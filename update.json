@@ -4,39 +4,39 @@
     "build": {
       "copyFiles": [
         {
-          "sourceFile": "projects/update/scripts/distribution.sh",
+          "sourceFile": "scripts/distribution.sh",
           "destinationFile": "distribution.sh"
         },
         {
-          "sourceFile": "projects/update/scripts/builder.sh",
+          "sourceFile": "scripts/builder.sh",
           "destinationFile": "builder.sh"
         },
         {
-          "sourceFile": "projects/update/scripts/installer.sh",
+          "sourceFile": "scripts/installer.sh",
           "destinationFile": "installer.sh"
         },
         {
-          "sourceFile": "projects/update/scripts/updater.sh",
+          "sourceFile": "scripts/updater.sh",
           "destinationFile": "updater.sh"
         },
         {
-          "sourceFile": "projects/update/scripts/update.sh",
+          "sourceFile": "scripts/update.sh",
           "destinationFile": "update.sh"
         },
         {
-          "sourceFile": "projects/update/scripts/updater_setup.sh",
+          "sourceFile": "scripts/updater_setup.sh",
           "destinationFile": "updater_setup.sh"
         },
         {
-          "sourceFile": "projects/update/scripts/distribution_setup.sh",
+          "sourceFile": "scripts/distribution_setup.sh",
           "destinationFile": "distribution_setup.sh"
         },
         {
-          "sourceFile": "projects/update/scripts/instance.yaml",
+          "sourceFile": "scripts/instance.yaml",
           "destinationFile": "instance.yaml"
         },
         {
-          "sourceFile": "projects/update/scripts/instance.sh",
+          "sourceFile": "scripts/instance.sh",
           "destinationFile": "instance.sh"
         }
       ]
