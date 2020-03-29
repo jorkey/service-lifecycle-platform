@@ -1,0 +1,137 @@
+{ "update": [
+  {
+    "service": "scripts",
+    "build": {
+      "copyFiles": [
+        {
+          "sourceFile": "projects/update/scripts/distribution.sh",
+          "destinationFile": "distribution.sh"
+        },
+        {
+          "sourceFile": "projects/update/scripts/builder.sh",
+          "destinationFile": "builder.sh"
+        },
+        {
+          "sourceFile": "projects/update/scripts/installer.sh",
+          "destinationFile": "installer.sh"
+        },
+        {
+          "sourceFile": "projects/update/scripts/updater.sh",
+          "destinationFile": "updater.sh"
+        },
+        {
+          "sourceFile": "projects/update/scripts/update.sh",
+          "destinationFile": "update.sh"
+        },
+        {
+          "sourceFile": "projects/update/scripts/updater_setup.sh",
+          "destinationFile": "updater_setup.sh"
+        },
+        {
+          "sourceFile": "projects/update/scripts/distribution_setup.sh",
+          "destinationFile": "distribution_setup.sh"
+        },
+        {
+          "sourceFile": "projects/update/scripts/instance.yaml",
+          "destinationFile": "instance.yaml"
+        },
+        {
+          "sourceFile": "projects/update/scripts/instance.sh",
+          "destinationFile": "instance.sh"
+        }
+      ]
+    }
+  },
+  {
+    "service": "builder",
+    "build": {
+      "buildCommands": [
+        {
+          "command": "sbt",
+          "args": [
+            "clean",
+            "set version in builder := \"%%version%%\"",
+            "set assemblyOutputPath in assembly in builder := new File(\"target/builder-%%version%%.jar\")",
+            "builder/assembly"],
+          "exitCode": 0,
+          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+        }
+      ],
+      "copyFiles": [
+        {
+          "sourceFile": "target/builder-%%version%%.jar",
+          "destinationFile": "builder-%%version%%.jar"
+        }
+      ]
+    }
+  },
+  {
+    "service": "installer",
+    "build": {
+      "buildCommands": [
+        {
+          "command": "sbt",
+          "args": [
+            "clean",
+            "set version in installer := \"%%version%%\"",
+            "set assemblyOutputPath in assembly in installer := new File(\"target/installer-%%version%%.jar\")",
+            "installer/assembly"],
+          "exitCode": 0,
+          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+        }
+      ],
+      "copyFiles": [
+        {
+          "sourceFile": "target/installer-%%version%%.jar",
+          "destinationFile": "installer-%%version%%.jar"
+        }
+      ]
+    }
+  },
+  {
+    "service": "updater",
+    "build": {
+      "buildCommands": [
+        {
+          "command": "sbt",
+          "args": [
+            "clean",
+            "set version in updater := \"%%version%%\"",
+            "set assemblyOutputPath in assembly in updater := new File(\"target/updater-%%version%%.jar\")",
+            "updater/assembly"],
+          "exitCode": 0,
+          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+        }
+      ],
+      "copyFiles": [
+        {
+          "sourceFile": "target/updater-%%version%%.jar",
+          "destinationFile": "updater-%%version%%.jar"
+        }
+      ]
+    }
+  },
+  {
+    "service": "distribution",
+    "build": {
+      "buildCommands": [
+        {
+          "command": "sbt",
+          "args": [
+            "clean",
+            "set version in distribution := \"%%version%%\"",
+            "set assemblyOutputPath in assembly in distribution := new File(\"target/distribution-%%version%%.jar\")",
+            "distribution/assembly"],
+          "exitCode": 0,
+          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+        }
+      ],
+      "copyFiles": [
+        {
+          "sourceFile": "target/distribution-%%version%%.jar",
+          "destinationFile": "distribution-%%version%%.jar"
+        }
+      ]
+    }
+  }
+]}
