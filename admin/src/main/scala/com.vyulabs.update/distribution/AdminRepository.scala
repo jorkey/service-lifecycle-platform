@@ -41,21 +41,31 @@ class AdminRepository(repository: GitRepository)(implicit log: Logger) {
 }
 
 object AdminRepository {
-  def makeStartOfSettingDesiredVersionsMessage(versions: Map[ServiceName, Option[BuildVersion]]): String = {
-    if (versions.size == 1) {
-      s"Set desired version " + makeDesiredVersionsStr(versions)
-    } else {
-      s"Set desired versions " + makeDesiredVersionsStr(versions)
+  def makeStartOfSettingDesiredVersionsMessage(versions: Option[Map[ServiceName, Option[BuildVersion]]], tested: Boolean): String = {
+    versions match {
+      case Some(versions) =>
+        val msg = if (versions.size == 1) {
+          s"Set desired version " + makeDesiredVersionsStr(versions)
+        } else {
+          s"Set desired versions " + makeDesiredVersionsStr(versions)
+        }
+        if (tested) {
+          msg + ", marked as tested"
+        } else {
+          msg + ", marked as not tested"
+        }
+      case None =>
+        if (tested) {
+          "Desired versions marked as tested"
+        } else {
+          "Desired versions marked as not tested"
+        }
     }
   }
 
-  def makeEndOfSettingDesiredVersionsMessage(completed: Boolean, versions: Map[ServiceName, Option[BuildVersion]]): String = {
+  def makeEndOfSettingDesiredVersionsMessage(completed: Boolean): String = {
     if (completed) {
-      if (versions.size == 1) {
-        s"Desired version " + makeDesiredVersionsStr(versions) + " is successfully assigned"
-      } else {
-        s"Desired versions " + makeDesiredVersionsStr(versions) + " are successfully assigned"
-      }
+      "Desired versions are successfully assigned"
     } else {
       "Desired versions assign is failed"
     }

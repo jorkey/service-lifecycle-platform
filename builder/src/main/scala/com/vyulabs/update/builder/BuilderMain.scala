@@ -1,12 +1,11 @@
 package com.vyulabs.update.builder
 
-import java.net.{URI, URL}
-
+import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
-import com.vyulabs.update.lock.{SmartFilesLocker}
+import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 
@@ -19,11 +18,10 @@ object BuilderMain extends App {
   implicit val filesLocker = new SmartFilesLocker()
 
   def usage(): String =
-    "Use: buildVersion <commonParameters> <author=value> <service=value> [client=value]\n" +
+    "Use: buildVersion <author=value> <service=value> [client=value]\n" +
     "                 [version=value] [comment=value] [sourceBranches=value1,value2,...] [setDesiredVersion=true]\n" +
-    "   getDesiredVersions <commonParameters> [clientName=value]\n" +
-    "   setDesiredVersions <commonParameters> [clientName=value] <services=<service[:version]>,[service1[:version1]],...>\n" +
-    "Where: commonParameters is <developerDirectoryUrl=value> <adminRepositoryUrl=value>"
+    "   getDesiredVersions [clientName=value]\n" +
+    "   setDesiredVersions [clientName=value] [services=<service[:version]>,[service1[:version1]],...] [tested=true]"
 
   if (args.size < 1) {
     sys.error(usage())
@@ -35,10 +33,11 @@ object BuilderMain extends App {
   }
   val arguments = Arguments.parse(args.drop(1))
 
-  val developerDirectoryUrl = new URL(arguments.getValue("developerDirectoryUrl"))
-  val adminRepositoryUri = new URI(arguments.getValue("adminRepositoryUrl"))
+  val config = BuilderConfig().getOrElse {
+    sys.error("No config")
+  }
 
-  val developerDirectory = DeveloperDistributionDirectoryClient(developerDirectoryUrl)
+  val developerDistribution = DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
 
   command match {
     case "buildVersion" =>
@@ -67,14 +66,14 @@ object BuilderMain extends App {
       val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
 
       log.info(s"Make new version of service ${serviceName}")
-      val builder = new Builder(developerDirectory, adminRepositoryUri)
+      val builder = new Builder(developerDistribution, config.adminRepositoryUri)
       builder.makeVersion(author, serviceName, clientName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
-            builder.setDesiredVersions(version.client, Map(serviceName -> Some(version)))
+            builder.setDesiredVersions(version.client, Some(Map(serviceName -> Some(version))), false)
             if (serviceName == Common.DistributionServiceName) {
               log.info("Update distribution server")
-              if (!developerDirectory.waitForServerUpdated(version)) {
+              if (!developerDistribution.waitForServerUpdated(version)) {
                 log.error("Can't update distribution server")
               }
             }
@@ -87,10 +86,10 @@ object BuilderMain extends App {
       val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
       clientName match {
         case Some(clientName) =>
-          val commonVersions = new Builder(developerDirectory, adminRepositoryUri).getDesiredVersions(None).getOrElse {
+          val commonVersions = new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(None).getOrElse {
             sys.error("Get desired versions error")
           }
-          val clientVersions = new Builder(developerDirectory, adminRepositoryUri).getDesiredVersions(Some(clientName))
+          val clientVersions = new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(Some(clientName))
             .getOrElse(Map.empty)
           log.info("Common desired versions:")
           commonVersions.foreach { case (serviceName, version) => {
@@ -103,7 +102,7 @@ object BuilderMain extends App {
           }
 
         case None =>
-          new Builder(developerDirectory, adminRepositoryUri).getDesiredVersions(None) match {
+          new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(None) match {
             case Some(versions) =>
               log.info("Desired versions:")
               versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
@@ -113,29 +112,39 @@ object BuilderMain extends App {
       }
     case "setDesiredVersions" =>
       val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
-      var servicesVersions = Map.empty[ServiceName, Option[BuildVersion]]
-      val servicesRecords: Seq[String] = arguments.getValue("services").split(",")
-      for (record <- servicesRecords) {
-        val fields = record.split(":")
-        if (fields.size == 2) {
-          val version = if (fields(1) != "-") {
-            Some(BuildVersion.parse(fields(1)))
+      var servicesVersions = Option.empty[Map[ServiceName, Option[BuildVersion]]]
+
+      for (services <- arguments.getOptionValue("services")) {
+        var versions = Map.empty[ServiceName, Option[BuildVersion]]
+        val servicesRecords: Seq[String] = services.split(",")
+        for (record <- servicesRecords) {
+          val fields = record.split(":")
+          if (fields.size == 2) {
+            val version = if (fields(1) != "-") {
+              Some(BuildVersion.parse(fields(1)))
+            } else {
+              None
+            }
+            versions += (fields(0) -> version)
           } else {
-            None
+            sys.error(s"Invalid service record ${record}")
           }
-          servicesVersions += (fields(0) -> version)
-        } else {
-          sys.error(s"Invalid service record ${record}")
         }
+        servicesVersions = Some(versions)
       }
-      if (!new Builder(developerDirectory, adminRepositoryUri).setDesiredVersions(clientName, servicesVersions)) {
+
+      val tested = arguments.getOptionBooleanValue("tested").getOrElse(false)
+
+      if (!new Builder(developerDistribution, config.adminRepositoryUri).setDesiredVersions(clientName, servicesVersions, tested)) {
         sys.error("Set desired versions error")
       }
-      for (distributionVersion <- servicesVersions.get(Common.DistributionServiceName)) {
-        for (distributionVersion <- distributionVersion) {
-          log.info("Update distribution server")
-          if (!developerDirectory.waitForServerUpdated(distributionVersion)) {
-            log.error("Can't update distribution server")
+      for (servicesVersions <- servicesVersions) {
+        for (distributionVersion <- servicesVersions.get(Common.DistributionServiceName)) {
+          for (distributionVersion <- distributionVersion) {
+            log.info("Update distribution server")
+            if (!developerDistribution.waitForServerUpdated(distributionVersion)) {
+              log.error("Can't update distribution server")
+            }
           }
         }
       }

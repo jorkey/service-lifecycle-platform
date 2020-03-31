@@ -9,7 +9,7 @@ import com.vyulabs.update.common.{Common, ServiceInstanceName}
 import com.vyulabs.update.state.{InstanceState, ServiceState}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.updater.UpdaterMain.log
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -39,9 +39,9 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
   }
 
   version = if (serviceInstanceName.serviceName == Common.UpdaterServiceName) {
-    UpdateUtils.getManifestBuildVersion(Common.UpdaterServiceName)
+    Utils.getManifestBuildVersion(Common.UpdaterServiceName)
   } else {
-    UpdateUtils.readServiceVersion(currentServiceDirectory)
+    Utils.readServiceVersion(currentServiceDirectory)
   }
 
   log.info(s"Current version of service ${serviceInstanceName} is ${version}")

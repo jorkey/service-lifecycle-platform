@@ -6,7 +6,7 @@ import com.vyulabs.update.common.Common.{ClientName, InstanceId, ProcessId, Serv
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 
@@ -78,7 +78,7 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
   }
 
   def getDesiredVersions(): Option[DesiredVersions] = {
-    val config = UpdateUtils.parseConfigFileWithLock(getDesiredVersionsFile())
+    val config = Utils.parseConfigFileWithLock(getDesiredVersionsFile())
     config.map(DesiredVersions(_))
   }
 }

@@ -7,7 +7,7 @@ import java.util.Base64
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vyulabs.update.common.Common.UserName
 import com.vyulabs.update.users.UserRole.UserRole
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import org.slf4j.{Logger, LoggerFactory}
@@ -88,7 +88,7 @@ class UsersCredentials(private var users: Map[UserName, UserCredentials]) {
   }
 
   def save(): Boolean = {
-    UpdateUtils.writeConfigFile(UsersCredentials.credentialsFile, toConfig())
+    Utils.writeConfigFile(UsersCredentials.credentialsFile, toConfig())
   }
 
   private def toConfig(): Config = {
@@ -109,7 +109,7 @@ object UsersCredentials {
 
     if (credentialsFile.exists()) {
       log.debug(s"Parse ${credentialsFile}")
-      val config = UpdateUtils.parseConfigFile(credentialsFile).getOrElse {
+      val config = Utils.parseConfigFile(credentialsFile).getOrElse {
         sys.error(s"Can't read ${credentialsFile}")
       }
       val users = config.getConfigList("credentials").asScala.foldLeft(Map.empty[UserName, UserCredentials]) {

@@ -7,7 +7,7 @@ import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.DesiredVersions
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 
@@ -37,9 +37,9 @@ object UpdaterMain extends App { self =>
         set + ServiceInstanceName.parse(record)
       )
 
-      log.info(s"-------------------------- Start updater of version ${UpdateUtils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${servicesInstanceNames} -------------------------")
+      log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${servicesInstanceNames} -------------------------")
 
-      val currentVersion = UpdateUtils.getManifestBuildVersion("updater").getOrElse {
+      val currentVersion = Utils.getManifestBuildVersion("updater").getOrElse {
         val version = BuildVersion(None, Seq(0, 0, 0))
         log.error(s"Can't get current updater version - assume ${version}")
         version

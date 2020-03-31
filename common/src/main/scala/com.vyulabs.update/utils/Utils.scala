@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
   * Copyright FanDate, Inc.
   */
-object UpdateUtils {
+object Utils {
 
   def runProcess(config: CommandConfig, args: Map[String, String],
                  dir: File, logOutput: Boolean)(implicit log: Logger): Boolean = {
@@ -169,7 +169,7 @@ object UpdateUtils {
 
   def writeConfigFile(file: File, config: Config)(implicit log: Logger): Boolean = {
     val json = file.getName.endsWith(".json")
-    UpdateUtils.writeFileFromBytes(file, renderConfig(config, json).getBytes("utf8"))
+    Utils.writeFileFromBytes(file, renderConfig(config, json).getBytes("utf8"))
   }
 
   def copyFile(from: File, to: File, filter: (File) => Boolean = (_) => true, settings: Map[String, String] = Map.empty)
@@ -309,7 +309,7 @@ object UpdateUtils {
         log.error(s"Can't make directory ${directory}")
         return false
       }
-    } else if (!UpdateUtils.deleteDirectoryContents(directory)) {
+    } else if (!Utils.deleteDirectoryContents(directory)) {
       log.error(s"Can't delete directory ${directory} contents")
       return false
     }

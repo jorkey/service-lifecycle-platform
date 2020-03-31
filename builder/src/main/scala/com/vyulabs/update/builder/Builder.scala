@@ -8,14 +8,14 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.distribution.{AdminRepository, GitRepositoryUtils}
 import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.builder.config.SourcesConfig
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
 import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.UpdateUtils.{copyFile, extendMacro}
+import com.vyulabs.update.utils.Utils.{copyFile, extendMacro}
 import com.vyulabs.update.version.BuildVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
@@ -32,7 +32,7 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
     if (!serviceDir.exists() && !serviceDir.mkdirs()) {
       log.error(s"Can't create directory ${serviceDir}")
     }
-    UpdateUtils.synchronize[Option[BuildVersion]](new File(serviceDir, builderLockFile), false,
+    Utils.synchronize[Option[BuildVersion]](new File(serviceDir, builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
           log.info(s"Another builder creates version for ${serviceName} - wait ...")
@@ -59,7 +59,7 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
             val sourceDir = new File(serviceDir, "source")
             val buildDir = new File(serviceDir, "build")
 
-            if (buildDir.exists() && !UpdateUtils.deleteFileRecursively(buildDir)) {
+            if (buildDir.exists() && !Utils.deleteFileRecursively(buildDir)) {
               log.error(s"Can't delete build directory ${buildDir}")
               return None
             }
@@ -126,7 +126,7 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
             var args = Map.empty[String, String]
             args += ("version" -> version.toString)
             for (command <- updateConfig.BuildConfig.BuildCommands) {
-              if (!UpdateUtils.runProcess(command, args, mainSourceRepository.getDirectory(), true)) {
+              if (!Utils.runProcess(command, args, mainSourceRepository.getDirectory(), true)) {
                 return None
               }
             }
@@ -159,7 +159,7 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
                 log.error(s"Build repository already contains file ${configFile}")
                 return None
               }
-              if (!UpdateUtils.writeConfigFile(configFile, installConfig.Origin)) {
+              if (!Utils.writeConfigFile(configFile, installConfig.Origin)) {
                 return None
               }
             }
@@ -202,10 +202,10 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
     directory.downloadDesiredVersions(clientName).map(_.Versions)
   }
 
-  def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
+  def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Option[Map[ServiceName, Option[BuildVersion]]], tested: Boolean)
                          (implicit log: Logger): Boolean = {
     log.info(s"Upload desired versions ${servicesVersions}" + (if (clientName.isDefined) s" for client ${clientName.get}" else ""))
-    UpdateUtils.synchronize[Boolean](new File(".", builderLockFile), false,
+    Utils.synchronize[Boolean](new File(".", builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
           log.info("Another builder is running - wait ...")
@@ -218,18 +218,20 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
           sys.error("Init admin repository error")
         }
         val gitLock = adminRepository.buildDesiredVersionsLock()
-        if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(servicesVersions),
-          s"Continue updating of desired versions")) {
+        if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(servicesVersions, tested),
+             s"Continue updating of desired versions")) {
           var newDesiredVersions = Option.empty[DesiredVersions]
           try {
             var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.Versions).getOrElse(Map.empty)
-            servicesVersions.foreach {
-              case (serviceName, Some(version)) =>
-                desiredVersionsMap += (serviceName -> version)
-              case (serviceName, None) =>
-                desiredVersionsMap -= serviceName
+            for (servicesVersions <- servicesVersions) {
+              servicesVersions.foreach {
+                case (serviceName, Some(version)) =>
+                  desiredVersionsMap += (serviceName -> version)
+                case (serviceName, None) =>
+                  desiredVersionsMap -= serviceName
+              }
             }
-            val desiredVersions = DesiredVersions(desiredVersionsMap)
+            val desiredVersions = DesiredVersions(desiredVersionsMap, tested)
             if (!directory.uploadDesiredVersions(clientName, desiredVersions)) {
               log.error("Can't update desired versions")
               return false
@@ -240,7 +242,7 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
           } finally {
             for (desiredVersions <- newDesiredVersions) {
               val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-              if (!UpdateUtils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
+              if (!Utils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
                 return false
               }
               if (!adminRepository.addFileToCommit(desiredVersionsFile)) {
@@ -248,11 +250,13 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
               }
             }
             adminRepository.processLogFile(!newDesiredVersions.isEmpty)
-            if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(!newDesiredVersions.isEmpty, servicesVersions))) {
+            if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(!newDesiredVersions.isEmpty))) {
               log.error("Can't unlock update of desired versions")
             }
-            if (!servicesVersions.isEmpty) {
-              adminRepository.tagServices(servicesVersions.map(_._1).toSeq)
+            for (servicesVersions <- servicesVersions) {
+              if (!servicesVersions.isEmpty) {
+                adminRepository.tagServices(servicesVersions.map(_._1).toSeq)
+              }
             }
           }
         } else {

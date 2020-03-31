@@ -5,7 +5,7 @@ import java.io.File
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.info.{VersionInfo, VersionsInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -49,7 +49,7 @@ abstract class DistributionDirectory(val directory: File)(implicit filesLocker: 
       for (file <- directory.listFiles()) {
         if (file.getName.endsWith("-info.json")) {
           try {
-            versions ++= UpdateUtils.parseConfigFile(file).map(VersionInfo.apply(_))
+            versions ++= Utils.parseConfigFile(file).map(VersionInfo.apply(_))
           } catch {
             case e: Exception =>
               log.error(s"Parse file ${file} error", e)
@@ -62,7 +62,7 @@ abstract class DistributionDirectory(val directory: File)(implicit filesLocker: 
 
   def writeVersionsInfo(directory: File, outputFile: File)(implicit log: Logger): Boolean = {
     val versionsInfo = getVersionsInfo(directory)
-    UpdateUtils.writeConfigFile(outputFile, versionsInfo.toConfig())
+    Utils.writeConfigFile(outputFile, versionsInfo.toConfig())
   }
 
   def removeVersion(serviceName: ServiceName, version: BuildVersion): Unit = {

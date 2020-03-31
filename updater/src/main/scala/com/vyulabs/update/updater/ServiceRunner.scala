@@ -12,7 +12,7 @@ import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultReport, FaultUploader, LogUploader}
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -94,7 +94,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
           case Some(params) =>
             params.config.FaultFilesMatch match {
               case Some(pattern) =>
-                val regPattern = UpdateUtils.extendMacro(pattern, params.args).r
+                val regPattern = Utils.extendMacro(pattern, params.args).r
                 val files = params.directory.listFiles().filter { file =>
                   file.getName match {
                     case regPattern() => true
@@ -144,7 +144,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
           val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + (if (failed) "-failed" else "")
           val saveDir = new File(state.logHistoryDirectory, s"${dirName}.log")
-          if (!saveDir.exists() || UpdateUtils.deleteFileRecursively(saveDir)) {
+          if (!saveDir.exists() || Utils.deleteFileRecursively(saveDir)) {
             if (logDirectory.exists()) {
               if (!logDirectory.renameTo(saveDir)) {
                 log.error(s"Can't rename ${logDirectory} to ${saveDir}")
@@ -155,7 +155,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
           } else {
             log.error(s"Can't delete ${saveDir}")
           }
-          UpdateUtils.maybeFreeSpace(state.logHistoryDirectory, maxLogHistoryDirCapacity, Set.empty)
+          Utils.maybeFreeSpace(state.logHistoryDirectory, maxLogHistoryDirCapacity, Set.empty)
         } else {
           state.error(s"Can't make directory ${state.logHistoryDirectory}")
         }
@@ -166,8 +166,8 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
   private def startService(): Boolean = {
     try {
       for (params <- processParameters) {
-        val command = UpdateUtils.extendMacro(params.config.Command, params.args)
-        val arguments = params.config.Arguments.map(UpdateUtils.extendMacro(_, params.args))
+        val command = Utils.extendMacro(params.config.Command, params.args)
+        val arguments = params.config.Arguments.map(Utils.extendMacro(_, params.args))
         val builder = new ProcessBuilder((command +: arguments).toList.asJava)
         builder.redirectErrorStream(true)
         params.config.Env.foldLeft(builder.environment())((e, entry) => {

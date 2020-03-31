@@ -16,7 +16,7 @@ import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
 import com.vyulabs.update.state.{InstanceState, InstancesState}
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Promise}
@@ -55,12 +55,12 @@ class ClientStateUploader(clientName: ClientName, dir: ClientDistributionDirecto
     import ExecutionContext.Implicits.global
     promise.future.onComplete { _ =>
       self.synchronized {
-        UpdateUtils.maybeDeleteOldFiles(dir.getStatesDir(), System.currentTimeMillis() - expirationPeriod, downloadingFiles)
+        Utils.maybeDeleteOldFiles(dir.getStatesDir(), System.currentTimeMillis() - expirationPeriod, downloadingFiles)
         downloadingFiles -= file
       }
     }
     val source = Source.single(
-      ByteString(UpdateUtils.renderConfig(config, true).getBytes("utf8")))
+      ByteString(Utils.renderConfig(config, true).getBytes("utf8")))
     distribution.fileWriteWithLock(source, dir.getInstanceStateFile(instanceId, updaterProcessId), Some(promise))
   }
 

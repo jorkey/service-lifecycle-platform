@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.common.{Common, ServiceInstanceName}
 import com.vyulabs.update.config.InstallConfig
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
 import com.vyulabs.update.version.BuildVersion
@@ -58,7 +58,7 @@ class ServiceUpdater(instanceId: InstanceId,
     state.setUpdateToVersion(newVersion)
 
     state.info(s"Download version ${newVersion}")
-    if (state.newServiceDirectory.exists() && !UpdateUtils.deleteFileRecursively(state.newServiceDirectory)) {
+    if (state.newServiceDirectory.exists() && !Utils.deleteFileRecursively(state.newServiceDirectory)) {
       state.error(s"Can't remove directory ${state.newServiceDirectory}")
       return false
     }
@@ -82,7 +82,7 @@ class ServiceUpdater(instanceId: InstanceId,
     }
 
     for (command <- installConfig.InstallCommands) {
-      if (!UpdateUtils.runProcess(command, args, state.newServiceDirectory, true)) {
+      if (!Utils.runProcess(command, args, state.newServiceDirectory, true)) {
         state.error(s"Install error")
         return false
       }
@@ -101,7 +101,7 @@ class ServiceUpdater(instanceId: InstanceId,
         this.serviceRunner = None
       }
 
-      if (!UpdateUtils.deleteFileRecursively(state.currentServiceDirectory)) {
+      if (!Utils.deleteFileRecursively(state.currentServiceDirectory)) {
         state.error(s"Can't delete ${state.currentServiceDirectory}")
         return false
       }
@@ -113,13 +113,13 @@ class ServiceUpdater(instanceId: InstanceId,
     }
 
     for (command <- installConfig.PostInstallCommands) {
-      if (!UpdateUtils.runProcess(command, args, state.currentServiceDirectory, true)) {
+      if (!Utils.runProcess(command, args, state.currentServiceDirectory, true)) {
         state.error(s"Install error")
         return false
       }
     }
 
-    UpdateUtils.writeServiceVersion(state.currentServiceDirectory, newVersion)
+    Utils.writeServiceVersion(state.currentServiceDirectory, newVersion)
 
     state.setVersion(newVersion)
 

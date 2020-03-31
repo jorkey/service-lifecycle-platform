@@ -11,7 +11,7 @@ import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success}
@@ -48,9 +48,9 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
     val result = source.runWith(sink)
     onSuccess(result) { result =>
       self.synchronized {
-        UpdateUtils.maybeDeleteOldFiles(clientDir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
-        UpdateUtils.maybeDeleteExcessFiles(clientDir, maxClientServiceReportsCount, downloadingFiles)
-        UpdateUtils.maybeFreeSpace(clientDir, maxClientServiceDirectoryCapacity, downloadingFiles)
+        Utils.maybeDeleteOldFiles(clientDir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
+        Utils.maybeDeleteExcessFiles(clientDir, maxClientServiceReportsCount, downloadingFiles)
+        Utils.maybeFreeSpace(clientDir, maxClientServiceDirectoryCapacity, downloadingFiles)
         downloadingFiles -= file
       }
       result.status match {

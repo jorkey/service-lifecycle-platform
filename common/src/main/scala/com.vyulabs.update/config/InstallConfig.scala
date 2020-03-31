@@ -4,7 +4,7 @@ import java.io.File
 
 import com.typesafe.config.Config
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters._
@@ -25,7 +25,7 @@ object InstallConfig {
   def apply(directory: File)(implicit log: Logger): Option[InstallConfig] = {
     val configFile = new File(directory, Common.InstallConfigFileName)
     if (configFile.exists()) {
-      val config = UpdateUtils.parseConfigFile(configFile).getOrElse(return None)
+      val config = Utils.parseConfigFile(configFile).getOrElse(return None)
       Some(InstallConfig(config))
     } else {
       log.error(s"Config file ${configFile} does not exist")

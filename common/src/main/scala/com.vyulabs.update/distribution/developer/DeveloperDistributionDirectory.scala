@@ -7,7 +7,7 @@ import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -99,7 +99,7 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   }
 
   def getDesiredVersion(serviceName: ServiceName): Option[BuildVersion] = {
-    val desiredVersions = UpdateUtils.parseConfigFileWithLock(getDesiredVersionsFile(None)).map(DesiredVersions(_))
+    val desiredVersions = Utils.parseConfigFileWithLock(getDesiredVersionsFile(None)).map(DesiredVersions(_))
     desiredVersions match {
       case Some(versions) =>
         versions.Versions.get(serviceName)
@@ -109,6 +109,6 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   }
 
   def getDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
-    UpdateUtils.parseConfigFileWithLock(getDesiredVersionsFile(clientName)).map(DesiredVersions(_))
+    Utils.parseConfigFileWithLock(getDesiredVersionsFile(clientName)).map(DesiredVersions(_))
   }
 }

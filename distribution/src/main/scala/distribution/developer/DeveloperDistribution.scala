@@ -12,7 +12,7 @@ import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.state.InstancesState
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
 import org.slf4j.LoggerFactory
@@ -47,11 +47,11 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                     getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                   } ~
                   path(downloadVersionsInfoPath / ".*".r) { (service) =>
-                    complete(UpdateUtils.renderConfig(
+                    complete(Utils.renderConfig(
                       dir.getVersionsInfo(dir.getServiceDir(service, None)).toConfig(), true))
                   } ~
                   path(downloadVersionsInfoPath / ".*".r / ".*".r) { (service, client) =>
-                    complete(UpdateUtils.renderConfig(
+                    complete(Utils.renderConfig(
                       dir.getVersionsInfo(dir.getServiceDir(service, Some(client))).toConfig(), true))
                   } ~
                   path(downloadDesiredVersionsPath) {

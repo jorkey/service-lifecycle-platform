@@ -7,7 +7,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,8 +43,8 @@ class SelfUpdater(dir: DistributionDirectory)
             return
           }
         }
-        for (ownVersion <- UpdateUtils.getManifestBuildVersion(Common.DistributionServiceName)) {
-          UpdateUtils.parseConfigFileWithLock(dir.getDesiredVersionsFile()) match {
+        for (ownVersion <- Utils.getManifestBuildVersion(Common.DistributionServiceName)) {
+          Utils.parseConfigFileWithLock(dir.getDesiredVersionsFile()) match {
             case Some(config) =>
               val versions = try {
                 DesiredVersions(config).Versions

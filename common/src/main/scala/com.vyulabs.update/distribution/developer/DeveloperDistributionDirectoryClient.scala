@@ -9,7 +9,7 @@ import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.info.{DesiredVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.state.InstancesState
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import org.slf4j.Logger
 
 /**

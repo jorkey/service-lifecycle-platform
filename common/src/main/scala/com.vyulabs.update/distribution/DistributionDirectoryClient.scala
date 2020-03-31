@@ -8,7 +8,7 @@ import java.util.Base64
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.info.VersionInfo
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -42,7 +42,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
       if (!downloadVersionImage(serviceName, buildVersion, tmpFile)) {
         return false
       }
-      if (!UpdateUtils.unzip(tmpFile, directory)) {
+      if (!Utils.unzip(tmpFile, directory)) {
         log.error(s"Can't unzip version ${buildVersion} of service ${serviceName}")
         return false
       }
@@ -61,11 +61,11 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     val imageTmpFile = File.createTempFile("build", ".zip")
     val infoTmpFile = File.createTempFile("version-info", ".json")
     try {
-      if (!UpdateUtils.zip(imageTmpFile, buildDir)) {
+      if (!Utils.zip(imageTmpFile, buildDir)) {
         log.error("Can't zip build directory")
         return false
       }
-      if (!UpdateUtils.writeConfigFile(infoTmpFile, versionInfo.toConfig())) {
+      if (!Utils.writeConfigFile(infoTmpFile, versionInfo.toConfig())) {
         return false
       }
       uploadVersionImage(serviceName, versionInfo.buildVersion, infoTmpFile, imageTmpFile)
@@ -128,7 +128,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
   protected def downloadToConfig(url: URL, options: ConfigParseOptions = ConfigParseOptions.defaults()): Option[Config] = {
     downloadToString(url) match {
       case Some(entry) =>
-        UpdateUtils.parseConfigString(entry, options)
+        Utils.parseConfigString(entry, options)
       case None =>
         None
     }
@@ -202,7 +202,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
   }
 
   protected def uploadFromConfig(url: URL, name: String, destinationFile: String, config: Config): Boolean = {
-    val content = UpdateUtils.renderConfig(config, true)
+    val content = Utils.renderConfig(config, true)
     val input = new ByteArrayInputStream(content.getBytes("utf8"))
     upload(url, name, destinationFile, input)
   }

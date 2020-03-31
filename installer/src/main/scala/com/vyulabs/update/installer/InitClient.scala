@@ -9,8 +9,9 @@ import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
+import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -22,10 +23,10 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private val adminRepositoryDir = new File("src/test", "admin")
   private val distributionDir = new File("src/test", "distrib")
 
-  def initClient(clientName: ClientName,
-                 clientDistributionUrl: URL, adminRepositoryUri: URI,
-                 developerDistribution: DeveloperDistributionDirectoryClient,
+  def initClient(clientName: ClientName, production: Boolean,
+                 adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
                  distributionServicePort: Int): Boolean = {
+    val developerDistribution = DeveloperDistributionDirectoryClient(developerDistributionUrl)
     val clientDistribution = new ClientDistributionDirectory(new File(distributionDir, "directory"))
     log.info("Init admin repository")
     if (!initAdminRepository()) {
@@ -40,8 +41,8 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     log.info("Init install directory")
     if (!initInstallDirectory(
         clientDistribution.getVersionImageFile(Common.ScriptsServiceName,
-          clientDistribution.getDesiredVersion(Common.ScriptsServiceName).get),
-      clientName, clientDistributionUrl, adminRepositoryUri)) {
+        clientDistribution.getDesiredVersion(Common.ScriptsServiceName).get),
+        clientName, production, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)) {
       log.error("Can't init install repository")
       return false
     }
@@ -66,26 +67,28 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def initInstallDirectory(scriptsZip: File, clientName: ClientName,
-                                   clientDistributionUrl: URL, adminRepositoryUri: URI): Boolean = {
+  private def initInstallDirectory(scriptsZip: File, clientName: ClientName, production: Boolean,
+                                   adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
+    log.info(s"Create ${InstallerConfig.configFile}")
+    val config = InstallerConfig(clientName, production, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)
+    if (!config.write()) {
+      return false
+    }
     log.info("Update installer.sh")
-    if (!UpdateUtils.unzip(scriptsZip, new File("."), (name: String) => { name == "installer.sh" })) {
+    if (!Utils.unzip(scriptsZip, new File("."), (name: String) => { name == "installer.sh" })) {
       return false
     }
     val installerFile = new File("installer.sh")
-    val originalContent = new String(UpdateUtils.readFileToBytes(installerFile).getOrElse {
+    val content = new String(Utils.readFileToBytes(installerFile).getOrElse {
       log.error(s"Read file ${installerFile} error")
       return false
     }, "utf8")
     installerFile.renameTo(File.createTempFile("installer", "sh"))
-    val content = originalContent.replace("#clientName=", s"clientName=${clientName}")
-      .replaceAll("#clientDistributionUrl=", s"clientDistributionUrl=${clientDistributionUrl}")
-      .replaceAll("#adminRepositoryUrl=", s"adminRepositoryUrl=${adminRepositoryUri}")
-    if (!UpdateUtils.writeFileFromBytes(installerFile, content.getBytes("utf8"))) {
+    if (!Utils.writeFileFromBytes(installerFile, content.getBytes("utf8"))) {
       log.error(s"Write file ${installerFile} error")
       return false
     }
-    if (!UpdateUtils.runProcess("chmod", Seq("+x", "installer.sh"), Map.empty, new File("."),
+    if (!Utils.runProcess("chmod", Seq("+x", "installer.sh"), Map.empty, new File("."),
           Some(0), None, false)) {
       log.warn("Can't set execution attribute to installer.sh")
     }
@@ -115,7 +118,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Write desired versions")
-    if (!UpdateUtils.writeConfigFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toConfig())) {
+    if (!Utils.writeConfigFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions, false).toConfig())) {
       log.error("Can't write desired versions")
       return false
     }
@@ -158,11 +161,11 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                       developerDistribution: DeveloperDistributionDirectoryClient,
                                       desiredVersions: Map[ServiceName, BuildVersion],
                                       distributionServicePort: Int): Boolean = {
-    UpdateUtils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
+    Utils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
       distributionDir, (name: String) => {
         name == "distribution_setup.sh" || name == "distribution.sh"
       })
-    if (!UpdateUtils.runProcess("bash",
+    if (!Utils.runProcess("bash",
         Seq( "distribution_setup.sh", "client", clientName, developerDistribution.url.toString, distributionServicePort.toString),
         Map.empty, distributionDir, Some(0), None, true)) {
       log.error("Can't setup distribution server")

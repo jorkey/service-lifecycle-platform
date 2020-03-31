@@ -10,7 +10,7 @@ import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -22,7 +22,7 @@ class UpdateClient()(implicit log: Logger) {
   private val buildDir = new File("build")
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def installUpdates(clientName: ClientName,
+  def installUpdates(clientName: ClientName, production: Boolean,
                      adminRepository: ClientAdminRepository,
                      clientDistribution: ClientDistributionDirectoryClient,
                      developerDistribution: DeveloperDistributionDirectoryClient,
@@ -35,7 +35,7 @@ class UpdateClient()(implicit log: Logger) {
       var completed = false
       var clientVersions = Map.empty[ServiceName, BuildVersion]
       try {
-        if (buildDir.exists() && !UpdateUtils.deleteFileRecursively(buildDir)) {
+        if (buildDir.exists() && !Utils.deleteFileRecursively(buildDir)) {
           log.error(s"Can't remove directory ${buildDir}")
           return false
         }
@@ -43,9 +43,13 @@ class UpdateClient()(implicit log: Logger) {
           log.error(s"Can't make directory ${buildDir}")
           return false
         }
-        log.info("Get desired versions")
-        val developerDesiredVersions = developerDistribution.downloadDesiredVersions(clientName).map(_.Versions).getOrElse {
+        log.info("Get developer desired versions")
+        val developerDesiredVersions = developerDistribution.downloadDesiredVersions(clientName).getOrElse {
           log.error(s"Can't get developer desired versions")
+          return false
+        }
+        if (production && !developerDesiredVersions.Tested) {
+          log.error(s"Can't install not tested versions to production server")
           return false
         }
         val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.Versions).getOrElse {
@@ -53,7 +57,7 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         var developerVersions = if (!localConfigOnly) {
-          developerDesiredVersions
+          developerDesiredVersions.Versions
         } else {
           clientDesiredVersions.mapValues(_.original())
         }
@@ -106,7 +110,8 @@ class UpdateClient()(implicit log: Logger) {
           for (distribDesiredVersions <- developerVersions.get(Common.DistributionServiceName)) {
             log.info("Update distribution server")
             if (!installVersions(adminRepository, clientDistribution, developerDistribution,
-                developerVersions.filterKeys(_ == Common.DistributionServiceName), clientVersions, assignDesiredVersions)) {
+                developerVersions.filterKeys(_ == Common.DistributionServiceName), clientVersions, assignDesiredVersions,
+                developerDesiredVersions.Tested)) {
               return false
             }
             if (!clientDistribution.waitForServerUpdated(distribDesiredVersions)) {
@@ -117,7 +122,7 @@ class UpdateClient()(implicit log: Logger) {
           }
         }
         if (!installVersions(adminRepository, clientDistribution, developerDistribution,
-            developerVersions, clientVersions, assignDesiredVersions)) {
+            developerVersions, clientVersions, assignDesiredVersions, developerDesiredVersions.Tested)) {
           return false
         }
         log.info("Updates successfully installed.")
@@ -149,9 +154,10 @@ class UpdateClient()(implicit log: Logger) {
 
   def setDesiredVersions(adminRepository: ClientAdminRepository,
                          clientDistribution: ClientDistributionDirectoryClient,
-                         versions: Map[ServiceName, Option[BuildVersion]]): Boolean = {
+                         versions: Option[Map[ServiceName, Option[BuildVersion]]],
+                         tested: Boolean): Boolean = {
     val gitLock = adminRepository.buildDesiredVersionsLock()
-    if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(versions),
+    if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(versions, tested),
         s"Continue of setting desired versions")) {
       var newDesiredVersions = Option.empty[DesiredVersions]
       try {
@@ -159,15 +165,19 @@ class UpdateClient()(implicit log: Logger) {
           log.error("Error of getting desired versions")
           return false
         }
-        val newVersions = versions.foldLeft(desiredVersionsMap) {
-          (map, entry) => entry._2 match {
-            case Some(version) =>
-              map + (entry._1 -> version)
-            case None =>
-              map - entry._1
-          }
+        val newVersions = versions match {
+          case Some(versions) =>
+            versions.foldLeft(desiredVersionsMap) {
+              (map, entry) => entry._2 match {
+                case Some(version) =>
+                  map + (entry._1 -> version)
+                case None =>
+                  map - entry._1
+              }}
+          case None =>
+            desiredVersionsMap
         }
-        val desiredVersions = new DesiredVersions(newVersions)
+        val desiredVersions = new DesiredVersions(newVersions, tested)
         if (!clientDistribution.uploadDesiredVersions(desiredVersions)) {
           log.error("Error of uploading desired versions")
           return false
@@ -181,7 +191,7 @@ class UpdateClient()(implicit log: Logger) {
       } finally {
         for (desiredVersions <- newDesiredVersions) {
           val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-          if (!UpdateUtils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
+          if (!Utils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
             return false
           }
           if (!adminRepository.addFileToCommit(desiredVersionsFile)) {
@@ -189,10 +199,10 @@ class UpdateClient()(implicit log: Logger) {
           }
         }
         adminRepository.processLogFile(!newDesiredVersions.isEmpty)
-        if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(!newDesiredVersions.isEmpty, versions))) {
+        if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(!newDesiredVersions.isEmpty))) {
           log.error("Can't unlock admin repository")
         }
-        if (!versions.isEmpty) {
+        for (versions <- versions) {
           adminRepository.tagServices(versions.map(_._1).toSeq)
         }
       }
@@ -207,7 +217,8 @@ class UpdateClient()(implicit log: Logger) {
                               developerDistribution: DeveloperDistributionDirectoryClient,
                               developerVersions: Map[ServiceName, BuildVersion],
                               clientVersions: Map[ServiceName, BuildVersion],
-                              assignDesiredVersions: Boolean): Boolean = {
+                              assignDesiredVersions: Boolean,
+                              tested: Boolean): Boolean = {
     developerVersions.foreach {
       case (serviceName, version) =>
         if (!installVersion(adminRepository, clientDistribution, developerDistribution, serviceName, version,
@@ -218,7 +229,8 @@ class UpdateClient()(implicit log: Logger) {
     }
     if (assignDesiredVersions) {
       log.info("Set desired versions")
-      if (!setDesiredVersions(adminRepository, clientDistribution, clientVersions.map(entry => (entry._1, Some(entry._2))))) {
+      if (!setDesiredVersions(adminRepository, clientDistribution,
+          Some(clientVersions.map(entry => (entry._1, Some(entry._2)))), tested)) {
         log.error("Set desired versions error")
         return false
       }
@@ -236,7 +248,7 @@ class UpdateClient()(implicit log: Logger) {
         log.error(s"Can't download version ${fromVersion} of service ${serviceName} info")
         return false
       }
-      if (!UpdateUtils.deleteDirectoryContents(buildDir)) {
+      if (!Utils.deleteDirectoryContents(buildDir)) {
         log.error(s"Can't remove directory ${buildDir} contents")
         return false
       }
@@ -266,7 +278,7 @@ class UpdateClient()(implicit log: Logger) {
       val privateDir = adminRepository.getServicePrivateDir(serviceName)
       if (privateDir.exists()) {
         log.info(s"Install private files")
-        if (!UpdateUtils.copyFile(privateDir, buildDir)) {
+        if (!Utils.copyFile(privateDir, buildDir)) {
           return false
         }
       }
@@ -289,13 +301,13 @@ class UpdateClient()(implicit log: Logger) {
     val clientConfigFile = adminRepository.getServiceInstallConfigFile(serviceName)
     if (clientConfigFile.exists()) {
       log.info(s"Merge ${Common.InstallConfigFileName} with client version")
-      val clientConfig = UpdateUtils.parseConfigFile(clientConfigFile).getOrElse(return false)
+      val clientConfig = Utils.parseConfigFile(clientConfigFile).getOrElse(return false)
       if (buildConfigFile.exists()) {
-        val buildConfig = UpdateUtils.parseConfigFile(buildConfigFile).getOrElse(return false)
+        val buildConfig = Utils.parseConfigFile(buildConfigFile).getOrElse(return false)
         val newConfig = clientConfig.withFallback(buildConfig).resolve()
-        UpdateUtils.writeConfigFile(buildConfigFile, newConfig)
+        Utils.writeConfigFile(buildConfigFile, newConfig)
       } else {
-        UpdateUtils.copyFile(buildConfigFile, clientConfigFile)
+        Utils.copyFile(buildConfigFile, clientConfigFile)
       }
     } else {
       true
@@ -322,7 +334,7 @@ class UpdateClient()(implicit log: Logger) {
           val filePath = if (subPath.isEmpty) originalName else subPath + "/" + originalName
           val buildConf = new File(buildDirectory, filePath)
           if (buildConf.exists()) {
-            val configSettings = new ConfigSettings(UpdateUtils.parseConfigFile(localFile).getOrElse {
+            val configSettings = new ConfigSettings(Utils.parseConfigFile(localFile).getOrElse {
               return false
             })
             log.info(s"Merge configuration file ${filePath} with local configuration file ${localFile}")
@@ -332,7 +344,7 @@ class UpdateClient()(implicit log: Logger) {
             }
           } else {
             log.info(s"Copy local configuration file ${localFile}")
-            if (!UpdateUtils.copyFile(localFile, buildConf)) {
+            if (!Utils.copyFile(localFile, buildConf)) {
               return false
             }
           }
@@ -354,7 +366,7 @@ class UpdateClient()(implicit log: Logger) {
           val filePath = if (subPath.isEmpty) name else subPath + "/" + name
           val buildConf = new File(buildDirectory, filePath)
           log.info(s"Copy local configuration file ${filePath}")
-          if (!UpdateUtils.copyFile(localFile, buildConf)) {
+          if (!Utils.copyFile(localFile, buildConf)) {
             return false
           }
         }

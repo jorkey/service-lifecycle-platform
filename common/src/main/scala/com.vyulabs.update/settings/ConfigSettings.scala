@@ -3,7 +3,7 @@ package com.vyulabs.update.settings
 import java.io.File
 
 import com.typesafe.config._
-import com.vyulabs.update.utils.UpdateUtils
+import com.vyulabs.update.utils.Utils
 import org.slf4j.Logger
 
 /**
@@ -13,11 +13,11 @@ import org.slf4j.Logger
 class ConfigSettings(config: Config) {
   def merge(file: File)(implicit log: Logger): Boolean = {
     if (file.exists()) {
-      val origConfig = UpdateUtils.parseConfigFile(file).getOrElse(return false)
+      val origConfig = Utils.parseConfigFile(file).getOrElse(return false)
       val newConfig = config.withFallback(origConfig).resolve()
-      UpdateUtils.writeConfigFile(file, newConfig)
+      Utils.writeConfigFile(file, newConfig)
     } else {
-      UpdateUtils.writeConfigFile(file, config)
+      Utils.writeConfigFile(file, config)
     }
   }
 }
