@@ -8,12 +8,12 @@ import scala.collection.JavaConverters._
 
 case class DesiredVersions(Versions: Map[ServiceName, BuildVersion], Tested: Boolean) {
   def toConfig(): Config = {
-    val config = ConfigFactory.empty()
     val versions = Versions.foldLeft(ConfigFactory.empty())((config, entry) => {
       config.withValue(entry._1, ConfigValueFactory.fromAnyRef(entry._2.toString))
     })
-    config.withValue("desiredVersions", ConfigValueFactory.fromAnyRef(versions.root()))
-    config.withValue("tested", ConfigValueFactory.fromAnyRef(Tested))
+    ConfigFactory.empty()
+      .withValue("desiredVersions", ConfigValueFactory.fromAnyRef(versions.root()))
+      .withValue("tested", ConfigValueFactory.fromAnyRef(Tested))
   }
 }
 
