@@ -28,7 +28,7 @@ object InstallerMain extends App {
     "           installUpdates [servicesOnly=<service1>:[-<profile>][,...]] [localConfigOnly=true] [setDesiredVersions=true]\n" +
     "           getDesiredVersions\n" +
     "           setDesiredVersions [services=<service[:version]>,[service1[:version1]],...]\n" +
-    "           markVersionsAsTested"
+    "           signVersionsAsTested"
 
   if (args.size < 1) {
     sys.error(usage())
@@ -148,7 +148,7 @@ object InstallerMain extends App {
             sys.error("Desired versions assignment error")
           }
 
-        case "markVersionsAsTested" =>
+        case "signVersionsAsTested" =>
           val config = InstallerConfig().getOrElse {
             sys.error("No config")
           }
@@ -162,8 +162,8 @@ object InstallerMain extends App {
           val clientDistribution = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
           val developerDistribution = new DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
 
-          if (!updateClient.markVersionsAsTested(adminRepository, clientDistribution, developerDistribution)) {
-            sys.error("Set tested flag error")
+          if (!updateClient.signVersionsAsTested(adminRepository, clientDistribution, developerDistribution)) {
+            sys.error("Sign versions as tested error")
           }
 
         case command =>

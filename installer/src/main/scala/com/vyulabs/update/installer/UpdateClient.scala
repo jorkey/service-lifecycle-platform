@@ -52,9 +52,9 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         for (testClientMatch <- testClientMatch) {
-          val tested = developerDesiredVersions.TestRecords.exists { record =>
-            record match {
-              case testClientMatch => true
+          val tested = developerDesiredVersions.TestSignatures.exists { signature =>
+            signature match {
+              case `testClientMatch` => true
               case _ => false
             }
           }
@@ -214,7 +214,7 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  def markVersionsAsTested(adminRepository: ClientAdminRepository,
+  def signVersionsAsTested(adminRepository: ClientAdminRepository,
                            clientDistribution: ClientDistributionDirectoryClient,
                            developerDistribution: DeveloperDistributionDirectoryClient): Boolean = {
     val gitLock = adminRepository.buildDesiredVersionsLock()

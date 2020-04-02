@@ -14,7 +14,7 @@ import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, TestRecord}
+import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.state.InstancesState
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
@@ -168,8 +168,8 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         val desiredVersions = DesiredVersions(desiredVersionsConfig)
         val testedVersions = ServicesVersions(config)
         if (desiredVersions.Versions.equals(testedVersions.Versions)) {
-          val testRecord = TestRecord(clientName, new Date())
-          val testedDesiredVersions = DesiredVersions(desiredVersions.Versions, desiredVersions.TestRecords :+ testRecord)
+          val testRecord = TestSignature(clientName, new Date())
+          val testedDesiredVersions = DesiredVersions(desiredVersions.Versions, desiredVersions.TestSignatures :+ testRecord)
           Some(ByteString(Utils.renderConfig(testedDesiredVersions.toConfig(), true).getBytes("utf8")))
         } else {
           None
