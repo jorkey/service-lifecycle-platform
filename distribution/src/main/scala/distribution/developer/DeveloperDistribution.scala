@@ -1,14 +1,20 @@
 package distribution.developer
 
+import java.io.IOException
+import java.util.Date
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{Route, ValidationRejection}
 import akka.stream.Materializer
+import akka.util.ByteString
+import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.DesiredVersions
+import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, TestRecord}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.state.InstancesState
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
@@ -84,30 +90,33 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       val buildVersion = BuildVersion.parse(version)
                       versionImageUpload(service, buildVersion)
                     } ~
-                      path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                        val buildVersion = BuildVersion.parse(version)
-                        versionInfoUpload(service, buildVersion)
-                      } ~
-                      path(uploadDesiredVersionsPath) {
-                        fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
-                      } ~
-                      path(uploadDesiredVersionsPath / ".*".r) { client =>
-                        fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(Some(client)))
-                      }
-                  } ~
-                    authorize(usersCredentials.getRole(userName) == UserRole.Client) {
-                      path(uploadInstancesStatePath / ".*".r) { client =>
-                        uploadToConfig(instancesStateName, (config) => {
-                          val instancesState = InstancesState(config)
-                          stateUploader.receiveInstancesState(client, instancesState)
-                        })
-                      } ~
-                        path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
-                          uploadToSource(serviceFaultName, (fileInfo, source) => {
-                            faultUploader.receiveFault(userName, serviceName, fileInfo.getFileName, source)
-                          })
-                        }
+                    path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                      val buildVersion = BuildVersion.parse(version)
+                      versionInfoUpload(service, buildVersion)
+                    } ~
+                    path(uploadDesiredVersionsPath) {
+                      fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
+                    } ~
+                    path(uploadDesiredVersionsPath / ".*".r) { client =>
+                      fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(Some(client)))
                     }
+                  } ~
+                  authorize(usersCredentials.getRole(userName) == UserRole.Client) {
+                    path(uploadTestedVersionsPath) {
+                      uploadTestedVersions(userName)
+                    } ~
+                    path(uploadInstancesStatePath / ".*".r) { client =>
+                      uploadToConfig(instancesStateName, (config) => {
+                        val instancesState = InstancesState(config)
+                        stateUploader.receiveInstancesState(client, instancesState)
+                      })
+                    } ~
+                    path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
+                      uploadToSource(serviceFaultName, (fileInfo, source) => {
+                        faultUploader.receiveFault(userName, serviceName, fileInfo.getFileName, source)
+                      })
+                    }
+                  }
                 }
             }
           }
@@ -148,5 +157,31 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
       }
     }
     promise.future
+  }
+
+  private def uploadTestedVersions(clientName: ClientName): Route = {
+    uploadToConfig(testedVersionsName, (config) => {
+      val future = overwriteFileContentWithLock(dir.getDesiredVersionsFile(None), content => {
+        val desiredVersionsConfig = Utils.parseConfigString(content.decodeString("utf8"), ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)).getOrElse {
+          throw new IOException(s"Can't parse ${dir.getDesiredVersionsFile(None)}")
+        }
+        val desiredVersions = DesiredVersions(desiredVersionsConfig)
+        val testedVersions = ServicesVersions(config)
+        if (desiredVersions.Versions.equals(testedVersions.Versions)) {
+          val testRecord = TestRecord(clientName, new Date())
+          val testedDesiredVersions = DesiredVersions(desiredVersions.Versions, desiredVersions.TestRecords :+ testRecord)
+          Some(ByteString(Utils.renderConfig(testedDesiredVersions.toConfig(), true).getBytes("utf8")))
+        } else {
+          None
+        }
+      })
+      onSuccess(future) { result =>
+        if (result) {
+          complete(StatusCodes.OK)
+        } else {
+          failWith(new IOException("Current desired versions are not equals tested versions"))
+        }
+      }
+    })
   }
 }

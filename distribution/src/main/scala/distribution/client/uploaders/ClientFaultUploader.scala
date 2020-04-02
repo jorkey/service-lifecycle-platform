@@ -28,7 +28,7 @@ class ClientFaultUploader(clientName: ClientName, dir: ClientDistributionDirecto
       extends Thread with DeveloperDistributionWebPaths { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val developerDirectory = DeveloperDistributionDirectoryClient(developerDirectoryUrl)
+  private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
 
   private val maxFilesCount = 50
   private val maxServiceDirectoryCapacity = 1000 * 1024 * 1024

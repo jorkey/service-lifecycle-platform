@@ -135,7 +135,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     }
     var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.Versions).getOrElse(Map.empty)
     desiredVersions += Common.ScriptsServiceName -> nextVersion
-    if (!Utils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions, false).toConfig())) {
+    if (!Utils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
       log.error("Can't write desired versions")
       return false
     }
@@ -168,7 +168,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       }
       var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.Versions).getOrElse(Map.empty)
       desiredVersions += serviceName -> nextVersion
-      if (!Utils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions, false).toConfig())) {
+      if (!Utils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
         log.error("Can't write desired versions")
         return false
       }

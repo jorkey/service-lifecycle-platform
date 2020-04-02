@@ -15,6 +15,8 @@ import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
+import scala.util.matching.Regex
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
@@ -23,10 +25,10 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private val adminRepositoryDir = new File("src/test", "admin")
   private val distributionDir = new File("src/test", "distrib")
 
-  def initClient(clientName: ClientName, production: Boolean,
+  def initClient(clientName: ClientName, testClientMatch: Option[Regex],
                  adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
                  distributionServicePort: Int): Boolean = {
-    val developerDistribution = DeveloperDistributionDirectoryClient(developerDistributionUrl)
+    val developerDistribution = new DeveloperDistributionDirectoryClient(developerDistributionUrl)
     val clientDistribution = new ClientDistributionDirectory(new File(distributionDir, "directory"))
     log.info("Init admin repository")
     if (!initAdminRepository()) {
@@ -42,7 +44,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     if (!initInstallDirectory(
         clientDistribution.getVersionImageFile(Common.ScriptsServiceName,
         clientDistribution.getDesiredVersion(Common.ScriptsServiceName).get),
-        clientName, production, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)) {
+        clientName, testClientMatch, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)) {
       log.error("Can't init install repository")
       return false
     }
@@ -67,10 +69,10 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def initInstallDirectory(scriptsZip: File, clientName: ClientName, production: Boolean,
+  private def initInstallDirectory(scriptsZip: File, clientName: ClientName, testClientMatch: Option[Regex],
                                    adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
     log.info(s"Create ${InstallerConfig.configFile}")
-    val config = InstallerConfig(clientName, production, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)
+    val config = InstallerConfig(clientName, testClientMatch, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)
     if (!config.write()) {
       return false
     }
@@ -118,7 +120,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Write desired versions")
-    if (!Utils.writeConfigFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions, false).toConfig())) {
+    if (!Utils.writeConfigFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toConfig())) {
       log.error("Can't write desired versions")
       return false
     }

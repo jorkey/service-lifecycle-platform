@@ -6,13 +6,15 @@ import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.AdminRepository
-import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
+import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
+
+import scala.util.matching.Regex
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -22,7 +24,8 @@ class UpdateClient()(implicit log: Logger) {
   private val buildDir = new File("build")
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def installUpdates(clientName: ClientName, production: Boolean,
+  def installUpdates(clientName: ClientName,
+                     testClientMatch: Option[Regex],
                      adminRepository: ClientAdminRepository,
                      clientDistribution: ClientDistributionDirectoryClient,
                      developerDistribution: DeveloperDistributionDirectoryClient,
@@ -48,9 +51,17 @@ class UpdateClient()(implicit log: Logger) {
           log.error(s"Can't get developer desired versions")
           return false
         }
-        if (production && !developerDesiredVersions.Tested) {
-          log.error(s"Can't install not tested versions to production server")
-          return false
+        for (testClientMatch <- testClientMatch) {
+          val tested = developerDesiredVersions.TestRecords.exists { record =>
+            record match {
+              case testClientMatch => true
+              case _ => false
+            }
+          }
+          if (!tested) {
+            log.error(s"Can't install not tested versions")
+            return false
+          }
         }
         val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.Versions).getOrElse {
           log.warn(s"Can't get client desired versions")
@@ -110,8 +121,7 @@ class UpdateClient()(implicit log: Logger) {
           for (distribDesiredVersions <- developerVersions.get(Common.DistributionServiceName)) {
             log.info("Update distribution server")
             if (!installVersions(adminRepository, clientDistribution, developerDistribution,
-                developerVersions.filterKeys(_ == Common.DistributionServiceName), clientVersions, assignDesiredVersions,
-                developerDesiredVersions.Tested)) {
+                developerVersions.filterKeys(_ == Common.DistributionServiceName), clientVersions, assignDesiredVersions)) {
               return false
             }
             if (!clientDistribution.waitForServerUpdated(distribDesiredVersions)) {
@@ -122,7 +132,7 @@ class UpdateClient()(implicit log: Logger) {
           }
         }
         if (!installVersions(adminRepository, clientDistribution, developerDistribution,
-            developerVersions, clientVersions, assignDesiredVersions, developerDesiredVersions.Tested)) {
+            developerVersions, clientVersions, assignDesiredVersions)) {
           return false
         }
         log.info("Updates successfully installed.")
@@ -147,37 +157,31 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  def getDesiredVersions(clientAdminRepository: ClientAdminRepository,
-                         clientDistribution: ClientDistributionDirectoryClient): Option[Map[ServiceName, BuildVersion]] = {
+  def getClientDesiredVersions(clientDistribution: ClientDistributionDirectoryClient): Option[Map[ServiceName, BuildVersion]] = {
     clientDistribution.downloadDesiredVersions().map(_.Versions)
   }
 
   def setDesiredVersions(adminRepository: ClientAdminRepository,
                          clientDistribution: ClientDistributionDirectoryClient,
-                         versions: Option[Map[ServiceName, Option[BuildVersion]]],
-                         tested: Boolean): Boolean = {
+                         versions: Map[ServiceName, Option[BuildVersion]]): Boolean = {
     val gitLock = adminRepository.buildDesiredVersionsLock()
-    if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(versions, tested),
+    if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(versions),
         s"Continue of setting desired versions")) {
       var newDesiredVersions = Option.empty[DesiredVersions]
       try {
-        val desiredVersionsMap = getDesiredVersions(adminRepository, clientDistribution).getOrElse {
+        val desiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
           log.error("Error of getting desired versions")
           return false
         }
-        val newVersions = versions match {
-          case Some(versions) =>
-            versions.foldLeft(desiredVersionsMap) {
-              (map, entry) => entry._2 match {
-                case Some(version) =>
-                  map + (entry._1 -> version)
-                case None =>
-                  map - entry._1
-              }}
-          case None =>
-            desiredVersionsMap
-        }
-        val desiredVersions = new DesiredVersions(newVersions, tested)
+        val newVersions =
+          versions.foldLeft(desiredVersionsMap) {
+            (map, entry) => entry._2 match {
+              case Some(version) =>
+                map + (entry._1 -> version)
+              case None =>
+                map - entry._1
+            }}
+        val desiredVersions = new DesiredVersions(newVersions )
         if (!clientDistribution.uploadDesiredVersions(desiredVersions)) {
           log.error("Error of uploading desired versions")
           return false
@@ -202,9 +206,46 @@ class UpdateClient()(implicit log: Logger) {
         if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(!newDesiredVersions.isEmpty))) {
           log.error("Can't unlock admin repository")
         }
-        for (versions <- versions) {
-          adminRepository.tagServices(versions.map(_._1).toSeq)
+        adminRepository.tagServices(versions.map(_._1).toSeq)
+      }
+    } else {
+      log.error("Can't lock admin repository")
+      false
+    }
+  }
+
+  def markVersionsAsTested(adminRepository: ClientAdminRepository,
+                           clientDistribution: ClientDistributionDirectoryClient,
+                           developerDistribution: DeveloperDistributionDirectoryClient): Boolean = {
+    val gitLock = adminRepository.buildDesiredVersionsLock()
+    if (gitLock.lock(AdminRepository.makeStartOfSettingTestedFlag(), s"Continue of setting tested flag")) {
+      try {
+        val clientDesiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
+          log.error("Error of getting desired versions")
+          return false
         }
+        val onlyCommonVersions = clientDesiredVersionsMap.values.find(_.client.isDefined).isEmpty
+        if (!onlyCommonVersions) {
+          log.error("Personal versions installed on client. Only common versions can be marked as tested.")
+          return false
+        }
+        val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(None).getOrElse {
+          log.error("Error of getting desired versions")
+          return false
+        }
+        if (!clientDesiredVersionsMap.equals(commonDeveloperDesiredVersionsMap)) {
+          log.error("Client versions are different from common developer versions")
+          return false
+        }
+        if (!developerDistribution.uploadTestedVersions(ServicesVersions(clientDesiredVersionsMap))) {
+          log.error("Error of uploading desired versions to developer")
+          return false
+        }
+        true
+      } catch {
+        case ex: Exception =>
+          log.error("Exception", ex)
+          false
       }
     } else {
       log.error("Can't lock admin repository")
@@ -217,8 +258,7 @@ class UpdateClient()(implicit log: Logger) {
                               developerDistribution: DeveloperDistributionDirectoryClient,
                               developerVersions: Map[ServiceName, BuildVersion],
                               clientVersions: Map[ServiceName, BuildVersion],
-                              assignDesiredVersions: Boolean,
-                              tested: Boolean): Boolean = {
+                              assignDesiredVersions: Boolean): Boolean = {
     developerVersions.foreach {
       case (serviceName, version) =>
         if (!installVersion(adminRepository, clientDistribution, developerDistribution, serviceName, version,
@@ -229,8 +269,7 @@ class UpdateClient()(implicit log: Logger) {
     }
     if (assignDesiredVersions) {
       log.info("Set desired versions")
-      if (!setDesiredVersions(adminRepository, clientDistribution,
-          Some(clientVersions.map(entry => (entry._1, Some(entry._2)))), tested)) {
+      if (!setDesiredVersions(adminRepository, clientDistribution, clientVersions.map(entry => (entry._1, Some(entry._2))))) {
         log.error("Set desired versions error")
         return false
       }

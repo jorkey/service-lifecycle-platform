@@ -6,7 +6,7 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceName}
 import com.vyulabs.update.common.ServiceInstanceName
-import com.vyulabs.update.info.{DesiredVersions, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.state.InstancesState
 import com.vyulabs.update.utils.Utils
@@ -80,6 +80,12 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
       desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toConfig())
   }
 
+  def uploadTestedVersions(testedVersions: ServicesVersions): Boolean = {
+    log.info(s"Upload tested versions")
+    uploadFromConfig(makeUrl(uploadTestedVersionsPath),
+      testedVersionsName, uploadTestedVersionsPath, testedVersions.toConfig())
+  }
+
   def uploadInstancesState(clientName: ClientName, instancesState: InstancesState): Boolean = {
     uploadFromConfig(makeUrl(getUploadInstancesStatePath(clientName)),
       instancesStateName, uploadInstancesStatePath, instancesState.toConfig())
@@ -88,8 +94,4 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
   def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {
     uploadFromFile(makeUrl(getUploadServiceFaultPath(serviceName)), serviceFaultName, faultFile)
   }
-}
-
-object DeveloperDistributionDirectoryClient {
-  def apply(distributionUrl: URL)(implicit log: Logger) = new DeveloperDistributionDirectoryClient(distributionUrl)
 }

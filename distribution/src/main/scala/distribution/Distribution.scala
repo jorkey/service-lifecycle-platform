@@ -77,8 +77,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     promise.future
   }
 
-  protected def getFileContentWithLock(targetFile: File)
-                                       (implicit materializer: Materializer): Future[ByteString] = {
+  protected def getFileContentWithLock(targetFile: File)(implicit materializer: Materializer): Future[ByteString] = {
     val promise = Promise[ByteString]()
     if (targetFile.exists()) {
       try {
@@ -99,6 +98,59 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
           case None =>
             log.info(s"Can't lock ${targetFile} in shared mode. Retry attempt after pause")
             after(FiniteDuration(100, TimeUnit.MILLISECONDS), system.scheduler)(getFileContentWithLock(targetFile))
+        }
+      } catch {
+        case ex: Exception =>
+          promise.failure(ex)
+      }
+    } else {
+      promise.failure(new FileNotFoundException())
+    }
+    promise.future
+  }
+
+  protected def overwriteFileContentWithLock(targetFile: File, replaceContent: (ByteString) => Option[ByteString])
+                                            (implicit materializer: Materializer): Future[Boolean] = {
+    val promise = Promise[Boolean]()
+    if (targetFile.exists()) {
+      try {
+        filesLocker.tryLock(targetFile, false) match {
+          case Some(lock) =>
+            val inputFuture = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())(_ ++ _))
+            inputFuture.onComplete { futureBytes =>
+              try {
+                replaceContent(futureBytes.get) match {
+                  case Some(content) =>
+                    val sink = FileIO.toPath(targetFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))
+                    val outputFuture = Source.single(content).runWith(sink)
+                    outputFuture.onComplete { result =>
+                      try {
+                        result.get.status match {
+                          case Success(_) =>
+                            promise.success(true)
+                          case Failure(ex) =>
+                            promise.failure(ex)
+                        }
+                      } catch {
+                        case ex: Exception =>
+                          promise.failure(ex)
+                      } finally {
+                        lock.release()
+                      }
+                    }
+                  case None =>
+                    lock.release()
+                    promise.success(false)
+                }
+              } catch {
+                case ex: Exception =>
+                  lock.release()
+                  promise.failure(ex)
+              }
+            }
+          case None =>
+            log.info(s"Can't lock ${targetFile} in not shared mode. Retry attempt after pause")
+            after(FiniteDuration(100, TimeUnit.MILLISECONDS), system.scheduler)(overwriteFileContentWithLock(targetFile, replaceContent))
         }
       } catch {
         case ex: Exception =>

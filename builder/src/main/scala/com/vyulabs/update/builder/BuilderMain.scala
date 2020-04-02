@@ -21,7 +21,7 @@ object BuilderMain extends App {
     "Use: buildVersion <author=value> <service=value> [client=value]\n" +
     "                 [version=value] [comment=value] [sourceBranches=value1,value2,...] [setDesiredVersion=true]\n" +
     "   getDesiredVersions [clientName=value]\n" +
-    "   setDesiredVersions [clientName=value] [services=<service[:version]>,[service1[:version1]],...] [tested=true]"
+    "   setDesiredVersions [clientName=value] [services=<service[:version]>,[service1[:version1]],...]"
 
   if (args.size < 1) {
     sys.error(usage())
@@ -37,7 +37,7 @@ object BuilderMain extends App {
     sys.error("No config")
   }
 
-  val developerDistribution = DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
+  val developerDistribution = new DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
 
   command match {
     case "buildVersion" =>
@@ -70,7 +70,7 @@ object BuilderMain extends App {
       builder.makeVersion(author, serviceName, clientName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
-            builder.setDesiredVersions(version.client, Some(Map(serviceName -> Some(version))), false)
+            builder.setDesiredVersions(version.client, Map(serviceName -> Some(version)))
             if (serviceName == Common.DistributionServiceName) {
               log.info("Update distribution server")
               if (!developerDistribution.waitForServerUpdated(version)) {
@@ -112,10 +112,9 @@ object BuilderMain extends App {
       }
     case "setDesiredVersions" =>
       val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
-      var servicesVersions = Option.empty[Map[ServiceName, Option[BuildVersion]]]
+      var servicesVersions = Map.empty[ServiceName, Option[BuildVersion]]
 
       for (services <- arguments.getOptionValue("services")) {
-        var versions = Map.empty[ServiceName, Option[BuildVersion]]
         val servicesRecords: Seq[String] = services.split(",")
         for (record <- servicesRecords) {
           val fields = record.split(":")
@@ -125,26 +124,21 @@ object BuilderMain extends App {
             } else {
               None
             }
-            versions += (fields(0) -> version)
+            servicesVersions += (fields(0) -> version)
           } else {
             sys.error(s"Invalid service record ${record}")
           }
         }
-        servicesVersions = Some(versions)
       }
 
-      val tested = arguments.getOptionBooleanValue("tested").getOrElse(false)
-
-      if (!new Builder(developerDistribution, config.adminRepositoryUri).setDesiredVersions(clientName, servicesVersions, tested)) {
+      if (!new Builder(developerDistribution, config.adminRepositoryUri).setDesiredVersions(clientName, servicesVersions)) {
         sys.error("Set desired versions error")
       }
-      for (servicesVersions <- servicesVersions) {
-        for (distributionVersion <- servicesVersions.get(Common.DistributionServiceName)) {
-          for (distributionVersion <- distributionVersion) {
-            log.info("Update distribution server")
-            if (!developerDistribution.waitForServerUpdated(distributionVersion)) {
-              log.error("Can't update distribution server")
-            }
+      for (distributionVersion <- servicesVersions.get(Common.DistributionServiceName)) {
+        for (distributionVersion <- distributionVersion) {
+          log.info("Update distribution server")
+          if (!developerDistribution.waitForServerUpdated(distributionVersion)) {
+            log.error("Can't update distribution server")
           }
         }
       }

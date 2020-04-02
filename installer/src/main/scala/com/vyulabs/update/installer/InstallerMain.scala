@@ -24,10 +24,11 @@ object InstallerMain extends App {
 
   def usage() =
     "Arguments: initDeveloper <distributionServicePort=value>\n" +
-    "           initClient <clientName=value> [production=true] <adminRepositoryUrl=value> <clientDistributionUrl=value> <developerDistributionUrl=value> <distributionServicePort=value>\n" +
+    "           initClient <clientName=value> [testClientMatch=regularValue] <adminRepositoryUrl=value> <clientDistributionUrl=value> <developerDistributionUrl=value> <distributionServicePort=value>\n" +
     "           installUpdates [servicesOnly=<service1>:[-<profile>][,...]] [localConfigOnly=true] [setDesiredVersions=true]\n" +
     "           getDesiredVersions\n" +
-    "           setDesiredVersions [services=<service[:version]>,[service1[:version1]],...] [tested=true]"
+    "           setDesiredVersions [services=<service[:version]>,[service1[:version1]],...]\n" +
+    "           markVersionsAsTested"
 
   if (args.size < 1) {
     sys.error(usage())
@@ -58,12 +59,12 @@ object InstallerMain extends App {
         case "initClient" =>
           val initClient = new InitClient()
           val clientName = arguments.getValue("clientName")
-          val production = arguments.getOptionBooleanValue("production").getOrElse(false)
+          val testClientMatch = arguments.getOptionValue("testClientMatch").map(_.r)
           val adminRepositoryUri = new URI(arguments.getValue("adminRepositoryUrl"))
           val clientDistributionUrl = new URL(arguments.getValue("clientDistributionUrl"))
           val developerDistributionUrl = new URL(arguments.getValue("developerDistributionUrl"))
           val distributionServicePort = arguments.getIntValue("distributionServicePort")
-          if (!initClient.initClient(clientName, production, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
+          if (!initClient.initClient(clientName, testClientMatch, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
             sys.error("Init client error")
           }
 
@@ -81,8 +82,8 @@ object InstallerMain extends App {
             }
 
           val clientDistribution = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
+          val developerDistribution = new DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
 
-          val developerDistribution = DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
           val servicesOnly = arguments.getOptionValue("servicesOnly")
             .map(_.split(",").foldLeft(Set.empty[ServiceName])((set, record) => {
               if (record == Common.InstallerServiceName) {
@@ -95,7 +96,7 @@ object InstallerMain extends App {
             sys.error("Use option localConfigOnly with servicesOnly")
           }
           val setDesiredVersions = arguments.getOptionBooleanValue("setDesiredVersions").getOrElse(true)
-          if (!updateClient.installUpdates(config.clientName, config.production, adminRepository, clientDistribution, developerDistribution,
+          if (!updateClient.installUpdates(config.clientName, config.testClientMatch, adminRepository, clientDistribution, developerDistribution,
                servicesOnly, localConfigOnly, setDesiredVersions)) {
             sys.error("Install update error")
           }
@@ -105,17 +106,11 @@ object InstallerMain extends App {
             sys.error("No config")
           }
           val updateClient = new UpdateClient()
-          val adminRepositoryUri = config.adminRepositoryUri
-          log.info(s"Initialize admin repository")
-          val adminRepository =
-            ClientAdminRepository(adminRepositoryUri, new File("admin")).getOrElse {
-              sys.error("Admin repository initialize error")
-            }
 
           val clientDistributionUrl = config.clientDistributionUrl
           val clientDistribution = new ClientDistributionDirectoryClient(clientDistributionUrl)
 
-          val versions = updateClient.getDesiredVersions(adminRepository, clientDistribution).getOrElse {
+          val versions = updateClient.getClientDesiredVersions(clientDistribution).getOrElse {
             sys.error("Can't get desired versions")
           }
           log.info("Desired versions:")
@@ -126,37 +121,49 @@ object InstallerMain extends App {
             sys.error("No config")
           }
           val updateClient = new UpdateClient()
-          val adminRepositoryUri = config.adminRepositoryUri
           log.info(s"Initialize admin repository")
           val adminRepository =
-            ClientAdminRepository(adminRepositoryUri, new File("admin")).getOrElse {
+            ClientAdminRepository(config.adminRepositoryUri, new File("admin")).getOrElse {
               sys.error("Admin repository initialize error")
             }
 
-          val clientDistributionUrl = config.clientDistributionUrl
-          val clientDistribution = new ClientDistributionDirectoryClient(clientDistributionUrl)
+          val clientDistribution = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
 
-          var servicesVersions = Option.empty[Map[ServiceName, Option[BuildVersion]]]
+          var servicesVersions = Map.empty[ServiceName, Option[BuildVersion]]
           for (services <- arguments.getOptionValue("services")) {
-            var versions = Map.empty[ServiceName, Option[BuildVersion]]
             for (record <- services.split(',')) {
               val fields = record.split(":")
               if (fields.size == 1) {
-                versions += (fields(0) -> None)
+                servicesVersions += (fields(0) -> None)
               } else if (fields.size == 2) {
-                versions += (fields(0) -> Some(BuildVersion.parse(fields(1))))
+                servicesVersions += (fields(0) -> Some(BuildVersion.parse(fields(1))))
               } else {
                 sys.error(s"Invalid service record ${record}")
               }
             }
-            servicesVersions = Some(versions)
           }
 
-          val tested = arguments.getOptionBooleanValue("tested").getOrElse(false)
-
           log.info(s"Set desired versions ${servicesVersions}")
-          if (!updateClient.setDesiredVersions(adminRepository, clientDistribution, servicesVersions, tested)) {
+          if (!updateClient.setDesiredVersions(adminRepository, clientDistribution, servicesVersions)) {
             sys.error("Desired versions assignment error")
+          }
+
+        case "markVersionsAsTested" =>
+          val config = InstallerConfig().getOrElse {
+            sys.error("No config")
+          }
+          val updateClient = new UpdateClient()
+          log.info(s"Initialize admin repository")
+          val adminRepository =
+            ClientAdminRepository(config.adminRepositoryUri, new File("admin")).getOrElse {
+              sys.error("Admin repository initialize error")
+            }
+
+          val clientDistribution = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
+          val developerDistribution = new DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
+
+          if (!updateClient.markVersionsAsTested(adminRepository, clientDistribution, developerDistribution)) {
+            sys.error("Set tested flag error")
           }
 
         case command =>

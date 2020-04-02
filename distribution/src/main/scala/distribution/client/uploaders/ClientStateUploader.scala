@@ -31,7 +31,7 @@ class ClientStateUploader(clientName: ClientName, dir: ClientDistributionDirecto
       extends Thread with DeveloperDistributionWebPaths with FutureDirectives { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val developerDirectory = DeveloperDistributionDirectoryClient(developerDirectoryUrl)
+  private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
 
   private var downloadingFiles = Set.empty[File]
   private var statesToUpload = Map.empty[UpdaterInstanceId, InstanceState]

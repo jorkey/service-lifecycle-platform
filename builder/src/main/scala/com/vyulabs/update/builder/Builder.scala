@@ -202,8 +202,8 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
     directory.downloadDesiredVersions(clientName).map(_.Versions)
   }
 
-  def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Option[Map[ServiceName, Option[BuildVersion]]], tested: Boolean)
-                         (implicit log: Logger): Boolean = {
+  def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
+                        (implicit log: Logger): Boolean = {
     log.info(s"Upload desired versions ${servicesVersions}" + (if (clientName.isDefined) s" for client ${clientName.get}" else ""))
     Utils.synchronize[Boolean](new File(".", builderLockFile), false,
       (attempt, _) => {
@@ -218,20 +218,18 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
           sys.error("Init admin repository error")
         }
         val gitLock = adminRepository.buildDesiredVersionsLock()
-        if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(servicesVersions, tested),
+        if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(servicesVersions),
              s"Continue updating of desired versions")) {
           var newDesiredVersions = Option.empty[DesiredVersions]
           try {
             var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.Versions).getOrElse(Map.empty)
-            for (servicesVersions <- servicesVersions) {
-              servicesVersions.foreach {
-                case (serviceName, Some(version)) =>
-                  desiredVersionsMap += (serviceName -> version)
-                case (serviceName, None) =>
-                  desiredVersionsMap -= serviceName
-              }
+            servicesVersions.foreach {
+              case (serviceName, Some(version)) =>
+                desiredVersionsMap += (serviceName -> version)
+              case (serviceName, None) =>
+                desiredVersionsMap -= serviceName
             }
-            val desiredVersions = DesiredVersions(desiredVersionsMap, tested)
+            val desiredVersions = DesiredVersions(desiredVersionsMap)
             if (!directory.uploadDesiredVersions(clientName, desiredVersions)) {
               log.error("Can't update desired versions")
               return false
@@ -253,10 +251,8 @@ class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUr
             if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(!newDesiredVersions.isEmpty))) {
               log.error("Can't unlock update of desired versions")
             }
-            for (servicesVersions <- servicesVersions) {
-              if (!servicesVersions.isEmpty) {
-                adminRepository.tagServices(servicesVersions.map(_._1).toSeq)
-              }
+            if (!servicesVersions.isEmpty) {
+              adminRepository.tagServices(servicesVersions.map(_._1).toSeq)
             }
           }
         } else {
