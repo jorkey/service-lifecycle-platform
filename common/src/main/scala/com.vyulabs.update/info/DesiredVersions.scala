@@ -1,5 +1,6 @@
 package com.vyulabs.update.info
 
+import java.security.MessageDigest
 import java.util.Date
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
@@ -14,10 +15,13 @@ case class DesiredVersions(Versions: Map[ServiceName, BuildVersion], TestSignatu
     val versions = Versions.foldLeft(ConfigFactory.empty())((config, entry) => {
       config.withValue(entry._1, ConfigValueFactory.fromAnyRef(entry._2.toString))
     })
-    val config = ConfigFactory.empty()
+    var config = ConfigFactory.empty()
       .withValue("desiredVersions", ConfigValueFactory.fromAnyRef(versions.root()))
+    val versionsString = Utils.renderConfig(versions.root().toConfig, true)
+    val versionsHash = new String(MessageDigest.getInstance("SHA-1").digest(versionsString.getBytes("utf8").array))
+    config = config.withValue("versionsHash", ConfigValueFactory.fromAnyRef(versionsHash))
     if (!TestSignatures.isEmpty) {
-      config.withValue("testSignatures", ConfigValueFactory.fromIterable(TestSignatures.map(_.toConfig()).asJava))
+      config = config.withValue("testSignatures", ConfigValueFactory.fromIterable(TestSignatures.map(_.toConfig()).asJava))
     }
     config
   }
