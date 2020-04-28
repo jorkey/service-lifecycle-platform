@@ -592,7 +592,7 @@ object Utils {
   def maybeDeleteOldFiles(dir: File, beforeTime: Long, except: Set[File])(implicit log: Logger): Unit = {
     val files = dir.listFiles().filter(_.isFile)
       for (file <- files.filter(_.lastModified() < beforeTime)) {
-        if (!except.contains(file) && !file.delete()) {
+        if (!except.contains(file) && !deleteFileRecursively(file)) {
           log.error(s"Can't delete ${file}")
         }
       }

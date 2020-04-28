@@ -47,17 +47,38 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
     onSuccess(result) { result =>
-      self.synchronized {
-        Utils.maybeDeleteOldFiles(clientDir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
-        Utils.maybeDeleteExcessFiles(clientDir, maxClientServiceReportsCount, downloadingFiles)
-        Utils.maybeFreeSpace(clientDir, maxClientServiceDirectoryCapacity, downloadingFiles)
-        downloadingFiles -= file
-      }
       result.status match {
         case Success(_) =>
+          new ProcessFaultReportTask(clientDir, file).start()
           complete(StatusCodes.OK)
         case Failure(ex) =>
           return failWith(ex)
+      }
+    }
+  }
+
+  class ProcessFaultReportTask(dir: File, file: File) extends Thread {
+    implicit val log = LoggerFactory.getLogger(getClass)
+
+    override def run(): Unit = {
+      if (file.getName.endsWith(".zip")) {
+        val faultDir = new File(dir, file.getName.substring(0, file.getName.length - 4))
+        if (faultDir.exists()) {
+          Utils.deleteFileRecursively(faultDir)
+        }
+        if (faultDir.mkdir()) {
+          if (Utils.unzip(file, dir)) {
+            file.delete()
+          }
+        } else {
+          log.error(s"Can't make directory ${faultDir}")
+        }
+      }
+      self.synchronized {
+        Utils.maybeDeleteOldFiles(dir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
+        Utils.maybeDeleteExcessFiles(dir, maxClientServiceReportsCount, downloadingFiles)
+        Utils.maybeFreeSpace(dir, maxClientServiceDirectoryCapacity, downloadingFiles)
+        downloadingFiles -= file
       }
     }
   }
