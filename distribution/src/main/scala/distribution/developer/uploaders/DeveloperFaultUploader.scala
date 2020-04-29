@@ -67,7 +67,7 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
           Utils.deleteFileRecursively(faultDir)
         }
         if (faultDir.mkdir()) {
-          if (Utils.unzip(file, dir)) {
+          if (Utils.unzip(file, faultDir)) {
             file.delete()
           }
         } else {
