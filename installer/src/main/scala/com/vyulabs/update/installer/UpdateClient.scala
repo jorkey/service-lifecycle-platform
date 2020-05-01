@@ -221,20 +221,15 @@ class UpdateClient()(implicit log: Logger) {
     if (gitLock.lock(AdminRepository.makeStartOfSettingTestedFlag(), s"Continue of setting tested flag")) {
       try {
         val clientDesiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
-          log.error("Error of getting desired versions")
-          return false
-        }
-        val onlyCommonVersions = clientDesiredVersionsMap.values.find(_.client.isDefined).isEmpty
-        if (!onlyCommonVersions) {
-          log.error("Personal versions installed on client. Only common versions can be marked as tested.")
+          log.error("Error of getting client desired versions")
           return false
         }
         val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(None).getOrElse {
-          log.error("Error of getting desired versions")
+          log.error("Error of getting developer desired versions")
           return false
         }
-        if (!clientDesiredVersionsMap.equals(commonDeveloperDesiredVersionsMap)) {
-          log.error("Client versions are different from common developer versions")
+        if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(commonDeveloperDesiredVersionsMap)) {
+          log.error("Common client versions are different from common developer versions")
           return false
         }
         if (!developerDistribution.uploadTestedVersions(ServicesVersions(clientDesiredVersionsMap))) {
