@@ -231,9 +231,29 @@ class UpdateClient()(implicit log: Logger) {
         val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(None).getOrElse {
           log.error("Error of getting developer desired versions")
           return false
-        }
+        }.Versions
         if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(commonDeveloperDesiredVersionsMap)) {
-          log.error("Common client versions are different from common developer versions")
+          log.error("Common client versions are different from common developer versions:")
+          clientDesiredVersionsMap foreach {
+            case (serviceName, version) =>
+              commonDeveloperDesiredVersionsMap.get(serviceName) match {
+                case Some(commonVersion) if commonVersion != version =>
+                  log.info(s"  service ${serviceName} version ${version} != ${commonVersion}")
+                case _ =>
+              }
+          }
+          commonDeveloperDesiredVersionsMap foreach {
+            case (serviceName, commonVersion) =>
+              if (!clientDesiredVersionsMap.get(serviceName).isDefined) {
+                log.info(s"  service ${serviceName} version ${commonVersion} is not installed")
+              }
+          }
+          clientDesiredVersionsMap foreach {
+            case (serviceName, version) =>
+              if (!commonDeveloperDesiredVersionsMap.get(serviceName).isDefined) {
+                log.info(s"  service ${serviceName} is not the developer common service")
+              }
+          }
           return false
         }
         if (!developerDistribution.uploadTestedVersions(ServicesVersions(clientDesiredVersionsMap))) {
