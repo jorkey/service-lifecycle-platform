@@ -21,7 +21,7 @@ case class DesiredVersions(Versions: Map[ServiceName, BuildVersion], TestSignatu
     val versionsHash = new String(MessageDigest.getInstance("SHA-1").digest(versionsString.getBytes("utf8").array))
     config = config.withValue("versionsHash", ConfigValueFactory.fromAnyRef(versionsHash))
     if (!TestSignatures.isEmpty) {
-      config = config.withValue("testSignatures", ConfigValueFactory.fromIterable(TestSignatures.map(_.toConfig()).asJava))
+      config = config.withValue("testSignatures", ConfigValueFactory.fromIterable(TestSignatures.map(_.toConfig().root()).asJava))
     }
     config
   }
