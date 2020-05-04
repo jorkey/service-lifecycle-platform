@@ -54,12 +54,15 @@ class UpdateClient()(implicit log: Logger) {
         for (testClientMatch <- testClientMatch) {
           val tested = developerDesiredVersions.TestSignatures.exists { signature =>
             signature match {
-              case `testClientMatch` => true
-              case _ => false
+              case `testClientMatch` =>
+                log.info(s"Versions was tested by ${signature.ClientName} at ${signature.Date}")
+                true
+              case _ =>
+                false
             }
           }
           if (!tested) {
-            log.error(s"Can't install not tested versions")
+            log.error(s"Can't install not tested versions by ${testClientMatch} clients")
             return false
           }
           if (servicesOnly.isDefined) {
