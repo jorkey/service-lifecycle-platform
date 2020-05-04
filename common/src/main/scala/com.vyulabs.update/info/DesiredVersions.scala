@@ -1,7 +1,7 @@
 package com.vyulabs.update.info
 
 import java.security.MessageDigest
-import java.util.Date
+import java.util.{Base64, Date}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
@@ -18,7 +18,8 @@ case class DesiredVersions(Versions: Map[ServiceName, BuildVersion], TestSignatu
     var config = ConfigFactory.empty()
       .withValue("desiredVersions", ConfigValueFactory.fromAnyRef(versions.root()))
     val versionsString = Utils.renderConfig(versions.root().toConfig, true)
-    val versionsHash = new String(MessageDigest.getInstance("SHA-1").digest(versionsString.getBytes("utf8").array))
+    val versionsHash = Base64.getEncoder().encodeToString(
+      MessageDigest.getInstance("SHA-1").digest(versionsString.getBytes("utf8").array))
     config = config.withValue("versionsHash", ConfigValueFactory.fromAnyRef(versionsHash))
     if (!TestSignatures.isEmpty) {
       config = config.withValue("testSignatures", ConfigValueFactory.fromIterable(TestSignatures.map(_.toConfig().root()).asJava))
