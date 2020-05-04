@@ -80,11 +80,6 @@ class UpdateClient()(implicit log: Logger) {
         for (servicesOnly <- servicesOnly) {
           developerVersions = developerVersions.filterKeys(servicesOnly.contains(_))
         }
-        developerVersions = developerVersions.filterKeys {
-          serviceName =>
-            { serviceName != Common.BuilderServiceName &&
-              serviceName != Common.InstallerServiceName }
-        }
         developerVersions.foreach {
           case (serviceName, developerVersion) =>
             val existingVersions = clientDistribution.downloadVersionsInfo(serviceName).getOrElse {
@@ -227,7 +222,7 @@ class UpdateClient()(implicit log: Logger) {
         val clientDesiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
           log.error("Error of getting client desired versions")
           return false
-        }
+        }.mapValues(version => BuildVersion(version.client, version.build))
         val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(None).getOrElse {
           log.error("Error of getting developer desired versions")
           return false
