@@ -62,6 +62,10 @@ class UpdateClient()(implicit log: Logger) {
             log.error(s"Can't install not tested versions")
             return false
           }
+          if (servicesOnly.isDefined) {
+            log.error(s"Only all services together can be updated on client with testClientMatch option")
+            return false
+          }
         }
         val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.Versions).getOrElse {
           log.warn(s"Can't get client desired versions")
