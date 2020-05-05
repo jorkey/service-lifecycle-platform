@@ -50,7 +50,11 @@ object AdminRepository {
   }
 
   def makeStartOfSettingTestedFlag(): String = {
-    "Desired versions marked as tested"
+    "Start marking of desired versions as tested"
+  }
+
+  def makeStopOfSettingTestedFlag(): String = {
+    "Stop marking of desired versions as tested"
   }
 
   def makeEndOfSettingDesiredVersionsMessage(completed: Boolean): String = {

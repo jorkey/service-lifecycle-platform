@@ -263,6 +263,10 @@ class UpdateClient()(implicit log: Logger) {
         case ex: Exception =>
           log.error("Exception", ex)
           false
+      } finally {
+        if (!gitLock.unlock(AdminRepository.makeStopOfSettingTestedFlag())) {
+          log.error("Can't unlock admin repository")
+        }
       }
     } else {
       log.error("Can't lock admin repository")
