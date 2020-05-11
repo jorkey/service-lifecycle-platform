@@ -49,20 +49,36 @@ object AdminRepository {
     }
   }
 
-  def makeStartOfSettingTestedFlag(): String = {
-    "Start marking of desired versions as tested"
-  }
-
-  def makeStopOfSettingTestedFlag(): String = {
-    "Stop marking of desired versions as tested"
-  }
-
   def makeEndOfSettingDesiredVersionsMessage(completed: Boolean): String = {
     if (completed) {
       "Desired versions are successfully assigned"
     } else {
       "Desired versions assign is failed"
     }
+  }
+
+  def makeStartOfSettingTestedFlagMessage(): String = {
+    "Start marking of desired versions as tested"
+  }
+
+  def makeContinueOfSettingTestedFlagMessage(): String = {
+    "Continue marking of desired versions as tested"
+  }
+
+  def makeStopOfSettingTestedFlagMessage(): String = {
+    "Stop marking of desired versions as tested"
+  }
+
+  def makeStartOfRemovingTestedFlagMessage(): String = {
+    "Start marking of desired versions as tested"
+  }
+
+  def makeContinueOfRemovingTestedFlagMessage(): String = {
+    "Continue marking of desired versions as tested"
+  }
+
+  def makeStopOfRemovingTestedFlagMessage(): String = {
+    "Stop marking of desired versions as tested"
   }
 
   private def makeDesiredVersionsStr(versions: Map[ServiceName, Option[BuildVersion]]): String = {

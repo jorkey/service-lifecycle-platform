@@ -53,8 +53,8 @@ class UpdateClient()(implicit log: Logger) {
         }
         for (testClientMatch <- testClientMatch) {
           val tested = developerDesiredVersions.TestSignatures.exists { signature =>
-            signature match {
-              case `testClientMatch` =>
+            signature.ClientName match {
+              case testClientMatch() =>
                 log.info(s"Versions was tested by ${signature.ClientName} at ${signature.Date}")
                 true
               case _ =>
@@ -62,7 +62,7 @@ class UpdateClient()(implicit log: Logger) {
             }
           }
           if (!tested) {
-            log.error(s"Can't install not tested versions by ${testClientMatch} clients")
+            log.error(s"Can't install not tested versions by '${testClientMatch}' client")
             return false
           }
           if (servicesOnly.isDefined) {
@@ -220,7 +220,7 @@ class UpdateClient()(implicit log: Logger) {
                            clientDistribution: ClientDistributionDirectoryClient,
                            developerDistribution: DeveloperDistributionDirectoryClient): Boolean = {
     val gitLock = adminRepository.buildDesiredVersionsLock()
-    if (gitLock.lock(AdminRepository.makeStartOfSettingTestedFlag(), s"Continue of setting tested flag")) {
+    if (gitLock.lock(AdminRepository.makeStartOfSettingTestedFlagMessage(), AdminRepository.makeContinueOfSettingTestedFlagMessage())) {
       try {
         val clientDesiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
           log.error("Error of getting client desired versions")
@@ -264,7 +264,7 @@ class UpdateClient()(implicit log: Logger) {
           log.error("Exception", ex)
           false
       } finally {
-        if (!gitLock.unlock(AdminRepository.makeStopOfSettingTestedFlag())) {
+        if (!gitLock.unlock(AdminRepository.makeStopOfSettingTestedFlagMessage())) {
           log.error("Can't unlock admin repository")
         }
       }
