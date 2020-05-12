@@ -5,6 +5,7 @@ import java.io.File
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.config.{ClientConfig, ClientInstallProfile}
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
@@ -25,7 +26,8 @@ class UpdateClient()(implicit log: Logger) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def installUpdates(clientName: ClientName,
-                     testClientMatch: Option[Regex],
+                     clientConfig: ClientConfig,
+                     installProfile: ClientInstallProfile,
                      adminRepository: ClientAdminRepository,
                      clientDistribution: ClientDistributionDirectoryClient,
                      developerDistribution: DeveloperDistributionDirectoryClient,
@@ -51,7 +53,7 @@ class UpdateClient()(implicit log: Logger) {
           log.error(s"Can't get developer desired versions")
           return false
         }
-        for (testClientMatch <- testClientMatch) {
+        for (testClientMatch <- clientConfig.testClientMatch) {
           val tested = developerDesiredVersions.TestSignatures.exists { signature =>
             signature.ClientName match {
               case testClientMatch() =>
@@ -75,7 +77,10 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         var developerVersions = if (!localConfigOnly) {
-          developerDesiredVersions.Versions
+          developerDesiredVersions.Versions.filter {
+            case (serviceName, _) =>
+              installProfile.serviceNames.contains(serviceName)
+          }
         } else {
           clientDesiredVersions.mapValues(_.original())
         }

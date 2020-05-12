@@ -12,6 +12,7 @@ object Common {
   type InstanceId = String
   type ProcessId = String
   type UpdaterDirectory = String
+  type InstallProfileName = String
 
   case class UpdaterInstanceId(instanceId: InstanceId, director: UpdaterDirectory)
 
