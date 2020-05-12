@@ -14,7 +14,7 @@ case class InstallerConfig(clientName: ClientName, adminRepositoryUri: URI, deve
   def toConfig(): Config = {
     ConfigFactory.empty()
       .withValue("client", ConfigValueFactory.fromAnyRef(clientName))
-      .withValue("adminRepositoryUri", ConfigValueFactory.fromAnyRef(adminRepositoryUri.toString))
+      .withValue("adminRepositoryUrl", ConfigValueFactory.fromAnyRef(adminRepositoryUri.toString))
       .withValue("developerDistributionUrl", ConfigValueFactory.fromAnyRef(developerDistributionUrl.toString))
       .withValue("clientDistributionUrl", ConfigValueFactory.fromAnyRef(clientDistributionUrl.toString))
   }
