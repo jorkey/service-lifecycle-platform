@@ -15,7 +15,7 @@ case class InstallerConfig(clientName: ClientName, testClientMatch: Option[Regex
   def toConfig(): Config = {
     var config = ConfigFactory.empty()
       .withValue("client", ConfigValueFactory.fromAnyRef(clientName))
-      .withValue("adminRepositoryUri", ConfigValueFactory.fromAnyRef(adminRepositoryUri.toString))
+      .withValue("adminRepositoryUrl", ConfigValueFactory.fromAnyRef(adminRepositoryUri.toString))
       .withValue("developerDistributionUrl", ConfigValueFactory.fromAnyRef(developerDistributionUrl.toString))
       .withValue("clientDistributionUrl", ConfigValueFactory.fromAnyRef(clientDistributionUrl.toString))
     for (testClientMatch <- testClientMatch) {
