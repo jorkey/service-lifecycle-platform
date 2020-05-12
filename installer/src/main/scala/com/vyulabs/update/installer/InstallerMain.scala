@@ -7,7 +7,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.config.{ClientConfig, ClientInstallProfile}
+import com.vyulabs.update.config.{ClientConfig, InstallProfile}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.installer.config.InstallerConfig
@@ -97,8 +97,8 @@ object InstallerMain extends App {
           }
           val setDesiredVersions = arguments.getOptionBooleanValue("setDesiredVersions").getOrElse(true)
           val clientConfig: ClientConfig = ???
-          val installProfile: ClientInstallProfile = ???
-          if (!updateClient.installUpdates(config.clientName, config.testClientMatch, adminRepository, clientDistribution, developerDistribution,
+          val installProfile: InstallProfile = ???
+          if (!updateClient.installUpdates(config.clientName, clientConfig, installProfile, adminRepository, clientDistribution, developerDistribution,
                servicesOnly, localConfigOnly, setDesiredVersions)) {
             sys.error("Install update error")
           }

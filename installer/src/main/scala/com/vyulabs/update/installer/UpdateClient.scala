@@ -5,7 +5,7 @@ import java.io.File
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.config.{ClientConfig, ClientInstallProfile}
+import com.vyulabs.update.config.{ClientConfig, InstallProfile}
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
@@ -27,7 +27,7 @@ class UpdateClient()(implicit log: Logger) {
 
   def installUpdates(clientName: ClientName,
                      clientConfig: ClientConfig,
-                     installProfile: ClientInstallProfile,
+                     installProfile: InstallProfile,
                      adminRepository: ClientAdminRepository,
                      clientDistribution: ClientDistributionDirectoryClient,
                      developerDistribution: DeveloperDistributionDirectoryClient,

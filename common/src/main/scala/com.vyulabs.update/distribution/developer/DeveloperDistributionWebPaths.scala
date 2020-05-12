@@ -9,6 +9,9 @@ import com.vyulabs.update.distribution.DistributionWebPaths
   * Copyright FanDate, Inc.
   */
 trait DeveloperDistributionWebPaths extends DistributionWebPaths {
+  val downloadClientConfigPath = "download-client-config"
+  val downloadInstallProfilePath = "download-install-profile"
+
   val uploadTestedVersionsPath = "upload-tested-versions"
   val uploadInstancesStatePath = "upload-instances-state"
 

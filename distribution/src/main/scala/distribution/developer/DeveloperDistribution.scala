@@ -49,40 +49,40 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                 path(downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                   getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                 } ~
-                  path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                    getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
+                path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                  getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
+                } ~
+                path(downloadVersionsInfoPath / ".*".r) { (service) =>
+                  complete(Utils.renderConfig(
+                    dir.getVersionsInfo(dir.getServiceDir(service, None)).toConfig(), true))
+                } ~
+                path(downloadVersionsInfoPath / ".*".r / ".*".r) { (service, client) =>
+                  complete(Utils.renderConfig(
+                    dir.getVersionsInfo(dir.getServiceDir(service, Some(client))).toConfig(), true))
+                } ~
+                path(downloadDesiredVersionsPath) {
+                  getFromFileWithLock(dir.getDesiredVersionsFile(None))
+                } ~
+                path(downloadDesiredVersionsPath / ".*".r) { client =>
+                  getFromFileWithLock(dir.getDesiredVersionsFile(Some(client)))
+                } ~
+                path(downloadDesiredVersionPath / ".*".r) { service =>
+                  getDesiredVersionImage(service)
+                } ~
+                path(downloadDesiredVersionPath / ".*".r / ".*".r) { (service, client) =>
+                  getDesiredVersionImage(service, client)
+                } ~
+                authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
+                  path(browsePath) {
+                    browse(None)
                   } ~
-                  path(downloadVersionsInfoPath / ".*".r) { (service) =>
-                    complete(Utils.renderConfig(
-                      dir.getVersionsInfo(dir.getServiceDir(service, None)).toConfig(), true))
+                  pathPrefix(browsePath / ".*".r) { path =>
+                    browse(Some(path))
                   } ~
-                  path(downloadVersionsInfoPath / ".*".r / ".*".r) { (service, client) =>
-                    complete(Utils.renderConfig(
-                      dir.getVersionsInfo(dir.getServiceDir(service, Some(client))).toConfig(), true))
-                  } ~
-                  path(downloadDesiredVersionsPath) {
-                    getFromFileWithLock(dir.getDesiredVersionsFile(None))
-                  } ~
-                  path(downloadDesiredVersionsPath / ".*".r) { client =>
-                    getFromFileWithLock(dir.getDesiredVersionsFile(Some(client)))
-                  } ~
-                  path(downloadDesiredVersionPath / ".*".r) { service =>
-                    getDesiredVersionImage(service)
-                  } ~
-                  path(downloadDesiredVersionPath / ".*".r / ".*".r) { (service, client) =>
-                    getDesiredVersionImage(service, client)
-                  } ~
-                  authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
-                    path(browsePath) {
-                      browse(None)
-                    } ~
-                    pathPrefix(browsePath / ".*".r) { path =>
-                      browse(Some(path))
-                    } ~
-                    path(getDistributionVersionPath) {
-                      getVersion()
-                    }
+                  path(getDistributionVersionPath) {
+                    getVersion()
                   }
+                }
               } ~
                 post {
                   authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {

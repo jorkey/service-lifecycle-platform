@@ -22,8 +22,8 @@ import scala.util.matching.Regex
   * Copyright FanDate, Inc.
   */
 class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
-  private val adminRepositoryDir = new File("src/test", "admin")
-  private val distributionDir = new File("src/test", "distrib")
+  private val adminRepositoryDir = new File("..", "admin")
+  private val distributionDir = new File("..", "distrib")
 
   def initClient(clientName: ClientName,
                  adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
