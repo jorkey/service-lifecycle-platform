@@ -159,6 +159,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
   private def getInstallProfile(profileName: InstallProfileName): Future[Option[InstallProfile]] = {
     val promise = Promise[Option[InstallProfile]]()
     val file = dir.getInstallProfileFile(profileName)
+    log.info(s"Read ${file}")
     getFileContentWithLock(file).onComplete { bytes =>
       try {
         Utils.parseConfigString(bytes.get.decodeString("utf8")) match {
