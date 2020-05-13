@@ -29,7 +29,7 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     }
   }
 
-  def downloadDesiredVersionsConfig(clientName: Option[ClientName]): Option[Config] = {
+  def downloadDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
     clientName match {
       case Some(clientName) =>
         log.info(s"Download desired versions for client ${clientName}")
@@ -37,36 +37,22 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
         log.info(s"Download desired versions")
     }
     val url = makeUrl(getDownloadDesiredVersionsPath(clientName))
-    if (exists(url)) {
-      downloadToConfig(url) match {
-        case Some(config) =>
-          Some(config)
-        case None =>
-          None
-      }
-    } else {
-      None
-    }
-  }
-
-  def downloadDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
-    downloadDesiredVersionsConfig(clientName).map(DesiredVersions(_))
-  }
-
-  def downloadDesiredVersions(clientName: ClientName): Option[DesiredVersions] = {
-    val commonConfig = downloadDesiredVersionsConfig(None)
-    val clientConfig = downloadDesiredVersionsConfig(Some(clientName))
-    val mergedConfig = (commonConfig, clientConfig) match {
-      case (Some(commonConfig), Some(clientConfig)) =>
-        Some(clientConfig.withFallback(commonConfig))
-      case (Some(commonConfig), None) =>
-        Some(commonConfig)
-      case (None, Some(clientConfig)) =>
-        Some(clientConfig)
-      case (None, None) =>
+    downloadToConfig(url) match {
+      case Some(config) =>
+        Some(DesiredVersions(config))
+      case None =>
         None
     }
-    mergedConfig.map(DesiredVersions(_))
+  }
+
+  def downloadDesiredVersions(): Option[DesiredVersions] = {
+    val url = makeUrl(getDownloadDesiredVersionsPath())
+    downloadToConfig(url) match {
+      case Some(config) =>
+        Some(DesiredVersions(config))
+      case None =>
+        None
+    }
   }
 
   def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: DesiredVersions): Boolean = {

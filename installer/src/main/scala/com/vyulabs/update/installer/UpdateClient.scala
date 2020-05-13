@@ -5,6 +5,7 @@ import java.io.File
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.config.{ClientConfig, InstallProfile}
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
@@ -25,7 +26,6 @@ class UpdateClient()(implicit log: Logger) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def installUpdates(clientName: ClientName,
-                     testClientMatch: Option[Regex],
                      adminRepository: ClientAdminRepository,
                      clientDistribution: ClientDistributionDirectoryClient,
                      developerDistribution: DeveloperDistributionDirectoryClient,
@@ -47,28 +47,9 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         log.info("Get developer desired versions")
-        val developerDesiredVersions = developerDistribution.downloadDesiredVersions(clientName).getOrElse {
+        val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
           log.error(s"Can't get developer desired versions")
           return false
-        }
-        for (testClientMatch <- testClientMatch) {
-          val tested = developerDesiredVersions.TestSignatures.exists { signature =>
-            signature.ClientName match {
-              case testClientMatch() =>
-                log.info(s"Versions was tested by ${signature.ClientName} at ${signature.Date}")
-                true
-              case _ =>
-                false
-            }
-          }
-          if (!tested) {
-            log.error(s"Can't install not tested versions by '${testClientMatch}' client")
-            return false
-          }
-          if (servicesOnly.isDefined) {
-            log.error(s"Only all services together can be updated on client with testClientMatch option")
-            return false
-          }
         }
         val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.Versions).getOrElse {
           log.warn(s"Can't get client desired versions")

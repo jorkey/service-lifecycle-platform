@@ -3,13 +3,14 @@ package com.vyulabs.update.distribution.developer
 import java.io.File
 import java.nio.channels.FileLock
 
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common
+import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, ServiceName}
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{LoggerFactory}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -21,6 +22,7 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
 
   protected val clientsDir = new File(directory, "clients")
   protected val faultsDir = new File(directory, "faults")
+  protected val profilesDir = new File(directory, "profiles")
 
   protected val instancesStateFile = "instances-state.json"
   protected val deadInstancesStateFile = "dead-instances-state.json"
@@ -31,7 +33,9 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   if (!clientsDir.exists()) {
     clientsDir.mkdir()
   }
-
+  if (!profilesDir.exists()) {
+    profilesDir.mkdir()
+  }
   if (!faultsDir.exists() && !faultsDir.mkdir()) {
     log.error(s"Can't create directory ${faultsDir}")
   }
@@ -42,10 +46,18 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     dir
   }
 
+  def getClientConfigFile(clientName: ClientName): File = {
+    new File(clientsDir, Common.ClientConfigFileName)
+  }
+
   def getServicesDir(clientName: ClientName): File = {
     val dir = new File(getClientDir(clientName), "services")
     if (!dir.exists()) dir.mkdir()
     dir
+  }
+
+  def getInstallProfileFile(profileName: InstallProfileName): File = {
+    new File(profilesDir, Common.InstallProfileFileName.format(profileName))
   }
 
   def getInstancesStateDir(clientName: ClientName): File = {

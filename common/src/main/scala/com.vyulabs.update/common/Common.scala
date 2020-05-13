@@ -12,6 +12,7 @@ object Common {
   type InstanceId = String
   type ProcessId = String
   type UpdaterDirectory = String
+  type InstallProfileName = String
 
   case class UpdaterInstanceId(instanceId: InstanceId, director: UpdaterDirectory)
 
@@ -31,6 +32,8 @@ object Common {
 
   val UpdateConfigFileName = "update.json"
   val InstallConfigFileName = "install.json"
+  val ClientConfigFileName = "client.json"
+  val InstallProfileFileName = "profile-$s.json"
 
   val CommonProfile = "common"
 

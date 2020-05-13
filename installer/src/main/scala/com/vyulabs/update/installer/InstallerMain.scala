@@ -7,6 +7,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
+import com.vyulabs.update.config.{ClientConfig, InstallProfile}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.installer.config.InstallerConfig
@@ -59,12 +60,11 @@ object InstallerMain extends App {
         case "initClient" =>
           val initClient = new InitClient()
           val clientName = arguments.getValue("clientName")
-          val testClientMatch = arguments.getOptionValue("testClientMatch").map(_.r)
           val adminRepositoryUri = new URI(arguments.getValue("adminRepositoryUrl"))
           val clientDistributionUrl = new URL(arguments.getValue("clientDistributionUrl"))
           val developerDistributionUrl = new URL(arguments.getValue("developerDistributionUrl"))
           val distributionServicePort = arguments.getIntValue("distributionServicePort")
-          if (!initClient.initClient(clientName, testClientMatch, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
+          if (!initClient.initClient(clientName, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
             sys.error("Init client error")
           }
 
@@ -96,7 +96,7 @@ object InstallerMain extends App {
             sys.error("Use option localConfigOnly with servicesOnly")
           }
           val setDesiredVersions = arguments.getOptionBooleanValue("setDesiredVersions").getOrElse(true)
-          if (!updateClient.installUpdates(config.clientName, config.testClientMatch, adminRepository, clientDistribution, developerDistribution,
+          if (!updateClient.installUpdates(config.clientName, adminRepository, clientDistribution, developerDistribution,
                servicesOnly, localConfigOnly, setDesiredVersions)) {
             sys.error("Install update error")
           }
