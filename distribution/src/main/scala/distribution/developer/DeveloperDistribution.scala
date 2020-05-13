@@ -11,6 +11,7 @@ import akka.http.scaladsl.server.{Route, ValidationRejection}
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, ServiceName}
 import com.vyulabs.update.config.{ClientConfig, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
@@ -61,10 +62,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                   getFromFileWithLock(dir.getDesiredVersionsFile(if (client.isEmpty) None else Some(client)))
                 } ~
                 path(downloadDesiredVersionsPath) {
-                  getDesiredVersions(userName)
+                  getDesiredVersionsRoute(userName)
                 } ~
                 path(downloadDesiredVersionPath / ".*".r) { service =>
-                  getDesiredVersionImage(service, userName)
+                  getDesiredVersionImageRoute(service, userName)
                 } ~
                 authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
                   path(browsePath) {
@@ -116,8 +117,8 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     Http().bindAndHandle(route, "0.0.0.0", port)
   }
 
-  private def getDesiredVersions(clientName: ClientName): Route = {
-    val future = getPersonalDesiredVersions(clientName)
+  private def getDesiredVersionsRoute(clientName: ClientName): Route = {
+    val future = getDesiredVersions(clientName)
     onSuccess(future) { desiredVersions =>
       desiredVersions match {
         case Some(desiredVersions) =>
@@ -128,8 +129,8 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     }
   }
 
-  private def getDesiredVersionImage(serviceName: ServiceName, clientName: ClientName): Route = {
-    val future = getPersonalDesiredVersions(clientName)
+  private def getDesiredVersionImageRoute(serviceName: ServiceName, clientName: ClientName): Route = {
+    val future = getDesiredVersions(clientName)
     getDesiredVersionImage(serviceName, future)
   }
 
@@ -175,6 +176,18 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
       }
     }
     promise.future
+  }
+
+  private def getDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
+    if (clientName == Common.AdminClient) {
+      getDesiredVersions(Some(clientName))
+    } else {
+      getPersonalDesiredVersions(clientName)
+    }
+  }
+
+  private def getDesiredVersions(clientName: Option[ClientName]): Future[Option[DesiredVersions]] = {
+    getDesiredVersions(dir.getDesiredVersionsFile(clientName))
   }
 
   private def getPersonalDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
@@ -238,9 +251,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
 
   private def getMergedDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
     val promise = Promise[Option[DesiredVersions]]()
-    val future = getDesiredVersions(dir.getDesiredVersionsFile())
+    val future = getDesiredVersions(None)
     future.onComplete { commonDesiredVersions =>
-      val future = getDesiredVersions(dir.getDesiredVersionsFile(Some(clientName)))
+      val future = getDesiredVersions(Some(clientName))
       future.onComplete { clientDesiredVersions =>
         try {
           val commonConfig = commonDesiredVersions.get.map(_.toConfig())

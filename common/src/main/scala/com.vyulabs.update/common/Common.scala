@@ -37,6 +37,8 @@ object Common {
 
   val CommonProfile = "common"
 
+  val AdminClient = "admin"
+
   def isUpdateService(serviceName: ServiceName): Boolean = {
     serviceName == ScriptsServiceName ||
     serviceName == DistributionServiceName ||

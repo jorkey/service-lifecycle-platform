@@ -18,9 +18,9 @@ import org.slf4j.Logger
   * Copyright FanDate, Inc.
   */
 class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
-  private val adminRepositoryDir = new File("src/test", "admin")
-  private val buildDir = new File("src/test", "build")
-  private val distributionDir = new File("src/test", "distrib")
+  private val adminRepositoryDir = new File("..", "admin")
+  private val buildDir = new File("..", "build")
+  private val distributionDir = new File("..", "distrib")
 
   def initDeveloper(distributionServicePort: Int): Boolean = {
     log.info("Init admin repository")
