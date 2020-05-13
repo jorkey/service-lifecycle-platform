@@ -47,7 +47,7 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   }
 
   def getClientConfigFile(clientName: ClientName): File = {
-    new File(clientsDir, Common.ClientConfigFileName)
+    new File(getClientDir(clientName), Common.ClientConfigFileName)
   }
 
   def getServicesDir(clientName: ClientName): File = {
