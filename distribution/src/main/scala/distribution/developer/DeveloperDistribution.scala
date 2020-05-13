@@ -179,8 +179,8 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
   }
 
   private def getDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
-    if (clientName == Common.AdminClient) {
-      getDesiredVersions(Some(clientName))
+    if (clientName == Common.ClientAdmin) {
+      getDesiredVersions(None)
     } else {
       getPersonalDesiredVersions(clientName)
     }
