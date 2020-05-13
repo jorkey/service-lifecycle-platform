@@ -71,7 +71,7 @@ object BuilderMain extends App {
         case Some(version) =>
           if (setDesiredVersion) {
             builder.setDesiredVersions(version.client, Map(serviceName -> Some(version)))
-            if (serviceName == Common.DistributionServiceName) {
+            if (serviceName == Common.DistributionServiceName && clientName.isEmpty) {
               log.info("Update distribution server")
               if (!developerDistribution.waitForServerUpdated(version)) {
                 log.error("Can't update distribution server")
