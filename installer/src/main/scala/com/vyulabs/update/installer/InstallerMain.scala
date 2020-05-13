@@ -96,9 +96,7 @@ object InstallerMain extends App {
             sys.error("Use option localConfigOnly with servicesOnly")
           }
           val setDesiredVersions = arguments.getOptionBooleanValue("setDesiredVersions").getOrElse(true)
-          val clientConfig: ClientConfig = ???
-          val installProfile: InstallProfile = ???
-          if (!updateClient.installUpdates(config.clientName, clientConfig, installProfile, adminRepository, clientDistribution, developerDistribution,
+          if (!updateClient.installUpdates(config.clientName, adminRepository, clientDistribution, developerDistribution,
                servicesOnly, localConfigOnly, setDesiredVersions)) {
             sys.error("Install update error")
           }

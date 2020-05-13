@@ -9,9 +9,6 @@ import com.vyulabs.update.distribution.DistributionWebPaths
   * Copyright FanDate, Inc.
   */
 trait DeveloperDistributionWebPaths extends DistributionWebPaths {
-  val downloadClientConfigPath = "download-client-config"
-  val downloadInstallProfilePath = "download-install-profile"
-
   val uploadTestedVersionsPath = "upload-tested-versions"
   val uploadInstancesStatePath = "upload-instances-state"
 
@@ -20,30 +17,19 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   val serviceFaultName = "service-fault"
 
   def getDownloadVersionsInfoPath(clientName: Option[ClientName], serviceName: ServiceName): String = {
-    clientName match {
-      case Some(clientName) =>
-        downloadVersionsInfoPath + "/" + serviceName + "/" + clientName
-      case None =>
-        downloadVersionsInfoPath + "/" + serviceName
-    }
+    downloadVersionsInfoPath + "/" + serviceName + "/" + clientName.getOrElse("")
   }
 
   def getDownloadDesiredVersionsPath(clientName: Option[ClientName]): String = {
-    clientName match {
-      case Some(clientName) =>
-        downloadDesiredVersionsPath + "/" + clientName
-      case None =>
-        downloadDesiredVersionsPath
-    }
+    downloadDesiredVersionsPath + "/" + clientName.getOrElse("")
+  }
+
+  def getDownloadDesiredVersionsPath(): String = {
+    downloadDesiredVersionsPath
   }
 
   def getUploadDesiredVersionsPath(clientName: Option[ClientName]): String = {
-    clientName match {
-      case Some(clientName) =>
-        uploadDesiredVersionsPath + "/" + clientName
-      case None =>
-        uploadDesiredVersionsPath
-    }
+    uploadDesiredVersionsPath + "/" + clientName.getOrElse("")
   }
 
   def getUploadInstancesStatePath(clientName: ClientName): String = {

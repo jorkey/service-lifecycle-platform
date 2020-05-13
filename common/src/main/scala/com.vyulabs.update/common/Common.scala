@@ -32,6 +32,8 @@ object Common {
 
   val UpdateConfigFileName = "update.json"
   val InstallConfigFileName = "install.json"
+  val ClientConfigFileName = "client.json"
+  val InstallProfileFileName = "profile-$s.json"
 
   val CommonProfile = "common"
 
