@@ -67,27 +67,24 @@ class ClientFaultUploader(clientName: ClientName, dir: ClientDistributionDirecto
     self.synchronized { downloadingFiles += file }
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
-    onComplete(result) {
-      case Success(result) =>
-        result.status match {
-          case Success(_) =>
-            self.synchronized {
-              downloadingFiles -= file
-              faultsToUpload = faultsToUpload.enqueue(FaultFile(serviceName, file))
-              val notDeleteFiles = faultsToUpload.map(_.file).toSet ++ downloadingFiles
-              Utils.maybeDeleteExcessFiles(serviceDir, maxFilesCount, notDeleteFiles)
-              Utils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, notDeleteFiles)
-              notify()
-            }
-            complete(StatusCodes.OK)
-          case Failure(ex) =>
-            self.synchronized {
-              downloadingFiles -= file
-            }
-            return failWith(ex)
-        }
-      case Failure(ex) =>
-        failWith(ex)
+    onSuccess(result) { result =>
+      result.status match {
+        case Success(_) =>
+          self.synchronized {
+            downloadingFiles -= file
+            faultsToUpload = faultsToUpload.enqueue(FaultFile(serviceName, file))
+            val notDeleteFiles = faultsToUpload.map(_.file).toSet ++ downloadingFiles
+            Utils.maybeDeleteExcessFiles(serviceDir, maxFilesCount, notDeleteFiles)
+            Utils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, notDeleteFiles)
+            notify()
+          }
+          complete(StatusCodes.OK)
+        case Failure(ex) =>
+          self.synchronized {
+            downloadingFiles -= file
+          }
+          failWith(ex)
+      }
     }
   }
 

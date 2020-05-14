@@ -46,17 +46,14 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
     self.synchronized { downloadingFiles += file }
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
-    onComplete(result) {
-      case Success(result) =>
-        result.status match {
-          case Success(_) =>
-            new ProcessFaultReportTask(clientDir, file).start()
-            complete(StatusCodes.OK)
-          case Failure(ex) =>
-            return failWith(ex)
-        }
-      case Failure(ex) =>
-        return failWith(ex)
+    onSuccess(result) { result =>
+      result.status match {
+        case Success(_) =>
+          new ProcessFaultReportTask(clientDir, file).start()
+          complete(StatusCodes.OK)
+        case Failure(ex) =>
+          return failWith(ex)
+      }
     }
   }
 

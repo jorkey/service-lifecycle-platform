@@ -123,16 +123,13 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
 
   private def getDesiredVersionsRoute(clientName: ClientName): Route = {
     val future = getDesiredVersions(clientName)
-    onComplete(future) {
-      case Success(desiredVersions) =>
-        desiredVersions match {
-          case Some(desiredVersions) =>
-            complete(Utils.renderConfig(desiredVersions.toConfig(), true))
-          case None =>
-            complete((InternalServerError, s"No desired versions"))
-        }
-      case Failure(ex) =>
-        failWith(ex)
+    onSuccess(future) { desiredVersions =>
+      desiredVersions match {
+        case Some(desiredVersions) =>
+          complete(Utils.renderConfig(desiredVersions.toConfig(), true))
+        case None =>
+          complete((InternalServerError, s"No desired versions"))
+      }
     }
   }
 
@@ -301,15 +298,12 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
           None
         }
       })
-      onComplete(future) {
-        case Success(result) =>
-          if (result) {
-            complete(StatusCodes.OK)
-          } else {
-            failWith(new IOException("Current common desired versions are not equals tested versions"))
-          }
-        case Failure(ex) =>
-          failWith(ex)
+      onSuccess(future) { result =>
+        if (result) {
+          complete(StatusCodes.OK)
+        } else {
+          failWith(new IOException("Current common desired versions are not equals tested versions"))
+        }
       }
     })
   }

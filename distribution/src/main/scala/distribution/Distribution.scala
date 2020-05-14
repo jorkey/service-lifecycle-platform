@@ -41,21 +41,18 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
   }
 
   protected def getDesiredVersionImage(serviceName: ServiceName, future: Future[Option[DesiredVersions]]): Route = {
-    onComplete(future) {
-      case Success(desiredVersions)=>
-        desiredVersions match {
-          case Some(desiredVersions) =>
-            desiredVersions.Versions.get(serviceName) match {
-              case Some(version) =>
-                getFromFileWithLock(dir.getVersionImageFile(serviceName, version))
-              case None =>
-                complete((InternalServerError, s"No desired version for service ${serviceName}"))
-            }
-          case None =>
-            complete((InternalServerError, s"No desired versions"))
-        }
-      case Failure(ex) =>
-        failWith(ex)
+    onSuccess(future) { desiredVersions =>
+      desiredVersions match {
+        case Some(desiredVersions) =>
+          desiredVersions.Versions.get(serviceName) match {
+            case Some(version) =>
+              getFromFileWithLock(dir.getVersionImageFile(serviceName, version))
+            case None =>
+              complete((InternalServerError, s"No desired version for service ${serviceName}"))
+          }
+        case None =>
+          complete((InternalServerError, s"No desired versions"))
+      }
     }
   }
 
@@ -257,18 +254,15 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
       case Some(lock) =>
         val sink = FileIO.toPath(targetFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))
         val result = byteSource.runWith(sink)
-        onComplete(result) {
-          case Success(result) =>
-            lock.release()
-            completePromise.foreach(_.success())
-            result.status match {
-              case Success(_) =>
-                complete(StatusCodes.OK)
-              case Failure(ex) =>
-                failWith(new IOException(s"Write ${targetFile} error", ex))
-            }
-          case Failure(ex) =>
-            failWith(ex)
+        onSuccess(result) { result =>
+          lock.release()
+          completePromise.foreach(_.success())
+          result.status match {
+            case Success(_) =>
+              complete(StatusCodes.OK)
+            case Failure(ex) =>
+              failWith(new IOException(s"Write ${targetFile} error", ex))
+          }
         }
       case None =>
         log.info(s"Can't lock ${targetFile} in exclusively mode. Retry attempt after pause")
@@ -294,11 +288,8 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
       case (_, byteSource) =>
         val sink = Sink.fold[ByteString, ByteString](ByteString())(_ ++ _)
         val result = byteSource.runWith(sink)
-        onComplete(result) {
-          case Success(result) =>
-            content(result.decodeString("utf8"))
-          case Failure(ex) =>
-            failWith(ex)
+        onSuccess(result) { result =>
+          content(result.decodeString("utf8"))
         }
     }
   }
