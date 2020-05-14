@@ -5,7 +5,7 @@ import java.net.URL
 import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{complete, failWith, onSuccess}
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Keep, Source}
@@ -67,24 +67,27 @@ class ClientFaultUploader(clientName: ClientName, dir: ClientDistributionDirecto
     self.synchronized { downloadingFiles += file }
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
-    onSuccess(result) { result =>
-      result.status match {
-        case Success(_) =>
-          self.synchronized {
-            downloadingFiles -= file
-            faultsToUpload = faultsToUpload.enqueue(FaultFile(serviceName, file))
-            val notDeleteFiles = faultsToUpload.map(_.file).toSet ++ downloadingFiles
-            Utils.maybeDeleteExcessFiles(serviceDir, maxFilesCount, notDeleteFiles)
-            Utils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, notDeleteFiles)
-            notify()
-          }
-          complete(StatusCodes.OK)
-        case Failure(ex) =>
-          self.synchronized {
-            downloadingFiles -= file
-          }
-          return failWith(ex)
-      }
+    onComplete(result) {
+      case Success(result) =>
+        result.status match {
+          case Success(_) =>
+            self.synchronized {
+              downloadingFiles -= file
+              faultsToUpload = faultsToUpload.enqueue(FaultFile(serviceName, file))
+              val notDeleteFiles = faultsToUpload.map(_.file).toSet ++ downloadingFiles
+              Utils.maybeDeleteExcessFiles(serviceDir, maxFilesCount, notDeleteFiles)
+              Utils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, notDeleteFiles)
+              notify()
+            }
+            complete(StatusCodes.OK)
+          case Failure(ex) =>
+            self.synchronized {
+              downloadingFiles -= file
+            }
+            return failWith(ex)
+        }
+      case Failure(ex) =>
+        failWith(ex)
     }
   }
 

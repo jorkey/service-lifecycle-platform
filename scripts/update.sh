@@ -2,21 +2,32 @@
 
 echo "Start update"
 
+function download {
+  rm -f $2
+  http_code=`curl $1 --output $2 --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`
+  if [ $0 == 0 ] && [ $http_code != "200" ]; then
+    if [ -f $2 ]; then
+      cat $2; rm $2
+    fi
+    exit 1
+  fi
+}
+
 if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
   function downloadDesiredVersions {
     echo "Download desired versions"
-    curl ${distribDirectoryUrl}/download-desired-versions --output $1 --retry 10 --retry-delay 2 --connect-timeout 5 --silent --show-error || exit 1
+    download ${distribDirectoryUrl}/download-desired-versions $1
   }
   function downloadVersionImage {
     echo "Download version ${1} image"
-    curl ${distribDirectoryUrl}/download-version/${updateService}/$1 --output $2 --retry 10 --retry-delay 2 --connect-timeout 5 --silent --show-error || exit 1
+    download ${distribDirectoryUrl}/download-version/${updateService}/$1 $2
   }
 elif [[ ${distribDirectoryUrl} == file://* ]]; then
   function downloadDesiredVersions {
-    curl ${distribDirectoryUrl}/desired-versions.json --output $1 --silent --show-error || exit 1
+    download ${distribDirectoryUrl}/desired-versions.json $1
   }
   function downloadVersionImage {
-    curl ${distribDirectoryUrl}/services/${updateService}/${updateService}-$1.zip --output $2 --silent --show-error || exit 1
+    download ${distribDirectoryUrl}/services/${updateService}/${updateService}-$1.zip $2
   }
 else
   echo "Invalid distribution directory URL ${distribDirectoryUrl}"

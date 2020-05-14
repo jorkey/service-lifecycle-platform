@@ -5,6 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
@@ -113,5 +114,10 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
         }
       }
     Http().bindAndHandle(route, "0.0.0.0", port)
+  }
+
+  protected def getDesiredVersionImage(serviceName: ServiceName): Route = {
+    val future = getDesiredVersions(dir.getDesiredVersionsFile())
+    getDesiredVersionImage(serviceName, future)
   }
 }

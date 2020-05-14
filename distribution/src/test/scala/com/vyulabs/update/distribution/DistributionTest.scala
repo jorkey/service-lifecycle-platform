@@ -1,7 +1,6 @@
 package com.vyulabs.update.distribution
 
 import java.io.File
-import java.net.{HttpURLConnection, URL}
 import java.nio.file.{Files, Paths}
 
 import org.scalatest.FlatSpecLike
@@ -10,6 +9,8 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.model._
 import akka.stream.scaladsl.FileIO
+
+import scala.util.{Failure, Success}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 14.01.16.
@@ -41,8 +42,11 @@ class DistributionTest extends FlatSpecLike with ScalatestRouteTest with Matcher
               case (fileInfo, byteSource) =>
                 val sink = FileIO.toPath(Paths.get(s"/tmp/${fileInfo.fileName}"))
                 val future = byteSource.runWith(sink)
-                onSuccess(future) { _ =>
-                  complete("Success")
+                onComplete(future) {
+                  case Success(_) =>
+                    complete("Success")
+                  case Failure(ex) =>
+                    failWith(ex)
                 }
             }
           }

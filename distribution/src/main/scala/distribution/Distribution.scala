@@ -1,17 +1,18 @@
 package com.vyulabs.update.distribution
 
-import java.io.{File, FileNotFoundException, IOException, RandomAccessFile}
+import java.io.{File, FileNotFoundException, IOException}
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest, StatusCodes}
-import akka.http.scaladsl.server.Directives.{complete, failWith, fileUpload, getFromBrowseableDirectory, getFromFile, onSuccess}
+import akka.http.scaladsl.server.Directives.{complete, failWith, fileUpload, getFromBrowseableDirectory, getFromFile}
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.version.BuildVersion
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.{Credentials, FileInfo}
-import akka.http.scaladsl.server.{Route, RouteResult, ValidationRejection}
+import akka.http.scaladsl.server.{Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.util.ByteString
@@ -35,24 +36,22 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
   private implicit val log = LoggerFactory.getLogger(this.getClass)
   private val maxVersions = 10
 
-  protected def getDesiredVersionImage(serviceName: ServiceName): Route = {
-    val future = getDesiredVersions(dir.getDesiredVersionsFile())
-    getDesiredVersionImage(serviceName, future)
-  }
-
   protected def getDesiredVersionImage(serviceName: ServiceName, future: Future[Option[DesiredVersions]]): Route = {
-    onSuccess(future) { desiredVersions =>
-      desiredVersions match {
-        case Some(desiredVersions) =>
-          desiredVersions.Versions.get(serviceName) match {
-            case Some(version) =>
-              getFromFileWithLock(dir.getVersionImageFile(serviceName, version))
-            case None =>
-              reject(ValidationRejection(s"No desired version for service ${serviceName}"))
-          }
-        case None =>
-          reject(ValidationRejection(s"No desired versions"))
-      }
+    onComplete(future) {
+      case Success(desiredVersions)=>
+        desiredVersions match {
+          case Some(desiredVersions) =>
+            desiredVersions.Versions.get(serviceName) match {
+              case Some(version) =>
+                getFromFileWithLock(dir.getVersionImageFile(serviceName, version))
+              case None =>
+                complete((InternalServerError, s"No desired version for service ${serviceName}"))
+            }
+          case None =>
+            complete((InternalServerError, s"No desired versions"))
+        }
+      case Failure(ex) =>
+        failWith(ex)
     }
   }
 
@@ -221,7 +220,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
           failWith(ex)
       }
     } else {
-      reject(ValidationRejection(s"File ${targetFile} not exist"))
+      complete((InternalServerError, s"File ${targetFile} not exist"))
     }
   }
 
@@ -254,15 +253,18 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
       case Some(lock) =>
         val sink = FileIO.toPath(targetFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))
         val result = byteSource.runWith(sink)
-        onSuccess(result) { result =>
-          lock.release()
-          completePromise.foreach(_.success())
-          result.status match {
-            case Success(_) =>
-              complete(StatusCodes.OK)
-            case Failure(ex) =>
-              failWith(new IOException(s"Write ${targetFile} error", ex))
-          }
+        onComplete(result) {
+          case Success(result) =>
+            lock.release()
+            completePromise.foreach(_.success())
+            result.status match {
+              case Success(_) =>
+                complete(StatusCodes.OK)
+              case Failure(ex) =>
+                failWith(new IOException(s"Write ${targetFile} error", ex))
+            }
+          case Failure(ex) =>
+            failWith(ex)
         }
       case None =>
         log.info(s"Can't lock ${targetFile} in exclusively mode. Retry attempt after pause")
@@ -288,8 +290,11 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
       case (_, byteSource) =>
         val sink = Sink.fold[ByteString, ByteString](ByteString())(_ ++ _)
         val result = byteSource.runWith(sink)
-        onSuccess(result) { result =>
-          content(result.decodeString("utf8"))
+        onComplete(result) {
+          case Success(result) =>
+            content(result.decodeString("utf8"))
+          case Failure(ex) =>
+            failWith(ex)
         }
     }
   }
@@ -306,7 +311,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
       case Some(version) =>
         complete(version.toString)
       case None =>
-        reject(ValidationRejection(s"Version is not defined in manifest"))
+        complete((InternalServerError, s"Version is not defined in manifest"))
     }
   }
 

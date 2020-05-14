@@ -8,6 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{Route, ValidationRejection}
+import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
@@ -65,7 +67,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                   getDesiredVersionsRoute(userName)
                 } ~
                 path(downloadDesiredVersionPath / ".*".r) { service =>
-                  getDesiredVersionImageRoute(service, userName)
+                  getDesiredVersionImage(service, userName)
                 } ~
                 authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
                   path(browsePath) {
@@ -119,17 +121,20 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
 
   private def getDesiredVersionsRoute(clientName: ClientName): Route = {
     val future = getDesiredVersions(clientName)
-    onSuccess(future) { desiredVersions =>
-      desiredVersions match {
-        case Some(desiredVersions) =>
-          complete(Utils.renderConfig(desiredVersions.toConfig(), true))
-        case None =>
-          reject(ValidationRejection(s"No desired versions"))
-      }
+    onComplete(future) {
+      case Success(desiredVersions) =>
+        desiredVersions match {
+          case Some(desiredVersions) =>
+            complete(Utils.renderConfig(desiredVersions.toConfig(), true))
+          case None =>
+            complete((InternalServerError, s"No desired versions"))
+        }
+      case Failure(ex) =>
+        failWith(ex)
     }
   }
 
-  private def getDesiredVersionImageRoute(serviceName: ServiceName, clientName: ClientName): Route = {
+  private def getDesiredVersionImage(serviceName: ServiceName, clientName: ClientName): Route = {
     val future = getDesiredVersions(clientName)
     getDesiredVersionImage(serviceName, future)
   }
@@ -224,7 +229,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                             val filteredVersions = desiredVersions.Versions.filterKeys(installProfile.serviceNames.contains(_))
                             promise.success(Some(DesiredVersions(filteredVersions, desiredVersions.TestSignatures)))
                           case None =>
-                            promise.failure(new IOException(s"Can't find install profile ${clientConfig.installProfileName}"))
+                            promise.failure(new IOException(s"Can't find install profile '${clientConfig.installProfileName}''"))
                         }
                       } catch {
                         case e: Exception =>
@@ -235,7 +240,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                     promise.failure(new IOException("Versions are not tested"))
                   }
                 case None =>
-                  promise.failure(new IOException(s"Can't find client ${clientName} config"))
+                  promise.failure(new IOException(s"Can't find client '${clientName}' config"))
               }
             } catch {
               case e: Exception =>
@@ -294,12 +299,15 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
           None
         }
       })
-      onSuccess(future) { result =>
-        if (result) {
-          complete(StatusCodes.OK)
-        } else {
-          failWith(new IOException("Current common desired versions are not equals tested versions"))
-        }
+      onComplete(future) {
+        case Success(result) =>
+          if (result) {
+            complete(StatusCodes.OK)
+          } else {
+            failWith(new IOException("Current common desired versions are not equals tested versions"))
+          }
+        case Failure(ex) =>
+          failWith(ex)
       }
     })
   }

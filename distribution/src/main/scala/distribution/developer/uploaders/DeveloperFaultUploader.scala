@@ -4,7 +4,7 @@ import java.io.{File, IOException}
 import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{complete, failWith, onSuccess}
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Source}
@@ -46,14 +46,17 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
     self.synchronized { downloadingFiles += file }
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
-    onSuccess(result) { result =>
-      result.status match {
-        case Success(_) =>
-          new ProcessFaultReportTask(clientDir, file).start()
-          complete(StatusCodes.OK)
-        case Failure(ex) =>
-          return failWith(ex)
-      }
+    onComplete(result) {
+      case Success(result) =>
+        result.status match {
+          case Success(_) =>
+            new ProcessFaultReportTask(clientDir, file).start()
+            complete(StatusCodes.OK)
+          case Failure(ex) =>
+            return failWith(ex)
+        }
+      case Failure(ex) =>
+        return failWith(ex)
     }
   }
 
