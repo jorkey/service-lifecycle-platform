@@ -14,7 +14,9 @@ function download {
 }
 
 echo "Download desired scripts"
-distribDirectoryUrl=`jq -r .developerDistributionUrl installer.json`
+if [ -z "$distribDirectoryUrl" ]; then
+    distribDirectoryUrl=`jq -r .developerDistributionUrl installer.json`
+fi
 download ${distribDirectoryUrl}/download-desired-version/scripts scripts.zip
 unzip -o scripts.zip update.sh || exit 1
 rm -f scripts.zip; chmod +x update.sh
