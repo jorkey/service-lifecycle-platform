@@ -84,13 +84,7 @@ object InstallerMain extends App {
           val clientDistribution = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
           val developerDistribution = new DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
 
-          val servicesOnly = arguments.getOptionValue("servicesOnly")
-            .map(_.split(",").foldLeft(Set.empty[ServiceName])((set, record) => {
-              if (record == Common.InstallerServiceName) {
-                sys.error("No need to update installer. It updates itself when running.")
-              }
-              set + record
-            }))
+          val servicesOnly = arguments.getOptionValue("servicesOnly").map(_.split(",").toSet)
           val localConfigOnly = arguments.getOptionBooleanValue("localConfigOnly").getOrElse(false)
           if (localConfigOnly && servicesOnly.isEmpty) {
             sys.error("Use option localConfigOnly with servicesOnly")
