@@ -19,7 +19,7 @@ function download {
     exit 1
   elif [[ "$1" == http* ]] && [ "$http_code" != "200" ]; then
     if [ -f $2 ]; then
-      echo -n "Server returned: "; cat $2; rm $2; echo
+      echo -n "Response: "; cat $2; rm $2; echo
     fi
     exit 1
   fi
