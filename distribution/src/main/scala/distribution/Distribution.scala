@@ -12,7 +12,7 @@ import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.version.BuildVersion
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.{Credentials, FileInfo}
-import akka.http.scaladsl.server.{Route, RouteResult}
+import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.util.ByteString
@@ -35,6 +35,10 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
                   (implicit system: ActorSystem, materializer: Materializer, filesLocker: SmartFilesLocker) extends DistributionWebPaths {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
   private val maxVersions = 10
+
+  protected val exceptionHandler = ExceptionHandler {
+    case ex => complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
+  }
 
   protected def getDesiredVersionImage(serviceName: ServiceName, future: Future[Option[DesiredVersions]]): Route = {
     onComplete(future) {
