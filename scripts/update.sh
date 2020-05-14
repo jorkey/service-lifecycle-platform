@@ -5,7 +5,7 @@ echo "Start update"
 function download {
   rm -f $2
   http_code=`curl $1 --output $2 --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`
-  if [ "$?" == "0" ] && [ "$http_code" != "200" ]; then
+  if [ "$?" == "0" ] && [ "$http_code" != "200" ] && [ "$http_code" != "000" ]; then
     if [ -f $2 ]; then
       cat $2; rm $2; echo
     fi
