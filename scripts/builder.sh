@@ -1,6 +1,6 @@
 #!/bin/bash
 
-updateService=installer
+updateService=builder
 
 function download {
   rm -f $2
@@ -16,7 +16,7 @@ function download {
 }
 
 echo "Download desired scripts"
-distribDirectoryUrl=`jq -r .developerDistributionUrl installer.json`
+distribDirectoryUrl=`jq -r .developerDistributionUrl builder.json`
 download ${distribDirectoryUrl}/download-desired-version/scripts scripts.zip
 unzip -o scripts.zip update.sh || exit 1
 rm -f scripts.zip; chmod +x update.sh
