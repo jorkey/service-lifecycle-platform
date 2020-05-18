@@ -18,7 +18,7 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   def getDownloadVersionsInfoPath(serviceName: ServiceName, clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>
-        downloadVersionsInfoPath + "/" + serviceName + "/?client=" + clientName
+        downloadVersionsInfoPath + "/" + serviceName + "?client=" + clientName
       case None =>
         downloadVersionsInfoPath + "/" + serviceName
     }
@@ -27,7 +27,7 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   def getDownloadDesiredVersionsPath(clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>
-        downloadDesiredVersionsPath + "/?client=" + clientName
+        downloadDesiredVersionsPath + "?client=" + clientName
       case None =>
         downloadDesiredVersionsPath
     }
@@ -36,7 +36,7 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   def getUploadDesiredVersionsPath(clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>
-        uploadDesiredVersionsPath + "/?client=" + clientName
+        uploadDesiredVersionsPath + "?client=" + clientName
       case None =>
         uploadDesiredVersionsPath
     }
