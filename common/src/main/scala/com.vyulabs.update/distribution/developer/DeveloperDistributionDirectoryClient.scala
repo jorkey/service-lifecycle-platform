@@ -20,7 +20,7 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     with DeveloperDistributionWebPaths {
 
   def downloadVersionsInfo(clientName: Option[ClientName], serviceName: ServiceName): Option[VersionsInfo] = {
-    val url = makeUrl(getDownloadVersionsInfoPath(clientName, serviceName))
+    val url = makeUrl(getDownloadVersionsInfoPath(serviceName, clientName))
     downloadToConfig(url) match {
       case Some(config) =>
         Some(VersionsInfo(config))

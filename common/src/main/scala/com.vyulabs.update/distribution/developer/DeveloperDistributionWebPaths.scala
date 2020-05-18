@@ -16,12 +16,12 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   val instancesStateName = "instances-state"
   val serviceFaultName = "service-fault"
 
-  def getDownloadVersionsInfoPath(clientName: Option[ClientName], serviceName: ServiceName): String = {
+  def getDownloadVersionsInfoPath(serviceName: ServiceName, clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>
-        downloadVersionsInfoPath + "/?" + clientName
+        downloadVersionsInfoPath + "/" + serviceName + "/?" + clientName
       case None =>
-        downloadVersionsInfoPath
+        downloadVersionsInfoPath + "/" + serviceName
     }
   }
 
