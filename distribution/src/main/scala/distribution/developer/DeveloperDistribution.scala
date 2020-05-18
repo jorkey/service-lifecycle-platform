@@ -60,7 +60,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                     getDesiredVersionsRoute(userName)
                   } ~
                   path(downloadDesiredVersionPath / ".*".r) { service =>
-                    parameter("image".as[Boolean]?false) { image =>
+                    parameter("image".as[Boolean]?true) { image =>
                       getDesiredVersion(service, userName, image)
                     }
                   } ~
@@ -75,6 +75,13 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       parameter("client".?) { client =>
                         getFromFileWithLock(dir.getDesiredVersionsFile(client))
                       }
+                    } ~
+                    path(downloadVersionsInfoPath / ".*".r / ".*".r) { (service, client) => // TODO deprecated
+                      complete(Utils.renderConfig(
+                        dir.getVersionsInfo(dir.getServiceDir(service, if (client.isEmpty) None else Some(client))).toConfig(), true))
+                    } ~
+                    path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
+                      getFromFileWithLock(dir.getDesiredVersionsFile(if (client.isEmpty) None else Some(client)))
                     } ~
                     path(browsePath) {
                       browse(None)
@@ -93,15 +100,18 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                         val buildVersion = BuildVersion.parse(version)
                         versionImageUpload(service, buildVersion)
                       } ~
-                        path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                          val buildVersion = BuildVersion.parse(version)
-                          versionInfoUpload(service, buildVersion)
-                        } ~
-                        path(uploadDesiredVersionsPath) {
-                          parameter("client".?) { client =>
-                            fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(client))
-                          }
+                      path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                        val buildVersion = BuildVersion.parse(version)
+                        versionInfoUpload(service, buildVersion)
+                      } ~
+                      path(uploadDesiredVersionsPath) {
+                        parameter("client".?) { client =>
+                          fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(client))
                         }
+                      } ~
+                      path(uploadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
+                        fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(if (client.isEmpty) None else Some(client)))
+                      }
                     } ~
                     authorize(usersCredentials.getRole(userName) == UserRole.Client) {
                       path(uploadTestedVersionsPath) {
