@@ -1,7 +1,6 @@
 package com.vyulabs.update.distribution.developer
 
-import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceName}
-import com.vyulabs.update.common.ServiceInstanceName
+import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.DistributionWebPaths
 
 /**
@@ -19,7 +18,7 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   def getDownloadVersionsInfoPath(serviceName: ServiceName, clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>
-        downloadVersionsInfoPath + "/" + serviceName + "/?" + clientName
+        downloadVersionsInfoPath + "/" + serviceName + "/?client=" + clientName
       case None =>
         downloadVersionsInfoPath + "/" + serviceName
     }
@@ -28,7 +27,7 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   def getDownloadDesiredVersionsPath(clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>
-        downloadDesiredVersionsPath + "/?" + clientName
+        downloadDesiredVersionsPath + "/?client=" + clientName
       case None =>
         downloadDesiredVersionsPath
     }
@@ -37,7 +36,7 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   def getUploadDesiredVersionsPath(clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>
-        uploadDesiredVersionsPath + "/?" + clientName
+        uploadDesiredVersionsPath + "/?client=" + clientName
       case None =>
         uploadDesiredVersionsPath
     }
