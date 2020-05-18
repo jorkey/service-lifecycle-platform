@@ -47,7 +47,7 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         log.info("Get developer desired versions")
-        val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
+        val developerDesiredVersions = developerDistribution.downloadDesiredVersions(None).getOrElse {
           log.error(s"Can't get developer desired versions")
           return false
         }

@@ -111,7 +111,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.info(s"Directory ${distributionDir} exists")
     }
     log.info("Download desired versions")
-    val desiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
+    val desiredVersions = developerDistribution.downloadDesiredVersions(None).getOrElse {
       log.error("Can't download desired versions")
       return false
     }.Versions

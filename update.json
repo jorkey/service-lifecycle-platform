@@ -24,6 +24,10 @@
           "destinationFile": "update.sh"
         },
         {
+          "sourceFile": "scripts/update_scripts.sh",
+          "destinationFile": "update_scripts.sh"
+        },
+        {
           "sourceFile": "scripts/updater_setup.sh",
           "destinationFile": "updater_setup.sh"
         },

@@ -45,16 +45,6 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     }
   }
 
-  def downloadDesiredVersions(): Option[DesiredVersions] = {
-    val url = makeUrl(getDownloadDesiredVersionsPath())
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(DesiredVersions(config))
-      case None =>
-        None
-    }
-  }
-
   def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: DesiredVersions): Boolean = {
     clientName match {
       case Some(clientName) =>

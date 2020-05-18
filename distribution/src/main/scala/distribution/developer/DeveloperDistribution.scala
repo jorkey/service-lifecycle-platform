@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{path, _}
-import akka.http.scaladsl.server.{Route, ValidationRejection}
+import akka.http.scaladsl.server.{Route}
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.stream.Materializer
 import akka.util.ByteString
@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
 
 class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
@@ -54,33 +53,39 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                   path(downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                     getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                   } ~
-                    path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                      getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
-                    } ~
-                    path(downloadVersionsInfoPath / ".*".r / ".*".r) { (service, client) =>
-                      complete(Utils.renderConfig(
-                        dir.getVersionsInfo(dir.getServiceDir(service, if (client.isEmpty) None else Some(client))).toConfig(), true))
-                    } ~
-                    path(downloadDesiredVersionsPath / ".*".r) { client =>
-                      getFromFileWithLock(dir.getDesiredVersionsFile(if (client.isEmpty) None else Some(client)))
+                  path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                    getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
+                  } ~
+                  path(downloadDesiredVersionsPath) {
+                    getDesiredVersionsRoute(userName)
+                  } ~
+                  path(downloadDesiredVersionPath / ".*".r) { service =>
+                    parameter("image".as[Boolean]?false) { image =>
+                      getDesiredVersion(service, userName, image)
+                    }
+                  } ~
+                  authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
+                    path(downloadVersionsInfoPath / ".*".r) { service =>
+                      parameter("client".?) { client =>
+                        complete(Utils.renderConfig(
+                          dir.getVersionsInfo(dir.getServiceDir(service, client)).toConfig(), true))
+                      }
                     } ~
                     path(downloadDesiredVersionsPath) {
-                      getDesiredVersionsRoute(userName)
+                      parameter("client".?) { client =>
+                        getFromFileWithLock(dir.getDesiredVersionsFile(client))
+                      }
                     } ~
-                    path(downloadDesiredVersionPath / ".*".r) { service =>
-                      getDesiredVersionImage(service, userName)
+                    path(browsePath) {
+                      browse(None)
                     } ~
-                    authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
-                      path(browsePath) {
-                        browse(None)
-                      } ~
-                        pathPrefix(browsePath / ".*".r) { path =>
-                          browse(Some(path))
-                        } ~
-                        path(getDistributionVersionPath) {
-                          getVersion()
-                        }
+                    pathPrefix(browsePath / ".*".r) { path =>
+                      browse(Some(path))
+                    } ~
+                    path(getDistributionVersionPath) {
+                      getVersion()
                     }
+                  }
                 } ~
                   post {
                     authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
@@ -92,26 +97,28 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                           val buildVersion = BuildVersion.parse(version)
                           versionInfoUpload(service, buildVersion)
                         } ~
-                        path(uploadDesiredVersionsPath / ".*".r) { client =>
-                          fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(if (client.isEmpty) None else Some(client)))
+                        path(uploadDesiredVersionsPath) {
+                          parameter("client".?) { client =>
+                            fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(client))
+                          }
                         }
                     } ~
-                      authorize(usersCredentials.getRole(userName) == UserRole.Client) {
-                        path(uploadTestedVersionsPath) {
-                          uploadTestedVersions(userName)
-                        } ~
-                          path(uploadInstancesStatePath / ".*".r) { client =>
-                            uploadToConfig(instancesStateName, (config) => {
-                              val instancesState = InstancesState(config)
-                              stateUploader.receiveInstancesState(client, instancesState)
-                            })
-                          } ~
-                          path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
-                            uploadToSource(serviceFaultName, (fileInfo, source) => {
-                              faultUploader.receiveFault(userName, serviceName, fileInfo.getFileName, source)
-                            })
-                          }
+                    authorize(usersCredentials.getRole(userName) == UserRole.Client) {
+                      path(uploadTestedVersionsPath) {
+                        uploadTestedVersions(userName)
+                      } ~
+                      path(uploadInstancesStatePath / ".*".r) { client =>
+                        uploadToConfig(instancesStateName, (config) => {
+                          val instancesState = InstancesState(config)
+                          stateUploader.receiveInstancesState(client, instancesState)
+                        })
+                      } ~
+                      path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
+                        uploadToSource(serviceFaultName, (fileInfo, source) => {
+                          faultUploader.receiveFault(userName, serviceName, fileInfo.getFileName, source)
+                        })
                       }
+                    }
                   }
               }
             }
@@ -133,9 +140,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     }
   }
 
-  private def getDesiredVersionImage(serviceName: ServiceName, clientName: ClientName): Route = {
+  private def getDesiredVersion(serviceName: ServiceName, clientName: ClientName, image: Boolean): Route = {
     val future = getDesiredVersions(clientName)
-    getDesiredVersionImage(serviceName, future)
+    getDesiredVersion(serviceName, future, image)
   }
 
   private def getClientConfig(clientName: ClientName): Future[Option[ClientConfig]] = {

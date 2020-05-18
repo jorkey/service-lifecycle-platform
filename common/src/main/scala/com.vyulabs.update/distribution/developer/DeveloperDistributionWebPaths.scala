@@ -17,19 +17,30 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   val serviceFaultName = "service-fault"
 
   def getDownloadVersionsInfoPath(clientName: Option[ClientName], serviceName: ServiceName): String = {
-    downloadVersionsInfoPath + "/" + serviceName + "/" + clientName.getOrElse("")
+    clientName match {
+      case Some(clientName) =>
+        downloadVersionsInfoPath + "/?" + clientName
+      case None =>
+        downloadVersionsInfoPath
+    }
   }
 
   def getDownloadDesiredVersionsPath(clientName: Option[ClientName]): String = {
-    downloadDesiredVersionsPath + "/" + clientName.getOrElse("")
-  }
-
-  def getDownloadDesiredVersionsPath(): String = {
-    downloadDesiredVersionsPath
+    clientName match {
+      case Some(clientName) =>
+        downloadDesiredVersionsPath + "/?" + clientName
+      case None =>
+        downloadDesiredVersionsPath
+    }
   }
 
   def getUploadDesiredVersionsPath(clientName: Option[ClientName]): String = {
-    uploadDesiredVersionsPath + "/" + clientName.getOrElse("")
+    clientName match {
+      case Some(clientName) =>
+        uploadDesiredVersionsPath + "/?" + clientName
+      case None =>
+        uploadDesiredVersionsPath
+    }
   }
 
   def getUploadInstancesStatePath(clientName: ClientName): String = {
