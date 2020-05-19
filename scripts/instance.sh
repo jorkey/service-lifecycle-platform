@@ -15,7 +15,7 @@ distribDirectoryUrl=$3
 
 . ./update_scripts.sh
 
-distribDirectoryUrl=`jq -r .developerDistributionUrl builder.json`
+distribDirectoryUrl=`jq -r .clientDistributionUrl builder.json`
 update_scripts ${distribDirectoryUrl} instance.sh updater_setup.sh
 
 echo "Execute setup"

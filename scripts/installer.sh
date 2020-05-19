@@ -4,7 +4,7 @@ updateService=installer
 
 . ./update_scripts.sh
 
-distribDirectoryUrl=`jq -r .developerDistributionUrl installer.json`
+distribDirectoryUrl=`jq -r .clientDistributionUrl installer.json`
 update_scripts ${distribDirectoryUrl} installer.sh
 
 . ./update.sh "$@"
