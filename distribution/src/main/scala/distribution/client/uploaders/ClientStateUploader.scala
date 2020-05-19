@@ -26,7 +26,7 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.
   * Copyright FanDate, Inc.
   */
-class ClientStateUploader(clientName: ClientName, dir: ClientDistributionDirectory, developerDirectoryUrl: URL)
+class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL)
                          (implicit system: ActorSystem, materializer: Materializer)
       extends Thread with DeveloperDistributionWebPaths with FutureDirectives { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -98,7 +98,7 @@ class ClientStateUploader(clientName: ClientName, dir: ClientDistributionDirecto
             if (!states.isEmpty) {
               log.debug("Upload instances state to developer distribution server")
               val instancesState = InstancesState(states)
-              if (!developerDirectory.uploadInstancesState(clientName, instancesState)) {
+              if (!developerDirectory.uploadInstancesState(instancesState)) {
                 log.error("Can't upload instances state")
               }
             }

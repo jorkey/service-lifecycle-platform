@@ -4,7 +4,7 @@ import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
+import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryAdmin}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
@@ -37,7 +37,7 @@ object BuilderMain extends App {
     sys.error("No config")
   }
 
-  val developerDistribution = new DeveloperDistributionDirectoryClient(config.developerDistributionUrl)
+  val developerDistribution = new DeveloperDistributionDirectoryAdmin(config.developerDistributionUrl)
 
   command match {
     case "buildVersion" =>

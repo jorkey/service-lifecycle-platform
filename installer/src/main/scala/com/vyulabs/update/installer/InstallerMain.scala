@@ -59,12 +59,11 @@ object InstallerMain extends App {
 
         case "initClient" =>
           val initClient = new InitClient()
-          val clientName = arguments.getValue("clientName")
           val adminRepositoryUri = new URI(arguments.getValue("adminRepositoryUrl"))
           val clientDistributionUrl = new URL(arguments.getValue("clientDistributionUrl"))
           val developerDistributionUrl = new URL(arguments.getValue("developerDistributionUrl"))
           val distributionServicePort = arguments.getIntValue("distributionServicePort")
-          if (!initClient.initClient(clientName, adminRepositoryUri, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
+          if (!initClient.initClient(adminRepositoryUri, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
             sys.error("Init client error")
           }
 
@@ -90,7 +89,7 @@ object InstallerMain extends App {
             sys.error("Use option localConfigOnly with servicesOnly")
           }
           val setDesiredVersions = arguments.getOptionBooleanValue("setDesiredVersions").getOrElse(true)
-          if (!updateClient.installUpdates(config.clientName, adminRepository, clientDistribution, developerDistribution,
+          if (!updateClient.installUpdates(adminRepository, clientDistribution, developerDistribution,
                servicesOnly, localConfigOnly, setDesiredVersions)) {
             sys.error("Install update error")
           }

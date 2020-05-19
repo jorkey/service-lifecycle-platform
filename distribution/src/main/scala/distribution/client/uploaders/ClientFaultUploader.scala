@@ -10,7 +10,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Keep, Source}
 import akka.util.ByteString
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
 import com.vyulabs.update.utils.Utils
@@ -23,7 +23,7 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.12.19.
   * Copyright FanDate, Inc.
   */
-class ClientFaultUploader(clientName: ClientName, dir: ClientDistributionDirectory, developerDirectoryUrl: URL)
+class ClientFaultUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL)
                          (implicit materializer: Materializer)
       extends Thread with DeveloperDistributionWebPaths { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)

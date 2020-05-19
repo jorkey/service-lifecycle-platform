@@ -13,14 +13,14 @@ import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
 import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
+import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryAdmin}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils.{copyFile, extendMacro}
 import com.vyulabs.update.version.BuildVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
-class Builder(directory: DeveloperDistributionDirectoryClient, adminRepositoryUri: URI)(implicit filesLocker: SmartFilesLocker) {
+class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
 
   def makeVersion(author: String, serviceName: ServiceName,

@@ -25,8 +25,7 @@ class UpdateClient()(implicit log: Logger) {
   private val buildDir = new File("build")
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def installUpdates(clientName: ClientName,
-                     adminRepository: ClientAdminRepository,
+  def installUpdates(adminRepository: ClientAdminRepository,
                      clientDistribution: ClientDistributionDirectoryClient,
                      developerDistribution: DeveloperDistributionDirectoryClient,
                      servicesOnly: Option[Set[ServiceName]],
@@ -47,7 +46,7 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         log.info("Get developer desired versions")
-        val developerDesiredVersions = developerDistribution.downloadDesiredVersions(None).getOrElse {
+        val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
           log.error(s"Can't get developer desired versions")
           return false
         }
@@ -207,7 +206,7 @@ class UpdateClient()(implicit log: Logger) {
           log.error("Error of getting client desired versions")
           return false
         }.mapValues(version => BuildVersion(version.client, version.build))
-        val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(None).getOrElse {
+        val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(common = true).getOrElse {
           log.error("Error of getting developer desired versions")
           return false
         }.Versions

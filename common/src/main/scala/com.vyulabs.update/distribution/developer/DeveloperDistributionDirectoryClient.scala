@@ -19,24 +19,9 @@ import org.slf4j.Logger
 class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) extends DistributionDirectoryClient(url)
     with DeveloperDistributionWebPaths {
 
-  def downloadVersionsInfo(clientName: Option[ClientName], serviceName: ServiceName): Option[VersionsInfo] = {
-    val url = makeUrl(getDownloadVersionsInfoPath(serviceName, clientName))
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(VersionsInfo(config))
-      case None =>
-        None
-    }
-  }
-
-  def downloadDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
-    clientName match {
-      case Some(clientName) =>
-        log.info(s"Download desired versions for client ${clientName}")
-      case None =>
-        log.info(s"Download desired versions")
-    }
-    val url = makeUrl(getDownloadDesiredVersionsPath(clientName))
+  def downloadDesiredVersions(common: Boolean = false): Option[DesiredVersions] = {
+    log.info(s"Download desired versions")
+    val url = makeUrl(getDownloadDesiredVersionsPath(common))
     downloadToConfig(url) match {
       case Some(config) =>
         Some(DesiredVersions(config))
@@ -45,25 +30,14 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     }
   }
 
-  def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: DesiredVersions): Boolean = {
-    clientName match {
-      case Some(clientName) =>
-        log.info(s"Upload desired versions for client ${clientName}")
-      case None =>
-        log.info(s"Upload desired versions")
-    }
-    uploadFromConfig(makeUrl(getUploadDesiredVersionsPath(clientName)),
-      desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toConfig())
-  }
-
   def uploadTestedVersions(testedVersions: ServicesVersions): Boolean = {
     log.info(s"Upload tested versions")
     uploadFromConfig(makeUrl(uploadTestedVersionsPath),
       testedVersionsName, uploadTestedVersionsPath, testedVersions.toConfig())
   }
 
-  def uploadInstancesState(clientName: ClientName, instancesState: InstancesState): Boolean = {
-    uploadFromConfig(makeUrl(getUploadInstancesStatePath(clientName)),
+  def uploadInstancesState(instancesState: InstancesState): Boolean = {
+    uploadFromConfig(makeUrl(getUploadInstancesStatePath()),
       instancesStateName, uploadInstancesStatePath, instancesState.toConfig())
   }
 

@@ -67,13 +67,12 @@ object DistributionMain extends App {
       distribution.run()
 
     case "client" =>
-      val clientName = arguments.getValue("clientName")
       val dir = new ClientDistributionDirectory(directory)
       val developerDirectoryUrl = new URL(arguments.getValue("developerDirectoryUrl"))
       val port = arguments.getIntValue("port")
 
-      val stateUploader = new ClientStateUploader(clientName, dir, developerDirectoryUrl)
-      val faultUploader = new ClientFaultUploader(clientName, dir, developerDirectoryUrl)
+      val stateUploader = new ClientStateUploader(dir, developerDirectoryUrl)
+      val faultUploader = new ClientFaultUploader(dir, developerDirectoryUrl)
       val logUploader = new ClientLogUploader(dir)
 
       val selfUpdater = new SelfUpdater(dir)

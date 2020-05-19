@@ -2,7 +2,7 @@
 
 function exitUsage() {
   echo "Use: $0 developer <port> or"
-  echo "     $0 client <clientName> <developerDirectoryUrl> <port>"
+  echo "     $0 client <port> <developerDirectoryUrl>"
   exit 1
 }
 
@@ -35,12 +35,11 @@ if [ "$1" = "developer" ]; then
 }
 EOF
 elif [ "$1" = "client" ]; then
-  if [ -z "$4" ]; then
+  if [ -z "$3" ]; then
     exitUsage
   fi
-  clientName=$2
+  port=$2
   distribDirectoryUrl=$3
-  port=$4
   escapedDisribDirectoryUrl=`echo ${distribDirectoryUrl} | sed -e 's/\\//\\\\\//g'`
   cat << EOF > distribution_pm2.json
 {
@@ -54,7 +53,6 @@ elif [ "$1" = "client" ]; then
     "args": [
       "client",
       "port=${port}",
-      "clientName=${clientName}",
       "developerDirectoryUrl=${escapedDisribDirectoryUrl}"
     ]
   }]
