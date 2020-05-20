@@ -6,7 +6,7 @@ echo "Start update"
 
 if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
   function getDesiredVersion {
-    echo "Download desired version for service ${updateService}"
+    echo "Get desired version for service ${updateService}"
     desiredVersionFile=.desired-version-${updateService}.json
     download ${distribDirectoryUrl}/download-desired-version/${updateService}?image=false ${desiredVersionFile}
     desiredVersion=`cat ${desiredVersionFile}`
@@ -18,9 +18,11 @@ if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == http
   }
 elif [[ ${distribDirectoryUrl} == file://* ]]; then
   function getDesiredVersion {
+    echo "Get desired version for service ${updateService}"
     desiredVersion=`jq -r .desiredVersions.${updateService} ${distribDirectoryUrl}/desired-versions.json`
   }
   function downloadVersionImage {
+    echo "Get version ${1} image"
     download ${distribDirectoryUrl}/services/${updateService}/${updateService}-$1.zip $2
   }
 else
@@ -31,6 +33,10 @@ fi
 while [ 1 ]
 do
   updateScripts ${distribDirectoryUrl}
+  if [ "${scriptsUpdated}" == "true" ]; then
+    echo "Restart $0"
+    exec $0 "$@"
+  fi
   echo "Check for new version of ${updateService}"
   getDesiredVersion
   if [ ! -f ${updateService}-*.jar ]; then
@@ -49,7 +55,7 @@ do
     echo "Update ${updateService} to version ${desiredVersion}"
     downloadVersionImage ${desiredVersion} ${updateService}.zip
     rm -f ${updateService}-*.jar
-    unzip -o ${updateService}.zip && rm -f ${updateService}.zip
+    unzip -qo ${updateService}.zip && rm -f ${updateService}.zip
   fi
 
   buildVersion=`echo ${desiredVersion} | sed -e 's/_.*//'`

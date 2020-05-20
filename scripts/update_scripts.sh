@@ -27,12 +27,11 @@ function updateScripts {
     download $1/download-version/scripts/${version} ${scriptsZipFile}
     echo "Update scripts"
     scriptFiles="update_scripts.sh update.sh `basename "$0"` $2 $3 $4 $5"
-    unzip -o ${scriptsZipFile} $scriptFiles
+    unzip -qo ${scriptsZipFile} $scriptFiles
     rm -f ${scriptsZipFile}
     chmod +x $scriptFiles
     mv ${newScriptsVersionFile} ${scriptsVersionFile}
-    echo "Restart $0"
-    exec $0 "$@"
+    scriptsUpdated="true"
   else
     rm -f ${newScriptsVersionFile}
   fi

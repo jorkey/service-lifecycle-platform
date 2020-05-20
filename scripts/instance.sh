@@ -16,6 +16,10 @@ distribDirectoryUrl=$3
 . ./update_scripts.sh
 
 updateScripts ${distribDirectoryUrl} updater_setup.sh
+if [ "${scriptsUpdated}" == "true" ]; then
+  echo "Restart $0"
+  exec $0 "$@"
+fi
 
 echo "Execute setup"
 ./updater_setup.sh Azure ${name} ${services} ${distribDirectoryUrl}
