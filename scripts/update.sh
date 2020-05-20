@@ -9,7 +9,7 @@ if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == http
     echo "Download desired version for service ${updateService}"
     desiredVersionFile=.desired-version-${updateService}.json
     download ${distribDirectoryUrl}/download-desired-version/${updateService}?image=false ${desiredVersionFile}
-    desiredVersion=`cat desiredVersionFile`
+    desiredVersion=`cat ${desiredVersionFile}`
     rm -f ${desiredVersionFile}
   }
   function downloadVersionImage {
