@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 if [ -z "$4" ]
 then
@@ -42,7 +42,7 @@ cat << EOF > updater_pm2.json
 }
 EOF
 
-unzip -o scripts.zip updater.sh update_scripts.sh && chmod +x updater.sh update_scripts.sh || exit 1
+unzip -o scripts.zip updater.sh update_scripts.sh && chmod +x updater.sh update_scripts.sh
 
 pm2 start updater_pm2.json
 pm2 save

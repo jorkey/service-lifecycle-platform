@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 function exitUsage() {
   echo "Use: $0 name services distribDirectoryUrl"

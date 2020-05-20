@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 function download {
   rm -f $2
@@ -27,10 +27,10 @@ function updateScripts {
     download $1/download-version/scripts/${version} ${scriptsZipFile}
     echo "Update scripts"
     scriptFiles="update_scripts.sh update.sh `basename "$0"` $2 $3 $4 $5"
-    unzip -o ${scriptsZipFile} $scriptFiles || exit 1
+    unzip -o ${scriptsZipFile} $scriptFiles
     rm -f ${scriptsZipFile}
-    chmod +x $scriptFiles || exit 1
-    mv ${newScriptsVersionFile} ${scriptsVersionFile} || exit 1
+    chmod +x $scriptFiles
+    mv ${newScriptsVersionFile} ${scriptsVersionFile}
     echo "Restart $0"
     exec $0 "$@"
   else

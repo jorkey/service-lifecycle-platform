@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 function exitUsage() {
   echo "Use: $0 developer <port> or"
@@ -64,7 +64,7 @@ fi
 
 echo "distribution_pm2.json is created"
 
-chmod +x distribution.sh || exit 1
-pm2 start distribution_pm2.json || exit 1
+chmod +x distribution.sh
+pm2 start distribution_pm2.json
 
 exit 0

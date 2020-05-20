@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 echo "Start update"
 
@@ -48,8 +48,8 @@ do
   if [ "${update}" == "true" ]; then
     echo "Update ${updateService} to version ${desiredVersion}"
     downloadVersionImage ${desiredVersion} ${updateService}.zip
-    rm -f ${updateService}-*.jar || exit 1
-    unzip -o ${updateService}.zip && rm -f ${updateService}.zip || exit 1
+    rm -f ${updateService}-*.jar
+    unzip -o ${updateService}.zip && rm -f ${updateService}.zip
   fi
 
   buildVersion=`echo ${desiredVersion} | sed -e 's/_.*//'`
