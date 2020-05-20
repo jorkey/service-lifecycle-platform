@@ -10,11 +10,7 @@ instanceId=$1
 services=$2
 
 updateService=updater
+
 distribDirectoryUrl=$3
-
-. ./update_scripts.sh
-
-distribDirectoryUrl=`jq -r .clientDistributionUrl builder.json`
-update_scripts ${distribDirectoryUrl} updater.sh
 
 . ./update.sh runServices "clientDirectoryUrl=${distribDirectoryUrl}" "instanceId=${instanceId}" "services=${services}"

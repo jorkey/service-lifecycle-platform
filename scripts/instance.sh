@@ -15,8 +15,7 @@ distribDirectoryUrl=$3
 
 . ./update_scripts.sh
 
-distribDirectoryUrl=`jq -r .clientDistributionUrl builder.json`
-update_scripts ${distribDirectoryUrl} instance.sh updater_setup.sh
+updateScripts ${distribDirectoryUrl} updater_setup.sh
 
 echo "Execute setup"
 ./updater_setup.sh Azure ${name} ${services} ${distribDirectoryUrl}

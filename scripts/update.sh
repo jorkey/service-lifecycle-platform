@@ -3,17 +3,20 @@
 echo "Start update"
 
 if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-  function downloadDesiredVersions {
-    echo "Download desired versions"
-    download ${distribDirectoryUrl}/download-desired-versions $1
+  function getDesiredVersion {
+    echo "Download desired version for service ${updateService}"
+    desiredVersionFile=.desired-version-${updateService}.json
+    download ${distribDirectoryUrl}/download-desired-version/${updateService}?image=false ${desiredVersionFile}
+    desiredVersion=`cat desiredVersionFile`
+    rm -f ${desiredVersionFile}
   }
   function downloadVersionImage {
     echo "Download version ${1} image"
     download ${distribDirectoryUrl}/download-version/${updateService}/$1 $2
   }
 elif [[ ${distribDirectoryUrl} == file://* ]]; then
-  function downloadDesiredVersions {
-    download ${distribDirectoryUrl}/desired-versions.json $1
+  function getDesiredVersion {
+    desiredVersion=`jq -r .desiredVersions.${updateService} ${distribDirectoryUrl}/desired-versions.json`
   }
   function downloadVersionImage {
     download ${distribDirectoryUrl}/services/${updateService}/${updateService}-$1.zip $2
@@ -25,10 +28,9 @@ fi
 
 while [ 1 ]
 do
-  downloadDesiredVersions .desired-versions.json
-  desiredVersion=`jq -r .desiredVersions.${updateService} .desired-versions.json`
-
+  updateScripts ${distribDirectoryUrl}
   echo "Check for new version of ${updateService}"
+  getDesiredVersion
   if [ ! -f ${updateService}-*.jar ]; then
     update="true"
   else
@@ -37,17 +39,15 @@ do
       echo "Desired version ${desiredVersion} != current version ${currentVersion}."
       update="true"
     else
-      rm -f .desired-versions.json
       update="false"
     fi
   fi
 
-  if [ "${update}" = "true" ]; then
+  if [ "${update}" == "true" ]; then
     echo "Update ${updateService} to version ${desiredVersion}"
     downloadVersionImage ${desiredVersion} ${updateService}.zip
     rm -f ${updateService}-*.jar || exit 1
     unzip -o ${updateService}.zip && rm -f ${updateService}.zip || exit 1
-    rm -f .desired-versions.json
   fi
 
   buildVersion=`echo ${desiredVersion} | sed -e 's/_.*//'`
