@@ -2,6 +2,8 @@
 
 echo "Start update"
 
+. update_scripts.sh
+
 if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
   function getDesiredVersion {
     echo "Download desired version for service ${updateService}"

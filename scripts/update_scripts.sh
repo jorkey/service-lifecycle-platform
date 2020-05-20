@@ -27,7 +27,7 @@ function updateScripts {
     download $1/download-version/scripts/${version} ${scriptsZipFile}
     echo "Update scripts"
     scriptFiles="update_scripts.sh update.sh `basename "$0"` $2 $3 $4 $5"
-    unzip -o ${scriptsZipFile} "$scriptFiles" || exit 1
+    unzip -o ${scriptsZipFile} $scriptFiles || exit 1
     rm -f ${scriptsZipFile}
     chmod +x $scriptFiles || exit 1
     mv ${newScriptsVersionFile} ${scriptsVersionFile} || exit 1
