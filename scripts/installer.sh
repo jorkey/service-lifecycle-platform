@@ -2,6 +2,6 @@
 
 updateService=installer
 
-distribDirectoryUrl=`jq -r .clientDistributionUrl installer.json`
+distribDirectoryUrl=`jq -r .developerDistributionUrl installer.json`
 
 . ./update.sh "$@"
