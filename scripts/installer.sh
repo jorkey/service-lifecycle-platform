@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
 updateService=installer
-distribDirectoryUrl=`jq -r .developerDistributionUrl installer.json`
+distribDirectoryUrl=`jq -r .clientDistributionUrl installer.json`
 
 . update.sh
