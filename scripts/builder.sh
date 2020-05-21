@@ -4,4 +4,6 @@ updateService=builder
 
 distribDirectoryUrl=`jq -r .developerDistributionUrl builder.json`
 
-. ./update.sh "$@"
+. ./update.sh
+
+runService "$@"

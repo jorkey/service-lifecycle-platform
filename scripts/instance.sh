@@ -13,9 +13,9 @@ name=$1
 services=$2
 distribDirectoryUrl=$3
 
-. ./update_scripts.sh
+. ./update.sh
 
-updateScripts ${distribDirectoryUrl} updater_setup.sh
+updateScripts updater_setup.sh
 if [ "${scriptsUpdated}" == "true" ]; then
   echo "Restart $0"
   exec $0 "$@"

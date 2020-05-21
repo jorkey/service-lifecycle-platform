@@ -2,7 +2,8 @@
 
 updateService=distribution
 
-distribDirectory=directory
-distribDirectoryUrl=file://`/bin/pwd`/${distribDirectory}
+distribDirectoryUrl=file://`/bin/pwd`/directory
 
-. ./update.sh "$@"
+. ./update.sh
+
+runService "$@"

@@ -13,4 +13,6 @@ updateService=updater
 
 distribDirectoryUrl=$3
 
-. ./update.sh runServices "clientDirectoryUrl=${distribDirectoryUrl}" "instanceId=${instanceId}" "services=${services}"
+. ./update.sh
+
+runService runServices "clientDirectoryUrl=${distribDirectoryUrl}" "instanceId=${instanceId}" "services=${services}"
