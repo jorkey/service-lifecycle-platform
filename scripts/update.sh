@@ -54,29 +54,41 @@ function updateScripts {
   fi
 }
 
-if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-  function getDesiredVersion {
+### Get desired version number of service
+# output:
+#  $desiredVersion - version number
+function getDesiredVersion {
+  if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     desiredVersionFile=.desired-version-${updateService}.json
     download ${distribDirectoryUrl}/download-desired-version/${updateService}?image=false ${desiredVersionFile}
     desiredVersion=`cat ${desiredVersionFile}`
     rm -f ${desiredVersionFile}
-  }
-  function downloadVersionImage {
-    echo "Download version ${1} image"
-    download ${distribDirectoryUrl}/download-version/${updateService}/$1 $2
-  }
-elif [[ ${distribDirectoryUrl} == file://* ]]; then
-  function getDesiredVersion {
+  elif [[ ${distribDirectoryUrl} == file://* ]]; then
     desiredVersion=`jq -r .desiredVersions.${updateService} ${distribDirectoryUrl}/desired-versions.json`
-  }
-  function downloadVersionImage {
-    echo "Get version ${1} image"
-    download ${distribDirectoryUrl}/services/${updateService}/${updateService}-$1.zip $2
-  }
-else
-  echo "Invalid distribution directory URL ${distribDirectoryUrl}"
-  exit 1
-fi
+  else
+    echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
+  fi
+}
+
+### Download service version image of specified version
+# input:
+#   $1 - service version
+#   $2 - output file
+# output:
+#  $desiredVersion - version number
+function downloadVersionImage {
+  version=$1
+  outputFile=$2
+  if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
+    echo "Download version ${version} image"
+    download ${distribDirectoryUrl}/download-version/${updateService}/${version} ${outputFile}
+  elif [[ ${distribDirectoryUrl} == file://* ]]; then
+    echo "Get version ${version} image"
+    download ${distribDirectoryUrl}/services/${updateService}/${updateService}-${version}.zip ${outputFile}
+  else
+    echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
+  fi
+}
 
 # Updates scripts and service if need. Run service.
 # input:
