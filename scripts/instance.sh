@@ -13,7 +13,7 @@ name=$1
 services=$2
 distribDirectoryUrl=$3
 
-. ./update.sh
+. update.sh
 
 updateScripts updater_setup.sh
 if [ "${scriptsUpdated}" == "true" ]; then

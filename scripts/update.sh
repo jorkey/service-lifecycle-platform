@@ -1,9 +1,13 @@
 #!/bin/bash -e
 
-######## Update utilities. Input parameters: $distribDirectoryUrl - distribution URL.
+######## Update utilities script.
+# input:
+#   $distribDirectoryUrl - distribution URL.
+#   $updateService - service to update and run.
+########
 
 ### Download resource to file
-# Input:
+# input:
 #  $1 - source URL
 #  $2 - output file
 function download {
@@ -24,14 +28,14 @@ function download {
 }
 
 ### Check scripts version and update if need
-# Input:
+# input:
 #  $@ - script files to extract
-# Output:
+# output:
 #  $scriptsUpdated - "true" when scripts are updated
 function updateScripts {
   scriptsVersionFile=.scripts.version
   newScriptsVersionFile=.new_scripts.version
-  echo "Check scripts version"
+  echo "Check for new version of scripts"
   download ${distribDirectoryUrl}/download-desired-version/scripts?image=false ${newScriptsVersionFile}
   if [ ! -f ${scriptsVersionFile} ] || ! diff ${scriptsVersionFile} ${newScriptsVersionFile} >/dev/null; then
     version=`cat ${newScriptsVersionFile}`
@@ -52,7 +56,6 @@ function updateScripts {
 
 if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
   function getDesiredVersion {
-    echo "Get desired version for service ${updateService}"
     desiredVersionFile=.desired-version-${updateService}.json
     download ${distribDirectoryUrl}/download-desired-version/${updateService}?image=false ${desiredVersionFile}
     desiredVersion=`cat ${desiredVersionFile}`
@@ -64,7 +67,6 @@ if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == http
   }
 elif [[ ${distribDirectoryUrl} == file://* ]]; then
   function getDesiredVersion {
-    echo "Get desired version for service ${updateService}"
     desiredVersion=`jq -r .desiredVersions.${updateService} ${distribDirectoryUrl}/desired-versions.json`
   }
   function downloadVersionImage {
@@ -77,7 +79,7 @@ else
 fi
 
 # Updates scripts and service if need. Run service.
-# Input:
+# input:
 #  $updateService - service
 #  $@ - main script arguments
 function runService {
@@ -133,3 +135,7 @@ function runService {
     fi
   done
 }
+
+if [ ! -z "$updateService" ]; then
+  runService "$@"
+fi
