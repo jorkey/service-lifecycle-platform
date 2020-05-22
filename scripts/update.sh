@@ -36,7 +36,7 @@ function updateScripts {
   scriptsVersionFile=.scripts.version
   newScriptsVersionFile=.new_scripts.version
   echo "Check for new version of scripts"
-  download ${distribDirectoryUrl}/download-desired-version/scripts?image=false ${newScriptsVersionFile}
+  download ${distribDirectoryUrl}/download-desired-version/scripts ${newScriptsVersionFile}
   if [ ! -f ${scriptsVersionFile} ] || ! diff ${scriptsVersionFile} ${newScriptsVersionFile} >/dev/null; then
     version=`cat ${newScriptsVersionFile}`
     echo "Download scripts version ${version}"
@@ -60,7 +60,7 @@ function updateScripts {
 function getDesiredVersion {
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     desiredVersionFile=.desired-version-${updateService}.json
-    download ${distribDirectoryUrl}/download-desired-version/${updateService}?image=false ${desiredVersionFile}
+    download ${distribDirectoryUrl}/download-desired-version/${updateService} ${desiredVersionFile}
     desiredVersion=`cat ${desiredVersionFile}`
     rm -f ${desiredVersionFile}
   elif [[ ${distribDirectoryUrl} == file://* ]]; then

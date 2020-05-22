@@ -20,7 +20,13 @@ else
   exit 1
 fi
 
-escapedDisribDirectoryUrl=`echo ${distribDirectoryUrl} | sed -e 's/\\//\\\\\//g'`
+cat << EOF > updater.json
+{
+  "instanceId" : "${instanceId}",
+  "services": "`echo ${services} | jq -R '. / ","'",
+  "clientDistributionUrl" : "${distribDirectoryUrl}"
+}
+EOF
 
 cat << EOF > updater_pm2.json
 {
@@ -34,15 +40,13 @@ cat << EOF > updater_pm2.json
     "min_uptime"   : "5s",
     "merge_logs"   : true,
     "args": [
-      "${instanceId}",
-      "${services}",
-      "${escapedDisribDirectoryUrl}"
+      "runServices"
     ]
   }]
 }
 EOF
 
-unzip -qo scripts.zip updater.sh update.sh
+unzip -qo .scripts.zip updater.sh update.sh
 chmod +x updater.sh update.sh
 
 pm2 start updater_pm2.json

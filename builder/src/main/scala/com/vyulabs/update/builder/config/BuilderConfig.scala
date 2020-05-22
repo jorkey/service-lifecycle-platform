@@ -6,7 +6,6 @@ import java.net.{URI, URL}
 import com.vyulabs.update.utils.Utils
 import org.slf4j.Logger
 
-
 case class BuilderConfig(adminRepositoryUri: URI, developerDistributionUrl: URL)
 
 object BuilderConfig {

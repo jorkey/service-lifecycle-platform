@@ -119,7 +119,7 @@ class ServiceUpdater(instanceId: InstanceId,
       }
     }
 
-    Utils.writeServiceVersion(state.currentServiceDirectory, newVersion)
+    Utils.writeServiceVersion(state.currentServiceDirectory, serviceInstanceName.serviceName, newVersion)
 
     state.setVersion(newVersion)
 

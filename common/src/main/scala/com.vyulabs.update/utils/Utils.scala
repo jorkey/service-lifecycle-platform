@@ -7,7 +7,8 @@ import java.util.jar.Attributes
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
 
 import com.typesafe.config._
-import com.vyulabs.update.common.{Common}
+import com.vyulabs.update.common.Common
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.CommandConfig
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.version.BuildVersion
@@ -243,8 +244,32 @@ object Utils {
     }
   }
 
-  def readServiceVersion(directory: File)(implicit log: Logger): Option[BuildVersion] = {
-    val versionMarkFile = new File(directory, Common.VersionMarkFile)
+  def isServiceNeedUpdate(serviceName: ServiceName,
+                          ownVersion: Option[BuildVersion], desiredVersion: Option[BuildVersion])(implicit log: Logger): Option[BuildVersion] = {
+    ownVersion match {
+      case Some(version) if (!version.isEmpty()) =>
+        desiredVersion match {
+          case Some(desiredVersion) if !BuildVersion.ordering.equiv(version, desiredVersion) =>
+            log.info(s"Service ${serviceName} is obsolete. Own version ${version} desired version ${desiredVersion}")
+            Some(desiredVersion)
+          case Some(_) =>
+            log.debug(s"Service ${serviceName} is up to date")
+            None
+          case None =>
+            log.warn(s"No desired version for ${serviceName}")
+            None
+        }
+      case None =>
+        None
+    }
+  }
+
+  def getScriptsVersion(): Option[BuildVersion] = {
+    readServiceVersion(new File("."), Common.ScriptsServiceName)
+  }
+
+  def readServiceVersion(directory: File, serviceName: ServiceName)(implicit log: Logger): Option[BuildVersion] = {
+    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
     if (versionMarkFile.exists()) {
       val bytes = readFileToBytes(versionMarkFile).getOrElse {
         return None
@@ -263,8 +288,8 @@ object Utils {
     }
   }
 
-  def writeServiceVersion(directory: File, version: BuildVersion)(implicit log: Logger): Boolean = {
-    val versionMarkFile = new File(directory, Common.VersionMarkFile)
+  def writeServiceVersion(directory: File, serviceName: ServiceName, version: BuildVersion)(implicit log: Logger): Boolean = {
+    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
     writeFileFromBytes(versionMarkFile, version.toString.getBytes("utf8"))
   }
 

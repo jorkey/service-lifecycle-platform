@@ -2,8 +2,9 @@ package com.vyulabs.update.updater
 
 import java.io.File
 
-import com.vyulabs.update.common.{Common}
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -13,32 +14,20 @@ import org.slf4j.Logger
   */
 class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistributionDirectoryClient)
                  (implicit log: Logger) {
+  private val scriptsVersion = Utils.getScriptsVersion()
+
   state.serviceStarted()
 
-  def needUpdate(desiredVersion: Option[BuildVersion]): Option[BuildVersion] = {
-    state.getVersion() match {
-      case Some(version) =>
-        if (!version.isEmpty) {
-          desiredVersion match {
-            case Some(newVersion) if (!BuildVersion.ordering.equiv(version, newVersion)) =>
-              state.info(s"Is obsolete. Own version ${version} desired version ${newVersion}")
-              Some(newVersion)
-            case Some(_) =>
-              state.info("Up to date")
-              None
-            case None =>
-              state.info(s"No desired version for updater")
-              None
-          }
-        } else {
-          None
-        }
-      case None =>
-        None
-    }
+  def updaterNeedUpdate(desiredVersion: Option[BuildVersion]): Option[BuildVersion] = {
+    Utils.isServiceNeedUpdate(Common.UpdaterServiceName, state.getVersion(), desiredVersion)
   }
 
-  def update(toVersion: BuildVersion): Unit = {
+  def scriptsNeedUpdate(desiredVersion: Option[BuildVersion]): Option[BuildVersion] = {
+    Utils.isServiceNeedUpdate(Common.ScriptsServiceName, scriptsVersion, desiredVersion)
+  }
+
+  def beginUpdate(toVersion: BuildVersion): Unit = {
+    state.info(s"Updater is obsolete. Own version ${state.getVersion()} desired version ${toVersion}")
     state.setUpdateToVersion(toVersion)
     log.info(s"Downloading updater of version ${toVersion}")
     for (fromVersion <- state.getVersion()) {
@@ -48,6 +37,10 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
       log.error("Downloading updater error")
     }
     state.serviceStopped()
+  }
+
+  def beginScriptsUpdate(toVersion: BuildVersion): Unit = {
+    state.setScriptsUpdateToVersion(toVersion)
   }
 }
 

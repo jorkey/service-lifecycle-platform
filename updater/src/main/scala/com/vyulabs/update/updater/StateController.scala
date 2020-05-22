@@ -41,7 +41,7 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
   version = if (serviceInstanceName.serviceName == Common.UpdaterServiceName) {
     Utils.getManifestBuildVersion(Common.UpdaterServiceName)
   } else {
-    Utils.readServiceVersion(currentServiceDirectory)
+    Utils.readServiceVersion(currentServiceDirectory, serviceInstanceName.serviceName)
   }
 
   log.info(s"Current version of service ${serviceInstanceName} is ${version}")
@@ -81,6 +81,11 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
   def setUpdateToVersion(serviceVersion: BuildVersion): Unit = synchronized {
     this.updateToVersion = Some(serviceVersion)
     info(s"Begin update to version ${serviceVersion}")
+    updateRepository()
+  }
+
+  def setScriptsUpdateToVersion(serviceVersion: BuildVersion): Unit = synchronized {
+    info(s"Begin update scripts to version ${serviceVersion}")
     updateRepository()
   }
 

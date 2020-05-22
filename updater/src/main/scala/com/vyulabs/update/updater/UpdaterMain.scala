@@ -1,12 +1,10 @@
 package com.vyulabs.update.updater
 
-import java.net.URL
-
 import com.vyulabs.update.common.{Common, ServiceInstanceName}
-import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.DesiredVersions
+import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
@@ -29,15 +27,13 @@ object UpdaterMain extends App { self =>
   val command = args(0)
   val arguments = Arguments.parse(args.drop(1))
 
+  val config = UpdaterConfig().getOrElse {
+    sys.error("No config")
+  }
+
   command match {
     case "runServices" =>
-      val clientDirectoryUrl = new URL(arguments.getValue("clientDirectoryUrl"))
-      val instanceId: InstanceId = arguments.getValue("instanceId")
-      val servicesInstanceNames = arguments.getValue("services").split(",").foldLeft(Set.empty[ServiceInstanceName])((set, record) =>
-        set + ServiceInstanceName.parse(record)
-      )
-
-      log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${servicesInstanceNames} -------------------------")
+      log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${config.servicesInstanceNames} -------------------------")
 
       val currentVersion = Utils.getManifestBuildVersion("updater").getOrElse {
         val version = BuildVersion(None, Seq(0, 0, 0))
@@ -47,9 +43,9 @@ object UpdaterMain extends App { self =>
 
       val updaterServiceName = ServiceInstanceName(Common.UpdaterServiceName)
 
-      val clientDirectory = new ClientDistributionDirectoryClient(clientDirectoryUrl)
+      val clientDirectory = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
 
-      val instanceState = new InstanceStateUploader(instanceId, currentVersion, servicesInstanceNames + updaterServiceName, clientDirectory)
+      val instanceState = new InstanceStateUploader(config.instanceId, currentVersion, config.servicesInstanceNames + updaterServiceName, clientDirectory)
 
       instanceState.start()
 
@@ -57,8 +53,8 @@ object UpdaterMain extends App { self =>
         val updaterServiceController = instanceState.getServiceStateController(updaterServiceName).get
         val selfUpdater = SelfUpdater(updaterServiceController, clientDirectory)
 
-        val serviceUpdaters = servicesInstanceNames.foldLeft(Seq.empty[ServiceUpdater])((updaters, service) =>
-          updaters :+ new ServiceUpdater(instanceId,
+        val serviceUpdaters = config.servicesInstanceNames.foldLeft(Seq.empty[ServiceUpdater])((updaters, service) =>
+          updaters :+ new ServiceUpdater(config.instanceId,
             service, instanceState.getServiceStateController(service).get, clientDirectory))
 
         var lastUpdateTime = 0L
@@ -139,17 +135,28 @@ object UpdaterMain extends App { self =>
             case (updater, version) =>
               updater.update(version)
           }
-          selfUpdater.needUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName)) match {
+          val mustExit = selfUpdater.updaterNeedUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName)) match {
             case Some(newUpdaterVersion) =>
-              selfUpdater.update(newUpdaterVersion)
-              new Thread() {
-                override def run(): Unit = {
-                  log.info("Exit with status 9 to update")
-                  System.exit(9)
-                }
-              }.start()
+              selfUpdater.beginUpdate(newUpdaterVersion)
+              true
             case None =>
-              needUpdate.keySet.foreach(_.execute())
+              selfUpdater.scriptsNeedUpdate(desiredVersions.Versions.get(Common.ScriptsServiceName)) match {
+                case Some(newScriptsVersion) =>
+                  selfUpdater.beginScriptsUpdate(newScriptsVersion)
+                  true
+                case None =>
+                  false
+              }
+          }
+          if (mustExit) {
+            new Thread() {
+              override def run(): Unit = {
+                log.info("Exit with status 9 to update")
+                System.exit(9)
+              }
+            }.start()
+          } else {
+            needUpdate.keySet.foreach(_.execute())
           }
         }
 

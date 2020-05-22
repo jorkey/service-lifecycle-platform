@@ -54,9 +54,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                       getFromFileWithLock(dir.getDesiredVersionsFile())
                     } ~
                     path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
-                      parameter("image".as[Boolean]?true) { image =>
-                        getDesiredVersion(service, image)
-                      }
+                      getDesiredVersion(service)
                     } ~
                     path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterInstanceId) =>
                       getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterInstanceId))
@@ -120,8 +118,8 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
     Http().bindAndHandle(route, "0.0.0.0", port)
   }
 
-  protected def getDesiredVersion(serviceName: ServiceName, image: Boolean): Route = {
+  protected def getDesiredVersion(serviceName: ServiceName): Route = {
     val future = getDesiredVersions(dir.getDesiredVersionsFile())
-    getDesiredVersion(serviceName, future, image)
+    getDesiredVersion(serviceName, future)
   }
 }

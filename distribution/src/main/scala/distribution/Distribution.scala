@@ -40,17 +40,13 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     case ex => complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
   }
 
-  protected def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]], image: Boolean): Route = {
+  protected def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]]): Route = {
     onSuccess(future) { desiredVersions =>
       desiredVersions match {
         case Some(desiredVersions) =>
           desiredVersions.Versions.get(serviceName) match {
             case Some(version) =>
-              if (!image) {
-                complete(version.toString)
-              } else {
-                getFromFileWithLock(dir.getVersionImageFile(serviceName, version))
-              }
+              complete(version.toString)
             case None =>
               complete((InternalServerError, s"No desired version for service ${serviceName}"))
           }

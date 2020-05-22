@@ -12,8 +12,7 @@ import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, ServiceName}
+import com.vyulabs.update.common.Common.{ClientName, InstallProfileName}
 import com.vyulabs.update.config.{ClientConfig, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
@@ -69,9 +68,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       }
                     } ~
                     path(downloadDesiredVersionPath / ".*".r) { service =>
-                      parameter("image".as[Boolean]?true) { image =>
-                        getDesiredVersion(service, getDesiredVersions(None), image)
-                      }
+                      getDesiredVersion(service, getDesiredVersions(None))
                     } ~
                     path(browsePath) {
                       browse(None)
@@ -99,9 +96,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       }
                     } ~
                     path(downloadDesiredVersionPath / ".*".r) { service =>
-                      parameter("image".as[Boolean]?true) { image =>
-                        getDesiredVersion(service, getPersonalDesiredVersions(userName), image)
-                      }
+                      getDesiredVersion(service, getPersonalDesiredVersions(userName))
                     }
                   }
                 } ~

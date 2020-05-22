@@ -1,7 +1,8 @@
 #cloud-config
 runcmd:
   - [ sh, -xc, "echo 'Download desired scripts'" ]
-  - su - ec2-user -c "curl %%distribDirectoryUrl%%/download-desired-version/scripts --output scripts.zip --retry 1000 --retry-delay 2 --connect-timeout 5"
-  - su - ec2-user -c "unzip -o scripts.zip updater_setup.sh && chmod +x updater_setup.sh"
+  - su - ec2-user -c "curl %%distribDirectoryUrl%%/download-desired-version/scripts --output .scripts.version --retry 1000 --retry-delay 2 --connect-timeout 5"
+  - su - ec2-user -c "curl %%distribDirectoryUrl%%/download-version/scripts/`cat .scripts.version` --output .scripts.zip --retry 1000 --retry-delay 2 --connect-timeout 5"
+  - su - ec2-user -c "unzip -o .scripts.zip updater_setup.sh && chmod +x updater_setup.sh"
   - [ sh, -xc, "echo 'Execute setup'" ]
   - su - ec2-user -c "./updater_setup.sh Azure %%name%% %%services%% %%distribDirectoryUrl%%"

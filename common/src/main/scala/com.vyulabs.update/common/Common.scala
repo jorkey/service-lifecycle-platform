@@ -28,7 +28,7 @@ object Common {
   val InstallerJarName = "installer-%s.jar"
   val UpdaterJarName = "updater-%s.jar"
 
-  val VersionMarkFile = "version"
+  val VersionMarkFile = ".%s.version"
 
   val UpdateConfigFileName = "update.json"
   val InstallConfigFileName = "install.json"
