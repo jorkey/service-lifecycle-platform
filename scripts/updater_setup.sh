@@ -23,7 +23,7 @@ fi
 cat << EOF > updater.json
 {
   "instanceId" : "${instanceId}",
-  "services": "`echo ${services} | jq -R '. / ","'`",
+  "services": `echo ${services} | jq -R '. / ","'`,
   "clientDistributionUrl" : "${distribDirectoryUrl}"
 }
 EOF
