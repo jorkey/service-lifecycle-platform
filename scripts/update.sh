@@ -45,7 +45,6 @@ function updateScripts {
     scriptFiles="update.sh `basename "$0"` $@"
     echo "Update scripts ${scriptFiles}"
     unzip -qo ${scriptsZipFile} $scriptFiles
-    rm -f ${scriptsZipFile}
     chmod +x $scriptFiles
     mv ${newScriptsVersionFile} ${scriptsVersionFile}
     scriptsUpdated="true"
