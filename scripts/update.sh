@@ -43,7 +43,7 @@ function updateScripts {
     scriptsZipFile=.scripts.zip
     download ${distribDirectoryUrl}/download-version/scripts/${version} ${scriptsZipFile}
     scriptFiles="update.sh `basename "$0"` $@"
-    echo "Update scripts '${scriptFiles}'"
+    echo "Update scripts ${scriptFiles}"
     unzip -qo ${scriptsZipFile} $scriptFiles
     rm -f ${scriptsZipFile}
     chmod +x $scriptFiles

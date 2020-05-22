@@ -42,8 +42,8 @@ cat << EOF > updater_pm2.json
 }
 EOF
 
-unzip -qo scripts.zip updater.sh
-chmod +x updater.sh
+unzip -qo scripts.zip updater.sh update.sh
+chmod +x updater.sh update.sh
 
 pm2 start updater_pm2.json
 pm2 save
