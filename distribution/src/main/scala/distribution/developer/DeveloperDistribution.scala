@@ -68,7 +68,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       }
                     } ~
                     path(downloadDesiredVersionPath / ".*".r) { service =>
-                      getDesiredVersion(service, getDesiredVersions(None))
+                      parameter("image".as[Boolean]?true) { image =>
+                        getDesiredVersion(service, getDesiredVersions(None), image)
+                      }
                     } ~
                     path(browsePath) {
                       browse(None)
@@ -96,7 +98,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       }
                     } ~
                     path(downloadDesiredVersionPath / ".*".r) { service =>
-                      getDesiredVersion(service, getPersonalDesiredVersions(userName))
+                      parameter("image".as[Boolean]?true) { image =>
+                        getDesiredVersion(service, getPersonalDesiredVersions(userName), image)
+                      }
                     }
                   }
                 } ~
