@@ -264,7 +264,7 @@ object Utils {
     }
   }
 
-  def getScriptsVersion(): Option[BuildVersion] = {
+  def getScriptsVersion()(implicit log: Logger): Option[BuildVersion] = {
     readServiceVersion(new File("."), Common.ScriptsServiceName)
   }
 
