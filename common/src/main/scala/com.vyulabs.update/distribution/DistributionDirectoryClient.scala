@@ -107,8 +107,8 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     log.info(s"Wait for distribution server will restarted")
     Thread.sleep(5000)
     for (_ <- 0 until 25) {
-      if (exists(makeUrl(pingPath))) {
-        downloadToString(makeUrl(pingPath)) match {
+      if (exists(makeUrl(getDistributionVersionPath))) {
+        downloadToString(makeUrl(getDistributionVersionPath)) match {
           case Some(content) =>
             log.info(s"Distribution server is restarted")
             return true
