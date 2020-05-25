@@ -11,9 +11,12 @@ import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import distribution.client.ClientDistribution
+import distribution.client.config.ClientDistributionConfig
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
 import distribution.developer.DeveloperDistribution
+import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
+import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
 
@@ -24,6 +27,8 @@ import scala.io.StdIn
 object DistributionMain extends App {
   implicit val system = ActorSystem("Distribution")
   implicit val materializer = ActorMaterializer()
+
+  implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val directory = new File("directory")
 
@@ -47,14 +52,17 @@ object DistributionMain extends App {
 
   command match {
     case "developer" =>
+      val config = DeveloperDistributionConfig().getOrElse {
+        sys.error("No config")
+      }
+
       val dir = new DeveloperDistributionDirectory(directory)
-      val port = arguments.getIntValue("port")
 
       val stateUploader = new DeveloperStateUploader(dir)
       val faultUploader = new DeveloperFaultUploader(dir)
 
       val selfUpdater = new SelfUpdater(dir)
-      val distribution = new DeveloperDistribution(dir, port, usersCredentials, stateUploader, faultUploader)
+      val distribution = new DeveloperDistribution(dir, config.port, usersCredentials, stateUploader, faultUploader)
 
       selfUpdater.start()
 
@@ -67,17 +75,19 @@ object DistributionMain extends App {
       distribution.run()
 
     case "client" =>
-      val dir = new ClientDistributionDirectory(directory)
-      val developerDirectoryUrl = new URL(arguments.getValue("developerDirectoryUrl"))
-      val port = arguments.getIntValue("port")
+      val config = ClientDistributionConfig().getOrElse {
+        sys.error("No config")
+      }
 
-      val stateUploader = new ClientStateUploader(dir, developerDirectoryUrl)
-      val faultUploader = new ClientFaultUploader(dir, developerDirectoryUrl)
+      val dir = new ClientDistributionDirectory(directory)
+
+      val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl)
+      val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
       val logUploader = new ClientLogUploader(dir)
 
       val selfUpdater = new SelfUpdater(dir)
 
-      val distribution = new ClientDistribution(dir, port, usersCredentials, stateUploader, logUploader, faultUploader)
+      val distribution = new ClientDistribution(dir, config.port, usersCredentials, stateUploader, logUploader, faultUploader)
 
       stateUploader.start()
       logUploader.start()

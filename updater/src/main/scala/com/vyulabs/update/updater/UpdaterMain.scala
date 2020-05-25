@@ -21,7 +21,7 @@ object UpdaterMain extends App { self =>
   }
 
   def usage(): String = {
-    "Use: runServices <clientDirectoryUrl=value> <instanceId=value> <services=<service1>:[-<profile>][,...]>"
+    "Use: runServices <services=<service1>:[-<profile>][,...]>"
   }
 
   val command = args(0)
@@ -33,7 +33,11 @@ object UpdaterMain extends App { self =>
 
   command match {
     case "runServices" =>
-      log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${config.servicesInstanceNames} -------------------------")
+      val servicesInstanceNames = arguments.getValue("services").split(",").foldLeft(Set.empty[ServiceInstanceName])((set, record) =>
+        set + ServiceInstanceName.parse(record)
+      )
+
+      log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${servicesInstanceNames} -------------------------")
 
       val currentVersion = Utils.getManifestBuildVersion("updater").getOrElse {
         val version = BuildVersion(None, Seq(0, 0, 0))
@@ -45,7 +49,7 @@ object UpdaterMain extends App { self =>
 
       val clientDirectory = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
 
-      val instanceState = new InstanceStateUploader(config.instanceId, currentVersion, config.servicesInstanceNames + updaterServiceName, clientDirectory)
+      val instanceState = new InstanceStateUploader(config.instanceId, currentVersion, servicesInstanceNames + updaterServiceName, clientDirectory)
 
       instanceState.start()
 
@@ -53,9 +57,8 @@ object UpdaterMain extends App { self =>
         val updaterServiceController = instanceState.getServiceStateController(updaterServiceName).get
         val selfUpdater = SelfUpdater(updaterServiceController, clientDirectory)
 
-        val serviceUpdaters = config.servicesInstanceNames.foldLeft(Seq.empty[ServiceUpdater])((updaters, service) =>
-          updaters :+ new ServiceUpdater(config.instanceId,
-            service, instanceState.getServiceStateController(service).get, clientDirectory))
+        val serviceUpdaters = servicesInstanceNames.foldLeft(Seq.empty[ServiceUpdater])((updaters, service) =>
+          updaters :+ new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, clientDirectory))
 
         var lastUpdateTime = 0L
 

@@ -182,7 +182,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private def setupDistributionServer(distributionServicePort: Int): Boolean = {
     val scriptsZip = new File("scripts.zip")
     if (!Utils.unzip(scriptsZip, distributionDir, (name: String) => {
-      name == "distribution_setup.sh" || name == "distribution.sh" })) {
+        name == "distribution_setup.sh" })) {
       return false
     }
     if (!Utils.runProcess("bash",

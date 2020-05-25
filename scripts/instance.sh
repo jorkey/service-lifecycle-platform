@@ -12,14 +12,9 @@ fi
 name=$1
 services=$2
 distribDirectoryUrl=$3
+additionalScripts=updater_setup.sh
 
 . update.sh
-
-updateScripts updater_setup.sh
-if [ "${scriptsUpdated}" == "true" ]; then
-  echo "Restart $0"
-  exec $0 "$@"
-fi
 
 echo "Execute setup"
 ./updater_setup.sh Azure ${name} ${services} ${distribDirectoryUrl}

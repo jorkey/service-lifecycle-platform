@@ -23,7 +23,6 @@ fi
 cat << EOF > updater.json
 {
   "instanceId" : "${instanceId}",
-  "services": `echo ${services} | jq -R '. / ","'`,
   "clientDistributionUrl" : "${distribDirectoryUrl}"
 }
 EOF
@@ -40,7 +39,8 @@ cat << EOF > updater_pm2.json
     "min_uptime"   : "5s",
     "merge_logs"   : true,
     "args": [
-      "runServices"
+      "runServices",
+      "services": `echo ${services} | jq -R '. / ","'`,
     ]
   }]
 }

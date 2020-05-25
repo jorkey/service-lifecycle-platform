@@ -162,8 +162,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                       distributionServicePort: Int): Boolean = {
     Utils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
       distributionDir, (name: String) => {
-        name == "distribution_setup.sh" || name == "distribution.sh"
-      })
+        name == "distribution_setup.sh" })
     if (!Utils.runProcess("bash",
         Seq( "distribution_setup.sh", "client", distributionServicePort.toString, developerDistribution.url.toString),
         Map.empty, distributionDir, Some(0), None, true)) {

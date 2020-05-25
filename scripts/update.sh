@@ -29,7 +29,7 @@ function download {
 
 ### Check scripts version and update if need
 # input:
-#  $@ - script files to extract
+#  $additionalScripts - additional script files to extract
 # output:
 #  $scriptsUpdated - "true" when scripts are updated
 function updateScripts {
@@ -42,7 +42,7 @@ function updateScripts {
     echo "Download scripts version ${version}"
     scriptsZipFile=.scripts.zip
     download ${distribDirectoryUrl}/download-version/scripts/${version} ${scriptsZipFile}
-    scriptFiles="update.sh `basename "$0"` $@"
+    scriptFiles="update.sh `basename $additionalScripts` $@"
     echo "Update scripts ${scriptFiles}"
     unzip -qo ${scriptsZipFile} $scriptFiles
     chmod +x $scriptFiles
@@ -149,4 +149,10 @@ function runService {
 
 if [ ! -z "$updateService" ]; then
   runService "$@"
+else
+  updateScripts
+  if [ "${scriptsUpdated}" == "true" ]; then
+    echo "Restart $0"
+    exec $0 "$@"
+  fi
 fi
