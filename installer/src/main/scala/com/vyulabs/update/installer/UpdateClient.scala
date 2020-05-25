@@ -99,20 +99,6 @@ class UpdateClient()(implicit log: Logger) {
             clientVersions += (serviceName -> clientVersion)
         }
         log.info("Install updates")
-        if (assignDesiredVersions) {
-          for (distribDesiredVersions <- developerVersions.get(Common.DistributionServiceName)) {
-            log.info("Update distribution server")
-            if (!installVersions(adminRepository, clientDistribution, developerDistribution,
-                developerVersions.filterKeys(_ == Common.DistributionServiceName), clientVersions, assignDesiredVersions)) {
-              return false
-            }
-            if (!clientDistribution.waitForServerUpdated(distribDesiredVersions)) {
-              log.error("Update distribution server error")
-              return false
-            }
-            developerVersions = developerVersions.filterKeys(_ != Common.DistributionServiceName)
-          }
-        }
         if (!installVersions(adminRepository, clientDistribution, developerDistribution,
             developerVersions, clientVersions, assignDesiredVersions)) {
           return false
@@ -273,6 +259,20 @@ class UpdateClient()(implicit log: Logger) {
       if (!setDesiredVersions(adminRepository, clientDistribution, clientVersions.map(entry => (entry._1, Some(entry._2))))) {
         log.error("Set desired versions error")
         return false
+      }
+      developerVersions.get(Common.DistributionServiceName) match {
+        case Some(newDistributionVersion) =>
+          if (!clientDistribution.waitForServerUpdated(newDistributionVersion)) {
+            log.error("Update distribution server error")
+            return false
+          }
+        case None =>
+          if (developerVersions.contains(Common.ScriptsServiceName)) {
+            if (!clientDistribution.waitForServerRestarted()) {
+              log.error("Restart distribution server error")
+              return false
+            }
+          }
       }
     }
     true

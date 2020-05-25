@@ -76,6 +76,11 @@ object BuilderMain extends App {
               if (!developerDistribution.waitForServerUpdated(version)) {
                 log.error("Can't update distribution server")
               }
+            } else if (serviceName == Common.ScriptsServiceName && clientName.isEmpty) {
+              log.info("Restart distribution server")
+              if (!developerDistribution.waitForServerRestarted()) {
+                log.error("Can't restart distribution server")
+              }
             }
           }
         case None =>
@@ -134,13 +139,20 @@ object BuilderMain extends App {
       if (!new Builder(developerDistribution, config.adminRepositoryUri).setDesiredVersions(clientName, servicesVersions)) {
         sys.error("Set desired versions error")
       }
-      for (distributionVersion <- servicesVersions.get(Common.DistributionServiceName)) {
-        for (distributionVersion <- distributionVersion) {
+
+      servicesVersions.get(Common.DistributionServiceName) match {
+        case Some(Some(distributionVersion)) =>
           log.info("Update distribution server")
           if (!developerDistribution.waitForServerUpdated(distributionVersion)) {
             log.error("Can't update distribution server")
           }
-        }
+        case _ =>
+          if (servicesVersions.contains(Common.ScriptsServiceName)) {
+            log.info("Restart distribution server")
+            if (!developerDistribution.waitForServerRestarted()) {
+              log.error("Can't restart distribution server")
+            }
+          }
       }
     case command =>
       sys.error(s"Invalid command ${command}\n${usage()}")

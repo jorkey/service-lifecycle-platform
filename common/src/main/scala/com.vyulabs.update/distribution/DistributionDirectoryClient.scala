@@ -103,6 +103,25 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     false
   }
 
+  def waitForServerRestarted(): Boolean = {
+    log.info(s"Wait for distribution server will restarted")
+    Thread.sleep(5000)
+    for (_ <- 0 until 25) {
+      if (exists(makeUrl(pingPath))) {
+        downloadToString(makeUrl(pingPath)) match {
+          case Some(content) =>
+            log.info(s"Distribution server is restarted")
+            return true
+          case None =>
+            return false
+        }
+      }
+      Thread.sleep(1000)
+    }
+    log.error("Timeout of waiting for distribution server become available")
+    false
+  }
+
   protected def exists(url: URL): Boolean = {
     if (log.isDebugEnabled) log.debug(s"Check for exists ${url}")
     try {

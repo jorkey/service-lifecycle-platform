@@ -40,6 +40,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     case ex => complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
   }
 
+  // TODO remove parameter 'image' when all usages will 'false'
   protected def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]], image: Boolean): Route = {
     onSuccess(future) { desiredVersions =>
       desiredVersions match {

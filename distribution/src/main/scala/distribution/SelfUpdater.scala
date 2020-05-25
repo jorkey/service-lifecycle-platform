@@ -4,12 +4,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils
-import com.vyulabs.update.version.BuildVersion
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
