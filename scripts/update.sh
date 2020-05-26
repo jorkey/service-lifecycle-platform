@@ -3,7 +3,7 @@
 ######## Update utilities script.
 # input:
 #   $distribDirectoryUrl - distribution URL.
-#   $updateService - service to update and run.
+#   $serviceToRun - service to update and run.
 ########
 
 ### Download resource to file
@@ -72,7 +72,7 @@ function downloadVersionImage {
 
 ### Check scripts version. Update and restart if need.
 # input:
-#  $additionalScripts - additional script files to extract
+#  $scriptsToUpdate - script files to extract
 function updateScripts {
   echo "Check for new version of scripts"
   scriptsVersionFile=.scripts.version
@@ -81,10 +81,9 @@ function updateScripts {
     echo "Download scripts version ${scriptsDesiredVersion}"
     scriptsZipFile=.scripts.zip
     downloadVersionImage scripts ${scriptsDesiredVersion} ${scriptsZipFile}
-    scriptFiles="update.sh `basename $0` $additionalScripts"
-    echo "Update scripts ${scriptFiles}"
-    unzip -qo ${scriptsZipFile} ${scriptFiles}
-    chmod +x ${scriptFiles}
+    echo "Update scripts ${scriptsToUpdate}"
+    unzip -qo ${scriptsZipFile} ${scriptsToUpdate}
+    chmod +x ${scriptsToUpdate}
     echo ${scriptsDesiredVersion} >${scriptsVersionFile}
     echo "Restart $0"
     exec $0 "$@"
@@ -93,18 +92,19 @@ function updateScripts {
 
 # Updates scripts and service if need. Run service.
 # input:
-#  $updateService - service
+#  $serviceToRun - service to update and run
+#  $scriptsToUpdate - script files to extract
 #  $@ - main script arguments
 function runService {
   while [ 1 ]
   do
     updateScripts "$@"
-    echo "Check for new version of ${updateService}"
-    serviceDesiredVersion=`getDesiredVersion ${updateService}`
-    if [ ! -f ${updateService}-*.jar ]; then
+    echo "Check for new version of ${serviceToRun}"
+    serviceDesiredVersion=`getDesiredVersion ${serviceToRun}`
+    if [ ! -f ${serviceToRun}-*.jar ]; then
       update="true"
     else
-      currentVersion=`ls ${updateService}-*.jar | sed -e "s/^${updateService}-//; s/\.jar$//" | tail -1`
+      currentVersion=`ls ${serviceToRun}-*.jar | sed -e "s/^${serviceToRun}-//; s/\.jar$//" | tail -1`
       if [ "${currentVersion}" != "${serviceDesiredVersion}" ]; then
         echo "Desired version ${serviceDesiredVersion} != current version ${currentVersion}."
         update="true"
@@ -114,10 +114,10 @@ function runService {
     fi
 
     if [ "${update}" == "true" ]; then
-      echo "Update ${updateService} to version ${serviceDesiredVersion}"
-      downloadVersionImage ${updateService} ${serviceDesiredVersion} ${updateService}.zip
-      rm -f ${updateService}-*.jar
-      unzip -qo ${updateService}.zip && rm -f ${updateService}.zip
+      echo "Update ${serviceToRun} to version ${serviceDesiredVersion}"
+      downloadVersionImage ${serviceToRun} ${serviceDesiredVersion} ${serviceToRun}.zip
+      rm -f ${serviceToRun}-*.jar
+      unzip -qo ${serviceToRun}.zip && rm -f ${serviceToRun}.zip
     fi
 
     buildVersion=`echo ${serviceDesiredVersion} | sed -e 's/_.*//'`
@@ -126,27 +126,27 @@ function runService {
       command=`jq -r '.runService.command' install.json`
       args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${buildVersion}/`
     else
-      if [ ! -f ${updateService}-${buildVersion}.jar ]; then
-        echo "No <${updateService}-${buildVersion}>.jar in the build."
+      if [ ! -f ${serviceToRun}-${buildVersion}.jar ]; then
+        echo "No <${serviceToRun}-${buildVersion}>.jar in the build."
         exit 1
       fi
       command="/usr/bin/java"
-      args="-XX:+HeapDumpOnOutOfMemoryError -XX:MaxJavaStackTraceDepth=10000000 -Dscala.control.noTraceSuppression=true -jar ${updateService}-${buildVersion}.jar"
+      args="-XX:+HeapDumpOnOutOfMemoryError -XX:MaxJavaStackTraceDepth=10000000 -Dscala.control.noTraceSuppression=true -jar ${serviceToRun}-${buildVersion}.jar"
     fi
 
     echo "Run ${command} ${args} $@"
     ${command} ${args} "$@"
 
     if [ $? -eq 9 ]; then
-      echo "Service ${updateService} is obsoleted. Update it."
+      echo "Service ${serviceToRun} is obsoleted. Update it."
     else
       break
     fi
   done
 }
 
-if [ ! -z "$updateService" ]; then
+if [ ! -z "${serviceToRun}" ]; then
   runService "$@"
-else
+elif [ ! -z "${scriptsToUpdate}" ]; then
   updateScripts "$@"
 fi

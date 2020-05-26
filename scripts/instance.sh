@@ -12,7 +12,7 @@ fi
 name=$1
 services=$2
 distribDirectoryUrl=$3
-additionalScripts=updater_setup.sh
+scriptsToUpdate="updater_setup.sh updater.sh update.sh"
 
 . update.sh
 

@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
-updateService=builder
+serviceToRun=builder
+scriptsToUpdate="builder.sh update.sh"
 distribDirectoryUrl=`jq -r .developerDistributionUrl builder.json`
 
 . update.sh

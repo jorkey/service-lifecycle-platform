@@ -10,8 +10,9 @@ cloudProvider=$1
 name=$2
 services=$3
 distribDirectoryUrl=$4
+scriptsToUpdate="updater_setup.sh updater.sh update.sh"
 
-updateService=updater
+. update.sh
 
 if [ "${cloudProvider}" = "Azure" ]; then
   instanceId=`sudo dmidecode | grep UUID | awk '{printf $2}'`
@@ -45,9 +46,6 @@ cat << EOF > updater_pm2.json
   }]
 }
 EOF
-
-unzip -qo .scripts.zip updater.sh update.sh
-chmod +x updater.sh update.sh
 
 pm2 start updater_pm2.json
 pm2 save

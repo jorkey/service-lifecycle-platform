@@ -22,7 +22,7 @@ else
   exitUsage
 fi
 
-additionalScripts=distribution.sh
+scriptsToUpdate="distribution_setup.sh distribution.sh update.sh"
 . update.sh
 
 if [ "$1" == "developer" ]; then
@@ -85,7 +85,6 @@ fi
 
 echo "distribution_pm2.json is created"
 
-chmod +x distribution.sh
 pm2 start distribution_pm2.json
 
 exit 0
