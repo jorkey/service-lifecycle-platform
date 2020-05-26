@@ -41,7 +41,7 @@ cat << EOF > updater_pm2.json
     "merge_logs"   : true,
     "args": [
       "runServices",
-      "services": `echo ${services} | jq -R '. / ","'`,
+      "services=${services}"
     ]
   }]
 }
