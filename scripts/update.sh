@@ -77,7 +77,7 @@ function updateScripts {
   echo "Check for new version of scripts"
   scriptsVersionFile=.scripts.version
   scriptsDesiredVersion=`getDesiredVersion scripts`
-  if [ ! -f ${scriptsVersionFile} ] || "`cat ${scriptsVersionFile}`" != "${scriptsDesiredVersion}" >/dev/null; then
+  if [ ! -f ${scriptsVersionFile} ] || [[ "`cat ${scriptsVersionFile}`" != "${scriptsDesiredVersion}" ]]; then
     echo "Download scripts version ${scriptsDesiredVersion}"
     scriptsZipFile=.scripts.zip
     downloadVersionImage scripts ${scriptsDesiredVersion} ${scriptsZipFile}
