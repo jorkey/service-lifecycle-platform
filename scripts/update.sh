@@ -27,65 +27,67 @@ function download {
   fi
 }
 
-### Check scripts version and update if need
+### Get desired version number of service.
 # input:
-#  $additionalScripts - additional script files to extract
+#   $1 - service name
 # output:
-#  $scriptsUpdated - "true" when scripts are updated
-function updateScripts {
-  scriptsVersionFile=.scripts.version
-  newScriptsVersionFile=.new_scripts.version
-  echo "Check for new version of scripts"
-  download ${distribDirectoryUrl}/download-desired-version/scripts?image=false ${newScriptsVersionFile}
-  if [ ! -f ${scriptsVersionFile} ] || ! diff ${scriptsVersionFile} ${newScriptsVersionFile} >/dev/null; then
-    version=`cat ${newScriptsVersionFile}`
-    echo "Download scripts version ${version}"
-    scriptsZipFile=.scripts.zip
-    download ${distribDirectoryUrl}/download-version/scripts/${version} ${scriptsZipFile}
-    scriptFiles="update.sh `basename $additionalScripts` $@"
-    echo "Update scripts ${scriptFiles}"
-    unzip -qo ${scriptsZipFile} $scriptFiles
-    chmod +x $scriptFiles
-    mv ${newScriptsVersionFile} ${scriptsVersionFile}
-    scriptsUpdated="true"
-  else
-    rm -f ${newScriptsVersionFile}
-  fi
-}
-
-### Get desired version number of service
-# output:
-#  $desiredVersion - version number
+#   stdout - version number
 function getDesiredVersion {
+  service=$1
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    desiredVersionFile=.desired-version-${updateService}.json
-    download ${distribDirectoryUrl}/download-desired-version/${updateService}?image=false ${desiredVersionFile}
-    desiredVersion=`cat ${desiredVersionFile}`
+    desiredVersionFile=.desired-version-${service}.json
+    download ${distribDirectoryUrl}/download-desired-version/${service}?image=false ${desiredVersionFile}
+    cat ${desiredVersionFile}
     rm -f ${desiredVersionFile}
   elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    desiredVersion=`jq -r .desiredVersions.${updateService} ${distribDirectoryUrl}/desired-versions.json`
+    desiredVersionsFile=.desired-versions.json
+    download ${distribDirectoryUrl}/desired-versions.json ${desiredVersionsFile}
+    jq -r .desiredVersions.${service} ${desiredVersionsFile}
+    rm -f ${desiredVersionsFile}
+  else
+    echo "Invalid distribution directory URL ${distribDirectoryUrl}"
+    exit 1
+  fi
+}
+
+### Download service version image of specified version.
+# input:
+#  $1 - service name
+#  $2 - service version
+#  $3 - output file
+function downloadVersionImage {
+  service=$1
+  version=$2
+  outputFile=$3
+  if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
+    echo "Download version ${version} image"
+    download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
+  elif [[ ${distribDirectoryUrl} == file://* ]]; then
+    echo "Get version ${version} image"
+    download ${distribDirectoryUrl}/services/${service}/${service}-${version}.zip ${outputFile}
   else
     echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
   fi
 }
 
-### Download service version image of specified version
+### Check scripts version. Update and restart if need.
 # input:
-#   $1 - service version
-#   $2 - output file
-# output:
-#  $desiredVersion - version number
-function downloadVersionImage {
-  version=$1
-  outputFile=$2
-  if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    echo "Download version ${version} image"
-    download ${distribDirectoryUrl}/download-version/${updateService}/${version} ${outputFile}
-  elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    echo "Get version ${version} image"
-    download ${distribDirectoryUrl}/services/${updateService}/${updateService}-${version}.zip ${outputFile}
-  else
-    echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
+#  $additionalScripts - additional script files to extract
+function updateScripts {
+  echo "Check for new version of scripts"
+  scriptsVersionFile=.scripts.version
+  scriptsDesiredVersion=`getDesiredVersion scripts`
+  if [ ! -f ${scriptsVersionFile} ] || "`cat ${scriptsVersionFile}`" != "${scriptsDesiredVersion}" >/dev/null; then
+    echo "Download scripts version ${scriptsDesiredVersion}"
+    scriptsZipFile=.scripts.zip
+    downloadVersionImage scripts ${scriptsDesiredVersion} ${scriptsZipFile}
+    scriptFiles="update.sh `basename $additionalScripts` $@"
+    echo "Update scripts ${scriptFiles}"
+    unzip -qo ${scriptsZipFile} ${scriptFiles}
+    chmod +x ${scriptFiles}
+    echo ${scriptsDesiredVersion} >${scriptsVersionFile}
+    echo "Restart $0"
+    exec $0 "$@"
   fi
 }
 
@@ -96,19 +98,19 @@ function downloadVersionImage {
 function runService {
   while [ 1 ]
   do
-    updateScripts
+    updateScripts "$@"
     if [ "${scriptsUpdated}" == "true" ]; then
       echo "Restart $0"
       exec $0 "$@"
     fi
     echo "Check for new version of ${updateService}"
-    getDesiredVersion
+    serviceDesiredVersion=`getDesiredVersion ${updateService}`
     if [ ! -f ${updateService}-*.jar ]; then
       update="true"
     else
       currentVersion=`ls ${updateService}-*.jar | sed -e "s/^${updateService}-//; s/\.jar$//" | tail -1`
-      if [ "${currentVersion}" != "${desiredVersion}" ]; then
-        echo "Desired version ${desiredVersion} != current version ${currentVersion}."
+      if [ "${currentVersion}" != "${serviceDesiredVersion}" ]; then
+        echo "Desired version ${serviceDesiredVersion} != current version ${currentVersion}."
         update="true"
       else
         update="false"
@@ -116,13 +118,13 @@ function runService {
     fi
 
     if [ "${update}" == "true" ]; then
-      echo "Update ${updateService} to version ${desiredVersion}"
-      downloadVersionImage ${desiredVersion} ${updateService}.zip
+      echo "Update ${updateService} to version ${serviceDesiredVersion}"
+      downloadVersionImage ${updateService} ${serviceDesiredVersion} ${updateService}.zip
       rm -f ${updateService}-*.jar
       unzip -qo ${updateService}.zip && rm -f ${updateService}.zip
     fi
 
-    buildVersion=`echo ${desiredVersion} | sed -e 's/_.*//'`
+    buildVersion=`echo ${serviceDesiredVersion} | sed -e 's/_.*//'`
 
     if [ -f install.json ]; then
       command=`jq -r '.runService.command' install.json`
@@ -150,9 +152,5 @@ function runService {
 if [ ! -z "$updateService" ]; then
   runService "$@"
 else
-  updateScripts
-  if [ "${scriptsUpdated}" == "true" ]; then
-    echo "Restart $0"
-    exec $0 "$@"
-  fi
+  updateScripts "$@"
 fi
