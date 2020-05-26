@@ -85,14 +85,15 @@ function updateScripts {
     echo "Update scripts"
     unzip -qo ${scriptsZipFile} update.sh
     unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
+    chmod +x *.sh
     echo ${scriptsDesiredVersion} >${scriptsVersionFile}
     echo "Restart $0"
     exec $0 "$@"
   else
     # TODO remove when ported to scripts groups
     unzip -qjf ${scriptsZipFile} ${serviceToSetup}/*
+    chmod +x *.sh
   fi
-  chmod +x *.sh
 }
 
 # Updates scripts and service if need. Run service.
