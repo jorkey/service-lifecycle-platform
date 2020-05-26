@@ -267,9 +267,9 @@ class UpdateClient()(implicit log: Logger) {
             return false
           }
         case None =>
-          if (developerVersions.contains(Common.ScriptsServiceName)) {
-            if (!clientDistribution.waitForServerRestarted()) {
-              log.error("Restart distribution server error")
+          for (newScriptsVersion <- developerVersions.get(Common.ScriptsServiceName)) {
+            if (!clientDistribution.waitForServerScriptsUpdated(newScriptsVersion)) {
+              log.error("Update scripts on distribution server error")
               return false
             }
           }

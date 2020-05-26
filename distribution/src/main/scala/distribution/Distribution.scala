@@ -315,6 +315,15 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     }
   }
 
+  protected def getScriptsVersion(): Route = {
+    Utils.getScriptsVersion() match {
+      case Some(version) =>
+        complete(version.toString)
+      case None =>
+        complete((InternalServerError, s"Can't found version of scripts"))
+    }
+  }
+
   protected def browse(path: Option[String]): Route = {
     val file = path match {
       case Some(path) =>

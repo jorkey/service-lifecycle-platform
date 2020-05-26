@@ -22,7 +22,7 @@ else
   exitUsage
 fi
 
-scriptsToUpdate="distribution_setup.sh distribution.sh update.sh"
+serviceToSetup=distribution
 . update.sh
 
 if [ "$1" == "developer" ]; then

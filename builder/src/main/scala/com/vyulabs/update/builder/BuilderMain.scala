@@ -77,9 +77,9 @@ object BuilderMain extends App {
                 log.error("Can't update distribution server")
               }
             } else if (serviceName == Common.ScriptsServiceName && clientName.isEmpty) {
-              log.info("Restart distribution server")
-              if (!developerDistribution.waitForServerRestarted()) {
-                log.error("Can't restart distribution server")
+              log.info("Update distribution server scripts")
+              if (!developerDistribution.waitForServerScriptsUpdated(version)) {
+                log.error("Can't update distribution server scripts")
               }
             }
           }
@@ -147,11 +147,13 @@ object BuilderMain extends App {
             log.error("Can't update distribution server")
           }
         case _ =>
-          if (servicesVersions.contains(Common.ScriptsServiceName)) {
-            log.info("Restart distribution server")
-            if (!developerDistribution.waitForServerRestarted()) {
-              log.error("Can't restart distribution server")
-            }
+          servicesVersions.get(Common.ScriptsServiceName) match {
+            case Some(Some(scriptsVersion)) =>
+              log.info("Update distribution server scripts")
+              if (!developerDistribution.waitForServerScriptsUpdated(scriptsVersion)) {
+                log.error("Can't update distribution server scripts")
+              }
+            case _ =>
           }
       }
     case command =>

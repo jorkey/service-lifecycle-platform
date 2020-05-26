@@ -4,6 +4,7 @@
 # input:
 #   $distribDirectoryUrl - distribution URL.
 #   $serviceToRun - service to update and run.
+#   $serviceToSetup - service to setup.
 ########
 
 ### Download resource to file
@@ -72,7 +73,7 @@ function downloadVersionImage {
 
 ### Check scripts version. Update and restart if need.
 # input:
-#  $scriptsToUpdate - script files to extract
+#  $serviceToSetup - service to extract script files.
 function updateScripts {
   echo "Check for new version of scripts"
   scriptsVersionFile=.scripts.version
@@ -81,23 +82,27 @@ function updateScripts {
     echo "Download scripts version ${scriptsDesiredVersion}"
     scriptsZipFile=.scripts.zip
     downloadVersionImage scripts ${scriptsDesiredVersion} ${scriptsZipFile}
-    echo "Update scripts ${scriptsToUpdate}"
-    unzip -qo ${scriptsZipFile} ${scriptsToUpdate}
-    chmod +x ${scriptsToUpdate}
+    echo "Update scripts"
+    unzip -qo ${scriptsZipFile} update.sh
+    unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
     echo ${scriptsDesiredVersion} >${scriptsVersionFile}
     echo "Restart $0"
     exec $0 "$@"
+  else
+    # TODO remove when ported to scripts groups
+    unzip -qjf ${scriptsZipFile} ${serviceToSetup}/*
   fi
+  chmod +x *.sh
 }
 
 # Updates scripts and service if need. Run service.
 # input:
 #  $serviceToRun - service to update and run
-#  $scriptsToUpdate - script files to extract
 #  $@ - main script arguments
 function runService {
   while [ 1 ]
   do
+    serviceToSetup=${serviceToRun}
     updateScripts "$@"
     echo "Check for new version of ${serviceToRun}"
     serviceDesiredVersion=`getDesiredVersion ${serviceToRun}`
@@ -146,7 +151,8 @@ function runService {
 }
 
 if [ ! -z "${serviceToRun}" ]; then
+  serviceToSetup=${serviceToRun}
   runService "$@"
-elif [ ! -z "${scriptsToUpdate}" ]; then
+elif [ ! -z "${serviceToSetup}" ]; then
   updateScripts "$@"
 fi

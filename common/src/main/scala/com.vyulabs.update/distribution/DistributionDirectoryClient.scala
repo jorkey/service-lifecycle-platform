@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.info.VersionInfo
 import com.vyulabs.update.utils.Utils
@@ -85,7 +86,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
             try {
               val version = BuildVersion.parse(content)
               if (version == desiredVersion) {
-                log.info(s"Distribution server updated to version ${desiredVersion}")
+                log.info(s"Distribution server is updated to version ${desiredVersion}")
                 return true
               }
             } catch {
@@ -99,26 +100,35 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
       }
       Thread.sleep(1000)
     }
-    log.error("Timeout of waiting for distribution server become available")
+    log.error(s"Timeout of waiting for distribution server become available")
     false
   }
 
-  def waitForServerRestarted(): Boolean = {
-    log.info(s"Wait for distribution server will restarted")
+  def waitForServerScriptsUpdated(desiredVersion: BuildVersion): Boolean = {
+    log.info(s"Wait for distribution server scripts updated to version ${desiredVersion}")
     Thread.sleep(5000)
     for (_ <- 0 until 25) {
-      if (exists(makeUrl(getDistributionVersionPath))) {
-        downloadToString(makeUrl(getDistributionVersionPath)) match {
+      if (exists(makeUrl(getScriptsVersionPath))) {
+        downloadToString(makeUrl(getScriptsVersionPath)) match {
           case Some(content) =>
-            log.info(s"Distribution server is restarted")
-            return true
+            try {
+              val version = BuildVersion.parse(content)
+              if (version == desiredVersion) {
+                log.info(s"Distribution server scripts is updated to version ${desiredVersion}")
+                return true
+              }
+            } catch {
+              case e: Exception =>
+                log.error("Parse build version error")
+                return false
+            }
           case None =>
             return false
         }
       }
       Thread.sleep(1000)
     }
-    log.error("Timeout of waiting for distribution server become available")
+    log.error(s"Timeout of waiting for distribution server become available")
     false
   }
 

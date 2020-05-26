@@ -24,6 +24,7 @@ trait DistributionWebPaths {
   val uploadServiceFaultPath = "upload-service-fault"
 
   val getDistributionVersionPath = "get-distribution-version"
+  val getScriptsVersionPath = "get-scripts-version"
 
   val browsePath = "browse"
   val pingPath = "ping"

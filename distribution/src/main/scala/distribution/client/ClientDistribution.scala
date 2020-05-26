@@ -65,12 +65,15 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                       path(prefix / browsePath) {
                         browse(None)
                       } ~
-                        pathPrefix(prefix / browsePath / ".*".r) { path =>
-                          browse(Some(path))
-                        } ~
-                        path(prefix / getDistributionVersionPath) {
-                          getVersion()
-                        }
+                      pathPrefix(prefix / browsePath / ".*".r) { path =>
+                        browse(Some(path))
+                      } ~
+                      path(prefix / getDistributionVersionPath) {
+                        getVersion()
+                      } ~
+                      path(prefix / getScriptsVersionPath) {
+                        getScriptsVersion()
+                      }
                     }
                 } ~
                   post {

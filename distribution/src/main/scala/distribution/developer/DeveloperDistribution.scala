@@ -80,6 +80,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                     } ~
                     path(getDistributionVersionPath) {
                       getVersion()
+                    } ~
+                    path(getScriptsVersionPath) {
+                      getScriptsVersion()
                     }
                   } ~
                   authorize(usersCredentials.getRole(userName) == UserRole.Client) {

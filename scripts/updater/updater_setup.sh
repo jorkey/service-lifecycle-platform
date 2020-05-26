@@ -10,8 +10,8 @@ cloudProvider=$1
 name=$2
 services=$3
 distribDirectoryUrl=$4
-scriptsToUpdate="updater_setup.sh updater.sh update.sh"
 
+serviceToSetup=updater
 . update.sh
 
 if [ "${cloudProvider}" = "Azure" ]; then
