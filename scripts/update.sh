@@ -81,7 +81,7 @@ function updateScripts {
     echo "Download scripts version ${scriptsDesiredVersion}"
     scriptsZipFile=.scripts.zip
     downloadVersionImage scripts ${scriptsDesiredVersion} ${scriptsZipFile}
-    scriptFiles="update.sh `basename $0` $additionalScripts $@"
+    scriptFiles="update.sh `basename $0` $additionalScripts"
     echo "Update scripts ${scriptFiles}"
     unzip -qo ${scriptsZipFile} ${scriptFiles}
     chmod +x ${scriptFiles}
