@@ -99,10 +99,6 @@ function runService {
   while [ 1 ]
   do
     updateScripts "$@"
-    if [ "${scriptsUpdated}" == "true" ]; then
-      echo "Restart $0"
-      exec $0 "$@"
-    fi
     echo "Check for new version of ${updateService}"
     serviceDesiredVersion=`getDesiredVersion ${updateService}`
     if [ ! -f ${updateService}-*.jar ]; then

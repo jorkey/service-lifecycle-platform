@@ -32,7 +32,7 @@ if [ "$1" == "developer" ]; then
   port=$2
   cat << EOF > distribution.json
 {
-  "port=${port}"
+  "port" : "${port}"
 }
 EOF
   cat << EOF > distribution_pm2.json
@@ -60,8 +60,8 @@ elif [ "$1" == "client" ]; then
   distribDirectoryUrl=$3
   cat << EOF > distribution.json
 {
-  "port=${port}",
-  "developerDistributionUrl=${distribDirectoryUrl}"
+  "port" : "${port}",
+  "developerDistributionUrl" : "${distribDirectoryUrl}"
 }
 EOF
   cat << EOF > distribution_pm2.json
