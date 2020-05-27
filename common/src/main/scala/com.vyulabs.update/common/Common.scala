@@ -27,6 +27,7 @@ object Common {
   val BuilderJarName = "builder-%s.jar"
   val InstallerJarName = "installer-%s.jar"
   val UpdaterJarName = "updater-%s.jar"
+  val ScriptsZipName = ".scripts.zip"
 
   val VersionMarkFile = ".%s.version"
 

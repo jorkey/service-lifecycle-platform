@@ -24,8 +24,8 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
     downloadVersionsInfoPath + "/" + serviceName
   }
 
-  def getDownloadInstanceStatePath(instanceId: InstanceId): String = {
-    downloadInstanceStatePath + "/" + instanceId
+  def getDownloadInstanceStatePath(instanceId: InstanceId, updaterProcessId: ProcessId): String = {
+    downloadInstanceStatePath + "/" + instanceId + "/" + updaterProcessId
   }
 
   def getUploadInstanceStatePath(instanceId: InstanceId, updaterProcessId: ProcessId): String = {

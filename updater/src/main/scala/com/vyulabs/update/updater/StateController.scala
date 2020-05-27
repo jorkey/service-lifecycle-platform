@@ -131,7 +131,7 @@ class InstanceStateUploader(instanceId: InstanceId, version: BuildVersion,
     services + (name -> new ServiceStateController(name, () => update()))
   }
 
-  private val startDate = clientDirectory.downloadInstanceState(instanceId) match {
+  private val startDate = clientDirectory.downloadInstanceState(instanceId, ProcessHandle.current().pid().toString) match {
     case Some(instanceState) =>
       for (storedState <- instanceState.servicesStates) {
         val serviceName = storedState.serviceInstanceName

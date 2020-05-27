@@ -58,8 +58,8 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                         getDesiredVersion(service, image)
                       }
                     } ~
-                    path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterInstanceId) =>
-                      getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterInstanceId))
+                    path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
+                      getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
                     } ~
                     authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
                       path(prefix / browsePath) {

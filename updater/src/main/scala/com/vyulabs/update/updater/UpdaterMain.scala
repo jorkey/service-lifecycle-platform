@@ -138,20 +138,7 @@ object UpdaterMain extends App { self =>
             case (updater, version) =>
               updater.update(version)
           }
-          val mustExit = selfUpdater.updaterNeedUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName)) match {
-            case Some(newUpdaterVersion) =>
-              selfUpdater.beginUpdate(newUpdaterVersion)
-              true
-            case None =>
-              selfUpdater.scriptsNeedUpdate(desiredVersions.Versions.get(Common.ScriptsServiceName)) match {
-                case Some(newScriptsVersion) =>
-                  selfUpdater.beginScriptsUpdate(newScriptsVersion)
-                  true
-                case None =>
-                  false
-              }
-          }
-          if (mustExit) {
+          if (selfUpdater.maybeStopToUpdate(desiredVersions)) {
             new Thread() {
               override def run(): Unit = {
                 log.info("Exit with status 9 to update")
