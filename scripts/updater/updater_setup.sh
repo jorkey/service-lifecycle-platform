@@ -31,14 +31,15 @@ EOF
 cat << EOF > updater_pm2.json
 {
   "apps" : [{
-    "name"         : "${name}",
-    "interpreter"  : "none",
-    "watch"        : false,
-    "script"       : "updater.sh",
-    "cwd"          : ".",
-    "max_restarts" : 2147483647,
-    "min_uptime"   : "5s",
-    "merge_logs"   : true,
+    "name"            : "${name}",
+    "interpreter"     : "none",
+    "watch"           : false,
+    "script"          : "updater.sh",
+    "cwd"             : ".",
+    "max_restarts"    : 2147483647,
+    "min_uptime"      : "5s",
+    "log_date_format" : "YYYY-MM-DD HH:mm:ss.SSS Z",
+    "merge_logs"      : true,
     "args": [
       "runServices",
       "services=${services}"
