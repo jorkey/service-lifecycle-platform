@@ -91,7 +91,7 @@ function updateScripts {
     exec $0 "$@"
   else
     # TODO remove when ported to scripts groups
-    unzip -qjf ${scriptsZipFile} ${serviceToSetup}/*
+    unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
     chmod +x *.sh
   fi
 }
