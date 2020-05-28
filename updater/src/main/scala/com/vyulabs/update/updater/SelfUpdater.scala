@@ -20,8 +20,9 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
   state.serviceStarted()
 
   def maybeBeginSelfUpdate(desiredVersions: DesiredVersions): Boolean = {
-    maybeBeginUpdaterUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName)) ||
-    maybeBeginScriptsUpdate(desiredVersions.Versions.get(Common.ScriptsServiceName))
+    val updaterUpdate = maybeBeginUpdaterUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName))
+    val scriptsUpdate = maybeBeginScriptsUpdate(desiredVersions.Versions.get(Common.ScriptsServiceName))
+    updaterUpdate || scriptsUpdate
   }
 
   def stop(): Unit = {
