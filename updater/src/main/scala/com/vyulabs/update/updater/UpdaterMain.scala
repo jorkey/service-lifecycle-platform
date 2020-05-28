@@ -103,8 +103,9 @@ object UpdaterMain extends App { self =>
             maybeUpdate()
             if (!servicesStarted) {
               serviceUpdaters.foreach { updater =>
-                if (!updater.isExecuted())
+                if (!updater.isExecuted()) {
                   updater.execute()
+                }
               }
               servicesStarted = true
             }
@@ -134,11 +135,14 @@ object UpdaterMain extends App { self =>
         }
 
         def update(needUpdate: Map[ServiceUpdater, BuildVersion], desiredVersions: DesiredVersions): Unit = {
-          needUpdate.foreach {
-            case (updater, version) =>
-              updater.update(version)
+          needUpdate.foreach { case (updater, version) =>
+            updater.beginInstall(version)
           }
-          if (selfUpdater.maybeStopToUpdate(desiredVersions)) {
+          val needRestart = selfUpdater.maybeBeginSelfUpdate(desiredVersions)
+          needUpdate.foreach { case (updater, version) =>
+            updater.finishInstall(version)
+          }
+          if (needRestart) {
             new Thread() {
               override def run(): Unit = {
                 log.info("Exit with status 9 to update")
@@ -146,7 +150,9 @@ object UpdaterMain extends App { self =>
               }
             }.start()
           } else {
-            needUpdate.keySet.foreach(_.execute())
+            needUpdate.foreach { case (updater, _) =>
+              updater.execute()
+            }
           }
         }
 

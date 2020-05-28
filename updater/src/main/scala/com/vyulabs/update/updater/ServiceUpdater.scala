@@ -49,7 +49,7 @@ class ServiceUpdater(instanceId: InstanceId,
     }
   }
 
-  def update(newVersion: BuildVersion): Boolean = {
+  def beginInstall(newVersion: BuildVersion): Boolean = {
     if (!state.serviceDirectory.exists() && !state.serviceDirectory.mkdir()) {
       state.error(s"Can't make directory ${state.serviceDirectory}")
       return false
@@ -88,7 +88,10 @@ class ServiceUpdater(instanceId: InstanceId,
       }
     }
 
-    state.info(s"Update to version ${newVersion}")
+    true
+  }
+
+  def finishInstall(newVersion: BuildVersion): Boolean = {
     if (state.currentServiceDirectory.exists()) {
       for (serviceRunner <- serviceRunner) {
         state.info(s"Stop old version ${state.getVersion()}")
@@ -111,6 +114,16 @@ class ServiceUpdater(instanceId: InstanceId,
       state.error(s"Can't rename ${state.newServiceDirectory} to ${state.currentServiceDirectory}")
       return false
     }
+
+    val installConfig = InstallConfig(state.currentServiceDirectory).getOrElse {
+      state.error(s"No install config in the build directory")
+      return false
+    }
+
+    state.info(s"Post install service")
+    var args = Map.empty[String, String]
+    args += ("profile" -> serviceInstanceName.serviceProfile)
+    args += ("version" -> newVersion.original().toString)
 
     for (command <- installConfig.PostInstallCommands) {
       if (!Utils.runProcess(command, args, state.currentServiceDirectory, true)) {

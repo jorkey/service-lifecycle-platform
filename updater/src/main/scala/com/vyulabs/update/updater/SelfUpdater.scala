@@ -19,14 +19,13 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
 
   state.serviceStarted()
 
-  def maybeStopToUpdate(desiredVersions: DesiredVersions): Boolean = {
-    if (maybeBeginUpdaterUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName)) ||
-        maybeBeginScriptsUpdate(desiredVersions.Versions.get(Common.ScriptsServiceName))) {
-      state.serviceStopped()
-      true
-    } else {
-      false
-    }
+  def maybeBeginSelfUpdate(desiredVersions: DesiredVersions): Boolean = {
+    maybeBeginUpdaterUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName)) ||
+    maybeBeginScriptsUpdate(desiredVersions.Versions.get(Common.ScriptsServiceName))
+  }
+
+  def stop(): Unit = {
+    state.serviceStopped()
   }
 
   private def maybeBeginUpdaterUpdate(desiredVersion: Option[BuildVersion]): Boolean = {
@@ -56,7 +55,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
         if (!clientDirectory.downloadVersionImage(Common.ScriptsServiceName, toVersion, new File(Common.ScriptsZipName))) {
           log.error("Downloading scripts error")
         }
-        if (!Utils.writeFileFromBytes(new File(Common.VersionMarkFile.format(Common.ScriptsZipName)), toVersion.toString.getBytes)) {
+        if (!Utils.writeServiceVersion(new File("."), Common.ScriptsServiceName, toVersion)) {
           log.error("Set scripts version error")
         }
         true
