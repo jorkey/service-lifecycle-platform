@@ -50,6 +50,8 @@ class ServiceUpdater(instanceId: InstanceId,
   }
 
   def beginInstall(newVersion: BuildVersion): Boolean = {
+    state.info("Begin install")
+
     if (!state.serviceDirectory.exists() && !state.serviceDirectory.mkdir()) {
       state.error(s"Can't make directory ${state.serviceDirectory}")
       return false
@@ -92,6 +94,8 @@ class ServiceUpdater(instanceId: InstanceId,
   }
 
   def finishInstall(newVersion: BuildVersion): Boolean = {
+    state.info("Finish install")
+
     if (state.currentServiceDirectory.exists()) {
       for (serviceRunner <- serviceRunner) {
         state.info(s"Stop old version ${state.getVersion()}")
