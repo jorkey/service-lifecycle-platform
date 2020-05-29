@@ -82,17 +82,17 @@ function updateScripts {
   if [ ! -f ${scriptsVersionFile} ] || [[ "`cat ${scriptsVersionFile}`" != "${scriptsDesiredVersion}" ]]; then
     echo "Download scripts version ${scriptsDesiredVersion}"
     downloadVersionImage scripts ${scriptsDesiredVersion} ${scriptsZipFile}
+    echo ${scriptsDesiredVersion} >${scriptsVersionFile}
+  fi
+  ## Updater could download the version earlier. Therefore we have an additional condition.
+  if [ -f ${scriptsZipFile} ]; then
     echo "Update scripts"
     unzip -qo ${scriptsZipFile} update.sh
     unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
+    rm -f ${scriptsZipFile}
     chmod +x *.sh
-    echo ${scriptsDesiredVersion} >${scriptsVersionFile}
     echo "Restart $0"
     exec $0 "$@"
-  else
-    # TODO remove when ported to scripts groups
-    unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
-    chmod +x *.sh
   fi
 }
 
