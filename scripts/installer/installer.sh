@@ -1,6 +1,9 @@
 #!/bin/bash -e
 
 serviceToRun=installer
-distribDirectoryUrl=`jq -r .clientDistributionUrl installer.json`
+
+if [ -z "${distribDirectoryUrl}" ]; then
+  distribDirectoryUrl=`jq -r .clientDistributionUrl installer.json`
+fi
 
 . update.sh
