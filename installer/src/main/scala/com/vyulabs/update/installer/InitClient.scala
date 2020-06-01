@@ -76,7 +76,13 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Update installer.sh")
-    if (!Utils.unzip(scriptsZip, new File("."), (name: String) => { name == "installer.sh" })) {
+    if (!Utils.unzip(scriptsZip, new File("."), (name: String) => {
+      if (name == "installer/installer.sh") {
+        Some("installer.sh")
+      } else {
+        None
+      }
+    })) {
       return false
     }
     val installerFile = new File("installer.sh")
@@ -162,7 +168,11 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                       distributionServicePort: Int): Boolean = {
     Utils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
       distributionDir, (name: String) => {
-        name == "distribution_setup.sh" })
+        if (name == "distribution/distribution_setup.sh") {
+          Some("distribution_setup.sh")
+        } else {
+          None
+        }})
     if (!Utils.runProcess("bash",
         Seq( "distribution_setup.sh", "client", distributionServicePort.toString, developerDistribution.url.toString),
         Map.empty, distributionDir, Some(0), None, true)) {

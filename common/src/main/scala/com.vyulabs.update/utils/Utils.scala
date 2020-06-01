@@ -436,12 +436,12 @@ object Utils {
     }
   }
 
-  def unzip(zipFile: File, outputFile: File, filter: (String) => Boolean = _ => true)(implicit log: Logger): Boolean = {
+  def unzip(zipFile: File, outputFile: File, map: (String) => Option[String] = Some(_))(implicit log: Logger): Boolean = {
     var zipInput: ZipInputStream = null
     try {
       if (log.isDebugEnabled) log.debug(s"Unzip ${zipFile} to ${outputFile}")
       zipInput = new ZipInputStream(new FileInputStream(zipFile))
-      unzip(zipInput, outputFile, filter)
+      unzip(zipInput, outputFile, map)
     } catch {
       case ex: Exception =>
         log.error(s"Unzip ${zipFile} exception", ex)
@@ -453,12 +453,12 @@ object Utils {
     }
   }
 
-  def unzip(zipInput: ZipInputStream, outputFile: File, filter: (String) => Boolean)(implicit log: Logger): Boolean = {
+  def unzip(zipInput: ZipInputStream, outputFile: File, map: (String) => Option[String])(implicit log: Logger): Boolean = {
     try {
       var entry = zipInput.getNextEntry
       while (entry != null) {
-        if (filter(entry.getName)) {
-          val file = new File(outputFile + File.separator + entry.getName)
+        for (outputName <- map(entry.getName)) {
+          val file = new File(outputFile + File.separator + outputName)
           if (entry.isDirectory) {
             if (!file.exists() && !file.mkdirs()) {
               log.error(s"Can't make directory ${file}")
@@ -485,7 +485,7 @@ object Utils {
     } catch {
       case ex: Exception =>
         log.error("Unzip exception", ex)
-        return false
+        false
     }
   }
 

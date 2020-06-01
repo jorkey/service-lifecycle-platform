@@ -71,7 +71,13 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     }
     log.info("Update builder.sh")
     val scriptsZip = new File("scripts.zip")
-    if (!Utils.unzip(scriptsZip, buildDir, (name: String) => { name == "builder.sh" })) {
+    if (!Utils.unzip(scriptsZip, buildDir, (name: String) => {
+      if (name == "builder/builder.sh") {
+        Some("builder.sh")
+      } else {
+        None
+      }
+    })) {
       return false
     }
     true
@@ -182,7 +188,11 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private def setupDistributionServer(distributionServicePort: Int): Boolean = {
     val scriptsZip = new File("scripts.zip")
     if (!Utils.unzip(scriptsZip, distributionDir, (name: String) => {
-        name == "distribution_setup.sh" })) {
+        if (name == "distribution/distribution_setup.sh") {
+          Some("distribution_setup.sh")
+        } else {
+          None
+        }})) {
       return false
     }
     if (!Utils.runProcess("bash",
