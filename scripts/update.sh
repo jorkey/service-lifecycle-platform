@@ -156,4 +156,7 @@ if [ ! -z "${serviceToRun}" ]; then
   runService "$@"
 elif [ ! -z "${serviceToSetup}" ]; then
   updateScripts "$@"
+else
+  echo "Variable serviceToRun or serviceToSetup must be set"
+  exit 1
 fi
