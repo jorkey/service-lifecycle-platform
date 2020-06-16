@@ -41,6 +41,9 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
         if (!clientDirectory.downloadVersion(Common.UpdaterServiceName, toVersion, new File("."))) {
           log.error("Downloading updater error")
         }
+        if (!Utils.writeServiceVersion(new File("."), Common.UpdaterServiceName, toVersion)) {
+          log.error("Set updater version error")
+        }
         true
       case None =>
         false

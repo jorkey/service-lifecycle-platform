@@ -107,10 +107,11 @@ function runService {
     updateScripts "$@"
     echo "Check for new version of ${serviceToRun}"
     serviceDesiredVersion=`getDesiredVersion ${serviceToRun}`
-    if [ ! -f ${serviceToRun}-*.jar ]; then
+    serviceVersionFile=.${serviceToRun}.version
+    if [ ! -f ${serviceVersionFile} ]; then
       update="true"
     else
-      currentVersion=`ls ${serviceToRun}-*.jar | sed -e "s/^${serviceToRun}-//; s/\.jar$//" | tail -1`
+      currentVersion=`cat ${serviceVersionFile}`
       if [ "${currentVersion}" != "${serviceDesiredVersion}" ]; then
         echo "Desired version ${serviceDesiredVersion} != current version ${currentVersion}."
         update="true"
@@ -124,6 +125,7 @@ function runService {
       downloadVersionImage ${serviceToRun} ${serviceDesiredVersion} ${serviceToRun}.zip
       rm -f ${serviceToRun}-*.jar
       unzip -qo ${serviceToRun}.zip && rm -f ${serviceToRun}.zip
+      echo ${serviceDesiredVersion} >${serviceVersionFile}
     fi
 
     buildVersion=`echo ${serviceDesiredVersion} | sed -e 's/_.*//'`
