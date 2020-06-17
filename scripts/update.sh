@@ -61,10 +61,10 @@ function downloadVersionImage {
   local version=$2
   local outputFile=$3
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    >&2 echo "Download version ${version} image of service ${service}"
+    >&2 echo "Download version ${version} image of ${service}"
     download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
   elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    >&2 echo "Get version ${version} image of service ${service}"
+    >&2 echo "Get version ${version} image of ${service}"
     download ${distribDirectoryUrl}/services/${service}/${service}-${version}.zip ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
