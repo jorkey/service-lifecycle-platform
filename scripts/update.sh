@@ -77,7 +77,7 @@ function downloadVersionImage {
 #  $serviceToSetup - service to extract script files
 function updateScripts {
   local scriptsZipFile=.scripts.zip
-  updateService scripts ${scriptsZipFile}
+  local newVersion=`updateService scripts ${scriptsZipFile}`
   if [ -f ${scriptsZipFile} ]; then
     >&2 echo "Update scripts"
     unzip -qo ${scriptsZipFile} update.sh
