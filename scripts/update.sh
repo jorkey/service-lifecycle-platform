@@ -119,7 +119,7 @@ function updateService {
   local serviceVersionFile=.${service}.version
   local serviceDesiredVersion=`getDesiredVersion ${service}`
   if [ ! -f ${serviceVersionFile} ] || [[ "`cat ${serviceVersionFile}`" != "${serviceDesiredVersion}" ]]; then
-    >&2 echo "Download service version ${serviceDesiredVersion}"
+    >&2 echo "Download ${service} version ${serviceDesiredVersion}"
     downloadVersionImage ${service} ${serviceDesiredVersion} ${outputFile}
     echo ${serviceDesiredVersion} >${serviceVersionFile}
   fi
