@@ -73,18 +73,11 @@ function downloadVersionImage {
 
 ### Check scripts version. Update and restart if need.
 # input:
-#  $serviceToSetup - service to extract script files.
+#  $@ - external arguments
+#  $serviceToSetup - service to extract script files
 function updateScripts {
-  echo "Check for new version of scripts"
-  scriptsVersionFile=.scripts.version
   scriptsZipFile=.scripts.zip
-  scriptsDesiredVersion=`getDesiredVersion scripts`
-  if [ ! -f ${scriptsVersionFile} ] || [[ "`cat ${scriptsVersionFile}`" != "${scriptsDesiredVersion}" ]]; then
-    echo "Download scripts version ${scriptsDesiredVersion}"
-    downloadVersionImage scripts ${scriptsDesiredVersion} ${scriptsZipFile}
-    echo ${scriptsDesiredVersion} >${scriptsVersionFile}
-  fi
-  ## Updater could download the version earlier. Therefore we have an additional condition.
+  updateService scripts ${scriptsZipFile}
   if [ -f ${scriptsZipFile} ]; then
     echo "Update scripts"
     unzip -qo ${scriptsZipFile} update.sh
@@ -96,6 +89,43 @@ function updateScripts {
   fi
 }
 
+### Check service version. Update if need.
+# input:
+#  $1 - service to update
+# output:
+#  new version
+function updateJavaService {
+  service=$1
+  serviceZipFile=.${service}.zip
+  newVersion=`updateService ${sevice} ${serviceZipFile}`
+  if [ -f ${serviceZipFile} ]; then
+    rm -f ${service}-*.jar
+    unzip -qo ${serviceZipFile}
+    rm -f ${serviceZipFile}
+  fi
+  echo ${newVersion}
+}
+
+### Check service version. Update if need.
+# input:
+#  $1 - service to update
+#  $2 - download file
+# output:
+#  new version
+function updateService {
+  service=$1
+  outputFile=$2
+  echo "Check for new version of ${service}"
+  serviceVersionFile=.${service}.version
+  serviceDesiredVersion=`getDesiredVersion ${service}`
+  if [ ! -f ${serviceVersionFile} ] || [[ "`cat ${serviceVersionFile}`" != "${serviceDesiredVersion}" ]]; then
+    echo "Download service version ${serviceDesiredVersion}"
+    downloadVersionImage ${service} ${serviceDesiredVersion} ${outputFile}
+    echo ${serviceDesiredVersion} >${serviceVersionFile}
+  fi
+  echo ${serviceDesiredVersion}
+}
+
 # Updates scripts and service if need. Run service.
 # input:
 #  $serviceToRun - service to update and run
@@ -105,30 +135,8 @@ function runService {
   do
     serviceToSetup=${serviceToRun}
     updateScripts "$@"
-    echo "Check for new version of ${serviceToRun}"
-    serviceDesiredVersion=`getDesiredVersion ${serviceToRun}`
-    serviceVersionFile=.${serviceToRun}.version
-    if [ ! -f ${serviceVersionFile} ]; then
-      update="true"
-    else
-      currentVersion=`cat ${serviceVersionFile}`
-      if [ "${currentVersion}" != "${serviceDesiredVersion}" ]; then
-        echo "Desired version ${serviceDesiredVersion} != current version ${currentVersion}."
-        update="true"
-      else
-        update="false"
-      fi
-    fi
 
-    if [ "${update}" == "true" ]; then
-      echo "Update ${serviceToRun} to version ${serviceDesiredVersion}"
-      downloadVersionImage ${serviceToRun} ${serviceDesiredVersion} ${serviceToRun}.zip
-      rm -f ${serviceToRun}-*.jar
-      unzip -qo ${serviceToRun}.zip && rm -f ${serviceToRun}.zip
-      echo ${serviceDesiredVersion} >${serviceVersionFile}
-    fi
-
-    buildVersion=`echo ${serviceDesiredVersion} | sed -e 's/_.*//'`
+    buildVersion=`updateJavaService ${serviceToRun} | sed -e 's/_.*//'`
 
     if [ -f install.json ]; then
       command=`jq -r '.runService.command' install.json`
@@ -139,7 +147,7 @@ function runService {
         exit 1
       fi
       command="/usr/bin/java"
-      args="-XX:+HeapDumpOnOutOfMemoryError -XX:MaxJavaStackTraceDepth=10000000 -Dscala.control.noTraceSuppression=true -jar ${serviceToRun}-${buildVersion}.jar"
+      args="-jar ${serviceToRun}-${buildVersion}.jar"
     fi
 
     echo "Run ${command} ${args} $@"
