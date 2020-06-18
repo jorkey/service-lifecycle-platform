@@ -2,7 +2,7 @@
 
 if [ -z "$4" ]
 then
-  echo "Use: $0 cloudProvider name services distribDirectoryUrl"
+  >&2 echo "Use: $0 cloudProvider name services distribDirectoryUrl"
   exit 1
 fi
 
@@ -17,7 +17,7 @@ serviceToSetup=updater
 if [ "${cloudProvider}" = "Azure" ]; then
   instanceId=`sudo dmidecode | grep UUID | awk '{printf $2}'`
 else
-  echo "Invalid cloud provider ${cloudProvider}"
+  >&2 echo "Invalid cloud provider ${cloudProvider}"
   exit 1
 fi
 

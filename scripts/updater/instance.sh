@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 function exitUsage() {
-  echo "Use: $0 name services distribDirectoryUrl"
+  >&2 echo "Use: $0 name services distribDirectoryUrl"
   exit 1
 }
 
@@ -16,5 +16,5 @@ distribDirectoryUrl=$3
 serviceToSetup=updater
 . update.sh
 
-echo "Execute setup"
+>&2 echo "Execute setup"
 ./updater_setup.sh Azure ${name} ${services} ${distribDirectoryUrl}

@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
 function exitUsage() {
-  echo "Use: $0 developer <port> or"
-  echo "     $0 client <port> <developerDirectoryUrl>"
+  >&2 echo "Use: $0 developer <port> or"
+  >&2 echo "     $0 client <port> <developerDirectoryUrl>"
   exit 1
 }
 
@@ -83,7 +83,7 @@ else
   exitUsage
 fi
 
-echo "distribution_pm2.json is created"
+>&2 echo "distribution_pm2.json is created"
 
 pm2 start distribution_pm2.json
 
