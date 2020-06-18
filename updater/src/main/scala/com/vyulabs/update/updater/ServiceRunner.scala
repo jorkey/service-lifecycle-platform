@@ -54,7 +54,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
       try {
         process match {
           case Some(p) =>
-            try {
+            val terminated = try {
               state.info("Stop service")
               p.destroy()
               if (!p.waitFor(5, TimeUnit.SECONDS)) {
@@ -63,11 +63,13 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
               }
               val status = p.waitFor()
               state.info(s"Service process is terminated with status ${status}.")
+              true
             } catch {
               case e: Exception =>
                 state.error("Stop process error", e)
+                false
             }
-            if (!p.isAlive) {
+            if (terminated) {
               processParameters = None
               process = None
               true
@@ -198,7 +200,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
             None
         }
         val dateFormat = params.config.LogWriter.DateFormat.map(new SimpleDateFormat(_))
-        new ReaderThread(state, process.getInputStream,
+        new ReaderThread(state, process,
           line => {
             val formattedLine = dateFormat match {
               case Some(dateFormat) =>

@@ -33,7 +33,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
     Utils.isServiceNeedUpdate(Common.UpdaterServiceName, state.getVersion(), desiredVersion) match {
       case Some(toVersion) =>
         state.info(s"Updater is obsolete. Own version ${state.getVersion()} desired version ${toVersion}")
-        state.setUpdateToVersion(toVersion)
+        state.beginUpdateToVersion(toVersion)
         log.info(s"Downloading updater of version ${toVersion}")
         for (fromVersion <- state.getVersion()) {
           new File(Common.UpdaterJarName.format(fromVersion.toString)).deleteOnExit()
@@ -54,7 +54,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
     Utils.isServiceNeedUpdate(Common.ScriptsServiceName, scriptsVersion, desiredVersion) match {
       case Some(toVersion) =>
         state.info(s"Scripts is obsolete. Own version ${scriptsVersion} desired version ${toVersion}")
-        state.setScriptsUpdateToVersion(toVersion)
+        state.beginUpdateScriptsToVersion(toVersion)
         log.info(s"Downloading scripts of version ${toVersion}")
         if (!clientDirectory.downloadVersionImage(Common.ScriptsServiceName, toVersion, new File(Common.ScriptsZipName))) {
           log.error("Downloading scripts error")

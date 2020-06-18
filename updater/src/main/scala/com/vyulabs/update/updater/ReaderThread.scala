@@ -8,9 +8,9 @@ import org.slf4j.Logger
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 8.05.19.
   * Copyright FanDate, Inc.
   */
-class ReaderThread(state: ServiceStateController, in: InputStream,
+class ReaderThread(state: ServiceStateController, process: Process,
                    onLine: String => Unit, onEof: () => Unit)(implicit log: Logger) extends Thread {
-  val input = new BufferedReader(new InputStreamReader(in))
+  val input = new BufferedReader(new InputStreamReader(process.getInputStream))
 
   override def run(): Unit = {
     try {
@@ -21,7 +21,9 @@ class ReaderThread(state: ServiceStateController, in: InputStream,
       }
     } catch {
       case e: Exception =>
-        state.error("Read service output error", e)
+        if (process.isAlive) {
+          state.error(s"Read service output error ${e.getMessage}")
+        }
     }
     onEof()
   }

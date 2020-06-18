@@ -57,7 +57,7 @@ class ServiceUpdater(instanceId: InstanceId,
       return false
     }
 
-    state.setUpdateToVersion(newVersion)
+    state.beginUpdateToVersion(newVersion)
 
     state.info(s"Download version ${newVersion}")
     if (state.newServiceDirectory.exists() && !Utils.deleteFileRecursively(state.newServiceDirectory)) {
