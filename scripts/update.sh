@@ -19,7 +19,7 @@ function download {
   if [ "$?" != "0" ]; then
     exit 1
   elif [[ "${url}" == http* ]] && [ "$http_code" != "200" ]; then
-    if [ -f ${url} ]; then
+    if [ -f ${outputFile} ]; then
       >&2 echo "Request: ${url}"
       >&2 echo "Response: `cat ${outputFile}`"
       rm ${outputFile}

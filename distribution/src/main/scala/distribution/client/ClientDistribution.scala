@@ -43,38 +43,38 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                   path(prefix / downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                     getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                   } ~
-                    path(prefix / downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                      getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
-                    } ~
-                    path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                      complete(Utils.renderConfig(
-                        dir.getVersionsInfo(dir.getServiceDir(service)).toConfig(), true))
-                    } ~
-                    path(prefix / downloadDesiredVersionsPath) {
-                      getFromFileWithLock(dir.getDesiredVersionsFile())
-                    } ~
-                    path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
-                      parameter("image".as[Boolean]?true) { image =>
-                        getDesiredVersion(service, image)
-                      }
-                    } ~
-                    path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
-                      getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
-                    } ~
-                    authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
-                      path(prefix / browsePath) {
-                        browse(None)
-                      } ~
-                      pathPrefix(prefix / browsePath / ".*".r) { path =>
-                        browse(Some(path))
-                      } ~
-                      path(prefix / getDistributionVersionPath) {
-                        getVersion()
-                      } ~
-                      path(prefix / getScriptsVersionPath) {
-                        getScriptsVersion()
-                      }
+                  path(prefix / downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                    getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
+                  } ~
+                  path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
+                    complete(Utils.renderConfig(
+                      dir.getVersionsInfo(dir.getServiceDir(service)).toConfig(), true))
+                  } ~
+                  path(prefix / downloadDesiredVersionsPath) {
+                    getFromFileWithLock(dir.getDesiredVersionsFile())
+                  } ~
+                  path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
+                    parameter("image".as[Boolean]?true) { image =>
+                      getDesiredVersion(service, image)
                     }
+                  } ~
+                  path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
+                    getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
+                  } ~
+                  authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
+                    path(prefix / browsePath) {
+                      browse(None)
+                    } ~
+                    pathPrefix(prefix / browsePath / ".*".r) { path =>
+                      browse(Some(path))
+                    } ~
+                    path(prefix / getDistributionVersionPath) {
+                      getVersion()
+                    } ~
+                    path(prefix / getScriptsVersionPath) {
+                      getScriptsVersion()
+                    }
+                  }
                 } ~
                   post {
                     authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
@@ -90,30 +90,30 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                           fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
                         }
                     } ~
-                      authorize(usersCredentials.getRole(userName) == UserRole.Service) {
-                        path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
-                          uploadToConfig(instanceStateName, (config) => {
-                            stateUploader.receiveState(instanceId, updaterProcessId, config, this)
-                          })
-                        } ~
-                          // TODO remove when no need of back compability
-                          path(prefix / uploadInstanceStatePath / ".*".r) { (instanceId) =>
-                            uploadToConfig(instanceStateName, (config) => {
-                              stateUploader.receiveState(instanceId, "x", config, this)
-                            })
-                          } ~
-                          path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
-                            uploadToConfig(serviceLogsName, (config) => {
-                              val serviceLogs = ServiceLogs.apply(config)
-                              logUploader.receiveLogs(instanceId, ServiceInstanceName.parse(serviceInstanceName), serviceLogs)
-                            })
-                          } ~
-                          path(prefix / uploadServiceFaultPath / ".*".r) { (serviceName) =>
-                            uploadToSource(serviceFaultName, (fileInfo, source) => {
-                              faultUploader.receiveFault(serviceName, fileInfo.getFileName, source)
-                            })
-                          }
+                    authorize(usersCredentials.getRole(userName) == UserRole.Service) {
+                      path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
+                        uploadToConfig(instanceStateName, (config) => {
+                          stateUploader.receiveState(instanceId, updaterProcessId, config, this)
+                        })
+                      } ~
+                      // TODO remove when no need of back compability
+                      path(prefix / uploadInstanceStatePath / ".*".r) { (instanceId) =>
+                        uploadToConfig(instanceStateName, (config) => {
+                          stateUploader.receiveState(instanceId, "x", config, this)
+                        })
+                      } ~
+                      path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
+                        uploadToConfig(serviceLogsName, (config) => {
+                          val serviceLogs = ServiceLogs.apply(config)
+                          logUploader.receiveLogs(instanceId, ServiceInstanceName.parse(serviceInstanceName), serviceLogs)
+                        })
+                      } ~
+                      path(prefix / uploadServiceFaultPath / ".*".r) { (serviceName) =>
+                        uploadToSource(serviceFaultName, (fileInfo, source) => {
+                          faultUploader.receiveFault(serviceName, fileInfo.getFileName, source)
+                        })
                       }
+                    }
                   }
               }
             }

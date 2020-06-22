@@ -591,10 +591,10 @@ object Utils {
   def maybeFreeSpace(dir: File, maxCapacity: Long, except: Set[File])(implicit log: Logger): Unit = {
     val used = getUsedSpace(dir)
     if (used > maxCapacity) {
-      val files = dir.listFiles()
+      val files = dir.listFiles().filterNot(except.contains(_))
       if (files.length > 1) {
         val oldestFile = files.sortBy(_.lastModified()).head
-        if (!except.contains(oldestFile) && !deleteFileRecursively(oldestFile)) {
+        if (!deleteFileRecursively(oldestFile)) {
           log.error(s"Can't delete ${oldestFile}")
         } else {
           maybeFreeSpace(dir, maxCapacity, except)
