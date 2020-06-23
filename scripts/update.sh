@@ -15,8 +15,7 @@ function download {
   local url=$1
   local outputFile=$2
   rm -f ${outputFile}
-  http_code=`curl ${url} --output ${outputFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`
-  if [ "$?" != "0" ]; then
+  if ! http_code=`curl ${url} --output ${outputFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
     exit 1
   elif [[ "${url}" == http* ]] && [ "$http_code" != "200" ]; then
     if [ -f ${outputFile} ]; then
@@ -61,10 +60,10 @@ function downloadVersionImage {
   local version=$2
   local outputFile=$3
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    >&2 echo "Download version ${version} image of ${service}"
+    >/dev/tty echo "Download version ${version} image of ${service}"
     download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
   elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    >&2 echo "Get version ${version} image of ${service}"
+    >/dev/tty echo "Get version ${version} image of ${service}"
     download ${distribDirectoryUrl}/services/${service}/${service}-${version}.zip ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
@@ -77,14 +76,17 @@ function downloadVersionImage {
 #  $serviceToSetup - service to extract script files
 function updateScripts {
   local scriptsZipFile=.scripts.zip
-  local newVersion=`updateService scripts ${scriptsZipFile}`
+  if ! desiredVersion=`updateService scripts ${scriptsZipFile}`; then
+    echo "Update scripts error"
+    exit 1
+  fi
   if [ -f ${scriptsZipFile} ]; then
-    >&2 echo "Update scripts"
+    >/dev/tty echo "Update scripts"
     unzip -qo ${scriptsZipFile} update.sh
     unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
     rm -f ${scriptsZipFile}
     chmod +x *.sh
-    >&2 echo "Restart $0"
+    >/dev/tty echo "Restart $0"
     exec $0 "$@"
   fi
 }
@@ -97,13 +99,16 @@ function updateScripts {
 function updateJavaService {
   local service=$1
   local serviceZipFile=.${service}.zip
-  local newVersion=`updateService ${service} ${serviceZipFile}`
+  if ! desiredVersion=`updateService ${service} ${serviceZipFile}`; then
+    >&2 echo "Update ${service} error"
+    exit 1
+  fi
   if [ -f ${serviceZipFile} ]; then
     rm -f ${service}-*.jar
     unzip -qo ${serviceZipFile}
     rm -f ${serviceZipFile}
   fi
-  echo ${newVersion}
+  echo ${desiredVersion}
 }
 
 ### Check service version. Update if need.
@@ -115,11 +120,14 @@ function updateJavaService {
 function updateService {
   local service=$1
   local outputFile=$2
-  >&2 echo "Check for new version of ${service}"
+  >/dev/tty echo "Check for desired version of ${service}"
   local serviceVersionFile=.${service}.version
-  local serviceDesiredVersion=`getDesiredVersion ${service}`
+  if ! serviceDesiredVersion=`getDesiredVersion ${service}`; then
+    >&2 echo "Getting desired version of ${service} error"
+    exit 1
+  fi
   if [ ! -f ${serviceVersionFile} ] || [[ "`cat ${serviceVersionFile}`" != "${serviceDesiredVersion}" ]]; then
-    >&2 echo "Download ${service} version ${serviceDesiredVersion}"
+    >/dev/tty echo "Download ${service} version ${serviceDesiredVersion}"
     downloadVersionImage ${service} ${serviceDesiredVersion} ${outputFile}
     echo ${serviceDesiredVersion} >${serviceVersionFile}
   fi
@@ -136,11 +144,17 @@ function runService {
     serviceToSetup=${serviceToRun}
     updateScripts "$@"
 
-    local buildVersion=`updateJavaService ${serviceToRun} | sed -e 's/_.*//'`
+    if ! buildVersion=`updateJavaService ${serviceToRun} | sed -e 's/_.*//'`; then
+      exit 1
+    fi
 
     if [ -f install.json ]; then
-      command=`jq -r '.runService.command' install.json`
-      args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${buildVersion}/`
+      if ! command=`jq -r '.runService.command' install.json`; then
+        >&2 echo "runService.command is not defined in the install.json"
+      fi
+      if ! args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${buildVersion}/`; then
+        >&2 echo "runService.args is not defined in the install.json"
+      fi
     else
       if [ ! -f ${serviceToRun}-${buildVersion}.jar ]; then
         >&2 echo "No <${serviceToRun}-${buildVersion}>.jar in the build."
@@ -154,7 +168,7 @@ function runService {
     ${command} ${args} "$@"
 
     if [ $? -eq 9 ]; then
-      >&2 echo "Service ${serviceToRun} is obsoleted. Update it."
+      echo "Service ${serviceToRun} is obsoleted. Update it."
     else
       break
     fi

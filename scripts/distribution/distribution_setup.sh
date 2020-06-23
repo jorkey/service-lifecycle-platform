@@ -83,7 +83,7 @@ else
   exitUsage
 fi
 
->&2 echo "distribution_pm2.json is created"
+echo "distribution_pm2.json is created"
 
 pm2 start distribution_pm2.json
 
