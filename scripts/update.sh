@@ -12,6 +12,7 @@
 #  $1 - source URL
 #  $2 - output file
 function download {
+  set -e
   local url=$1
   local outputFile=$2
   rm -f ${outputFile}
@@ -34,6 +35,7 @@ function download {
 # output:
 #   stdout - version number
 function getDesiredVersion {
+  set -e
   local service=$1
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local desiredVersionFile=.desired-version-${service}.json
@@ -57,6 +59,7 @@ function getDesiredVersion {
 #  $2 - service version
 #  $3 - output file
 function downloadVersionImage {
+  set -e
   local service=$1
   local version=$2
   local outputFile=$3
@@ -76,6 +79,7 @@ function downloadVersionImage {
 #  $@ - external arguments
 #  $serviceToSetup - service to extract script files
 function updateScripts {
+  set -e
   local scriptsZipFile=.scripts.zip
   local desiredVersion
   if ! desiredVersion=`updateService scripts ${scriptsZipFile}`; then
@@ -99,6 +103,7 @@ function updateScripts {
 # output:
 #  new version
 function updateJavaService {
+  set -e
   local service=$1
   local serviceZipFile=.${service}.zip
   local desiredVersion
@@ -121,10 +126,12 @@ function updateJavaService {
 # output:
 #  new version
 function updateService {
+  set -e
   local service=$1
   local outputFile=$2
   >&2 echo "Check for desired version of ${service}"
   local serviceVersionFile=.${service}.version
+  local serviceDesiredVersion
   if ! serviceDesiredVersion=`getDesiredVersion ${service}`; then
     >&2 echo "Getting desired version of ${service} error"
     exit 1
@@ -142,6 +149,7 @@ function updateService {
 #  $serviceToRun - service to update and run
 #  $@ - main script arguments
 function runService {
+  set -e
   while [ 1 ]
   do
     serviceToSetup=${serviceToRun}
