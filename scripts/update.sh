@@ -15,6 +15,7 @@ function download {
   local url=$1
   local outputFile=$2
   rm -f ${outputFile}
+  local http_code
   if ! http_code=`curl ${url} --output ${outputFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
     exit 1
   elif [[ "${url}" == http* ]] && [ "$http_code" != "200" ]; then
@@ -60,10 +61,10 @@ function downloadVersionImage {
   local version=$2
   local outputFile=$3
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    >/dev/tty echo "Download version ${version} image of ${service}"
+    >&2 echo "Download version ${version} image of ${service}"
     download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
   elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    >/dev/tty echo "Get version ${version} image of ${service}"
+    >&2 echo "Get version ${version} image of ${service}"
     download ${distribDirectoryUrl}/services/${service}/${service}-${version}.zip ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
@@ -76,17 +77,18 @@ function downloadVersionImage {
 #  $serviceToSetup - service to extract script files
 function updateScripts {
   local scriptsZipFile=.scripts.zip
+  local desiredVersion
   if ! desiredVersion=`updateService scripts ${scriptsZipFile}`; then
     echo "Update scripts error"
     exit 1
   fi
   if [ -f ${scriptsZipFile} ]; then
-    >/dev/tty echo "Update scripts"
+    >&2 echo "Update scripts"
     unzip -qo ${scriptsZipFile} update.sh
     unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
     rm -f ${scriptsZipFile}
     chmod +x *.sh
-    >/dev/tty echo "Restart $0"
+    >&2 echo "Restart $0"
     exec $0 "$@"
   fi
 }
@@ -99,6 +101,7 @@ function updateScripts {
 function updateJavaService {
   local service=$1
   local serviceZipFile=.${service}.zip
+  local desiredVersion
   if ! desiredVersion=`updateService ${service} ${serviceZipFile}`; then
     >&2 echo "Update ${service} error"
     exit 1
@@ -120,14 +123,14 @@ function updateJavaService {
 function updateService {
   local service=$1
   local outputFile=$2
-  >/dev/tty echo "Check for desired version of ${service}"
+  >&2 echo "Check for desired version of ${service}"
   local serviceVersionFile=.${service}.version
   if ! serviceDesiredVersion=`getDesiredVersion ${service}`; then
     >&2 echo "Getting desired version of ${service} error"
     exit 1
   fi
   if [ ! -f ${serviceVersionFile} ] || [[ "`cat ${serviceVersionFile}`" != "${serviceDesiredVersion}" ]]; then
-    >/dev/tty echo "Download ${service} version ${serviceDesiredVersion}"
+    >&2 echo "Download ${service} version ${serviceDesiredVersion}"
     downloadVersionImage ${service} ${serviceDesiredVersion} ${outputFile}
     echo ${serviceDesiredVersion} >${serviceVersionFile}
   fi
