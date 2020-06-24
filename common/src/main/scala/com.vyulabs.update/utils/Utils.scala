@@ -26,7 +26,11 @@ object Utils {
   def runProcess(config: CommandConfig, args: Map[String, String],
                  dir: File, logOutput: Boolean)(implicit log: Logger): Boolean = {
     val directory = config.directory match {
-      case Some(directory) => new File(dir, directory)
+      case Some(directory) =>
+        if (directory.startsWith("/"))
+          new File(directory)
+        else
+          new File(dir, directory)
       case None => dir
     }
     runProcess(extendMacro(config.command, args),

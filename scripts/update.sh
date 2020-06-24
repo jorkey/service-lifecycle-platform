@@ -19,7 +19,7 @@ function download {
   local http_code
   if ! http_code=`curl ${url} --output ${outputFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
     exit 1
-  elif [[ "${url}" == http* ]] && [ "$http_code" != "200" ]; then
+  elif [[ ${url} == http* ]] && [[ $http_code != "200" ]]; then
     if [ -f ${outputFile} ]; then
       >&2 echo "Request: ${url}"
       >&2 echo "Response: `cat ${outputFile}`"
@@ -64,13 +64,73 @@ function downloadVersionImage {
   local version=$2
   local outputFile=$3
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    >&2 echo "Download version ${version} image of ${service}"
     download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
   elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    >&2 echo "Get version ${version} image of ${service}"
     download ${distribDirectoryUrl}/services/${service}/${service}-${version}.zip ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
+  fi
+}
+
+### Get service version file.
+# input:
+#  $1 - service
+# output:
+#  stdout - version file
+function getServiceVersionFile {
+  echo ".${1}.version"
+}
+
+### Get service version.
+# input:
+#  $1 - service
+# output:
+#  stdout - version
+function getCurrentVersion {
+  set -e
+  local versionFile=`getServiceVersionFile $1`
+  if [ -f ${versionFile} ]; then
+    cat ${versionFile}
+  else
+    echo
+  fi
+}
+
+### Set service version.
+# input:
+#  $1 - service
+#  $2 - version
+# output:
+#  stdout - version
+function setCurrentVersion {
+  set -e
+  local versionFile=`getServiceVersionFile $1`
+  echo $2 >${versionFile}
+}
+
+### Check service version. Update if need.
+# input:
+#  $1 - service to update
+#  $2 - download file
+function updateService {
+  set -e
+  local service=$1
+  local outputFile=$2
+  echo "Check for current and desired version of ${service}"
+  local currentVersion
+  if ! currentVersion=`getCurrentVersion ${service}`; then
+    >&2 echo "Getting current version of ${service} error"
+    exit 1
+  fi
+  local desiredVersion
+  if ! desiredVersion=`getDesiredVersion ${service}`; then
+    >&2 echo "Getting desired version of ${service} error"
+    exit 1
+  fi
+  if [[ ${currentVersion} != ${desiredVersion} ]]; then
+    echo "Download ${service} version ${desiredVersion}"
+    downloadVersionImage ${service} ${desiredVersion} ${outputFile}
+    setCurrentVersion ${service} ${desiredVersion}
   fi
 }
 
@@ -81,18 +141,17 @@ function downloadVersionImage {
 function updateScripts {
   set -e
   local scriptsZipFile=.scripts.zip
-  local desiredVersion
-  if ! desiredVersion=`updateService scripts ${scriptsZipFile}`; then
-    echo "Update scripts error"
+  if ! updateService scripts ${scriptsZipFile}; then
+    >&2 echo "Update scripts error"
     exit 1
   fi
   if [ -f ${scriptsZipFile} ]; then
-    >&2 echo "Update scripts"
+    echo "Update scripts"
     unzip -qo ${scriptsZipFile} update.sh
     unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
     rm -f ${scriptsZipFile}
     chmod +x *.sh
-    >&2 echo "Restart $0"
+    echo "Restart $0"
     exec $0 "$@"
   fi
 }
@@ -100,48 +159,20 @@ function updateScripts {
 ### Check service version. Update if need.
 # input:
 #  $1 - service to update
-# output:
-#  new version
 function updateJavaService {
   set -e
   local service=$1
   local serviceZipFile=.${service}.zip
-  local desiredVersion
-  if ! desiredVersion=`updateService ${service} ${serviceZipFile}`; then
+  if ! updateService ${service} ${serviceZipFile}; then
     >&2 echo "Update ${service} error"
     exit 1
   fi
   if [ -f ${serviceZipFile} ]; then
+    echo "Update ${service}"
     rm -f ${service}-*.jar
     unzip -qo ${serviceZipFile}
     rm -f ${serviceZipFile}
   fi
-  echo ${desiredVersion}
-}
-
-### Check service version. Update if need.
-# input:
-#  $1 - service to update
-#  $2 - download file
-# output:
-#  new version
-function updateService {
-  set -e
-  local service=$1
-  local outputFile=$2
-  >&2 echo "Check for desired version of ${service}"
-  local serviceVersionFile=.${service}.version
-  local serviceDesiredVersion
-  if ! serviceDesiredVersion=`getDesiredVersion ${service}`; then
-    >&2 echo "Getting desired version of ${service} error"
-    exit 1
-  fi
-  if [ ! -f ${serviceVersionFile} ] || [[ "`cat ${serviceVersionFile}`" != "${serviceDesiredVersion}" ]]; then
-    >&2 echo "Download ${service} version ${serviceDesiredVersion}"
-    downloadVersionImage ${service} ${serviceDesiredVersion} ${outputFile}
-    echo ${serviceDesiredVersion} >${serviceVersionFile}
-  fi
-  echo ${serviceDesiredVersion}
 }
 
 # Updates scripts and service if need. Run service.
@@ -155,9 +186,15 @@ function runService {
     serviceToSetup=${serviceToRun}
     updateScripts "$@"
 
-    if ! buildVersion=`updateJavaService ${serviceToRun} | sed -e 's/_.*//'`; then
+    if ! updateJavaService ${serviceToRun}; then
       exit 1
     fi
+    local currentVersion
+    if ! currentVersion=`getCurrentVersion ${serviceToRun}`; then
+      >&2 echo "Getting current version of ${serviceToRun} error"
+      exit 1
+    fi
+    local buildVersion=`${currentVersion} | sed -e 's/_.*//'`
 
     if [ -f install.json ]; then
       if ! command=`jq -r '.runService.command' install.json`; then
@@ -186,10 +223,10 @@ function runService {
   done
 }
 
-if [ ! -z "${serviceToRun}" ]; then
+if [[ ! -z ${serviceToRun} ]]; then
   serviceToSetup=${serviceToRun}
   runService "$@"
-elif [ ! -z "${serviceToSetup}" ]; then
+elif [[ ! -z ${serviceToSetup} ]]; then
   updateScripts "$@"
 else
   >&2 echo "Variable serviceToRun or serviceToSetup must be set"

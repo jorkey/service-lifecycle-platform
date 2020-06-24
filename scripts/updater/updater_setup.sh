@@ -39,7 +39,6 @@ cat << EOF > updater_pm2.json
     "max_restarts"    : 2147483647,
     "min_uptime"      : "5s",
     "log_date_format" : "YYYY-MM-DD HH:mm:ss.SSS",
-    "merge_logs"      : true,
     "args": [
       "runServices",
       "services=${services}"
