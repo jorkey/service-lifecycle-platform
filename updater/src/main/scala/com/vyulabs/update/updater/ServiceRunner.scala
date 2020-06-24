@@ -172,9 +172,11 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         val arguments = params.config.Arguments.map(Utils.extendMacro(_, params.args))
         val builder = new ProcessBuilder((command +: arguments).toList.asJava)
         builder.redirectErrorStream(true)
+        var macroArgs = Map.empty[String, String]
+        macroArgs += ("PATH" -> System.getenv("PATH"))
         params.config.Env.foldLeft(builder.environment())((e, entry) => {
           if (entry._2 != null) {
-            e.put(entry._1, entry._2)
+            e.put(entry._1, Utils.extendMacro(entry._2, macroArgs))
           } else {
             e.remove(entry._1)
           }
