@@ -194,7 +194,7 @@ function runService {
       >&2 echo "Getting current version of ${serviceToRun} error"
       exit 1
     fi
-    local buildVersion=`${currentVersion} | sed -e 's/_.*//'`
+    local buildVersion=`echo ${currentVersion} | sed -e 's/_.*//'`
 
     if [ -f install.json ]; then
       if ! command=`jq -r '.runService.command' install.json`; then
