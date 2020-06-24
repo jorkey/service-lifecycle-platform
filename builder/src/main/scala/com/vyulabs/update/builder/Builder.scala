@@ -125,6 +125,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
             log.info("Execute build commands")
             var args = Map.empty[String, String]
             args += ("version" -> version.toString)
+            args += ("PATH" -> System.getenv("PATH"))
             for (command <- updateConfig.BuildConfig.BuildCommands) {
               if (!Utils.runProcess(command, args, mainSourceRepository.getDirectory(), true)) {
                 return None

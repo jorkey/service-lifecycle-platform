@@ -77,6 +77,7 @@ class ServiceUpdater(instanceId: InstanceId,
     var args = Map.empty[String, String]
     args += ("profile" -> serviceInstanceName.serviceProfile)
     args += ("version" -> newVersion.original().toString)
+    args += ("PATH" -> System.getenv("PATH"))
 
     val installConfig = InstallConfig(state.newServiceDirectory).getOrElse {
       state.error(s"No install config in the build directory")
@@ -128,6 +129,7 @@ class ServiceUpdater(instanceId: InstanceId,
     var args = Map.empty[String, String]
     args += ("profile" -> serviceInstanceName.serviceProfile)
     args += ("version" -> newVersion.original().toString)
+    args += ("PATH" -> System.getenv("PATH"))
 
     for (command <- installConfig.PostInstallCommands) {
       if (!Utils.runProcess(command, args, state.currentServiceDirectory, true)) {
