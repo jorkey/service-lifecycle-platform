@@ -144,7 +144,8 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
       for (logDirectory <- currentInstallConfig.RunService.map(_.LogWriter.Directory).map(new File(state.currentServiceDirectory, _))) {
         state.info(s"Save log files to history directory")
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
-          val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + (if (failed) "-failed" else "")
+          val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + s"-${Utils.serializeISO8601Date(new Date())}" +
+            (if (failed) "-failed" else "")
           val saveDir = new File(state.logHistoryDirectory, s"${dirName}.log")
           if (!saveDir.exists() || Utils.deleteFileRecursively(saveDir)) {
             if (logDirectory.exists()) {
