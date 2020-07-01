@@ -3,6 +3,7 @@ package com.vyulabs.update.updater
 import java.io.File
 
 import com.vyulabs.update.common.Common
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.utils.Utils
@@ -20,8 +21,8 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
   state.serviceStarted()
 
   def maybeBeginSelfUpdate(desiredVersions: DesiredVersions): Boolean = {
-    val updaterUpdate = maybeBeginUpdaterUpdate(desiredVersions.Versions.get(Common.UpdaterServiceName))
-    val scriptsUpdate = maybeBeginScriptsUpdate(desiredVersions.Versions.get(Common.ScriptsServiceName))
+    val updaterUpdate = maybeBeginServiceUpdate(Common.UpdaterServiceName, state.getVersion(), desiredVersions.Versions.get(Common.UpdaterServiceName))
+    val scriptsUpdate = maybeBeginServiceUpdate(Common.ScriptsServiceName, scriptsVersion, desiredVersions.Versions.get(Common.ScriptsServiceName))
     updaterUpdate || scriptsUpdate
   }
 
@@ -29,38 +30,17 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
     state.serviceStopped()
   }
 
-  private def maybeBeginUpdaterUpdate(desiredVersion: Option[BuildVersion]): Boolean = {
-    Utils.isServiceNeedUpdate(Common.UpdaterServiceName, state.getVersion(), desiredVersion) match {
+  private def maybeBeginServiceUpdate(serviceName: ServiceName, fromVersion: Option[BuildVersion], toVersion: Option[BuildVersion]): Boolean = {
+    Utils.isServiceNeedUpdate(serviceName, fromVersion, toVersion) match {
       case Some(toVersion) =>
-        state.info(s"Updater is obsolete. Own version ${state.getVersion()} desired version ${toVersion}")
+        state.info(s"Service ${serviceName} is obsolete. Own version ${fromVersion} desired version ${toVersion}")
         state.beginUpdateToVersion(toVersion)
-        log.info(s"Downloading updater of version ${toVersion}")
-        for (fromVersion <- state.getVersion()) {
-          new File(Common.UpdaterJarName.format(fromVersion.toString)).deleteOnExit()
+        log.info(s"Downloading ${serviceName} of version ${toVersion}")
+        if (!clientDirectory.downloadVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
+          log.error(s"Downloading ${serviceName} error")
         }
-        if (!clientDirectory.downloadVersion(Common.UpdaterServiceName, toVersion, new File("."))) {
-          log.error("Downloading updater error")
-        }
-        if (!Utils.writeServiceVersion(new File("."), Common.UpdaterServiceName, toVersion)) {
-          log.error("Set updater version error")
-        }
-        true
-      case None =>
-        false
-    }
-  }
-
-  private def maybeBeginScriptsUpdate(desiredVersion: Option[BuildVersion]): Boolean = {
-    Utils.isServiceNeedUpdate(Common.ScriptsServiceName, scriptsVersion, desiredVersion) match {
-      case Some(toVersion) =>
-        state.info(s"Scripts is obsolete. Own version ${scriptsVersion} desired version ${toVersion}")
-        state.beginUpdateScriptsToVersion(toVersion)
-        log.info(s"Downloading scripts of version ${toVersion}")
-        if (!clientDirectory.downloadVersionImage(Common.ScriptsServiceName, toVersion, new File(Common.ScriptsZipName))) {
-          log.error("Downloading scripts error")
-        }
-        if (!Utils.writeServiceVersion(new File("."), Common.ScriptsServiceName, toVersion)) {
-          log.error("Set scripts version error")
+        if (!Utils.writeServiceVersion(new File("."), serviceName, toVersion)) {
+          log.error(s"Set ${serviceName} version error")
         }
         true
       case None =>
