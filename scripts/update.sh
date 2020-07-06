@@ -213,7 +213,20 @@ function runService {
     fi
 
     echo "Run ${command} ${args} $@"
-    ${command} ${args} "$@"
+    case "$-" in
+    *i*)
+      ${command} ${args} "$@"
+      ;;
+    *)
+      local child
+      trap 'kill -TERM ${child}' TERM
+      ${command} ${args} "$@" &
+      child=$!
+      wait ${child}
+      trap - TERM
+      wait ${child}
+      ;;
+    esac
 
     if [ $? -eq 9 ]; then
       echo "Service ${serviceToRun} is obsoleted. Update it."
