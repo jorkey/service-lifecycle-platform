@@ -219,11 +219,11 @@ function runService {
       ;;
     *)
       local child
-      function trapTerm {
+      function trapKill {
         echo "Signal $1 is received. Kill ${serviceToRun}, PID ${child}"
         kill -TERM ${child}
       }
-      trap trapTerm TERM INT
+      trap trapKill TERM INT
       ${command} ${args} "$@" &
       child=$!
       wait ${child}
