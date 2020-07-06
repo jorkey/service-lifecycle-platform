@@ -220,7 +220,7 @@ function runService {
     *)
       local child
       function trapKill {
-        echo "Signal $1 is received. Kill ${serviceToRun}, PID ${child}"
+        echo "Termination signal is received. Kill ${serviceToRun}, PID ${child}"
         kill -TERM ${child}
       }
       trap trapKill TERM INT
