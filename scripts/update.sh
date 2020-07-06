@@ -220,14 +220,14 @@ function runService {
     *)
       local child
       function trapTerm {
-        echo "Signal TERM is received. Kill ${serviceToRun}"
+        echo "Signal $1 is received. Kill ${serviceToRun}, PID ${child}"
         kill -TERM ${child}
       }
-      trap trapTerm TERM
+      trap trapTerm TERM INT
       ${command} ${args} "$@" &
       child=$!
       wait ${child}
-      trap - TERM
+      trap - TERM INT
       wait ${child}
       ;;
     esac
