@@ -96,7 +96,9 @@ object UpdaterMain extends App { self =>
           }
           if (!mustStop) {
             mustExitToUpdate = maybeUpdate()
-            mustStop = true
+            if (mustExitToUpdate) {
+              mustStop = true
+            }
           }
           if (mustStop) {
             log.info("Updater is terminating")
