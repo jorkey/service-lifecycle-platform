@@ -82,9 +82,10 @@ object UpdaterMain extends App { self =>
         })
 
         var servicesStarted = false
+        var mustStop = false
 
-        while (true) {
-          val mustStop = self.synchronized {
+        while (!mustStop) {
+          mustStop = self.synchronized {
             if (servicesStarted) {
               self.wait(1000)
             }
@@ -98,7 +99,6 @@ object UpdaterMain extends App { self =>
               stopped = true
               self.notify()
             }
-            Runtime.getRuntime.halt(0)
           } else {
             maybeUpdate()
             if (!servicesStarted) {
