@@ -42,9 +42,12 @@ WorkingDirectory=`pwd`
 Environment=${environment}
 ExecStart=`pwd`/updater.sh runServices services=${services}
 
+[Install]
+Alias=${name}.service
+
 EOF
 "
-echo "Service update-${name} is created"
+echo "Service ${name} is created"
 
 sudo systemctl daemon-reload
 sudo systemctl start update-${name}.service

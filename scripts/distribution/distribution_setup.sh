@@ -77,9 +77,12 @@ RestartSec=1s
 WorkingDirectory=`pwd`
 ExecStart=`pwd`/distribution.sh client
 
+[Install]
+Alias=distribution.service
+
 EOF
 "
-  echo "Service update-distribution is created"
+  echo "Service distribution is created"
 
   sudo systemctl daemon-reload
   sudo systemctl start update-distribution.service
