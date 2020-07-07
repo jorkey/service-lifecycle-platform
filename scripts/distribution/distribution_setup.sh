@@ -64,27 +64,27 @@ elif [ "$1" == "client" ]; then
   "developerDistributionUrl" : "${distribDirectoryUrl}"
 }
 EOF
-  cat << EOF > distribution_pm2.json
-{
-  "apps" : [{
-    "name"        : "distribution",
-    "interpreter" : "none",
-    "watch"       : false,
-    "script"      : "distribution.sh",
-    "cwd"         : ".",
-    "merge_logs"  : true,
-    "args": [
-      "client"
-    ]
-  }]
-}
+
+  sudo sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
+[Unit]
+Description=Update distribution server
+
+[Service]
+User=ec2-user
+KillMode=process
+Restart=on-failure
+RestartSec=1s
+WorkingDirectory=`pwd`
+ExecStart=`pwd`/distribution.sh client
+
 EOF
+"
+  echo "Service update-distribution is created"
+
+  sudo systemctl daemon-reload
+  sudo systemctl start update-distribution.service
 else
   exitUsage
 fi
-
-echo "distribution_pm2.json is created"
-
-pm2 start distribution_pm2.json
 
 exit 0

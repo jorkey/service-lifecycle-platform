@@ -2,7 +2,7 @@
 
 if [ -z "$4" ]
 then
-  >&2 echo "Use: $0 cloudProvider name services distribDirectoryUrl"
+  >&2 echo "Use: $0 cloudProvider name services distribDirectoryUrl [environment]"
   exit 1
 fi
 
@@ -10,6 +10,7 @@ cloudProvider=$1
 name=$2
 services=$3
 distribDirectoryUrl=$4
+environment=$5
 
 serviceToSetup=updater
 . update.sh
@@ -28,24 +29,22 @@ cat << EOF > updater.json
 }
 EOF
 
-cat << EOF > updater_pm2.json
-{
-  "apps" : [{
-    "name"            : "${name}",
-    "interpreter"     : "none",
-    "watch"           : false,
-    "script"          : "updater.sh",
-    "cwd"             : ".",
-    "max_restarts"    : 2147483647,
-    "min_uptime"      : "5s",
-    "log_date_format" : "YYYY-MM-DD HH:mm:ss.SSS",
-    "args": [
-      "runServices",
-      "services=${services}"
-    ]
-  }]
-}
-EOF
+sudo sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
+[Unit]
+Description=${name}
 
-pm2 start updater_pm2.json
-pm2 save
+[Service]
+User=ec2-user
+KillMode=process
+Restart=on-failure
+RestartSec=1s
+WorkingDirectory=`pwd`
+Environment=${environment}
+ExecStart=`pwd`/updater.sh runServices services=${services}
+
+EOF
+"
+echo "Service update-${name} is created"
+
+sudo systemctl daemon-reload
+sudo systemctl start update-${name}.service
