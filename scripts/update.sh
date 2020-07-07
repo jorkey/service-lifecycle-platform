@@ -235,6 +235,9 @@ function runService {
     if [ $? -eq 9 ]; then
       echo "Service ${serviceToRun} is obsoleted. Update it."
     else
+      if [[ $- != *i* ]]; then
+        echo "Service is terminated with code $?"
+      fi
       break
     fi
   done

@@ -36,7 +36,7 @@ Description=${name}
 [Service]
 User=ec2-user
 KillMode=process
-Restart=on-failure
+Restart=always
 RestartSec=1s
 WorkingDirectory=`pwd`
 Environment=${environment}
