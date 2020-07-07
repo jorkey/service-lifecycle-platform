@@ -69,8 +69,10 @@ object UpdaterMain extends App { self =>
           override def run(): Unit = {
             log.info("Shutdown hook")
             self.synchronized {
-              stopping = true
-              self.notify()
+              if (!stopped) {
+                stopping = true
+                self.notify()
+              }
             }
             while (self.synchronized {
               if (!stopped) {
@@ -83,6 +85,7 @@ object UpdaterMain extends App { self =>
 
         var servicesStarted = false
         var mustStop = false
+        var mustExitToUpdate = false
 
         while (!mustStop) {
           mustStop = self.synchronized {
@@ -90,6 +93,10 @@ object UpdaterMain extends App { self =>
               self.wait(1000)
             }
             stopping
+          }
+          if (!mustStop) {
+            mustExitToUpdate = maybeUpdate()
+            mustStop = true
           }
           if (mustStop) {
             log.info("Updater is terminating")
@@ -99,20 +106,21 @@ object UpdaterMain extends App { self =>
               stopped = true
               self.notify()
             }
-          } else {
-            maybeUpdate()
-            if (!servicesStarted) {
-              serviceUpdaters.foreach { updater =>
-                if (!updater.isExecuted()) {
-                  updater.execute()
-                }
-              }
-              servicesStarted = true
+            if (mustExitToUpdate) {
+              log.info("Exit with status 9 to update")
+              System.exit(9)
             }
+          } else if (!servicesStarted) {
+            serviceUpdaters.foreach { updater =>
+              if (!updater.isExecuted()) {
+                updater.execute()
+              }
+            }
+            servicesStarted = true
           }
         }
 
-        def maybeUpdate(): Unit = {
+        def maybeUpdate(): Boolean = {
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
             clientDirectory.downloadDesiredVersions() match {
               case Some(desiredVersions) =>
@@ -125,16 +133,19 @@ object UpdaterMain extends App { self =>
                   }
                 })
                 if (!needUpdate.isEmpty) {
-                  update(needUpdate, desiredVersions)
+                  if (update(needUpdate, desiredVersions)) {
+                    return true
+                  }
                 }
               case None =>
                 updaterServiceController.error("Can't get desired versions")
             }
             lastUpdateTime = System.currentTimeMillis()
           }
+          false
         }
 
-        def update(needUpdate: Map[ServiceUpdater, BuildVersion], desiredVersions: DesiredVersions): Unit = {
+        def update(needUpdate: Map[ServiceUpdater, BuildVersion], desiredVersions: DesiredVersions): Boolean = {
           needUpdate.foreach { case (updater, version) =>
             updater.beginInstall(version)
           }
@@ -142,18 +153,12 @@ object UpdaterMain extends App { self =>
           needUpdate.foreach { case (updater, version) =>
             updater.finishInstall(version)
           }
-          if (needRestart) {
-            new Thread() {
-              override def run(): Unit = {
-                log.info("Exit with status 9 to update")
-                System.exit(9)
-              }
-            }.start()
-          } else {
+          if (!needRestart) {
             needUpdate.foreach { case (updater, _) =>
               updater.execute()
             }
           }
+          needRestart
         }
 
         def close(): Unit = {
