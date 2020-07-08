@@ -227,8 +227,10 @@ function runService {
     wait ${child}
     trap - TERM INT
     wait ${child}
-    echo "Service ${serviceToRun} is terminated with status $?."
+    local status=$?
     set -e
+    echo "Service ${serviceToRun} is terminated with status ${status}."
+    exit ${status}
   fi
 }
 
