@@ -211,11 +211,9 @@ function runService {
   fi
 
   echo "Run ${command} ${args} $@"
-  case "$-" in
-  *i*)
+  if tty -s; then
     exec ${command} ${args} "$@"
-    ;;
-  *)
+  else
     local child
     function trapKill {
       echo "Termination signal is received. Kill ${serviceToRun}, PID ${child}"
@@ -230,8 +228,7 @@ function runService {
     wait ${child}
     echo "Service ${serviceToRun} is terminated with status $?."
     set -e
-    ;;
-  esac
+  fi
 }
 
 if [[ ! -z ${serviceToRun} ]]; then
