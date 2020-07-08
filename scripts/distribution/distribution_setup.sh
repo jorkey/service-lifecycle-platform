@@ -73,7 +73,8 @@ Description=Update distribution server
 User=ec2-user
 KillMode=process
 Restart=always
-RestartSec=1s
+RestartSec=0
+StartLimitInterval=0
 WorkingDirectory=`pwd`
 ExecStart=`pwd`/distribution.sh client
 

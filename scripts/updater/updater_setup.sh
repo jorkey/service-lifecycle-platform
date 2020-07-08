@@ -37,7 +37,8 @@ Description=${name}
 User=ec2-user
 KillMode=process
 Restart=always
-RestartSec=1s
+RestartSec=0
+StartLimitInterval=0
 WorkingDirectory=`pwd`
 Environment=${environment}
 ExecStart=`pwd`/updater.sh runServices services=${services}

@@ -181,63 +181,57 @@ function updateJavaService {
 #  $@ - main script arguments
 function runService {
   set -e
-  while [ 1 ]
-  do
-    serviceToSetup=${serviceToRun}
-    updateScripts "$@"
+  serviceToSetup=${serviceToRun}
+  updateScripts "$@"
 
-    if ! updateJavaService ${serviceToRun}; then
+  if ! updateJavaService ${serviceToRun}; then
+    exit 1
+  fi
+  local currentVersion
+  if ! currentVersion=`getCurrentVersion ${serviceToRun}`; then
+    >&2 echo "Getting current version of ${serviceToRun} error"
+    exit 1
+  fi
+  local buildVersion=`echo ${currentVersion} | sed -e 's/_.*//'`
+
+  if [ -f install.json ]; then
+    if ! command=`jq -r '.runService.command' install.json`; then
+      >&2 echo "runService.command is not defined in the install.json"
+    fi
+    if ! args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${buildVersion}/`; then
+      >&2 echo "runService.args is not defined in the install.json"
+    fi
+  else
+    if [ ! -f ${serviceToRun}-${buildVersion}.jar ]; then
+      >&2 echo "No <${serviceToRun}-${buildVersion}>.jar in the build."
       exit 1
     fi
-    local currentVersion
-    if ! currentVersion=`getCurrentVersion ${serviceToRun}`; then
-      >&2 echo "Getting current version of ${serviceToRun} error"
-      exit 1
-    fi
-    local buildVersion=`echo ${currentVersion} | sed -e 's/_.*//'`
+    command="/usr/bin/java"
+    args="-jar ${serviceToRun}-${buildVersion}.jar"
+  fi
 
-    if [ -f install.json ]; then
-      if ! command=`jq -r '.runService.command' install.json`; then
-        >&2 echo "runService.command is not defined in the install.json"
-      fi
-      if ! args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${buildVersion}/`; then
-        >&2 echo "runService.args is not defined in the install.json"
-      fi
-    else
-      if [ ! -f ${serviceToRun}-${buildVersion}.jar ]; then
-        >&2 echo "No <${serviceToRun}-${buildVersion}>.jar in the build."
-        exit 1
-      fi
-      command="/usr/bin/java"
-      args="-jar ${serviceToRun}-${buildVersion}.jar"
-    fi
-
-    echo "Run ${command} ${args} $@"
-    case "$-" in
-    *i*)
-      ${command} ${args} "$@"
-      ;;
-    *)
-      local child
-      function trapKill {
-        echo "Termination signal is received. Kill ${serviceToRun}, PID ${child}"
-        kill -TERM ${child}
-      }
-      trap trapKill TERM INT
-      ${command} ${args} "$@" &
-      child=$!
-      wait ${child}
-      trap - TERM INT
-      wait ${child}
-      ;;
-    esac
-
-    if [ $? -eq 9 ]; then
-      echo "Service ${serviceToRun} is obsoleted. Update it."
-    else
-      break
-    fi
-  done
+  echo "Run ${command} ${args} $@"
+  case "$-" in
+  *i*)
+    exec ${command} ${args} "$@"
+    ;;
+  *)
+    local child
+    function trapKill {
+      echo "Termination signal is received. Kill ${serviceToRun}, PID ${child}"
+      kill -TERM ${child}
+    }
+    trap trapKill TERM INT
+    set +e
+    ${command} ${args} "$@" &
+    child=$!
+    wait ${child}
+    trap - TERM INT
+    wait ${child}
+    echo "Service ${serviceToRun} is terminated with status $?."
+    set -e
+    ;;
+  esac
 }
 
 if [[ ! -z ${serviceToRun} ]]; then
