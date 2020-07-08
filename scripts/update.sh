@@ -210,8 +210,8 @@ function runService {
     args="-jar ${serviceToRun}-${buildVersion}.jar"
   fi
 
-  echo "Run ${command} ${args} $@"
   if tty -s; then
+    echo "Run ${command} ${args} $@"
     exec ${command} ${args} "$@"
   else
     local child
@@ -221,6 +221,7 @@ function runService {
     }
     trap trapKill TERM INT
     set +e
+    echo "Run service ${command} ${args} $@"
     ${command} ${args} "$@" &
     child=$!
     wait ${child}
