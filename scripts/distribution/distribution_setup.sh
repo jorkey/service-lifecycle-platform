@@ -75,6 +75,7 @@ KillMode=process
 Restart=always
 RestartSec=0
 StartLimitInterval=0
+LimitCORE=infinity
 WorkingDirectory=`pwd`
 ExecStart=`pwd`/distribution.sh client
 

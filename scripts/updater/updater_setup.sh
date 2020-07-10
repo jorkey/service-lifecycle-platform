@@ -39,6 +39,7 @@ KillMode=process
 Restart=always
 RestartSec=0
 StartLimitInterval=0
+LimitCORE=infinity
 WorkingDirectory=`pwd`
 Environment=${environment}
 ExecStart=`pwd`/updater.sh runServices services=${services}
