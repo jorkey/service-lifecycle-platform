@@ -15,7 +15,7 @@ class LogWriter(directory: File,
   private var writer = Option.empty[BufferedWriter]
 
   private var logTail = Queue.empty[String]
-  private val logTailSize = 250
+  private val logTailSize = 500
 
   if (!directory.exists()) {
     directory.mkdirs()
