@@ -41,7 +41,7 @@ class LogUploader(instanceId: InstanceId, serviceInstanceName: ServiceInstanceNa
 
   override def run(): Unit = {
     var mustStop = false
-    while (mustStop) {
+    while (!mustStop) {
       try {
         val logs = self.synchronized {
           self.wait(10000)
