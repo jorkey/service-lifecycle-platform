@@ -105,7 +105,7 @@ lazy val akkaDependencies = Seq(
 
 lazy val dependencies =
   new {
-    val akkaVersion = "2.5.22"
+    val akkaVersion = "2.6.7"
     val akkaHttpVersion = "10.1.12"
 
     // Logging

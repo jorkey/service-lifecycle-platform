@@ -149,5 +149,6 @@ object DistributionMain extends App {
     case ex: Throwable =>
       log.error("Exception", ex)
       sys.error(ex.getMessage)
+      sys.exit(1)
   }
 }
