@@ -43,104 +43,111 @@ object DistributionMain extends App {
     "           removeUser <userName=value>\n" +
     "           changePassword <userName=value>"
 
-  val command = args(0)
-  val arguments = Arguments.parse(args.drop(1))
+  try {
 
-  implicit val filesLocker = new SmartFilesLocker()
+    val command = args(0)
+    val arguments = Arguments.parse(args.drop(1))
 
-  val usersCredentials = UsersCredentials()
+    implicit val filesLocker = new SmartFilesLocker()
 
-  command match {
-    case "developer" =>
-      val config = DeveloperDistributionConfig().getOrElse {
-        sys.error("No config")
-      }
+    val usersCredentials = UsersCredentials()
 
-      val dir = new DeveloperDistributionDirectory(directory)
-
-      val stateUploader = new DeveloperStateUploader(dir)
-      val faultUploader = new DeveloperFaultUploader(dir)
-
-      val selfUpdater = new SelfUpdater(dir)
-      val distribution = new DeveloperDistribution(dir, config.port, usersCredentials, stateUploader, faultUploader)
-
-      selfUpdater.start()
-
-      Runtime.getRuntime.addShutdownHook(new Thread() {
-        override def run(): Unit = {
-          selfUpdater.close()
+    command match {
+      case "developer" =>
+        val config = DeveloperDistributionConfig().getOrElse {
+          sys.error("No config")
         }
-      })
 
-      distribution.run()
+        val dir = new DeveloperDistributionDirectory(directory)
 
-    case "client" =>
-      val config = ClientDistributionConfig().getOrElse {
-        sys.error("No config")
-      }
+        val stateUploader = new DeveloperStateUploader(dir)
+        val faultUploader = new DeveloperFaultUploader(dir)
 
-      val dir = new ClientDistributionDirectory(directory)
+        val selfUpdater = new SelfUpdater(dir)
+        val distribution = new DeveloperDistribution(dir, config.port, usersCredentials, stateUploader, faultUploader)
 
-      val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl)
-      val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
-      val logUploader = new ClientLogUploader(dir)
+        selfUpdater.start()
 
-      val selfUpdater = new SelfUpdater(dir)
-
-      val distribution = new ClientDistribution(dir, config.port, usersCredentials, stateUploader, logUploader, faultUploader)
-
-      stateUploader.start()
-      logUploader.start()
-      faultUploader.start()
-      selfUpdater.start()
-
-      Runtime.getRuntime.addShutdownHook(new Thread() {
-        override def run(): Unit = {
-          stateUploader.close()
-          logUploader.close()
-          faultUploader.close()
-          selfUpdater.close()
-        }
-      })
-
-      distribution.run()
-
-    case "addUser" =>
-      val userName = arguments.getValue("userName")
-      val role = UserRole.withName(arguments.getValue("role"))
-      val password = StdIn.readLine("Enter password: ")
-      if (usersCredentials.getCredentials(userName).isDefined) {
-        sys.error(s"User ${userName} credentials already exists")
-      }
-      usersCredentials.addUser(userName, UserCredentials(role, PasswordHash(password)))
-      if (!usersCredentials.save()) {
-        sys.error("Can't save credentials file")
-      }
-      sys.exit()
-
-    case "removeUser" =>
-      val userName = arguments.getValue("userName")
-      usersCredentials.removeUser(userName)
-      if (!usersCredentials.save()) {
-        sys.error("Can't save credentials file")
-      }
-      sys.exit()
-
-    case "changePassword" =>
-      val userName = arguments.getValue("userName")
-      val password = StdIn.readLine("Enter password: ")
-      usersCredentials.getCredentials(userName) match {
-        case Some(credentials) =>
-          credentials.passwordHash = PasswordHash(password)
-          if (!usersCredentials.save()) {
-            sys.error("Can't save credentials file")
+        Runtime.getRuntime.addShutdownHook(new Thread() {
+          override def run(): Unit = {
+            selfUpdater.close()
           }
-        case None =>
-          sys.error(s"No user ${userName} credentials")
-      }
-      sys.exit()
+        })
 
-    case _ =>
-      sys.error(s"Invalid command ${command}\n${usage()}")
+        distribution.run()
+
+      case "client" =>
+        val config = ClientDistributionConfig().getOrElse {
+          sys.error("No config")
+        }
+
+        val dir = new ClientDistributionDirectory(directory)
+
+        val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl)
+        val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
+        val logUploader = new ClientLogUploader(dir)
+
+        val selfUpdater = new SelfUpdater(dir)
+
+        val distribution = new ClientDistribution(dir, config.port, usersCredentials, stateUploader, logUploader, faultUploader)
+
+        stateUploader.start()
+        logUploader.start()
+        faultUploader.start()
+        selfUpdater.start()
+
+        Runtime.getRuntime.addShutdownHook(new Thread() {
+          override def run(): Unit = {
+            stateUploader.close()
+            logUploader.close()
+            faultUploader.close()
+            selfUpdater.close()
+          }
+        })
+
+        distribution.run()
+
+      case "addUser" =>
+        val userName = arguments.getValue("userName")
+        val role = UserRole.withName(arguments.getValue("role"))
+        val password = StdIn.readLine("Enter password: ")
+        if (usersCredentials.getCredentials(userName).isDefined) {
+          sys.error(s"User ${userName} credentials already exists")
+        }
+        usersCredentials.addUser(userName, UserCredentials(role, PasswordHash(password)))
+        if (!usersCredentials.save()) {
+          sys.error("Can't save credentials file")
+        }
+        sys.exit()
+
+      case "removeUser" =>
+        val userName = arguments.getValue("userName")
+        usersCredentials.removeUser(userName)
+        if (!usersCredentials.save()) {
+          sys.error("Can't save credentials file")
+        }
+        sys.exit()
+
+      case "changePassword" =>
+        val userName = arguments.getValue("userName")
+        val password = StdIn.readLine("Enter password: ")
+        usersCredentials.getCredentials(userName) match {
+          case Some(credentials) =>
+            credentials.passwordHash = PasswordHash(password)
+            if (!usersCredentials.save()) {
+              sys.error("Can't save credentials file")
+            }
+          case None =>
+            sys.error(s"No user ${userName} credentials")
+        }
+        sys.exit()
+
+      case _ =>
+        sys.error(s"Invalid command ${command}\n${usage()}")
+    }
+  } catch {
+    case ex: Throwable =>
+      log.error("Exception", ex)
+      sys.error(ex.getMessage)
   }
 }
