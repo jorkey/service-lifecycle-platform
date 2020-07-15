@@ -51,11 +51,11 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
               get {
                 path(loginPath) {
                   mapRejections { rejections =>
-                    rejections.map(rejection => rejection match {
+                    rejections.map(_ match {
                       case AuthenticationFailedRejection(cause, challenge) =>
                         val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
                         AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
-                      case _ => _
+                      case rejection => rejection
                     })
                   } {
                     authenticateBasic(realm = "Distribution", authenticate) { case (_, userCredentials) =>
