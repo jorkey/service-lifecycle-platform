@@ -1,4 +1,4 @@
-import config from 'config';
+// TODO import config from 'config';
 
 export const Utils = {
     login,
@@ -6,17 +6,10 @@ export const Utils = {
     get
 };
 
-function login(username, password) {
-    return fetch(`${config.apiUrl}/login`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-    }).then(handleResponse)
-      .then(user => {
+function login(user, password) {
+    return get('/login', user, password).then(user => {
         if (user) {
-            user.authdata = window.btoa(username + ':' + password)
+            user.authdata = window.btoa(user + ':' + password)
             localStorage.setItem('user', JSON.stringify(user))
         }
         return user
@@ -27,16 +20,23 @@ function logout() {
     localStorage.removeItem('user')
 }
 
-function get(url) {
-    return fetch(`${config.apiUrl}/${url}`, {
+function get(path, user, password) {
+    console.log("get")
+    // TODO return fetch(`${config.apiUrl}/${url}`, {
+    return fetch(`${path}`, {
             method: 'GET',
-            headers: authHeader()
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + window.btoa(user + ':' + password)
+            }
         }).then(handleResponse);
 }
 
 function handleResponse(response) {
+    console.log("handleResponse")
     if (response.ok) {
         const text = response.text
+        console.log("Response: " +  response.status)
         return text && JSON.parse(text)
     } else {
         logout()
@@ -47,7 +47,7 @@ function handleResponse(response) {
     }
 }
 
-export function authHeader() {
+export function authHeader1() {
     let user = JSON.parse(localStorage.getItem('user'))
 
     if (user && user.authdata) {

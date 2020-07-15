@@ -38,8 +38,7 @@ class LoginPage extends React.Component {
         }
 
         this.setState({ loading: true });
-        Utils.login(username, password)
-            .then(
+        Utils.login(username, password).then(
                 user => {
                     const { from } = this.props.location.state || { from: { pathname: "/" } };
                     this.props.history.push(from);

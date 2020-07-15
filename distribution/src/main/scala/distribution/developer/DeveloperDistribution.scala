@@ -5,7 +5,7 @@ import java.util.Date
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
@@ -46,8 +46,24 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         logRequest(requestLogger _) {
           logResult(resultLogger _) {
             extractRequestContext { ctx =>
-              implicit val materializer = ctx.materializer
-
+              get {
+                path(loginPath) {
+                  mapResponse {
+                    case response =>
+                      if (response.status == StatusCodes.Unauthorized) {
+                        // Prevent browser popup dialog.
+                        val headers = response.headers.filter(_.name() != "Basic realm")
+                        HttpResponse.apply(response.status, headers, response.entity, response.protocol)
+                      } else {
+                        response
+                      }
+                  } {
+                    authenticateBasic(realm = "Distribution", authenticate) { case (_, userCredentials) =>
+                      complete(UserInfo(userCredentials.role.toString))
+                    }
+                  }
+                }
+              } ~
               authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                 get {
                   path(loginPath) {
