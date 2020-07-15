@@ -42,19 +42,6 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     case ex => complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
   }
 
-  private def authenticateBasicExt[T](realm: String, authenticator: Authenticator[T]): Route = {
-    mapRejections { rejections =>
-      rejections.map(_ match {
-        case AuthenticationFailedRejection(cause, challenge) =>
-          val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
-          AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
-        case rejection => rejection
-      })
-    } {
-      authenticateBasic(realm = "Distribution", authenticate)
-    }
-  }
-
   // TODO remove parameter 'image' when all usages will 'false'
   protected def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]], image: Boolean): Route = {
     onSuccess(future) { desiredVersions =>
