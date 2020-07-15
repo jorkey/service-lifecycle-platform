@@ -121,6 +121,7 @@
             "clean",
             "set version in distribution := \"%%version%%\"",
             "set assemblyOutputPath in assembly in distribution := new File(\"target/distribution-%%version%%.jar\")",
+            "set test in assembly in distribution := {}",
             "distribution/assembly"],
           "exitCode": 0,
           "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
