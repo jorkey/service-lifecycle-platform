@@ -48,8 +48,23 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         logRequest(requestLogger _) {
           logResult(resultLogger _) {
             extractRequestContext { ctx =>
-              mapRejections { rejections =>
-                // To prevent browser to invoke basic auth popup.
+              get {
+                path(browsePath) {
+                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                    authorize(userCredentials.role == UserRole.Administrator) {
+                      browse(None)
+                    }
+                  }
+                } ~
+                pathPrefix(browsePath / ".*".r) { path =>
+                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                    authorize(userCredentials.role == UserRole.Administrator) {
+                      browse(Some(path))
+                    }
+                  }
+                }
+              } ~
+              mapRejections { rejections => // Prevent browser to invoke basic auth popup.
                 rejections.map(_ match {
                   case AuthenticationFailedRejection(cause, challenge) =>
                     val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
@@ -84,12 +99,6 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                         parameter("image".as[Boolean]?true) { image =>
                           getDesiredVersion(service, getDesiredVersions(None), image)
                         }
-                      } ~
-                      path(browsePath) {
-                        browse(None)
-                      } ~
-                      pathPrefix(browsePath / ".*".r) { path =>
-                        browse(Some(path))
                       } ~
                       path(getDistributionVersionPath) {
                         getVersion()

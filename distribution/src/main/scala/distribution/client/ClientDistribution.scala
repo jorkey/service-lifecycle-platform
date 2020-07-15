@@ -37,6 +37,22 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
       handleExceptions(exceptionHandler) {
         logRequest(requestLogger _) {
           logResult(resultLogger _) {
+            get {
+              path(prefix / browsePath) {
+                authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                  authorize(userCredentials.role == UserRole.Administrator) {
+                    browse(None)
+                  }
+                }
+              } ~
+              pathPrefix(prefix / browsePath / ".*".r) { path =>
+                authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                  authorize(userCredentials.role == UserRole.Administrator) {
+                    browse(Some(path))
+                  }
+                }
+              }
+            } ~
             mapRejections { rejections =>
               // To prevent browser to invoke basic auth popup.
               rejections.map(_ match {
@@ -73,18 +89,12 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                     getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
                   } ~
                   authorize(userCredentials.role == UserRole.Administrator) {
-                    path(prefix / browsePath) {
-                      browse(None)
+                    path(prefix / getDistributionVersionPath) {
+                      getVersion()
                     } ~
-                      pathPrefix(prefix / browsePath / ".*".r) { path =>
-                        browse(Some(path))
-                      } ~
-                      path(prefix / getDistributionVersionPath) {
-                        getVersion()
-                      } ~
-                      path(prefix / getScriptsVersionPath) {
-                        getScriptsVersion()
-                      }
+                    path(prefix / getScriptsVersionPath) {
+                      getScriptsVersion()
+                    }
                   }
                 } ~
                   post {
