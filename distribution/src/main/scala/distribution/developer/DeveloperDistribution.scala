@@ -7,8 +7,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, _}
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
+import akka.http.scaladsl.model.headers.HttpChallenge
+import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
@@ -48,15 +50,13 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
             extractRequestContext { ctx =>
               get {
                 path(loginPath) {
-                  mapResponse {
-                    case response =>
-                      if (response.status == StatusCodes.Unauthorized) {
-                        // Prevent browser popup dialog.
-                        val headers = response.headers.filter(_.name() != "Basic realm")
-                        HttpResponse.apply(response.status, headers, response.entity, response.protocol)
-                      } else {
-                        response
-                      }
+                  mapRejections { rejections =>
+                    rejections.map(rejection => rejection match {
+                      case AuthenticationFailedRejection(cause, challenge) =>
+                        val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
+                        AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
+                      case _ => _
+                    })
                   } {
                     authenticateBasic(realm = "Distribution", authenticate) { case (_, userCredentials) =>
                       complete(UserInfo(userCredentials.role.toString))
