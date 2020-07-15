@@ -35,9 +35,11 @@ function get(path, user, password) {
 function handleResponse(response) {
     console.log("handleResponse")
     if (response.ok) {
-        const text = response.text
-        console.log("Response: " +  response.status)
-        return text && JSON.parse(text)
+        return response.text().then(text => {
+                console.log("Response: " + text)
+                return text && JSON.parse(text)
+            }
+        )
     } else {
         logout()
         console.log("Response error: " +  response.statusText)

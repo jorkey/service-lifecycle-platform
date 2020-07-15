@@ -6,13 +6,14 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
+import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, failWith, fileUpload, getFromBrowseableDirectory, getFromFile}
 import com.vyulabs.update.common.Common.{ServiceName, UserName}
 import com.vyulabs.update.version.BuildVersion
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.{Credentials, FileInfo}
-import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
+import akka.http.scaladsl.server.directives.{AuthenticationDirective, Credentials, FileInfo}
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.util.ByteString
@@ -28,6 +29,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 import akka.pattern.after
 import com.vyulabs.update.lock.{SmartFileLock, SmartFilesLocker}
+import distribution.UserInfo
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -38,6 +40,19 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
 
   protected val exceptionHandler = ExceptionHandler {
     case ex => complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
+  }
+
+  private def authenticateBasicExt[T](realm: String, authenticator: Authenticator[T]): Route = {
+    mapRejections { rejections =>
+      rejections.map(_ match {
+        case AuthenticationFailedRejection(cause, challenge) =>
+          val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
+          AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
+        case rejection => rejection
+      })
+    } {
+      authenticateBasic(realm = "Distribution", authenticate)
+    }
   }
 
   // TODO remove parameter 'image' when all usages will 'false'
