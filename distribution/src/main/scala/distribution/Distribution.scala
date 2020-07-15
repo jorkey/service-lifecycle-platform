@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, failWith, fileUpload, getFromBrowseableDirectory, getFromFile}
-import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.common.Common.{ServiceName, UserName}
 import com.vyulabs.update.version.BuildVersion
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.{Credentials, FileInfo}
@@ -19,7 +19,7 @@ import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigParseOptions, ConfigSyntax}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.info.DesiredVersions
-import com.vyulabs.update.users.{PasswordHash, UsersCredentials}
+import com.vyulabs.update.users.{PasswordHash, UserCredentials, UsersCredentials}
 import com.vyulabs.update.utils.Utils
 import org.slf4j.LoggerFactory
 
@@ -279,8 +279,8 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     }
   }
 
-  protected def uploadToConfig(fieldName: String, config: (Config) => Route)(implicit materializer: Materializer): Route = {
-    uploadToString(fieldName, content => Utils.parseConfigString(content, ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)) match {
+  protected def uploadFileToConfig(fieldName: String, config: (Config) => Route)(implicit materializer: Materializer): Route = {
+    uploadFileToString(fieldName, content => Utils.parseConfigString(content, ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)) match {
       case Some(c) =>
         config(c)
       case None =>
@@ -288,7 +288,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     })
   }
 
-  protected def uploadToString(fieldName: String, content: (String) => Route)(implicit materializer: Materializer): Route = {
+  protected def uploadFileToString(fieldName: String, content: (String) => Route)(implicit materializer: Materializer): Route = {
     fileUpload(fieldName) {
       case (_, byteSource) =>
         val sink = Sink.fold[ByteString, ByteString](ByteString())(_ ++ _)
@@ -299,7 +299,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     }
   }
 
-  protected def uploadToSource(fieldName: String, source: (FileInfo, Source[ByteString, Any]) => Route)(implicit materializer: Materializer): Route = {
+  protected def uploadFileToSource(fieldName: String, source: (FileInfo, Source[ByteString, Any]) => Route)(implicit materializer: Materializer): Route = {
     fileUpload(fieldName) {
       case (fileInfo, byteSource) =>
         source(fileInfo, byteSource)
@@ -338,13 +338,13 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     }
   }
 
-  protected def authenticate(credentials: Credentials): Option[String] = {
+  protected def authenticate(credentials: Credentials): Option[(UserName, UserCredentials)] = {
     credentials match {
-      case p@Credentials.Provided(user) =>
-        usersCredentials.getCredentials(user) match {
+      case p@Credentials.Provided(userName) =>
+        usersCredentials.getCredentials(userName) match {
           case Some(userCredentials) if p.verify(userCredentials.passwordHash.hash,
-              PasswordHash.generatePasswordHash(_, userCredentials.passwordHash.salt)) =>
-            Some(user)
+            PasswordHash.generatePasswordHash(_, userCredentials.passwordHash.salt)) =>
+            Some(userName, userCredentials)
           case _ =>
             None
         }

@@ -83,10 +83,6 @@ class UsersCredentials(private var users: Map[UserName, UserCredentials]) {
     users -= user
   }
 
-  def getRole(user: UserName): UserRole = {
-    users.get(user).map(_.role).getOrElse(UserRole.None)
-  }
-
   def save(): Boolean = {
     Utils.writeConfigFile(UsersCredentials.credentialsFile, toConfig())
   }

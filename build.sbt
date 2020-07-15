@@ -99,6 +99,7 @@ lazy val akkaDependencies = Seq(
   dependencies.akkaSlf4j,
   dependencies.akkaStreamTestKit,
   dependencies.akkaHttp,
+  dependencies.akkaHttpSpray,
   dependencies.akkaHttpTestKit
 )
 
@@ -106,6 +107,7 @@ lazy val dependencies =
   new {
     val akkaVersion = "2.5.22"
     val akkaHttpVersion = "10.1.8"
+    val akkaHttpSprayVersion = "10.1.12"
 
     // Logging
     val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
@@ -126,6 +128,7 @@ lazy val dependencies =
     val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
     val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
+    val akkaHttpSpray = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpSprayVersion
     val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
 
     // Misc

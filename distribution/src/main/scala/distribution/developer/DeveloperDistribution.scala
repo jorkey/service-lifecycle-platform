@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{path, _}
-import akka.http.scaladsl.server.{Route}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.stream.Materializer
 import akka.util.ByteString
@@ -22,6 +22,7 @@ import com.vyulabs.update.state.InstancesState
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
+import distribution.{JsonSupport, UserInfo}
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
 import org.slf4j.LoggerFactory
 
@@ -31,7 +32,7 @@ import ExecutionContext.Implicits.global
 class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
                            (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
-      extends Distribution(dir, usersCredentials) with DeveloperDistributionWebPaths {
+      extends Distribution(dir, usersCredentials) with DeveloperDistributionWebPaths with JsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def run(): Unit = {
@@ -47,15 +48,18 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
             extractRequestContext { ctx =>
               implicit val materializer = ctx.materializer
 
-              authenticateBasic(realm = "Distribution", authenticate) { userName =>
+              authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                 get {
+                  path(loginPath) {
+                    complete(UserInfo(userCredentials.role.toString))
+                  } ~
                   path(downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                     getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                   } ~
                   path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                     getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                   } ~
-                  authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
+                  authorize(userCredentials.role == UserRole.Administrator) {
                     path(downloadVersionsInfoPath / ".*".r) { service =>
                       parameter("client".?) { clientName =>
                         complete(Utils.renderConfig(
@@ -85,7 +89,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       getScriptsVersion()
                     }
                   } ~
-                  authorize(usersCredentials.getRole(userName) == UserRole.Client) {
+                  authorize(userCredentials.role == UserRole.Client) {
                     path(downloadDesiredVersionsPath) {
                       parameter("common".as[Boolean]?false) { common =>
                         getDesiredVersionsRoute(if (!common) getPersonalDesiredVersions(userName) else getDesiredVersions(None))
@@ -108,7 +112,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                   }
                 } ~
                   post {
-                    authorize(usersCredentials.getRole(userName) == UserRole.Administrator) {
+                    authorize(userCredentials.role == UserRole.Administrator) {
                       path(uploadVersionPath / ".*".r / ".*".r) { (service, version) =>
                         val buildVersion = BuildVersion.parse(version)
                         versionImageUpload(service, buildVersion)
@@ -123,24 +127,24 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                         }
                       }
                     } ~
-                    authorize(usersCredentials.getRole(userName) == UserRole.Client) {
+                    authorize(userCredentials.role == UserRole.Client) {
                       path(uploadTestedVersionsPath) {
                         uploadTestedVersions(userName)
                       } ~
                       path(uploadInstancesStatePath) {
-                        uploadToConfig(instancesStateName, (config) => {
+                        uploadFileToConfig(instancesStateName, (config) => {
                           val instancesState = InstancesState(config)
                           stateUploader.receiveInstancesState(userName, instancesState)
                         })
                       } ~
                       path(uploadInstancesStatePath / ".*".r) { client => // TODO deprecated
-                        uploadToConfig(instancesStateName, (config) => {
+                        uploadFileToConfig(instancesStateName, (config) => {
                           val instancesState = InstancesState(config)
                           stateUploader.receiveInstancesState(userName, instancesState)
                         })
                       } ~
                       path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
-                        uploadToSource(serviceFaultName, (fileInfo, source) => {
+                        uploadFileToSource(serviceFaultName, (fileInfo, source) => {
                           faultUploader.receiveFault(userName, serviceName, fileInfo.getFileName, source)
                         })
                       }
@@ -302,7 +306,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
   }
 
   private def uploadTestedVersions(clientName: ClientName): Route = {
-    uploadToConfig(testedVersionsName, (config) => {
+    uploadFileToConfig(testedVersionsName, (config) => {
       val future = overwriteFileContentWithLock(dir.getDesiredVersionsFile(None), content => {
         val desiredVersionsConfig = Utils.parseConfigString(content.decodeString("utf8"), ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)).getOrElse {
           throw new IOException(s"Can't parse ${dir.getDesiredVersionsFile(None)}")

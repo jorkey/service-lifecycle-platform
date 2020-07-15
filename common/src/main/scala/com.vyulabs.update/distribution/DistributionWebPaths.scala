@@ -26,6 +26,7 @@ trait DistributionWebPaths {
   val getDistributionVersionPath = "get-distribution-version"
   val getScriptsVersionPath = "get-scripts-version"
 
+  val loginPath = "login"
   val browsePath = "browse"
   val pingPath = "ping"
 
