@@ -55,18 +55,18 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         process match {
           case Some(p) =>
             val terminated = try {
-              state.info("Stop service")
+              state.info(s"Stop service, process ${p.pid()}")
               p.destroy()
               if (!p.waitFor(5, TimeUnit.SECONDS)) {
-                state.error("Service process is not terminated normally during 5 seconds - destroy it forcibly")
+                state.error(s"Service process ${p.pid()} is not terminated normally during 5 seconds - destroy it forcibly")
                 p.destroyForcibly()
               }
               val status = p.waitFor()
-              state.info(s"Service process is terminated with status ${status}.")
+              state.info(s"Service process ${p.pid()} is terminated with status ${status}.")
               true
             } catch {
               case e: Exception =>
-                state.error("Stop process error", e)
+                state.error(s"Stop process ${p.pid()} error", e)
                 false
             }
             if (terminated) {
@@ -189,6 +189,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         lastStartTime = System.currentTimeMillis()
         val process = builder.start()
         this.process = Some(process)
+        log.debug(s"Started process ${process.pid()}")
         val logWriter = new LogWriter(new File(state.currentServiceDirectory, params.config.LogWriter.Directory),
           params.config.LogWriter.MaxFileSizeMB * 1024 * 1024,
           params.config.LogWriter.MaxFilesCount,

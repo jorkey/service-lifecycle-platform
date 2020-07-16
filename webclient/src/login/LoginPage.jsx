@@ -30,7 +30,6 @@ class LoginPage extends React.Component {
         this.setState({ submitted: true });
         const { username, password } = this.state;
 
-        // stop here if form is invalid
         if (!(username && password)) {
             return;
         }
