@@ -25,6 +25,32 @@ fi
 serviceToSetup=distribution
 . update.sh
 
+function createService() {
+  sudo sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
+[Unit]
+Description=Update distribution server
+
+[Service]
+User=ec2-user
+KillMode=process
+Restart=always
+RestartSec=0
+StartLimitInterval=0
+LimitCORE=infinity
+WorkingDirectory=`pwd`
+ExecStart=`pwd`/distribution.sh "$@"
+
+[Install]
+Alias=distribution.service
+
+EOF
+"
+  echo "Service distribution is created"
+
+  sudo systemctl daemon-reload
+  sudo systemctl start update-distribution.service
+}
+
 if [ "$1" == "developer" ]; then
   if [ -z "$2" ]; then
     exitUsage
@@ -35,23 +61,9 @@ if [ "$1" == "developer" ]; then
   "port" : ${port}
 }
 EOF
-  cat << EOF > distribution_pm2.json
-{
-  "apps" : [{
-    "name"         : "distribution",
-    "interpreter"  : "none",
-    "watch"        : false,
-    "script"       : "distribution.sh",
-    "max_restarts" : 2147483647,
-    "min_uptime"   : "5s",
-    "merge_logs"   : true,
-    "cwd"          : ".",
-    "args": [
-      "developer"
-    ]
-  }]
-}
-EOF
+
+  createService developer
+
 elif [ "$1" == "client" ]; then
   if [ -z "$3" ]; then
     exitUsage
@@ -65,29 +77,8 @@ elif [ "$1" == "client" ]; then
 }
 EOF
 
-  sudo sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
-[Unit]
-Description=Update distribution server
+  createService client
 
-[Service]
-User=ec2-user
-KillMode=process
-Restart=always
-RestartSec=0
-StartLimitInterval=0
-LimitCORE=infinity
-WorkingDirectory=`pwd`
-ExecStart=`pwd`/distribution.sh client
-
-[Install]
-Alias=distribution.service
-
-EOF
-"
-  echo "Service distribution is created"
-
-  sudo systemctl daemon-reload
-  sudo systemctl start update-distribution.service
 else
   exitUsage
 fi

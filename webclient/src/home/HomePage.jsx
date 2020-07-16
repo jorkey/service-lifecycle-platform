@@ -16,13 +16,13 @@ class HomePage extends React.Component {
             user: JSON.parse(localStorage.getItem('user')),
             users: { loading: true }
         });
-        Utils.getAll().then(users => this.setState({ users }));
+        //Utils.getAll().then(users => this.setState({ users }));
     }
 
     render() {
         const { user } = this.state;
         return (
-            <div>Home page {user}</div>
+            <div>Home page</div>
         );
     }
 }
