@@ -1,6 +1,5 @@
 import React from 'react';
-
-import { Utils } from '../utils';
+import {Utils} from "../utils";
 
 class HomePage extends React.Component {
     constructor(props) {
@@ -14,13 +13,12 @@ class HomePage extends React.Component {
     componentDidMount() {
         this.setState({
             user: JSON.parse(localStorage.getItem('user')),
-            users: { loading: true }
         });
-        //Utils.getAll().then(users => this.setState({ users }));
+        Utils.get("/sdsds")
     }
 
     render() {
-        const { user } = this.state;
+        //const { user } = this.state;
         return (
             <div>Home page</div>
         );

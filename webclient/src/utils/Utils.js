@@ -1,4 +1,3 @@
-// TODO import config from 'config';
 
 export const Utils = {
     login,
@@ -7,54 +6,56 @@ export const Utils = {
 };
 
 function login(user, password) {
-    return get('/login', user, password).then(user => {
+    let authData = window.btoa(user + ':' + password)
+    return fetchRequest('GET', '/login', authData).then(user => {
         if (user) {
-            user.authdata = window.btoa(user + ':' + password)
+            user.authData = authData
             localStorage.setItem('user', JSON.stringify(user))
         }
         return user
-      });
+    });
 }
 
 function logout() {
     localStorage.removeItem('user')
 }
 
-function get(path, user, password) {
-    console.log("get")
-    // TODO return fetch(`${config.apiUrl}/${url}`, {
-    return fetch(`${path}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + window.btoa(user + ':' + password)
-            }
-        }).then(handleResponse);
-}
-
-function handleResponse(response) {
-    console.log("handleResponse")
-    if (response.ok) {
-        return response.text().then(text => {
-                console.log("Response: " + text)
-                return text && JSON.parse(text)
-            }
-        )
-    } else {
-        logout()
-        console.log("Response error: " +  response.statusText)
-        // eslint-disable-next-line no-restricted-globals
-        //location.reload(true)
-        return Promise.reject(response.status + ": " + response.statusText)
-    }
-}
-
-export function authHeader1() {
+function get(path) {
+    console.log(`get ${path}`)
     let user = JSON.parse(localStorage.getItem('user'))
+    return fetchRequest('GET', path, user.authData).then(
+      data => { return data },
+      response => {
+        if (response.status === 401) {
+            logout()
+            // eslint-disable-next-line no-restricted-globals
+            location.reload(true)
+        } else {
+            return Promise.reject(response)
+        }
+    })
+}
 
-    if (user && user.authdata) {
-        return { 'Authorization': 'Basic ' + user.authdata }
-    } else {
-        return {}
+function fetchRequest(method, path, authData) {
+    console.log(`Fetch ${method} ${path}`)
+    let requestInit = {}
+    requestInit.method = method
+    let headers = { 'Content-Type': 'application/json' }
+    if (authData) {
+        headers.Authorization = 'Basic ' + authData
     }
+    requestInit.headers = headers
+    return fetch(path, requestInit).then(response => {
+        console.log("handleResponse")
+        if (response.ok) {
+            return response.text().then(text => {
+                  console.log("Response: " + text)
+                  return text && JSON.parse(text)
+              }
+            )
+        } else {
+            console.log("Response error: " +  response.statusText)
+            return Promise.reject(response)
+        }
+    })
 }

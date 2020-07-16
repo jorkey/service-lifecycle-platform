@@ -12,8 +12,6 @@ class LoginPage extends React.Component {
         this.state = {
             username: '',
             password: '',
-            submitted: false,
-            loading: false,
             error: ''
         };
 
@@ -39,43 +37,44 @@ class LoginPage extends React.Component {
 
         this.setState({ loading: true });
         Utils.login(username, password).then(
-                user => {
-                    const { from } = this.props.location.state || { from: { pathname: "/" } };
-                    this.props.history.push(from);
-                },
-                error => {
-                    console.log("Login error " + error)
-                    this.setState({ error: error.toString(), loading: false })
-                }
-            );
+          user => {
+              const { from } = this.props.location.state || { from: { pathname: "/" } };
+              this.props.history.push(from);
+          },
+          response => {
+              const error = (response.status === 401)?"Authorization error":response.status + ": " + response.statusText;
+              console.log("Login error " + error)
+              this.setState({ error: error.toString(), loading: false })
+          }
+        );
     }
 
     render() {
         const { username, password, submitted, loading, error } = this.state;
         return (
-            <div className="col-md-6 col-md-offset-3">
-                <h2>Update Distribution Server</h2>
-                <form name="form" onSubmit={this.handleSubmit}>
-                    <div className={'form-group' + (submitted && !username ? ' has-error' : '')}>
-                        <label htmlFor="username">Username</label>
-                        <input type="text" className="form-control" name="username" value={username} onChange={this.handleChange} />
-                        {submitted && !username &&
-                        <div className="help-block">Username is required</div>
-                        }
-                    </div>
-                    <div className={'form-group' + (submitted && !password ? ' has-error' : '')}>
-                        <label htmlFor="password">Password</label>
-                        <input type="password" className="form-control" name="password" value={password} onChange={this.handleChange} />
-                        {submitted && !password &&
-                        <div className="help-block">Password is required</div>
-                        }
-                    </div>
-                    <div className="form-group">
-                        <button className="btn btn-primary" disabled={loading}>Login</button>
-                    </div>
-                    {error && <div className={'alert alert-danger'}>{error}</div>}
-                </form>
-            </div>
+          <div className="col-md-6 col-md-offset-3">
+              <h2>Update Distribution Server</h2>
+              <form name="form" onSubmit={this.handleSubmit}>
+                  <div className={'form-group' + (submitted && !username ? ' has-error' : '')}>
+                      <label htmlFor="username">Username</label>
+                      <input type="text" className="form-control" name="username" value={username} onChange={this.handleChange} />
+                      {submitted && !username &&
+                      <div className="help-block">Username is required</div>
+                      }
+                  </div>
+                  <div className={'form-group' + (submitted && !password ? ' has-error' : '')}>
+                      <label htmlFor="password">Password</label>
+                      <input type="password" className="form-control" name="password" value={password} onChange={this.handleChange} />
+                      {submitted && !password &&
+                      <div className="help-block">Password is required</div>
+                      }
+                  </div>
+                  <div className="form-group">
+                      <button className="btn btn-primary" disabled={loading}>Login</button>
+                  </div>
+                  {error && <div className={'alert alert-danger'}>{error}</div>}
+              </form>
+          </div>
         );
     }
 }
