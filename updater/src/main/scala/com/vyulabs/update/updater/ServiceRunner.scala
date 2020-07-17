@@ -106,7 +106,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
     var processes = Seq.empty[ProcessHandle]
     process.children().forEach { process =>
       processes :+= process
-      processes :+= getProcessDescendants(process)
+      processes ++= getProcessDescendants(process)
     }
     processes
   }
