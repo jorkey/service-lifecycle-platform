@@ -75,8 +75,10 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
                   Thread.sleep(1000)
                   descendantProcesses = descendantProcesses.filter(_.isAlive)
                 } while (!descendantProcesses.isEmpty && System.currentTimeMillis() - stopBeginTime < processTerminateTimeoutMs)
-                state.error(s"Service descendant processes ${descendantProcesses.map(_.pid())} are not terminated normally during ${processTerminateTimeoutMs}ms seconds - destroy them forcibly")
-                descendantProcesses.foreach(_.destroyForcibly())
+                if (!descendantProcesses.isEmpty) {
+                  state.error(s"Service descendant processes ${descendantProcesses.map(_.pid())} are not terminated normally during ${processTerminateTimeoutMs}ms seconds - destroy them forcibly")
+                  descendantProcesses.foreach(_.destroyForcibly())
+                }
               }
               true
             } catch {
