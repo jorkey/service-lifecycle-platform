@@ -34,6 +34,8 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
 
   private val maxLogHistoryDirCapacity = 5 * 1000 * 1000 * 1000
 
+  private val processTerminateTimeoutMs = 5000
+
   def isStarted() : Boolean = process.isDefined
 
   def startService(config: RunServiceConfig, args: Map[String, String], directory: File): Boolean = {
@@ -55,14 +57,27 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         process match {
           case Some(p) =>
             val terminated = try {
-              state.info(s"Stop service, process ${p.pid()}")
+              var descendantProcesses = getProcessDescendants(p.toHandle)
+              state.info(s"Stop service, process ${p.pid()}, descendant processes ${descendantProcesses.map(_.pid())}")
               p.destroy()
-              if (!p.waitFor(5, TimeUnit.SECONDS)) {
-                state.error(s"Service process ${p.pid()} is not terminated normally during 5 seconds - destroy it forcibly")
+              if (!p.waitFor(processTerminateTimeoutMs, TimeUnit.MILLISECONDS)) {
+                state.error(s"Service process ${p.pid()} is not terminated normally during ${processTerminateTimeoutMs}ms - destroy it forcibly")
                 p.destroyForcibly()
               }
               val status = p.waitFor()
               state.info(s"Service process ${p.pid()} is terminated with status ${status}.")
+              descendantProcesses = descendantProcesses.filter(_.isAlive)
+              if (!descendantProcesses.isEmpty) {
+                state.info(s"Destroy remaining descendant processes ${descendantProcesses.map(_.pid())}")
+                descendantProcesses.foreach(_.destroy())
+                val stopBeginTime = System.currentTimeMillis()
+                do {
+                  Thread.sleep(1000)
+                  descendantProcesses = descendantProcesses.filter(_.isAlive)
+                } while (!descendantProcesses.isEmpty && System.currentTimeMillis() - stopBeginTime < processTerminateTimeoutMs)
+                state.error(s"Service descendant processes ${descendantProcesses.map(_.pid())} are not terminated normally during ${processTerminateTimeoutMs}ms seconds - destroy them forcibly")
+                descendantProcesses.foreach(_.destroyForcibly())
+              }
               true
             } catch {
               case e: Exception =>
@@ -85,6 +100,15 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
           false
       }
     }
+  }
+
+  def getProcessDescendants(process: ProcessHandle): Seq[ProcessHandle] = {
+    var processes = Seq.empty[ProcessHandle]
+    process.children().forEach { process =>
+      processes :+= process
+      processes :+= getProcessDescendants(process)
+    }
+    processes
   }
 
   def processFault(stoppedProcess: Process, exitCode: Int, logTail: Queue[String]): Unit = {
