@@ -48,7 +48,7 @@ EOF
   echo "Service distribution is created"
 
   sudo systemctl daemon-reload
-  sudo systemctl start update-distribution.service
+  sudo systemctl restart update-distribution.service
 }
 
 if [ "$1" == "developer" ]; then
