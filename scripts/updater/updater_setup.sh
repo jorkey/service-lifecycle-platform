@@ -16,7 +16,7 @@ serviceToSetup=updater
 . update.sh
 
 if [ "${cloudProvider}" == "Azure" ]; then
-  if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, ":", .compute.name'`; then
+  if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, "#", .compute.name'`; then
     >&2 echo "Can't get instance Id"
     exit 1
   fi

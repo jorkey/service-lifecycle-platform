@@ -26,7 +26,7 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
 
   private val directory = dir.getFaultsDir()
 
-  private val maxClientServiceReportsCount = 25
+  private val maxClientServiceReportsCount = 100
   private val maxClientServiceDirectoryCapacity = 1024 * 1024 * 1024
 
   private var downloadingFiles = Set.empty[File]
