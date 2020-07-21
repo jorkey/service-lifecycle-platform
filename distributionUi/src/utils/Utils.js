@@ -21,7 +21,7 @@ function logout() {
 }
 
 function get(path) {
-  console.log(`get ${path}`)
+  console.log(`Get ${path}`)
   let user = JSON.parse(localStorage.getItem('user'))
   return fetchRequest('GET', path, user.authData).then(
     data => { return data },

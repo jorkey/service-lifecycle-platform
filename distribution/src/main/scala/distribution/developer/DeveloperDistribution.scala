@@ -5,12 +5,13 @@ import java.util.Date
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentType, StatusCodes}
+import akka.http.scaladsl.model.MediaTypes._
+import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.http.scaladsl.model.headers.HttpChallenge
-import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
@@ -169,7 +170,12 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       }
                     }
                   }
+                } ~
+              getFromResourceDirectory("") ~ pathPrefix("") {
+                get {
+                  getFromResource("index.html", ContentType(`text/html`, `UTF-8`))
                 }
+              }
             }
           }
         }

@@ -72,7 +72,14 @@ lazy val distribution = project
     assemblySettings
   )
   .dependsOn(
-    updateCommon
+    updateCommon,
+    distributionUi
+  )
+
+lazy val distributionUi = project
+  .in(file("distributionUi"))
+  .settings(
+    resourceDirectory in Compile := baseDirectory.value / "build"
   )
 
 lazy val gitLib = project
