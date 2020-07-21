@@ -611,7 +611,7 @@ object Utils {
     val files = dir.listFiles().filter(_.isFile)
     if (files.length > maxCount) {
       for (file <- files.sortBy(_.lastModified()).take(files.length - maxCount)) {
-        if (!except.contains(file) && !file.delete()) {
+        if (!except.contains(file) && !deleteFileRecursively(file)) {
           log.error(s"Can't delete ${file}")
         }
       }

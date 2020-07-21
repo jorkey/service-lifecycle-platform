@@ -33,7 +33,7 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)
 
   def receiveFault(clientName: ClientName, serviceName: ServiceName, fileName: String, source: Source[ByteString, Any]): Route = {
-    log.info(s"Receive fault file ${fileName}")
+    log.info(s"Receive fault file ${fileName} from client ${clientName}")
     val serviceDir = new File(directory, serviceName.toString)
     if (!serviceDir.exists() && !serviceDir.mkdir()) {
       return failWith(new IOException(s"Can't make directory ${serviceDir}"))

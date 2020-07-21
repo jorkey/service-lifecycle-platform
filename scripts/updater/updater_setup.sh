@@ -15,8 +15,11 @@ environment=$5
 serviceToSetup=updater
 . update.sh
 
-if [ "${cloudProvider}" = "Azure" ]; then
-  instanceId=`sudo dmidecode | grep UUID | awk '{printf $2}'`
+if [ "${cloudProvider}" == "Azure" ]; then
+  if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, ":", .compute.name'`; then
+    >&2 echo "Can't get instance Id"
+    exit 1
+  fi
 else
   >&2 echo "Invalid cloud provider ${cloudProvider}"
   exit 1
