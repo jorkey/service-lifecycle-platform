@@ -73,7 +73,7 @@ class UpdateClient()(implicit log: Logger) {
           case None =>
             true
         }
-        if (testCondition && !localConfigOnly) {
+        if (!testCondition && !localConfigOnly) {
           log.error("Developer desired versions are not tested")
           return false
         }
