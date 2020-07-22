@@ -109,6 +109,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       }
                     } ~
                     authorize(userCredentials.role == UserRole.Client) {
+                      path(downloadClientConfigPath) {
+                        getFromFile(dir.getClientConfigFile(userName))
+                      } ~
                       path(downloadDesiredVersionsPath) {
                         parameter("common".as[Boolean]?false) { common =>
                           getDesiredVersionsRoute(if (!common) getPersonalDesiredVersions(userName) else getDesiredVersions(None))
@@ -254,38 +257,20 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
             try {
               clientConfig.get match {
                 case Some(clientConfig) =>
-                  var testCondition = false
-                  clientConfig.testClientMatch match {
-                    case Some(testClientMatch) =>
-                      desiredVersions.TestSignatures.exists { signature =>
-                        signature.ClientName match {
-                          case testClientMatch() =>
-                            true
-                          case _ =>
-                            false
-                        }
+                  val future = getInstallProfile(clientConfig.installProfileName)
+                  future.onComplete { installProfile =>
+                    try {
+                      installProfile.get match {
+                        case Some(installProfile) =>
+                          val filteredVersions = desiredVersions.Versions.filterKeys(installProfile.serviceNames.contains(_))
+                          promise.success(Some(DesiredVersions(filteredVersions, desiredVersions.TestSignatures)))
+                        case None =>
+                          promise.failure(new IOException(s"Can't find install profile '${clientConfig.installProfileName}''"))
                       }
-                    case None =>
-                      testCondition = true
-                  }
-                  if (testCondition) {
-                    val future = getInstallProfile(clientConfig.installProfileName)
-                    future.onComplete { installProfile =>
-                      try {
-                        installProfile.get match {
-                          case Some(installProfile) =>
-                            val filteredVersions = desiredVersions.Versions.filterKeys(installProfile.serviceNames.contains(_))
-                            promise.success(Some(DesiredVersions(filteredVersions, desiredVersions.TestSignatures)))
-                          case None =>
-                            promise.failure(new IOException(s"Can't find install profile '${clientConfig.installProfileName}''"))
-                        }
-                      } catch {
-                        case e: Exception =>
-                          promise.failure(e)
-                      }
+                    } catch {
+                      case e: Exception =>
+                        promise.failure(e)
                     }
-                  } else {
-                    promise.failure(new IOException("Versions are not tested"))
                   }
                 case None =>
                   promise.failure(new IOException(s"Can't find client '${clientName}' config"))

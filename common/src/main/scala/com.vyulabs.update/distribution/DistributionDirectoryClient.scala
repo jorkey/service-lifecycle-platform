@@ -297,11 +297,6 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     val result = try {
       request(connection)
       (connection.getResponseCode, connection.getResponseMessage)
-    } catch {
-      case e: Exception =>
-        log.error(s"Request exception: ${e.getMessage}")
-        log.error(s"Request: ${url}, response: ${connection.getResponseCode}: ${connection.getResponseMessage}")
-        (connection.getResponseCode, connection.getResponseMessage)
     } finally {
       connection.disconnect()
     }

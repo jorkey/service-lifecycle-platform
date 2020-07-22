@@ -6,6 +6,7 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceName}
 import com.vyulabs.update.common.ServiceInstanceName
+import com.vyulabs.update.config.ClientConfig
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.state.InstancesState
@@ -18,6 +19,10 @@ import org.slf4j.Logger
   */
 class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) extends DistributionDirectoryClient(url)
     with DeveloperDistributionWebPaths {
+
+  def downloadClientConfig(): Option[ClientConfig] = {
+
+  }
 
   def downloadDesiredVersions(common: Boolean = false): Option[DesiredVersions] = {
     log.info(s"Download desired versions")

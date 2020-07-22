@@ -45,11 +45,39 @@ class UpdateClient()(implicit log: Logger) {
           log.error(s"Can't make directory ${buildDir}")
           return false
         }
+        log.info("Get client config")
+        val clientConfig = developerDistribution.downloadClientConfig().getOrElse {
+          log.error(s"Can't get client config")
+          return false
+        }
+        if (clientConfig.testClientMatch.isDefined && servicesOnly.isDefined && !localConfigOnly) {
+          log.error("You may use option servicesOnly only with localConfigOnly for client that requires preliminary testing")
+          return false
+        }
         log.info("Get developer desired versions")
         val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
           log.error(s"Can't get developer desired versions")
           return false
         }
+        val testCondition = clientConfig.testClientMatch match {
+          case Some(testClientMatch) =>
+            val regexp = testClientMatch
+            developerDesiredVersions.TestSignatures.exists { signature =>
+              signature.ClientName match {
+                case regexp() =>
+                  true
+                case _ =>
+                  false
+              }
+            }
+          case None =>
+            true
+        }
+        if (testCondition && !localConfigOnly) {
+          log.error("Developer desired versions are not tested")
+          return false
+        }
+        log.info("Get client desired versions")
         val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.Versions).getOrElse {
           log.warn(s"Can't get client desired versions")
           return false

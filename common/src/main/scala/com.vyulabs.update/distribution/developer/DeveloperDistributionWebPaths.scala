@@ -11,6 +11,8 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   val uploadTestedVersionsPath = "upload-tested-versions"
   val uploadInstancesStatePath = "upload-instances-state"
 
+  val downloadClientConfigPath = "download-client-config"
+
   val testedVersionsName = "tested-versions"
   val instancesStateName = "instances-state"
   val serviceFaultName = "service-fault"
