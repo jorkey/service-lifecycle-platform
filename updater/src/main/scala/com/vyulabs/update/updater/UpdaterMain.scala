@@ -17,7 +17,7 @@ object UpdaterMain extends App { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   if (args.size < 1) {
-    sys.error(usage())
+    Utils.error(usage())
   }
 
   def usage(): String = {
@@ -28,7 +28,7 @@ object UpdaterMain extends App { self =>
   val arguments = Arguments.parse(args.drop(1))
 
   val config = UpdaterConfig().getOrElse {
-    sys.error("No config")
+    Utils.error("No config")
   }
 
   command match {

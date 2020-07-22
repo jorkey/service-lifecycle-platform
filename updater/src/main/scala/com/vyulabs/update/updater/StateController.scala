@@ -35,7 +35,7 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
   private val maxLastErrors = 25
 
   if (!serviceDirectory.exists() && !serviceDirectory.mkdir()) {
-    sys.error(s"Can't create directory ${serviceDirectory}")
+    Utils.error(s"Can't create directory ${serviceDirectory}")
   }
 
   version = if (serviceInstanceName.serviceName == Common.UpdaterServiceName) {

@@ -42,13 +42,13 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
       },
       () => {
         val adminRepository = DeveloperAdminRepository(adminRepositoryUri, new File(serviceDir, "admin")).getOrElse {
-          sys.error("Init admin repository error")
+          Utils.error("Init admin repository error")
         }
         val sourcesConfig = SourcesConfig(adminRepository.getDirectory()).getOrElse {
-          sys.error("Can't get config of sources")
+          Utils.error("Can't get config of sources")
         }
         val sourceRepositoriesConf = sourcesConfig.Services.get(serviceName).getOrElse {
-          sys.error(s"Source repositories of service ${serviceName} is not specified.")
+          Utils.error(s"Source repositories of service ${serviceName} is not specified.")
         }
 
         val gitLock = adminRepository.buildVersionLock(serviceName)
@@ -216,7 +216,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
       },
       () => {
         val adminRepository = DeveloperAdminRepository(adminRepositoryUri, new File("admin")).getOrElse {
-          sys.error("Init admin repository error")
+          Utils.error("Init admin repository error")
         }
         val gitLock = adminRepository.buildDesiredVersionsLock()
         if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(servicesVersions),

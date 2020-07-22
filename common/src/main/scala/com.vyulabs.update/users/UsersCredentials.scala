@@ -106,7 +106,7 @@ object UsersCredentials {
     if (credentialsFile.exists()) {
       log.debug(s"Parse ${credentialsFile}")
       val config = Utils.parseConfigFile(credentialsFile).getOrElse {
-        sys.error(s"Can't read ${credentialsFile}")
+        Utils.error(s"Can't read ${credentialsFile}")
       }
       val users = config.getConfigList("credentials").asScala.foldLeft(Map.empty[UserName, UserCredentials]) {
         case (map, config) => map + (config.getString("user") -> UserCredentials(config))

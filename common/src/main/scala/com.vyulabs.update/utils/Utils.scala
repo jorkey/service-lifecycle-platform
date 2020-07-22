@@ -626,4 +626,9 @@ object Utils {
         }
       }
   }
+
+  def error(msg: String)(implicit log: Logger): Nothing = {
+    log.error(msg)
+    sys.exit(1)
+  }
 }

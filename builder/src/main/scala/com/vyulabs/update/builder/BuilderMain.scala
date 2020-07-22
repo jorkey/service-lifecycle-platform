@@ -4,8 +4,9 @@ import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryAdmin}
+import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
 import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 
@@ -24,17 +25,17 @@ object BuilderMain extends App {
     "   setDesiredVersions [clientName=value] [services=<service[:version]>,[service1[:version1]],...]"
 
   if (args.size < 1) {
-    sys.error(usage())
+    Utils.error(usage())
   }
 
   val command = args(0)
   if (command != "buildVersion" && command != "getDesiredVersions" && command != "setDesiredVersions") {
-    sys.error(usage())
+    Utils.error(usage())
   }
   val arguments = Arguments.parse(args.drop(1))
 
   val config = BuilderConfig().getOrElse {
-    sys.error("No config")
+    Utils.error("No config")
   }
 
   val developerDistribution = new DeveloperDistributionDirectoryAdmin(config.developerDistributionUrl)
@@ -51,7 +52,7 @@ object BuilderMain extends App {
             case Some(clientName) =>
               version.client match {
                 case Some(client) if (client != clientName) =>
-                  sys.error(s"Client name in the version ${client} != client ${clientName}")
+                  Utils.error(s"Client name in the version ${client} != client ${clientName}")
                 case Some(_) =>
                   version
                 case None =>
@@ -92,7 +93,7 @@ object BuilderMain extends App {
       clientName match {
         case Some(clientName) =>
           val commonVersions = new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(None).getOrElse {
-            sys.error("Get desired versions error")
+            Utils.error("Get desired versions error")
           }
           val clientVersions = new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(Some(clientName))
             .getOrElse(Map.empty)
@@ -112,7 +113,7 @@ object BuilderMain extends App {
               log.info("Desired versions:")
               versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
             case None =>
-              sys.error("Get desired versions error")
+              Utils.error("Get desired versions error")
           }
       }
     case "setDesiredVersions" =>
@@ -131,13 +132,13 @@ object BuilderMain extends App {
             }
             servicesVersions += (fields(0) -> version)
           } else {
-            sys.error(s"Invalid service record ${record}")
+            Utils.error(s"Invalid service record ${record}")
           }
         }
       }
 
       if (!new Builder(developerDistribution, config.adminRepositoryUri).setDesiredVersions(clientName, servicesVersions)) {
-        sys.error("Set desired versions error")
+        Utils.error("Set desired versions error")
       }
 
       servicesVersions.get(Common.DistributionServiceName) match {
@@ -157,6 +158,6 @@ object BuilderMain extends App {
           }
       }
     case command =>
-      sys.error(s"Invalid command ${command}\n${usage()}")
+      Utils.error(s"Invalid command ${command}\n${usage()}")
   }
 }

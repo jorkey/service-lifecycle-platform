@@ -91,7 +91,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
               }
             } catch {
               case e: Exception =>
-                log.error("Parse build version error")
+                log.error(s"Parse build version error ${e.getMessage}")
                 return false
             }
           case None =>
@@ -119,7 +119,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
               }
             } catch {
               case e: Exception =>
-                log.error("Parse build version error")
+                log.error(s"Parse build version error ${e.getMessage}")
                 return false
             }
           case None =>
@@ -204,7 +204,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
       resp._1 == HttpURLConnection.HTTP_OK
     } catch {
       case e: Exception =>
-        log.error(s"Download exception from ${url}", e)
+        log.error(s"Download exception from ${url}: ${e.getMessage}")
         false
     }
   }
@@ -272,7 +272,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
       true
     } catch {
       case e: Exception =>
-        log.error(s"Upload exception from ${url}", e)
+        log.error(s"Upload exception from ${url}: ${e.getMessage}")
         false
     }
   }
@@ -297,6 +297,11 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     val result = try {
       request(connection)
       (connection.getResponseCode, connection.getResponseMessage)
+    } catch {
+      case e: Exception =>
+        log.error(s"Request exception: ${e.getMessage}")
+        log.error(s"Request: ${url}, response: ${connection.getResponseCode}: ${connection.getResponseMessage}")
+        (connection.getResponseCode, connection.getResponseMessage)
     } finally {
       connection.disconnect()
     }

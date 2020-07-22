@@ -26,7 +26,7 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
   private var stopping = false
 
   if (!archiveDir.exists() && !archiveDir.mkdir()) {
-    sys.error(s"Can't create directory ${archiveDir}")
+    Utils.error(s"Can't create directory ${archiveDir}")
   }
 
   def addFaultReport(fault: FaultReport): Unit = {

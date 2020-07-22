@@ -10,6 +10,7 @@ import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
+import com.vyulabs.update.utils.Utils
 import distribution.client.ClientDistribution
 import distribution.client.config.ClientDistributionConfig
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
@@ -33,7 +34,7 @@ object DistributionMain extends App {
   private val directory = new File("directory")
 
   if (args.size < 1) {
-    sys.error(usage())
+    Utils.error(usage())
   }
 
   def usage() =
@@ -55,7 +56,7 @@ object DistributionMain extends App {
     command match {
       case "developer" =>
         val config = DeveloperDistributionConfig().getOrElse {
-          sys.error("No config")
+          Utils.error("No config")
         }
 
         val dir = new DeveloperDistributionDirectory(directory)
@@ -78,7 +79,7 @@ object DistributionMain extends App {
 
       case "client" =>
         val config = ClientDistributionConfig().getOrElse {
-          sys.error("No config")
+          Utils.error("No config")
         }
 
         val dir = new ClientDistributionDirectory(directory)
@@ -112,11 +113,11 @@ object DistributionMain extends App {
         val role = UserRole.withName(arguments.getValue("role"))
         val password = StdIn.readLine("Enter password: ")
         if (usersCredentials.getCredentials(userName).isDefined) {
-          sys.error(s"User ${userName} credentials already exists")
+          Utils.error(s"User ${userName} credentials already exists")
         }
         usersCredentials.addUser(userName, UserCredentials(role, PasswordHash(password)))
         if (!usersCredentials.save()) {
-          sys.error("Can't save credentials file")
+          Utils.error("Can't save credentials file")
         }
         sys.exit()
 
@@ -124,7 +125,7 @@ object DistributionMain extends App {
         val userName = arguments.getValue("userName")
         usersCredentials.removeUser(userName)
         if (!usersCredentials.save()) {
-          sys.error("Can't save credentials file")
+          Utils.error("Can't save credentials file")
         }
         sys.exit()
 
@@ -135,20 +136,20 @@ object DistributionMain extends App {
           case Some(credentials) =>
             credentials.passwordHash = PasswordHash(password)
             if (!usersCredentials.save()) {
-              sys.error("Can't save credentials file")
+              Utils.error("Can't save credentials file")
             }
           case None =>
-            sys.error(s"No user ${userName} credentials")
+            Utils.error(s"No user ${userName} credentials")
         }
         sys.exit()
 
       case _ =>
-        sys.error(s"Invalid command ${command}\n${usage()}")
+        Utils.error(s"Invalid command ${command}\n${usage()}")
     }
   } catch {
     case ex: Throwable =>
       log.error("Exception", ex)
-      sys.error(ex.getMessage)
+      Utils.error(ex.getMessage)
       sys.exit(1)
   }
 }
