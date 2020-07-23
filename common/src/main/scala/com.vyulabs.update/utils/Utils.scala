@@ -629,6 +629,9 @@ object Utils {
 
   def error(msg: String)(implicit log: Logger): Nothing = {
     log.error(msg)
+    for (stackElement <- Thread.currentThread().getStackTrace) {
+      log.debug(stackElement.toString)
+    }
     sys.exit(1)
   }
 }

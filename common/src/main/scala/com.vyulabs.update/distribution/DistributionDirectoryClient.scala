@@ -133,25 +133,15 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
   }
 
   protected def exists(url: URL): Boolean = {
-    if (log.isDebugEnabled) log.debug(s"Check for exists ${url}")
-    try {
-      val resp = executeRequest(url, (connection: HttpURLConnection) => {
-        if (!url.getUserInfo.isEmpty) {
-          val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
-        connection.setConnectTimeout(10000)
-        connection.setReadTimeout(30000)
-        connection.setRequestMethod("HEAD")
-      })
-      resp._1 == HttpURLConnection.HTTP_OK
-    } catch {
-      case e: Exception =>
-        return false
-      case e: StackOverflowError => // https://bugs.openjdk.java.net/browse/JDK-8214129
-        log.error(s"Exception of getting head ${url}", e)
-        false
-    }
+    executeRequest(url, (connection: HttpURLConnection) => {
+      if (!url.getUserInfo.isEmpty) {
+        val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
+        connection.setRequestProperty("Authorization", "Basic " + encoded)
+      }
+      connection.setConnectTimeout(10000)
+      connection.setReadTimeout(30000)
+      connection.setRequestMethod("HEAD")
+    })
   }
 
   protected def downloadToConfig(url: URL, options: ConfigParseOptions = ConfigParseOptions.defaults()): Option[Config] = {
@@ -190,23 +180,16 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
 
   protected def download(url: URL, output: OutputStream): Boolean = {
     if (log.isDebugEnabled) log.debug(s"Download by url ${url}")
-    try {
-      val resp = executeRequest(url, (connection: HttpURLConnection) => {
-        if (!url.getUserInfo.isEmpty) {
-          val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
-        connection.setConnectTimeout(10000)
-        connection.setReadTimeout(30000)
-        val input = connection.getInputStream
-        copy(input, output)
-      })
-      resp._1 == HttpURLConnection.HTTP_OK
-    } catch {
-      case e: Exception =>
-        log.error(s"Download exception from ${url}: ${e.getMessage}")
-        false
-    }
+    executeRequest(url, (connection: HttpURLConnection) => {
+      if (!url.getUserInfo.isEmpty) {
+        val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
+        connection.setRequestProperty("Authorization", "Basic " + encoded)
+      }
+      connection.setConnectTimeout(10000)
+      connection.setReadTimeout(30000)
+      val input = connection.getInputStream
+      copy(input, output)
+    })
   }
 
   protected def uploadFromFile(url: URL, name: String, file: File): Boolean = {
@@ -240,41 +223,29 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     if (log.isDebugEnabled) log.debug(s"Upload by url ${url}")
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
-    try {
-      val resp = executeRequest(url, (connection: HttpURLConnection) => {
-        if (!url.getUserInfo.isEmpty) {
-          val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
-        connection.setConnectTimeout(10000)
-        connection.setReadTimeout(30000)
-        connection.setDoOutput(true)
-        connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary)
-        val output = connection.getOutputStream
-        val writer = new PrintWriter(new OutputStreamWriter(output, "utf8"), true)
-
-        writer.append("--" + boundary).append(CRLF)
-        writer.append(s"Content-Type: application/octet-stream").append(CRLF)
-        writer.append(f"""Content-Disposition: form-data; name="${name}"; filename="${destinationFile}"""").append(CRLF)
-        writer.append(CRLF).flush
-
-        copy(input, output)
-        output.flush
-
-        writer.append(CRLF).flush
-        writer.append("--" + boundary + "--").append(CRLF).flush()
-      })
-
-      if (resp._1 != HttpURLConnection.HTTP_OK) {
-        log.error(s"Uploading file ${destinationFile} response code is ${resp._1}, output ${resp._2}")
-        return false
+    executeRequest(url, (connection: HttpURLConnection) => {
+      if (!url.getUserInfo.isEmpty) {
+        val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
+        connection.setRequestProperty("Authorization", "Basic " + encoded)
       }
-      true
-    } catch {
-      case e: Exception =>
-        log.error(s"Upload exception from ${url}: ${e.getMessage}")
-        false
-    }
+      connection.setConnectTimeout(10000)
+      connection.setReadTimeout(30000)
+      connection.setDoOutput(true)
+      connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary)
+      val output = connection.getOutputStream
+      val writer = new PrintWriter(new OutputStreamWriter(output, "utf8"), true)
+
+      writer.append("--" + boundary).append(CRLF)
+      writer.append(s"Content-Type: application/octet-stream").append(CRLF)
+      writer.append(f"""Content-Disposition: form-data; name="${name}"; filename="${destinationFile}"""").append(CRLF)
+      writer.append(CRLF).flush
+
+      copy(input, output)
+      output.flush
+
+      writer.append(CRLF).flush
+      writer.append("--" + boundary + "--").append(CRLF).flush()
+    })
   }
 
   protected def makeUrl(path: String): URL = {
@@ -291,22 +262,56 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
   }
 
   @tailrec
-  private def executeRequest(url: URL, request: (HttpURLConnection) => Unit): (Int, String) = {
+  private def executeRequest(url: URL, request: (HttpURLConnection) => Unit): Boolean = {
     if (log.isDebugEnabled) log.debug(s"Make request to ${url}")
-    val connection = url.openConnection().asInstanceOf[HttpURLConnection]
-    val result = try {
+    val connection =
+      try {
+        url.openConnection().asInstanceOf[HttpURLConnection]
+      } catch {
+        case e: IOException =>
+          log.error(s"Can't open connection to URL ${url}, error ${e.getMessage}")
+          return false
+      }
+    val responseCode = try {
       request(connection)
-      (connection.getResponseCode, connection.getResponseMessage)
+      connection.getResponseCode
+    } catch {
+      case e: IOException =>
+        log.error(s"Error: ${e.getMessage}")
+        try {
+          connection.getResponseCode
+        } catch {
+          case _: IOException =>
+            return false
+        }
     } finally {
+      try {
+        val responseCode = connection.getResponseCode
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+          log.error(s"Request: ${url}")
+          try {
+            log.error(s"Response message: ${connection.getResponseMessage}")
+          } catch {
+            case _: IOException =>
+          }
+          try {
+            val errorStream = connection.getErrorStream()
+            if (errorStream != null) log.error("Response error: " + new String(errorStream.readAllBytes(), "utf8"))
+          } catch {
+            case _: IOException =>
+          }
+        }
+      } catch {
+        case _: IOException =>
+      }
       connection.disconnect()
     }
-    if (log.isDebugEnabled) log.debug(s"Response code ${result._1}, message ${result._2}")
-    if (result._1 == 423) {
+    if (responseCode == 423) {
       if (log.isDebugEnabled) log.debug("The resource that is being accessed is locked. Retry request after pause.")
       Thread.sleep(1000)
       executeRequest(url, request)
     } else {
-      result
+      responseCode == HttpURLConnection.HTTP_OK
     }
   }
 }
