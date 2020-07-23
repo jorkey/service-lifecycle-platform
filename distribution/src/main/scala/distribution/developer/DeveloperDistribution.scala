@@ -65,115 +65,116 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                   }
                 }
               } ~
-              mapRejections { rejections => // Prevent browser to invoke basic auth popup.
-                rejections.map(_ match {
-                  case AuthenticationFailedRejection(cause, challenge) =>
-                    val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
-                    AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
-                  case rejection => rejection
-                })
-              } {
-                authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                  get {
-                    path(loginPath) {
-                      complete(UserInfo(userCredentials.role.toString))
-                    } ~
-                    path(downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
-                      getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
-                    } ~
-                    path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                      getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
-                    } ~
-                    authorize(userCredentials.role == UserRole.Administrator) {
-                      path(downloadVersionsInfoPath / ".*".r) { service =>
-                        parameter("client".?) { clientName =>
-                          complete(Utils.renderConfig(
-                            dir.getVersionsInfo(dir.getServiceDir(service, clientName)).toConfig(), true))
-                        }
+              pathPrefix("login.*|download.*|upload.*|get.*".r) { p => // TODO remove with new API
+                mapRejections { rejections => // Prevent browser to invoke basic auth popup.
+                  rejections.map(_ match {
+                    case AuthenticationFailedRejection(cause, challenge) =>
+                      val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
+                      AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
+                    case rejection => rejection
+                  })
+                } {
+                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                    get {
+                      path(loginPath) {
+                        complete(UserInfo(userCredentials.role.toString))
                       } ~
-                      path(downloadDesiredVersionsPath) {
-                        parameter("client".?) { clientName =>
-                          getDesiredVersionsRoute(getDesiredVersions(clientName))
-                        }
+                      path(downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
+                        getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                       } ~
-                      path(downloadDesiredVersionPath / ".*".r) { service =>
-                        parameter("image".as[Boolean]?true) { image =>
-                          getDesiredVersion(service, getDesiredVersions(None), image)
-                        }
+                      path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                        getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                       } ~
-                      path(getDistributionVersionPath) {
-                        getVersion()
-                      } ~
-                      path(getScriptsVersionPath) {
-                        getScriptsVersion()
-                      }
-                    } ~
-                    authorize(userCredentials.role == UserRole.Client) {
-                      path(downloadClientConfigPath) {
-                        getFromFile(dir.getClientConfigFile(userName))
-                      } ~
-                      path(downloadDesiredVersionsPath) {
-                        parameter("common".as[Boolean]?false) { common =>
-                          getDesiredVersionsRoute(if (!common) getPersonalDesiredVersions(userName) else getDesiredVersions(None))
-                        }
-                      } ~
-                      path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
-                        if (client.isEmpty) {
-                          getDesiredVersionsRoute(getDesiredVersions(None))
-                        } else if (client == userName) {
-                          getDesiredVersionsRoute(getPersonalDesiredVersions(userName))
-                        } else {
-                          failWith(new IOException("invalid request"))
-                        }
-                      } ~
-                      path(downloadDesiredVersionPath / ".*".r) { service =>
-                        parameter("image".as[Boolean]?true) { image =>
-                          getDesiredVersion(service, getPersonalDesiredVersions(userName), image)
-                        }
-                      }
-                    }
-                  } ~
-                    post {
                       authorize(userCredentials.role == UserRole.Administrator) {
-                        path(uploadVersionPath / ".*".r / ".*".r) { (service, version) =>
-                          val buildVersion = BuildVersion.parse(version)
-                          versionImageUpload(service, buildVersion)
-                        } ~
-                        path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                          val buildVersion = BuildVersion.parse(version)
-                          versionInfoUpload(service, buildVersion)
-                        } ~
-                        path(uploadDesiredVersionsPath) {
+                        path(downloadVersionsInfoPath / ".*".r) { service =>
                           parameter("client".?) { clientName =>
-                            fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(clientName))
+                            complete(Utils.renderConfig(
+                              dir.getVersionsInfo(dir.getServiceDir(service, clientName)).toConfig(), true))
                           }
+                        } ~
+                        path(downloadDesiredVersionsPath) {
+                          parameter("client".?) { clientName =>
+                            getDesiredVersionsRoute(getDesiredVersions(clientName))
+                          }
+                        } ~
+                        path(downloadDesiredVersionPath / ".*".r) { service =>
+                          parameter("image".as[Boolean]?true) { image =>
+                            getDesiredVersion(service, getDesiredVersions(None), image)
+                          }
+                        } ~
+                        path(getDistributionVersionPath) {
+                          getVersion()
+                        } ~
+                        path(getScriptsVersionPath) {
+                          getScriptsVersion()
                         }
                       } ~
                       authorize(userCredentials.role == UserRole.Client) {
-                        path(uploadTestedVersionsPath) {
-                          uploadTestedVersions(userName)
+                        path(downloadClientConfigPath) {
+                          getFromFile(dir.getClientConfigFile(userName))
                         } ~
-                        path(uploadInstancesStatePath) {
-                          uploadFileToConfig(instancesStateName, (config) => {
-                            val instancesState = InstancesState(config)
-                            stateUploader.receiveInstancesState(userName, instancesState)
-                          })
+                        path(downloadDesiredVersionsPath) {
+                          parameter("common".as[Boolean]?false) { common =>
+                            getDesiredVersionsRoute(if (!common) getPersonalDesiredVersions(userName) else getDesiredVersions(None))
+                          }
                         } ~
-                        path(uploadInstancesStatePath / ".*".r) { client => // TODO deprecated
-                          uploadFileToConfig(instancesStateName, (config) => {
-                            val instancesState = InstancesState(config)
-                            stateUploader.receiveInstancesState(userName, instancesState)
-                          })
+                        path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
+                          if (client.isEmpty) {
+                            getDesiredVersionsRoute(getDesiredVersions(None))
+                          } else if (client == userName) {
+                            getDesiredVersionsRoute(getPersonalDesiredVersions(userName))
+                          } else {
+                            failWith(new IOException("invalid request"))
+                          }
                         } ~
-                        path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
-                          uploadFileToSource(serviceFaultName, (fileInfo, source) => {
-                            faultUploader.receiveFault(userName, serviceName, fileInfo.getFileName, source)
-                          })
+                        path(downloadDesiredVersionPath / ".*".r) { service =>
+                          parameter("image".as[Boolean]?true) { image =>
+                            getDesiredVersion(service, getPersonalDesiredVersions(userName), image)
+                          }
+                        }
+                      }
+                    } ~
+                      post {
+                        authorize(userCredentials.role == UserRole.Administrator) {
+                          path(uploadVersionPath / ".*".r / ".*".r) { (service, version) =>
+                            val buildVersion = BuildVersion.parse(version)
+                            versionImageUpload(service, buildVersion)
+                          } ~
+                          path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                            val buildVersion = BuildVersion.parse(version)
+                            versionInfoUpload(service, buildVersion)
+                          } ~
+                          path(uploadDesiredVersionsPath) {
+                            parameter("client".?) { clientName =>
+                              fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(clientName))
+                            }
+                          }
+                        } ~
+                        authorize(userCredentials.role == UserRole.Client) {
+                          path(uploadTestedVersionsPath) {
+                            uploadTestedVersions(userName)
+                          } ~
+                          path(uploadInstancesStatePath) {
+                            uploadFileToConfig(instancesStateName, (config) => {
+                              val instancesState = InstancesState(config)
+                              stateUploader.receiveInstancesState(userName, instancesState)
+                            })
+                          } ~
+                          path(uploadInstancesStatePath / ".*".r) { client => // TODO deprecated
+                            uploadFileToConfig(instancesStateName, (config) => {
+                              val instancesState = InstancesState(config)
+                              stateUploader.receiveInstancesState(userName, instancesState)
+                            })
+                          } ~
+                          path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
+                            uploadFileToSource(serviceFaultName, (fileInfo, source) => {
+                              faultUploader.receiveFault(userName, serviceName, fileInfo.getFileName, source)
+                            })
+                          }
                         }
                       }
                     }
-                  }
-                } ~
+                  } } ~
               getFromResourceDirectory("") ~
                 pathPrefix("") {
                   get {
