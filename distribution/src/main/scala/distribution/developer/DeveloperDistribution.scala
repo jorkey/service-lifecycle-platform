@@ -174,11 +174,11 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       browse(Some(path))
                     }
                   }
-                } ~
-                getFromResourceDirectory("") ~
-                  pathPrefix("") {
-                    getFromResource("index.html", ContentType(`text/html`, `UTF-8`))
-                  }
+                } //~
+                //getFromResourceDirectory("") ~
+                //  pathPrefix("") {
+                //    getFromResource("index.html", ContentType(`text/html`, `UTF-8`))
+                //  }
               }
             }
           }
