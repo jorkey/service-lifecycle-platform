@@ -8,6 +8,7 @@ import org.scalatest.Matchers
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives.pathPrefix
 import akka.stream.scaladsl.FileIO
 
 import scala.util.{Failure, Success}
@@ -22,43 +23,45 @@ class DistributionTest extends FlatSpecLike with ScalatestRouteTest with Matcher
 
   val route: Route =
     extractRequestContext { ctx =>
-      get {
-        pathPrefix("download" / ".*".r) { path =>
-          val file = File.createTempFile("aaa", "txt")
-          file.deleteOnExit()
-          Files.write(file.toPath, "qwe123".getBytes)
-          getFromFile(s"${file.getPath}")
-        }
-      } ~
-      post {
-        path("upload") {
-          implicit val materializer = ctx.materializer
-
-          mapRouteResult {
-            case r =>
-              r
-          } {
-            fileUpload("instances-state") {
-              case (fileInfo, byteSource) =>
-                val sink = FileIO.toPath(Paths.get(s"/tmp/${fileInfo.fileName}"))
-                val future = byteSource.runWith(sink)
-                onComplete(future) {
-                  case Success(_) =>
-                    complete("Success")
-                  case Failure(ex) =>
-                    failWith(ex)
-                }
-            }
+      pathPrefixTest("down.*|uplo.*|upd.*".r) { (p1) =>
+        get {
+          pathPrefix("download" / ".*".r) { path =>
+            val file = File.createTempFile("aaa", "txt")
+            file.deleteOnExit()
+            Files.write(file.toPath, "qwe123".getBytes)
+            getFromFile(s"${file.getPath}")
           }
-        }
-      } ~
-      head {
-        path("update") {
-          complete(StatusCodes.OK)
         } ~
-        path("ping") {
-          complete(StatusCodes.OK)
-        }
+          post {
+            path("upload") {
+              implicit val materializer = ctx.materializer
+
+              mapRouteResult {
+                case r =>
+                  r
+              } {
+                fileUpload("instances-state") {
+                  case (fileInfo, byteSource) =>
+                    val sink = FileIO.toPath(Paths.get(s"/tmp/${fileInfo.fileName}"))
+                    val future = byteSource.runWith(sink)
+                    onComplete(future) {
+                      case Success(_) =>
+                        complete("Success")
+                      case Failure(ex) =>
+                        failWith(ex)
+                    }
+                }
+              }
+            }
+          } ~
+          head {
+            path("update") {
+              complete(StatusCodes.OK)
+            } ~
+              path("ping") {
+                complete(StatusCodes.OK)
+              }
+          }
       }
     }
 
