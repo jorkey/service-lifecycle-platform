@@ -49,23 +49,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         logRequest(requestLogger _) {
           logResult(resultLogger _) {
             extractRequestContext { ctx =>
-              pathPrefixTest("browse.*|login|download.*|upload.*|get.*".r) { p => // TODO remove with new API
-                get {
-                  path(browsePath) {
-                    authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                      authorize(userCredentials.role == UserRole.Administrator) {
-                        browse(None)
-                      }
-                    }
-                  } ~
-                    pathPrefix(browsePath / ".*".r) { path =>
-                      authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                        authorize(userCredentials.role == UserRole.Administrator) {
-                          browse(Some(path))
-                        }
-                      }
-                    }
-                } ~
+              pathPrefixTest("login|download.*|upload.*|get.*".r) { p => // TODO remove with new API
                 mapRejections { rejections => // Prevent browser to invoke basic auth popup.
                   rejections.map(_ match {
                     case AuthenticationFailedRejection(cause, challenge) =>
@@ -176,12 +160,26 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                     }
                   }
               } ~
-              getFromResourceDirectory("") ~
-                pathPrefix("") {
-                  get {
+              get {
+                path(browsePath) {
+                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                    authorize(userCredentials.role == UserRole.Administrator) {
+                      browse(None)
+                    }
+                  }
+                } ~
+                pathPrefix(browsePath / ".*".r) { path =>
+                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                    authorize(userCredentials.role == UserRole.Administrator) {
+                      browse(Some(path))
+                    }
+                  }
+                } ~
+                getFromResourceDirectory("") ~
+                  pathPrefix("") {
                     getFromResource("index.html", ContentType(`text/html`, `UTF-8`))
                   }
-                }
+              }
             }
           }
         }
