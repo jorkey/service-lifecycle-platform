@@ -161,7 +161,12 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                   }
               } ~
               get {
-                path(browsePath) {
+                pathPrefixTest("(?!^browse).*".r) { p => // TODO remove with full functional UI
+                  getFromResourceDirectory("") ~
+                    pathPrefix("") {
+                      getFromResource("index.html", ContentType(`text/html`, `UTF-8`))
+                    }
+                } ~ path(browsePath) {
                   authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                     authorize(userCredentials.role == UserRole.Administrator) {
                       browse(None)
@@ -174,11 +179,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                       browse(Some(path))
                     }
                   }
-                } //~
-                //getFromResourceDirectory("") ~
-                //  pathPrefix("") {
-                //    getFromResource("index.html", ContentType(`text/html`, `UTF-8`))
-                //  }
+                }
               }
             }
           }
