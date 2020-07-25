@@ -49,7 +49,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         logRequest(requestLogger _) {
           logResult(resultLogger _) {
             extractRequestContext { ctx =>
-              pathPrefixTest("login|download.*|upload.*|get.*".r) { p => // TODO remove with new API
+              pathPrefixTest("^login|^download.*|^upload.*|^get.*".r) { p => // TODO remove with new API
                 mapRejections { rejections => // Prevent browser to invoke basic auth popup.
                   rejections.map(_ match {
                     case AuthenticationFailedRejection(cause, challenge) =>
