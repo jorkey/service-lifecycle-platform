@@ -23,7 +23,6 @@ class DistributionTest extends FlatSpecLike with ScalatestRouteTest with Matcher
 
   val route: Route =
     extractRequestContext { ctx =>
-      pathPrefixTest("down.*|uplo.*|upd.*".r) { (p1) =>
         get {
           pathPrefix("download" / ".*".r) { path =>
             val file = File.createTempFile("aaa", "txt")
@@ -62,7 +61,6 @@ class DistributionTest extends FlatSpecLike with ScalatestRouteTest with Matcher
                 complete(StatusCodes.OK)
               }
           }
-      }
     }
 
   it should "download files" in {

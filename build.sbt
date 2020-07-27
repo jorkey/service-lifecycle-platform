@@ -79,8 +79,19 @@ lazy val distribution = project
 lazy val distributionUi = project
   .in(file("distributionUi"))
   .settings(
-    resourceDirectory in Compile := baseDirectory.value / "build"
+    resourceGenerators in Compile += buildUi.init
   )
+
+lazy val buildUi = taskKey[Seq[File]]("Generate Ui resources") := {
+  val webapp = baseDirectory.value / "build"
+  val managed = resourceManaged.value
+  for {
+    (from, to) <- webapp ** "*" pair Path.rebase(webapp, managed / "main" / "ui")
+  } yield {
+    Sync.copy(from, to)
+    to
+  }
+}
 
 lazy val gitLib = project
   .in(file("git"))

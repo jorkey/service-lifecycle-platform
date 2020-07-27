@@ -288,7 +288,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
       try {
         val responseCode = connection.getResponseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
-          log.error(s"Request: ${url}")
+          log.error(s"Request: ${connection.getRequestMethod} ${url}")
           try {
             log.error(s"Response message: ${connection.getResponseMessage}")
           } catch {
