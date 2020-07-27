@@ -184,10 +184,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                     }
                   }
                 } ~
-                pathPrefix("") {
-                  getFromResourceDirectory("ui") ~
+                getFromResourceDirectory("ui") ~
+                  pathPrefix("") {
                     getFromResource("index.html", ContentType(`text/html`, `UTF-8`))
-                }
+                  }
               }
             }
           }
