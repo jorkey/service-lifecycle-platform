@@ -166,15 +166,17 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                 }
               } ~
               get {
-                seal {
-                  path(browsePath) {
+                path(browsePath) {
+                  seal {
                     authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                       authorize(userCredentials.role == UserRole.Administrator) {
                         browse(None)
                       }
                     }
-                  } ~
-                  pathPrefix(browsePath / ".*".r) { path =>
+                  }
+                } ~
+                pathPrefix(browsePath / ".*".r) { path =>
+                  seal {
                     authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                       authorize(userCredentials.role == UserRole.Administrator) {
                         browse(Some(path))
