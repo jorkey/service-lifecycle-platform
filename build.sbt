@@ -1,5 +1,7 @@
 import sbt.project
 
+import scala.sys.process.Process
+
 name := "update"
 
 scalaVersion in ThisBuild := "2.12.8"
@@ -82,7 +84,33 @@ lazy val distributionUi = project
     resourceGenerators in Compile += buildUi.init
   )
 
-lazy val buildUi = taskKey[Seq[File]]("Generate Ui resources") := {
+val shell = if (sys.props("os.name").contains("Windows")) Seq("cmd", "/c") else Seq ("bash", "-c")
+
+lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
+  val task = streams.value
+  task.log.info(s"Delete npm modules ...")
+  IO.delete(baseDirectory.value / "node_modules")
+  task.log.info("Install npm modules ...")
+  val process = Process(shell :+ "npm install", baseDirectory.value)
+  if ((process ! task.log) != 0) {
+    throw new IllegalStateException("Can't install npm modules")
+  }
+}
+
+lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
+  installNpmModules.init.value
+  val task = streams.value
+  task.log.info(s"Delete React build ...")
+  IO.delete(baseDirectory.value / "build")
+  task.log.info("Compile React scripts ...")
+  val process = Process(shell :+ s"npm run-script build", baseDirectory.value)
+  if ((process ! task.log) != 0) {
+    throw new IllegalStateException("Can't compile React scripts")
+  }
+}
+
+lazy val buildUi = taskKey[Seq[File]]("Generate UI resources") := {
+  buildReactScripts.init.value
   val webapp = baseDirectory.value / "build"
   val managed = resourceManaged.value
   for {
