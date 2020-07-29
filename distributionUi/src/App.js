@@ -2,12 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Route } from 'react-router-dom';
 import { Redirect } from 'react-router-dom';
 
-import { Dashboard } from "./home";
+import { Desktop } from "./desktop";
 import { LoginPage } from "./login";
 
 import './App.css';
 
-export const SwitchRoute = ({ component: Component, ...rest }) => (
+export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   <Route {...rest} render = { props => (
     localStorage.getItem('user')
         ? <Component {...props} />
@@ -21,8 +21,8 @@ function App() {
         <div className="col-sm-8 col-sm-offset-2">
           <Router>
             <div>
-              <SwitchRoute exact path="/" component={Dashboard} />
-              <Route path="/login" component={LoginPage} />
+              <Route exact path="/login" component={LoginPage} />
+              <LoginSwitchRoute path="/" component={Desktop} />
             </div>
           </Router>
         </div>

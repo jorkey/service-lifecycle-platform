@@ -84,43 +84,6 @@ lazy val distributionUi = project
     resourceGenerators in Compile += buildUi.init
   )
 
-val shell = if (sys.props("os.name").contains("Windows")) Seq("cmd", "/c") else Seq ("bash", "-c")
-
-lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
-  val task = streams.value
-  task.log.info(s"Delete npm modules ...")
-  IO.delete(baseDirectory.value / "node_modules")
-  task.log.info("Install npm modules ...")
-  val process = Process(shell :+ "npm install", baseDirectory.value)
-  if ((process ! task.log) != 0) {
-    throw new IllegalStateException("Can't install npm modules")
-  }
-}
-
-lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
-  installNpmModules.init.value
-  val task = streams.value
-  task.log.info(s"Delete React build ...")
-  IO.delete(baseDirectory.value / "build")
-  task.log.info("Compile React scripts ...")
-  val process = Process(shell :+ s"npm run-script build", baseDirectory.value)
-  if ((process ! task.log) != 0) {
-    throw new IllegalStateException("Can't compile React scripts")
-  }
-}
-
-lazy val buildUi = taskKey[Seq[File]]("Generate UI resources") := {
-  buildReactScripts.init.value
-  val webapp = baseDirectory.value / "build"
-  val managed = resourceManaged.value
-  for {
-    (from, to) <- webapp ** "*" pair Path.rebase(webapp, managed / "main" / "ui")
-  } yield {
-    Sync.copy(from, to)
-    to
-  }
-}
-
 lazy val gitLib = project
   .in(file("git"))
   .settings(
@@ -193,3 +156,41 @@ lazy val assemblySettings = Seq(
     case _ => MergeStrategy.first
   }
 )
+
+val shell = if (sys.props("os.name").contains("Windows")) Seq("cmd", "/c") else Seq ("bash", "-c")
+
+lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
+  val task = streams.value
+  task.log.info(s"Delete npm modules ...")
+  IO.delete(baseDirectory.value / "node_modules")
+  task.log.info("Install npm modules ...")
+  val process = Process(shell :+ "npm install", baseDirectory.value)
+  if ((process ! task.log) != 0) {
+    throw new IllegalStateException("Can't install npm modules")
+  }
+}
+
+lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
+  installNpmModules.init.value
+  val task = streams.value
+  task.log.info(s"Delete React build ...")
+  IO.delete(baseDirectory.value / "build")
+  task.log.info("Compile React scripts ...")
+  val process = Process(shell :+ s"npm run-script build", baseDirectory.value)
+  if ((process ! task.log) != 0) {
+    throw new IllegalStateException("Can't compile React scripts")
+  }
+}
+
+lazy val buildUi = taskKey[Seq[File]]("Generate UI resources") := {
+  buildReactScripts.init.value
+  val webapp = baseDirectory.value / "build"
+  val managed = resourceManaged.value
+  for {
+    (from, to) <- webapp ** "*" pair Path.rebase(webapp, managed / "main" / "ui")
+  } yield {
+    Sync.copy(from, to)
+    to
+  }
+}
+
