@@ -13,7 +13,7 @@ import Badge from '@material-ui/core/Badge';
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import NotificationsIcon from '@material-ui/icons/Notifications';
-import {SidebarItems} from './Sidebar';
+import {SidebarPagesList} from './SidebarPages';
 import Routes from "./Routes";
 import Container from "@material-ui/core/Container";
 
@@ -146,7 +146,7 @@ export function Desktop() {
           </IconButton>
         </div>
         <Divider/>
-        <List><SidebarItems/></List>
+        <SidebarPagesList/>
         <Divider/>
       </Drawer>
       <main className={classes.content}>
