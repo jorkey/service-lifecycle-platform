@@ -6,7 +6,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.DesiredVersions
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -16,7 +16,7 @@ import org.slf4j.Logger
   */
 class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistributionDirectoryClient)
                  (implicit log: Logger) {
-  private val scriptsVersion = Utils.getScriptsVersion()
+  private val scriptsVersion = IOUtils.getScriptsVersion()
 
   state.serviceStarted()
 
@@ -39,7 +39,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
         if (!clientDirectory.downloadVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
           log.error(s"Downloading ${serviceName} error")
         }
-        if (!Utils.writeServiceVersion(new File("."), serviceName, toVersion)) {
+        if (!IOUtils.writeServiceVersion(new File("."), serviceName, toVersion)) {
           log.error(s"Set ${serviceName} version error")
         }
         true

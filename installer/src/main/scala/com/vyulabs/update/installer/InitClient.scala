@@ -11,7 +11,7 @@ import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -76,7 +76,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Update installer.sh")
-    if (!Utils.unzip(scriptsZip, new File("."), (name: String) => {
+    if (!ZipUtils.unzip(scriptsZip, new File("."), (name: String) => {
       if (name == "installer/installer.sh") {
         Some("installer.sh")
       } else {
@@ -86,17 +86,17 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     val installerFile = new File("installer.sh")
-    val content = new String(Utils.readFileToBytes(installerFile).getOrElse {
+    val content = new String(IOUtils.readFileToBytes(installerFile).getOrElse {
       log.error(s"Read file ${installerFile} error")
       return false
     }, "utf8")
     installerFile.renameTo(File.createTempFile("installer", "sh"))
-    if (!Utils.writeFileFromBytes(installerFile, content.getBytes("utf8"))) {
+    if (!IOUtils.writeFileFromBytes(installerFile, content.getBytes("utf8"))) {
       log.error(s"Write file ${installerFile} error")
       return false
     }
-    if (!Utils.runProcess("chmod", Seq("+x", "installer.sh"), Map.empty, new File("."),
-          Some(0), None, false)) {
+    if (!ProcessUtils.runProcess("chmod", Seq("+x", "installer.sh"), Map.empty, new File("."),
+          Some(0), None, ProcessUtils.Logging.None)) {
       log.warn("Can't set execution attribute to installer.sh")
     }
     true
@@ -124,7 +124,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Write desired versions")
-    if (!Utils.writeConfigFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toConfig())) {
+    if (!IOUtils.writeConfigFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toConfig())) {
       log.error("Can't write desired versions")
       return false
     }
@@ -166,16 +166,16 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                       developerDistribution: DeveloperDistributionDirectoryClient,
                                       desiredVersions: Map[ServiceName, BuildVersion],
                                       distributionServicePort: Int): Boolean = {
-    Utils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
+    ZipUtils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
       distributionDir, (name: String) => {
         if (name == "distribution/distribution_setup.sh") {
           Some("distribution_setup.sh")
         } else {
           None
         }})
-    if (!Utils.runProcess("bash",
+    if (!ProcessUtils.runProcess("bash",
         Seq( "distribution_setup.sh", "client", distributionServicePort.toString, developerDistribution.url.toString),
-        Map.empty, distributionDir, Some(0), None, true)) {
+        Map.empty, distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error("Can't setup distribution server")
       return false
     }

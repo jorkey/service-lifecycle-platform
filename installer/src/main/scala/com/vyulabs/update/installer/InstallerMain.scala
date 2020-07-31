@@ -12,7 +12,7 @@ import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 
@@ -40,7 +40,7 @@ object InstallerMain extends App {
 
   implicit val filesLocker = new SmartFilesLocker()
 
-  Utils.synchronize(new File(s"installer.lock"), false,
+  IOUtils.synchronize(new File(s"installer.lock"), false,
     (attempt, _) => {
       if (attempt == 1) {
         log.info("Another installer is running - wait ...")

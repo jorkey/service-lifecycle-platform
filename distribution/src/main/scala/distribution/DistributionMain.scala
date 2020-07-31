@@ -10,7 +10,7 @@ import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils}
 import distribution.client.ClientDistribution
 import distribution.client.config.ClientDistributionConfig
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}

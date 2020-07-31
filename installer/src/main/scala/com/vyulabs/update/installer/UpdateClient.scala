@@ -11,7 +11,7 @@ import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -37,7 +37,7 @@ class UpdateClient()(implicit log: Logger) {
       var completed = false
       var clientVersions = Map.empty[ServiceName, BuildVersion]
       try {
-        if (buildDir.exists() && !Utils.deleteFileRecursively(buildDir)) {
+        if (buildDir.exists() && !IOUtils.deleteFileRecursively(buildDir)) {
           log.error(s"Can't remove directory ${buildDir}")
           return false
         }
@@ -191,7 +191,7 @@ class UpdateClient()(implicit log: Logger) {
       } finally {
         for (desiredVersions <- newDesiredVersions) {
           val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-          if (!Utils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
+          if (!IOUtils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
             return false
           }
           if (!adminRepository.addFileToCommit(desiredVersionsFile)) {
@@ -316,7 +316,7 @@ class UpdateClient()(implicit log: Logger) {
         log.error(s"Can't download version ${fromVersion} of service ${serviceName} info")
         return false
       }
-      if (!Utils.deleteDirectoryContents(buildDir)) {
+      if (!IOUtils.deleteDirectoryContents(buildDir)) {
         log.error(s"Can't remove directory ${buildDir} contents")
         return false
       }
@@ -346,7 +346,7 @@ class UpdateClient()(implicit log: Logger) {
       val privateDir = adminRepository.getServicePrivateDir(serviceName)
       if (privateDir.exists()) {
         log.info(s"Install private files")
-        if (!Utils.copyFile(privateDir, buildDir)) {
+        if (!IOUtils.copyFile(privateDir, buildDir)) {
           return false
         }
       }
@@ -369,13 +369,13 @@ class UpdateClient()(implicit log: Logger) {
     val clientConfigFile = adminRepository.getServiceInstallConfigFile(serviceName)
     if (clientConfigFile.exists()) {
       log.info(s"Merge ${Common.InstallConfigFileName} with client version")
-      val clientConfig = Utils.parseConfigFile(clientConfigFile).getOrElse(return false)
+      val clientConfig = IOUtils.parseConfigFile(clientConfigFile).getOrElse(return false)
       if (buildConfigFile.exists()) {
-        val buildConfig = Utils.parseConfigFile(buildConfigFile).getOrElse(return false)
+        val buildConfig = IOUtils.parseConfigFile(buildConfigFile).getOrElse(return false)
         val newConfig = clientConfig.withFallback(buildConfig).resolve()
-        Utils.writeConfigFile(buildConfigFile, newConfig)
+        IOUtils.writeConfigFile(buildConfigFile, newConfig)
       } else {
-        Utils.copyFile(buildConfigFile, clientConfigFile)
+        IOUtils.copyFile(buildConfigFile, clientConfigFile)
       }
     } else {
       true
@@ -402,7 +402,7 @@ class UpdateClient()(implicit log: Logger) {
           val filePath = if (subPath.isEmpty) originalName else subPath + "/" + originalName
           val buildConf = new File(buildDirectory, filePath)
           if (buildConf.exists()) {
-            val configSettings = new ConfigSettings(Utils.parseConfigFile(localFile).getOrElse {
+            val configSettings = new ConfigSettings(IOUtils.parseConfigFile(localFile).getOrElse {
               return false
             })
             log.info(s"Merge configuration file ${filePath} with local configuration file ${localFile}")
@@ -412,7 +412,7 @@ class UpdateClient()(implicit log: Logger) {
             }
           } else {
             log.info(s"Copy local configuration file ${localFile}")
-            if (!Utils.copyFile(localFile, buildConf)) {
+            if (!IOUtils.copyFile(localFile, buildConf)) {
               return false
             }
           }
@@ -434,7 +434,7 @@ class UpdateClient()(implicit log: Logger) {
           val filePath = if (subPath.isEmpty) name else subPath + "/" + name
           val buildConf = new File(buildDirectory, filePath)
           log.info(s"Copy local configuration file ${filePath}")
-          if (!Utils.copyFile(localFile, buildConf)) {
+          if (!IOUtils.copyFile(localFile, buildConf)) {
             return false
           }
         }

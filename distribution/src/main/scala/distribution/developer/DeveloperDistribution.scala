@@ -24,7 +24,7 @@ import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, TestSignature
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.state.InstancesState
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import distribution.{JsonSupport, UserInfo}
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
@@ -76,7 +76,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                           authorize(userCredentials.role == UserRole.Administrator) {
                             path(downloadVersionsInfoPath / ".*".r) { service =>
                               parameter("client".?) { clientName =>
-                                complete(Utils.renderConfig(
+                                complete(IOUtils.renderConfig(
                                   dir.getVersionsInfo(dir.getServiceDir(service, clientName)).toConfig(), true))
                               }
                             } ~
@@ -200,7 +200,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     onSuccess(future) { desiredVersions =>
       desiredVersions match {
         case Some(desiredVersions) =>
-          complete(Utils.renderConfig(desiredVersions.toConfig(), true))
+          complete(IOUtils.renderConfig(desiredVersions.toConfig(), true))
         case None =>
           complete((InternalServerError, s"No desired versions"))
       }
@@ -212,7 +212,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     val file = dir.getClientConfigFile(clientName)
     getFileContentWithLock(dir.getClientConfigFile(clientName)).onComplete { bytes =>
       try {
-        Utils.parseConfigString(bytes.get.decodeString("utf8")) match {
+        IOUtils.parseConfigString(bytes.get.decodeString("utf8")) match {
           case Some(config) =>
             val clientConfig = ClientConfig.apply(config)
             promise.success(Some(clientConfig))
@@ -234,7 +234,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     val file = dir.getInstallProfileFile(profileName)
     getFileContentWithLock(file).onComplete { bytes =>
       try {
-        Utils.parseConfigString(bytes.get.decodeString("utf8")) match {
+        IOUtils.parseConfigString(bytes.get.decodeString("utf8")) match {
           case Some(config) =>
             val installProfile = InstallProfile.apply(config)
             promise.success(Some(installProfile))
@@ -328,7 +328,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
   private def uploadTestedVersions(clientName: ClientName): Route = {
     uploadFileToConfig(testedVersionsName, (config) => {
       val future = overwriteFileContentWithLock(dir.getDesiredVersionsFile(None), content => {
-        val desiredVersionsConfig = Utils.parseConfigString(content.decodeString("utf8"), ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)).getOrElse {
+        val desiredVersionsConfig = IOUtils.parseConfigString(content.decodeString("utf8"), ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)).getOrElse {
           throw new IOException(s"Can't parse ${dir.getDesiredVersionsFile(None)}")
         }
         val desiredVersions = DesiredVersions(desiredVersionsConfig)
@@ -336,7 +336,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         if (desiredVersions.Versions.equals(testedVersions.Versions)) {
           val testRecord = TestSignature(clientName, new Date())
           val testedDesiredVersions = DesiredVersions(desiredVersions.Versions, desiredVersions.TestSignatures :+ testRecord)
-          Some(ByteString(Utils.renderConfig(testedDesiredVersions.toConfig(), true).getBytes("utf8")))
+          Some(ByteString(IOUtils.renderConfig(testedDesiredVersions.toConfig(), true).getBytes("utf8")))
         } else {
           None
         }

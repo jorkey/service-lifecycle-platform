@@ -9,7 +9,7 @@ import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -71,7 +71,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     }
     log.info("Update builder.sh")
     val scriptsZip = new File("scripts.zip")
-    if (!Utils.unzip(scriptsZip, buildDir, (name: String) => {
+    if (!ZipUtils.unzip(scriptsZip, buildDir, (name: String) => {
       if (name == "builder/builder.sh") {
         Some("builder.sh")
       } else {
@@ -130,18 +130,18 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     }
     log.info(s"Create version ${nextVersion} of service ${Common.ScriptsServiceName}")
     val scriptsZip = new File("scripts.zip")
-    if (!Utils.copyFile(scriptsZip, developerDistribution.getVersionImageFile(Common.ScriptsServiceName, nextVersion))) {
+    if (!IOUtils.copyFile(scriptsZip, developerDistribution.getVersionImageFile(Common.ScriptsServiceName, nextVersion))) {
       log.error("Can't copy scripts jar file")
       return false
     }
     val scriptsVersionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
-    if (!Utils.writeConfigFile(developerDistribution.getVersionInfoFile(Common.ScriptsServiceName, nextVersion), scriptsVersionInfo.toConfig())) {
+    if (!IOUtils.writeConfigFile(developerDistribution.getVersionInfoFile(Common.ScriptsServiceName, nextVersion), scriptsVersionInfo.toConfig())) {
       log.error(s"Can't write scripts version info")
       return false
     }
     var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.Versions).getOrElse(Map.empty)
     desiredVersions += Common.ScriptsServiceName -> nextVersion
-    if (!Utils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
+    if (!IOUtils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
       log.error("Can't write desired versions")
       return false
     }
@@ -157,24 +157,24 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       }
       log.info(s"Create version ${nextVersion} of service ${serviceName}")
       val imageJar = new File(s"${serviceName}-${nextVersion.toString}.jar")
-      if (!Utils.copyFile(sourceJar, imageJar)) {
+      if (!IOUtils.copyFile(sourceJar, imageJar)) {
         log.error(s"Can't copy jar of service ${serviceName}")
         return false
       }
       val distributionZip = developerDistribution.getVersionImageFile(serviceName, nextVersion)
-      if (!Utils.zip(distributionZip, imageJar)) {
+      if (!ZipUtils.zip(distributionZip, imageJar)) {
         log.error(s"Can't zip image of service ${serviceName}")
         return false
       }
       imageJar.delete()
       val versionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
-      if (!Utils.writeConfigFile(developerDistribution.getVersionInfoFile(serviceName, nextVersion), versionInfo.toConfig())) {
+      if (!IOUtils.writeConfigFile(developerDistribution.getVersionInfoFile(serviceName, nextVersion), versionInfo.toConfig())) {
         log.error(s"Can't write version info of service ${serviceName}")
         return false
       }
       var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.Versions).getOrElse(Map.empty)
       desiredVersions += serviceName -> nextVersion
-      if (!Utils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
+      if (!IOUtils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
         log.error("Can't write desired versions")
         return false
       }
@@ -187,7 +187,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
 
   private def setupDistributionServer(distributionServicePort: Int): Boolean = {
     val scriptsZip = new File("scripts.zip")
-    if (!Utils.unzip(scriptsZip, distributionDir, (name: String) => {
+    if (!ZipUtils.unzip(scriptsZip, distributionDir, (name: String) => {
         if (name == "distribution/distribution_setup.sh") {
           Some("distribution_setup.sh")
         } else {
@@ -195,9 +195,9 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
         }})) {
       return false
     }
-    if (!Utils.runProcess("bash",
+    if (!ProcessUtils.runProcess("bash",
         Seq("distribution_setup.sh", "developer", distributionServicePort.toString),
-        Map.empty, distributionDir, Some(0), None, true)) {
+        Map.empty, distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error("Can't setup distribution server")
       return false
     }

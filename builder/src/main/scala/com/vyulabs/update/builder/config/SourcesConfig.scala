@@ -5,7 +5,7 @@ import java.net.URI
 
 import com.typesafe.config.{Config}
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters._
@@ -37,7 +37,7 @@ object SourcesConfig {
   def apply(directory: File)(implicit log: Logger): Option[SourcesConfig] = {
     val configFile = new File(directory, "sources.json")
     if (configFile.exists()) {
-      val services = Utils.parseConfigFile(configFile).getOrElse(return None)
+      val services = IOUtils.parseConfigFile(configFile).getOrElse(return None)
         .getConfigList("sources").asScala.map(SourceRepository(_))
         .foldLeft(Map.empty[ServiceName, Seq[RepositoryConfig]])((map, entry) => map + (entry.serviceName -> entry.sourceRepositories))
       Some(SourcesConfig(services))

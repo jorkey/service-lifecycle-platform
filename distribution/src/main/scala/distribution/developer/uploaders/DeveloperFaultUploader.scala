@@ -11,7 +11,7 @@ import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, ZipUtils}
 import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success}
@@ -64,10 +64,10 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
       if (file.getName.endsWith(".zip")) {
         val faultDir = new File(dir, file.getName.substring(0, file.getName.length - 4))
         if (faultDir.exists()) {
-          Utils.deleteFileRecursively(faultDir)
+          IOUtils.deleteFileRecursively(faultDir)
         }
         if (faultDir.mkdir()) {
-          if (Utils.unzip(file, faultDir)) {
+          if (ZipUtils.unzip(file, faultDir)) {
             file.delete()
           }
         } else {
@@ -75,9 +75,9 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
         }
       }
       self.synchronized {
-        Utils.maybeDeleteOldFiles(dir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
-        Utils.maybeDeleteExcessFiles(dir, maxClientServiceReportsCount, downloadingFiles)
-        Utils.maybeFreeSpace(dir, maxClientServiceDirectoryCapacity, downloadingFiles)
+        IOUtils.maybeDeleteOldFiles(dir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
+        IOUtils.maybeDeleteExcessFiles(dir, maxClientServiceReportsCount, downloadingFiles)
+        IOUtils.maybeFreeSpace(dir, maxClientServiceDirectoryCapacity, downloadingFiles)
         downloadingFiles -= file
       }
     }

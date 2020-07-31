@@ -13,7 +13,7 @@ import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, Clie
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import distribution.{JsonSupport, UserInfo}
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
@@ -74,7 +74,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                     getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                   } ~
                   path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                    complete(Utils.renderConfig(
+                    complete(IOUtils.renderConfig(
                       dir.getVersionsInfo(dir.getServiceDir(service)).toConfig(), true))
                   } ~
                   path(prefix / downloadDesiredVersionsPath) {

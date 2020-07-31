@@ -21,7 +21,7 @@ import com.typesafe.config.{Config, ConfigParseOptions, ConfigSyntax}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UsersCredentials}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}
@@ -67,7 +67,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     val promise = Promise[Option[DesiredVersions]]()
     getFileContentWithLock(targetFile).onComplete { bytes =>
       try {
-        Utils.parseConfigString(bytes.get.decodeString("utf8")) match {
+        IOUtils.parseConfigString(bytes.get.decodeString("utf8")) match {
           case Some(config) =>
             val desiredVersions = DesiredVersions.apply(config)
             promise.success(Some(desiredVersions))
@@ -282,7 +282,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
   }
 
   protected def uploadFileToConfig(fieldName: String, config: (Config) => Route)(implicit materializer: Materializer): Route = {
-    uploadFileToString(fieldName, content => Utils.parseConfigString(content, ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)) match {
+    uploadFileToString(fieldName, content => IOUtils.parseConfigString(content, ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)) match {
       case Some(c) =>
         config(c)
       case None =>
@@ -318,7 +318,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
   }
 
   protected def getScriptsVersion(): Route = {
-    Utils.getScriptsVersion() match {
+    IOUtils.getScriptsVersion() match {
       case Some(version) =>
         complete(version.toString)
       case None =>

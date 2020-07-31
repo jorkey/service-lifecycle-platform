@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.common.{Common, ServiceInstanceName}
 import com.vyulabs.update.config.InstallConfig
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, ProcessUtils}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
 import com.vyulabs.update.version.BuildVersion
@@ -60,7 +60,7 @@ class ServiceUpdater(instanceId: InstanceId,
     state.beginUpdateToVersion(newVersion)
 
     state.info(s"Download version ${newVersion}")
-    if (state.newServiceDirectory.exists() && !Utils.deleteFileRecursively(state.newServiceDirectory)) {
+    if (state.newServiceDirectory.exists() && !IOUtils.deleteFileRecursively(state.newServiceDirectory)) {
       state.error(s"Can't remove directory ${state.newServiceDirectory}")
       return false
     }
@@ -85,7 +85,7 @@ class ServiceUpdater(instanceId: InstanceId,
     }
 
     for (command <- installConfig.InstallCommands) {
-      if (!Utils.runProcess(command, args, state.newServiceDirectory, true)) {
+      if (!ProcessUtils.runProcess(command, args, state.newServiceDirectory, ProcessUtils.Logging.Realtime)) {
         state.error(s"Install error")
         return false
       }
@@ -109,7 +109,7 @@ class ServiceUpdater(instanceId: InstanceId,
         this.serviceRunner = None
       }
 
-      if (!Utils.deleteFileRecursively(state.currentServiceDirectory)) {
+      if (!IOUtils.deleteFileRecursively(state.currentServiceDirectory)) {
         state.error(s"Can't delete ${state.currentServiceDirectory}")
         return false
       }
@@ -132,13 +132,13 @@ class ServiceUpdater(instanceId: InstanceId,
     args += ("PATH" -> System.getenv("PATH"))
 
     for (command <- installConfig.PostInstallCommands) {
-      if (!Utils.runProcess(command, args, state.currentServiceDirectory, true)) {
+      if (!ProcessUtils.runProcess(command, args, state.currentServiceDirectory, ProcessUtils.Logging.Realtime)) {
         state.error(s"Install error")
         return false
       }
     }
 
-    Utils.writeServiceVersion(state.currentServiceDirectory, serviceInstanceName.serviceName, newVersion)
+    IOUtils.writeServiceVersion(state.currentServiceDirectory, serviceInstanceName.serviceName, newVersion)
 
     state.setVersion(newVersion)
 

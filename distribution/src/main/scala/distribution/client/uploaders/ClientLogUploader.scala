@@ -10,7 +10,7 @@ import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.logs.{LogWriterInit, ServiceLogs}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.{LoggerFactory}
 
 /**
@@ -138,7 +138,7 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
           }
           writers -= instanceId
         }
-        if (!Utils.deleteFileRecursively(instanceDir)) {
+        if (!IOUtils.deleteFileRecursively(instanceDir)) {
           log.error(s"Can't delete ${instanceDir}")
         }
       }

@@ -5,7 +5,7 @@ import java.net.{URI, URL}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vyulabs.update.common.Common.ClientName
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 
 import scala.util.matching.Regex
@@ -19,7 +19,7 @@ case class InstallerConfig(adminRepositoryUri: URI, developerDistributionUrl: UR
   }
 
   def write()(implicit log: Logger): Boolean = {
-    Utils.writeConfigFile(InstallerConfig.configFile, toConfig())
+    IOUtils.writeConfigFile(InstallerConfig.configFile, toConfig())
   }
 }
 
@@ -28,7 +28,7 @@ object InstallerConfig {
 
   def apply()(implicit log: Logger): Option[InstallerConfig] = {
     if (configFile.exists()) {
-      val config = Utils.parseConfigFile(configFile).getOrElse{ return None }
+      val config = IOUtils.parseConfigFile(configFile).getOrElse{ return None }
       val adminRepositoryUri = new URI(config.getString("adminRepositoryUrl"))
       val developerDistributionUrl = new URL(config.getString("developerDistributionUrl"))
       val clientDistributionUrl = new URL(config.getString("clientDistributionUrl"))

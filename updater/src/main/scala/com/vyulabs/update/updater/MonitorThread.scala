@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import java.io.{File, IOException}
 
 import com.vyulabs.update.config.RestartConditionsConfig
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, ProcessUtils}
 import org.slf4j.Logger
 
 /**
@@ -44,7 +44,10 @@ class MonitorThread(state: ServiceStateController,
     if (isUnix) {
       try {
         val proc = Runtime.getRuntime.exec(s"ps -o vsz= -p ${pid}", null, new File("."))
-        val stdOutput = Utils.readOutputToString(proc.getInputStream, false)
+        val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, None, false).getOrElse {
+          state.error(s"Get 'ps' output error")
+          return None
+        }
         try {
           val value = stdOutput.trim
           if (!value.isEmpty) {

@@ -7,7 +7,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,7 +21,7 @@ class SelfUpdater(dir: DistributionDirectory)
     extends Thread with DeveloperDistributionWebPaths { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val scriptsVersion = Utils.getScriptsVersion()
+  private val scriptsVersion = IOUtils.getScriptsVersion()
   private var stopping = false
 
   def close(): Unit = {
@@ -44,7 +44,7 @@ class SelfUpdater(dir: DistributionDirectory)
             return
           }
         }
-        val desiredVersions = Utils.parseConfigFileWithLock(dir.getDesiredVersionsFile()) match {
+        val desiredVersions = IOUtils.parseConfigFileWithLock(dir.getDesiredVersionsFile()) match {
           case Some(config) =>
             try {
               DesiredVersions(config).Versions

@@ -13,7 +13,7 @@ import akka.util.ByteString
 import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.Queue
@@ -74,8 +74,8 @@ class ClientFaultUploader(dir: ClientDistributionDirectory, developerDirectoryUr
             downloadingFiles -= file
             faultsToUpload = faultsToUpload.enqueue(FaultFile(serviceName, file))
             val notDeleteFiles = faultsToUpload.map(_.file).toSet ++ downloadingFiles
-            Utils.maybeDeleteExcessFiles(serviceDir, maxFilesCount, notDeleteFiles)
-            Utils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, notDeleteFiles)
+            IOUtils.maybeDeleteExcessFiles(serviceDir, maxFilesCount, notDeleteFiles)
+            IOUtils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, notDeleteFiles)
             notify()
           }
           complete(StatusCodes.OK)

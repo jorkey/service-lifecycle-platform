@@ -9,7 +9,7 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common.ClientName
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.state.InstancesState
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
@@ -24,11 +24,11 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)(implicit mater
   def receiveInstancesState(clientName: ClientName, instancesState: InstancesState): Route = {
     log.info(s"Receive instances state of client ${clientName}")
     val statesFile = dir.getInstancesStateFile(clientName)
-    val oldStates = Utils.parseConfigFile(statesFile).map(InstancesState(_))
+    val oldStates = IOUtils.parseConfigFile(statesFile).map(InstancesState(_))
     for (oldStates <- oldStates) {
       val newDeadStates = oldStates.states.filterKeys(!instancesState.states.contains(_))
       val deadStatesFile = dir.getDeadInstancesStateFile(clientName)
-      val deadStates = Utils.parseConfigFile(deadStatesFile).map(InstancesState(_)) match {
+      val deadStates = IOUtils.parseConfigFile(deadStatesFile).map(InstancesState(_)) match {
         case Some(deadInstancesState) =>
           deadInstancesState.states
             .filterKeys(!instancesState.states.contains(_))
@@ -36,11 +36,11 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)(implicit mater
         case None =>
           Map.empty
       }
-      if (!Utils.writeConfigFile(deadStatesFile, InstancesState(deadStates ++ newDeadStates).toConfig())) {
+      if (!IOUtils.writeConfigFile(deadStatesFile, InstancesState(deadStates ++ newDeadStates).toConfig())) {
         log.error(s"Can't write ${deadStatesFile}")
       }
     }
-    if (!Utils.writeConfigFile(dir.getInstancesStateFile(clientName), instancesState.toConfig())) {
+    if (!IOUtils.writeConfigFile(dir.getInstancesStateFile(clientName), instancesState.toConfig())) {
       failWith(new IOException(s"Error of writing instances state"))
     } else {
       complete(StatusCodes.OK)

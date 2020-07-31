@@ -5,7 +5,7 @@ import java.net.URI
 
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.libs.git.GitRepository.{cloneRepository, openAndPullRepository}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 
 /**
@@ -19,7 +19,7 @@ object GitRepositoryUtils {
     } else {
       openAndPullRepository(uri, branch, directory) match {
         case None =>
-          if (!Utils.deleteFileRecursively(directory)) {
+          if (!IOUtils.deleteFileRecursively(directory)) {
             return None
           }
           cloneRepository(uri, branch, directory, cloneSubmodules)

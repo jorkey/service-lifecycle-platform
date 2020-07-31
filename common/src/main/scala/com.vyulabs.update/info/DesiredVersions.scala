@@ -5,7 +5,7 @@ import java.util.{Base64, Date}
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 
 import scala.collection.JavaConverters._
@@ -17,7 +17,7 @@ case class DesiredVersions(Versions: Map[ServiceName, BuildVersion], TestSignatu
     })
     var config = ConfigFactory.empty()
       .withValue("desiredVersions", ConfigValueFactory.fromAnyRef(versions.root()))
-    val versionsString = Utils.renderConfig(versions.root().toConfig, true)
+    val versionsString = IOUtils.renderConfig(versions.root().toConfig, true)
     val versionsHash = Base64.getEncoder().encodeToString(
       MessageDigest.getInstance("SHA-1").digest(versionsString.getBytes("utf8").array))
     config = config.withValue("versionsHash", ConfigValueFactory.fromAnyRef(versionsHash))
@@ -45,14 +45,14 @@ case class TestSignature(ClientName: ClientName, Date: Date) {
   def toConfig(): Config = {
     ConfigFactory.empty()
       .withValue("clientName", ConfigValueFactory.fromAnyRef(ClientName))
-      .withValue("date", ConfigValueFactory.fromAnyRef(Utils.serializeISO8601Date(Date)))
+      .withValue("date", ConfigValueFactory.fromAnyRef(IOUtils.serializeISO8601Date(Date)))
   }
 }
 
 object TestSignature {
   def apply(config: Config): TestSignature = {
     val clientName = config.getString("clientName")
-    val date = Utils.parseISO8601Date(config.getString("date"))
+    val date = IOUtils.parseISO8601Date(config.getString("date"))
     TestSignature(clientName, date)
   }
 }

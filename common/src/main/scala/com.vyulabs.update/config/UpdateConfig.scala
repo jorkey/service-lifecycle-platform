@@ -5,7 +5,7 @@ import java.io.File
 import com.typesafe.config.Config
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters._
@@ -38,7 +38,7 @@ object UpdateConfig {
   def apply(directory: File)(implicit log: Logger): Option[UpdateConfig] = {
     val configFile = new File(directory, Common.UpdateConfigFileName)
     if (configFile.exists()) {
-      val config = Utils.parseConfigFile(configFile).getOrElse(return None)
+      val config = IOUtils.parseConfigFile(configFile).getOrElse(return None)
       val services = config.getConfigList("update").asScala.foldLeft(Map.empty[ServiceName, ServiceUpdateConfig]){
         case (map, config) => map + (config.getString("service") -> ServiceUpdateConfig(config))
       }

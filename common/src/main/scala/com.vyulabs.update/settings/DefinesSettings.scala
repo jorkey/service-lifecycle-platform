@@ -3,7 +3,7 @@ package com.vyulabs.update.settings
 import java.io.File
 
 import com.typesafe.config.{ConfigParseOptions, ConfigSyntax}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters._
@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 class DefinesSettings(map: Map[String, String]) {
   def propertiesExpansion(file: File)(implicit log: Logger): Boolean = {
     log.info(s"Expand macro for file ${file}")
-    if (!Utils.macroExpansion(file, file, map)) {
+    if (!IOUtils.macroExpansion(file, file, map)) {
       return false
     }
     true
@@ -25,7 +25,7 @@ class DefinesSettings(map: Map[String, String]) {
 object DefinesSettings {
   def apply(configFile: File, preSettings: Map[String, String])(implicit log: Logger): Option[DefinesSettings] = {
     val parseOptions = ConfigParseOptions.defaults().setSyntax(ConfigSyntax.PROPERTIES)
-    val config = Utils.parseConfigFile(configFile, parseOptions).getOrElse(return None)
+    val config = IOUtils.parseConfigFile(configFile, parseOptions).getOrElse(return None)
     var settings = preSettings
     for (setting <- config.entrySet().asScala) {
       settings += (setting.getKey -> setting.getValue.unwrapped().toString)

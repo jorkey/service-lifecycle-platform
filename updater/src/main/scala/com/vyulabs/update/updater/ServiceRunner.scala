@@ -1,6 +1,6 @@
 package com.vyulabs.update.updater
 
-import java.io.File
+import java.io.{BufferedReader, File, InputStreamReader}
 import java.nio.file.Files
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -12,7 +12,7 @@ import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultReport, FaultUploader, LogUploader}
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, ProcessUtils, ReaderThread, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -170,10 +170,10 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
       for (logDirectory <- currentInstallConfig.RunService.map(_.LogWriter.Directory).map(new File(state.currentServiceDirectory, _))) {
         state.info(s"Save log files to history directory")
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
-          val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + s"-${Utils.serializeISO8601Date(new Date())}" +
+          val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + s"-${IOUtils.serializeISO8601Date(new Date())}" +
             (if (failed) "-failed" else "")
           val saveDir = new File(state.logHistoryDirectory, s"${dirName}.log")
-          if (!saveDir.exists() || Utils.deleteFileRecursively(saveDir)) {
+          if (!saveDir.exists() || IOUtils.deleteFileRecursively(saveDir)) {
             if (logDirectory.exists()) {
               if (!logDirectory.renameTo(saveDir)) {
                 log.error(s"Can't rename ${logDirectory} to ${saveDir}")
@@ -184,7 +184,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
           } else {
             log.error(s"Can't delete ${saveDir}")
           }
-          Utils.maybeFreeSpace(state.logHistoryDirectory, maxLogHistoryDirCapacity, Set.empty)
+          IOUtils.maybeFreeSpace(state.logHistoryDirectory, maxLogHistoryDirCapacity, Set.empty)
         } else {
           state.error(s"Can't make directory ${state.logHistoryDirectory}")
         }
@@ -230,7 +230,8 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
             None
         }
         val dateFormat = params.config.LogWriter.DateFormat.map(new SimpleDateFormat(_))
-        new ReaderThread(state, process,
+        val input = new BufferedReader(new InputStreamReader(process.getInputStream))
+        ProcessUtils.readOutput(input, None,
           line => {
             val formattedLine = dateFormat match {
               case Some(dateFormat) =>
@@ -248,7 +249,12 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
             val exitCode = process.waitFor()
             log.debug(s"Service ${serviceInstanceName} is terminated with code ${exitCode}")
             processFault(process, exitCode, logTail)
-          }).start()
+          },
+          exception => {
+            if (process.isAlive) {
+              state.error(s"Read service output error ${exception.getMessage}")
+            }
+          })
         for (restartConditions <- params.config.RestartConditions) {
           new MonitorThread(state, process, restartConditions).start()
         }

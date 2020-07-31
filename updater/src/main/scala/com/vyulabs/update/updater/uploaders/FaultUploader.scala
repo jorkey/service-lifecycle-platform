@@ -7,7 +7,7 @@ import java.util.Date
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.state.ServiceState
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -65,40 +65,40 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
 
   private def uploadFault(fault: FaultReport): Boolean = {
     try {
-      val serviceDir = new File(archiveDir, Utils.serializeISO8601Date(new Date))
+      val serviceDir = new File(archiveDir, IOUtils.serializeISO8601Date(new Date))
       if (!serviceDir.mkdir()) {
         log.error(s"Can't create directory ${serviceDir}")
         return false
       }
-      val archivedFileName = s"${fault.state.serviceInstanceName.serviceName}_${fault.state.version.getOrElse(BuildVersion.empty)}_${fault.instanceId}_${Utils.serializeISO8601Date(new Date())}_fault.zip"
+      val archivedFileName = s"${fault.state.serviceInstanceName.serviceName}_${fault.state.version.getOrElse(BuildVersion.empty)}_${fault.instanceId}_${IOUtils.serializeISO8601Date(new Date())}_fault.zip"
       val archiveFile = new File(serviceDir, archivedFileName)
       val tmpDirectory = Files.createTempDirectory(s"fault-${fault.state.serviceInstanceName.serviceName}").toFile
       val stateInfoFile = new File(tmpDirectory, "state.json")
       val logTailFile = new File(tmpDirectory, s"${fault.state.serviceInstanceName.serviceName}.log")
       try {
-        if (!Utils.writeConfigFile(stateInfoFile, fault.state.toConfig())) {
+        if (!IOUtils.writeConfigFile(stateInfoFile, fault.state.toConfig())) {
           log.error(s"Can't write file with state")
           return false
         }
         val logs = fault.logTail.foldLeft(new String) { (sum, line) => sum + '\n' + line }
-        if (!Utils.writeFileFromBytes(logTailFile, logs.getBytes("utf8"))) {
+        if (!IOUtils.writeFileFromBytes(logTailFile, logs.getBytes("utf8"))) {
           log.error(s"Can't write file with tail of logs")
           return false
         }
         val filesToZip = fault.reportFilesTmpDir.toSeq :+ stateInfoFile :+ logTailFile
-        if (!Utils.zip(archiveFile, filesToZip)) {
+        if (!ZipUtils.zip(archiveFile, filesToZip)) {
           log.error(s"Can't zip ${filesToZip} to ${archiveFile}")
           return false
         }
       } finally {
-        Utils.deleteFileRecursively(tmpDirectory)
+        IOUtils.deleteFileRecursively(tmpDirectory)
       }
-      fault.reportFilesTmpDir.foreach(Utils.deleteFileRecursively(_))
+      fault.reportFilesTmpDir.foreach(IOUtils.deleteFileRecursively(_))
       if (!clientDirectory.uploadServiceFault(fault.state.serviceInstanceName.serviceName, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }
-      Utils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, Set(archiveFile))
+      IOUtils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, Set(archiveFile))
       true
     } catch {
       case ex: Exception =>
