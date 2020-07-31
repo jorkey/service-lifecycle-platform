@@ -22,7 +22,7 @@ private class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Opt
     try {
       var cnt = input.read(chunk)
       while (cnt != -1) {
-        buffer.append(chunk, cnt)
+        buffer.appendAll(chunk, 0, cnt)
         var index1 = 0
         var index2 = 0
         while (index2 < buffer.size) {
