@@ -32,7 +32,7 @@ private class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Opt
           }
           index2 += 1
         }
-        buffer.drop(index1)
+        buffer.delete(0, index1)
         if (!buffer.isEmpty)
           for (lineWaitingTimeoutMs <- lineWaitingTimeoutMs) {
             val expire = System.currentTimeMillis() + lineWaitingTimeoutMs
