@@ -44,7 +44,7 @@ class MonitorThread(state: ServiceStateController,
     if (isUnix) {
       try {
         val proc = Runtime.getRuntime.exec(s"ps -o vsz= -p ${pid}", null, new File("."))
-        val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, None, false).getOrElse {
+        val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, ProcessUtils.Logging.None).getOrElse {
           state.error(s"Get 'ps' output error")
           return None
         }

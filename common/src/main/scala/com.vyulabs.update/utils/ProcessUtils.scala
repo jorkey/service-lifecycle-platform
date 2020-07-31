@@ -3,30 +3,37 @@ package com.vyulabs.update.utils
 import java.io.{BufferedReader, File, InputStream, InputStreamReader}
 
 import com.vyulabs.update.config.CommandConfig
+import com.vyulabs.update.utils.ProcessUtils.Logging.Logging
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters._
 import Utils._
-import com.vyulabs.update.utils.ProcessUtils.Logging.Logging
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 31.07.20.
   * Copyright FanDate, Inc.
   */
-private class ReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
-                   onData: (String) => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
+private class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
+                                onLine: (String, Boolean) => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
 
   override def run(): Unit = {
-    val line = StringBuilder.newBuilder
-    val buffer = Array.apply[Char](1024)
+    val buffer = StringBuilder.newBuilder
+    val chunk = new Array[Char](1024)
     try {
-      var cnt = input.read(buffer)
+      var cnt = input.read(chunk)
       while (cnt != -1) {
-        line.append(buffer, cnt)
-        if (line.endsWith("\n")) {
-          onData(line.toString())
-          line.clear()
-        } else {
+        buffer.append(chunk, cnt)
+        var index1 = 0
+        var index2 = 0
+        while (index2 < buffer.size) {
+          if (buffer(index2) == '\n') {
+            onLine(buffer.substring(index1, index2), true)
+            index1 = index2 + 1
+          }
+          index2 += 1
+        }
+        buffer.drop(index1)
+        if (!buffer.isEmpty)
           for (lineWaitingTimeoutMs <- lineWaitingTimeoutMs) {
             val expire = System.currentTimeMillis() + lineWaitingTimeoutMs
             var rest = expire - System.currentTimeMillis()
@@ -37,12 +44,11 @@ private class ReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[I
               } while (!input.ready() && rest > 0)
             }
             if (!input.ready()) {
-              onData(line.toString())
-              line.clear()
+              onLine(buffer.toString(), false)
+              buffer.clear()
             }
           }
-        }
-        cnt = input.read(buffer)
+        cnt = input.read(chunk)
       }
     } catch {
       case e: Exception =>
@@ -96,8 +102,7 @@ object ProcessUtils {
       builder.directory(dir)
       val proc = builder.start()
 
-      val output = readOutputToString(proc.getInputStream,
-          if (logging == Logging.Realtime) Some(1000) else None, logging != Logging.None).getOrElse {
+      val output = readOutputToString(proc.getInputStream, logging).getOrElse {
         log.error("Can't read process output")
         return false
       }
@@ -129,21 +134,23 @@ object ProcessUtils {
     }
   }
 
-  def readOutput(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
-                 onData: (String) => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger): Unit = {
-    new ReaderThread(input, lineWaitingTimeoutMs, onData, onEof, onError).start()
+  def readOutputLines(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
+                      onLine: (String, Boolean) => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger): Unit = {
+    new LinesReaderThread(input, lineWaitingTimeoutMs, onLine, onEof, onError).start()
   }
 
-  def readOutputToString(input: InputStream, readLineTimeoutMs: Option[Int],
-                         logOutput: Boolean)(implicit log: Logger): Option[String] = {
+  def readOutputToString(input: InputStream, logging: Logging)(implicit log: Logger): Option[String] = {
     val stdInput = new BufferedReader(new InputStreamReader(input))
     val output = StringBuilder.newBuilder
-    val thread = new ReaderThread(stdInput, readLineTimeoutMs,
-      data => {
-        if (logOutput) {
-          log.info(if (data.endsWith("\n")) data.dropRight(1) else data)
+    val thread = new LinesReaderThread(stdInput, if (logging == Logging.Realtime) Some(1000) else None,
+      (data, nl) => {
+        if (logging != Logging.None) {
+          log.info(data)
         }
         output.append(data)
+        if (nl) {
+          output.append('\n')
+        }
       },
       () => {},
       ex => {

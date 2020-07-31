@@ -231,8 +231,8 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         }
         val dateFormat = params.config.LogWriter.DateFormat.map(new SimpleDateFormat(_))
         val input = new BufferedReader(new InputStreamReader(process.getInputStream))
-        ProcessUtils.readOutput(input, None,
-          line => {
+        ProcessUtils.readOutputLines(input, None,
+          (line, nl) => {
             val formattedLine = dateFormat match {
               case Some(dateFormat) =>
                 s"${dateFormat.format(new Date)} ${line}"
