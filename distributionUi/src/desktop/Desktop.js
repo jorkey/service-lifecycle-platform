@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Drawer from '@material-ui/core/Drawer';
 import Divider from '@material-ui/core/Divider';
@@ -58,6 +58,8 @@ const useStyles = makeStyles((theme) => ({
 
 export function Desktop() {
   const classes = useStyles();
+  const theme = useTheme();
+
   const [open, setOpen] = React.useState(true);
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => setOpen(false);

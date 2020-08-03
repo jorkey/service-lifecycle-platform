@@ -2,7 +2,7 @@
 export const Utils = {
   login,
   logout,
-  get
+  getDesiredVersions
 };
 
 function login(user, password) {
@@ -18,6 +18,14 @@ function login(user, password) {
 
 function logout() {
   localStorage.removeItem('user')
+}
+
+function getDesiredVersions(client) {
+  let path = (typeof client === 'undefined') ? '/download-desired-versions' : ('/download-desired-versions?${client}' + client)
+  return get(path).then(versions => {
+    console.log('desired versions ' + JSON.stringify(versions.desiredVersions))
+    return versions.desiredVersions
+  });
 }
 
 function get(path) {

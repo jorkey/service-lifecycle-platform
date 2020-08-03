@@ -33,7 +33,7 @@ private class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Opt
           index2 += 1
         }
         buffer.delete(0, index1)
-        if (!buffer.isEmpty)
+        if (!buffer.isEmpty) {
           for (lineWaitingTimeoutMs <- lineWaitingTimeoutMs) {
             val expire = System.currentTimeMillis() + lineWaitingTimeoutMs
             var rest = expire - System.currentTimeMillis()
@@ -48,6 +48,7 @@ private class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Opt
               buffer.clear()
             }
           }
+        }
         cnt = input.read(chunk)
       }
     } catch {
