@@ -6,7 +6,9 @@ import { Redirect, Switch } from 'react-router-dom';
 import { Desktop } from "./desktop";
 import { LoginPage } from "./login";
 
-import './App.css';
+import { ThemeProvider } from '@material-ui/styles';
+
+import theme from './theme';
 
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   <Route {...rest} render = { props => (
@@ -18,16 +20,14 @@ export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
 
 function App() {
   return (
-    <div className="container">
-        <div className="col-sm-8 col-sm-offset-2">
-          <Router>
-            <Switch>
-              <Route exact path="/login" component={LoginPage} />
-              <LoginSwitchRoute path="/" component={Desktop} />
-            </Switch>
-          </Router>
-        </div>
-    </div>
+    <ThemeProvider theme={theme}>
+      <Router>
+        <Switch>
+          <Route exact path="/login" component={LoginPage} />
+          <LoginSwitchRoute path="/" component={Desktop} />
+        </Switch>
+      </Router>
+    </ThemeProvider>
   );
 }
 
