@@ -75,11 +75,11 @@ lazy val distribution = project
   )
   .dependsOn(
     updateCommon,
-    distributionUi
+    dashboard
   )
 
-lazy val distributionUi = project
-  .in(file("distributionUi"))
+lazy val dashboard = project
+  .in(file("dashboard"))
   .settings(
     resourceGenerators in Compile += buildUi.init
   )
@@ -182,7 +182,7 @@ lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
   }
 }
 
-lazy val buildUi = taskKey[Seq[File]]("Generate UI resources") := {
+lazy val buildUi = taskKey[Seq[File]]("Generate dashboard resources") := {
   buildReactScripts.init.value
   val webapp = baseDirectory.value / "build"
   val managed = resourceManaged.value
