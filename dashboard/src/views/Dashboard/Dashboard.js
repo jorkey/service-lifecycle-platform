@@ -6,18 +6,19 @@ import {
   Versions,
 } from './components';
 
-let classes = makeStyles(theme => ({
+const useStyles = makeStyles(theme => ({
   root: {
-    padding: theme.spacing(4)
+    padding: theme.spacing(2)
   }
 }));
 
 const Dashboard = () => {
+  const classes = useStyles();
+
   return (
     <div className={classes.root}>
       <Grid
         container
-        spacing={4}
       >
         <Grid
           item

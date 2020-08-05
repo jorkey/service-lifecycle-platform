@@ -87,8 +87,8 @@ const Versions = props => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell style={serviceColumnStyle}>Desired version</TableCell>
-                <TableCell>Instance version</TableCell>
+                <TableCell style={serviceColumnStyle}>Service</TableCell>
+                <TableCell>Desired version</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

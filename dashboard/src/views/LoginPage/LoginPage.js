@@ -47,7 +47,7 @@ const LoginPage = () => {
 
     Utils.login(userName, password).then(
       user => {
-        window.location.href = "/"
+        window.location.replace("/")
       },
       response => {
         const error = (response.status === 401)?"Authorization error":response.status + ": " + response.statusText;
