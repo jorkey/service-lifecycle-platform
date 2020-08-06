@@ -2,12 +2,15 @@
 export const Utils = {
   login,
   logout,
-  getDesiredVersions
+  getClients,
+  getDesiredVersions,
+  getInstanceVersions
 };
 
 function login(user, password) {
   let authData = window.btoa(user + ':' + password)
-  return fetchRequest('GET', '/login', authData).then(user => {
+  let path ='/api/login'
+  return fetchRequest('GET', path, authData).then(user => {
     if (user) {
       user.authData = authData
       localStorage.setItem('user', JSON.stringify(user))
@@ -20,10 +23,23 @@ function logout() {
   localStorage.removeItem('user')
 }
 
+function getClients() {
+  let path ='/api/get-clients'
+  return get(path).then(clients => {
+    return clients
+  });
+}
+
 function getDesiredVersions(client) {
-  let path = (typeof client === 'undefined') ? '/download-desired-versions' : ('/download-desired-versions?${client}' + client)
+  let path = '/api/' + ((typeof client === 'undefined') ? 'download-desired-versions' : ('download-desired-versions?${client}' + client))
   return get(path).then(versions => {
-    console.log('desired versions ' + JSON.stringify(versions.desiredVersions))
+    return versions.desiredVersions
+  });
+}
+
+function getInstanceVersions(client) {
+  let path = '/api/download-desired-versions?${client}' + client
+  return get(path).then(versions => {
     return versions.desiredVersions
   });
 }

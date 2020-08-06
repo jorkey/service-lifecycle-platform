@@ -20,6 +20,7 @@ import {
   TableSortLabel,
   Select
 } from '@material-ui/core';
+import Grid from "@material-ui/core/Grid";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -38,10 +39,16 @@ const useStyles = makeStyles(theme => ({
   },
   actions: {
     justifyContent: 'flex-end'
+  },
+  serviceColumn: {
+    width: '200px',
+    padding: '6px',
+    paddingLeft: '16px'
+  },
+  desiredVersionColumn: {
+    padding: '6px'
   }
 }));
-
-const serviceColumnStyle = { width: '200px', padding: '0px', paddingLeft: '36px' }
 
 const Versions = props => {
   const { className, ...rest } = props;
@@ -65,7 +72,7 @@ const Versions = props => {
     >
       <CardHeader
         action={
-          <>
+          <Grid>
             <InputLabel htmlFor="age-native-simple">Client</InputLabel>
             <Select
               native
@@ -76,7 +83,7 @@ const Versions = props => {
               >
               {clients.map( client => <option>{client}</option> )}
             </Select>
-          </>
+          </Grid>
         }
 
         title="Versions"
@@ -87,8 +94,8 @@ const Versions = props => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell style={serviceColumnStyle}>Service</TableCell>
-                <TableCell>Desired version</TableCell>
+                <TableCell className={classes.serviceColumn}>Service</TableCell>
+                <TableCell className={classes.desiredVersionColumn}>Desired version</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -98,8 +105,8 @@ const Versions = props => {
                     hover
                     key={service}
                   >
-                    <TableCell style={serviceColumnStyle}>{service}</TableCell>
-                    <TableCell>{version}</TableCell>
+                    <TableCell className={classes.serviceColumn}>{service}</TableCell>
+                    <TableCell className={classes.desiredVersionColumn}>{version}</TableCell>
                   </TableRow>
                 ))}
             </TableBody>
