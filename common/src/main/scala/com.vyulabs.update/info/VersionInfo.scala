@@ -2,37 +2,14 @@ package com.vyulabs.update.info
 
 import java.util.Date
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
-import scala.collection.JavaConverters._
+import spray.json.DefaultJsonProtocol
 
-case class VersionInfo(buildVersion: BuildVersion, author: String, branches: Seq[String], date: Date, comment: Option[String]) {
-  def toConfig(): Config = {
-    var config = ConfigFactory.empty()
-      .withValue("version", ConfigValueFactory.fromAnyRef(buildVersion.toString))
-      .withValue("author", ConfigValueFactory.fromAnyRef(author))
-      .withValue("branches", ConfigValueFactory.fromIterable(branches.asJava))
-      .withValue("date", ConfigValueFactory.fromAnyRef(IOUtils.serializeISO8601Date(date)))
-    for (comment <- comment) {
-      config = config.withValue("comment", ConfigValueFactory.fromAnyRef(comment))
-    }
-    config
-  }
-}
+case class VersionInfo(version: BuildVersion, author: String, branches: Seq[String], date: Date, comment: Option[String])
 
-object VersionInfo {
-  def apply(config: Config): VersionInfo = {
-    val version = BuildVersion.parse(config.getString("version"))
-    val author = config.getString("author")
-    val branches = if (config.hasPath("branches")) config.getStringList("branches").asScala else Seq.empty
-    val date =
-      if (config.hasPath("date")) {
-        IOUtils.parseISO8601Date(config.getString("date"))
-      } else {
-        new Date(config.getLong("time"))
-      }
-    val comment = if (config.hasPath("comment")) Some(config.getString("comment")) else None
-    VersionInfo(version, author, branches, date, comment)
-  }
+object VersionInfoJson extends DefaultJsonProtocol {
+  import com.vyulabs.update.utils.Utils.DateJson._
+  import com.vyulabs.update.version.BuildVersionJson._
+
+  implicit val versionInfoJson = jsonFormat5(VersionInfo.apply)
 }

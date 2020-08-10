@@ -12,8 +12,11 @@ import com.vyulabs.update.info.VersionInfo
 import com.vyulabs.update.utils.{IOUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
+import spray.json.JsValue
 
 import scala.annotation.tailrec
+import spray.json._
+import com.vyulabs.update.info.VersionInfoJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -30,7 +33,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
   }
 
   def downloadVersionInfo(serviceName: ServiceName, buildVersion: BuildVersion): Option[VersionInfo] = {
-    downloadToConfig(makeUrl(getDownloadVersionInfoPath(serviceName, buildVersion))).map(VersionInfo(_))
+    downloadToJson(makeUrl(getDownloadVersionInfoPath(serviceName, buildVersion))).map(_.convertTo[VersionInfo])
   }
 
   def downloadVersionImage(serviceName: ServiceName, buildVersion: BuildVersion, file: File): Boolean = {
@@ -66,10 +69,10 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
         log.error("Can't zip build directory")
         return false
       }
-      if (!IOUtils.writeConfigFile(infoTmpFile, versionInfo.toConfig())) {
+      if (!IOUtils.writeJsonToFile(infoTmpFile, versionInfo.toJson)) {
         return false
       }
-      uploadVersionImage(serviceName, versionInfo.buildVersion, infoTmpFile, imageTmpFile)
+      uploadVersionImage(serviceName, versionInfo.version, infoTmpFile, imageTmpFile)
     } finally {
       imageTmpFile.delete()
       infoTmpFile.delete()
@@ -144,13 +147,8 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     })
   }
 
-  protected def downloadToConfig(url: URL, options: ConfigParseOptions = ConfigParseOptions.defaults()): Option[Config] = {
-    downloadToString(url) match {
-      case Some(entry) =>
-        IOUtils.parseConfigString(entry, options)
-      case None =>
-        None
-    }
+  protected def downloadToJson(url: URL, options: ConfigParseOptions = ConfigParseOptions.defaults()): Option[JsValue] = {
+    downloadToString(url).map(_.parseJson)
   }
 
   protected def downloadToString(url: URL): Option[String] = {
@@ -213,8 +211,8 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     upload(url, name, destinationFile, input)
   }
 
-  protected def uploadFromConfig(url: URL, name: String, destinationFile: String, config: Config): Boolean = {
-    val content = IOUtils.renderConfig(config, true)
+  protected def uploadFromJson(url: URL, name: String, destinationFile: String, json: JsValue): Boolean = {
+    val content = json.prettyPrint
     val input = new ByteArrayInputStream(content.getBytes("utf8"))
     upload(url, name, destinationFile, input)
   }

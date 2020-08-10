@@ -4,7 +4,7 @@ import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.config.LogUploaderConfig
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.logs.{LogWriterInit, ServiceLogs}
+import com.vyulabs.update.logs.{ServiceLogs}
 import org.slf4j.Logger
 
 import scala.collection.immutable.Queue

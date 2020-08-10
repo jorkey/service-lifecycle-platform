@@ -12,6 +12,10 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
+import spray.json.enrichAny
+
+import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.info.VersionInfoJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.05.19.
@@ -135,13 +139,13 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     val scriptsVersionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
-    if (!IOUtils.writeConfigFile(developerDistribution.getVersionInfoFile(Common.ScriptsServiceName, nextVersion), scriptsVersionInfo.toConfig())) {
+    if (!IOUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(Common.ScriptsServiceName, nextVersion), scriptsVersionInfo.toJson)) {
       log.error(s"Can't write scripts version info")
       return false
     }
-    var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.Versions).getOrElse(Map.empty)
+    var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.desiredVersions).getOrElse(Map.empty)
     desiredVersions += Common.ScriptsServiceName -> nextVersion
-    if (!IOUtils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
+    if (!IOUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toJson)) {
       log.error("Can't write desired versions")
       return false
     }
@@ -168,13 +172,13 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       }
       imageJar.delete()
       val versionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
-      if (!IOUtils.writeConfigFile(developerDistribution.getVersionInfoFile(serviceName, nextVersion), versionInfo.toConfig())) {
+      if (!IOUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(serviceName, nextVersion), versionInfo.toJson)) {
         log.error(s"Can't write version info of service ${serviceName}")
         return false
       }
-      var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.Versions).getOrElse(Map.empty)
+      var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.desiredVersions).getOrElse(Map.empty)
       desiredVersions += serviceName -> nextVersion
-      if (!IOUtils.writeConfigFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toConfig())) {
+      if (!IOUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toJson)) {
         log.error("Can't write desired versions")
         return false
       }

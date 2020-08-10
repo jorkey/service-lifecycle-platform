@@ -6,10 +6,12 @@ import java.util.{Date, TimeZone}
 
 import com.typesafe.config._
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.version.BuildVersion
+
 import org.slf4j.Logger
+import spray.json._
 
 import scala.annotation.tailrec
 
@@ -18,20 +20,6 @@ import scala.annotation.tailrec
   * Copyright FanDate, Inc.
   */
 object IOUtils {
-  def serializeISO8601Date(date: Date): String = {
-    val timezone = TimeZone.getTimeZone("UTC")
-    val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    dateFormat.setTimeZone(timezone)
-    dateFormat.format(date)
-  }
-
-  def parseISO8601Date(dateStr: String): Date = {
-    val timezone = TimeZone.getTimeZone("UTC")
-    val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    dateFormat.setTimeZone(timezone)
-    dateFormat.parse(dateStr)
-  }
-
   def readFileToBytes(file: File)(implicit log: Logger): Option[Array[Byte]] = {
     try {
       val in = new FileInputStream(file)
@@ -53,7 +41,25 @@ object IOUtils {
     }
   }
 
-  def writeFileFromBytes(file: File, data: Array[Byte])(implicit log: Logger): Boolean = {
+  def readFileToBytesWithLock(file: File)
+                             (implicit filesLocker: SmartFilesLocker, log: Logger): Option[Array[Byte]] = {
+    synchronize(file, true, (attempt, time) => {
+      Thread.sleep(100)
+      true
+    }, () => {
+      readFileToBytes(file)
+    }).getOrElse(None)
+  }
+
+  def readFileToJson(file: File)(implicit log: Logger): Option[JsValue] = {
+    readFileToBytes(file).map(new String(_, "utf8").parseJson)
+  }
+
+  def readFileToJsonWithLock(file: File)(implicit log: Logger): Option[JsValue] = {
+    readFileToBytes(file).map(new String(_, "utf8").parseJson)
+  }
+
+  def writeBytesToFile(file: File, data: Array[Byte])(implicit log: Logger): Boolean = {
     try {
       val out = new FileOutputStream(file)
       out.write(data)
@@ -64,6 +70,30 @@ object IOUtils {
         log.error(s"Write file ${file} error", ex)
         false
     }
+  }
+
+  def writeBytesToFileWithLock(file: File, data: Array[Byte])
+                              (implicit filesLocker: SmartFilesLocker, log: Logger): Boolean = {
+    synchronize(file, false, (attempt, time) => {
+      Thread.sleep(100)
+      true
+    }, () => {
+      writeBytesToFile(file, data)
+    }).getOrElse(false)
+  }
+
+  def writeJsonToFile(file: File, json: JsValue)(implicit log: Logger): Boolean = {
+    writeBytesToFile(file, json.prettyPrint.getBytes("utf8"))
+  }
+
+  def writeJsonToFileWithLock(file: File, json: JsValue)
+                                (implicit filesLocker: SmartFilesLocker, log: Logger): Boolean = {
+    writeBytesToFileWithLock(file, json.prettyPrint.getBytes("utf8"))
+  }
+
+  def writeConfigToFile(file: File, config: Config)(implicit log: Logger): Boolean = {
+    val json = file.getName.endsWith(".json")
+    writeBytesToFile(file, renderConfig(config, json).getBytes("utf8"))
   }
 
   def parseConfigFile(file: File, options: ConfigParseOptions = ConfigParseOptions.defaults())(implicit log: Logger): Option[Config] = {
@@ -81,45 +111,9 @@ object IOUtils {
     }
   }
 
-  def parseConfigString(string: String, options: ConfigParseOptions = ConfigParseOptions.defaults())(implicit log: Logger): Option[Config] = {
-    try {
-      Some(ConfigFactory.parseReader(new StringReader(string), options))
-    } catch {
-      case e: Exception =>
-        log.error(s"Parse stream error", e)
-        None
-    }
-  }
-
-  def parseConfigReader(reader: Reader, options: ConfigParseOptions = ConfigParseOptions.defaults())(implicit log: Logger): Option[Config] = {
-    try {
-      Some(ConfigFactory.parseReader(reader, options))
-    } catch {
-      case e: Exception =>
-        log.error(s"Parse stream error", e)
-        None
-    }
-  }
-
-  def parseConfigFileWithLock(file: File,
-                              options: ConfigParseOptions = ConfigParseOptions.defaults())
-                             (implicit filesLocker: SmartFilesLocker, log: Logger): Option[Config] = {
-    synchronize(file, true, (attempt, time) => {
-      Thread.sleep(100)
-      true
-    }, () => {
-      parseConfigFile(file, options)
-    }).flatten
-  }
-
   def renderConfig(config: Config, json: Boolean): String = {
     val renderOpts = ConfigRenderOptions.defaults().setFormatted(true).setOriginComments(false).setJson(json)
     config.root().render(renderOpts)
-  }
-
-  def writeConfigFile(file: File, config: Config)(implicit log: Logger): Boolean = {
-    val json = file.getName.endsWith(".json")
-    IOUtils.writeFileFromBytes(file, renderConfig(config, json).getBytes("utf8"))
   }
 
   def copyFile(from: File, to: File, filter: (File) => Boolean = (_) => true, settings: Map[String, String] = Map.empty)
@@ -219,7 +213,7 @@ object IOUtils {
 
   def writeServiceVersion(directory: File, serviceName: ServiceName, version: BuildVersion)(implicit log: Logger): Boolean = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
-    writeFileFromBytes(versionMarkFile, version.toString.getBytes("utf8"))
+    writeBytesToFile(versionMarkFile, version.toString.getBytes("utf8"))
   }
 
   def macroExpansion(inputFile: File, outputFile: File, args: Map[String, String])(implicit log: Logger): Boolean = {
@@ -232,7 +226,7 @@ object IOUtils {
       val value = entry._2
       contents = contents.replaceAll(s"%%${variable}%%", value)
     }
-    writeFileFromBytes(outputFile, contents.getBytes("utf8"))
+    writeBytesToFile(outputFile, contents.getBytes("utf8"))
   }
 
   def deleteFileRecursively(file: File): Boolean = {

@@ -1,5 +1,13 @@
 package com.vyulabs.update.common
 
+import java.net.{URI, URL}
+import java.text.SimpleDateFormat
+import java.util.{Date, TimeZone}
+
+import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
+
+import scala.util.matching.Regex
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.03.19.
   * Copyright FanDate, Inc.
@@ -47,5 +55,9 @@ object Common {
     serviceName == BuilderServiceName ||
     serviceName == InstallerServiceName ||
     serviceName == UpdaterServiceName
+  }
+
+  object UpdaterInstanceIdJson extends DefaultJsonProtocol {
+    implicit val updaterInstanceIdJson = jsonFormat2(UpdaterInstanceId.apply)
   }
 }

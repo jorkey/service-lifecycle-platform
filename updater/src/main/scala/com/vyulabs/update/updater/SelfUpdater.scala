@@ -21,8 +21,8 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
   state.serviceStarted()
 
   def maybeBeginSelfUpdate(desiredVersions: DesiredVersions): Boolean = {
-    val updaterUpdate = maybeBeginServiceUpdate(Common.UpdaterServiceName, state.getVersion(), desiredVersions.Versions.get(Common.UpdaterServiceName))
-    val scriptsUpdate = maybeBeginServiceUpdate(Common.ScriptsServiceName, scriptsVersion, desiredVersions.Versions.get(Common.ScriptsServiceName))
+    val updaterUpdate = maybeBeginServiceUpdate(Common.UpdaterServiceName, state.getVersion(), desiredVersions.desiredVersions.get(Common.UpdaterServiceName))
+    val scriptsUpdate = maybeBeginServiceUpdate(Common.ScriptsServiceName, scriptsVersion, desiredVersions.desiredVersions.get(Common.ScriptsServiceName))
     updaterUpdate || scriptsUpdate
   }
 

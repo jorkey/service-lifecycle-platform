@@ -9,6 +9,8 @@ import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
+import com.vyulabs.update.info.VersionInfoJson._
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
@@ -49,7 +51,7 @@ abstract class DistributionDirectory(val directory: File)(implicit filesLocker: 
       for (file <- directory.listFiles()) {
         if (file.getName.endsWith("-info.json")) {
           try {
-            versions ++= IOUtils.parseConfigFile(file).map(VersionInfo.apply(_))
+            versions ++= IOUtils.readFileToJson(file).map(_.convertTo[VersionInfo])
           } catch {
             case e: Exception =>
               log.error(s"Parse file ${file} error", e)
@@ -58,11 +60,6 @@ abstract class DistributionDirectory(val directory: File)(implicit filesLocker: 
       }
     }
     VersionsInfo(versions)
-  }
-
-  def writeVersionsInfo(directory: File, outputFile: File)(implicit log: Logger): Boolean = {
-    val versionsInfo = getVersionsInfo(directory)
-    IOUtils.writeConfigFile(outputFile, versionsInfo.toConfig())
   }
 
   def removeVersion(serviceName: ServiceName, version: BuildVersion): Unit = {

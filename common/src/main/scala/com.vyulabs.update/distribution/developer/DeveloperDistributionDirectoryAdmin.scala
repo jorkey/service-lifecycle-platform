@@ -6,6 +6,9 @@ import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import org.slf4j.Logger
+import com.vyulabs.update.info.VersionsInfoJson._
+import com.vyulabs.update.info.DesiredVersionsJson._
+import spray.json.enrichAny
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -16,9 +19,9 @@ class DeveloperDistributionDirectoryAdmin(val url: URL)(implicit log: Logger) ex
 
   def downloadVersionsInfo(clientName: Option[ClientName], serviceName: ServiceName): Option[VersionsInfo] = {
     val url = makeUrl(getDownloadVersionsInfoPath(serviceName, clientName))
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(VersionsInfo(config))
+    downloadToJson(url) match {
+      case Some(json) =>
+        Some(json.convertTo[VersionsInfo])
       case None =>
         None
     }
@@ -32,9 +35,9 @@ class DeveloperDistributionDirectoryAdmin(val url: URL)(implicit log: Logger) ex
         log.info(s"Download desired versions")
     }
     val url = makeUrl(getDownloadDesiredVersionsPath(clientName))
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(DesiredVersions(config))
+    downloadToJson(url) match {
+      case Some(json) =>
+        Some(json.convertTo[DesiredVersions])
       case None =>
         None
     }
@@ -47,7 +50,7 @@ class DeveloperDistributionDirectoryAdmin(val url: URL)(implicit log: Logger) ex
       case None =>
         log.info(s"Upload desired versions")
     }
-    uploadFromConfig(makeUrl(getUploadDesiredVersionsPath(clientName)),
-      desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toConfig())
+    uploadFromJson(makeUrl(getUploadDesiredVersionsPath(clientName)),
+      desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
   }
 }

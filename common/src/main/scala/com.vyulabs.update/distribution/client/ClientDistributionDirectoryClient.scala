@@ -8,8 +8,14 @@ import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.state.InstanceState
 import com.vyulabs.update.info.{DesiredVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
-import com.vyulabs.update.logs.{LogWriterInit, ServiceLogs}
+import com.vyulabs.update.logs.{ServiceLogs}
 import org.slf4j.Logger
+import spray.json._
+
+import com.vyulabs.update.state.InstanceStateJson._
+import com.vyulabs.update.info.VersionsInfoJson._
+import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.logs.ServiceLogsJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 25.04.19.
@@ -19,9 +25,9 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     with ClientDistributionWebPaths {
 
   def downloadVersionsInfo(serviceName: ServiceName): Option[VersionsInfo] = {
-    downloadToConfig(makeUrl(getDownloadVersionsInfoPath(serviceName))) match {
-      case Some(config) =>
-        Some(VersionsInfo(config))
+    downloadToJson(makeUrl(getDownloadVersionsInfoPath(serviceName))) match {
+      case Some(json) =>
+        Some(json.convertTo[VersionsInfo])
       case None =>
         None
     }
@@ -32,9 +38,9 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     if (!exists(url)) {
       return None
     }
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(DesiredVersions(config))
+    downloadToJson(url) match {
+      case Some(json) =>
+        Some(json.convertTo[DesiredVersions])
       case None =>
         None
     }
@@ -45,24 +51,25 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     if (!exists(url)) {
       return None
     }
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(InstanceState(config))
+    downloadToString(url) match {
+      case Some(json) =>
+        Some(json.parseJson.convertTo[InstanceState])
       case None =>
         None
     }
   }
 
   def uploadDesiredVersions(desiredVersions: DesiredVersions): Boolean = {
-    uploadFromConfig(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toConfig())
+    uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
   }
 
   def uploadInstanceState(instanceId: InstanceId, updaterProcessId: ProcessId, instanceState: InstanceState): Boolean = {
-    uploadFromConfig(makeUrl(getUploadInstanceStatePath(instanceId, updaterProcessId)), instanceStateName, uploadInstanceStatePath, instanceState.toConfig())
+    uploadFromString(makeUrl(getUploadInstanceStatePath(instanceId, updaterProcessId)), instanceStateName, uploadInstanceStatePath,
+      instanceState.toJson.prettyPrint)
   }
 
   def uploadServiceLogs(instanceId: InstanceId, serviceInstanceName: ServiceInstanceName, serviceLogs: ServiceLogs): Boolean = {
-    uploadFromConfig(makeUrl(getUploadServiceLogsPath(instanceId, serviceInstanceName)), serviceLogsName, uploadServiceLogsPath, serviceLogs.toConfig())
+    uploadFromJson(makeUrl(getUploadServiceLogsPath(instanceId, serviceInstanceName)), serviceLogsName, uploadServiceLogsPath, serviceLogs.toJson)
   }
 
   def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {

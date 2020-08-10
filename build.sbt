@@ -21,7 +21,7 @@ lazy val updateCommon = project
   .in(file("common"))
   .disablePlugins(sbtassembly.AssemblyPlugin)
   .settings(
-    libraryDependencies ++= baseDependencies
+    libraryDependencies ++= (baseDependencies ++ sprayDependencies)
   )
 
 lazy val updateAdmin = project
@@ -112,6 +112,10 @@ lazy val akkaDependencies = Seq(
   dependencies.akkaHttpTestKit
 )
 
+lazy val sprayDependencies = Seq(
+  dependencies.sprayJson
+)
+
 lazy val dependencies =
   new {
     val akkaVersion = "2.6.7"
@@ -138,6 +142,9 @@ lazy val dependencies =
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
     val akkaHttpSpray = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
     val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
+
+    // Spray Json
+    val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
 
     // Misc
     val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "5.6.1.202002131546-r"

@@ -20,6 +20,11 @@ import com.vyulabs.update.version.BuildVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
+import com.vyulabs.update.config.InstallConfigJson._
+import com.vyulabs.update.info.DesiredVersionsJson._
+
+import spray.json.enrichAny
+
 class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
 
@@ -44,10 +49,10 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
         val adminRepository = DeveloperAdminRepository(adminRepositoryUri, new File(serviceDir, "admin")).getOrElse {
           Utils.error("Init admin repository error")
         }
-        val sourcesConfig = SourcesConfig(adminRepository.getDirectory()).getOrElse {
+        val sourcesConfig = SourcesConfig.fromFile(adminRepository.getDirectory()).getOrElse {
           Utils.error("Can't get config of sources")
         }
-        val sourceRepositoriesConf = sourcesConfig.Services.get(serviceName).getOrElse {
+        val sourceRepositoriesConf = sourcesConfig.sources.get(serviceName).getOrElse {
           Utils.error(s"Source repositories of service ${serviceName} is not specified.")
         }
 
@@ -74,10 +79,10 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
                 version
               case None =>
                 directory.downloadVersionsInfo(clientName, serviceName) match {
-                  case Some(versions) if (!versions.info.isEmpty) =>
-                    val lastVersion = versions.info.sortBy(_.buildVersion)(BuildVersion.ordering).last
+                  case Some(versions) if (!versions.versions.isEmpty) =>
+                    val lastVersion = versions.versions.sortBy(_.version)(BuildVersion.ordering).last
                     log.info(s"Last version is ${lastVersion}")
-                    lastVersion.buildVersion.next()
+                    lastVersion.version.next()
                   case _ =>
                     log.error("No existing versions")
                     BuildVersion(clientName, Seq(1, 0, 0))
@@ -114,7 +119,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
             }
 
             log.info("Initialize update config")
-            val servicesUpdateConfig = UpdateConfig(mainSourceRepository.getDirectory()).getOrElse {
+            val servicesUpdateConfig = UpdateConfig.read(mainSourceRepository.getDirectory()).getOrElse {
               return None
             }
             val updateConfig = servicesUpdateConfig.services.getOrElse(serviceName, {
@@ -126,21 +131,21 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
             var args = Map.empty[String, String]
             args += ("version" -> version.toString)
             args += ("PATH" -> System.getenv("PATH"))
-            for (command <- updateConfig.BuildConfig.BuildCommands) {
+            for (command <- updateConfig.build.buildCommands) {
               if (!ProcessUtils.runProcess(command, args, mainSourceRepository.getDirectory(), ProcessUtils.Logging.Realtime)) {
                 return None
               }
             }
 
             log.info(s"Copy files to build directory ${buildDir}")
-            for (copyCommand <- updateConfig.BuildConfig.CopyBuildFiles) {
-              val sourceFile = Utils.extendMacro(copyCommand.SourceFile, args)
+            for (copyCommand <- updateConfig.build.copyFiles) {
+              val sourceFile = Utils.extendMacro(copyCommand.sourceFile, args)
               val in = if (sourceFile.startsWith("/")) {
                 new File(sourceFile)
               } else {
                 new File(mainSourceRepository.getDirectory(), sourceFile)
               }
-              val out = new File(buildDir, Utils.extendMacro(copyCommand.DestinationFile, args))
+              val out = new File(buildDir, Utils.extendMacro(copyCommand.destinationFile, args))
               val outDir = out.getParentFile
               if (outDir != null) {
                 if (!outDir.exists() && !outDir.mkdirs()) {
@@ -148,19 +153,19 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
                   return None
                 }
               }
-              if (!copyFile(in, out, file => !copyCommand.Except.contains(in.toPath.relativize(file.toPath).toString), copyCommand.Settings)) {
+              if (!copyFile(in, out, file => !copyCommand.except.contains(in.toPath.relativize(file.toPath).toString), copyCommand.settings)) {
                 return None
               }
             }
 
-            for (installConfig <- updateConfig.InstallConfig) {
+            for (installConfig <- updateConfig.install) {
               log.info("Create install configuration file")
               val configFile = new File(buildDir, Common.InstallConfigFileName)
               if (configFile.exists()) {
                 log.error(s"Build repository already contains file ${configFile}")
                 return None
               }
-              if (!IOUtils.writeConfigFile(configFile, installConfig.Origin)) {
+              if (!IOUtils.writeJsonToFile(configFile, installConfig.toJson)) {
                 return None
               }
             }
@@ -200,7 +205,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
   }
 
   def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, BuildVersion]] = {
-    directory.downloadDesiredVersions(clientName).map(_.Versions)
+    directory.downloadDesiredVersions(clientName).map(_.desiredVersions)
   }
 
   def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
@@ -223,7 +228,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
              s"Continue updating of desired versions")) {
           var newDesiredVersions = Option.empty[DesiredVersions]
           try {
-            var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.Versions).getOrElse(Map.empty)
+            var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.desiredVersions).getOrElse(Map.empty)
             servicesVersions.foreach {
               case (serviceName, Some(version)) =>
                 desiredVersionsMap += (serviceName -> version)
@@ -241,7 +246,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
           } finally {
             for (desiredVersions <- newDesiredVersions) {
               val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-              if (!IOUtils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
+              if (!IOUtils.writeJsonToFile(desiredVersionsFile, desiredVersions.toJson)) {
                 return false
               }
               if (!adminRepository.addFileToCommit(desiredVersionsFile)) {

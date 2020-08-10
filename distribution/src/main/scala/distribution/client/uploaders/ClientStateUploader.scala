@@ -10,17 +10,18 @@ import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.typesafe.config.Config
-import com.vyulabs.update.common.Common.{ClientName, InstanceId, UpdaterDirectory, UpdaterInstanceId, ProcessId}
+import com.vyulabs.update.common.Common.{InstanceId, ProcessId, UpdaterInstanceId}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
 import com.vyulabs.update.state.{InstanceState, InstancesState}
 import com.vyulabs.update.utils.IOUtils
 import org.slf4j.LoggerFactory
+import spray.json.enrichAny
 
 import scala.concurrent.{ExecutionContext, Promise}
 import scala.concurrent.duration.FiniteDuration
+import com.vyulabs.update.state.InstanceStateJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.
@@ -43,8 +44,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
   private var stopping = false
 
   def receiveState(instanceId: InstanceId, updaterProcessId: ProcessId,
-                   config: Config, distribution: Distribution): Route = {
-    val instanceState = InstanceState(config)
+                   instanceState: InstanceState, distribution: Distribution): Route = {
     val file = dir.getInstanceStateFile(instanceId, updaterProcessId)
     self.synchronized {
       val updaterInstanceId = UpdaterInstanceId(instanceState.instanceId, instanceState.directory)
@@ -59,8 +59,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
         downloadingFiles -= file
       }
     }
-    val source = Source.single(
-      ByteString(IOUtils.renderConfig(config, true).getBytes("utf8")))
+    val source = Source.single(ByteString(instanceState.toJson.prettyPrint.getBytes("utf8")))
     distribution.fileWriteWithLock(source, dir.getInstanceStateFile(instanceId, updaterProcessId), Some(promise))
   }
 

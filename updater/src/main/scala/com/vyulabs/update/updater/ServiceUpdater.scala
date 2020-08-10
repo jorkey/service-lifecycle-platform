@@ -84,7 +84,7 @@ class ServiceUpdater(instanceId: InstanceId,
       return false
     }
 
-    for (command <- installConfig.InstallCommands) {
+    for (command <- installConfig.installCommands) {
       if (!ProcessUtils.runProcess(command, args, state.newServiceDirectory, ProcessUtils.Logging.Realtime)) {
         state.error(s"Install error")
         return false
@@ -131,7 +131,7 @@ class ServiceUpdater(instanceId: InstanceId,
     args += ("version" -> newVersion.original().toString)
     args += ("PATH" -> System.getenv("PATH"))
 
-    for (command <- installConfig.PostInstallCommands) {
+    for (command <- installConfig.postInstallCommands) {
       if (!ProcessUtils.runProcess(command, args, state.currentServiceDirectory, ProcessUtils.Logging.Realtime)) {
         state.error(s"Install error")
         return false
@@ -161,7 +161,7 @@ class ServiceUpdater(instanceId: InstanceId,
         return false
       }
 
-      for (runService <- installConfig.RunService) {
+      for (runService <- installConfig.runService) {
         state.info(s"Start service of version ${newVersion}")
 
         var args = Map.empty[String, String]

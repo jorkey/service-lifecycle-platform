@@ -1,21 +1,10 @@
 package com.vyulabs.update.config
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import com.vyulabs.update.logs.LogWriterInit
+import spray.json.DefaultJsonProtocol
 
-case class LogUploaderConfig(writer: LogWriterInit) {
-  def toConfig(): Config = {
-    val instance = ConfigFactory.empty()
-      .withValue("writer", ConfigValueFactory.fromAnyRef(writer.toConfig()))
-    ConfigFactory.empty().withValue("logUploader", instance.root())
-  }
+case class LogUploaderConfig(writer: LogWriterInit)
+
+object LogUploaderConfigJson extends DefaultJsonProtocol {
+  implicit val logWriterInitJson = jsonFormat3(LogWriterInit.apply)
+  implicit val logUploaderConfigJson = jsonFormat1(LogUploaderConfig)
 }
-
-object LogUploaderConfig {
-  def apply(config: Config): LogUploaderConfig = {
-    val init = LogWriterInit(config.getConfig("writer"))
-    LogUploaderConfig(init)
-  }
-}
-
-

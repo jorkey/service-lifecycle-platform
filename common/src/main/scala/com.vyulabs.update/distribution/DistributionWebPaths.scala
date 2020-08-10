@@ -8,27 +8,53 @@ import com.vyulabs.update.version.BuildVersion
   * Copyright FanDate, Inc.
   */
 trait DistributionWebPaths {
+  // New paths
+
+  val apiPathPrefix = "api"
+  val uiPathPrefix = "ui"
+
+  // New API paths
+
+  val getUserInfoPath = "get-user-info"
+  val getClientsInfoPath = "get-clients-info"
+  val getVersionPath = "get-version"
+  val getVersionInfoPath = "get-version-info"
+  val getVersionsInfoPath = "get-versions-info"
+  val getDesiredVersionsPath = "get-desired-versions"
+  val getDesiredVersionPath = "get-desired-version"
+
+  val putVersionPath = "put-version"
+  val putVersionInfoPath = "put-version-info"
+  val putDesiredVersionsPath = "put-desired-versions"
+  val putServiceFaultPath = "put-service-fault"
+
+  // Deprecated API paths
+
   val downloadVersionPath = "download-version"
   val downloadVersionInfoPath = "download-version-info"
   val downloadVersionsInfoPath = "download-versions-info"
   val downloadDesiredVersionsPath = "download-desired-versions"
   val downloadDesiredVersionPath = "download-desired-version"
 
-  val versionName = "version"
-  val versionInfoName = "version-info"
-  val desiredVersionsName = "desired-versions"
-
   val uploadVersionPath = "upload-version"
   val uploadVersionInfoPath = "upload-version-info"
   val uploadDesiredVersionsPath = "upload-desired-versions"
   val uploadServiceFaultPath = "upload-service-fault"
 
+  // Old API
+
+  val browsePath = "browse"
+
   val getDistributionVersionPath = "get-distribution-version"
   val getScriptsVersionPath = "get-scripts-version"
 
-  val loginPath = "login"
-  val browsePath = "browse"
   val pingPath = "ping"
+
+  // Names
+
+  val versionName = "version"
+  val versionInfoName = "version-info"
+  val desiredVersionsName = "desired-versions"
 
   def getDownloadVersionPath(serviceName: ServiceName, version: BuildVersion): String = {
     downloadVersionPath + "/" + serviceName + "/" + version.toString

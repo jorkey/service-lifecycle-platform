@@ -1,25 +1,14 @@
 package com.vyulabs.update.config
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vyulabs.update.common.Common.InstallProfileName
+import spray.json.DefaultJsonProtocol
 
 import scala.util.matching.Regex
 
-case class ClientConfig(installProfileName: InstallProfileName, testClientMatch: Option[Regex]) {
-  def toConfig(): Config = {
-    var config = ConfigFactory.empty()
-      .withValue("installProfile", ConfigValueFactory.fromAnyRef(installProfileName))
-    for (testClientMatch <- testClientMatch) {
-      config = config.withValue("testClientMatch", ConfigValueFactory.fromAnyRef(testClientMatch.toString()))
-    }
-    config
-  }
-}
+case class ClientConfig(installProfile: InstallProfileName, testClientMatch: Option[Regex])
 
-object ClientConfig {
-  def apply(config: Config): ClientConfig = {
-    val profileName = config.getString("installProfile")
-    val testClientMatch = if (config.hasPath("testClientMatch")) Some(config.getString("testClientMatch").r) else None
-    ClientConfig(profileName, testClientMatch)
-  }
+object ClientConfigJson extends DefaultJsonProtocol {
+  import com.vyulabs.update.utils.Utils.RegexJson._
+
+  implicit val clientInfoJson = jsonFormat2(ClientConfig.apply)
 }

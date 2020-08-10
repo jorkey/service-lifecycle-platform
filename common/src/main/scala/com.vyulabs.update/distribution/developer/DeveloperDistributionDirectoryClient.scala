@@ -11,6 +11,11 @@ import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.state.InstancesState
 import org.slf4j.Logger
+import com.vyulabs.update.config.ClientConfigJson._
+import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.info.ServicesVersionsJson._
+import com.vyulabs.update.state.InstancesStateJson._
+import spray.json._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -22,34 +27,24 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
   def downloadClientConfig(): Option[ClientConfig] = {
     log.info(s"Download client config")
     val url = makeUrl(getDownloadClientConfigPath())
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(ClientConfig(config))
-      case None =>
-        None
-    }
+    downloadToJson(url).map(_.convertTo[ClientConfig])
   }
 
   def downloadDesiredVersions(common: Boolean = false): Option[DesiredVersions] = {
     log.info(s"Download desired versions")
     val url = makeUrl(getDownloadDesiredVersionsPath(common))
-    downloadToConfig(url) match {
-      case Some(config) =>
-        Some(DesiredVersions(config))
-      case None =>
-        None
-    }
+    downloadToJson(url).map(_.convertTo[DesiredVersions])
   }
 
   def uploadTestedVersions(testedVersions: ServicesVersions): Boolean = {
     log.info(s"Upload tested versions")
-    uploadFromConfig(makeUrl(uploadTestedVersionsPath),
-      testedVersionsName, uploadTestedVersionsPath, testedVersions.toConfig())
+    uploadFromJson(makeUrl(uploadTestedVersionsPath),
+      testedVersionsName, uploadTestedVersionsPath, testedVersions.toJson)
   }
 
   def uploadInstancesState(instancesState: InstancesState): Boolean = {
-    uploadFromConfig(makeUrl(getUploadInstancesStatePath()),
-      instancesStateName, uploadInstancesStatePath, instancesState.toConfig())
+    uploadFromJson(makeUrl(getUploadInstancesStatePath()),
+      instancesStateName, uploadInstancesStatePath, instancesState.toJson)
   }
 
   def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {

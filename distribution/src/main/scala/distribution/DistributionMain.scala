@@ -9,6 +9,7 @@ import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import distribution.client.ClientDistribution
@@ -20,6 +21,8 @@ import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateU
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
+import com.vyulabs.update.users.UsersCredentialsJson._
+import spray.json._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.04.19.
@@ -116,7 +119,7 @@ object DistributionMain extends App {
           Utils.error(s"User ${userName} credentials already exists")
         }
         usersCredentials.addUser(userName, UserCredentials(role, PasswordHash(password)))
-        if (!usersCredentials.save()) {
+        if (!IOUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
           Utils.error("Can't save credentials file")
         }
         sys.exit()
@@ -124,7 +127,7 @@ object DistributionMain extends App {
       case "removeUser" =>
         val userName = arguments.getValue("userName")
         usersCredentials.removeUser(userName)
-        if (!usersCredentials.save()) {
+        if (!IOUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
           Utils.error("Can't save credentials file")
         }
         sys.exit()
@@ -135,7 +138,7 @@ object DistributionMain extends App {
         usersCredentials.getCredentials(userName) match {
           case Some(credentials) =>
             credentials.passwordHash = PasswordHash(password)
-            if (!usersCredentials.save()) {
+            if (!IOUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
               Utils.error("Can't save credentials file")
             }
           case None =>

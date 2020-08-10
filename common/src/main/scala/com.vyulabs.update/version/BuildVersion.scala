@@ -1,6 +1,7 @@
 package com.vyulabs.update.version
 
 import com.vyulabs.update.common.Common
+import spray.json.{JsString, JsValue, RootJsonFormat}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 26.04.19.
@@ -108,5 +109,12 @@ object BuildVersion {
       case (Some(local1), Some(local2)) =>
         local1 < local2
     }
+  }
+}
+
+object BuildVersionJson {
+  implicit object BuildVersionJsonFormat extends RootJsonFormat[BuildVersion] {
+    def write(value: BuildVersion) = JsString(value.toString)
+    def read(value: JsValue) = BuildVersion.parse(value.toString)
   }
 }

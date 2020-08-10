@@ -127,7 +127,7 @@ object UpdaterMain extends App { self =>
             clientDirectory.downloadDesiredVersions() match {
               case Some(desiredVersions) =>
                 val needUpdate = serviceUpdaters.foldLeft(Map.empty[ServiceUpdater, BuildVersion])((map, updater) => {
-                  updater.needUpdate(desiredVersions.Versions.get(updater.serviceInstanceName.serviceName)) match {
+                  updater.needUpdate(desiredVersions.desiredVersions.get(updater.serviceInstanceName.serviceName)) match {
                     case Some(version) =>
                       map + (updater -> version)
                     case None =>

@@ -2,6 +2,7 @@ package distribution.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
@@ -13,16 +14,19 @@ import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, Clie
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
-import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
-import distribution.{JsonSupport, UserInfo}
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
 import org.slf4j.LoggerFactory
+import com.vyulabs.update.info.VersionsInfoJson._
+import com.vyulabs.update.state.InstanceState
+
+import com.vyulabs.update.state.InstanceStateJson._
+import com.vyulabs.update.logs.ServiceLogsJson._
 
 class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                          stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
                         (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
-    extends Distribution(dir, usersCredentials) with ClientDistributionWebPaths with JsonSupport {
+    extends Distribution(dir, usersCredentials) with ClientDistributionWebPaths with SprayJsonSupport {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val prefix = "update"
@@ -64,9 +68,6 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
             } {
               authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                 get {
-                  path(prefix / loginPath) {
-                    complete(UserInfo(userCredentials.role.toString))
-                  } ~
                   path(prefix / downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                     getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                   } ~
@@ -74,8 +75,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                     getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                   } ~
                   path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                    complete(IOUtils.renderConfig(
-                      dir.getVersionsInfo(dir.getServiceDir(service)).toConfig(), true))
+                    complete(dir.getVersionsInfo(dir.getServiceDir(service)))
                   } ~
                   path(prefix / downloadDesiredVersionsPath) {
                     getFromFileWithLock(dir.getDesiredVersionsFile())
@@ -113,19 +113,21 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                     } ~
                       authorize(userCredentials.role == UserRole.Service) {
                         path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
-                          uploadFileToConfig(instanceStateName, (config) => {
-                            stateUploader.receiveState(instanceId, updaterProcessId, config, this)
+                          uploadFileToJson(instanceStateName, (json) => {
+                            val instanceState = json.convertTo[InstanceState]
+                            stateUploader.receiveState(instanceId, updaterProcessId, instanceState, this)
                           })
                         } ~
                           // TODO remove when no need of back compability
                           path(prefix / uploadInstanceStatePath / ".*".r) { (instanceId) =>
-                            uploadFileToConfig(instanceStateName, (config) => {
-                              stateUploader.receiveState(instanceId, "x", config, this)
+                            uploadFileToJson(instanceStateName, (json) => {
+                              val instanceState = json.convertTo[InstanceState]
+                              stateUploader.receiveState(instanceId, "x", instanceState, this)
                             })
                           } ~
                           path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
-                            uploadFileToConfig(serviceLogsName, (config) => {
-                              val serviceLogs = ServiceLogs.apply(config)
+                            uploadFileToJson(serviceLogsName, (json) => {
+                              val serviceLogs = json.convertTo[ServiceLogs]
                               logUploader.receiveLogs(instanceId, ServiceInstanceName.parse(serviceInstanceName), serviceLogs)
                             })
                           } ~

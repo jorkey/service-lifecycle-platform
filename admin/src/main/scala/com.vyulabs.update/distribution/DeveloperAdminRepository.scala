@@ -49,7 +49,7 @@ class DeveloperAdminRepository(repository: GitRepository)(implicit log: Logger) 
   }
 
   def writeUpdateSequence(updateSequence: Int): Boolean = {
-    if (!IOUtils.writeFileFromBytes(updateSequenceFile, updateSequence.toString.getBytes("utf8"))) {
+    if (!IOUtils.writeBytesToFile(updateSequenceFile, updateSequence.toString.getBytes("utf8"))) {
       return false
     }
     repository.add(updateSequenceFile)

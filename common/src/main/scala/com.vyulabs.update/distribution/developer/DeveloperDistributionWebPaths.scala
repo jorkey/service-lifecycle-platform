@@ -8,10 +8,21 @@ import com.vyulabs.update.distribution.DistributionWebPaths
   * Copyright FanDate, Inc.
   */
 trait DeveloperDistributionWebPaths extends DistributionWebPaths {
+  // New API paths
+
+  val putTestedVersionsPath = "put-tested-versions"
+  val putInstancesStatePath = "put-instances-state"
+
+  val getClientConfigPath = "get-client-config"
+
+  // Old API paths
+
   val uploadTestedVersionsPath = "upload-tested-versions"
   val uploadInstancesStatePath = "upload-instances-state"
 
   val downloadClientConfigPath = "download-client-config"
+
+  // Names
 
   val testedVersionsName = "tested-versions"
   val instancesStateName = "instances-state"

@@ -17,7 +17,6 @@ import akka.http.scaladsl.server.{AuthenticationFailedRejection, ExceptionHandle
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.util.ByteString
-import com.typesafe.config.{Config, ConfigParseOptions, ConfigSyntax}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UsersCredentials}
@@ -29,9 +28,9 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 import akka.pattern.after
 import com.vyulabs.update.lock.{SmartFileLock, SmartFilesLocker}
-import distribution.UserInfo
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import spray.json._
 
 class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredentials)
                   (implicit system: ActorSystem, materializer: Materializer, filesLocker: SmartFilesLocker) extends DistributionWebPaths {
@@ -47,7 +46,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     onSuccess(future) { desiredVersions =>
       desiredVersions match {
         case Some(desiredVersions) =>
-          desiredVersions.Versions.get(serviceName) match {
+          desiredVersions.desiredVersions.get(serviceName) match {
             case Some(version) =>
               if (!image) {
                 complete(version.toString)
@@ -67,13 +66,9 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     val promise = Promise[Option[DesiredVersions]]()
     getFileContentWithLock(targetFile).onComplete { bytes =>
       try {
-        IOUtils.parseConfigString(bytes.get.decodeString("utf8")) match {
-          case Some(config) =>
-            val desiredVersions = DesiredVersions.apply(config)
-            promise.success(Some(desiredVersions))
-          case None =>
-            promise.failure(new IOException(s"Can't parse config file ${targetFile}"))
-        }
+        import com.vyulabs.update.info.DesiredVersionsJson._
+        val desiredVersions = bytes.get.decodeString("utf8").parseJson.convertTo[DesiredVersions]
+        promise.success(Some(desiredVersions))
       } catch {
           case _: FileNotFoundException =>
             promise.success(None)
@@ -180,14 +175,14 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
       case result@RouteResult.Complete(_) =>
         log.info(s"Uploaded version ${buildVersion} of service ${serviceName}")
         val versionsDir = dir.getServiceDir(serviceName, buildVersion.client)
-        log.info("Existing versions " + dir.getVersionsInfo(versionsDir).info.map(_.buildVersion))
-        var versions = dir.getVersionsInfo(versionsDir).info.sortBy(_.date.getTime).map(_.buildVersion)
+        log.info("Existing versions " + dir.getVersionsInfo(versionsDir).versions.map(_.version))
+        var versions = dir.getVersionsInfo(versionsDir).versions.sortBy(_.date.getTime).map(_.version)
         log.info(s"Versions count is ${versions.size}")
         while (versions.size > maxVersions) {
           val lastVersion = versions.head
           log.info(s"Remove obsolete version ${lastVersion}")
           dir.removeVersion(serviceName, lastVersion)
-          versions = dir.getVersionsInfo(versionsDir).info.sortBy(_.date.getTime).map(_.buildVersion)
+          versions = dir.getVersionsInfo(versionsDir).versions.sortBy(_.date.getTime).map(_.version)
         }
         result
       case result =>
@@ -281,22 +276,13 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     }
   }
 
-  protected def uploadFileToConfig(fieldName: String, config: (Config) => Route)(implicit materializer: Materializer): Route = {
-    uploadFileToString(fieldName, content => IOUtils.parseConfigString(content, ConfigParseOptions.defaults().setSyntax(ConfigSyntax.JSON)) match {
-      case Some(c) =>
-        config(c)
-      case None =>
-        failWith(new IOException(s"Can't parse config ${fieldName}"))
-    })
-  }
-
-  protected def uploadFileToString(fieldName: String, content: (String) => Route)(implicit materializer: Materializer): Route = {
+  protected def uploadFileToJson(fieldName: String, json: (JsValue) => Route)(implicit materializer: Materializer): Route = {
     fileUpload(fieldName) {
       case (_, byteSource) =>
         val sink = Sink.fold[ByteString, ByteString](ByteString())(_ ++ _)
         val result = byteSource.runWith(sink)
         onSuccess(result) { result =>
-          content(result.decodeString("utf8"))
+          json(result.decodeString("utf8").parseJson)
         }
     }
   }

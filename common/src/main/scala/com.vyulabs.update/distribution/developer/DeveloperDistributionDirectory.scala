@@ -12,6 +12,8 @@ import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.{LoggerFactory}
 
+import com.vyulabs.update.info.DesiredVersionsJson._
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
@@ -39,6 +41,8 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   if (!faultsDir.exists() && !faultsDir.mkdir()) {
     log.error(s"Can't create directory ${faultsDir}")
   }
+
+  def getClientsDir() = clientsDir
 
   def getClientDir(clientName: ClientName): File = {
     val dir = new File(clientsDir, clientName)
@@ -111,16 +115,11 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   }
 
   def getDesiredVersion(serviceName: ServiceName): Option[BuildVersion] = {
-    val desiredVersions = IOUtils.parseConfigFileWithLock(getDesiredVersionsFile(None)).map(DesiredVersions(_))
-    desiredVersions match {
-      case Some(versions) =>
-        versions.Versions.get(serviceName)
-      case None =>
-        None
-    }
+    IOUtils.readFileToJson(getDesiredVersionsFile(None)).map(_.convertTo[DesiredVersions])
+      .map(_.desiredVersions.get(serviceName)).flatten
   }
 
   def getDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
-    IOUtils.parseConfigFileWithLock(getDesiredVersionsFile(clientName)).map(DesiredVersions(_))
+    IOUtils.readFileToJson(getDesiredVersionsFile(clientName)).map(_.convertTo[DesiredVersions])
   }
 }

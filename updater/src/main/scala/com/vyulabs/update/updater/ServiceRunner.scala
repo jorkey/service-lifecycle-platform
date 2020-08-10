@@ -7,12 +7,12 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.common.ServiceInstanceName
+import com.vyulabs.update.common.{Common, ServiceInstanceName}
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultReport, FaultUploader, LogUploader}
-import com.vyulabs.update.utils.{IOUtils, ProcessUtils, ReaderThread, Utils}
+import com.vyulabs.update.utils.{IOUtils, ProcessUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -120,35 +120,31 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         saveLogs(true)
         val reportFilesTmpDir = processParameters match {
           case Some(params) =>
-            params.config.FaultFilesMatch match {
-              case Some(pattern) =>
-                val regPattern = Utils.extendMacro(pattern, params.args).r
-                val files = params.directory.listFiles().filter { file =>
-                  file.getName match {
-                    case regPattern() => true
-                    case _ => false
-                  }
+            val pattern = params.config.faultFilesMatch.getOrElse("core")
+            val regPattern = Utils.extendMacro(pattern, params.args).r
+            val files = params.directory.listFiles().filter { file =>
+              file.getName match {
+                case regPattern() => true
+                case _ => false
+              }
+            }
+            if (!files.isEmpty) {
+              val reportTmpDir = Files.createTempDirectory(s"${serviceInstanceName}-fault-").toFile
+              for (file <- files) {
+                val tmpFile = new File(reportTmpDir, file.getName)
+                if (!file.renameTo(tmpFile)) {
+                  log.error(s"Can't rename ${file} to ${tmpFile}")
                 }
-                if (!files.isEmpty) {
-                  val reportTmpDir = Files.createTempDirectory(s"${serviceInstanceName}-fault-").toFile
-                  for (file <- files) {
-                    val tmpFile = new File(reportTmpDir, file.getName)
-                    if (!file.renameTo(tmpFile)) {
-                      log.error(s"Can't rename ${file} to ${tmpFile}")
-                    }
-                  }
-                  Some(reportTmpDir)
-                } else {
-                  None
-                }
-              case None =>
-                None
+              }
+              Some(reportTmpDir)
+            } else {
+              None
             }
           case None =>
             None
         }
         faultUploader.addFaultReport(FaultReport(instanceId, state.getState(), reportFilesTmpDir, logTail))
-        val restartOnFault = processParameters.map(_.config.RestartOnFault).getOrElse(false)
+        val restartOnFault = processParameters.map(_.config.restartOnFault).getOrElse(false)
         if (restartOnFault) {
           state.info("Try to restart service")
           val period = System.currentTimeMillis() - lastStartTime
@@ -167,10 +163,10 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
 
   def saveLogs(failed: Boolean): Unit = {
     for (currentInstallConfig <- InstallConfig(state.currentServiceDirectory)) {
-      for (logDirectory <- currentInstallConfig.RunService.map(_.LogWriter.Directory).map(new File(state.currentServiceDirectory, _))) {
+      for (logDirectory <- currentInstallConfig.runService.map(_.logWriter.directory).map(new File(state.currentServiceDirectory, _))) {
         state.info(s"Save log files to history directory")
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
-          val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + s"-${IOUtils.serializeISO8601Date(new Date())}" +
+          val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + s"-${Utils.serializeISO8601Date(new Date())}" +
             (if (failed) "-failed" else "")
           val saveDir = new File(state.logHistoryDirectory, s"${dirName}.log")
           if (!saveDir.exists() || IOUtils.deleteFileRecursively(saveDir)) {
@@ -195,13 +191,13 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
   private def startService(): Boolean = {
     try {
       for (params <- processParameters) {
-        val command = Utils.extendMacro(params.config.Command, params.args)
-        val arguments = params.config.Arguments.map(Utils.extendMacro(_, params.args))
+        val command = Utils.extendMacro(params.config.command, params.args)
+        val arguments = params.config.args.map(Utils.extendMacro(_, params.args))
         val builder = new ProcessBuilder((command +: arguments).toList.asJava)
         builder.redirectErrorStream(true)
         var macroArgs = Map.empty[String, String]
         macroArgs += ("PATH" -> System.getenv("PATH"))
-        params.config.Env.foldLeft(builder.environment())((e, entry) => {
+        params.config.env.foldLeft(builder.environment())((e, entry) => {
           if (entry._2 != null) {
             e.put(entry._1, Utils.extendMacro(entry._2, macroArgs))
           } else {
@@ -216,12 +212,12 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
         val process = builder.start()
         this.process = Some(process)
         log.debug(s"Started process ${process.pid()}")
-        val logWriter = new LogWriter(new File(state.currentServiceDirectory, params.config.LogWriter.Directory),
-          params.config.LogWriter.MaxFileSizeMB * 1024 * 1024,
-          params.config.LogWriter.MaxFilesCount,
-          params.config.LogWriter.FilePrefix,
+        val logWriter = new LogWriter(new File(state.currentServiceDirectory, params.config.logWriter.directory),
+          params.config.logWriter.maxFileSizeMB * 1024 * 1024,
+          params.config.logWriter.maxFilesCount,
+          params.config.logWriter.filePrefix,
           (message, exception) => state.error(message, exception))
-        val logUploader = params.config.LogUploader match {
+        val logUploader = params.config.logUploader match {
           case Some(logsUploaderConfig) =>
             val uploader = new LogUploader(instanceId, serviceInstanceName, logsUploaderConfig, clientDirectory)
             uploader.start()
@@ -229,7 +225,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
           case None =>
             None
         }
-        val dateFormat = params.config.LogWriter.DateFormat.map(new SimpleDateFormat(_))
+        val dateFormat = params.config.logWriter.dateFormat.map(new SimpleDateFormat(_))
         val input = new BufferedReader(new InputStreamReader(process.getInputStream))
         ProcessUtils.readOutputLines(input, None,
           (line, nl) => {
@@ -255,7 +251,7 @@ class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstance
               state.error(s"Read service output error ${exception.getMessage}")
             }
           })
-        for (restartConditions <- params.config.RestartConditions) {
+        for (restartConditions <- params.config.restartConditions) {
           new MonitorThread(state, process, restartConditions).start()
         }
       }

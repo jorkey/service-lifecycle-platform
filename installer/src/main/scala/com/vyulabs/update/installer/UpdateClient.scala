@@ -4,8 +4,7 @@ import java.io.File
 
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.config.{ClientConfig, InstallProfile}
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
@@ -14,8 +13,9 @@ import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
+import spray.json.enrichAny
 
-import scala.util.matching.Regex
+import com.vyulabs.update.info.DesiredVersionsJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -62,8 +62,8 @@ class UpdateClient()(implicit log: Logger) {
         val testCondition = clientConfig.testClientMatch match {
           case Some(testClientMatch) =>
             val regexp = testClientMatch
-            developerDesiredVersions.TestSignatures.exists { signature =>
-              signature.ClientName match {
+            developerDesiredVersions.testSignatures.exists { signature =>
+              signature.clientName match {
                 case regexp() =>
                   true
                 case _ =>
@@ -78,12 +78,12 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         log.info("Get client desired versions")
-        val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.Versions).getOrElse {
+        val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.desiredVersions).getOrElse {
           log.warn(s"Can't get client desired versions")
           return false
         }
         var developerVersions = if (!localConfigOnly) {
-          developerDesiredVersions.Versions
+          developerDesiredVersions.desiredVersions
         } else {
           clientDesiredVersions.mapValues(_.original())
         }
@@ -96,8 +96,8 @@ class UpdateClient()(implicit log: Logger) {
             val existingVersions = clientDistribution.downloadVersionsInfo(serviceName).getOrElse {
               log.error(s"Error of getting service ${serviceName} versions list")
               return false
-            }.info
-              .map(_.buildVersion)
+            }.versions
+              .map(_.version)
               .filter(_.original() == developerVersion)
             val clientVersion =
               if (!localConfigOnly) {
@@ -154,7 +154,7 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   def getClientDesiredVersions(clientDistribution: ClientDistributionDirectoryClient): Option[Map[ServiceName, BuildVersion]] = {
-    clientDistribution.downloadDesiredVersions().map(_.Versions)
+    clientDistribution.downloadDesiredVersions().map(_.desiredVersions)
   }
 
   def setDesiredVersions(adminRepository: ClientAdminRepository,
@@ -191,7 +191,7 @@ class UpdateClient()(implicit log: Logger) {
       } finally {
         for (desiredVersions <- newDesiredVersions) {
           val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-          if (!IOUtils.writeConfigFile(desiredVersionsFile, desiredVersions.toConfig())) {
+          if (!IOUtils.writeJsonToFile(desiredVersionsFile, desiredVersions.toJson)) {
             return false
           }
           if (!adminRepository.addFileToCommit(desiredVersionsFile)) {
@@ -223,7 +223,7 @@ class UpdateClient()(implicit log: Logger) {
         val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(common = true).getOrElse {
           log.error("Error of getting developer desired versions")
           return false
-        }.Versions
+        }.desiredVersions
         if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(commonDeveloperDesiredVersionsMap)) {
           log.error("Common client versions are different from common developer versions:")
           clientDesiredVersionsMap foreach {
@@ -373,7 +373,7 @@ class UpdateClient()(implicit log: Logger) {
       if (buildConfigFile.exists()) {
         val buildConfig = IOUtils.parseConfigFile(buildConfigFile).getOrElse(return false)
         val newConfig = clientConfig.withFallback(buildConfig).resolve()
-        IOUtils.writeConfigFile(buildConfigFile, newConfig)
+        IOUtils.writeConfigToFile(buildConfigFile, newConfig)
       } else {
         IOUtils.copyFile(buildConfigFile, clientConfigFile)
       }

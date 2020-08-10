@@ -2,6 +2,8 @@ package com.vyulabs.update.common
 
 import Common._
 
+import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.03.19.
   * Copyright FanDate, Inc.
@@ -35,5 +37,12 @@ object ServiceInstanceName {
     } else {
       sys.error(s"Invalid service instance name ${name}")
     }
+  }
+}
+
+object ServiceInstanceJson extends DefaultJsonProtocol {
+  implicit object ServiceInstanceNameJsonFormat extends RootJsonFormat[ServiceInstanceName] {
+    def write(value: ServiceInstanceName) = JsString(value.toString)
+    def read(value: JsValue) = ServiceInstanceName.parse(value.toString)
   }
 }

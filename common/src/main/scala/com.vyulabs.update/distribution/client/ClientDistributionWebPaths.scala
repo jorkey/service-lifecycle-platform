@@ -9,12 +9,23 @@ import com.vyulabs.update.distribution.DistributionWebPaths
   * Copyright FanDate, Inc.
   */
 trait ClientDistributionWebPaths extends DistributionWebPaths {
+  // New API paths
+
+  val getInstanceStatePath = "get-instance-state"
+  val getInstancesStatePath = "get-instances-state"
+
+  val putInstanceStatePath = "put-instance-state"
+  val putServiceLogsPath = "put-service-logs"
+
+  // Old API paths
+
   val downloadInstanceStatePath = "download-instance-state"
   val downloadInstancesStatePath = "download-instances-state"
 
   val uploadInstanceStatePath = "upload-instance-state"
-
   val uploadServiceLogsPath = "upload-service-logs"
+
+  // Names
 
   val instanceStateName = "instance-state"
   val serviceLogsName = "service-logs"

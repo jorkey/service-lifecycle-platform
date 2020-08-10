@@ -11,6 +11,7 @@ import com.vyulabs.update.utils.{IOUtils, Utils}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import com.vyulabs.update.info.DesiredVersionsJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 9.12.19.
@@ -44,10 +45,10 @@ class SelfUpdater(dir: DistributionDirectory)
             return
           }
         }
-        val desiredVersions = IOUtils.parseConfigFileWithLock(dir.getDesiredVersionsFile()) match {
-          case Some(config) =>
+        val desiredVersions = IOUtils.readFileToJsonWithLock(dir.getDesiredVersionsFile()) match {
+          case Some(json) =>
             try {
-              DesiredVersions(config).Versions
+              json.convertTo[DesiredVersions].desiredVersions
             } catch {
               case e: Exception =>
                 log.error("Can't init desired versions")

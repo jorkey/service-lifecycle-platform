@@ -15,9 +15,9 @@ class ConfigSettings(config: Config) {
     if (file.exists()) {
       val origConfig = IOUtils.parseConfigFile(file).getOrElse(return false)
       val newConfig = config.withFallback(origConfig).resolve()
-      IOUtils.writeConfigFile(file, newConfig)
+      IOUtils.writeConfigToFile(file, newConfig)
     } else {
-      IOUtils.writeConfigFile(file, config)
+      IOUtils.writeConfigToFile(file, config)
     }
   }
 }

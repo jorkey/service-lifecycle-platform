@@ -14,8 +14,12 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
+import spray.json.enrichAny
 
 import scala.util.matching.Regex
+
+import com.vyulabs.update.installer.config.InstallerConfigJson._
+import com.vyulabs.update.info.DesiredVersionsJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -72,7 +76,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                    adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
     log.info(s"Create ${InstallerConfig.configFile}")
     val config = InstallerConfig(adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)
-    if (!config.write()) {
+    if (!IOUtils.writeJsonToFile(InstallerConfig.configFile, config.toJson)) {
       return false
     }
     log.info("Update installer.sh")
@@ -91,7 +95,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }, "utf8")
     installerFile.renameTo(File.createTempFile("installer", "sh"))
-    if (!IOUtils.writeFileFromBytes(installerFile, content.getBytes("utf8"))) {
+    if (!IOUtils.writeBytesToFile(installerFile, content.getBytes("utf8"))) {
       log.error(s"Write file ${installerFile} error")
       return false
     }
@@ -118,13 +122,13 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     val desiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
       log.error("Can't download desired versions")
       return false
-    }.Versions
+    }.desiredVersions
     if (!downloadUpdateServices(clientDistribution, developerDistribution, desiredVersions)) {
       log.error("Can't download update services")
       return false
     }
     log.info("Write desired versions")
-    if (!IOUtils.writeConfigFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toConfig())) {
+    if (!IOUtils.writeJsonToFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toJson)) {
       log.error("Can't write desired versions")
       return false
     }

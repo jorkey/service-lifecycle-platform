@@ -1,17 +1,37 @@
 package com.vyulabs.update.utils
 
 import java.io.IOException
+import java.net.{URI, URL}
+import java.text.SimpleDateFormat
+import java.util.{Date, TimeZone}
 import java.util.jar.Attributes
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
+import spray.json.{JsString, JsValue, RootJsonFormat}
+
+import scala.util.matching.Regex
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 31.07.20.
   * Copyright FanDate, Inc.
   */
 object Utils {
+  def serializeISO8601Date(date: Date): String = {
+    val timezone = TimeZone.getTimeZone("UTC")
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    dateFormat.setTimeZone(timezone)
+    dateFormat.format(date)
+  }
+
+  def parseISO8601Date(dateStr: String): Date = {
+    val timezone = TimeZone.getTimeZone("UTC")
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    dateFormat.setTimeZone(timezone)
+    dateFormat.parse(dateStr)
+  }
+
   def isServiceNeedUpdate(serviceName: ServiceName,
                           ownVersion: Option[BuildVersion], desiredVersion: Option[BuildVersion])(implicit log: Logger): Option[BuildVersion] = {
     ownVersion match {
@@ -68,5 +88,33 @@ object Utils {
       log.debug(stackElement.toString)
     }
     sys.exit(1)
+  }
+
+  object RegexJson {
+    implicit object RegexFormat extends RootJsonFormat[Regex] {
+      def write(value: Regex) = JsString(value.toString)
+      def read(value: JsValue) = (value.toString().r)
+    }
+  }
+
+  object URIJson {
+    implicit object URIJsonFormat extends RootJsonFormat[URI] {
+      def write(value: URI) = JsString(value.toString)
+      def read(value: JsValue) = new URI(value.toString())
+    }
+  }
+
+  object URLJson {
+    implicit object URLJsonFormat extends RootJsonFormat[URL] {
+      def write(value: URL) = JsString(value.toString)
+      def read(value: JsValue) = new URL(value.toString())
+    }
+  }
+
+  object DateJson {
+    implicit object DateJsonFormat extends RootJsonFormat[Date] {
+      def write(value: Date) = JsString(serializeISO8601Date(value))
+      def read(value: JsValue) = parseISO8601Date(value.toString)
+    }
   }
 }

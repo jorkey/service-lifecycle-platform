@@ -4,27 +4,24 @@ import java.io.File
 import java.security.SecureRandom
 import java.util.Base64
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import com.typesafe.config.Config
 import com.vyulabs.update.common.Common.UserName
 import com.vyulabs.update.users.UserRole.UserRole
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import org.slf4j.{Logger, LoggerFactory}
-
-import scala.collection.JavaConverters._
+import spray.json._
 
 object UserRole extends Enumeration {
   type UserRole = Value
   val None, Administrator, Client, Service = Value
 }
 
-case class PasswordHash(salt: String, hash: String) {
-  def toConfig(): Config = {
-    ConfigFactory.empty()
-      .withValue("salt", ConfigValueFactory.fromAnyRef(salt))
-      .withValue("hash", ConfigValueFactory.fromAnyRef(hash))
-  }
+case class PasswordHash(salt: String, hash: String)
+
+object PasswordHashJson extends DefaultJsonProtocol {
+  implicit val passwordHashJson = jsonFormat2(PasswordHash.apply)
 }
 
 object PasswordHash {
@@ -54,50 +51,45 @@ object PasswordHash {
   }
 }
 
-case class UserCredentials(role: UserRole, var passwordHash: PasswordHash) {
-  def toConfig(config: Config): Config = {
-    config
-      .withValue("role", ConfigValueFactory.fromAnyRef(role.toString))
-      .withValue("password", ConfigValueFactory.fromAnyRef(passwordHash.toConfig().root()))
+object UserRoleJson extends DefaultJsonProtocol {
+  implicit object UserRoleJsonFormat extends RootJsonFormat[UserRole] {
+    def write(value: UserRole) = JsString(value.toString)
+    def read(value: JsValue) = UserRole.withName(value.toString)
   }
 }
 
-object UserCredentials {
-  def apply(config: Config): UserCredentials = {
-    new UserCredentials(UserRole.withName(config.getString("role")), PasswordHash(config.getConfig("password")))
-  }
+case class UserCredentials(role: UserRole, var passwordHash: PasswordHash)
+
+object UserCredentialsJson extends DefaultJsonProtocol {
+  import UserRoleJson._
+  import PasswordHashJson._
+
+  implicit val userCredentialsJson = jsonFormat2(UserCredentials.apply)
 }
 
-class UsersCredentials(private var users: Map[UserName, UserCredentials]) {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
+case class UsersCredentials(var credentials: Map[UserName, UserCredentials]) {
   def addUser(user: UserName, credentials: UserCredentials): Unit = {
-    users += (user -> credentials)
+    this.credentials += (user -> credentials)
   }
 
   def getCredentials(user: UserName): Option[UserCredentials] = {
-    users.get(user)
+    credentials.get(user)
   }
 
   def removeUser(user: UserName): Unit = {
-    users -= user
-  }
-
-  def save(): Boolean = {
-    IOUtils.writeConfigFile(UsersCredentials.credentialsFile, toConfig())
-  }
-
-  private def toConfig(): Config = {
-    ConfigFactory.empty()
-      .withValue("credentials", ConfigValueFactory.fromIterable(
-        users.map(account => {
-          account._2.toConfig(ConfigFactory.empty()
-            .withValue("user", ConfigValueFactory.fromAnyRef(account._1))).root()
-        }).asJava))
+    credentials -= user
   }
 }
 
+object UsersCredentialsJson extends DefaultJsonProtocol {
+  import UserCredentialsJson._
+
+  implicit val usersCredentialsJson = jsonFormat1(UsersCredentials.apply)
+}
+
 object UsersCredentials {
+  import UsersCredentialsJson._
+
   val credentialsFile = new File("credentials.json")
 
   def apply(): UsersCredentials = {
@@ -105,16 +97,20 @@ object UsersCredentials {
 
     if (credentialsFile.exists()) {
       log.debug(s"Parse ${credentialsFile}")
-      val config = IOUtils.parseConfigFile(credentialsFile).getOrElse {
+      IOUtils.readFileToJson(credentialsFile).getOrElse {
         Utils.error(s"Can't read ${credentialsFile}")
-      }
-      val users = config.getConfigList("credentials").asScala.foldLeft(Map.empty[UserName, UserCredentials]) {
-        case (map, config) => map + (config.getString("user") -> UserCredentials(config))
-      }
-      new UsersCredentials(users)
+      }.convertTo[UsersCredentials]
     } else {
       log.info(s"File ${credentialsFile} not exists")
       new UsersCredentials(Map.empty)
     }
   }
+}
+
+case class UserInfo(name: UserName, fullName: Option[String], role: UserRole)
+
+object UserInfoJson extends DefaultJsonProtocol {
+  import UserRoleJson._
+
+  implicit val userInfoJson = jsonFormat3(UserInfo)
 }

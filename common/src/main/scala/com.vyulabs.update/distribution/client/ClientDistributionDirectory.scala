@@ -71,14 +71,14 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
   def getDesiredVersion(serviceName: ServiceName): Option[BuildVersion] = {
     getDesiredVersions() match {
       case Some(versions) =>
-        versions.Versions.get(serviceName)
+        versions.desiredVersions.get(serviceName)
       case None =>
         None
     }
   }
 
   def getDesiredVersions(): Option[DesiredVersions] = {
-    val config = IOUtils.parseConfigFileWithLock(getDesiredVersionsFile())
-    config.map(DesiredVersions(_))
+    import com.vyulabs.update.info.DesiredVersionsJson._
+    IOUtils.readFileToJson(getDesiredVersionsFile()).map(_.convertTo[DesiredVersions])
   }
 }

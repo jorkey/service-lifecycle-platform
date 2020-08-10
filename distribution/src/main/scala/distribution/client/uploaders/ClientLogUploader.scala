@@ -9,7 +9,7 @@ import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.log.LogWriter
-import com.vyulabs.update.logs.{LogWriterInit, ServiceLogs}
+import com.vyulabs.update.logs.{ServiceLogs}
 import com.vyulabs.update.utils.IOUtils
 import org.slf4j.{LoggerFactory}
 
@@ -69,7 +69,7 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
           return failWith(new IOException(s"Can't make directory ${serviceDir}"))
         }
         val writer = new LogWriter(serviceDir,
-          writerInit.MaxFileSizeMB * 1024 * 1024, writerInit.MaxFilesCount, writerInit.FilePrefix,
+          writerInit.maxFileSizeMB * 1024 * 1024, writerInit.maxFilesCount, writerInit.filePrefix,
           ((error, exception) => log.error(error, exception)))
         writers += (instanceId -> (instanceServices + (serviceInstanceName -> writer)))
       }

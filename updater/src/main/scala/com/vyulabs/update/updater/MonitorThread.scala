@@ -19,7 +19,7 @@ class MonitorThread(state: ServiceStateController,
     try {
       while (process.isAlive) {
         val pid = process.pid()
-        for (maxMemorySize <- restartConditions.MaxMemorySize) {
+        for (maxMemorySize <- restartConditions.maxMemory) {
           for (memorySize <- getProcessMemorySize(pid)) {
             if (memorySize > maxMemorySize) {
               state.error(s"Process memory size ${memorySize} > ${maxMemorySize}. Kill it.")
