@@ -70,10 +70,12 @@ object DistributionMain extends App {
         val selfUpdater = new SelfUpdater(dir)
         val distribution = new DeveloperDistribution(dir, config.port, usersCredentials, stateUploader, faultUploader)
 
+        stateUploader.start()
         selfUpdater.start()
 
         Runtime.getRuntime.addShutdownHook(new Thread() {
           override def run(): Unit = {
+            stateUploader.close()
             selfUpdater.close()
           }
         })

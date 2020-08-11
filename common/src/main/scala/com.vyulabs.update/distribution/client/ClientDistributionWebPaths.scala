@@ -12,7 +12,6 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
   // New API paths
 
   val getInstanceStatePath = "get-instance-state"
-  val getInstancesStatePath = "get-instances-state"
 
   val putInstanceStatePath = "put-instance-state"
   val putServiceLogsPath = "put-service-logs"

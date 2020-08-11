@@ -20,12 +20,12 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.vyulabs.update.common.Common.{ClientName, InstallProfileName}
-import com.vyulabs.update.config.{ClientConfig, InstallProfile}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.state.{InstanceState, InstancesState}
+import com.vyulabs.update.state.{ClientInstancesState, InstanceState, InstancesState}
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
@@ -34,17 +34,18 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import ExecutionContext.Implicits.global
 
+import spray.json._
+import com.vyulabs.update.utils.JsUtils._
+
 import com.vyulabs.update.users.UserInfoJson._
 import com.vyulabs.update.config.ClientConfigJson._
+import com.vyulabs.update.config.ClientInfoJson._
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.state.InstancesStateJson._
+import com.vyulabs.update.state.ClientInstancesStateJson._
 import com.vyulabs.update.info.DesiredVersionsJson._
 import com.vyulabs.update.config.InstallProfileJson._
 import com.vyulabs.update.info.ServicesVersionsJson._
-
-import spray.json._
-
-import com.vyulabs.update.utils.JsUtils._
 
 class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
@@ -83,6 +84,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                         } ~
                         path(getClientsInfoPath) {
                           complete(getClientsInfo())
+                        } ~
+                        path(getInstancesStatePath) {
+                          complete(getInstancesState())
                         } ~
                         path(getVersionPath / ".*".r / ".*".r) { (service, version) =>
                           getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
@@ -153,6 +157,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                               uploadFileToJson(instancesStateName, (json) => {
                                 val instancesState = json.convertTo[InstancesState]
                                 stateUploader.receiveInstancesState(userName, instancesState)
+                                complete(StatusCodes.OK)
                               })
                             } ~
                             path(putServiceFaultPath / ".*".r) { (serviceName) =>
@@ -257,12 +262,14 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                                   uploadFileToJson(instancesStateName, (json) => {
                                     val instancesState = json.convertTo[InstancesState]
                                     stateUploader.receiveInstancesState(userName, instancesState)
+                                    complete(StatusCodes.OK)
                                   })
                                 } ~
                                 path(uploadInstancesStatePath / ".*".r) { client => // TODO deprecated
                                   uploadFileToJson(instancesStateName, (json) => {
                                     val instancesState = json.convertTo[InstancesState]
                                     stateUploader.receiveInstancesState(userName, instancesState)
+                                    complete(StatusCodes.OK)
                                   })
                                 } ~
                                 path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
@@ -318,22 +325,21 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     }
   }
 
-  private def getClientsInfo(): Source[ClientConfig, NotUsed] = {
+  private def getClientsInfo(): Source[ClientInfo, NotUsed] = {
     Source(dir.getClientsDir().list().toList)
-      .map(clientName => getClientConfig(clientName).collect { case Some(config) => (clientName, config) })
+      .map(clientName => getClientConfig(clientName).collect {
+        case Some(config) => ClientInfo(clientName, config.installProfile, config.testClientMatch)
+      })
       .flatMapConcat(config => Source.future(config))
-      .map { case (clientName, config) => ClientConfig(config.installProfile, config.testClientMatch) }
   }
 
-  /* TODO
-  private def getInstancesState(): Source[InstanceState, NotUsed] = {
+  private def getInstancesState(): Source[ClientInstancesState, NotUsed] = {
     Source(dir.getClientsDir().list().toList)
-      .map(clientName => getClientConfig(clientName).collect { case Some(config) => (clientName, config) })
+      .map(clientName => getClientInstancesState(clientName).collect {
+        case Some(state) => ClientInstancesState(clientName, state)
+      })
       .flatMapConcat(config => Source.future(config))
-      .map { case (clientName, config) => ClientConfig(config.installProfile, config.testClientMatch) }
-
   }
-   */
 
   private def getClientConfig(clientName: ClientName): Future[Option[ClientConfig]] = {
     val promise = Promise[Option[ClientConfig]]()
@@ -341,6 +347,22 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
       try {
         val clientConfig = bytes.get.decodeString("utf8").parseJson.convertTo[ClientConfig]
         promise.success(Some(clientConfig))
+      } catch {
+        case _: FileNotFoundException =>
+          promise.success(None)
+        case ex: Exception =>
+          promise.failure(ex)
+      }
+    }
+    promise.future
+  }
+
+  private def getClientInstancesState(clientName: ClientName): Future[Option[InstancesState]] = {
+    val promise = Promise[Option[InstancesState]]()
+    getFileContentWithLock(dir.getInstancesStateFile(clientName)).onComplete { bytes =>
+      try {
+        val instancesState = bytes.get.decodeString("utf8").parseJson.convertTo[InstancesState]
+        promise.success(Some(instancesState))
       } catch {
         case _: FileNotFoundException =>
           promise.success(None)

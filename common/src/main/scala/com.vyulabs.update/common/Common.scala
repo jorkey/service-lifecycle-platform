@@ -1,12 +1,6 @@
 package com.vyulabs.update.common
 
-import java.net.{URI, URL}
-import java.text.SimpleDateFormat
-import java.util.{Date, TimeZone}
-
-import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
-
-import scala.util.matching.Regex
+import spray.json.{DefaultJsonProtocol}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.03.19.
