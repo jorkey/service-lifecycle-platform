@@ -2,7 +2,7 @@ package com.vyulabs.update.state
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{ClientName, InstanceId, UpdaterInstanceId}
+import com.vyulabs.update.common.Common.{InstanceId, ServiceName, ServiceProfile, UpdaterInstanceId}
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.version.BuildVersion
 import spray.json.DefaultJsonProtocol
@@ -18,7 +18,7 @@ case class InstanceState(date: Date, startDate: Date, instanceId: InstanceId, di
 
 case class InstancesState(states: Map[UpdaterInstanceId, InstanceState])
 
-case class ClientInstancesState(clientName: ClientName, state: InstancesState)
+case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[InstanceId]]])
 
 object ServiceStateJson extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
@@ -43,7 +43,7 @@ object InstancesStateJson extends DefaultJsonProtocol {
 }
 
 object ClientInstancesStateJson extends DefaultJsonProtocol {
-  import InstancesStateJson._
+  import com.vyulabs.update.version.BuildVersionJson._
 
-  implicit val clientInstancesStateJson = jsonFormat2(ClientInstancesState.apply)
+  implicit val clientInstancesStateJson = jsonFormat1(InstanceVersionsState.apply)
 }

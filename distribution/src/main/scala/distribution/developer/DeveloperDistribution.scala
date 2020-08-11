@@ -19,13 +19,13 @@ import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.vyulabs.update.common.Common.{ClientName, InstallProfileName}
+import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, InstanceId, ServiceName}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.state.{ClientInstancesState, InstanceState, InstancesState}
+import com.vyulabs.update.state.{InstanceVersionsState, InstancesState}
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
@@ -33,10 +33,8 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import ExecutionContext.Implicits.global
-
 import spray.json._
 import com.vyulabs.update.utils.JsUtils._
-
 import com.vyulabs.update.users.UserInfoJson._
 import com.vyulabs.update.config.ClientConfigJson._
 import com.vyulabs.update.config.ClientInfoJson._
@@ -85,10 +83,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                         path(getClientsInfoPath) {
                           complete(getClientsInfo())
                         } ~
-                        path(getInstancesStatePath) {
-                          complete(getInstancesState())
+                        path(getInstanceVersionsPath / ".*".r) { clientName =>
+                          complete(getInstanceVersionsState(clientName))
                         } ~
-                        path(getVersionPath / ".*".r / ".*".r) { (service, version) =>
+                        path(getVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                           getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                         } ~
                         path(getVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
@@ -96,19 +94,19 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                         } ~
                         authorize(userCredentials.role == UserRole.Administrator) {
                           path(getVersionsInfoPath / ".*".r) { service =>
-                            parameter("client".?) { clientName =>
-                              complete(dir.getVersionsInfo(dir.getServiceDir(service, clientName)))
-                            }
+                            complete(dir.getVersionsInfo(dir.getServiceDir(service, None)))
+                          } ~
+                          path(getVersionsInfoPath / ".*".r / ".*".r) { (service, clientName) =>
+                            complete(dir.getVersionsInfo(dir.getServiceDir(service, Some(clientName))))
                           } ~
                           path(getDesiredVersionsPath) {
-                            parameter("client".?) { clientName =>
-                              getDesiredVersionsRoute(getDesiredVersions(clientName))
-                            }
+                            getDesiredVersionsRoute(getDesiredVersions(None))
+                          } ~
+                          path(getDesiredVersionsPath / ".*".r) { clientName =>
+                            getDesiredVersionsRoute(getDesiredVersions(Some(clientName)))
                           } ~
                           path(getDesiredVersionPath / ".*".r) { service =>
-                            parameter("image".as[Boolean] ? true) { image =>
-                              getDesiredVersion(service, getDesiredVersions(None), image)
-                            }
+                            getDesiredVersion(service, getDesiredVersions(None), false)
                           } ~
                           path(getDistributionVersionPath) {
                             getVersion()
@@ -127,9 +125,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                             }
                           } ~
                           path(getDesiredVersionPath / ".*".r) { service =>
-                            parameter("image".as[Boolean] ? true) { image =>
-                              getDesiredVersion(service, getPersonalDesiredVersions(userName), image)
-                            }
+                            getDesiredVersion(service, getPersonalDesiredVersions(userName), false)
                           }
                         }
                       } ~
@@ -144,9 +140,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                               versionInfoUpload(service, buildVersion)
                             } ~
                             path(putDesiredVersionsPath) {
-                              parameter("client".?) { clientName =>
-                                fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(clientName))
-                              }
+                              fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
+                            } ~
+                            path(putDesiredVersionsPath / ".*".r) { clientName =>
+                              fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(Some(clientName)))
                             }
                           } ~
                           authorize(userCredentials.role == UserRole.Client) {
@@ -333,12 +330,22 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
       .flatMapConcat(config => Source.future(config))
   }
 
-  private def getInstancesState(): Source[ClientInstancesState, NotUsed] = {
-    Source(dir.getClientsDir().list().toList)
-      .map(clientName => getClientInstancesState(clientName).collect {
-        case Some(state) => ClientInstancesState(clientName, state)
-      })
-      .flatMapConcat(config => Source.future(config))
+  private def getInstanceVersionsState(clientName: ClientName): Source[InstanceVersionsState, NotUsed] = {
+     Source.future(getClientInstancesState(clientName).collect {
+        case Some(state) =>
+          var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
+          state.states.foreach { case (instanceId, instanceState) =>
+            instanceState.servicesStates.foreach { serviceState =>
+              for (version <- serviceState.version) {
+                val serviceName = serviceState.serviceInstanceName.serviceName
+                var map = versions.getOrElse(serviceName, Map.empty[BuildVersion, Set[InstanceId]])
+                map += (version -> (map.getOrElse(version, Set.empty) + instanceId.instanceId))
+                versions += (serviceName -> map)
+              }
+            }
+          }
+          InstanceVersionsState(versions)
+       })
   }
 
   private def getClientConfig(clientName: ClientName): Future[Option[ClientConfig]] = {

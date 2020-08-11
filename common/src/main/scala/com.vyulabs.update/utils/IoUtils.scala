@@ -1,8 +1,6 @@
 package com.vyulabs.update.utils
 
 import java.io._
-import java.text.SimpleDateFormat
-import java.util.{Date, TimeZone}
 
 import com.typesafe.config._
 import com.vyulabs.update.common.Common

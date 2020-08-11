@@ -17,8 +17,8 @@ trait DistributionWebPaths {
 
   val getUserInfoPath = "get-user-info"
   val getClientsInfoPath = "get-clients-info"
-  val getInstancesStatePath = "get-instances-state"
-  val getVersionPath = "get-version"
+  val getInstanceVersionsPath = "get-instance-versions"
+  val getVersionImagePath = "get-version-image"
   val getVersionInfoPath = "get-version-info"
   val getVersionsInfoPath = "get-versions-info"
   val getDesiredVersionsPath = "get-desired-versions"
