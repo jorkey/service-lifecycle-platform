@@ -473,7 +473,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         if (desiredVersions.desiredVersions.equals(testedVersions.servicesVersions)) {
           val testRecord = TestSignature(clientName, new Date())
           val testedDesiredVersions = DesiredVersions(desiredVersions.desiredVersions, desiredVersions.testSignatures :+ testRecord)
-          Some(ByteString(testedDesiredVersions.toJson.prettyPrint.getBytes("utf8")))
+          Some(ByteString(testedDesiredVersions.toJson.sortedPrint.getBytes("utf8")))
         } else {
           None
         }

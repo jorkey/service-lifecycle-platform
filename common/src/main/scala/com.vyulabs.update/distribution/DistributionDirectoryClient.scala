@@ -212,7 +212,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
   }
 
   protected def uploadFromJson(url: URL, name: String, destinationFile: String, json: JsValue): Boolean = {
-    val content = json.prettyPrint
+    val content = json.sortedPrint
     val input = new ByteArrayInputStream(content.getBytes("utf8"))
     upload(url, name, destinationFile, input)
   }

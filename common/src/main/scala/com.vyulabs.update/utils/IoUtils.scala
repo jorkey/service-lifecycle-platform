@@ -83,12 +83,12 @@ object IOUtils {
   }
 
   def writeJsonToFile(file: File, json: JsValue)(implicit log: Logger): Boolean = {
-    writeBytesToFile(file, json.prettyPrint.getBytes("utf8"))
+    writeBytesToFile(file, json.sortedPrint.getBytes("utf8"))
   }
 
   def writeJsonToFileWithLock(file: File, json: JsValue)
                                 (implicit filesLocker: SmartFilesLocker, log: Logger): Boolean = {
-    writeBytesToFileWithLock(file, json.prettyPrint.getBytes("utf8"))
+    writeBytesToFileWithLock(file, json.sortedPrint.getBytes("utf8"))
   }
 
   def writeConfigToFile(file: File, config: Config)(implicit log: Logger): Boolean = {

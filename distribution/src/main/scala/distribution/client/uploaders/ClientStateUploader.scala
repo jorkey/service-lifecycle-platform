@@ -59,7 +59,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
         downloadingFiles -= file
       }
     }
-    val source = Source.single(ByteString(instanceState.toJson.prettyPrint.getBytes("utf8")))
+    val source = Source.single(ByteString(instanceState.toJson.sortedPrint.getBytes("utf8")))
     distribution.fileWriteWithLock(source, dir.getInstanceStateFile(instanceId, updaterProcessId), Some(promise))
   }
 
