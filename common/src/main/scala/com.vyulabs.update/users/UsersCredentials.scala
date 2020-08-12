@@ -54,11 +54,11 @@ object PasswordHash {
 object UserRoleJson extends DefaultJsonProtocol {
   implicit object UserRoleJsonFormat extends RootJsonFormat[UserRole] {
     def write(value: UserRole) = JsString(value.toString)
-    def read(value: JsValue) = UserRole.withName(value.toString)
+    def read(value: JsValue) = UserRole.withName(value.asInstanceOf[JsString].value)
   }
 }
 
-case class UserCredentials(role: UserRole, var passwordHash: PasswordHash)
+case class UserCredentials(role: UserRole, var password: PasswordHash)
 
 object UserCredentialsJson extends DefaultJsonProtocol {
   import UserRoleJson._

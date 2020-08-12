@@ -139,7 +139,7 @@ object DistributionMain extends App {
         val password = StdIn.readLine("Enter password: ")
         usersCredentials.getCredentials(userName) match {
           case Some(credentials) =>
-            credentials.passwordHash = PasswordHash(password)
+            credentials.password = PasswordHash(password)
             if (!IOUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
               Utils.error("Can't save credentials file")
             }

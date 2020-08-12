@@ -115,6 +115,6 @@ object BuildVersion {
 object BuildVersionJson {
   implicit object BuildVersionJsonFormat extends RootJsonFormat[BuildVersion] {
     def write(value: BuildVersion) = JsString(value.toString)
-    def read(value: JsValue) = BuildVersion.parse(value.toString)
+    def read(value: JsValue) = BuildVersion.parse(value.asInstanceOf[JsString].value)
   }
 }

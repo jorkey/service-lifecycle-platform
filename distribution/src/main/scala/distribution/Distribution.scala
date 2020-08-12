@@ -330,8 +330,8 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     credentials match {
       case p@Credentials.Provided(userName) =>
         usersCredentials.getCredentials(userName) match {
-          case Some(userCredentials) if p.verify(userCredentials.passwordHash.hash,
-            PasswordHash.generatePasswordHash(_, userCredentials.passwordHash.salt)) =>
+          case Some(userCredentials) if p.verify(userCredentials.password.hash,
+            PasswordHash.generatePasswordHash(_, userCredentials.password.salt)) =>
             Some(userName, userCredentials)
           case _ =>
             None

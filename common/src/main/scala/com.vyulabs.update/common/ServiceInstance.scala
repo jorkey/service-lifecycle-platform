@@ -43,6 +43,6 @@ object ServiceInstanceName {
 object ServiceInstanceJson extends DefaultJsonProtocol {
   implicit object ServiceInstanceNameJsonFormat extends RootJsonFormat[ServiceInstanceName] {
     def write(value: ServiceInstanceName) = JsString(value.toString)
-    def read(value: JsValue) = ServiceInstanceName.parse(value.toString)
+    def read(value: JsValue) = ServiceInstanceName.parse(value.asInstanceOf[JsString].value)
   }
 }
