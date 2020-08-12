@@ -115,10 +115,17 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                         }
                     } ~
                       authorize(userCredentials.role == UserRole.Service) {
+                        println(s"${userName} is authorized")
                         path(prefix / uploadInstanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
                           uploadFileToJson(instanceStateName, (json) => {
                             val instanceState = json.convertTo[UpdaterInstanceState]
                             stateUploader.receiveState(instanceId, updaterDirectory, updaterProcessId, instanceState, this)
+                          })
+                        } ~
+                        path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) => // TODO remove
+                          uploadFileToJson(instanceStateName, (json) => {
+                            val instanceState = json.convertTo[UpdaterInstanceState]
+                            stateUploader.receiveState(instanceId, "/", updaterProcessId, instanceState, this)
                           })
                         } ~
                         path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
