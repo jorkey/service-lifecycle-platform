@@ -60,12 +60,12 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
               val statesFile = dir.getInstancesStateFile(clientName)
               val oldStates = IOUtils.readFileToJsonWithLock(statesFile).map(_.convertTo[InstancesState])
               for (oldStates <- oldStates) {
-                val newDeadStates = oldStates.states.filterKeys(!instancesState.states.contains(_))
+                val newDeadStates = oldStates.instances.filterKeys(!instancesState.instances.contains(_))
                 val deadStatesFile = dir.getDeadInstancesStateFile(clientName)
                 val deadStates = IOUtils.readFileToJsonWithLock(deadStatesFile).map(_.convertTo[InstancesState]) match {
                   case Some(deadInstancesState) =>
-                    deadInstancesState.states
-                      .filterKeys(!instancesState.states.contains(_))
+                    deadInstancesState.instances
+                      .filterKeys(!instancesState.instances.contains(_))
                       .filter(state => (System.currentTimeMillis() - state._2.startDate.getTime) < expireDiedInstanceStateTime)
                   case None =>
                     Map.empty

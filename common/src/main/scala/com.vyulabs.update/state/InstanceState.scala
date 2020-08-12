@@ -16,7 +16,7 @@ case class ServiceState(serviceInstanceName: ServiceInstanceName, startDate: Opt
 case class InstanceState(date: Date, startDate: Date, instanceId: InstanceId, directory: String,
                          servicesStates: Seq[ServiceState])
 
-case class InstancesState(states: Map[UpdaterInstanceId, InstanceState])
+case class InstancesState(instances: Map[UpdaterInstanceId, InstanceState])
 
 case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[InstanceId]]])
 

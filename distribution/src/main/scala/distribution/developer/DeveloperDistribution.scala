@@ -334,7 +334,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
      Source.future(getClientInstancesState(clientName).collect {
         case Some(state) =>
           var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
-          state.states.foreach { case (instanceId, instanceState) =>
+          state.instances.foreach { case (instanceId, instanceState) =>
             instanceState.servicesStates.foreach { serviceState =>
               for (version <- serviceState.version) {
                 val serviceName = serviceState.serviceInstanceName.serviceName
