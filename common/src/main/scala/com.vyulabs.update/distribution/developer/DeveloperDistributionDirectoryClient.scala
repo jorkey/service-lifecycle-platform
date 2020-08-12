@@ -44,10 +44,10 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
 
   def uploadVmInstancesState(instancesState: VmInstancesState): Boolean = {
     uploadFromJson(makeUrl(getUploadInstancesStatePath()),
-      instancesStateName, uploadInstancesStatePath, instancesState.toJson)
+      instancesStateName, apiPathPrefix + "/" + instancesStatePath, instancesState.toJson)
   }
 
   def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {
-    uploadFromFile(makeUrl(getUploadServiceFaultPath(serviceName)), serviceFaultName, faultFile)
+    uploadFromFile(makeUrl(apiPathPrefix + "/" + getServiceFaultPath(serviceName)), serviceFaultName, faultFile)
   }
 }

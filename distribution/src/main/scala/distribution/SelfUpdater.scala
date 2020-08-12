@@ -51,7 +51,7 @@ class SelfUpdater(dir: DistributionDirectory)
               json.convertTo[DesiredVersions].desiredVersions
             } catch {
               case e: Exception =>
-                log.error("Can't init desired versions")
+                log.error("Can't init desired versions", e)
                 return
             }
           case None =>

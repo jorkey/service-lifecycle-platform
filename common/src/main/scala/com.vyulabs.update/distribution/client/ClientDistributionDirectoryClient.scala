@@ -73,6 +73,6 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
   }
 
   def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {
-    uploadFromFile(makeUrl(getUploadServiceFaultPath(serviceName)), serviceFaultName, faultFile)
+    uploadFromFile(makeUrl(getServiceFaultPath(serviceName)), serviceFaultName, faultFile)
   }
 }

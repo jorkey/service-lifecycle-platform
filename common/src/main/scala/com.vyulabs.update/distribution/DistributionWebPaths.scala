@@ -69,7 +69,7 @@ trait DistributionWebPaths {
     uploadVersionInfoPath + "/" + serviceName + "/" + version.toString
   }
 
-  def getUploadServiceFaultPath(serviceName: ServiceName): String = {
-    uploadServiceFaultPath + "/" + serviceName.toString
+  def getServiceFaultPath(serviceName: ServiceName): String = {
+    serviceFaultPath + "/" + serviceName
   }
 }

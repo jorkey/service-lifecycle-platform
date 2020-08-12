@@ -6,7 +6,7 @@ import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.version.BuildVersion
 import spray.json.{DefaultJsonProtocol}
 
-case class DesiredVersions(desiredVersions: Map[ServiceName, BuildVersion], testSignatures: Seq[TestSignature] = Seq.empty)
+case class DesiredVersions(desiredVersions: Map[ServiceName, BuildVersion], testSignatures: Option[Seq[TestSignature]] = None)
 case class TestSignature(clientName: ClientName, date: Date)
 
 object DesiredVersionsJson extends DefaultJsonProtocol {

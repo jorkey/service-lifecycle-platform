@@ -62,13 +62,13 @@ class UpdateClient()(implicit log: Logger) {
         val testCondition = clientConfig.testClientMatch match {
           case Some(testClientMatch) =>
             val regexp = testClientMatch
-            developerDesiredVersions.testSignatures.exists { signature =>
+            developerDesiredVersions.testSignatures.exists { signatures => signatures.exists(signature =>
               signature.clientName match {
                 case regexp() =>
                   true
                 case _ =>
                   false
-              }
+              })
             }
           case None =>
             true

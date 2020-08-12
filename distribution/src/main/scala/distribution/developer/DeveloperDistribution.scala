@@ -256,18 +256,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                                 uploadTestedVersions(userName)
                               } ~
                                 path(uploadInstancesStatePath) {
-                                  uploadFileToJson(instancesStateName, (json) => {
-                                    val instancesState = json.convertTo[VmInstancesState]
-                                    stateUploader.receiveInstancesState(userName, instancesState)
-                                    complete(StatusCodes.OK)
-                                  })
-                                } ~
-                                path(uploadInstancesStatePath / ".*".r) { client => // TODO deprecated
-                                  uploadFileToJson(instancesStateName, (json) => {
-                                    val instancesState = json.convertTo[VmInstancesState]
-                                    stateUploader.receiveInstancesState(userName, instancesState)
-                                    complete(StatusCodes.OK)
-                                  })
+                                  complete(StatusCodes.BadRequest) // New format
                                 } ~
                                 path(uploadServiceFaultPath / ".*".r) { (serviceName) =>
                                   uploadFileToSource(serviceFaultName, (fileInfo, source) => {
@@ -481,7 +470,8 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         val testedVersions = json.convertTo[ServicesVersions]
         if (desiredVersions.desiredVersions.equals(testedVersions.servicesVersions)) {
           val testRecord = TestSignature(clientName, new Date())
-          val testedDesiredVersions = DesiredVersions(desiredVersions.desiredVersions, desiredVersions.testSignatures :+ testRecord)
+          val testSignatures = desiredVersions.testSignatures.getOrElse(Seq.empty) :+ testRecord
+          val testedDesiredVersions = DesiredVersions(desiredVersions.desiredVersions, Some(testSignatures))
           Some(ByteString(testedDesiredVersions.toJson.sortedPrint.getBytes("utf8")))
         } else {
           None
