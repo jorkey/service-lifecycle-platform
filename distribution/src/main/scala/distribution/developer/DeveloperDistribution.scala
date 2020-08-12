@@ -203,10 +203,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                                   getDesiredVersion(service, getDesiredVersions(None), image)
                                 }
                               } ~
-                              path(downloadDistributionVersionPath) {
+                              path(getDistributionVersionPath) {
                                 getVersion()
                               } ~
-                              path(downloadScriptsVersionPath) {
+                              path(getScriptsVersionPath) {
                                 getScriptsVersion()
                               }
                           } ~

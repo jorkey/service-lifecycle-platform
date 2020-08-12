@@ -92,10 +92,10 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                     getFromFileWithLock(dir.getInstanceStateFile(instanceId, "/", updaterProcessId))
                   } ~
                   authorize(userCredentials.role == UserRole.Administrator) {
-                    path(prefix / downloadDistributionVersionPath) {
+                    path(prefix / getDistributionVersionPath) {
                       getVersion()
                     } ~
-                    path(prefix / downloadScriptsVersionPath) {
+                    path(prefix / getScriptsVersionPath) {
                       getScriptsVersion()
                     }
                   }

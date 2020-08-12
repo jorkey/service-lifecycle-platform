@@ -83,8 +83,8 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     log.info(s"Wait for distribution server updated to version ${desiredVersion}")
     Thread.sleep(5000)
     for (_ <- 0 until 25) {
-      if (exists(makeUrl(downloadDistributionVersionPath))) {
-        downloadToString(makeUrl(downloadDistributionVersionPath)) match {
+      if (exists(makeUrl(getDistributionVersionPath))) {
+        downloadToString(makeUrl(getDistributionVersionPath)) match {
           case Some(content) =>
             try {
               val version = BuildVersion.parse(content)
@@ -111,8 +111,8 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     log.info(s"Wait for distribution server scripts updated to version ${desiredVersion}")
     Thread.sleep(5000)
     for (_ <- 0 until 25) {
-      if (exists(makeUrl(downloadScriptsVersionPath))) {
-        downloadToString(makeUrl(downloadScriptsVersionPath)) match {
+      if (exists(makeUrl(getScriptsVersionPath))) {
+        downloadToString(makeUrl(getScriptsVersionPath)) match {
           case Some(content) =>
             try {
               val version = BuildVersion.parse(content)

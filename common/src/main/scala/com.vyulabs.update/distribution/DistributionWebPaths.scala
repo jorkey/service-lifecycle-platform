@@ -34,8 +34,8 @@ trait DistributionWebPaths {
   val downloadVersionsInfoPath = "download-versions-info"
   val downloadDesiredVersionsPath = "download-desired-versions"
   val downloadDesiredVersionPath = "download-desired-version"
-  val downloadDistributionVersionPath = "download-distribution-version"
-  val downloadScriptsVersionPath = "download-scripts-version"
+  val getDistributionVersionPath = "get-distribution-version"
+  val getScriptsVersionPath = "get-scripts-version"
 
   val uploadVersionPath = "upload-version"
   val uploadVersionInfoPath = "upload-version-info"
