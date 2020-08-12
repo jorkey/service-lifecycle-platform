@@ -4,9 +4,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.VmInstanceId
 import com.vyulabs.update.common.{Common, ServiceInstanceName}
-import com.vyulabs.update.state.{InstanceState, ServiceState}
+import com.vyulabs.update.state.{UpdaterInstanceState, ServiceState}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.updater.UpdaterMain.log
 import com.vyulabs.update.utils.{IOUtils, Utils}
@@ -124,14 +124,15 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
   }
 }
 
-class InstanceStateUploader(instanceId: InstanceId, version: BuildVersion,
+class InstanceStateUploader(instanceId: VmInstanceId, version: BuildVersion,
                             servicesInstanceNames: Set[ServiceInstanceName],
                             clientDirectory: ClientDistributionDirectoryClient)(implicit log: Logger) extends Thread { self =>
   private val services = servicesInstanceNames.foldLeft(Map.empty[ServiceInstanceName, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(name, () => update()))
   }
 
-  private val startDate = clientDirectory.downloadInstanceState(instanceId, ProcessHandle.current().pid().toString) match {
+  private val startDate = clientDirectory.downloadInstanceState(instanceId,
+      new java.io.File(".").getCanonicalPath(), ProcessHandle.current().pid().toString) match {
     case Some(instanceState) =>
       for (storedState <- instanceState.servicesStates) {
         val serviceName = storedState.serviceInstanceName
@@ -175,8 +176,9 @@ class InstanceStateUploader(instanceId: InstanceId, version: BuildVersion,
 
   private def updateRepository(): Boolean = synchronized {
     log.info("Update instance state")
-    val state = InstanceState(new Date(), startDate, instanceId, new java.io.File(".").getCanonicalPath(),
+    val state = UpdaterInstanceState(new Date(), startDate,
       services.foldLeft(Seq.empty[ServiceState])((states, service) => { states :+ service._2.getState() }))
-    clientDirectory.uploadInstanceState(instanceId, ProcessHandle.current().pid().toString, state)
+    clientDirectory.uploadInstanceState(instanceId,
+      new java.io.File(".").getCanonicalPath(), ProcessHandle.current().pid().toString, state)
   }
 }

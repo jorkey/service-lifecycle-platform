@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.VmInstanceId
 import com.vyulabs.update.common.{Common, ServiceInstanceName}
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
@@ -23,7 +23,7 @@ import scala.collection.immutable.Queue
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceRunner(instanceId: InstanceId, serviceInstanceName: ServiceInstanceName,
+class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName,
                     state: ServiceStateController, clientDirectory: ClientDistributionDirectoryClient,
                     faultUploader: FaultUploader)(implicit log: Logger) {
     private case class ProcessParameters(config: RunServiceConfig, args: Map[String, String], directory: File)

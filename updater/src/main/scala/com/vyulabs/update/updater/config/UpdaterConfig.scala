@@ -3,12 +3,12 @@ package com.vyulabs.update.updater.config
 import java.io.File
 import java.net.URL
 
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.VmInstanceId
 import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
-case class UpdaterConfig(instanceId: InstanceId, clientDistributionUrl: URL)
+case class UpdaterConfig(instanceId: VmInstanceId, clientDistributionUrl: URL)
 
 object UpdaterConfigJson extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URLJson._

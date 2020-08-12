@@ -1,6 +1,6 @@
 package com.vyulabs.update.updater
 
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.VmInstanceId
 import com.vyulabs.update.common.{Common, ServiceInstanceName}
 import com.vyulabs.update.config.InstallConfig
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils}
@@ -13,7 +13,7 @@ import org.slf4j.Logger
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class ServiceUpdater(instanceId: InstanceId,
+class ServiceUpdater(instanceId: VmInstanceId,
                      val serviceInstanceName: ServiceInstanceName,
                      state: ServiceStateController,
                      clientDirectory: ClientDistributionDirectoryClient)

@@ -3,16 +3,15 @@ package com.vyulabs.update.distribution.client
 import java.io.File
 import java.net.URL
 
-import com.vyulabs.update.common.Common.{InstanceId, ProcessId, ServiceName, UpdaterInstanceId}
+import com.vyulabs.update.common.Common.{ProcessId, ServiceName, UpdaterDirectory, VmInstanceId}
 import com.vyulabs.update.common.ServiceInstanceName
-import com.vyulabs.update.state.InstanceState
+import com.vyulabs.update.state.UpdaterInstanceState
 import com.vyulabs.update.info.{DesiredVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
-import com.vyulabs.update.logs.{ServiceLogs}
+import com.vyulabs.update.logs.ServiceLogs
 import org.slf4j.Logger
 import spray.json._
-
-import com.vyulabs.update.state.InstanceStateJson._
+import com.vyulabs.update.state.UpdaterInstanceStateJson._
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.info.DesiredVersionsJson._
 import com.vyulabs.update.logs.ServiceLogsJson._
@@ -46,14 +45,15 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     }
   }
 
-  def downloadInstanceState(instanceId: InstanceId, updaterProcessId: ProcessId): Option[InstanceState] = {
-    val url = makeUrl(getDownloadInstanceStatePath(instanceId, updaterProcessId))
+  def downloadInstanceState(instanceId: VmInstanceId,
+                            updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): Option[UpdaterInstanceState] = {
+    val url = makeUrl(getDownloadInstanceStatePath(instanceId, updaterDirectory, updaterProcessId))
     if (!exists(url)) {
       return None
     }
     downloadToString(url) match {
       case Some(json) =>
-        Some(json.parseJson.convertTo[InstanceState])
+        Some(json.parseJson.convertTo[UpdaterInstanceState])
       case None =>
         None
     }
@@ -63,12 +63,12 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
   }
 
-  def uploadInstanceState(instanceId: InstanceId, updaterProcessId: ProcessId, instanceState: InstanceState): Boolean = {
-    uploadFromString(makeUrl(getUploadInstanceStatePath(instanceId, updaterProcessId)), instanceStateName, uploadInstanceStatePath,
+  def uploadInstanceState(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId, instanceState: UpdaterInstanceState): Boolean = {
+    uploadFromString(makeUrl(getUploadInstanceStatePath(instanceId, updaterDirectory, updaterProcessId)), instanceStateName, uploadInstanceStatePath,
       instanceState.toJson.sortedPrint)
   }
 
-  def uploadServiceLogs(instanceId: InstanceId, serviceInstanceName: ServiceInstanceName, serviceLogs: ServiceLogs): Boolean = {
+  def uploadServiceLogs(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName, serviceLogs: ServiceLogs): Boolean = {
     uploadFromJson(makeUrl(getUploadServiceLogsPath(instanceId, serviceInstanceName)), serviceLogsName, uploadServiceLogsPath, serviceLogs.toJson)
   }
 

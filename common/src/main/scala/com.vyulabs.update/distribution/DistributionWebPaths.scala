@@ -15,19 +15,17 @@ trait DistributionWebPaths {
 
   // New API paths
 
-  val getUserInfoPath = "get-user-info"
-  val getClientsInfoPath = "get-clients-info"
-  val getInstanceVersionsPath = "get-instance-versions"
-  val getVersionImagePath = "get-version-image"
-  val getVersionInfoPath = "get-version-info"
-  val getVersionsInfoPath = "get-versions-info"
-  val getDesiredVersionsPath = "get-desired-versions"
-  val getDesiredVersionPath = "get-desired-version"
-
-  val putVersionPath = "put-version"
-  val putVersionInfoPath = "put-version-info"
-  val putDesiredVersionsPath = "put-desired-versions"
-  val putServiceFaultPath = "put-service-fault"
+  val userInfoPath = "user-info"
+  val clientsInfoPath = "clients-info"
+  val instanceVersionsPath = "instance-versions"
+  val versionImagePath = "version-image"
+  val versionInfoPath = "version-info"
+  val versionsInfoPath = "versions-info"
+  val desiredVersionsPath = "desired-versions"
+  val desiredVersionPath = "desired-version"
+  val serviceFaultPath = "service-fault"
+  val distributionVersionPath = "distribution-version"
+  val scriptsVersionPath = "scripts-version"
 
   // Deprecated API paths
 
@@ -36,6 +34,8 @@ trait DistributionWebPaths {
   val downloadVersionsInfoPath = "download-versions-info"
   val downloadDesiredVersionsPath = "download-desired-versions"
   val downloadDesiredVersionPath = "download-desired-version"
+  val downloadDistributionVersionPath = "download-distribution-version"
+  val downloadScriptsVersionPath = "download-scripts-version"
 
   val uploadVersionPath = "upload-version"
   val uploadVersionInfoPath = "upload-version-info"
@@ -45,10 +45,6 @@ trait DistributionWebPaths {
   // Old API
 
   val browsePath = "browse"
-
-  val getDistributionVersionPath = "get-distribution-version"
-  val getScriptsVersionPath = "get-scripts-version"
-
   val pingPath = "ping"
 
   // Names

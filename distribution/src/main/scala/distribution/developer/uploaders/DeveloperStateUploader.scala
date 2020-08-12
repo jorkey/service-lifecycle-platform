@@ -4,9 +4,9 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common.ClientName
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.state.InstancesState
+import com.vyulabs.update.state.VmInstancesState
 import com.vyulabs.update.utils.IOUtils
-import com.vyulabs.update.state.InstancesStateJson._
+import com.vyulabs.update.state.VmInstancesStateJson._
 
 import org.slf4j.LoggerFactory
 import spray.json._
@@ -19,7 +19,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
                             (implicit filesLocker: SmartFilesLocker, materializer: Materializer) extends Thread { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private var client2instancesState = Map.empty[ClientName, InstancesState]
+  private var client2instancesState = Map.empty[ClientName, VmInstancesState]
   private var stopping = false
 
   private val expireDiedInstanceStateTime = 24 * 60 * 60 * 1000L
@@ -32,7 +32,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
     join()
   }
 
-  def receiveInstancesState(clientName: ClientName, instancesState: InstancesState): Unit = {
+  def receiveInstancesState(clientName: ClientName, instancesState: VmInstancesState): Unit = {
     log.info(s"Receive instances state of client ${clientName}")
     self.synchronized {
       client2instancesState += (clientName -> instancesState)
@@ -52,25 +52,27 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
           if (stopping) {
             return
           }
-          client2instancesState.foldLeft(Map.empty[ClientName, InstancesState])((m, e) => m + (e._1 -> e._2))
+          client2instancesState.foldLeft(Map.empty[ClientName, VmInstancesState])((m, e) => m + (e._1 -> e._2))
         }
         states.foreach { case (clientName, instancesState) => {
             log.info(s"Process instances state of client ${clientName}")
             try {
               val statesFile = dir.getInstancesStateFile(clientName)
-              val oldStates = IOUtils.readFileToJsonWithLock(statesFile).map(_.convertTo[InstancesState])
+              val oldStates = IOUtils.readFileToJsonWithLock(statesFile).map(_.convertTo[VmInstancesState])
               for (oldStates <- oldStates) {
-                val newDeadStates = oldStates.instances.filterKeys(!instancesState.instances.contains(_))
+                val newDeadStates = oldStates.state.filterKeys(!instancesState.state.contains(_))
                 val deadStatesFile = dir.getDeadInstancesStateFile(clientName)
-                val deadStates = IOUtils.readFileToJsonWithLock(deadStatesFile).map(_.convertTo[InstancesState]) match {
+                val deadStates = IOUtils.readFileToJsonWithLock(deadStatesFile).map(_.convertTo[VmInstancesState]) match {
                   case Some(deadInstancesState) =>
-                    deadInstancesState.instances
-                      .filterKeys(!instancesState.instances.contains(_))
-                      .filter(state => (System.currentTimeMillis() - state._2.startDate.getTime) < expireDiedInstanceStateTime)
+                    deadInstancesState.state
+                      .filterKeys(!instancesState.state.contains(_))
+                      .mapValues(_.filter { case (_, updaterState) =>
+                        (System.currentTimeMillis() - updaterState.startDate.getTime) < expireDiedInstanceStateTime })
+                      .filter(!_._2.isEmpty)
                   case None =>
                     Map.empty
                 }
-                if (!IOUtils.writeJsonToFileWithLock(deadStatesFile, InstancesState(deadStates ++ newDeadStates).toJson)) {
+                if (!IOUtils.writeJsonToFileWithLock(deadStatesFile, VmInstancesState(deadStates ++ newDeadStates).toJson)) {
                   log.error(s"Can't write ${deadStatesFile}")
                 }
               }

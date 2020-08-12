@@ -11,12 +11,10 @@ object Common {
   type ServiceProfile = String
   type ClientName = String
   type UserName = String
-  type InstanceId = String
+  type VmInstanceId = String
   type ProcessId = String
   type UpdaterDirectory = String
   type InstallProfileName = String
-
-  case class UpdaterInstanceId(instanceId: InstanceId, director: UpdaterDirectory)
 
   val Pm2DescFileName = "pm2_desc.json"
 
@@ -49,9 +47,5 @@ object Common {
     serviceName == BuilderServiceName ||
     serviceName == InstallerServiceName ||
     serviceName == UpdaterServiceName
-  }
-
-  object UpdaterInstanceIdJson extends DefaultJsonProtocol {
-    implicit val updaterInstanceIdJson = jsonFormat2(UpdaterInstanceId.apply)
   }
 }

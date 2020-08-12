@@ -1,6 +1,6 @@
 package com.vyulabs.update.updater.uploaders
 
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.VmInstanceId
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.config.LogUploaderConfig
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
@@ -13,7 +13,7 @@ import scala.collection.immutable.Queue
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 9.12.19.
   * Copyright FanDate, Inc.
   */
-class LogUploader(instanceId: InstanceId, serviceInstanceName: ServiceInstanceName, logUploaderConfig: LogUploaderConfig,
+class LogUploader(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName, logUploaderConfig: LogUploaderConfig,
                   clientDirectory: ClientDistributionDirectoryClient)(implicit log: Logger) extends Thread { self =>
 
   private val notifyThreshold = 50

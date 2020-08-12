@@ -2,7 +2,7 @@ package com.vyulabs.update.state
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{InstanceId, ServiceName, ServiceProfile, UpdaterInstanceId}
+import com.vyulabs.update.common.Common.{VmInstanceId, ServiceName, UpdaterDirectory}
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.version.BuildVersion
 import spray.json.DefaultJsonProtocol
@@ -13,12 +13,11 @@ case class ServiceState(serviceInstanceName: ServiceInstanceName, startDate: Opt
                         version: Option[BuildVersion], updateToVersion: Option[BuildVersion],
                         failuresCount: Int, lastErrors: Seq[String], lastExitCode: Option[Int])
 
-case class InstanceState(date: Date, startDate: Date, instanceId: InstanceId, directory: String,
-                         servicesStates: Seq[ServiceState])
+case class UpdaterInstanceState(date: Date, startDate: Date, servicesStates: Seq[ServiceState])
 
-case class InstancesState(instances: Map[UpdaterInstanceId, InstanceState])
+case class VmInstancesState(state: Map[VmInstanceId, Map[UpdaterDirectory, UpdaterInstanceState]])
 
-case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[InstanceId]]])
+case class VmInstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[VmInstanceId]]])
 
 object ServiceStateJson extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
@@ -28,22 +27,21 @@ object ServiceStateJson extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat7(ServiceState)
 }
 
-object InstanceStateJson extends DefaultJsonProtocol {
+object UpdaterInstanceStateJson extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
   import ServiceStateJson._
 
-  implicit val instanceStateJson = jsonFormat5(InstanceState.apply)
+  implicit val instanceStateJson = jsonFormat3(UpdaterInstanceState.apply)
 }
 
-object InstancesStateJson extends DefaultJsonProtocol {
-  import com.vyulabs.update.common.Common.UpdaterInstanceIdJson._
-  import InstanceStateJson._
+object VmInstancesStateJson extends DefaultJsonProtocol {
+  import UpdaterInstanceStateJson._
 
-  implicit val instancesStateJson = jsonFormat1(InstancesState.apply)
+  implicit val instancesStateJson = jsonFormat1(VmInstancesState.apply)
 }
 
-object ClientInstancesStateJson extends DefaultJsonProtocol {
+object VmInstanceVersionsStateJson extends DefaultJsonProtocol {
   import com.vyulabs.update.version.BuildVersionJson._
 
-  implicit val clientInstancesStateJson = jsonFormat1(InstanceVersionsState.apply)
+  implicit val clientInstancesStateJson = jsonFormat1(VmInstanceVersionsState.apply)
 }

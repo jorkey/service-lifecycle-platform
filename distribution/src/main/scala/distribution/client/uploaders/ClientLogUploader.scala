@@ -5,7 +5,7 @@ import java.io.{File, IOException}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, failWith}
 import akka.http.scaladsl.server.Route
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.VmInstanceId
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.log.LogWriter
@@ -22,8 +22,8 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
 
   private val instanceDeadTimeout: Long = 24 * 60 * 60 * 1000
 
-  private var writers = Map.empty[InstanceId, Map[ServiceInstanceName, LogWriter]]
-  private var instancesTimestamps = Map.empty[InstanceId, Long]
+  private var writers = Map.empty[VmInstanceId, Map[ServiceInstanceName, LogWriter]]
+  private var instancesTimestamps = Map.empty[VmInstanceId, Long]
 
   private var stopping = false
 
@@ -41,7 +41,7 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
     join()
   }
 
-  def receiveLogs(instanceId: InstanceId, serviceInstanceName: ServiceInstanceName, serviceLogs: ServiceLogs): Route = {
+  def receiveLogs(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName, serviceLogs: ServiceLogs): Route = {
     log.debug(s"Receive logs from instance ${instanceId} service ${serviceInstanceName.toString}")
     self.synchronized {
       for (writerInit <- serviceLogs.writerInit) {

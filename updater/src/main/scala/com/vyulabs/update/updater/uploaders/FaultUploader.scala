@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.Date
 
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.VmInstanceId
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.state.ServiceState
 import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
@@ -20,7 +20,7 @@ import com.vyulabs.update.state.ServiceStateJson._
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
   * Copyright FanDate, Inc.
   */
-case class FaultReport(instanceId: InstanceId, state: ServiceState, reportFilesTmpDir: Option[File], logTail: Queue[String])
+case class FaultReport(instanceId: VmInstanceId, state: ServiceState, reportFilesTmpDir: Option[File], logTail: Queue[String])
 
 class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirectoryClient)
                    (implicit log: Logger) extends Thread { self =>

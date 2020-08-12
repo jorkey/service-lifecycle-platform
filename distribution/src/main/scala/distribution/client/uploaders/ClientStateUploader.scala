@@ -10,18 +10,18 @@ import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.vyulabs.update.common.Common.{InstanceId, ProcessId, UpdaterInstanceId}
+import com.vyulabs.update.common.Common.{VmInstanceId, ProcessId, UpdaterDirectory}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
-import com.vyulabs.update.state.{InstanceState, InstancesState}
+import com.vyulabs.update.state.{UpdaterInstanceState, VmInstancesState}
 import com.vyulabs.update.utils.IOUtils
 import org.slf4j.LoggerFactory
 import spray.json.enrichAny
 
 import scala.concurrent.{ExecutionContext, Promise}
 import scala.concurrent.duration.FiniteDuration
-import com.vyulabs.update.state.InstanceStateJson._
+import com.vyulabs.update.state.UpdaterInstanceStateJson._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.
@@ -35,7 +35,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
   private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
 
   private var downloadingFiles = Set.empty[File]
-  private var statesToUpload = Map.empty[UpdaterInstanceId, InstanceState]
+  private var statesToUpload = Map.empty[VmInstanceId, Map[UpdaterDirectory, UpdaterInstanceState]]
 
   private val uploadInterval = 10000
   private var lastUploadTime = 0L
@@ -43,12 +43,13 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
 
   private var stopping = false
 
-  def receiveState(instanceId: InstanceId, updaterProcessId: ProcessId,
-                   instanceState: InstanceState, distribution: Distribution): Route = {
-    val file = dir.getInstanceStateFile(instanceId, updaterProcessId)
+  def receiveState(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId,
+                   instanceState: UpdaterInstanceState, distribution: Distribution): Route = {
+    val file = dir.getInstanceStateFile(instanceId, updaterDirectory, updaterProcessId)
     self.synchronized {
-      val updaterInstanceId = UpdaterInstanceId(instanceState.instanceId, instanceState.directory)
-      statesToUpload += (updaterInstanceId -> instanceState)
+      var updaters = statesToUpload.getOrElse(instanceId, Map.empty)
+      updaters += (updaterDirectory -> instanceState)
+      statesToUpload += (instanceId -> updaters)
       downloadingFiles += file
     }
     val promise = Promise[Unit]()
@@ -60,7 +61,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
       }
     }
     val source = Source.single(ByteString(instanceState.toJson.sortedPrint.getBytes("utf8")))
-    distribution.fileWriteWithLock(source, dir.getInstanceStateFile(instanceId, updaterProcessId), Some(promise))
+    distribution.fileWriteWithLock(source, dir.getInstanceStateFile(instanceId, updaterDirectory, updaterProcessId), Some(promise))
   }
 
   def close(): Unit = {
@@ -96,8 +97,8 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
             }
             if (!states.isEmpty) {
               log.debug("Upload instances state to developer distribution server")
-              val instancesState = InstancesState(states)
-              if (!developerDirectory.uploadInstancesState(instancesState)) {
+              val vmInstancesState = VmInstancesState(states)
+              if (!developerDirectory.uploadVmInstancesState(vmInstancesState)) {
                 log.error("Can't upload instances state")
               }
             }

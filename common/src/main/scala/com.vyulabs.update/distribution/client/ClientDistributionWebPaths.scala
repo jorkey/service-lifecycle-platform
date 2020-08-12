@@ -1,6 +1,6 @@
 package com.vyulabs.update.distribution.client
 
-import com.vyulabs.update.common.Common.{InstanceId, ProcessId, ServiceName, UpdaterInstanceId}
+import com.vyulabs.update.common.Common.{ProcessId, ServiceName, UpdaterDirectory, VmInstanceId}
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.distribution.DistributionWebPaths
 
@@ -11,10 +11,8 @@ import com.vyulabs.update.distribution.DistributionWebPaths
 trait ClientDistributionWebPaths extends DistributionWebPaths {
   // New API paths
 
-  val getInstanceStatePath = "get-instance-state"
-
-  val putInstanceStatePath = "put-instance-state"
-  val putServiceLogsPath = "put-service-logs"
+  val instanceStatePath = "instance-state"
+  val serviceLogsPath = "service-logs"
 
   // Old API paths
 
@@ -34,15 +32,15 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
     downloadVersionsInfoPath + "/" + serviceName
   }
 
-  def getDownloadInstanceStatePath(instanceId: InstanceId, updaterProcessId: ProcessId): String = {
-    downloadInstanceStatePath + "/" + instanceId + "/" + updaterProcessId
+  def getDownloadInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
+    downloadInstanceStatePath + "/" + instanceId + "/" + updaterDirectory + "/" + updaterProcessId
   }
 
-  def getUploadInstanceStatePath(instanceId: InstanceId, updaterProcessId: ProcessId): String = {
-    uploadInstanceStatePath + "/" + instanceId + "/" + updaterProcessId
+  def getUploadInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
+    uploadInstanceStatePath + "/" + instanceId + "/" + updaterDirectory + "/" + updaterProcessId
   }
 
-  def getUploadServiceLogsPath(instanceId: InstanceId, serviceInstanceName: ServiceInstanceName): String = {
+  def getUploadServiceLogsPath(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName): String = {
     uploadServiceLogsPath + "/" + instanceId + "/" + serviceInstanceName.toString
   }
 }

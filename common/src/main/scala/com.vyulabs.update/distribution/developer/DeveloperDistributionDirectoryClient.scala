@@ -4,17 +4,17 @@ import java.io._
 import java.net.URL
 
 import com.typesafe.config.Config
-import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceName}
+import com.vyulabs.update.common.Common.{ClientName, VmInstanceId, ServiceName}
 import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.config.ClientConfig
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
-import com.vyulabs.update.state.InstancesState
+import com.vyulabs.update.state.VmInstancesState
 import org.slf4j.Logger
 import com.vyulabs.update.config.ClientConfigJson._
 import com.vyulabs.update.info.DesiredVersionsJson._
 import com.vyulabs.update.info.ServicesVersionsJson._
-import com.vyulabs.update.state.InstancesStateJson._
+import com.vyulabs.update.state.VmInstancesStateJson._
 import spray.json._
 
 /**
@@ -42,7 +42,7 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
       testedVersionsName, uploadTestedVersionsPath, testedVersions.toJson)
   }
 
-  def uploadInstancesState(instancesState: InstancesState): Boolean = {
+  def uploadVmInstancesState(instancesState: VmInstancesState): Boolean = {
     uploadFromJson(makeUrl(getUploadInstancesStatePath()),
       instancesStateName, uploadInstancesStatePath, instancesState.toJson)
   }
