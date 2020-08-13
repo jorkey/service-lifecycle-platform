@@ -72,7 +72,7 @@ trait DistributionWebPaths {
   }
 
   def getServiceFaultPath(serviceName: ServiceName): String = {
-    serviceFaultPath + "/" + encode(serviceName)
+    uploadServiceFaultPath + "/" + encode(serviceName)
   }
 
   protected def encode(pathSegment: String): String = {
