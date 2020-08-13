@@ -56,7 +56,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                 } {
                   authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                     authorize(userCredentials.role == UserRole.Service) {
-                      put {
+                      post {
                         path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
                           uploadFileToJson(instanceStateName, (json) => {
                             val instanceState = json.convertTo[UpdaterInstanceState]

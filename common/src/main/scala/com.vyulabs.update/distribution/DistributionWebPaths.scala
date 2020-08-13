@@ -75,7 +75,7 @@ trait DistributionWebPaths {
     serviceFaultPath + "/" + encode(serviceName)
   }
 
-  protected def encode(pathSegment: String): Unit = {
+  protected def encode(pathSegment: String): String = {
     URLEncoder.encode(pathSegment, "utf8")
   }
 }
