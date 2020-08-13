@@ -67,7 +67,7 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
     }
   }
 
-  def getUploadInstancesStatePath(): String = {
-    uploadInstancesStatePath
+  def getInstancesStatePath(): String = {
+    instancesStatePath
   }
 }

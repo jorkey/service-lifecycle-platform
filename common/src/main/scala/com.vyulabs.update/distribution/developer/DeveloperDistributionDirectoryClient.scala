@@ -43,7 +43,7 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
   }
 
   def uploadVmInstancesState(instancesState: VmInstancesState): Boolean = {
-    uploadFromJson(makeUrl(getUploadInstancesStatePath()),
+    uploadFromJson(makeUrl(apiPathPrefix + "/" + getInstancesStatePath()),
       instancesStateName, apiPathPrefix + "/" + instancesStatePath, instancesState.toJson)
   }
 
