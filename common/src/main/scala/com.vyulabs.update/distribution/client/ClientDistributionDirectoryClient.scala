@@ -47,7 +47,7 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
 
   def downloadInstanceState(instanceId: VmInstanceId,
                             updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): Option[UpdaterInstanceState] = {
-    val url = makeUrl(getDownloadInstanceStatePath(instanceId, updaterDirectory, updaterProcessId))
+    val url = makeUrl(getInstanceStatePath(instanceId, updaterDirectory, updaterProcessId))
     if (!exists(url)) {
       return None
     }
