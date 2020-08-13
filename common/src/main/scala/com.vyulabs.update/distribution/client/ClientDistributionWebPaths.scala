@@ -37,7 +37,7 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
   }
 
   def getUploadInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
-    apiPathPrefix + "/" + uploadInstanceStatePath + "/" + encode(instanceId) + "/" + encode(updaterDirectory) + "/" + encode(updaterProcessId)
+    apiPathPrefix + "/" + instanceStatePath + "/" + encode(instanceId) + "/" + encode(updaterDirectory) + "/" + encode(updaterProcessId)
   }
 
   def getUploadServiceLogsPath(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName): String = {

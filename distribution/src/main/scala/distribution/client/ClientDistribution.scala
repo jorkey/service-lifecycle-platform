@@ -140,10 +140,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                         }
                     } ~
                       authorize(userCredentials.role == UserRole.Service) {
-                        path(prefix / uploadInstanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
-                          complete(StatusCodes.BadRequest) // New format
-                        } ~
-                        path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) => // TODO remove
+                        path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
                           complete(StatusCodes.BadRequest) // New format
                         } ~
                         path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
