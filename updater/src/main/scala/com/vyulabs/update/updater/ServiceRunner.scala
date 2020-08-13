@@ -144,7 +144,7 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
             None
         }
         faultUploader.addFaultReport(FaultReport(instanceId, state.getState(), reportFilesTmpDir, logTail))
-        val restartOnFault = processParameters.map(_.config.restartOnFault).getOrElse(false)
+        val restartOnFault = processParameters.map(_.config.restartOnFault.getOrElse(true)).getOrElse(false)
         if (restartOnFault) {
           state.info("Try to restart service")
           val period = System.currentTimeMillis() - lastStartTime
@@ -192,7 +192,7 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
     try {
       for (params <- processParameters) {
         val command = Utils.extendMacro(params.config.command, params.args)
-        val arguments = params.config.args.map(Utils.extendMacro(_, params.args))
+        val arguments = params.config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, params.args))
         val builder = new ProcessBuilder((command +: arguments).toList.asJava)
         builder.redirectErrorStream(true)
         var macroArgs = Map.empty[String, String]

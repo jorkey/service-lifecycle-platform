@@ -77,8 +77,8 @@ object ProcessUtils {
       case None => dir
     }
     runProcess(extendMacro(config.command, args),
-      config.args.map(extendMacro(_, args)),
-      config.env.mapValues(extendMacro(_, args)),
+      config.args.getOrElse(Seq.empty).map(extendMacro(_, args)),
+      config.env.getOrElse(Map.empty).mapValues(extendMacro(_, args)),
       directory, config.exitCode,
       config.outputMatch.map(extendMacro(_, args)),
       logging)

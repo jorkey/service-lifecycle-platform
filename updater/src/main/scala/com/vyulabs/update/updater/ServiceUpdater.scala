@@ -84,7 +84,7 @@ class ServiceUpdater(instanceId: VmInstanceId,
       return false
     }
 
-    for (command <- installConfig.installCommands) {
+    for (command <- installConfig.installCommands.getOrElse(Seq.empty)) {
       if (!ProcessUtils.runProcess(command, args, state.newServiceDirectory, ProcessUtils.Logging.Realtime)) {
         state.error(s"Install error")
         return false
@@ -131,7 +131,7 @@ class ServiceUpdater(instanceId: VmInstanceId,
     args += ("version" -> newVersion.original().toString)
     args += ("PATH" -> System.getenv("PATH"))
 
-    for (command <- installConfig.postInstallCommands) {
+    for (command <- installConfig.postInstallCommands.getOrElse(Seq.empty)) {
       if (!ProcessUtils.runProcess(command, args, state.currentServiceDirectory, ProcessUtils.Logging.Realtime)) {
         state.error(s"Install error")
         return false

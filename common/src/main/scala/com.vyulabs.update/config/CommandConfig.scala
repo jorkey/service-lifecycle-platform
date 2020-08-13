@@ -2,7 +2,7 @@ package com.vyulabs.update.config
 
 import spray.json.DefaultJsonProtocol
 
-case class CommandConfig(command: String, args: Seq[String], env: Map[String, String], directory: Option[String],
+case class CommandConfig(command: String, args: Option[Seq[String]], env: Option[Map[String, String]], directory: Option[String],
                          exitCode: Option[Int], outputMatch: Option[String])
 
 object CommandConfig extends DefaultJsonProtocol {

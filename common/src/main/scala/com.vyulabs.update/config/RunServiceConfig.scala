@@ -6,9 +6,9 @@ case class RestartConditionsConfig(maxMemoryMB: Option[Long]) {
   def maxMemory = maxMemoryMB.map(_ * 1024 *1024)
 }
 
-case class RunServiceConfig(command: String, args: Seq[String], env: Option[Map[String, String]],
+case class RunServiceConfig(command: String, args: Option[Seq[String]], env: Option[Map[String, String]],
                             logWriter: LogWriterConfig, logUploader: Option[LogUploaderConfig], faultFilesMatch: Option[String],
-                            restartOnFault: Boolean, restartConditions: Option[RestartConditionsConfig])
+                            restartOnFault: Option[Boolean], restartConditions: Option[RestartConditionsConfig])
 
 object RunServiceConfig extends DefaultJsonProtocol {
   import LogWriterConfig._

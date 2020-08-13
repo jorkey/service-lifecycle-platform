@@ -108,7 +108,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
                 "master"
               }
               val sourceRepository =
-                GitRepositoryUtils.getGitRepository(repositoryConf.uri, branch, repositoryConf.cloneSubmodules, directory).getOrElse {
+                GitRepositoryUtils.getGitRepository(repositoryConf.uri, branch, repositoryConf.cloneSubmodules.getOrElse(true), directory).getOrElse {
                   log.error("Pull source repository error")
                   return None
                 }
@@ -131,7 +131,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
             var args = Map.empty[String, String]
             args += ("version" -> version.toString)
             args += ("PATH" -> System.getenv("PATH"))
-            for (command <- updateConfig.build.buildCommands) {
+            for (command <- updateConfig.build.buildCommands.getOrElse(Seq.empty)) {
               if (!ProcessUtils.runProcess(command, args, mainSourceRepository.getDirectory(), ProcessUtils.Logging.Realtime)) {
                 return None
               }
@@ -153,7 +153,8 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
                   return None
                 }
               }
-              if (!copyFile(in, out, file => !copyCommand.except.contains(in.toPath.relativize(file.toPath).toString), copyCommand.settings)) {
+              if (!copyFile(in, out, file => !copyCommand.except.contains(in.toPath.relativize(file.toPath).toString),
+                            copyCommand.settings.getOrElse(Map.empty))) {
                 return None
               }
             }

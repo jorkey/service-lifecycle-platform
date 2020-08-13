@@ -8,7 +8,7 @@ import org.slf4j.Logger
 
 import spray.json._
 
-case class InstallConfig(installCommands: Seq[CommandConfig], postInstallCommands: Seq[CommandConfig], runService: Option[RunServiceConfig])
+case class InstallConfig(installCommands: Option[Seq[CommandConfig]], postInstallCommands: Option[Seq[CommandConfig]], runService: Option[RunServiceConfig])
 
 object InstallConfig extends DefaultJsonProtocol {
   import CommandConfig._

@@ -9,7 +9,7 @@ import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 import spray.json._
 
-case class BuildConfig(buildCommands: Seq[CommandConfig], copyFiles: Seq[CopyFileConfig])
+case class BuildConfig(buildCommands: Option[Seq[CommandConfig]], copyFiles: Seq[CopyFileConfig])
 case class ServiceUpdateConfig(build: BuildConfig, install: Option[InstallConfig])
 case class UpdateConfig(services: Map[ServiceName, ServiceUpdateConfig])
 
