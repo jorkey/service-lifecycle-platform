@@ -67,12 +67,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
                     deadInstancesState.state
                       .filterKeys(!instancesState.state.contains(_))
                       .mapValues(_.filter { case (_, updaterState) =>
-                        updaterState.date match {
-                          case Some(date) =>
-                            (System.currentTimeMillis() - date.getTime) < expireDiedInstanceStateTime
-                          case None =>
-                            true
-                        }
+                        (System.currentTimeMillis() - updaterState.date.getTime) < expireDiedInstanceStateTime
                       })
                       .filter(!_._2.isEmpty)
                   case None =>

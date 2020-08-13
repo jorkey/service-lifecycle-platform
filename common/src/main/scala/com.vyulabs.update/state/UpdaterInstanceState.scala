@@ -13,8 +13,7 @@ case class ServiceState(serviceInstanceName: ServiceInstanceName, startDate: Opt
                         version: Option[BuildVersion], updateToVersion: Option[BuildVersion],
                         failuresCount: Int, lastErrors: Seq[String], lastExitCode: Option[Int])
 
-case class UpdaterInstanceState(date: Option[Date], // TODO remove Option
-                                startDate: Date, servicesStates: Seq[ServiceState])
+case class UpdaterInstanceState(date: Date, startDate: Date, servicesStates: Seq[ServiceState])
 
 case class VmInstancesState(state: Map[VmInstanceId, Map[UpdaterDirectory, UpdaterInstanceState]])
 
