@@ -38,9 +38,9 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
           complete("pong")
         }
       } ~
-      handleExceptions(exceptionHandler) {
-        logRequest(requestLogger _) {
-          logResult(resultLogger _) {
+      logRequest(requestLogger _) {
+        logResult(resultLogger _) {
+          handleExceptions(exceptionHandler) {
             get {
               path(prefix / browsePath) {
                 authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
@@ -115,7 +115,6 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                         }
                     } ~
                       authorize(userCredentials.role == UserRole.Service) {
-                        println(s"${userName} is authorized")
                         path(prefix / uploadInstanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
                           uploadFileToJson(instanceStateName, (json) => {
                             val instanceState = json.convertTo[UpdaterInstanceState]

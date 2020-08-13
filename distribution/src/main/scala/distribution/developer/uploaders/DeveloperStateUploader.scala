@@ -88,7 +88,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
       }
     } catch {
       case ex: Exception =>
-        log.error(s"Fault uploader thread is failed", ex)
+        log.error(s"Uploader thread is failed", ex)
     }
   }
 }

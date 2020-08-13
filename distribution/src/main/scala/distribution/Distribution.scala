@@ -38,7 +38,9 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
   private val maxVersions = 10
 
   protected val exceptionHandler = ExceptionHandler {
-    case ex => complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
+    case ex =>
+      log.error("Exception", ex)
+      complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
   }
 
   // TODO remove parameter 'image' when all usages will 'false'
