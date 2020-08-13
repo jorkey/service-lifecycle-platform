@@ -40,8 +40,8 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
 
   def getFaultsDir() = faultsDir
 
-  def getInstanceStateFileName(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
-    s"${instanceId}_${updaterDirectory}_${updaterProcessId}_state.json"
+  def getInstanceStateFileName(instanceId: VmInstanceId, updaterProcessId: ProcessId): String = {
+    s"${instanceId}_${updaterProcessId}_state.json"
   }
 
   def getServiceDir(serviceName: ServiceName): File = {
@@ -64,8 +64,8 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
     new File(getServiceDir(serviceName), getVersionImageFileName(serviceName, version))
   }
 
-  def getInstanceStateFile(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): File = {
-    new File(statesDir, getInstanceStateFileName(instanceId, updaterDirectory, updaterProcessId))
+  def getInstanceStateFile(instanceId: VmInstanceId, updaterProcessId: ProcessId): File = {
+    new File(statesDir, getInstanceStateFileName(instanceId, updaterProcessId))
   }
 
   def getDesiredVersion(serviceName: ServiceName): Option[BuildVersion] = {

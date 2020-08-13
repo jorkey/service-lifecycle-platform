@@ -45,7 +45,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
 
   def receiveState(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId,
                    instanceState: UpdaterInstanceState, distribution: Distribution): Route = {
-    val file = dir.getInstanceStateFile(instanceId, updaterDirectory, updaterProcessId)
+    val file = dir.getInstanceStateFile(instanceId, updaterProcessId)
     self.synchronized {
       var updaters = statesToUpload.getOrElse(instanceId, Map.empty)
       updaters += (updaterDirectory -> instanceState)
@@ -61,7 +61,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
       }
     }
     val source = Source.single(ByteString(instanceState.toJson.sortedPrint.getBytes("utf8")))
-    distribution.fileWriteWithLock(source, dir.getInstanceStateFile(instanceId, updaterDirectory, updaterProcessId), Some(promise))
+    distribution.fileWriteWithLock(source, file, Some(promise))
   }
 
   def close(): Unit = {

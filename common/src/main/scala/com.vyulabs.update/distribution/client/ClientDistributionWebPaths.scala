@@ -29,18 +29,18 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
   val serviceFaultName = "instance-fault"
 
   def getDownloadVersionsInfoPath(serviceName: ServiceName): String = {
-    downloadVersionsInfoPath + "/" + serviceName
+    downloadVersionsInfoPath + "/" + encode(serviceName)
   }
 
   def getDownloadInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
-    downloadInstanceStatePath + "/" + instanceId + "/" + updaterDirectory + "/" + updaterProcessId
+    downloadInstanceStatePath + "/" + encode(instanceId) + "/" + encode(updaterDirectory) + "/" + encode(updaterProcessId)
   }
 
   def getUploadInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
-    uploadInstanceStatePath + "/" + instanceId + "/" + updaterDirectory + "/" + updaterProcessId
+    apiPathPrefix + "/" + uploadInstanceStatePath + "/" + encode(instanceId) + "/" + encode(updaterDirectory) + "/" + encode(updaterProcessId)
   }
 
   def getUploadServiceLogsPath(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName): String = {
-    uploadServiceLogsPath + "/" + instanceId + "/" + serviceInstanceName.toString
+    uploadServiceLogsPath + "/" + encode(instanceId) + "/" + encode(serviceInstanceName.toString)
   }
 }

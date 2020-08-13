@@ -3,8 +3,10 @@ package distribution.client
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.server.Directives.{path, _}
+import akka.http.scaladsl.server.Route.seal
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common.ServiceName
@@ -19,7 +21,6 @@ import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, Cl
 import org.slf4j.LoggerFactory
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.state.UpdaterInstanceState
-
 import com.vyulabs.update.state.UpdaterInstanceState._
 import com.vyulabs.update.logs.ServiceLogs._
 
@@ -41,6 +42,33 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
       logRequest(requestLogger _) {
         logResult(resultLogger _) {
           handleExceptions(exceptionHandler) {
+            pathPrefix(prefix / apiPathPrefix) {
+              seal {
+                mapRejections { rejections => // Prevent browser to invoke basic auth popup.
+                  rejections.map(_ match {
+                    case AuthenticationFailedRejection(cause, challenge) =>
+                      val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
+                      AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
+                    case rejection =>
+                      rejection
+
+                  })
+                } {
+                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                    authorize(userCredentials.role == UserRole.Service) {
+                      put {
+                        path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
+                          uploadFileToJson(instanceStateName, (json) => {
+                            val instanceState = json.convertTo[UpdaterInstanceState]
+                            stateUploader.receiveState(instanceId, updaterDirectory, updaterProcessId, instanceState, this)
+                          })
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            } ~
             get {
               path(prefix / browsePath) {
                 authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
@@ -57,7 +85,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                 }
               }
             } ~
-            mapRejections { rejections =>
+            mapRejections { rejections => // TODO Old API. Remove later.
               // To prevent browser to invoke basic auth popup.
               rejections.map(_ match {
                 case AuthenticationFailedRejection(cause, challenge) =>
@@ -85,11 +113,8 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                       getDesiredVersion(service, image)
                     }
                   } ~
-                  path(prefix / downloadInstanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
-                    getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterDirectory, updaterProcessId))
-                  } ~
-                  path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) => // TODO remove
-                    getFromFileWithLock(dir.getInstanceStateFile(instanceId, "/", updaterProcessId))
+                  path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
+                    getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
                   } ~
                   authorize(userCredentials.role == UserRole.Administrator) {
                     path(prefix / getDistributionVersionPath) {
@@ -116,16 +141,10 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                     } ~
                       authorize(userCredentials.role == UserRole.Service) {
                         path(prefix / uploadInstanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
-                          uploadFileToJson(instanceStateName, (json) => {
-                            val instanceState = json.convertTo[UpdaterInstanceState]
-                            stateUploader.receiveState(instanceId, updaterDirectory, updaterProcessId, instanceState, this)
-                          })
+                          complete(StatusCodes.BadRequest) // New format
                         } ~
                         path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) => // TODO remove
-                          uploadFileToJson(instanceStateName, (json) => {
-                            val instanceState = json.convertTo[UpdaterInstanceState]
-                            stateUploader.receiveState(instanceId, "/", updaterProcessId, instanceState, this)
-                          })
+                          complete(StatusCodes.BadRequest) // New format
                         } ~
                         path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
                           uploadFileToJson(serviceLogsName, (json) => {

@@ -1,5 +1,7 @@
 package com.vyulabs.update.distribution
 
+import java.net.URLEncoder
+
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.version.BuildVersion
 
@@ -54,22 +56,26 @@ trait DistributionWebPaths {
   val desiredVersionsName = "desired-versions"
 
   def getDownloadVersionPath(serviceName: ServiceName, version: BuildVersion): String = {
-    downloadVersionPath + "/" + serviceName + "/" + version.toString
+    downloadVersionPath + "/" + encode(serviceName) + "/" + encode(version.toString)
   }
 
   def getDownloadVersionInfoPath(serviceName: ServiceName, version: BuildVersion): String = {
-    downloadVersionInfoPath + "/" + serviceName + "/" + version.toString
+    downloadVersionInfoPath + "/" + encode(serviceName) + "/" + encode(version.toString)
   }
 
   def getUploadVersionPath(serviceName: ServiceName, version: BuildVersion): String = {
-    uploadVersionPath + "/" + serviceName + "/" + version.toString
+    uploadVersionPath + "/" + encode(serviceName) + "/" + encode(version.toString)
   }
 
   def getUploadVersionInfoPath(serviceName: ServiceName, version: BuildVersion): String = {
-    uploadVersionInfoPath + "/" + serviceName + "/" + version.toString
+    uploadVersionInfoPath + "/" + encode(serviceName) + "/" + encode(version.toString)
   }
 
   def getServiceFaultPath(serviceName: ServiceName): String = {
-    serviceFaultPath + "/" + serviceName
+    serviceFaultPath + "/" + encode(serviceName)
+  }
+
+  protected def encode(pathSegment: String): Unit = {
+    URLEncoder.encode(pathSegment, "utf8")
   }
 }
