@@ -56,6 +56,11 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                 } {
                   authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                     authorize(userCredentials.role == UserRole.Service) {
+                      get {
+                        path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, _, updaterProcessId) =>
+                          getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
+                        }
+                      } ~
                       post {
                         path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
                           uploadFileToJson(instanceStateName, (json) => {
