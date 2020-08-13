@@ -6,7 +6,7 @@ import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.state.VmInstancesState
 import com.vyulabs.update.utils.IOUtils
-import com.vyulabs.update.state.VmInstancesStateJson._
+import com.vyulabs.update.state.VmInstancesState._
 
 import org.slf4j.LoggerFactory
 import spray.json._

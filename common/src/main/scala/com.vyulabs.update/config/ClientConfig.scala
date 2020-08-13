@@ -7,7 +7,7 @@ import scala.util.matching.Regex
 
 case class ClientConfig(installProfile: InstallProfileName, testClientMatch: Option[Regex])
 
-object ClientConfigJson extends DefaultJsonProtocol {
+object ClientConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.RegexJson._
 
   implicit val clientConfigJson = jsonFormat2(ClientConfig.apply)
@@ -15,7 +15,7 @@ object ClientConfigJson extends DefaultJsonProtocol {
 
 case class ClientInfo(name: ClientName, installProfile: InstallProfileName, testClientMatch: Option[Regex])
 
-object ClientInfoJson extends DefaultJsonProtocol {
+object ClientInfo extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.RegexJson._
 
   implicit val clientInfoJson = jsonFormat3(ClientInfo.apply)

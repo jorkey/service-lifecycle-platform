@@ -16,7 +16,7 @@ import spray.json.JsValue
 
 import scala.annotation.tailrec
 import spray.json._
-import com.vyulabs.update.info.VersionInfoJson._
+import com.vyulabs.update.info.VersionInfo._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.

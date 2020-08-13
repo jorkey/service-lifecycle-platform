@@ -14,7 +14,7 @@ import spray.json.enrichAny
 
 import scala.collection.immutable.Queue
 
-import com.vyulabs.update.state.ServiceStateJson._
+import com.vyulabs.update.state.ServiceState._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.

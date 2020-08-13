@@ -68,7 +68,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     val promise = Promise[Option[DesiredVersions]]()
     getFileContentWithLock(targetFile).onComplete { bytes =>
       try {
-        import com.vyulabs.update.info.DesiredVersionsJson._
+        import com.vyulabs.update.info.DesiredVersions._
         val desiredVersions = bytes.get.decodeString("utf8").parseJson.convertTo[DesiredVersions]
         promise.success(Some(desiredVersions))
       } catch {

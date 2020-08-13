@@ -10,14 +10,10 @@ import spray.json.DefaultJsonProtocol
 
 case class UpdaterConfig(instanceId: VmInstanceId, clientDistributionUrl: URL)
 
-object UpdaterConfigJson extends DefaultJsonProtocol {
+object UpdaterConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URLJson._
 
   implicit val updaterConfigJson = jsonFormat2(UpdaterConfig.apply)
-}
-
-object UpdaterConfig {
-  import UpdaterConfigJson._
 
   def apply()(implicit log: Logger): Option[UpdaterConfig] = {
     val configFile = new File("updater.json")

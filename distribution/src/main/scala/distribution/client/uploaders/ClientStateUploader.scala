@@ -21,7 +21,7 @@ import spray.json.enrichAny
 
 import scala.concurrent.{ExecutionContext, Promise}
 import scala.concurrent.duration.FiniteDuration
-import com.vyulabs.update.state.UpdaterInstanceStateJson._
+import com.vyulabs.update.state.UpdaterInstanceState._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.

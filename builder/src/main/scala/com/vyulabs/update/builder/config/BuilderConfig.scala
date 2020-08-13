@@ -9,15 +9,11 @@ import spray.json._
 
 case class BuilderConfig(adminRepositoryUri: URI, developerDistributionUrl: URL)
 
-object BuilderConfigJson extends DefaultJsonProtocol {
+object BuilderConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URIJson._
   import com.vyulabs.update.utils.Utils.URLJson._
 
   implicit val builderConfigJson = jsonFormat2(BuilderConfig.apply)
-}
-
-object BuilderConfig {
-  import BuilderConfigJson._
 
   def apply()(implicit log: Logger): Option[BuilderConfig] = {
     val configFile = new File("builder.json")

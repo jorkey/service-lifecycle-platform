@@ -20,8 +20,8 @@ import com.vyulabs.update.version.BuildVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
-import com.vyulabs.update.config.InstallConfigJson._
-import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.config.InstallConfig._
+import com.vyulabs.update.info.DesiredVersions._
 
 import spray.json.enrichAny
 

@@ -79,7 +79,7 @@ class ServiceUpdater(instanceId: VmInstanceId,
     args += ("version" -> newVersion.original().toString)
     args += ("PATH" -> System.getenv("PATH"))
 
-    val installConfig = InstallConfig(state.newServiceDirectory).getOrElse {
+    val installConfig = InstallConfig.read(state.newServiceDirectory).getOrElse {
       state.error(s"No install config in the build directory")
       return false
     }
@@ -120,7 +120,7 @@ class ServiceUpdater(instanceId: VmInstanceId,
       return false
     }
 
-    val installConfig = InstallConfig(state.currentServiceDirectory).getOrElse {
+    val installConfig = InstallConfig.read(state.currentServiceDirectory).getOrElse {
       state.error(s"No install config in the build directory")
       return false
     }
@@ -156,7 +156,7 @@ class ServiceUpdater(instanceId: VmInstanceId,
         return false
       }
 
-      val installConfig = InstallConfig(state.currentServiceDirectory).getOrElse {
+      val installConfig = InstallConfig.read(state.currentServiceDirectory).getOrElse {
         state.error(s"No install config in the build directory")
         return false
       }

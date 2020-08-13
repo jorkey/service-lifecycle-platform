@@ -9,7 +9,7 @@ import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
-import com.vyulabs.update.info.VersionInfoJson._
+import com.vyulabs.update.info.VersionInfo._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.

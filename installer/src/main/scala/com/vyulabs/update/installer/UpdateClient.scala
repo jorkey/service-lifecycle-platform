@@ -15,7 +15,7 @@ import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.enrichAny
 
-import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.info.DesiredVersions._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.

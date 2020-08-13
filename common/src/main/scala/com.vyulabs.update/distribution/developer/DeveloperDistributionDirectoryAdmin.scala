@@ -7,7 +7,7 @@ import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import org.slf4j.Logger
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.info.DesiredVersions._
 import spray.json.enrichAny
 
 /**

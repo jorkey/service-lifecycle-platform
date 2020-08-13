@@ -162,7 +162,7 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
   }
 
   def saveLogs(failed: Boolean): Unit = {
-    for (currentInstallConfig <- InstallConfig(state.currentServiceDirectory)) {
+    for (currentInstallConfig <- InstallConfig.read(state.currentServiceDirectory)) {
       for (logDirectory <- currentInstallConfig.runService.map(_.logWriter.directory).map(new File(state.currentServiceDirectory, _))) {
         state.info(s"Save log files to history directory")
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
@@ -197,7 +197,7 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
         builder.redirectErrorStream(true)
         var macroArgs = Map.empty[String, String]
         macroArgs += ("PATH" -> System.getenv("PATH"))
-        params.config.env.foldLeft(builder.environment())((e, entry) => {
+        params.config.env.getOrElse(Map.empty).foldLeft(builder.environment())((e, entry) => {
           if (entry._2 != null) {
             e.put(entry._1, Utils.extendMacro(entry._2, macroArgs))
           } else {

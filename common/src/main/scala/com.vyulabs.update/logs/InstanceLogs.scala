@@ -7,8 +7,8 @@ import scala.collection._
 
 case class ServiceLogs(writerInit: Option[LogWriterInit], records: Seq[String])
 
-object ServiceLogsJson extends DefaultJsonProtocol {
-  import com.vyulabs.update.config.LogWriterInitJson._
+object ServiceLogs extends DefaultJsonProtocol {
+  import com.vyulabs.update.config.LogWriterInit._
 
   implicit val serviceLogsJson = jsonFormat2(ServiceLogs.apply)
 }

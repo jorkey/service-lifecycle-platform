@@ -11,7 +11,7 @@ import com.vyulabs.update.utils.{IOUtils, Utils}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.info.DesiredVersions._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 9.12.19.

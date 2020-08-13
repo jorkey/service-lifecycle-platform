@@ -21,7 +21,7 @@ import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateU
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
-import com.vyulabs.update.users.UsersCredentialsJson._
+import com.vyulabs.update.users.UsersCredentials._
 import spray.json._
 
 /**

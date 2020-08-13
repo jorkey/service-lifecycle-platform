@@ -9,14 +9,10 @@ import spray.json._
 
 case class ClientDistributionConfig(port: Int, developerDistributionUrl: URL)
 
-object ClientDistributionConfigJson extends DefaultJsonProtocol {
+object ClientDistributionConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URLJson._
 
   implicit val clientDistributionConfigJson = jsonFormat2(ClientDistributionConfig.apply)
-}
-
-object ClientDistributionConfig {
-  import ClientDistributionConfigJson._
 
   def apply()(implicit log: Logger): Option[ClientDistributionConfig] = {
     val configFile = new File("distribution.json")
@@ -28,5 +24,4 @@ object ClientDistributionConfig {
     }
   }
 }
-
 

@@ -12,7 +12,7 @@ import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.{LoggerFactory}
 
-import com.vyulabs.update.info.DesiredVersionsJson._
+import com.vyulabs.update.info.DesiredVersions._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.

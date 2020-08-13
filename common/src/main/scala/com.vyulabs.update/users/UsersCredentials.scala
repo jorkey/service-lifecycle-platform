@@ -13,18 +13,21 @@ import javax.crypto.spec.PBEKeySpec
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json._
 
-object UserRole extends Enumeration {
+object UserRole extends Enumeration with DefaultJsonProtocol {
   type UserRole = Value
   val None, Administrator, Client, Service = Value
+
+  implicit object UserRoleJsonFormat extends RootJsonFormat[UserRole] {
+    def write(value: UserRole) = JsString(value.toString)
+    def read(value: JsValue) = withName(value.asInstanceOf[JsString].value)
+  }
 }
 
 case class PasswordHash(salt: String, hash: String)
 
-object PasswordHashJson extends DefaultJsonProtocol {
+object PasswordHash extends DefaultJsonProtocol {
   implicit val passwordHashJson = jsonFormat2(PasswordHash.apply)
-}
 
-object PasswordHash {
   def apply(password: String): PasswordHash = {
     val salt = generateSalt()
     val hash = generatePasswordHash(password, salt)
@@ -51,18 +54,11 @@ object PasswordHash {
   }
 }
 
-object UserRoleJson extends DefaultJsonProtocol {
-  implicit object UserRoleJsonFormat extends RootJsonFormat[UserRole] {
-    def write(value: UserRole) = JsString(value.toString)
-    def read(value: JsValue) = UserRole.withName(value.asInstanceOf[JsString].value)
-  }
-}
-
 case class UserCredentials(role: UserRole, var password: PasswordHash)
 
-object UserCredentialsJson extends DefaultJsonProtocol {
-  import UserRoleJson._
-  import PasswordHashJson._
+object UserCredentials extends DefaultJsonProtocol {
+  import UserRole._
+  import PasswordHash._
 
   implicit val userCredentialsJson = jsonFormat2(UserCredentials.apply)
 }
@@ -81,14 +77,10 @@ case class UsersCredentials(var credentials: Map[UserName, UserCredentials]) {
   }
 }
 
-object UsersCredentialsJson extends DefaultJsonProtocol {
-  import UserCredentialsJson._
+object UsersCredentials extends DefaultJsonProtocol {
+  import UserCredentials._
 
   implicit val usersCredentialsJson = jsonFormat1(UsersCredentials.apply)
-}
-
-object UsersCredentials {
-  import UsersCredentialsJson._
 
   val credentialsFile = new File("credentials.json")
 
@@ -109,8 +101,8 @@ object UsersCredentials {
 
 case class UserInfo(name: UserName, fullName: Option[String], role: UserRole)
 
-object UserInfoJson extends DefaultJsonProtocol {
-  import UserRoleJson._
+object UserInfo extends DefaultJsonProtocol {
+  import UserRole._
 
-  implicit val userInfoJson = jsonFormat3(UserInfo)
+  implicit val userInfoJson = jsonFormat3(UserInfo.apply)
 }

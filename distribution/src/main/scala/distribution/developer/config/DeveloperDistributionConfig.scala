@@ -9,12 +9,8 @@ import spray.json.DefaultJsonProtocol
 
 case class DeveloperDistributionConfig(port: Int)
 
-object DeveloperDistributionConfigJson extends DefaultJsonProtocol {
+object DeveloperDistributionConfig extends DefaultJsonProtocol {
   implicit val developerDistributionConfigJson = jsonFormat1(DeveloperDistributionConfig.apply)
-}
-
-object DeveloperDistributionConfig {
-  import DeveloperDistributionConfigJson._
 
   def apply()(implicit log: Logger): Option[DeveloperDistributionConfig] = {
     val configFile = new File("distribution.json")

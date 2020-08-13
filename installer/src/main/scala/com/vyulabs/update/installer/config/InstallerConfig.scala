@@ -9,15 +9,11 @@ import spray.json.DefaultJsonProtocol
 
 case class InstallerConfig(adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL)
 
-object InstallerConfigJson extends DefaultJsonProtocol {
+object InstallerConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URIJson._
   import com.vyulabs.update.utils.Utils.URLJson._
 
   implicit val builderConfigJson = jsonFormat3(InstallerConfig.apply)
-}
-
-object InstallerConfig {
-  import InstallerConfigJson._
 
   val configFile = new File("installer.json")
 

@@ -5,7 +5,7 @@ import spray.json.DefaultJsonProtocol
 case class VersionsInfo(versions: Seq[VersionInfo])
 
 object VersionsInfoJson extends DefaultJsonProtocol {
-  import VersionInfoJson._
+  import VersionInfo._
 
   implicit val versionsInfoJson = jsonFormat1(VersionsInfo.apply)
 }

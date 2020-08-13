@@ -13,10 +13,10 @@ case class BuildConfig(buildCommands: Seq[CommandConfig], copyFiles: Seq[CopyFil
 case class ServiceUpdateConfig(build: BuildConfig, install: Option[InstallConfig])
 case class UpdateConfig(services: Map[ServiceName, ServiceUpdateConfig])
 
-object UpdateConfigJson extends DefaultJsonProtocol {
-  import InstallConfigJson._
-  import CommandConfigJson._
-  import CopyFileConfigJson._
+object UpdateConfig extends DefaultJsonProtocol {
+  import InstallConfig._
+  import CommandConfig._
+  import CopyFileConfig._
 
   implicit val buildConfigJson = jsonFormat2(BuildConfig.apply)
   implicit val serviceUpdateConfigJson = jsonFormat2(ServiceUpdateConfig.apply)
@@ -39,13 +39,11 @@ object UpdateConfigJson extends DefaultJsonProtocol {
       UpdateConfigJ(update).toJson
     }
   }
-}
 
-object UpdateConfig {
   def read(directory: File)(implicit log: Logger): Option[UpdateConfig] = {
     val configFile = new File(directory, Common.UpdateConfigFileName)
     if (configFile.exists()) {
-      import UpdateConfigJson._
+      import UpdateConfig._
       IOUtils.readFileToJson(configFile).map(config => config.convertTo[UpdateConfig])
     } else {
       log.error(s"Config file ${configFile} does not exist")

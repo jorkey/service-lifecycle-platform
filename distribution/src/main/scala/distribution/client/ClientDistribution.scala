@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.state.UpdaterInstanceState
 
-import com.vyulabs.update.state.UpdaterInstanceStateJson._
-import com.vyulabs.update.logs.ServiceLogsJson._
+import com.vyulabs.update.state.UpdaterInstanceState._
+import com.vyulabs.update.logs.ServiceLogs._
 
 class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                          stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)

@@ -5,6 +5,6 @@ import spray.json.DefaultJsonProtocol
 
 case class InstallProfile(services: Set[ServiceName])
 
-object InstallProfileJson extends DefaultJsonProtocol {
-  implicit val installProfileJson = jsonFormat1(InstallProfile)
+object InstallProfile extends DefaultJsonProtocol {
+  implicit val installProfileJson = jsonFormat1(InstallProfile.apply)
 }

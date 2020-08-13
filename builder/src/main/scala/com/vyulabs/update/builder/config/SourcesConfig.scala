@@ -10,7 +10,7 @@ import spray.json._
 
 case class RepositoryConfig(uri: URI, cloneSubmodules: Boolean, directory: Option[String])
 
-object RepositoryConfigJson extends DefaultJsonProtocol {
+object RepositoryConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URIJson._
 
   implicit val repositoryConfigJson = jsonFormat3(RepositoryConfig.apply)
@@ -18,14 +18,10 @@ object RepositoryConfigJson extends DefaultJsonProtocol {
 
 case class SourcesConfig(sources: Map[ServiceName, Seq[RepositoryConfig]])
 
-object SourcesConfigJson extends DefaultJsonProtocol {
-  import RepositoryConfigJson._
+object SourcesConfig extends DefaultJsonProtocol {
+  import RepositoryConfig._
 
   implicit val sourcesConfigListJson = jsonFormat1(SourcesConfig.apply)
-}
-
-object SourcesConfig {
-  import SourcesConfigJson._
 
   def fromFile(directory: File)(implicit log: Logger): Option[SourcesConfig] = {
     val configFile = new File(directory, "sources.json")

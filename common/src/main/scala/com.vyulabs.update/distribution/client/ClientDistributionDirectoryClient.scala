@@ -11,10 +11,10 @@ import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.logs.ServiceLogs
 import org.slf4j.Logger
 import spray.json._
-import com.vyulabs.update.state.UpdaterInstanceStateJson._
+import com.vyulabs.update.state.UpdaterInstanceState._
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.info.DesiredVersionsJson._
-import com.vyulabs.update.logs.ServiceLogsJson._
+import com.vyulabs.update.info.DesiredVersions._
+import com.vyulabs.update.logs.ServiceLogs._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 25.04.19.

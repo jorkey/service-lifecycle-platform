@@ -78,7 +78,7 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
   }
 
   def getDesiredVersions(): Option[DesiredVersions] = {
-    import com.vyulabs.update.info.DesiredVersionsJson._
+    import com.vyulabs.update.info.DesiredVersions._
     IOUtils.readFileToJson(getDesiredVersionsFile()).map(_.convertTo[DesiredVersions])
   }
 }

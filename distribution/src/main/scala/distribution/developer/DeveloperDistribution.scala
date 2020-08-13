@@ -34,16 +34,16 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import ExecutionContext.Implicits.global
 import spray.json._
+
 import com.vyulabs.update.utils.JsUtils._
-import com.vyulabs.update.users.UserInfoJson._
-import com.vyulabs.update.config.ClientConfigJson._
-import com.vyulabs.update.config.ClientInfoJson._
+import com.vyulabs.update.config.ClientConfig._
+import com.vyulabs.update.config.ClientInfo._
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.state.VmInstancesStateJson._
-import com.vyulabs.update.state.VmInstanceVersionsStateJson._
-import com.vyulabs.update.info.DesiredVersionsJson._
-import com.vyulabs.update.config.InstallProfileJson._
-import com.vyulabs.update.info.ServicesVersionsJson._
+import com.vyulabs.update.state.VmInstancesState._
+import com.vyulabs.update.state.VmInstanceVersionsState._
+import com.vyulabs.update.info.DesiredVersions._
+import com.vyulabs.update.config.InstallProfile._
+import com.vyulabs.update.info.ServicesVersions._
 
 class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)

@@ -11,10 +11,10 @@ import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.state.VmInstancesState
 import org.slf4j.Logger
-import com.vyulabs.update.config.ClientConfigJson._
-import com.vyulabs.update.info.DesiredVersionsJson._
-import com.vyulabs.update.info.ServicesVersionsJson._
-import com.vyulabs.update.state.VmInstancesStateJson._
+import com.vyulabs.update.config.ClientConfig._
+import com.vyulabs.update.info.DesiredVersions._
+import com.vyulabs.update.info.ServicesVersions._
+import com.vyulabs.update.state.VmInstancesState._
 import spray.json._
 
 /**
