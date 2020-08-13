@@ -59,9 +59,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
           complete("pong")
         }
       } ~
-      handleExceptions(exceptionHandler) {
-        logRequest(requestLogger _) {
-          logResult(resultLogger _) {
+      logRequest(requestLogger _) {
+        logResult(resultLogger _) {
+          handleExceptions(exceptionHandler) {
             extractRequestContext { ctx =>
               pathPrefix(apiPathPrefix) {
                 seal {
