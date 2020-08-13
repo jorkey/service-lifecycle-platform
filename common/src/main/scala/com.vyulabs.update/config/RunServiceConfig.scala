@@ -3,7 +3,7 @@ package com.vyulabs.update.config
 import spray.json.DefaultJsonProtocol
 
 case class RestartConditionsConfig(maxMemoryMB: Option[Long]) {
-  val maxMemory = maxMemoryMB.map(_ * 1024 *1024)
+  def maxMemory = maxMemoryMB.map(_ * 1024 *1024)
 }
 
 case class RunServiceConfig(command: String, args: Seq[String], env: Option[Map[String, String]],
