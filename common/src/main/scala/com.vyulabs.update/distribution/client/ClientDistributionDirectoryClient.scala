@@ -64,7 +64,7 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
   }
 
   def uploadInstanceState(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId, instanceState: UpdaterInstanceState): Boolean = {
-    uploadFromString(makeUrl(getUploadInstanceStatePath(instanceId, updaterDirectory, updaterProcessId)), instanceStateName, instanceStatePath,
+    uploadFromString(makeUrl(getInstanceStatePath(instanceId, updaterDirectory, updaterProcessId)), instanceStateName, instanceStatePath,
       instanceState.toJson.sortedPrint)
   }
 

@@ -32,11 +32,7 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
     downloadVersionsInfoPath + "/" + encode(serviceName)
   }
 
-  def getDownloadInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
-    downloadInstanceStatePath + "/" + encode(instanceId) + "/" + encode(updaterDirectory) + "/" + encode(updaterProcessId)
-  }
-
-  def getUploadInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
+  def getInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
     apiPathPrefix + "/" + instanceStatePath + "/" + encode(instanceId) + "/" + encode(updaterDirectory) + "/" + encode(updaterProcessId)
   }
 
