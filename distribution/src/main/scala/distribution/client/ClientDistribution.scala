@@ -55,17 +55,64 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                   })
                 } {
                   authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                    authorize(userCredentials.role == UserRole.Service) {
-                      get {
-                        path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, _, updaterProcessId) =>
-                          getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
+                    get {
+                      path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
+                        getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
+                      } ~
+                      path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                        getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
+                      } ~
+                      path(versionsInfoPath / ".*".r) { (service) =>
+                        complete(dir.getVersionsInfo(dir.getServiceDir(service)))
+                      } ~
+                      path(desiredVersionsPath) {
+                        getFromFileWithLock(dir.getDesiredVersionsFile())
+                      } ~
+                      path(desiredVersionPath / ".*".r) { service =>
+                        getDesiredVersion(service, false)
+                      } ~
+                      path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, _, updaterProcessId) =>
+                        getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
+                      }
+                      authorize(userCredentials.role == UserRole.Administrator) {
+                        path(distributionVersionPath) {
+                          getVersion()
+                        } ~
+                        path(scriptsVersionPath) {
+                          getScriptsVersion()
+                        }
+                      }
+                    } ~
+                    post {
+                      authorize(userCredentials.role == UserRole.Administrator) {
+                        path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
+                          val buildVersion = BuildVersion.parse(version)
+                          versionImageUpload(service, buildVersion)
+                        } ~
+                        path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                          val buildVersion = BuildVersion.parse(version)
+                          versionInfoUpload(service, buildVersion)
+                        } ~
+                        path(desiredVersionsPath) {
+                          fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
                         }
                       } ~
-                      post {
+                      authorize(userCredentials.role == UserRole.Service) {
                         path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
                           uploadFileToJson(instanceStateName, (json) => {
                             val instanceState = json.convertTo[UpdaterInstanceState]
                             stateUploader.receiveState(instanceId, updaterDirectory, updaterProcessId, instanceState, this)
+                          })
+                        } ~
+                        path(serviceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
+                          uploadFileToJson(serviceLogsName, (json) => {
+                            val serviceLogs = json.convertTo[ServiceLogs]
+                            logUploader.receiveLogs(instanceId, ServiceInstanceName.parse(serviceInstanceName), serviceLogs)
+                          })
+                        } ~
+                        path(serviceFaultPath / ".*".r) { (serviceName) =>
+                          uploadFileToSource(serviceFaultName, (fileInfo, source) => {
+                            faultUploader.receiveFault(serviceName, fileInfo.getFileName, source)
                           })
                         }
                       }
@@ -100,6 +147,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
               })
             } {
               authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                log.warn("Old API call")
                 get {
                   path(prefix / downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                     getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))

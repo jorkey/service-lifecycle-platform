@@ -5,7 +5,7 @@ import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes.InternalServerError
+import akka.http.scaladsl.model.StatusCodes.{InternalServerError, NotFound}
 import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, failWith, fileUpload, getFromBrowseableDirectory, getFromFile}
@@ -225,7 +225,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
           failWith(ex)
       }
     } else {
-      complete((InternalServerError, s"File ${targetFile} not exist"))
+      complete((NotFound, s"File ${targetFile} not exist"))
     }
   }
 
