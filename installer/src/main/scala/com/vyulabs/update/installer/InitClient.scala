@@ -29,7 +29,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private val adminRepositoryDir = new File("..", "admin")
   private val distributionDir = new File("..", "distrib")
 
-  def initClient(adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
+  def initClient(adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
                  distributionServicePort: Int): Boolean = {
     val developerDistribution = new DeveloperDistributionDirectoryClient(developerDistributionUrl)
     val clientDistribution = new ClientDistributionDirectory(new File(distributionDir, "directory"))
@@ -47,7 +47,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     if (!initInstallDirectory(
         clientDistribution.getVersionImageFile(Common.ScriptsServiceName,
         clientDistribution.getDesiredVersion(Common.ScriptsServiceName).get),
-        adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)) {
+        adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl)) {
       log.error("Can't init install repository")
       return false
     }
@@ -73,9 +73,9 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   }
 
   private def initInstallDirectory(scriptsZip: File,
-                                   adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
+                                   adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
     log.info(s"Create ${InstallerConfig.configFile}")
-    val config = InstallerConfig(adminRepositoryUri, developerDistributionUrl, clientDistributionUrl)
+    val config = InstallerConfig(adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl)
     if (!IOUtils.writeJsonToFile(InstallerConfig.configFile, config.toJson)) {
       return false
     }

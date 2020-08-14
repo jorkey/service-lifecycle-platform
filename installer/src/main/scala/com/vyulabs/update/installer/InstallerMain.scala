@@ -59,11 +59,11 @@ object InstallerMain extends App {
 
         case "initClient" =>
           val initClient = new InitClient()
-          val adminRepositoryUri = new URI(arguments.getValue("adminRepositoryUrl"))
+          val adminRepositoryUrl = new URI(arguments.getValue("adminRepositoryUrl"))
           val clientDistributionUrl = new URL(arguments.getValue("clientDistributionUrl"))
           val developerDistributionUrl = new URL(arguments.getValue("developerDistributionUrl"))
           val distributionServicePort = arguments.getIntValue("distributionServicePort")
-          if (!initClient.initClient(adminRepositoryUri, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
+          if (!initClient.initClient(adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
             Utils.error("Init client error")
           }
 

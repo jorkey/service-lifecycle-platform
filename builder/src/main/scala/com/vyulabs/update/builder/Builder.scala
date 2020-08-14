@@ -25,7 +25,7 @@ import com.vyulabs.update.info.DesiredVersions._
 
 import spray.json.enrichAny
 
-class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri: URI)(implicit filesLocker: SmartFilesLocker) {
+class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
 
   def makeVersion(author: String, serviceName: ServiceName,
@@ -46,7 +46,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
         true
       },
       () => {
-        val adminRepository = DeveloperAdminRepository(adminRepositoryUri, new File(serviceDir, "admin")).getOrElse {
+        val adminRepository = DeveloperAdminRepository(adminRepositoryUrl, new File(serviceDir, "admin")).getOrElse {
           Utils.error("Init admin repository error")
         }
         val sourcesConfig = SourcesConfig.fromFile(adminRepository.getDirectory()).getOrElse {
@@ -221,7 +221,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUri
         true
       },
       () => {
-        val adminRepository = DeveloperAdminRepository(adminRepositoryUri, new File("admin")).getOrElse {
+        val adminRepository = DeveloperAdminRepository(adminRepositoryUrl, new File("admin")).getOrElse {
           Utils.error("Init admin repository error")
         }
         val gitLock = adminRepository.buildDesiredVersionsLock()

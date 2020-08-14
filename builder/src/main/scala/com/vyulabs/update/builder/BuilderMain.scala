@@ -67,7 +67,7 @@ object BuilderMain extends App {
       val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
 
       log.info(s"Make new version of service ${serviceName}")
-      val builder = new Builder(developerDistribution, config.adminRepositoryUri)
+      val builder = new Builder(developerDistribution, config.adminRepositoryUrl)
       builder.makeVersion(author, serviceName, clientName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
@@ -92,10 +92,10 @@ object BuilderMain extends App {
       val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
       clientName match {
         case Some(clientName) =>
-          val commonVersions = new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(None).getOrElse {
+          val commonVersions = new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(None).getOrElse {
             Utils.error("Get desired versions error")
           }
-          val clientVersions = new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(Some(clientName))
+          val clientVersions = new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(Some(clientName))
             .getOrElse(Map.empty)
           log.info("Common desired versions:")
           commonVersions.foreach { case (serviceName, version) => {
@@ -108,7 +108,7 @@ object BuilderMain extends App {
           }
 
         case None =>
-          new Builder(developerDistribution, config.adminRepositoryUri).getDesiredVersions(None) match {
+          new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(None) match {
             case Some(versions) =>
               log.info("Desired versions:")
               versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
@@ -137,7 +137,7 @@ object BuilderMain extends App {
         }
       }
 
-      if (!new Builder(developerDistribution, config.adminRepositoryUri).setDesiredVersions(clientName, servicesVersions)) {
+      if (!new Builder(developerDistribution, config.adminRepositoryUrl).setDesiredVersions(clientName, servicesVersions)) {
         Utils.error("Set desired versions error")
       }
 
