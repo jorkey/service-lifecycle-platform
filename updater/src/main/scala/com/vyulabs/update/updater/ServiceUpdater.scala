@@ -50,109 +50,80 @@ class ServiceUpdater(instanceId: VmInstanceId,
   }
 
   def beginInstall(newVersion: BuildVersion): Boolean = {
-    state.info("Begin install")
+    try {
+      state.info("Begin install")
 
-    if (!state.serviceDirectory.exists() && !state.serviceDirectory.mkdir()) {
-      state.error(s"Can't make directory ${state.serviceDirectory}")
-      return false
-    }
-
-    state.beginUpdateToVersion(newVersion)
-
-    state.info(s"Download version ${newVersion}")
-    if (state.newServiceDirectory.exists() && !IOUtils.deleteFileRecursively(state.newServiceDirectory)) {
-      state.error(s"Can't remove directory ${state.newServiceDirectory}")
-      return false
-    }
-    if (!state.newServiceDirectory.mkdir()) {
-      state.error(s"Can't make directory ${state.newServiceDirectory}")
-      return false
-    }
-    if (!clientDirectory.downloadVersion(serviceInstanceName.serviceName, newVersion, state.newServiceDirectory)) {
-      state.error(s"Can't download ${serviceInstanceName.serviceName} version ${newVersion}")
-      return false
-    }
-
-    state.info(s"Install service")
-    var args = Map.empty[String, String]
-    args += ("profile" -> serviceInstanceName.serviceProfile)
-    args += ("version" -> newVersion.original().toString)
-    args += ("PATH" -> System.getenv("PATH"))
-
-    val installConfig = InstallConfig.read(state.newServiceDirectory).getOrElse {
-      state.error(s"No install config in the build directory")
-      return false
-    }
-
-    for (command <- installConfig.installCommands.getOrElse(Seq.empty)) {
-      if (!ProcessUtils.runProcess(command, args, state.newServiceDirectory, ProcessUtils.Logging.Realtime)) {
-        state.error(s"Install error")
+      if (!state.serviceDirectory.exists() && !state.serviceDirectory.mkdir()) {
+        state.error(s"Can't make directory ${state.serviceDirectory}")
         return false
       }
-    }
 
-    true
+      state.beginUpdateToVersion(newVersion)
+
+      state.info(s"Download version ${newVersion}")
+      if (state.newServiceDirectory.exists() && !IOUtils.deleteFileRecursively(state.newServiceDirectory)) {
+        state.error(s"Can't remove directory ${state.newServiceDirectory}")
+        return false
+      }
+      if (!state.newServiceDirectory.mkdir()) {
+        state.error(s"Can't make directory ${state.newServiceDirectory}")
+        return false
+      }
+      if (!clientDirectory.downloadVersion(serviceInstanceName.serviceName, newVersion, state.newServiceDirectory)) {
+        state.error(s"Can't download ${serviceInstanceName.serviceName} version ${newVersion}")
+        return false
+      }
+
+      state.info(s"Install service")
+      var args = Map.empty[String, String]
+      args += ("profile" -> serviceInstanceName.serviceProfile)
+      args += ("version" -> newVersion.original().toString)
+      args += ("PATH" -> System.getenv("PATH"))
+
+      val installConfig = InstallConfig.read(state.newServiceDirectory).getOrElse {
+        state.error(s"No install config in the build directory")
+        return false
+      }
+
+      for (command <- installConfig.installCommands.getOrElse(Seq.empty)) {
+        if (!ProcessUtils.runProcess(command, args, state.newServiceDirectory, ProcessUtils.Logging.Realtime)) {
+          state.error(s"Install error")
+          return false
+        }
+      }
+
+      true
+    } catch {
+      case e: Exception =>
+        state.error(s"Install exception", e)
+        false
+    }
   }
 
   def finishInstall(newVersion: BuildVersion): Boolean = {
-    state.info("Finish install")
+    try {
+      state.info("Finish install")
 
-    if (state.currentServiceDirectory.exists()) {
-      for (serviceRunner <- serviceRunner) {
-        state.info(s"Stop old version ${state.getVersion()}")
-        if (serviceRunner.stopService()) {
-          state.serviceStopped()
-        } else {
-          state.error(s"Can't stop service")
+      if (state.currentServiceDirectory.exists()) {
+        for (serviceRunner <- serviceRunner) {
+          state.info(s"Stop old version ${state.getVersion()}")
+          if (serviceRunner.stopService()) {
+            state.serviceStopped()
+          } else {
+            state.error(s"Can't stop service")
+          }
+          serviceRunner.saveLogs(false)
+          this.serviceRunner = None
         }
-        serviceRunner.saveLogs(false)
-        this.serviceRunner = None
+
+        if (!IOUtils.deleteFileRecursively(state.currentServiceDirectory)) {
+          state.error(s"Can't delete ${state.currentServiceDirectory}")
+          return false
+        }
       }
 
-      if (!IOUtils.deleteFileRecursively(state.currentServiceDirectory)) {
-        state.error(s"Can't delete ${state.currentServiceDirectory}")
-        return false
-      }
-    }
-
-    if (!state.newServiceDirectory.renameTo(state.currentServiceDirectory)) {
-      state.error(s"Can't rename ${state.newServiceDirectory} to ${state.currentServiceDirectory}")
-      return false
-    }
-
-    val installConfig = InstallConfig.read(state.currentServiceDirectory).getOrElse {
-      state.error(s"No install config in the build directory")
-      return false
-    }
-
-    state.info(s"Post install service")
-    var args = Map.empty[String, String]
-    args += ("profile" -> serviceInstanceName.serviceProfile)
-    args += ("version" -> newVersion.original().toString)
-    args += ("PATH" -> System.getenv("PATH"))
-
-    for (command <- installConfig.postInstallCommands.getOrElse(Seq.empty)) {
-      if (!ProcessUtils.runProcess(command, args, state.currentServiceDirectory, ProcessUtils.Logging.Realtime)) {
-        state.error(s"Install error")
-        return false
-      }
-    }
-
-    IOUtils.writeServiceVersion(state.currentServiceDirectory, serviceInstanceName.serviceName, newVersion)
-
-    state.setVersion(newVersion)
-
-    true
-  }
-
-  def isExecuted(): Boolean = {
-    serviceRunner.isDefined
-  }
-
-  def execute(): Boolean = {
-    if (serviceRunner.isEmpty) {
-      val newVersion = state.getVersion().getOrElse {
-        state.error("Can't start service because it is not installed")
+      if (!state.newServiceDirectory.renameTo(state.currentServiceDirectory)) {
+        state.error(s"Can't rename ${state.newServiceDirectory} to ${state.currentServiceDirectory}")
         return false
       }
 
@@ -161,26 +132,73 @@ class ServiceUpdater(instanceId: VmInstanceId,
         return false
       }
 
-      for (runService <- installConfig.runService) {
-        state.info(s"Start service of version ${newVersion}")
+      state.info(s"Post install service")
+      var args = Map.empty[String, String]
+      args += ("profile" -> serviceInstanceName.serviceProfile)
+      args += ("version" -> newVersion.original().toString)
+      args += ("PATH" -> System.getenv("PATH"))
 
-        var args = Map.empty[String, String]
-        args += ("profile" -> serviceInstanceName.serviceProfile)
-        args += ("version" -> newVersion.original().toString)
-
-        val runner = new ServiceRunner(instanceId, serviceInstanceName, state, clientDirectory, faultUploader)
-        if (!runner.startService(runService, args, state.currentServiceDirectory)) {
-          state.error(s"Can't start service")
+      for (command <- installConfig.postInstallCommands.getOrElse(Seq.empty)) {
+        if (!ProcessUtils.runProcess(command, args, state.currentServiceDirectory, ProcessUtils.Logging.Realtime)) {
+          state.error(s"Install error")
           return false
         }
-        serviceRunner = Some(runner)
       }
 
-      state.serviceStarted()
-    } else {
-      state.error(s"Service is already started")
-    }
+      IOUtils.writeServiceVersion(state.currentServiceDirectory, serviceInstanceName.serviceName, newVersion)
 
-    true
+      state.setVersion(newVersion)
+
+      true
+    } catch {
+      case e: Exception =>
+        state.error(s"Install exception", e)
+        false
+    }
+  }
+
+  def isExecuted(): Boolean = {
+    serviceRunner.isDefined
+  }
+
+  def execute(): Boolean = {
+    try {
+      if (serviceRunner.isEmpty) {
+        val newVersion = state.getVersion().getOrElse {
+          state.error("Can't start service because it is not installed")
+          return false
+        }
+
+        val installConfig = InstallConfig.read(state.currentServiceDirectory).getOrElse {
+          state.error(s"No install config in the build directory")
+          return false
+        }
+
+        for (runService <- installConfig.runService) {
+          state.info(s"Start service of version ${newVersion}")
+
+          var args = Map.empty[String, String]
+          args += ("profile" -> serviceInstanceName.serviceProfile)
+          args += ("version" -> newVersion.original().toString)
+
+          val runner = new ServiceRunner(instanceId, serviceInstanceName, state, clientDirectory, faultUploader)
+          if (!runner.startService(runService, args, state.currentServiceDirectory)) {
+            state.error(s"Can't start service")
+            return false
+          }
+          serviceRunner = Some(runner)
+        }
+
+        state.serviceStarted()
+      } else {
+        state.error(s"Service is already started")
+      }
+
+      true
+    } catch {
+      case e: Exception =>
+        state.error(s"Execute exception", e)
+        false
+    }
   }
 }

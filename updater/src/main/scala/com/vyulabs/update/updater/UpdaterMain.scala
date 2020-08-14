@@ -88,37 +88,42 @@ object UpdaterMain extends App { self =>
         var mustExitToUpdate = false
 
         while (!mustStop) {
-          mustStop = self.synchronized {
-            if (servicesStarted) {
-              self.wait(1000)
+          try {
+            mustStop = self.synchronized {
+              if (servicesStarted) {
+                self.wait(1000)
+              }
+              stopping
             }
-            stopping
-          }
-          if (!mustStop) {
-            mustExitToUpdate = maybeUpdate()
-            if (mustExitToUpdate) {
-              mustStop = true
-            }
-          }
-          if (mustStop) {
-            log.info("Updater is terminating")
-            close()
-            log.info("All are terminated")
-            self.synchronized {
-              stopped = true
-              self.notify()
-            }
-            if (mustExitToUpdate) {
-              log.info("Exit with status 9 to update")
-              System.exit(9)
-            }
-          } else if (!servicesStarted) {
-            serviceUpdaters.foreach { updater =>
-              if (!updater.isExecuted()) {
-                updater.execute()
+            if (!mustStop) {
+              mustExitToUpdate = maybeUpdate()
+              if (mustExitToUpdate) {
+                mustStop = true
               }
             }
-            servicesStarted = true
+            if (mustStop) {
+              log.info("Updater is terminating")
+              close()
+              log.info("All are terminated")
+              self.synchronized {
+                stopped = true
+                self.notify()
+              }
+              if (mustExitToUpdate) {
+                log.info("Exit with status 9 to update")
+                System.exit(9)
+              }
+            } else if (!servicesStarted) {
+              serviceUpdaters.foreach { updater =>
+                if (!updater.isExecuted()) {
+                  updater.execute()
+                }
+              }
+              servicesStarted = true
+            }
+          } catch {
+            case e: Exception =>
+              instanceState.error("Exception", e)
           }
         }
 
@@ -148,17 +153,20 @@ object UpdaterMain extends App { self =>
         }
 
         def update(needUpdate: Map[ServiceUpdater, BuildVersion], desiredVersions: DesiredVersions): Boolean = {
-          needUpdate.foreach { case (updater, version) =>
+          var errored = needUpdate.filterNot { case (updater, version) =>
             updater.beginInstall(version)
           }
           val needRestart = selfUpdater.maybeBeginSelfUpdate(desiredVersions)
-          needUpdate.foreach { case (updater, version) =>
+          errored ++= needUpdate.filterKeys(!errored.contains(_)).filterNot { case (updater, version) =>
             updater.finishInstall(version)
           }
           if (!needRestart) {
-            needUpdate.foreach { case (updater, _) =>
+            errored ++= needUpdate.filterKeys(!errored.contains(_)).filterNot { case (updater, _) =>
               updater.execute()
             }
+          }
+          if (!errored.isEmpty) {
+            log.error(s"Some versions are not installed: ${errored}")
           }
           needRestart
         }
@@ -170,7 +178,7 @@ object UpdaterMain extends App { self =>
       } catch {
         case e: Exception =>
           instanceState.error("Run services error", e)
-          System.exit(1)
+          Runtime.getRuntime().halt(1)
       }
   }
 }
