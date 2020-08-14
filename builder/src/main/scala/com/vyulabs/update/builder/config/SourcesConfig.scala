@@ -8,7 +8,7 @@ import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 import spray.json._
 
-case class RepositoryConfig(uri: URI, cloneSubmodules: Option[Boolean], directory: Option[String])
+case class RepositoryConfig(url: URI, cloneSubmodules: Option[Boolean], directory: Option[String])
 
 object RepositoryConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URIJson._

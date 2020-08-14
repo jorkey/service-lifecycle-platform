@@ -108,7 +108,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
                 "master"
               }
               val sourceRepository =
-                GitRepositoryUtils.getGitRepository(repositoryConf.uri, branch, repositoryConf.cloneSubmodules.getOrElse(true), directory).getOrElse {
+                GitRepositoryUtils.getGitRepository(repositoryConf.url, branch, repositoryConf.cloneSubmodules.getOrElse(true), directory).getOrElse {
                   log.error("Pull source repository error")
                   return None
                 }
