@@ -76,7 +76,7 @@ object InstallerMain extends App {
 
           log.info(s"Initialize admin repository")
           val adminRepository =
-            ClientAdminRepository(config.adminRepositoryUri, new File("admin")).getOrElse {
+            ClientAdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
               Utils.error("Admin repository initialize error")
             }
 
@@ -116,7 +116,7 @@ object InstallerMain extends App {
           val updateClient = new UpdateClient()
           log.info(s"Initialize admin repository")
           val adminRepository =
-            ClientAdminRepository(config.adminRepositoryUri, new File("admin")).getOrElse {
+            ClientAdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
               Utils.error("Admin repository initialize error")
             }
 
@@ -148,7 +148,7 @@ object InstallerMain extends App {
           val updateClient = new UpdateClient()
           log.info(s"Initialize admin repository")
           val adminRepository =
-            ClientAdminRepository(config.adminRepositoryUri, new File("admin")).getOrElse {
+            ClientAdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
               Utils.error("Admin repository initialize error")
             }
 

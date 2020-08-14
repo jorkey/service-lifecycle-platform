@@ -7,7 +7,7 @@ import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
-case class InstallerConfig(adminRepositoryUri: URI, developerDistributionUrl: URL, clientDistributionUrl: URL)
+case class InstallerConfig(adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL)
 
 object InstallerConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URIJson._
