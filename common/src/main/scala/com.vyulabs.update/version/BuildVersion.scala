@@ -47,6 +47,11 @@ case class BuildVersion(client: Option[Common.ClientName], build: Seq[Int], loca
 }
 
 object BuildVersion {
+  implicit object BuildVersionJsonFormat extends RootJsonFormat[BuildVersion] {
+    def write(value: BuildVersion) = JsString(value.toString)
+    def read(value: JsValue) = BuildVersion.parse(value.asInstanceOf[JsString].value)
+  }
+
   def apply(build: Seq[Int]): BuildVersion = {
     new BuildVersion(None, build)
   }
@@ -109,12 +114,5 @@ object BuildVersion {
       case (Some(local1), Some(local2)) =>
         local1 < local2
     }
-  }
-}
-
-object BuildVersionJson {
-  implicit object BuildVersionJsonFormat extends RootJsonFormat[BuildVersion] {
-    def write(value: BuildVersion) = JsString(value.toString)
-    def read(value: JsValue) = BuildVersion.parse(value.asInstanceOf[JsString].value)
   }
 }

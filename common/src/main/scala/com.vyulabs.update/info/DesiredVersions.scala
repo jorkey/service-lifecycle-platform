@@ -11,7 +11,7 @@ case class TestSignature(clientName: ClientName, date: Date)
 
 object DesiredVersions extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
-  import com.vyulabs.update.version.BuildVersionJson._
+  import com.vyulabs.update.version.BuildVersion._
 
   implicit val testSignatureJson = jsonFormat2(TestSignature.apply)
   implicit val desiredVersionsJson = jsonFormat2(DesiredVersions.apply)

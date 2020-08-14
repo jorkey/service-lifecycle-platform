@@ -15,7 +15,7 @@ case class ServiceState(serviceInstanceName: ServiceInstanceName, startDate: Opt
 
 object ServiceState extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
-  import com.vyulabs.update.version.BuildVersionJson._
+  import com.vyulabs.update.version.BuildVersion._
   import com.vyulabs.update.common.ServiceInstanceName._
 
   implicit val serviceStateJson = jsonFormat7(ServiceState.apply)
@@ -41,7 +41,7 @@ object VmInstancesState extends DefaultJsonProtocol {
 case class VmInstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[VmInstanceId]]])
 
 object VmInstanceVersionsState extends DefaultJsonProtocol {
-  import com.vyulabs.update.version.BuildVersionJson._
+  import com.vyulabs.update.version.BuildVersion._
 
   implicit val clientInstancesStateJson = jsonFormat1(VmInstanceVersionsState.apply)
 }

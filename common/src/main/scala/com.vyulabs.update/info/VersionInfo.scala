@@ -9,7 +9,7 @@ case class VersionInfo(version: BuildVersion, author: String, branches: Seq[Stri
 
 object VersionInfo extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
-  import com.vyulabs.update.version.BuildVersionJson._
+  import com.vyulabs.update.version.BuildVersion._
 
   implicit val versionInfoJson = jsonFormat5(VersionInfo.apply)
 }
