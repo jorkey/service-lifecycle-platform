@@ -60,6 +60,7 @@ const Versions = props => {
   const [desiredVersions, setDesiredVersions] = useState([])
 
   React.useEffect(() => {
+    Utils.getClients().then(clients => setClients(clients))
     Utils.getDesiredVersions(client).then(versions => setDesiredVersions(Object.entries(versions)))
   }, [client]);
 

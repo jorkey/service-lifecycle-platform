@@ -9,7 +9,7 @@ export const Utils = {
 
 function login(user, password) {
   let authData = window.btoa(user + ':' + password)
-  let path ='/api/get-user-info'
+  let path ='/api/user-info'
   return fetchRequest('GET', path, authData).then(user => {
     if (user) {
       user.authData = authData
@@ -24,21 +24,21 @@ function logout() {
 }
 
 function getClients() {
-  let path ='/api/get-clients'
+  let path ='/api/clients-info'
   return get(path).then(clients => {
-    return clients
+    return clients.map(client => client.name)
   });
 }
 
 function getDesiredVersions(client) {
-  let path = '/api/' + ((typeof client === 'undefined') ? 'get-desired-versions' : ('get-desired-versions?client=' + client))
+  let path = '/api/' + ((typeof client === 'undefined') ? 'desired-versions' : ('desired-versions/' + client))
   return get(path).then(versions => {
     return versions.desiredVersions
   });
 }
 
 function getInstanceVersions(client) {
-  let path = '/api/get-instance-versions/' + client
+  let path = '/api/instance-versions/' + client
   return get(path).then(versions => {
     return versions.desiredVersions
   });
