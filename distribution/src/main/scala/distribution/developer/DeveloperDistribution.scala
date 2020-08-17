@@ -311,13 +311,14 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     }
   }
 
-  private def getClientsInfo(): Source[Option[ClientInfo], NotUsed] = {
-    Source(dir.getClientsDir().list().toList)
-      .map(clientName => getClientConfig(clientName).map {
-        case Some(config) => Some(ClientInfo(clientName, config.installProfile, config.testClientMatch))
-        case None => None
-      })
-      .flatMapConcat(config => Source.future(config))
+  private def getClientsInfo(): Source[Seq[ClientInfo], NotUsed] = {
+    Source.future(
+      Source(dir.getClientsDir().list().toList)
+        .map(clientName => getClientConfig(clientName).map {
+          case Some(config) => Some(ClientInfo(clientName, config.installProfile, config.testClientMatch))
+          case None => None
+        })
+        .flatMapConcat(config => Source.future(config)).runFold(Seq.empty[ClientInfo])((seq, info) => seq ++ info))
   }
 
   private def getInstanceVersionsState(clientName: ClientName): Source[VmInstanceVersionsState, NotUsed] = {
