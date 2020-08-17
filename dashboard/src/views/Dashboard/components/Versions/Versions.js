@@ -61,11 +61,11 @@ const Versions = props => {
 
   React.useEffect(() => {
     Utils.getClients().then(clients => setClients(clients))
+  }, '')
+
+  React.useEffect(() => {
     Utils.getDesiredVersions(client).then(versions => setDesiredVersions(Object.entries(versions)))
   }, [client]);
-
-  console.log("render " + desiredVersions.length)
-  clients.forEach(client => { console.log("client " + client) });
 
   return (
     <Card
@@ -83,7 +83,7 @@ const Versions = props => {
                 setClient(event.target.value);
               }}
               >
-              {clients.map( client => <option>{client}</option> )}
+              {clients.map( client => <option key={client}>{client}</option> )}
             </Select>
           </Grid>
         }

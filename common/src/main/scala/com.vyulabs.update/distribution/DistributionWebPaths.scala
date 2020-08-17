@@ -25,6 +25,7 @@ trait DistributionWebPaths {
   val versionsInfoPath = "versions-info"
   val desiredVersionsPath = "desired-versions"
   val desiredVersionPath = "desired-version"
+  val personalDesiredVersionsPath = "personal-desired-versions"
   val serviceFaultPath = "service-fault"
   val distributionVersionPath = "distribution-version"
   val scriptsVersionPath = "scripts-version"

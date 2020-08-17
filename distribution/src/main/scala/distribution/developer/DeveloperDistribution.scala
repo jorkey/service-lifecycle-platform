@@ -103,7 +103,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                             getDesiredVersionsRoute(getDesiredVersions(None))
                           } ~
                           path(desiredVersionsPath / ".*".r) { clientName =>
-                            getDesiredVersionsRoute(getDesiredVersions(Some(clientName)))
+                            getDesiredVersionsRoute(getClientDesiredVersions(clientName))
                           } ~
                           path(desiredVersionPath / ".*".r) { service =>
                             getDesiredVersion(service, getDesiredVersions(None), false)
@@ -121,11 +121,11 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                           } ~
                           path(desiredVersionsPath) {
                             parameter("common".as[Boolean] ? false) { common =>
-                              getDesiredVersionsRoute(if (!common) getPersonalDesiredVersions(userName) else getDesiredVersions(None))
+                              getDesiredVersionsRoute(if (!common) getClientDesiredVersions(userName) else getDesiredVersions(None))
                             }
                           } ~
                           path(desiredVersionPath / ".*".r) { service =>
-                            getDesiredVersion(service, getPersonalDesiredVersions(userName), false)
+                            getDesiredVersion(service, getClientDesiredVersions(userName), false)
                           }
                         }
                       } ~
@@ -216,21 +216,21 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                             } ~
                               path(downloadDesiredVersionsPath) {
                                 parameter("common".as[Boolean] ? false) { common =>
-                                  getDesiredVersionsRoute(if (!common) getPersonalDesiredVersions(userName) else getDesiredVersions(None))
+                                  getDesiredVersionsRoute(if (!common) getClientDesiredVersions(userName) else getDesiredVersions(None))
                                 }
                               } ~
                               path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
                                 if (client.isEmpty) {
                                   getDesiredVersionsRoute(getDesiredVersions(None))
                                 } else if (client == userName) {
-                                  getDesiredVersionsRoute(getPersonalDesiredVersions(userName))
+                                  getDesiredVersionsRoute(getClientDesiredVersions(userName))
                                 } else {
                                   failWith(new IOException("invalid request"))
                                 }
                               } ~
                               path(downloadDesiredVersionPath / ".*".r) { service =>
                                 parameter("image".as[Boolean] ? true) { image =>
-                                  getDesiredVersion(service, getPersonalDesiredVersions(userName), image)
+                                  getDesiredVersion(service, getClientDesiredVersions(userName), image)
                                 }
                               }
                           }
@@ -396,9 +396,13 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     getDesiredVersions(dir.getDesiredVersionsFile(clientName))
   }
 
-  private def getPersonalDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
+  private def getClientDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
+    filterDesiredVersionsByProfile(clientName, getMergedDesiredVersions(clientName))
+  }
+
+  private def filterDesiredVersionsByProfile(clientName: ClientName,
+                                             future: Future[Option[DesiredVersions]]): Future[Option[DesiredVersions]] = {
     val promise = Promise[Option[DesiredVersions]]()
-    val future = getMergedDesiredVersions(clientName)
     future.onComplete { desiredVersions =>
       desiredVersions.get match {
         case Some(desiredVersions) =>
