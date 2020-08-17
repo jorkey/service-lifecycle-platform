@@ -65,6 +65,7 @@ const Versions = props => {
   }, [client]);
 
   console.log("render " + desiredVersions.length)
+  clients.forEach(client => { console.log("client " + client) });
 
   return (
     <Card
