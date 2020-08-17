@@ -311,10 +311,11 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
     }
   }
 
-  private def getClientsInfo(): Source[ClientInfo, NotUsed] = {
+  private def getClientsInfo(): Source[Option[ClientInfo], NotUsed] = {
     Source(dir.getClientsDir().list().toList)
-      .map(clientName => getClientConfig(clientName).filter(_.isDefined).map {
-        config => ClientInfo(clientName, config.get.installProfile, config.get.testClientMatch)
+      .map(clientName => getClientConfig(clientName).map {
+        case Some(config) => Some(ClientInfo(clientName, config.installProfile, config.testClientMatch))
+        case None => None
       })
       .flatMapConcat(config => Source.future(config))
   }
