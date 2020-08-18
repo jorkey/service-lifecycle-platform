@@ -46,7 +46,14 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: '16px'
   },
   desiredVersionColumn: {
+    padding: '6px',
+    width: '200px'
+  },
+  instanceVersionsColumn: {
     padding: '6px'
+  },
+  clientSelect: {
+    width: '100px'
   }
 }));
 
@@ -58,13 +65,22 @@ const Versions = props => {
   const [client, setClient] = useState()
   const [clients, setClients] = useState([])
   const [desiredVersions, setDesiredVersions] = useState([])
+  const [instanceVersions, setInstanceVersions] = useState([])
 
   React.useEffect(() => {
     Utils.getClients().then(clients => setClients(clients))
-  }, '')
+  }, [])
 
   React.useEffect(() => {
     Utils.getDesiredVersions(client).then(versions => setDesiredVersions(Object.entries(versions)))
+    if (client) {
+      Utils.getInstanceVersions(client).then(versions => {
+        console.log("instance versions " + versions)
+        setInstanceVersions(Object.entries(versions)) })
+    } else {
+      console.log("instance versions undefined")
+      setInstanceVersions([])
+    }
   }, [client]);
 
   return (
@@ -75,19 +91,20 @@ const Versions = props => {
       <CardHeader
         action={
           <Grid>
-            <InputLabel htmlFor="age-native-simple">Client</InputLabel>
+            <InputLabel>Client</InputLabel>
             <Select
+              className={classes.clientSelect}
               native
               value={client}
               onChange={(event) => {
                 setClient(event.target.value);
               }}
               >
-              {clients.map( client => <option key={client}>{client}</option> )}
+              <option aria-label="" />
+              { clients.map( client => <option key={client}>{client}</option> ) }
             </Select>
           </Grid>
         }
-
         title="Versions"
       />
       <Divider />
@@ -97,11 +114,12 @@ const Versions = props => {
             <TableHead>
               <TableRow>
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
-                <TableCell className={classes.desiredVersionColumn}>Desired version</TableCell>
+                <TableCell className={classes.desiredVersionColumn}>Desired Version</TableCell>
+                { client ? <TableCell className={classes.instanceVersionsColumn}>Client Instance Versions</TableCell> : <TableCell/> }
               </TableRow>
             </TableHead>
             <TableBody>
-              {desiredVersions.map(([service, version]) =>
+              {desiredVersions.sort().map(([service, version]) =>
                 (
                   <TableRow
                     hover
@@ -109,6 +127,10 @@ const Versions = props => {
                   >
                     <TableCell className={classes.serviceColumn}>{service}</TableCell>
                     <TableCell className={classes.desiredVersionColumn}>{version}</TableCell>
+                    { (client && instanceVersions.length != 0) ? <TableCell className={classes.instanceVersionsColumn}>{
+                      instanceVersions.get(service).map(([version, instances]) =>
+                        <TableCell className={classes.desiredVersionColumn}>{version}</TableCell>)
+                    }</TableCell> : <TableCell/>}
                   </TableRow>
                 ))}
             </TableBody>

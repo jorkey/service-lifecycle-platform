@@ -21,7 +21,7 @@ const useStyles = makeStyles(theme => ({
 const LoginPage = () => {
   const classes = useStyles();
 
-  useEffect(() => Utils.logout(), '');
+  useEffect(() => Utils.logout(), []);
 
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');

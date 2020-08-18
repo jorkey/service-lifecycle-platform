@@ -84,7 +84,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
                           complete(getClientsInfo())
                         } ~
                         path(instanceVersionsPath / ".*".r) { clientName =>
-                          complete(getInstanceVersionsState(clientName))
+                          getInstanceVersionsState(clientName)
                         } ~
                         path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                           getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
@@ -323,8 +323,8 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
         .flatMapConcat(clients => Source.fromIterator(() => clients.iterator))
   }
 
-  private def getInstanceVersionsState(clientName: ClientName): Source[VmInstanceVersionsState, NotUsed] = {
-     Source.future(getClientInstancesState(clientName).collect {
+  private def getInstanceVersionsState(clientName: ClientName): Route = {
+     onSuccess(getClientInstancesState(clientName).collect {
         case Some(state) =>
           var versions = Map.empty[ServiceName, Map[BuildVersion, Set[VmInstanceId]]]
           state.state.foreach { case (instanceId, instanceState) =>
@@ -340,7 +340,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
             }
           }
           VmInstanceVersionsState(versions)
-       })
+       }) { state => complete(state) }
   }
 
   private def getClientConfig(clientName: ClientName): Future[Option[ClientConfig]] = {

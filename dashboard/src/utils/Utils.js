@@ -31,7 +31,7 @@ function getClients() {
 }
 
 function getDesiredVersions(client) {
-  let path = '/api/' + ((typeof client === 'undefined') ? 'desired-versions' : ('desired-versions/' + client))
+  let path = '/api/' + (!client ? 'desired-versions' : ('desired-versions/' + client))
   return get(path).then(versions => {
     return versions.desiredVersions
   });
@@ -40,7 +40,9 @@ function getDesiredVersions(client) {
 function getInstanceVersions(client) {
   let path = '/api/instance-versions/' + client
   return get(path).then(versions => {
-    return versions.desiredVersions
+    console.log("--- versions " + JSON.stringify(versions))
+    console.log("--- versions.versions " + versions.versions)
+    return versions.versions
   });
 }
 
