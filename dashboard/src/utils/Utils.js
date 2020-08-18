@@ -40,8 +40,6 @@ function getDesiredVersions(client) {
 function getInstanceVersions(client) {
   let path = '/api/instance-versions/' + client
   return get(path).then(versions => {
-    console.log("--- versions " + JSON.stringify(versions))
-    console.log("--- versions.versions " + versions.versions)
     return versions.versions
   });
 }

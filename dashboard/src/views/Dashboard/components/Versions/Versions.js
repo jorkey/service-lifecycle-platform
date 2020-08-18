@@ -65,23 +65,41 @@ const Versions = props => {
   const [client, setClient] = useState()
   const [clients, setClients] = useState([])
   const [desiredVersions, setDesiredVersions] = useState([])
-  const [instanceVersions, setInstanceVersions] = useState([])
+  const [instanceVersions, setInstanceVersions] = useState(new Map())
 
   React.useEffect(() => {
     Utils.getClients().then(clients => setClients(clients))
   }, [])
 
   React.useEffect(() => {
+    setInstanceVersions(new Map())
     Utils.getDesiredVersions(client).then(versions => setDesiredVersions(Object.entries(versions)))
     if (client) {
       Utils.getInstanceVersions(client).then(versions => {
-        console.log("instance versions " + versions)
-        setInstanceVersions(Object.entries(versions)) })
-    } else {
-      console.log("instance versions undefined")
-      setInstanceVersions([])
+        setInstanceVersions(new Map(Object.entries(versions))) })
     }
   }, [client]);
+
+  const InstanceVersions = props => {
+    const { service } = props;
+
+    if (client) {
+      const versions = instanceVersions.get(service)
+      if (versions) {
+        console.log("size " + Object.entries(versions).length)
+        return (
+          <TableCell className={classes.instanceVersionsColumn}>{
+            Object.entries(versions).map(([version, instances]) =>
+              <div key={version} title={Object.entries(instances).concat()}>{version}</div>)}
+          </TableCell>
+        )
+      } else {
+        return (<TableCell className={classes.instanceVersionsColumn}/>)
+      }
+    } else {
+      return (<TableCell className={classes.instanceVersionsColumn}/>)
+    }
+  }
 
   return (
     <Card
@@ -127,10 +145,7 @@ const Versions = props => {
                   >
                     <TableCell className={classes.serviceColumn}>{service}</TableCell>
                     <TableCell className={classes.desiredVersionColumn}>{version}</TableCell>
-                    { (client && instanceVersions.length != 0) ? <TableCell className={classes.instanceVersionsColumn}>{
-                      instanceVersions.get(service).map(([version, instances]) =>
-                        <TableCell className={classes.desiredVersionColumn}>{version}</TableCell>)
-                    }</TableCell> : <TableCell/>}
+                    <InstanceVersions service={service}/>
                   </TableRow>
                 ))}
             </TableBody>
