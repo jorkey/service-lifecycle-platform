@@ -45,11 +45,11 @@ const useStyles = makeStyles(theme => ({
     padding: '6px',
     paddingLeft: '16px'
   },
-  desiredVersionColumn: {
+  versionColumn: {
     padding: '6px',
     width: '200px'
   },
-  instanceVersionsColumn: {
+  instancesColumn: {
     padding: '6px'
   },
   clientSelect: {
@@ -80,24 +80,54 @@ const Versions = props => {
     }
   }, [client]);
 
-  const InstanceVersions = props => {
-    const { service } = props;
+  const ServiceVersions = props => {
+    const { service, desiredVersion } = props;
 
-    if (client) {
-      const versions = instanceVersions.get(service)
-      if (versions) {
-        console.log("size " + Object.entries(versions).length)
-        return (
-          <TableCell className={classes.instanceVersionsColumn}>{
-            Object.entries(versions).map(([version, instances]) =>
-              <div key={version} title={Object.entries(instances).concat()}>{version}</div>)}
-          </TableCell>
-        )
-      } else {
-        return (<TableCell className={classes.instanceVersionsColumn}/>)
-      }
+    const concatInstances = (instances) => {
+      let result = "";
+      instances.forEach(([index, instance]) => {
+        if (result) result += ", "
+        result += instance
+      })
+      return result
+    }
+
+    if (!client) {
+      return (
+        <TableRow hover key={service}>
+          <TableCell className={classes.serviceColumn}>{service}</TableCell>
+          <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
+        </TableRow>
+      )
     } else {
-      return (<TableCell className={classes.instanceVersionsColumn}/>)
+      const versions = instanceVersions.get(service)
+      if (versions && Object.entries(versions).length > 0) {
+        return Object.entries(versions).map(([version, instances], index) => {
+          return (<TableRow hover key={service}>
+            { index == 0 ? (
+            <>
+              <TableCell className={classes.serviceColumn} rowSpan={versions.length}>{service}</TableCell>
+              <TableCell className={classes.versionColumn} rowSpan={versions.length}>{desiredVersion}</TableCell>
+            </>) : null
+            }
+            <TableCell className={classes.instancesColumn}>
+              {version}
+            </TableCell>
+            <TableCell className={classes.instancesColumn}>
+              <div>{concatInstances(Object.entries(instances))}</div>
+            </TableCell>
+          </TableRow>)
+        })
+      } else {
+        return (
+          <TableRow hover key={service}>
+            <TableCell className={classes.serviceColumn}>{service}</TableCell>
+            <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
+            <TableCell className={classes.instancesColumn}/>
+            <TableCell className={classes.instancesColumn}/>
+          </TableRow>
+        )
+      }
     }
   }
 
@@ -132,22 +162,13 @@ const Versions = props => {
             <TableHead>
               <TableRow>
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
-                <TableCell className={classes.desiredVersionColumn}>Desired Version</TableCell>
-                { client ? <TableCell className={classes.instanceVersionsColumn}>Client Instance Versions</TableCell> : <TableCell/> }
+                <TableCell className={classes.versionColumn}>Desired Version</TableCell>
+                { client ? <TableCell className={classes.versionColumn}>Client Versions</TableCell> : <TableCell/> }
+                { client ? <TableCell className={classes.instancesColumn}>Client Instances</TableCell> : <TableCell/> }
               </TableRow>
             </TableHead>
             <TableBody>
-              {desiredVersions.sort().map(([service, version]) =>
-                (
-                  <TableRow
-                    hover
-                    key={service}
-                  >
-                    <TableCell className={classes.serviceColumn}>{service}</TableCell>
-                    <TableCell className={classes.desiredVersionColumn}>{version}</TableCell>
-                    <InstanceVersions service={service}/>
-                  </TableRow>
-                ))}
+              { desiredVersions.sort().map(([service, version]) => <ServiceVersions key={service} service={service} desiredVersion={version}/>) }
             </TableBody>
           </Table>
         </div>
