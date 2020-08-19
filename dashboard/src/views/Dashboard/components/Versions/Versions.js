@@ -85,7 +85,7 @@ const Versions = props => {
 
     const concatInstances = (instances) => {
       let result = "";
-      instances.forEach(([index, instance]) => {
+      instances.sort().forEach(([index, instance]) => {
         if (result) result += ", "
         result += instance
       })
