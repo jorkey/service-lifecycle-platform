@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
@@ -6,6 +6,7 @@ import { makeStyles } from '@material-ui/styles';
 import {AppBar, Toolbar, Typography} from '@material-ui/core';
 import Grid from "@material-ui/core/Grid";
 import UpdateIcon from "@material-ui/icons/Update";
+import {Utils} from "../../../../utils";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -30,6 +31,12 @@ const Topbar = props => {
 
   const classes = useStyles();
 
+  const [distributionInfo, setDistributionInfo] = useState([]);
+
+  useEffect(() => {
+    Utils.getDistributionInfo().then(info => setDistributionInfo(info))
+  }, [])
+
   return (
     <AppBar
       {...rest}
@@ -44,7 +51,7 @@ const Topbar = props => {
             <Typography className={classes.logotype}
                         display="inline"
             >
-              Update Dashboard
+              VyuLabs Developer Update Distribution Server v1.3.45
             </Typography>
           </Grid>
         </RouterLink>

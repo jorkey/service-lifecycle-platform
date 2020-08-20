@@ -19,22 +19,23 @@ import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, VmInstanceId, ServiceName}
+import com.vyulabs.update.common.Common
+import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, ServiceName, VmInstanceId}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, TestSignature}
+import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.state.{VmInstanceVersionsState, VmInstancesState}
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
+import distribution.developer.config.DeveloperDistributionConfig
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import ExecutionContext.Implicits.global
 import spray.json._
-
 import com.vyulabs.update.utils.JsUtils._
 import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.config.ClientInfo._
@@ -44,8 +45,9 @@ import com.vyulabs.update.state.VmInstanceVersionsState._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.config.InstallProfile._
 import com.vyulabs.update.info.ServicesVersions._
+import com.vyulabs.update.utils.Utils
 
-class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
+class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: DeveloperDistributionConfig, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
                            (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
       extends Distribution(dir, usersCredentials) with DeveloperDistributionWebPaths with SprayJsonSupport {
@@ -54,9 +56,13 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
 
   def run(): Unit = {
     val route: Route =
-      path(pingPath) {
-        get {
+      get {
+        path(pingPath) {
           complete("pong")
+        } ~
+        path(distributionInfoPath) {
+          complete(DistributionInfo(config.name, Utils.getManifestBuildVersion(Common.DistributionServiceName)
+            .getOrElse(BuildVersion.empty)))
         }
       } ~
       logRequest(requestLogger _) {
@@ -297,7 +303,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, port: Int, user
           }
         }
       }
-    Http().bindAndHandle(route, "0.0.0.0", port)
+    Http().bindAndHandle(route, "0.0.0.0", config.port)
   }
 
   private def getDesiredVersionsRoute(future: Future[Option[DesiredVersions]]): Route = {

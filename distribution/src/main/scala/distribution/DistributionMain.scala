@@ -1,13 +1,13 @@
 package com.vyulabs.update.distribution
 
 import java.io.File
-import java.net.URL
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
+import com.vyulabs.update.info.DistributionInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
@@ -68,7 +68,7 @@ object DistributionMain extends App {
         val faultUploader = new DeveloperFaultUploader(dir)
 
         val selfUpdater = new SelfUpdater(dir)
-        val distribution = new DeveloperDistribution(dir, config.port, usersCredentials, stateUploader, faultUploader)
+        val distribution = new DeveloperDistribution(dir, config, usersCredentials, stateUploader, faultUploader)
 
         stateUploader.start()
         selfUpdater.start()

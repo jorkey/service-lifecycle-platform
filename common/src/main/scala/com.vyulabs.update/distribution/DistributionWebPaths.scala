@@ -17,6 +17,7 @@ trait DistributionWebPaths {
 
   // New API paths
 
+  val distributionInfoPath = "distribution-info"
   val userInfoPath = "user-info"
   val clientsInfoPath = "clients-info"
   val instanceVersionsPath = "instance-versions"

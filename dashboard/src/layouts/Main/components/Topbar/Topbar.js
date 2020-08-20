@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
@@ -8,6 +8,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
 import UpdateIcon from '@material-ui/icons/Update';
 import Grid from "@material-ui/core/Grid";
+import {Utils} from "../../../../utils/Utils";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -38,6 +39,12 @@ const Topbar = props => {
 
   const classes = useStyles();
 
+  const [distributionInfo, setDistributionInfo] = useState([]);
+
+  useEffect(() => {
+    Utils.getDistributionInfo().then(info => setDistributionInfo(info))
+  }, [])
+
   return (
     <AppBar
       {...rest}
@@ -50,7 +57,7 @@ const Topbar = props => {
             <Typography className={classes.logotype}
               display="inline"
             >
-              Update Dashboard
+              {distributionInfo.name} v{distributionInfo.version}
             </Typography>
           </Grid>
         </RouterLink>

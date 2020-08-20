@@ -2,14 +2,15 @@
 export const Utils = {
   login,
   logout,
+  getDistributionInfo,
   getClients,
   getDesiredVersions,
   getInstanceVersions
 };
 
 function login(user, password) {
-  let authData = window.btoa(user + ':' + password)
-  let path ='/api/user-info'
+  const authData = window.btoa(user + ':' + password)
+  const path ='/api/user-info'
   return fetchRequest('GET', path, authData).then(user => {
     if (user) {
       user.authData = authData
@@ -23,22 +24,27 @@ function logout() {
   localStorage.removeItem('user')
 }
 
+function getDistributionInfo() {
+  const path ='/api/distribution-info'
+  return get(path);
+}
+
 function getClients() {
-  let path ='/api/clients-info'
+  const path ='/api/clients-info'
   return get(path).then(clients => {
     return clients.map(client => client.name)
   });
 }
 
 function getDesiredVersions(client) {
-  let path = '/api/' + (!client ? 'desired-versions' : ('desired-versions/' + client))
+  const path = '/api/' + (!client ? 'desired-versions' : ('desired-versions/' + client))
   return get(path).then(versions => {
     return versions.desiredVersions
   });
 }
 
 function getInstanceVersions(client) {
-  let path = '/api/instance-versions/' + client
+  const path = '/api/instance-versions/' + client
   return get(path).then(versions => {
     return versions.versions
   });
@@ -46,7 +52,7 @@ function getInstanceVersions(client) {
 
 function get(path) {
   console.log(`Get ${path}`)
-  let user = JSON.parse(localStorage.getItem('user'))
+  const user = JSON.parse(localStorage.getItem('user'))
   return fetchRequest('GET', path, user.authData).then(
     data => { return data },
     response => {
@@ -62,9 +68,9 @@ function get(path) {
 
 function fetchRequest(method, path, authData) {
   console.log(`Fetch ${method} ${path}`)
-  let requestInit = {}
+  const requestInit = {}
   requestInit.method = method
-  let headers = { 'Content-Type': 'application/json' }
+  const headers = { 'Content-Type': 'application/json' }
   if (authData) {
     headers.Authorization = 'Basic ' + authData
   }
