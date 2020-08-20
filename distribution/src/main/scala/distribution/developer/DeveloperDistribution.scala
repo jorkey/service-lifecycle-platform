@@ -59,10 +59,6 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
       get {
         path(pingPath) {
           complete("pong")
-        } ~
-        path(distributionInfoPath) {
-          complete(DistributionInfo(config.name, Utils.getManifestBuildVersion(Common.DistributionServiceName)
-            .getOrElse(BuildVersion.empty)))
         }
       } ~
       logRequest(requestLogger _) {
@@ -81,6 +77,12 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
 
                     })
                   } {
+                    get {
+                      path(distributionInfoPath) {
+                        complete(DistributionInfo(config.name, Utils.getManifestBuildVersion(Common.DistributionServiceName)
+                          .getOrElse(BuildVersion.empty)))
+                      }
+                    } ~
                     authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
                       get {
                         path(userInfoPath) {
