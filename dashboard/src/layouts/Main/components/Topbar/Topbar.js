@@ -24,7 +24,7 @@ const useStyles = makeStyles(theme => ({
     color: 'white',
     display: 'flex'
   },
-  logotype: {
+  distributionName: {
     paddingLeft: 10,
     color: 'white',
     fontWeight: 400,
@@ -32,6 +32,14 @@ const useStyles = makeStyles(theme => ({
     letterSpacing: '-0.06px',
     lineHeight: '28px'
   },
+  version: {
+    paddingLeft: 10,
+    color: 'white',
+    fontWeight: 100,
+    fontSize: '24px',
+    letterSpacing: '-0.06px',
+    lineHeight: '28px'
+  }
 }));
 
 const Topbar = props => {
@@ -54,11 +62,21 @@ const Topbar = props => {
         <RouterLink to="/">
           <Grid className={classes.logo}>
             <UpdateIcon/>
-            <Typography className={classes.logotype}
-              display="inline"
-            >
-              {distributionInfo.name} v{distributionInfo.version}
-            </Typography>
+            { distributionInfo.name ? (
+              <>
+                <Typography className={classes.distributionName}
+                  display="inline"
+                >
+                  {distributionInfo.name}
+                </Typography>
+                <Typography className={classes.version}
+                            display="inline"
+                            variant="h5"
+                >
+                  v{distributionInfo.version}
+                </Typography>
+              </>
+            ) : null }
           </Grid>
         </RouterLink>
         <div className={classes.flexGrow} />

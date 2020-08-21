@@ -6,11 +6,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import com.vyulabs.update.common.Common.VmInstanceId
-import com.vyulabs.update.common.{Common, ServiceInstanceName}
+import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.log.LogWriter
+import com.vyulabs.update.state.{ProfiledServiceName, ServiceInstallation}
 import com.vyulabs.update.updater.uploaders.{FaultReport, FaultUploader, LogUploader}
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
@@ -23,7 +23,7 @@ import scala.collection.immutable.Queue
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName,
+class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledServiceName,
                     state: ServiceStateController, clientDirectory: ClientDistributionDirectoryClient,
                     faultUploader: FaultUploader)(implicit log: Logger) {
     private case class ProcessParameters(config: RunServiceConfig, args: Map[String, String], directory: File)
@@ -129,7 +129,7 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
               }
             }
             if (!files.isEmpty) {
-              val reportTmpDir = Files.createTempDirectory(s"${serviceInstanceName}-fault-").toFile
+              val reportTmpDir = Files.createTempDirectory(s"${profiledServiceName}-fault-").toFile
               for (file <- files) {
                 val tmpFile = new File(reportTmpDir, file.getName)
                 if (!file.renameTo(tmpFile)) {
@@ -143,7 +143,9 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
           case None =>
             None
         }
-        faultUploader.addFaultReport(FaultReport(instanceId, state.getState(), reportFilesTmpDir, logTail))
+        faultUploader.addFaultReport(FaultReport(instanceId,
+          ServiceInstallation(profiledServiceName, new java.io.File(".").getCanonicalPath()),
+          state.getState(), reportFilesTmpDir, logTail))
         val restartOnFault = processParameters.map(_.config.restartOnFault.getOrElse(true)).getOrElse(false)
         if (restartOnFault) {
           state.info("Try to restart service")
@@ -219,7 +221,7 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
           (message, exception) => state.error(message, exception))
         val logUploader = params.config.logUploader match {
           case Some(logsUploaderConfig) =>
-            val uploader = new LogUploader(instanceId, serviceInstanceName, logsUploaderConfig, clientDirectory)
+            val uploader = new LogUploader(instanceId, profiledServiceName, logsUploaderConfig, clientDirectory)
             uploader.start()
             Some(uploader)
           case None =>
@@ -243,7 +245,7 @@ class ServiceRunner(instanceId: VmInstanceId, serviceInstanceName: ServiceInstan
             logWriter.close()
             logUploader.foreach(_.close())
             val exitCode = process.waitFor()
-            log.debug(s"Service ${serviceInstanceName} is terminated with code ${exitCode}")
+            log.debug(s"Service ${profiledServiceName} is terminated with code ${exitCode}")
             processFault(process, exitCode, logTail)
           },
           exception => {

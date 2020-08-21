@@ -7,7 +7,6 @@ import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
-import com.vyulabs.update.info.DistributionInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
@@ -89,7 +88,7 @@ object DistributionMain extends App {
 
         val dir = new ClientDistributionDirectory(directory)
 
-        val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl)
+        val stateUploader = new ClientStateUploader(config.developerDistributionUrl, config.instanceId)
         val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
         val logUploader = new ClientLogUploader(dir)
 

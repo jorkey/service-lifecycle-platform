@@ -269,7 +269,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
           }
         }
       case None =>
-        log.info(s"Can't lock ${targetFile} in exclusively mode. Retry attempt after pause")
+        //log.info(s"Can't lock ${targetFile} in exclusively mode. Retry attempt after pause")
         val result = Source.tick(FiniteDuration(100, TimeUnit.MILLISECONDS), FiniteDuration(100, TimeUnit.MILLISECONDS), Unit)
           .take(1).runWith(Sink.ignore)
         onComplete(result) { _ =>
@@ -305,8 +305,8 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     }
   }
 
-  protected def getScriptsVersion(): Route = {
-    IOUtils.getScriptsVersion() match {
+  protected def getServiceVersion(serviceName: ServiceName, directory: File): Route = {
+    IOUtils.readServiceVersion(serviceName, directory) match {
       case Some(version) =>
         complete(version.toString)
       case None =>

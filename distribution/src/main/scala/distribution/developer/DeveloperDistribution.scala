@@ -1,6 +1,6 @@
 package distribution.developer
 
-import java.io.{FileNotFoundException, IOException}
+import java.io.{File, FileNotFoundException, IOException}
 import java.util.Date
 
 import akka.NotUsed
@@ -20,13 +20,13 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, ServiceName, VmInstanceId}
+import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, InstanceId, ServiceName}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
 import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.state.{VmInstanceVersionsState, VmInstancesState}
+import com.vyulabs.update.state.{InstanceVersionsState, InstancesState}
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
@@ -40,8 +40,8 @@ import com.vyulabs.update.utils.JsUtils._
 import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.config.ClientInfo._
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.state.VmInstancesState._
-import com.vyulabs.update.state.VmInstanceVersionsState._
+import com.vyulabs.update.state.InstancesState._
+import com.vyulabs.update.state.InstanceVersionsState._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.config.InstallProfile._
 import com.vyulabs.update.info.ServicesVersions._
@@ -113,6 +113,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                           path(desiredVersionsPath / ".*".r) { clientName =>
                             getDesiredVersionsRoute(getClientDesiredVersions(clientName))
                           } ~
+                          path(installedDesiredVersionsPath / ".*".r) { clientName =>
+                            getFromFileWithLock(dir.getInstalledDesiredVersionsFile(clientName))
+                          } ~
                           path(desiredVersionPath / ".*".r) { service =>
                             getDesiredVersion(service, getDesiredVersions(None), false)
                           } ~
@@ -120,7 +123,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             getVersion()
                           } ~
                           path(scriptsVersionPath) {
-                            getScriptsVersion()
+                            getServiceVersion(Common.ScriptsServiceName, new File("."))
                           }
                         } ~
                         authorize(userCredentials.role == UserRole.Client) {
@@ -155,14 +158,22 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             }
                           } ~
                           authorize(userCredentials.role == UserRole.Client) {
+                            path(installedDesiredVersionsPath) {
+                              fileUploadWithLock(desiredVersionsName, dir.getInstalledDesiredVersionsFile(userName))
+                            } ~
                             path(testedVersionsPath) {
                               uploadTestedVersions(userName)
                             } ~
                             path(instancesStatePath) {
                               uploadFileToJson(instancesStateName, (json) => {
-                                val instancesState = json.convertTo[VmInstancesState]
-                                stateUploader.receiveInstancesState(userName, instancesState)
-                                complete(StatusCodes.OK)
+                                try {
+                                  val instancesState = json.convertTo[InstancesState]
+                                  stateUploader.receiveInstancesState(userName, instancesState)
+                                  complete(StatusCodes.OK)
+                                } catch { // TODO remove
+                                  case e: Exception =>
+                                    complete(StatusCodes.BadRequest)
+                                }
                               })
                             } ~
                             path(serviceFaultPath / ".*".r) { (serviceName) =>
@@ -215,7 +226,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                                 getVersion()
                               } ~
                               path(getScriptsVersionPath) {
-                                getScriptsVersion()
+                                getServiceVersion(Common.ScriptsServiceName, new File("."))
                               }
                           } ~
                           authorize(userCredentials.role == UserRole.Client) {
@@ -334,20 +345,18 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
   private def getInstanceVersionsState(clientName: ClientName): Route = {
      onSuccess(getClientInstancesState(clientName).collect {
         case Some(state) =>
-          var versions = Map.empty[ServiceName, Map[BuildVersion, Set[VmInstanceId]]]
-          state.state.foreach { case (instanceId, instanceState) =>
-            instanceState.values.foreach { updaterState =>
-              updaterState.servicesStates.foreach { serviceState =>
-                for (version <- serviceState.version) {
-                  val serviceName = serviceState.serviceInstanceName.serviceName
-                  var map = versions.getOrElse(serviceName, Map.empty[BuildVersion, Set[VmInstanceId]])
-                  map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
-                  versions += (serviceName -> map)
-                }
+          var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
+          state.state.foreach { case (instanceId, servicesStates) =>
+            servicesStates.foreach { case (serviceInstallation, serviceState) =>
+              for (version <- serviceState.version) {
+                val serviceName = serviceInstallation.name.serviceName
+                var map = versions.getOrElse(serviceName, Map.empty[BuildVersion, Set[InstanceId]])
+                map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
+                versions += (serviceName -> map)
               }
             }
           }
-          VmInstanceVersionsState(versions)
+          InstanceVersionsState(versions)
        }) { state => complete(state) }
   }
 
@@ -367,11 +376,11 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
     promise.future
   }
 
-  private def getClientInstancesState(clientName: ClientName): Future[Option[VmInstancesState]] = {
-    val promise = Promise[Option[VmInstancesState]]()
+  private def getClientInstancesState(clientName: ClientName): Future[Option[InstancesState]] = {
+    val promise = Promise[Option[InstancesState]]()
     getFileContentWithLock(dir.getInstancesStateFile(clientName)).onComplete { bytes =>
       try {
-        val instancesState = bytes.get.decodeString("utf8").parseJson.convertTo[VmInstancesState]
+        val instancesState = bytes.get.decodeString("utf8").parseJson.convertTo[InstancesState]
         promise.success(Some(instancesState))
       } catch {
         case _: FileNotFoundException =>

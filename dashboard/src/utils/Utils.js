@@ -5,6 +5,7 @@ export const Utils = {
   getDistributionInfo,
   getClients,
   getDesiredVersions,
+  getInstalledDesiredVersions,
   getInstanceVersions
 };
 
@@ -38,6 +39,13 @@ function getClients() {
 
 function getDesiredVersions(client) {
   const path = '/api/' + (!client ? 'desired-versions' : ('desired-versions/' + client))
+  return get(path).then(versions => {
+    return versions.desiredVersions
+  });
+}
+
+function getInstalledDesiredVersions(client) {
+  const path = '/api/installed-desired-versions/' + client
   return get(path).then(versions => {
     return versions.desiredVersions
   });

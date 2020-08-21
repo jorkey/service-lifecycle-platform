@@ -16,7 +16,7 @@ import org.slf4j.Logger
   */
 class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistributionDirectoryClient)
                  (implicit log: Logger) {
-  private val scriptsVersion = IOUtils.getScriptsVersion()
+  private val scriptsVersion = IOUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
 
   state.serviceStarted()
 

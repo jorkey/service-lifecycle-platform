@@ -65,6 +65,7 @@ const Versions = props => {
   const [client, setClient] = useState()
   const [clients, setClients] = useState([])
   const [desiredVersions, setDesiredVersions] = useState([])
+  const [installedDesiredVersions, setInstalledDesiredVersions] = useState([])
   const [instanceVersions, setInstanceVersions] = useState(new Map())
 
   React.useEffect(() => {
@@ -73,15 +74,22 @@ const Versions = props => {
 
   React.useEffect(() => {
     setInstanceVersions(new Map())
-    Utils.getDesiredVersions(client).then(versions => setDesiredVersions(Object.entries(versions)))
-    if (client) {
-      Utils.getInstanceVersions(client).then(versions => {
-        setInstanceVersions(new Map(Object.entries(versions))) })
-    }
+    Utils.getDesiredVersions(client).then(versions => {
+        setDesiredVersions(Object.entries(versions))
+        if (client) {
+          Utils.getInstalledDesiredVersions(client).then(versions => {
+            setInstalledDesiredVersions(Object.entries(versions))
+            Utils.getInstanceVersions(client).then(versions => {
+              setInstanceVersions(new Map(Object.entries(versions))) })
+          })
+        }
+      })
   }, [client]);
 
   const ServiceVersions = props => {
     const { service, desiredVersion } = props;
+
+    const installedDesiredVersion = installedDesiredVersions.get(service)
 
     const concatInstances = (instances) => {
       let result = "";
@@ -108,6 +116,7 @@ const Versions = props => {
             <>
               <TableCell className={classes.serviceColumn} rowSpan={versions.length}>{service}</TableCell>
               <TableCell className={classes.versionColumn} rowSpan={versions.length}>{desiredVersion}</TableCell>
+              <TableCell className={classes.versionColumn} rowSpan={versions.length}>{installedDesiredVersion}</TableCell>
             </>) : null
             }
             <TableCell className={classes.instancesColumn}>
@@ -123,6 +132,7 @@ const Versions = props => {
           <TableRow hover key={service}>
             <TableCell className={classes.serviceColumn}>{service}</TableCell>
             <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
+            <TableCell className={classes.versionColumn}>{installedDesiredVersion}</TableCell>
             <TableCell className={classes.instancesColumn}/>
             <TableCell className={classes.instancesColumn}/>
           </TableRow>
@@ -163,12 +173,14 @@ const Versions = props => {
               <TableRow>
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
                 <TableCell className={classes.versionColumn}>Desired Version</TableCell>
-                { client ? <TableCell className={classes.versionColumn}>Client Versions</TableCell> : <TableCell/> }
+                { client ? <TableCell className={classes.versionColumn}>Desired Client Versions</TableCell> : <TableCell/> }
+                { client ? <TableCell className={classes.versionColumn}>Working Client Versions</TableCell> : <TableCell/> }
                 { client ? <TableCell className={classes.instancesColumn}>Client Instances</TableCell> : <TableCell/> }
               </TableRow>
             </TableHead>
             <TableBody>
-              { desiredVersions.sort().map(([service, version]) => <ServiceVersions key={service} service={service} desiredVersion={version}/>) }
+              { desiredVersions.sort().map(([service, desiredVersion]) =>
+                  <ServiceVersions key={service} service={service} desiredVersion={desiredVersion}/>) }
             </TableBody>
           </Table>
         </div>

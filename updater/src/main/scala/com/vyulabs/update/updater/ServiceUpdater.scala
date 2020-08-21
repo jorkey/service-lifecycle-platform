@@ -1,10 +1,10 @@
 package com.vyulabs.update.updater
 
-import com.vyulabs.update.common.Common.VmInstanceId
-import com.vyulabs.update.common.{Common, ServiceInstanceName}
+import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.InstallConfig
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
+import com.vyulabs.update.state.ProfiledServiceName
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
@@ -13,8 +13,8 @@ import org.slf4j.Logger
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class ServiceUpdater(instanceId: VmInstanceId,
-                     val serviceInstanceName: ServiceInstanceName,
+class ServiceUpdater(instanceId: InstanceId,
+                     val profiledServiceName: ProfiledServiceName,
                      state: ServiceStateController,
                      clientDirectory: ClientDistributionDirectoryClient)
                     (implicit log: Logger) {
@@ -69,14 +69,14 @@ class ServiceUpdater(instanceId: VmInstanceId,
         state.error(s"Can't make directory ${state.newServiceDirectory}")
         return false
       }
-      if (!clientDirectory.downloadVersion(serviceInstanceName.serviceName, newVersion, state.newServiceDirectory)) {
-        state.error(s"Can't download ${serviceInstanceName.serviceName} version ${newVersion}")
+      if (!clientDirectory.downloadVersion(profiledServiceName.serviceName, newVersion, state.newServiceDirectory)) {
+        state.error(s"Can't download ${profiledServiceName.serviceName} version ${newVersion}")
         return false
       }
 
       state.info(s"Install service")
       var args = Map.empty[String, String]
-      args += ("profile" -> serviceInstanceName.serviceProfile)
+      args += ("profile" -> profiledServiceName.serviceProfile)
       args += ("version" -> newVersion.original().toString)
       args += ("PATH" -> System.getenv("PATH"))
 
@@ -134,7 +134,7 @@ class ServiceUpdater(instanceId: VmInstanceId,
 
       state.info(s"Post install service")
       var args = Map.empty[String, String]
-      args += ("profile" -> serviceInstanceName.serviceProfile)
+      args += ("profile" -> profiledServiceName.serviceProfile)
       args += ("version" -> newVersion.original().toString)
       args += ("PATH" -> System.getenv("PATH"))
 
@@ -145,7 +145,7 @@ class ServiceUpdater(instanceId: VmInstanceId,
         }
       }
 
-      IOUtils.writeServiceVersion(state.currentServiceDirectory, serviceInstanceName.serviceName, newVersion)
+      IOUtils.writeServiceVersion(state.currentServiceDirectory, profiledServiceName.serviceName, newVersion)
 
       state.setVersion(newVersion)
 
@@ -178,10 +178,10 @@ class ServiceUpdater(instanceId: VmInstanceId,
           state.info(s"Start service of version ${newVersion}")
 
           var args = Map.empty[String, String]
-          args += ("profile" -> serviceInstanceName.serviceProfile)
+          args += ("profile" -> profiledServiceName.serviceProfile)
           args += ("version" -> newVersion.original().toString)
 
-          val runner = new ServiceRunner(instanceId, serviceInstanceName, state, clientDirectory, faultUploader)
+          val runner = new ServiceRunner(instanceId, profiledServiceName, state, clientDirectory, faultUploader)
           if (!runner.startService(runService, args, state.currentServiceDirectory)) {
             state.error(s"Can't start service")
             return false

@@ -185,11 +185,7 @@ object IOUtils {
     }
   }
 
-  def getScriptsVersion()(implicit log: Logger): Option[BuildVersion] = {
-    readServiceVersion(new File("."), Common.ScriptsServiceName)
-  }
-
-  def readServiceVersion(directory: File, serviceName: ServiceName)(implicit log: Logger): Option[BuildVersion] = {
+  def readServiceVersion(serviceName: ServiceName, directory: File)(implicit log: Logger): Option[BuildVersion] = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
     if (versionMarkFile.exists()) {
       val bytes = readFileToBytes(versionMarkFile).getOrElse {

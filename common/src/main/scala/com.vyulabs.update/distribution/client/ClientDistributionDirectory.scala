@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.client
 
 import java.io.File
 
-import com.vyulabs.update.common.Common.{ClientName, ProcessId, ServiceName, UpdaterDirectory, VmInstanceId}
+import com.vyulabs.update.common.Common.{ClientName, ProcessId, ServiceName, ServiceDirectory, InstanceId}
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -18,13 +18,8 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
       extends DistributionDirectory(directory) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  protected val statesDir = new File(directory, "states")
   protected val logsDir = new File(directory, "logs")
   protected val faultsDir = new File(directory, "faults")
-
-  if (!statesDir.exists() && !statesDir.mkdir()) {
-    log.error(s"Can't create directory ${statesDir}")
-  }
 
   if (!logsDir.exists() && !logsDir.mkdir()) {
     log.error(s"Can't create directory ${logsDir}")
@@ -34,14 +29,12 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
     log.error(s"Can't create directory ${faultsDir}")
   }
 
-  def getStatesDir() = statesDir
-
   def getLogsDir() = logsDir
 
   def getFaultsDir() = faultsDir
 
-  def getInstanceStateFileName(instanceId: VmInstanceId, updaterProcessId: ProcessId): String = {
-    s"${instanceId}_${updaterProcessId}_state.json"
+  def getInstanceStateFileName(instanceId: InstanceId): String = {
+    s"${instanceId}}_state.json"
   }
 
   def getServiceDir(serviceName: ServiceName): File = {
@@ -62,10 +55,6 @@ class ClientDistributionDirectory(directory: File)(implicit filesLocker: SmartFi
 
   def getVersionImageFile(serviceName: ServiceName, version: BuildVersion): File = {
     new File(getServiceDir(serviceName), getVersionImageFileName(serviceName, version))
-  }
-
-  def getInstanceStateFile(instanceId: VmInstanceId, updaterProcessId: ProcessId): File = {
-    new File(statesDir, getInstanceStateFileName(instanceId, updaterProcessId))
   }
 
   def getDesiredVersion(serviceName: ServiceName): Option[BuildVersion] = {

@@ -10,6 +10,7 @@ import com.vyulabs.update.distribution.DistributionWebPaths
 trait DeveloperDistributionWebPaths extends DistributionWebPaths {
   // New API paths
 
+  val installedDesiredVersionsPath = "installed-desired-versions"
   val testedVersionsPath = "tested-versions"
   val instancesStatePath = "instances-state"
 

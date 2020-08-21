@@ -1,10 +1,12 @@
 package com.vyulabs.update.updater
 
-import com.vyulabs.update.common.{Common, ServiceInstanceName}
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.DesiredVersions
+import com.vyulabs.update.state.ProfiledServiceName
 import com.vyulabs.update.updater.config.UpdaterConfig
+import com.vyulabs.update.updater.uploaders.StateUploader
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
@@ -33,23 +35,17 @@ object UpdaterMain extends App { self =>
 
   command match {
     case "runServices" =>
-      val servicesInstanceNames = arguments.getValue("services").split(",").foldLeft(Set.empty[ServiceInstanceName])((set, record) =>
-        set + ServiceInstanceName.parse(record)
+      val servicesInstanceNames = arguments.getValue("services").split(",").foldLeft(Set.empty[ProfiledServiceName])((set, record) =>
+        set + ProfiledServiceName.parse(record)
       )
 
       log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${servicesInstanceNames} -------------------------")
 
-      val currentVersion = Utils.getManifestBuildVersion("updater").getOrElse {
-        val version = BuildVersion(None, Seq(0, 0, 0))
-        log.error(s"Can't get current updater version - assume ${version}")
-        version
-      }
-
-      val updaterServiceName = ServiceInstanceName(Common.UpdaterServiceName)
+      val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
 
       val clientDirectory = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
 
-      val instanceState = new InstanceStateUploader(config.instanceId, currentVersion, servicesInstanceNames + updaterServiceName, clientDirectory)
+      val instanceState = new StateUploader(config.instanceId, servicesInstanceNames + updaterServiceName, clientDirectory)
 
       instanceState.start()
 
@@ -132,7 +128,7 @@ object UpdaterMain extends App { self =>
             clientDirectory.downloadDesiredVersions() match {
               case Some(desiredVersions) =>
                 val needUpdate = serviceUpdaters.foldLeft(Map.empty[ServiceUpdater, BuildVersion])((map, updater) => {
-                  updater.needUpdate(desiredVersions.desiredVersions.get(updater.serviceInstanceName.serviceName)) match {
+                  updater.needUpdate(desiredVersions.desiredVersions.get(updater.profiledServiceName.serviceName)) match {
                     case Some(version) =>
                       map + (updater -> version)
                     case None =>

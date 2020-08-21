@@ -1,5 +1,7 @@
 package distribution.client
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -9,8 +11,8 @@ import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.Route.seal
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.common.ServiceInstanceName
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -20,9 +22,8 @@ import com.vyulabs.update.version.BuildVersion
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
 import org.slf4j.LoggerFactory
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.state.UpdaterInstanceState
-import com.vyulabs.update.state.UpdaterInstanceState._
 import com.vyulabs.update.logs.ServiceLogs._
+import com.vyulabs.update.state.{ProfiledServiceName, ServicesState}
 
 class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                          stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
@@ -71,14 +72,14 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                       path(desiredVersionPath / ".*".r) { service =>
                         getDesiredVersion(service, false)
                       } ~
-                      path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, _, updaterProcessId) =>
-                        getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
+                      path(servicesStatePath / ".*".r) { (instanceId) =>
+                        stateUploader.getInstanceState(instanceId)
                       } ~
                       path(distributionVersionPath) {
                         getVersion()
                       } ~
                       path(scriptsVersionPath) {
-                        getScriptsVersion()
+                        getServiceVersion(Common.ScriptsServiceName, new File("."))
                       }
                     } ~
                     post {
@@ -96,16 +97,16 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                         }
                       } ~
                       authorize(userCredentials.role == UserRole.Service) {
-                        path(instanceStatePath / ".*".r / ".*".r / ".*".r) { (instanceId, updaterDirectory, updaterProcessId) =>
-                          uploadFileToJson(instanceStateName, (json) => {
-                            val instanceState = json.convertTo[UpdaterInstanceState]
-                            stateUploader.receiveState(instanceId, updaterDirectory, updaterProcessId, instanceState, this)
+                        path(servicesStatePath / ".*".r) { instanceId =>
+                          uploadFileToJson(servicesStateName, (json) => {
+                            val servicesState = json.convertTo[ServicesState]
+                            stateUploader.receiveState(instanceId, servicesState)
                           })
                         } ~
-                        path(serviceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
+                        path(serviceLogsPath / ".*".r / ".*".r) { (instanceId, profiledServiceName) =>
                           uploadFileToJson(serviceLogsName, (json) => {
                             val serviceLogs = json.convertTo[ServiceLogs]
-                            logUploader.receiveLogs(instanceId, ServiceInstanceName.parse(serviceInstanceName), serviceLogs)
+                            logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs)
                           })
                         } ~
                         path(serviceFaultPath / ".*".r) { (serviceName) =>
@@ -164,15 +165,15 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                       getDesiredVersion(service, image)
                     }
                   } ~
-                  path(prefix / downloadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
-                    getFromFileWithLock(dir.getInstanceStateFile(instanceId, updaterProcessId))
+                  path(prefix / downloadInstanceStatePath / ".*".r) { (instanceId) =>
+                    stateUploader.getInstanceState(instanceId)
                   } ~
                   authorize(userCredentials.role == UserRole.Administrator) {
                     path(prefix / getDistributionVersionPath) {
                       getVersion()
                     } ~
                     path(prefix / getScriptsVersionPath) {
-                      getScriptsVersion()
+                      getServiceVersion(Common.ScriptsServiceName, new File("."))
                     }
                   }
                 } ~
@@ -194,10 +195,10 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                         path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
                           complete(StatusCodes.BadRequest) // New format
                         } ~
-                        path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, serviceInstanceName) =>
+                        path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, profiledServiceName) =>
                           uploadFileToJson(serviceLogsName, (json) => {
                             val serviceLogs = json.convertTo[ServiceLogs]
-                            logUploader.receiveLogs(instanceId, ServiceInstanceName.parse(serviceInstanceName), serviceLogs)
+                            logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs)
                           })
                         } ~
                         path(prefix / uploadServiceFaultPath / ".*".r) { (serviceName) =>

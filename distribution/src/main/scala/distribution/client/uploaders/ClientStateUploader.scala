@@ -5,63 +5,61 @@ import java.net.URL
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
-import com.vyulabs.update.common.Common.{VmInstanceId, ProcessId, UpdaterDirectory}
-import com.vyulabs.update.distribution.Distribution
-import com.vyulabs.update.distribution.client.ClientDistributionDirectory
+import com.vyulabs.update.common.Common
+import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
-import com.vyulabs.update.state.{UpdaterInstanceState, VmInstancesState}
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.state.{InstancesState, ServiceInstallation, ServiceState, ServicesState}
+import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import org.slf4j.LoggerFactory
-import spray.json.enrichAny
 
-import scala.concurrent.{ExecutionContext, Promise}
 import scala.concurrent.duration.FiniteDuration
-import com.vyulabs.update.state.UpdaterInstanceState._
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import ServicesState._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.
   * Copyright FanDate, Inc.
   */
-class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL)
+class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL, instanceId: InstanceId)
                          (implicit system: ActorSystem, materializer: Materializer)
-      extends Thread with DeveloperDistributionWebPaths with FutureDirectives { self =>
+      extends Thread with DeveloperDistributionWebPaths with FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
 
-  private var downloadingFiles = Set.empty[File]
-  private var statesToUpload = Map.empty[VmInstanceId, Map[UpdaterDirectory, UpdaterInstanceState]]
+  private var instancesStates = Map.empty[InstanceId, Map[ServiceInstallation, ServiceState]]
+  private var statesToUpload = Map.empty[InstanceId, Map[ServiceInstallation, ServiceState]]
 
-  private val uploadInterval = 10000
-  private var lastUploadTime = 0L
   private val expirationPeriod = FiniteDuration.apply(1, TimeUnit.MINUTES).toMillis
+  private val uploadInterval = 10000
+
+  private var lastStatesUploadTime = 0L
+  private var desiredVersionsLmt = 0L
 
   private var stopping = false
 
-  def receiveState(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId,
-                   instanceState: UpdaterInstanceState, distribution: Distribution): Route = {
-    val file = dir.getInstanceStateFile(instanceId, updaterProcessId)
+  def receiveState(instanceId: InstanceId, servicesState: ServicesState): Route = {
     self.synchronized {
-      var updaters = statesToUpload.getOrElse(instanceId, Map.empty)
-      updaters += (updaterDirectory -> instanceState)
-      statesToUpload += (instanceId -> updaters)
-      downloadingFiles += file
+      instancesStates += (instanceId -> (instancesStates.getOrElse(instanceId, Map.empty) ++ servicesState.state))
+      statesToUpload += (instanceId -> (statesToUpload.getOrElse(instanceId, Map.empty) ++ servicesState.state))
     }
-    val promise = Promise[Unit]()
-    import ExecutionContext.Implicits.global
-    promise.future.onComplete { _ =>
-      self.synchronized {
-        IOUtils.maybeDeleteOldFiles(dir.getStatesDir(), System.currentTimeMillis() - expirationPeriod, downloadingFiles)
-        downloadingFiles -= file
+    complete(StatusCodes.OK)
+  }
+
+  def getInstanceState(instanceId: InstanceId): Route = {
+    self.synchronized {
+      instancesStates.get(instanceId) match {
+        case Some(state) =>
+          complete(ServicesState(state))
+        case None =>
+          complete(StatusCodes.NotFound)
       }
     }
-    val source = Source.single(ByteString(instanceState.toJson.sortedPrint.getBytes("utf8")))
-    distribution.fileWriteWithLock(source, file, Some(promise))
   }
 
   def close(): Unit = {
@@ -76,7 +74,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
     log.info("State uploader started")
     try {
       while (true) {
-        val pause = lastUploadTime + uploadInterval - System.currentTimeMillis()
+        val pause = lastStatesUploadTime + uploadInterval - System.currentTimeMillis()
         if (pause > 0) {
           self.synchronized {
             if (stopping) {
@@ -90,28 +88,55 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
         }
         if (!stopping) {
           try {
+            removeOldStates()
+            mayBeUploadInstalledDesiredVersions()
+
             val states = self.synchronized {
               val states = statesToUpload
               statesToUpload = Map.empty
               states
-            }
-            if (!states.isEmpty) {
-              log.debug("Upload instances state to developer distribution server")
-              val vmInstancesState = VmInstancesState(states)
-              if (!developerDirectory.uploadVmInstancesState(vmInstancesState)) {
-                log.error("Can't upload instances state")
-              }
+            } + (instanceId ->
+              (ServiceState.getOwnInstanceState(Common.DistributionServiceName) ++
+               ServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")) ++
+               ServiceState.getServiceInstanceState(Common.InstallerServiceName, new File("../install"))
+              ))
+            log.debug("Upload instances state to developer distribution server")
+            val instancesState = InstancesState(states)
+            if (!developerDirectory.uploadInstancesState(instancesState)) {
+              log.error("Can't upload instances state")
             }
           } catch {
             case ex: Exception =>
               log.error("State uploader exception", ex)
           }
-          lastUploadTime = System.currentTimeMillis()
+          lastStatesUploadTime = System.currentTimeMillis()
         }
       }
     } catch {
       case ex: Exception =>
         log.error(s"State uploader thread is failed", ex)
+    }
+  }
+
+  private def removeOldStates(): Unit = {
+    self.synchronized {
+      instancesStates = instancesStates.map { case (instanceId, state) =>
+        (instanceId, state.filter { case (_, state) =>
+          System.currentTimeMillis() - state.date.getTime < expirationPeriod
+        })
+      }.filter { case (_, state) =>
+        !state.isEmpty
+      }
+    }
+  }
+
+  private def mayBeUploadInstalledDesiredVersions(): Unit = {
+    val file = dir.getDesiredVersionsFile()
+    val lmt = file.lastModified()
+    if (lmt != desiredVersionsLmt) {
+      if (developerDirectory.uploadInstalledDesiredVersions(file)) {
+        desiredVersionsLmt = lmt
+      }
     }
   }
 }

@@ -1,7 +1,5 @@
 package com.vyulabs.update.common
 
-import spray.json.{DefaultJsonProtocol}
-
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.03.19.
   * Copyright FanDate, Inc.
@@ -11,9 +9,9 @@ object Common {
   type ServiceProfile = String
   type ClientName = String
   type UserName = String
-  type VmInstanceId = String
+  type InstanceId = String
   type ProcessId = String
-  type UpdaterDirectory = String
+  type ServiceDirectory = String
   type InstallProfileName = String
 
   val Pm2DescFileName = "pm2_desc.json"

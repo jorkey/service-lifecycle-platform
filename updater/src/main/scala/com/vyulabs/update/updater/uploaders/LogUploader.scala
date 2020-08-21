@@ -1,10 +1,10 @@
 package com.vyulabs.update.updater.uploaders
 
-import com.vyulabs.update.common.Common.VmInstanceId
-import com.vyulabs.update.common.ServiceInstanceName
+import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.LogUploaderConfig
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.logs.{ServiceLogs}
+import com.vyulabs.update.logs.ServiceLogs
+import com.vyulabs.update.state.ProfiledServiceName
 import org.slf4j.Logger
 
 import scala.collection.immutable.Queue
@@ -13,7 +13,7 @@ import scala.collection.immutable.Queue
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 9.12.19.
   * Copyright FanDate, Inc.
   */
-class LogUploader(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName, logUploaderConfig: LogUploaderConfig,
+class LogUploader(instanceId: InstanceId, profiledServiceName: ProfiledServiceName, logUploaderConfig: LogUploaderConfig,
                   clientDirectory: ClientDistributionDirectoryClient)(implicit log: Logger) extends Thread { self =>
 
   private val notifyThreshold = 50
@@ -50,13 +50,13 @@ class LogUploader(instanceId: VmInstanceId, serviceInstanceName: ServiceInstance
           queue = Queue.empty
           logs
         }
-        if (!clientDirectory.uploadServiceLogs(instanceId, serviceInstanceName, new ServiceLogs(None, logs))) {
+        if (!clientDirectory.uploadServiceLogs(instanceId, profiledServiceName, new ServiceLogs(None, logs))) {
           log.debug("Upload of service logs is failed - resend with writer init")
-          clientDirectory.uploadServiceLogs(instanceId, serviceInstanceName, new ServiceLogs(Some(logUploaderConfig.writer), logs))
+          clientDirectory.uploadServiceLogs(instanceId, profiledServiceName, new ServiceLogs(Some(logUploaderConfig.writer), logs))
         }
       } catch {
         case e: Exception =>
-          log.error(s"Uploading of service ${serviceInstanceName} logs is failed", e)
+          log.error(s"Uploading of service ${profiledServiceName} logs is failed", e)
       }
     }
   }

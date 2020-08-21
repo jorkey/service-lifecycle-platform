@@ -1,8 +1,8 @@
 package com.vyulabs.update.distribution.client
 
-import com.vyulabs.update.common.Common.{ProcessId, ServiceName, UpdaterDirectory, VmInstanceId}
-import com.vyulabs.update.common.ServiceInstanceName
+import com.vyulabs.update.common.Common.{ServiceDirectory, ServiceName, InstanceId}
 import com.vyulabs.update.distribution.DistributionWebPaths
+import com.vyulabs.update.state.ProfiledServiceName
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -11,7 +11,7 @@ import com.vyulabs.update.distribution.DistributionWebPaths
 trait ClientDistributionWebPaths extends DistributionWebPaths {
   // New API paths
 
-  val instanceStatePath = "instance-state"
+  val servicesStatePath = "services-state"
   val serviceLogsPath = "service-logs"
 
   // Old API paths
@@ -24,7 +24,7 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
 
   // Names
 
-  val instanceStateName = "instance-state"
+  val servicesStateName = "services-state"
   val serviceLogsName = "service-logs"
   val serviceFaultName = "instance-fault"
 
@@ -32,11 +32,11 @@ trait ClientDistributionWebPaths extends DistributionWebPaths {
     downloadVersionsInfoPath + "/" + encode(serviceName)
   }
 
-  def getInstanceStatePath(instanceId: VmInstanceId, updaterDirectory: UpdaterDirectory, updaterProcessId: ProcessId): String = {
-    apiPathPrefix + "/" + instanceStatePath + "/" + encode(instanceId) + "/" + encode(updaterDirectory) + "/" + encode(updaterProcessId)
+  def getServicesStatePath(instanceId: InstanceId): String = {
+    apiPathPrefix + "/" + servicesStatePath + "/" + encode(instanceId)
   }
 
-  def getUploadServiceLogsPath(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName): String = {
-    uploadServiceLogsPath + "/" + encode(instanceId) + "/" + encode(serviceInstanceName.toString)
+  def getUploadServiceLogsPath(instanceId: InstanceId, profiledServiceName: ProfiledServiceName): String = {
+    uploadServiceLogsPath + "/" + encode(instanceId) + "/" + encode(profiledServiceName.toString)
   }
 }

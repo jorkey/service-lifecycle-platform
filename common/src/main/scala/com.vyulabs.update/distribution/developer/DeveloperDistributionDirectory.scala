@@ -32,6 +32,8 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   protected val serviceLogsFile = "%s-logs.json"
   protected val clientLockFile = "client-%s.lock"
 
+  protected val installedDesiredVersionsFile = "installed-desired-versions.json"
+
   if (!clientsDir.exists()) {
     clientsDir.mkdir()
   }
@@ -93,14 +95,18 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     new File(getServiceDir(serviceName, version.client), getVersionImageFileName(serviceName, version))
   }
 
-  def getClientDesiredVersionsFile(clientName: ClientName): File = {
+  def getDesiredVersionsFile(clientName: ClientName): File = {
     new File(getClientDir(clientName), desiredVersionsFile)
+  }
+
+  def getInstalledDesiredVersionsFile(clientName: ClientName): File = {
+    new File(getClientDir(clientName), installedDesiredVersionsFile)
   }
 
   def getDesiredVersionsFile(clientName: Option[ClientName]): File = {
     clientName match {
       case Some(clientName) =>
-        getClientDesiredVersionsFile(clientName)
+        getDesiredVersionsFile(clientName)
       case None =>
         getDesiredVersionsFile()
     }

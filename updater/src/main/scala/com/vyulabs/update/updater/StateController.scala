@@ -1,14 +1,12 @@
 package com.vyulabs.update.updater
 
 import java.io.File
-import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.vyulabs.update.common.Common.VmInstanceId
-import com.vyulabs.update.common.{Common, ServiceInstanceName}
-import com.vyulabs.update.state.{UpdaterInstanceState, ServiceState}
+import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common
+import com.vyulabs.update.state.{ProfiledServiceName, ServiceInstallation, ServiceState, ServicesState}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.updater.UpdaterMain.log
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
@@ -17,9 +15,9 @@ import org.slf4j.Logger
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceStateController(serviceInstanceName: ServiceInstanceName,
+class ServiceStateController(profiledServiceName: ProfiledServiceName,
                              updateRepository: () => Unit)(implicit log: Logger) {
-  val serviceDirectory = new File(serviceInstanceName.toString)
+  val serviceDirectory = new File(profiledServiceName.toString)
   val currentServiceDirectory = new File(serviceDirectory, "current")
   val faultsDirectory = new File(serviceDirectory, "faults")
   val newServiceDirectory = new File(serviceDirectory, "new")
@@ -28,9 +26,9 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
   @volatile private var startDate = Option.empty[Date]
   @volatile private var version = Option.empty[BuildVersion]
   @volatile private var updateToVersion = Option.empty[BuildVersion]
-  @volatile private var lastErrors = Seq.empty[String]
+  @volatile private var lastErrors = Option.empty[Seq[String]]
   @volatile private var lastExitCode = Option.empty[Int]
-  @volatile private var failuresCount = 0
+  @volatile private var failuresCount = Option.empty[Int]
 
   private val maxLastErrors = 25
 
@@ -38,21 +36,21 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
     Utils.error(s"Can't create directory ${serviceDirectory}")
   }
 
-  version = if (serviceInstanceName.serviceName == Common.UpdaterServiceName) {
+  version = if (profiledServiceName.serviceName == Common.UpdaterServiceName) {
     Utils.getManifestBuildVersion(Common.UpdaterServiceName)
   } else {
-    IOUtils.readServiceVersion(currentServiceDirectory, serviceInstanceName.serviceName)
+    IOUtils.readServiceVersion(profiledServiceName.serviceName, currentServiceDirectory)
   }
 
-  log.info(s"Current version of service ${serviceInstanceName} is ${version}")
+  log.info(s"Current version of service ${profiledServiceName} is ${version}")
 
   def getVersion() = version
 
   def initFromState(state: ServiceState): Unit = {
     failuresCount = state.failuresCount
-    if (serviceInstanceName.serviceName == Common.UpdaterServiceName) {
+    if (profiledServiceName.serviceName == Common.UpdaterServiceName) {
       if (updateToVersion.isEmpty) {
-        failuresCount += 1
+        failuresCount = Some(failuresCount.getOrElse(0) + 1)
       }
     }
   }
@@ -90,95 +88,36 @@ class ServiceStateController(serviceInstanceName: ServiceInstanceName,
   }
 
   def info(message: String): Unit = {
-    log.info(s"Service ${serviceInstanceName}: ${message}")
+    log.info(s"Service ${profiledServiceName}: ${message}")
   }
 
   def error(message: String): Unit = {
-    log.error(s"Service ${serviceInstanceName}: ${message}")
+    log.error(s"Service ${profiledServiceName}: ${message}")
     addLastError(message)
     updateRepository()
   }
 
   def error(message: String, exception: Throwable): Unit = {
-    log.error(s"Service ${serviceInstanceName}: ${message}", exception)
+    log.error(s"Service ${profiledServiceName}: ${message}", exception)
     addLastError(message + ": " + exception.toString)
     updateRepository()
   }
 
   def failure(exitCode: Int): Unit = {
-    log.error(s"Service ${serviceInstanceName} terminated unexpectedly with code ${exitCode}")
+    log.error(s"Service ${profiledServiceName} terminated unexpectedly with code ${exitCode}")
     lastExitCode = Some(exitCode)
-    failuresCount += 1
+    failuresCount = Some(failuresCount.getOrElse(0) + 1)
     updateRepository()
   }
 
   def getState(): ServiceState = {
-    ServiceState(serviceInstanceName, startDate, version, updateToVersion, failuresCount, lastErrors, lastExitCode)
+    ServiceState(new Date(), startDate, version, updateToVersion, failuresCount, lastErrors, lastExitCode)
   }
 
   private def addLastError(error: String): Unit = {
-    lastErrors :+= error
-    if (lastErrors.size == maxLastErrors + 1) {
-      lastErrors = lastErrors.drop(1)
+    lastErrors = Some(lastErrors.getOrElse(Seq.empty) :+ error)
+    if (lastErrors.get.size == maxLastErrors + 1) {
+      lastErrors = Some(lastErrors.get.drop(1))
     }
-  }
-}
-
-class InstanceStateUploader(instanceId: VmInstanceId, version: BuildVersion,
-                            servicesInstanceNames: Set[ServiceInstanceName],
-                            clientDirectory: ClientDistributionDirectoryClient)(implicit log: Logger) extends Thread { self =>
-  private val services = servicesInstanceNames.foldLeft(Map.empty[ServiceInstanceName, ServiceStateController]){ (services, name) =>
-    services + (name -> new ServiceStateController(name, () => update()))
-  }
-
-  private val startDate = clientDirectory.downloadInstanceState(instanceId,
-      new java.io.File(".").getCanonicalPath(), ProcessHandle.current().pid().toString) match {
-    case Some(instanceState) =>
-      for (storedState <- instanceState.servicesStates) {
-        val serviceName = storedState.serviceInstanceName
-        for (state <- services.get(serviceName)) {
-          state.initFromState(storedState)
-        }
-      }
-      instanceState.startDate
-    case None =>
-      new Date()
-  }
-
-  def getServiceStateController(serviceInstanceName: ServiceInstanceName): Option[ServiceStateController] = {
-    services.get(serviceInstanceName)
-  }
-
-  def error(message: String, exception: Throwable): Unit = {
-    log.error(message, exception)
-    update()
-  }
-
-  def update(): Unit = {
-    self.synchronized {
-      self.notify()
-    }
-  }
-
-  override def run(): Unit = {
-    while (true) {
-      try {
-        self.synchronized {
-          self.wait(10000)
-        }
-        updateRepository()
-      } catch {
-        case ex: Exception =>
-          log.error("Updating repository error", ex)
-      }
-    }
-  }
-
-  private def updateRepository(): Boolean = synchronized {
-    log.info("Update instance state")
-    val state = UpdaterInstanceState(new Date(), startDate,
-      services.foldLeft(Seq.empty[ServiceState])((states, service) => { states :+ service._2.getState() }))
-    clientDirectory.uploadInstanceState(instanceId,
-      new java.io.File(".").getCanonicalPath(), ProcessHandle.current().pid().toString, state)
   }
 }

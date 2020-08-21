@@ -1,5 +1,7 @@
 package com.vyulabs.update.distribution
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
@@ -22,7 +24,7 @@ class SelfUpdater(dir: DistributionDirectory)
     extends Thread with DeveloperDistributionWebPaths { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val scriptsVersion = IOUtils.getScriptsVersion()
+  private val scriptsVersion = IOUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
   private var stopping = false
 
   def close(): Unit = {

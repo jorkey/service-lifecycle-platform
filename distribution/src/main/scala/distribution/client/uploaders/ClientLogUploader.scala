@@ -5,13 +5,13 @@ import java.io.{File, IOException}
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, failWith}
 import akka.http.scaladsl.server.Route
-import com.vyulabs.update.common.Common.VmInstanceId
-import com.vyulabs.update.common.ServiceInstanceName
+import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.log.LogWriter
-import com.vyulabs.update.logs.{ServiceLogs}
+import com.vyulabs.update.logs.ServiceLogs
+import com.vyulabs.update.state.ProfiledServiceName
 import com.vyulabs.update.utils.IOUtils
-import org.slf4j.{LoggerFactory}
+import org.slf4j.LoggerFactory
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.12.19.
@@ -22,8 +22,8 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
 
   private val instanceDeadTimeout: Long = 24 * 60 * 60 * 1000
 
-  private var writers = Map.empty[VmInstanceId, Map[ServiceInstanceName, LogWriter]]
-  private var instancesTimestamps = Map.empty[VmInstanceId, Long]
+  private var writers = Map.empty[InstanceId, Map[ProfiledServiceName, LogWriter]]
+  private var instancesTimestamps = Map.empty[InstanceId, Long]
 
   private var stopping = false
 
@@ -41,16 +41,16 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
     join()
   }
 
-  def receiveLogs(instanceId: VmInstanceId, serviceInstanceName: ServiceInstanceName, serviceLogs: ServiceLogs): Route = {
-    log.debug(s"Receive logs from instance ${instanceId} service ${serviceInstanceName.toString}")
+  def receiveLogs(instanceId: InstanceId, profiledServiceName: ProfiledServiceName, serviceLogs: ServiceLogs): Route = {
+    log.debug(s"Receive logs from instance ${instanceId} service ${profiledServiceName.toString}")
     self.synchronized {
       for (writerInit <- serviceLogs.writerInit) {
-        log.info(s"Receive init of logs from instance ${instanceId} service ${serviceInstanceName.toString}")
+        log.info(s"Receive init of logs from instance ${instanceId} service ${profiledServiceName.toString}")
         val instanceServices = writers.get(instanceId) match {
           case Some(services) =>
             services
           case None =>
-            val services = Map.empty[ServiceInstanceName, LogWriter]
+            val services = Map.empty[ProfiledServiceName, LogWriter]
             writers += (instanceId -> services)
             services
         }
@@ -58,20 +58,20 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
         if (!instanceDir.exists() && !instanceDir.mkdir()) {
           return failWith(new IOException(s"Can't make directory ${instanceDir}"))
         }
-        for (writer <- instanceServices.get(serviceInstanceName)) {
-          log.info(s"Close log writer for service ${serviceInstanceName} of instance ${instanceId}")
+        for (writer <- instanceServices.get(profiledServiceName)) {
+          log.info(s"Close log writer for service ${profiledServiceName} of instance ${instanceId}")
           writer.close()
-          writers += (instanceId -> (instanceServices - serviceInstanceName))
+          writers += (instanceId -> (instanceServices - profiledServiceName))
         }
-        log.info(s"Open log writer for service ${serviceInstanceName} of instance ${instanceId}")
-        val serviceDir = new File(instanceDir, serviceInstanceName.toString)
+        log.info(s"Open log writer for service ${profiledServiceName} of instance ${instanceId}")
+        val serviceDir = new File(instanceDir, profiledServiceName.toString)
         if (!serviceDir.exists() && !serviceDir.mkdir()) {
           return failWith(new IOException(s"Can't make directory ${serviceDir}"))
         }
         val writer = new LogWriter(serviceDir,
           writerInit.maxFileSizeMB * 1024 * 1024, writerInit.maxFilesCount, writerInit.filePrefix,
           ((error, exception) => log.error(error, exception)))
-        writers += (instanceId -> (instanceServices + (serviceInstanceName -> writer)))
+        writers += (instanceId -> (instanceServices + (profiledServiceName -> writer)))
       }
       writers.get(instanceId) match {
         case Some(instanceServices) =>
@@ -80,14 +80,14 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
             return failWith(new IOException(s"Can't make directory ${instanceDir}"))
           } else {
             instancesTimestamps += (instanceId -> System.currentTimeMillis())
-            instanceServices.get(serviceInstanceName) match {
+            instanceServices.get(profiledServiceName) match {
               case Some(writer) =>
                 for (record <- serviceLogs.records) {
                   writer.writeLogLine(record, false)
                 }
                 writer.flush()
               case None =>
-                return complete(StatusCodes.NotAcceptable, s"Logging of service ${serviceInstanceName} is not initialized")
+                return complete(StatusCodes.NotAcceptable, s"Logging of service ${profiledServiceName} is not initialized")
             }
           }
           complete(StatusCodes.OK)

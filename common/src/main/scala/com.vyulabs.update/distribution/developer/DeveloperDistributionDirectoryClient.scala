@@ -3,18 +3,16 @@ package com.vyulabs.update.distribution.developer
 import java.io._
 import java.net.URL
 
-import com.typesafe.config.Config
-import com.vyulabs.update.common.Common.{ClientName, VmInstanceId, ServiceName}
-import com.vyulabs.update.common.ServiceInstanceName
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.config.ClientConfig
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
-import com.vyulabs.update.state.VmInstancesState
+import com.vyulabs.update.state.InstancesState
 import org.slf4j.Logger
 import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.info.ServicesVersions._
-import com.vyulabs.update.state.VmInstancesState._
+import com.vyulabs.update.state.InstancesState._
 import spray.json._
 
 /**
@@ -36,15 +34,20 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     downloadToJson(url).map(_.convertTo[DesiredVersions])
   }
 
+  def uploadInstalledDesiredVersions(file: File): Boolean = {
+    log.info(s"Upload installed desired versions")
+    uploadFromFile(makeUrl(apiPathPrefix + "/" + installedDesiredVersionsPath), desiredVersionsName, file)
+  }
+
   def uploadTestedVersions(testedVersions: ServicesVersions): Boolean = {
     log.info(s"Upload tested versions")
     uploadFromJson(makeUrl(uploadTestedVersionsPath),
       testedVersionsName, uploadTestedVersionsPath, testedVersions.toJson)
   }
 
-  def uploadVmInstancesState(instancesState: VmInstancesState): Boolean = {
+  def uploadInstancesState(instancesState: InstancesState): Boolean = {
     uploadFromJson(makeUrl(apiPathPrefix + "/" + getInstancesStatePath()),
-      instancesStateName, apiPathPrefix + "/" + instancesStatePath, instancesState.toJson)
+      instancesStateName, instancesStatePath, instancesState.toJson)
   }
 
   def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {
