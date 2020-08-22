@@ -1,23 +1,21 @@
 #!/bin/bash -e
 
 function exitUsage() {
-  >&2 echo "Use: $0 developer <port> or"
-  >&2 echo "     $0 client <port> <developerDirectoryUrl>"
+  >&2 echo "Use: $0 developer <name> <port> or"
+  >&2 echo "     $0 client <name> <port> <developerDirectoryUrl>"
   exit 1
 }
 
-if [ -z "$1" ]
-then
-  exitUsage
-fi
-
 if [ "$1" == "developer" ]; then
-  distribDirectoryUrl=file://`/bin/pwd`/directory
-elif [ "$1" == "client" ]; then
   if [ -z "$3" ]; then
     exitUsage
   fi
-  distribDirectoryUrl=$3
+  distribDirectoryUrl=file://`/bin/pwd`/directory
+elif [ "$1" == "client" ]; then
+  if [ -z "$4" ]; then
+    exitUsage
+  fi
+  distribDirectoryUrl=$4
 else
   exitUsage
 fi
@@ -55,9 +53,11 @@ if [ "$1" == "developer" ]; then
   if [ -z "$2" ]; then
     exitUsage
   fi
-  port=$2
+  name=$2
+  port=$3
   cat << EOF > distribution.json
 {
+  "name: " ${name},
   "port" : ${port}
 }
 EOF
@@ -68,10 +68,12 @@ elif [ "$1" == "client" ]; then
   if [ -z "$3" ]; then
     exitUsage
   fi
-  port=$2
-  distribDirectoryUrl=$3
+  name=$2
+  port=$3
+  distribDirectoryUrl=$4
   cat << EOF > distribution.json
 {
+  "name: " ${name},
   "port" : ${port},
   "developerDistributionUrl" : "${distribDirectoryUrl}"
 }
