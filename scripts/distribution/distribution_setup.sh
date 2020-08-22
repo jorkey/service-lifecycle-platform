@@ -23,6 +23,16 @@ fi
 serviceToSetup=distribution
 . update.sh
 
+if [ "${cloudProvider}" == "Azure" ]; then
+  if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, ":", .compute.name'`; then
+    >&2 echo "Can't get instance Id"
+    exit 1
+  fi
+else
+  >&2 echo "Invalid cloud provider ${cloudProvider}"
+  exit 1
+fi
+
 function createService() {
   sudo sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
 [Unit]
@@ -50,14 +60,12 @@ EOF
 }
 
 if [ "$1" == "developer" ]; then
-  if [ -z "$2" ]; then
-    exitUsage
-  fi
   name=$2
   port=$3
   cat << EOF > distribution.json
 {
   "name: " ${name},
+  "instanceId: " ${instanceId},
   "port" : ${port}
 }
 EOF
@@ -65,15 +73,13 @@ EOF
   createService developer
 
 elif [ "$1" == "client" ]; then
-  if [ -z "$3" ]; then
-    exitUsage
-  fi
   name=$2
   port=$3
   distribDirectoryUrl=$4
   cat << EOF > distribution.json
 {
   "name: " ${name},
+  "instanceId: " ${instanceId},
   "port" : ${port},
   "developerDistributionUrl" : "${distribDirectoryUrl}"
 }
