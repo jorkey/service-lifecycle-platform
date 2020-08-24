@@ -167,7 +167,6 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             path(instancesStatePath) {
                               uploadFileToJson(instancesStateName, (json) => {
                                 try {
-                                  log.debug(s"State from ${userName}: ${json.sortedPrint}")
                                   val instancesState = json.convertTo[InstancesState]
                                   stateUploader.receiveInstancesState(userName, instancesState)
                                   complete(StatusCodes.OK)
