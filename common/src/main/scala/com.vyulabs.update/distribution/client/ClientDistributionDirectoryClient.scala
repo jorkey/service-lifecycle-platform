@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.client
 import java.io.File
 import java.net.URL
 
-import com.vyulabs.update.common.Common.{ServiceDirectory, ServiceName, InstanceId}
+import com.vyulabs.update.common.Common.{ServiceName, InstanceId}
 import com.vyulabs.update.info.{DesiredVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.logs.ServiceLogs
@@ -12,7 +12,7 @@ import spray.json._
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.logs.ServiceLogs._
-import com.vyulabs.update.state.{ProfiledServiceName, ServiceInstallation, ServiceState, ServicesState}
+import com.vyulabs.update.state.{ProfiledServiceName, ServicesState}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 25.04.19.
