@@ -65,7 +65,7 @@ const Versions = props => {
   const [client, setClient] = useState()
   const [clients, setClients] = useState([])
   const [desiredVersions, setDesiredVersions] = useState([])
-  const [installedDesiredVersions, setInstalledDesiredVersions] = useState([])
+  const [installedDesiredVersions, setInstalledDesiredVersions] = useState(new Map())
   const [instanceVersions, setInstanceVersions] = useState(new Map())
 
   React.useEffect(() => {
@@ -78,7 +78,7 @@ const Versions = props => {
         setDesiredVersions(Object.entries(versions))
         if (client) {
           Utils.getInstalledDesiredVersions(client).then(versions => {
-            setInstalledDesiredVersions(Object.entries(versions))
+            setInstalledDesiredVersions(new Map(Object.entries(versions)))
             Utils.getInstanceVersions(client).then(versions => {
               setInstanceVersions(new Map(Object.entries(versions))) })
           })
