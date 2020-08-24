@@ -73,7 +73,7 @@ const Topbar = props => {
                             display="inline"
                             variant="h5"
                 >
-                  v{distributionInfo.version}
+                  {distributionInfo.version}
                 </Typography>
               </>
             ) : null }

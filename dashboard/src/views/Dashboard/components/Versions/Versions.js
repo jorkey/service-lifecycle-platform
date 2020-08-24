@@ -79,9 +79,9 @@ const Versions = props => {
         if (client) {
           Utils.getInstalledDesiredVersions(client).then(versions => {
             setInstalledDesiredVersions(new Map(Object.entries(versions)))
-            Utils.getInstanceVersions(client).then(versions => {
-              setInstanceVersions(new Map(Object.entries(versions))) })
           })
+          Utils.getInstanceVersions(client).then(versions => {
+            setInstanceVersions(new Map(Object.entries(versions))) })
         }
       })
   }, [client]);
