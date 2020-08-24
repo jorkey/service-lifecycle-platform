@@ -69,14 +69,14 @@ class ServiceUpdater(instanceId: InstanceId,
         state.error(s"Can't make directory ${state.newServiceDirectory}")
         return false
       }
-      if (!clientDirectory.downloadVersion(profiledServiceName.serviceName, newVersion, state.newServiceDirectory)) {
-        state.error(s"Can't download ${profiledServiceName.serviceName} version ${newVersion}")
+      if (!clientDirectory.downloadVersion(profiledServiceName.service, newVersion, state.newServiceDirectory)) {
+        state.error(s"Can't download ${profiledServiceName.service} version ${newVersion}")
         return false
       }
 
       state.info(s"Install service")
       var args = Map.empty[String, String]
-      args += ("profile" -> profiledServiceName.serviceProfile)
+      args += ("profile" -> profiledServiceName.profile)
       args += ("version" -> newVersion.original().toString)
       args += ("PATH" -> System.getenv("PATH"))
 
@@ -134,7 +134,7 @@ class ServiceUpdater(instanceId: InstanceId,
 
       state.info(s"Post install service")
       var args = Map.empty[String, String]
-      args += ("profile" -> profiledServiceName.serviceProfile)
+      args += ("profile" -> profiledServiceName.profile)
       args += ("version" -> newVersion.original().toString)
       args += ("PATH" -> System.getenv("PATH"))
 
@@ -145,7 +145,7 @@ class ServiceUpdater(instanceId: InstanceId,
         }
       }
 
-      IOUtils.writeServiceVersion(state.currentServiceDirectory, profiledServiceName.serviceName, newVersion)
+      IOUtils.writeServiceVersion(state.currentServiceDirectory, profiledServiceName.service, newVersion)
 
       state.setVersion(newVersion)
 
@@ -178,7 +178,7 @@ class ServiceUpdater(instanceId: InstanceId,
           state.info(s"Start service of version ${newVersion}")
 
           var args = Map.empty[String, String]
-          args += ("profile" -> profiledServiceName.serviceProfile)
+          args += ("profile" -> profiledServiceName.profile)
           args += ("version" -> newVersion.original().toString)
 
           val runner = new ServiceRunner(instanceId, profiledServiceName, state, clientDirectory, faultUploader)

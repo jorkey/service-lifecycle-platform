@@ -97,7 +97,7 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
         IOUtils.deleteFileRecursively(tmpDirectory)
       }
       fault.reportFilesTmpDir.foreach(IOUtils.deleteFileRecursively(_))
-      if (!clientDirectory.uploadServiceFault(fault.serviceInstallation.name.serviceName, archiveFile)) {
+      if (!clientDirectory.uploadServiceFault(fault.serviceInstallation.name.service, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }

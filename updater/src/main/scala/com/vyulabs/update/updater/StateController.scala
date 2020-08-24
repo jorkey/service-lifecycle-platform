@@ -36,10 +36,10 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName,
     Utils.error(s"Can't create directory ${serviceDirectory}")
   }
 
-  version = if (profiledServiceName.serviceName == Common.UpdaterServiceName) {
+  version = if (profiledServiceName.service == Common.UpdaterServiceName) {
     Utils.getManifestBuildVersion(Common.UpdaterServiceName)
   } else {
-    IOUtils.readServiceVersion(profiledServiceName.serviceName, currentServiceDirectory)
+    IOUtils.readServiceVersion(profiledServiceName.service, currentServiceDirectory)
   }
 
   log.info(s"Current version of service ${profiledServiceName} is ${version}")
@@ -48,7 +48,7 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName,
 
   def initFromState(state: ServiceState): Unit = {
     failuresCount = state.failuresCount
-    if (profiledServiceName.serviceName == Common.UpdaterServiceName) {
+    if (profiledServiceName.service == Common.UpdaterServiceName) {
       if (updateToVersion.isEmpty) {
         failuresCount = Some(failuresCount.getOrElse(0) + 1)
       }

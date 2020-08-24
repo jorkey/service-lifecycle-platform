@@ -3,19 +3,18 @@ package com.vyulabs.update.state
 import java.io.File
 import java.util.Date
 
-import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{CommonProfile, InstanceId, ServiceDirectory, ServiceName, ServiceProfile}
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
 
-case class ProfiledServiceName(serviceName: ServiceName, serviceProfile: ServiceProfile) {
+case class ProfiledServiceName(service: ServiceName, profile: ServiceProfile) {
   override def toString: String = {
-    if (serviceProfile != CommonProfile) {
-      serviceName + "-" + serviceProfile
+    if (profile != CommonProfile) {
+      service + "-" + profile
     } else {
-      serviceName
+      service
     }
   }
 }

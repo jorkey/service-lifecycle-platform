@@ -167,6 +167,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             path(instancesStatePath) {
                               uploadFileToJson(instancesStateName, (json) => {
                                 //try {
+                                  log.debug(s"State from ${userName}: ${json.sortedPrint}")
                                   val instancesState = json.convertTo[InstancesState]
                                   stateUploader.receiveInstancesState(userName, instancesState)
                                   complete(StatusCodes.OK)
@@ -349,7 +350,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
           state.state.foreach { case (instanceId, servicesStates) =>
             servicesStates.foreach { case (serviceInstallation, serviceState) =>
               for (version <- serviceState.version) {
-                val serviceName = serviceInstallation.name.serviceName
+                val serviceName = serviceInstallation.name.service
                 var map = versions.getOrElse(serviceName, Map.empty[BuildVersion, Set[InstanceId]])
                 map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
                 versions += (serviceName -> map)

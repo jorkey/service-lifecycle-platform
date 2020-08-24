@@ -23,7 +23,7 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
     val directory = new java.io.File(".").getCanonicalPath()
     servicesState.state.foreach { case (service, serviceState) =>
       if (service.directory == directory) {
-        if (service.name.serviceName == Common.UpdaterServiceName) {
+        if (service.name.service == Common.UpdaterServiceName) {
           for (date <- serviceState.startDate) {
             startDate = date
           }
