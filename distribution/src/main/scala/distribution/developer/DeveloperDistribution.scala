@@ -348,12 +348,13 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
         case Some(state) =>
           var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
           state.state.foreach { case (instanceId, servicesStates) =>
-            servicesStates.foreach { case (serviceInstallation, serviceState) =>
-              for (version <- serviceState.version) {
-                val serviceName = serviceInstallation.name.service
-                var map = versions.getOrElse(serviceName, Map.empty[BuildVersion, Set[InstanceId]])
-                map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
-                versions += (serviceName -> map)
+            servicesStates.state.foreach { case (_, state) =>
+              state.foreach { case (name, state) =>
+                for (version <- state.version) {
+                  var map = versions.getOrElse(name.service, Map.empty[BuildVersion, Set[InstanceId]])
+                  map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
+                  versions += (name.service -> map)
+                }
               }
             }
           }

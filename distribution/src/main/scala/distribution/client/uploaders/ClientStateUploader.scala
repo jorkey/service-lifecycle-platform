@@ -11,9 +11,9 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
-import com.vyulabs.update.state.{InstancesState, ServiceInstallation, ServiceState, ServicesState}
+import com.vyulabs.update.state.{InstancesState, ProfiledServiceName, ServiceState, ServicesState}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import org.slf4j.LoggerFactory
 
@@ -32,8 +32,8 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
 
   private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
 
-  private var instancesStates = Map.empty[InstanceId, Map[ServiceInstallation, ServiceState]]
-  private var statesToUpload = Map.empty[InstanceId, Map[ServiceInstallation, ServiceState]]
+  private var instancesStates = Map.empty[InstanceId, Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]]
+  private var statesToUpload = Map.empty[InstanceId, Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]]
 
   private val expirationPeriod = FiniteDuration.apply(1, TimeUnit.MINUTES).toMillis
   private val uploadInterval = 10000
@@ -94,15 +94,13 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
             val states = self.synchronized {
               val states = statesToUpload
               statesToUpload = Map.empty
-              states
-            } + (instanceId ->
-              (ServiceState.getOwnInstanceState(Common.DistributionServiceName) ++
-               ServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")) ++
-               ServiceState.getServiceInstanceState(Common.InstallerServiceName, new File("../install"))
-              ))
+              InstancesState(states.mapValues(ServicesState(_)))
+            }.merge(InstancesState(Map.empty + (instanceId ->
+              ServicesState.getOwnInstanceState(Common.DistributionServiceName)
+                .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
+                .merge(ServicesState.getServiceInstanceState(new File("../install"), Common.InstallerServiceName)))))
             log.debug("Upload instances state to developer distribution server")
-            val instancesState = InstancesState(states)
-            if (!developerDirectory.uploadInstancesState(instancesState)) {
+            if (!developerDirectory.uploadInstancesState(states)) {
               log.error("Can't upload instances state")
             }
           } catch {
@@ -121,9 +119,10 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
   private def removeOldStates(): Unit = {
     self.synchronized {
       instancesStates = instancesStates.map { case (instanceId, state) =>
-        (instanceId, state.filter { case (_, state) =>
-          System.currentTimeMillis() - state.date.getTime < expirationPeriod
-        })
+        (instanceId, state.mapValues ( state =>
+          state.filter { case (_, state) =>
+            System.currentTimeMillis() - state.date.getTime < expirationPeriod
+          }))
       }.filter { case (_, state) =>
         !state.isEmpty
       }

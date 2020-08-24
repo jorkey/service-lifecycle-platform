@@ -4,10 +4,9 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common.ClientName
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.state.InstancesState
+import com.vyulabs.update.state.{InstancesState, ServicesState}
 import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.state.InstancesState._
-
 import org.slf4j.LoggerFactory
 import spray.json._
 
@@ -66,10 +65,12 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
                   case Some(deadInstancesState) =>
                     deadInstancesState.state
                       .filterKeys(!instancesState.state.contains(_))
-                      .mapValues(_.filter { case (_, serviceState) =>
+                      .mapValues(_.state.mapValues(_.filter { case (_, serviceState) =>
                         (System.currentTimeMillis() - serviceState.date.getTime) < expireDiedInstanceStateTime
                       })
-                      .filter(!_._2.isEmpty)
+                      .filterNot(_._2.isEmpty))
+                      .filterNot(_._2.isEmpty)
+                      .mapValues(ServicesState(_))
                   case None =>
                     Map.empty
                 }

@@ -47,12 +47,6 @@ object ProfiledServiceName {
 
 case class StateEvent(date: Date, message: String)
 
-case class ServiceInstallation(name: ProfiledServiceName, directory: ServiceDirectory)
-
-object ServiceInstallation extends DefaultJsonProtocol {
-  implicit val serviceInstallation = jsonFormat2(ServiceInstallation.apply)
-}
-
 case class ServiceState(date: Date = new Date(), startDate: Option[Date] = None, version: Option[BuildVersion] = None, updateToVersion: Option[BuildVersion] = None,
                         failuresCount: Option[Int] = None, lastErrors: Option[Seq[String]] = None, lastExitCode: Option[Int] = None)
 
@@ -61,34 +55,67 @@ object ServiceState extends DefaultJsonProtocol {
   import com.vyulabs.update.version.BuildVersion._
 
   implicit val serviceStateJson = jsonFormat7(ServiceState.apply)
-
-  def getOwnInstanceState(serviceName: ServiceName)(implicit log: Logger): Map[ServiceInstallation, ServiceState] = {
-    val ownInstallation = ServiceInstallation(ProfiledServiceName(serviceName), new java.io.File(".").getCanonicalPath())
-    val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName))
-    Map.empty[ServiceInstallation, ServiceState] + (ownInstallation -> ownState)
-  }
-
-  def getServiceInstanceState(serviceName: ServiceName, directory: File)(implicit log: Logger): Map[ServiceInstallation, ServiceState] = {
-    val serviceInstallation = ServiceInstallation(ProfiledServiceName(serviceName), directory.getCanonicalPath())
-    val serviceState = ServiceState(version = IOUtils.readServiceVersion(serviceName, directory))
-    Map.empty[ServiceInstallation, ServiceState] + (serviceInstallation -> serviceState)
-  }
 }
 
-case class ServicesState(state: Map[ServiceInstallation, ServiceState])
+case class ServicesState(state: Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]) {
+  def merge(servicesState: ServicesState): ServicesState = {
+    var mergedState = state
+    servicesState.state.foreach { case (directory, directoryState) =>
+      val mergedDirectoryState = mergedState.get(directory) match {
+        case Some(mergedDirectoryState) =>
+          mergedDirectoryState ++ directoryState
+        case None =>
+          directoryState
+      }
+      mergedState += (directory -> mergedDirectoryState)
+    }
+    ServicesState(mergedState)
+  }
+}
 
 object ServicesState extends DefaultJsonProtocol {
   import ServiceState._
 
   implicit val servicesStateJson = jsonFormat1(ServicesState.apply)
+
+  def getOwnInstanceState(serviceName: ServiceName)(implicit log: Logger): ServicesState = {
+    val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName))
+    val directoryState = Map.empty + (ProfiledServiceName(serviceName) -> ownState)
+    ServicesState(Map.empty + (new File(".").getCanonicalPath() -> directoryState))
+  }
+
+  def getServiceInstanceState(directory: File, serviceName: ServiceName)(implicit log: Logger): ServicesState = {
+    val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName))
+    val directoryState = Map.empty + (ProfiledServiceName(serviceName) -> ownState)
+    ServicesState(Map.empty + (directory.getCanonicalPath() -> directoryState))
+  }
 }
 
-case class InstancesState(state: Map[InstanceId, Map[ServiceInstallation, ServiceState]])
+case class InstancesState(state: Map[InstanceId, ServicesState]) {
+  def merge(instancesState: InstancesState): InstancesState = {
+    var mergedState = state
+    instancesState.state.foreach { case (instanceId, instanceState) =>
+      mergedState.get(instanceId) match {
+        case Some(mergedInstanceState) =>
+          mergedState += (instanceId -> mergedInstanceState.merge(instanceState))
+        case None =>
+          mergedState += (instanceId -> instanceState)
+      }
+    }
+    InstancesState(mergedState)
+  }
+}
 
 object InstancesState extends DefaultJsonProtocol {
-  import ServiceState._
-
   implicit val instancesStateJson = jsonFormat1(InstancesState.apply)
+
+  def getOwnInstanceState(instanceId: InstanceId, serviceName: ServiceName)(implicit log: Logger): InstancesState = {
+    InstancesState(Map.empty + (instanceId -> ServicesState.getOwnInstanceState(serviceName)))
+  }
+
+  def getServiceInstanceState(instanceId: InstanceId, directory: File, serviceName: ServiceName)(implicit log: Logger): InstancesState = {
+    InstancesState(Map.empty + (instanceId -> ServicesState.getServiceInstanceState(directory, serviceName)))
+  }
 }
 
 case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[InstanceId]]])

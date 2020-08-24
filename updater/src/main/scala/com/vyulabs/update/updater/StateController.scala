@@ -3,10 +3,8 @@ package com.vyulabs.update.updater
 import java.io.File
 import java.util.Date
 
-import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.state.{ProfiledServiceName, ServiceInstallation, ServiceState, ServicesState}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
+import com.vyulabs.update.state.{ProfiledServiceName, ServiceState}
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger

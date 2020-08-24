@@ -4,11 +4,10 @@ import java.io.File
 import java.util.Date
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.state.{ProfiledServiceName, ServiceInstallation, ServiceState, ServicesState}
+import com.vyulabs.update.state.{ProfiledServiceName, ServiceState, ServicesState}
 import com.vyulabs.update.updater.ServiceStateController
-import com.vyulabs.update.utils.{IOUtils, Utils}
 import org.slf4j.Logger
 
 class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
@@ -21,15 +20,17 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
 
   for (servicesState <- clientDirectory.downloadServicesState(instanceId)) {
     val directory = new java.io.File(".").getCanonicalPath()
-    servicesState.state.foreach { case (service, serviceState) =>
-      if (service.directory == directory) {
-        if (service.name.service == Common.UpdaterServiceName) {
-          for (date <- serviceState.startDate) {
-            startDate = date
-          }
-        } else {
-          for (state <- services.get(service.name)) {
-            state.initFromState(serviceState)
+    servicesState.state.foreach { case (directory, serviceStates) =>
+      serviceStates.foreach { case (serviceName, serviceState) =>
+        if (directory == directory) {
+          if (serviceName.service == Common.UpdaterServiceName) {
+            for (date <- serviceState.startDate) {
+              startDate = date
+            }
+          } else {
+            for (state <- services.get(serviceName)) {
+              state.initFromState(serviceState)
+            }
           }
         }
       }
@@ -67,11 +68,11 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
 
   private def updateRepository(): Boolean = synchronized {
     log.info("Update instance state")
-    val ownState = ServiceState.getOwnInstanceState(Common.UpdaterServiceName)
-    val scriptsState = ServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
-    val servicesState = services.foldLeft(Map.empty[ServiceInstallation, ServiceState])((states, service) => { states +
-      (ServiceInstallation(service._1, new java.io.File(".").getCanonicalPath()) -> service._2.getState()) })
-    val state = ServicesState(ownState ++ scriptsState ++ servicesState)
-    clientDirectory.uploadServicesStates(instanceId, state)
+    val ownState = ServicesState.getOwnInstanceState(Common.UpdaterServiceName)
+    val scriptsState = ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName)
+    val states = services.foldLeft(Map.empty[ProfiledServiceName, ServiceState])((states, service) => {
+      states + (service._1 -> service._2.getState()) })
+    val servicesState = ServicesState(Map.empty + (new java.io.File(".").getCanonicalPath() -> states))
+    clientDirectory.uploadServicesStates(instanceId, ownState.merge(scriptsState).merge(servicesState))
   }
 }

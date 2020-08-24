@@ -10,7 +10,7 @@ import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.log.LogWriter
-import com.vyulabs.update.state.{ProfiledServiceName, ServiceInstallation}
+import com.vyulabs.update.state.{ProfiledServiceName}
 import com.vyulabs.update.updater.uploaders.{FaultReport, FaultUploader, LogUploader}
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
@@ -144,7 +144,7 @@ class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledService
             None
         }
         faultUploader.addFaultReport(FaultReport(instanceId,
-          ServiceInstallation(profiledServiceName, new java.io.File(".").getCanonicalPath()),
+          new java.io.File(".").getCanonicalPath(), profiledServiceName,
           state.getState(), reportFilesTmpDir, logTail))
         val restartOnFault = processParameters.map(_.config.restartOnFault.getOrElse(true)).getOrElse(false)
         if (restartOnFault) {
