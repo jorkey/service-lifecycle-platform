@@ -20,7 +20,7 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
 
   for (servicesState <- clientDirectory.downloadServicesState(instanceId)) {
     val directory = new java.io.File(".").getCanonicalPath()
-    servicesState.state.foreach { case (directory, serviceStates) =>
+    servicesState.directories.foreach { case (directory, serviceStates) =>
       serviceStates.foreach { case (serviceName, serviceState) =>
         if (directory == directory) {
           if (serviceName.service == Common.UpdaterServiceName) {

@@ -57,10 +57,10 @@ object ServiceState extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat7(ServiceState.apply)
 }
 
-case class ServicesState(state: Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]) {
+case class ServicesState(directories: Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]) {
   def merge(servicesState: ServicesState): ServicesState = {
-    var mergedState = state
-    servicesState.state.foreach { case (directory, directoryState) =>
+    var mergedState = directories
+    servicesState.directories.foreach { case (directory, directoryState) =>
       val mergedDirectoryState = mergedState.get(directory) match {
         case Some(mergedDirectoryState) =>
           mergedDirectoryState ++ directoryState
@@ -91,10 +91,10 @@ object ServicesState extends DefaultJsonProtocol {
   }
 }
 
-case class InstancesState(state: Map[InstanceId, ServicesState]) {
+case class InstancesState(instances: Map[InstanceId, ServicesState]) {
   def merge(instancesState: InstancesState): InstancesState = {
-    var mergedState = state
-    instancesState.state.foreach { case (instanceId, instanceState) =>
+    var mergedState = instances
+    instancesState.instances.foreach { case (instanceId, instanceState) =>
       mergedState.get(instanceId) match {
         case Some(mergedInstanceState) =>
           mergedState += (instanceId -> mergedInstanceState.merge(instanceState))

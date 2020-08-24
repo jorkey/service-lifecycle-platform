@@ -45,8 +45,8 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
 
   def receiveState(instanceId: InstanceId, servicesState: ServicesState): Route = {
     self.synchronized {
-      instancesStates += (instanceId -> (instancesStates.getOrElse(instanceId, Map.empty) ++ servicesState.state))
-      statesToUpload += (instanceId -> (statesToUpload.getOrElse(instanceId, Map.empty) ++ servicesState.state))
+      instancesStates += (instanceId -> (instancesStates.getOrElse(instanceId, Map.empty) ++ servicesState.directories))
+      statesToUpload += (instanceId -> (statesToUpload.getOrElse(instanceId, Map.empty) ++ servicesState.directories))
     }
     complete(StatusCodes.OK)
   }

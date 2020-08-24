@@ -347,8 +347,8 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
      onSuccess(getClientInstancesState(clientName).collect {
         case Some(state) =>
           var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
-          state.state.foreach { case (instanceId, servicesStates) =>
-            servicesStates.state.foreach { case (_, state) =>
+          state.instances.foreach { case (instanceId, servicesStates) =>
+            servicesStates.directories.foreach { case (_, state) =>
               state.foreach { case (name, state) =>
                 for (version <- state.version) {
                   var map = versions.getOrElse(name.service, Map.empty[BuildVersion, Set[InstanceId]])
