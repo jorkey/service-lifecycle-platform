@@ -166,15 +166,15 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             } ~
                             path(instancesStatePath) {
                               uploadFileToJson(instancesStateName, (json) => {
-                                //try {
+                                try {
                                   log.debug(s"State from ${userName}: ${json.sortedPrint}")
                                   val instancesState = json.convertTo[InstancesState]
                                   stateUploader.receiveInstancesState(userName, instancesState)
                                   complete(StatusCodes.OK)
-                                //} catch { // TODO remove
-                                //  case e: Exception =>
-                                //    complete(StatusCodes.BadRequest)
-                                //}
+                                } catch { // TODO remove
+                                  case e: Exception =>
+                                    complete(StatusCodes.BadRequest)
+                                }
                               })
                             } ~
                             path(serviceFaultPath / ".*".r) { (serviceName) =>
