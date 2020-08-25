@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import {AppBar, Toolbar, Typography} from '@material-ui/core';
 import Grid from "@material-ui/core/Grid";
-import UpdateIcon from "@material-ui/icons/Update";
+import BuildIcon from "@material-ui/icons/Build";
 import {Utils} from "../../../../common";
 
 const useStyles = makeStyles(() => ({
@@ -55,7 +55,7 @@ const Topbar = props => {
       <Toolbar>
         <RouterLink to="/">
           <Grid className={classes.logo}>
-            <UpdateIcon/>
+            <BuildIcon/>
             { distributionInfo.name ? (
               <>
                 <Typography className={classes.distributionName}

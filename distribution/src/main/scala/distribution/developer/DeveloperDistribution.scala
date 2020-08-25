@@ -381,7 +381,6 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
     val promise = Promise[Option[InstancesState]]()
     getFileContentWithLock(dir.getInstancesStateFile(clientName)).onComplete { bytes =>
       try {
-        log.debug(bytes.get.decodeString("utf8"))
         val instancesState = bytes.get.decodeString("utf8").parseJson.convertTo[InstancesState]
         promise.success(Some(instancesState))
       } catch {

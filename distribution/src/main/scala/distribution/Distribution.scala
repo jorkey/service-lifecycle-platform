@@ -211,7 +211,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
           case Some(lock) =>
             getFromFileAndUnlock(targetFile, lock)
           case None =>
-            log.info(s"Can't lock ${targetFile} in shared mode. Retry attempt after pause")
+            //log.info(s"Can't lock ${targetFile} in shared mode. Retry attempt after pause")
             val delay = Promise[Unit]()
             system.scheduler.scheduleOnce(FiniteDuration(100, TimeUnit.MILLISECONDS)) {
               delay.success()
@@ -236,7 +236,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
         future.onComplete { _ =>
           lock.release()
         }
-        HttpEntity.Default(contentType, contentLength, Source.fromFuture(future))
+        HttpEntity.Default(contentType, contentLength, Source.future(future))
       case entity =>
         lock.release()
         entity

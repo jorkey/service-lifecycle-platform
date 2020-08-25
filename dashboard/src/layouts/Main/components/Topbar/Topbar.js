@@ -6,7 +6,7 @@ import { makeStyles } from '@material-ui/styles';
 import {AppBar, Toolbar, Badge, Hidden, IconButton, Typography} from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
-import UpdateIcon from '@material-ui/icons/Update';
+import BuildIcon from '@material-ui/icons/Build';
 import Grid from "@material-ui/core/Grid";
 import {Utils} from "../../../../common/Utils";
 
@@ -61,7 +61,7 @@ const Topbar = props => {
       <Toolbar>
         <RouterLink to="/">
           <Grid className={classes.logo}>
-            <UpdateIcon/>
+            <BuildIcon/>
             { distributionInfo.name ? (
               <>
                 <Typography className={classes.distributionName}

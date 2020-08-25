@@ -22,6 +22,8 @@ import {
 } from '@material-ui/core';
 import Grid from "@material-ui/core/Grid";
 import {Version} from "../../../../common/Version";
+import RefreshIcon from "@material-ui/icons/Refresh";
+import {Label} from "@material-ui/icons";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -60,6 +62,11 @@ const useStyles = makeStyles(theme => ({
   },
   clientSelect: {
     width: '100px'
+  },
+  refresh: {
+    width: '50px',
+    paddingLeft: '20px',
+    paddingRight: '20px'
   }
 }));
 
@@ -79,18 +86,21 @@ const Versions = props => {
   }, [])
 
   React.useEffect(() => {
-    setInstanceVersions(new Map())
-    Utils.getDesiredVersions(client).then(versions => {
-        setDesiredVersions(Object.entries(versions))
-        if (client) {
-          Utils.getInstalledDesiredVersions(client).then(versions => {
-            setInstalledDesiredVersions(new Map(Object.entries(versions)))
-          })
-          Utils.getInstanceVersions(client).then(versions => {
-            setInstanceVersions(new Map(Object.entries(versions))) })
-        }
-      })
+    getVersions(client)
   }, [client]);
+
+  const getVersions = (client) => {
+    Utils.getDesiredVersions(client).then(versions => {
+      setDesiredVersions(Object.entries(versions))
+    })
+    if (client) {
+      Utils.getInstalledDesiredVersions(client).then(versions => {
+        setInstalledDesiredVersions(new Map(Object.entries(versions)))
+      })
+      Utils.getInstanceVersions(client).then(versions => {
+        setInstanceVersions(new Map(Object.entries(versions))) })
+    }
+  }
 
   const ServiceVersions = props => {
     const { service, desiredVersion } = props;
@@ -159,6 +169,7 @@ const Versions = props => {
           <Grid>
             <InputLabel>Client</InputLabel>
             <Select
+              title="Select client"
               className={classes.clientSelect}
               native
               value={client}
@@ -169,6 +180,11 @@ const Versions = props => {
               <option aria-label="" />
               { clients.map( client => <option key={client}>{client}</option> ) }
             </Select>
+            <Button title="Refresh" className={classes.refresh} onClick={() => getVersions(client)}>
+              <RefreshIcon/>
+              <InputLabel>{new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
+                     ":" + new Date().getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}</InputLabel>
+            </Button>
           </Grid>
         }
         title="Versions"
