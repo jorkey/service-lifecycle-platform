@@ -6,7 +6,7 @@ import { makeStyles } from '@material-ui/styles';
 import {AppBar, Toolbar, Typography} from '@material-ui/core';
 import Grid from "@material-ui/core/Grid";
 import UpdateIcon from "@material-ui/icons/Update";
-import {Utils} from "../../../../utils";
+import {Utils} from "../../../../common";
 
 const useStyles = makeStyles(() => ({
   root: {

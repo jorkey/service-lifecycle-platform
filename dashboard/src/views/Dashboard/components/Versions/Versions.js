@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
-import { Utils } from '../../../../utils';
+import { Utils } from '../../../../common';
 import {
   Card,
   CardActions,
@@ -21,6 +21,7 @@ import {
   Select
 } from '@material-ui/core';
 import Grid from "@material-ui/core/Grid";
+import {Version} from "../../../../common/Version";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -48,6 +49,11 @@ const useStyles = makeStyles(theme => ({
   versionColumn: {
     padding: '6px',
     width: '200px'
+  },
+  alarmVersionColumn: {
+    padding: '6px',
+    width: '200px',
+    color: 'red'
   },
   instancesColumn: {
     padding: '6px'
@@ -107,7 +113,7 @@ const Versions = props => {
           <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
         </TableRow>
       )
-    } else {
+    } else if (service != "builder") {
       const versions = instanceVersions.get(service)
       if (versions && Object.entries(versions).length > 0) {
         return Object.entries(versions).map(([version, instances], index) => {
@@ -116,10 +122,10 @@ const Versions = props => {
             <>
               <TableCell className={classes.serviceColumn} rowSpan={versions.length}>{service}</TableCell>
               <TableCell className={classes.versionColumn} rowSpan={versions.length}>{desiredVersion}</TableCell>
-              <TableCell className={classes.versionColumn} rowSpan={versions.length}>{installedDesiredVersion}</TableCell>
+              <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={versions.length}>{installedDesiredVersion}</TableCell>
             </>) : null
             }
-            <TableCell className={classes.instancesColumn}>
+            <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.instancesColumn:classes.alarmVersionColumn}>
               {version}
             </TableCell>
             <TableCell className={classes.instancesColumn}>
@@ -132,12 +138,14 @@ const Versions = props => {
           <TableRow hover key={service}>
             <TableCell className={classes.serviceColumn}>{service}</TableCell>
             <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
-            <TableCell className={classes.versionColumn}>{installedDesiredVersion}</TableCell>
+            <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn}>{installedDesiredVersion}</TableCell>
             <TableCell className={classes.instancesColumn}/>
             <TableCell className={classes.instancesColumn}/>
           </TableRow>
         )
       }
+    } else {
+      return null
     }
   }
 
@@ -173,8 +181,8 @@ const Versions = props => {
               <TableRow>
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
                 <TableCell className={classes.versionColumn}>Desired Version</TableCell>
-                { client ? <TableCell className={classes.versionColumn}>Desired Client Versions</TableCell> : <TableCell/> }
-                { client ? <TableCell className={classes.versionColumn}>Working Client Versions</TableCell> : <TableCell/> }
+                { client ? <TableCell className={classes.versionColumn}>Installed Client Version</TableCell> : <TableCell/> }
+                { client ? <TableCell className={classes.versionColumn}>Working Client Version</TableCell> : <TableCell/> }
                 { client ? <TableCell className={classes.instancesColumn}>Client Instances</TableCell> : <TableCell/> }
               </TableRow>
             </TableHead>

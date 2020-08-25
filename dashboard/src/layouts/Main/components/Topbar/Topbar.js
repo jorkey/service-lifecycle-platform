@@ -8,7 +8,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
 import UpdateIcon from '@material-ui/icons/Update';
 import Grid from "@material-ui/core/Grid";
-import {Utils} from "../../../../utils/Utils";
+import {Utils} from "../../../../common/Utils";
 
 const useStyles = makeStyles(theme => ({
   root: {
