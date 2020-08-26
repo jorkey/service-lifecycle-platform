@@ -79,14 +79,14 @@ object BuilderMain extends App {
               None
             }).map(path => (path, developerDistribution.getServerVersion(path)))
               .filter { case (_, v) => v.isDefined && v.get.client == version.client }
-              .map(p => (p._1, p._2.get))
+              .map(_._1)
             builder.setDesiredVersions(version.client, Map(serviceName -> Some(version)))
-            waitFor.foreach { case (path, version) =>
+            waitFor.foreach(path => {
               log.info("Update distribution server")
               if (!developerDistribution.waitForServerUpdated(path, version)) {
                 log.error("Can't update distribution server")
               }
-            }
+            })
           }
         case None =>
           log.error("Make version error")
