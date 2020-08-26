@@ -5,7 +5,6 @@ import { makeStyles } from '@material-ui/styles';
 import { Utils } from '../../../../common';
 import {
   Card,
-  CardActions,
   CardHeader,
   CardContent,
   Button,
@@ -16,14 +15,11 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Tooltip,
-  TableSortLabel,
   Select
 } from '@material-ui/core';
 import Grid from "@material-ui/core/Grid";
 import {Version} from "../../../../common/Version";
 import RefreshIcon from "@material-ui/icons/Refresh";
-import {Label} from "@material-ui/icons";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -125,9 +121,9 @@ const Versions = props => {
         </TableRow>
       )
     } else if (service != "builder") {
-      const versions = instanceVersions.get(service)
-      if (versions && Object.entries(versions).length > 0) {
-        return Object.entries(versions).map(([version, instances], index) => {
+      const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : undefined
+      if (versions && versions.length > 0) {
+        return versions.map(([version, instances], index) => {
           return (<TableRow hover key={service}>
             { index == 0 ? (
             <>

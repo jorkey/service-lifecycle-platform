@@ -162,7 +162,7 @@ object UpdaterMain extends App { self =>
             }
           }
           if (!errored.isEmpty) {
-            log.error(s"Some versions are not installed: ${errored}")
+            log.error(s"Some versions are not installed: ${errored.map{ case (updater, version) => (updater.profiledServiceName, version)} }")
           }
           needRestart
         }

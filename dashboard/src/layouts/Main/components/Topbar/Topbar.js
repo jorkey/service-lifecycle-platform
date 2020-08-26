@@ -3,7 +3,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
-import {AppBar, Toolbar, Badge, Hidden, IconButton, Typography} from '@material-ui/core';
+import {AppBar, Toolbar, Badge, Hidden, IconButton, Typography, Button} from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
 import BuildIcon from '@material-ui/icons/Build';
@@ -51,6 +51,9 @@ const Topbar = props => {
 
   useEffect(() => {
     Utils.getDistributionInfo().then(info => setDistributionInfo(info))
+    /* TODO setInterval(() => {
+      Utils.getDistributionInfo().then(info => setDistributionInfo(info))
+    }, 10000)*/
   }, [])
 
   return (
@@ -81,7 +84,7 @@ const Topbar = props => {
         </RouterLink>
         <div className={classes.flexGrow} />
         <Hidden mdDown>
-          <IconButton
+          <IconButton title="Logout"
             className={classes.signOutButton}
             color="inherit"
             href="/login"
