@@ -3,19 +3,19 @@ package com.vyulabs.update.distribution
 import java.io.File
 
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.info.{VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions, VersionInfo, VersionsInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
-import org.slf4j.Logger
-
 import com.vyulabs.update.info.VersionInfo._
+
+import org.slf4j.Logger
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-abstract class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFilesLocker) {
+class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFilesLocker) {
   protected val servicesDir = new File(directory, "services")
 
   protected val desiredVersionsFile = "desired-versions.json"
@@ -27,11 +27,36 @@ abstract class DistributionDirectory(val directory: File)(implicit filesLocker: 
     servicesDir.mkdir()
   }
 
-  def getServiceDir(serviceName: ServiceName, clientName: Option[ClientName]): File
+  def getServiceDir(serviceName: ServiceName, clientName: Option[ClientName]): File = {
+    getServiceDir(serviceName)
+  }
 
-  def getVersionInfoFile(serviceName: ServiceName, version: BuildVersion): File
+  def getServiceDir(serviceName: ServiceName): File = {
+    val dir = new File(servicesDir, serviceName)
+    if (!dir.exists()) dir.mkdir()
+    dir
+  }
 
-  def getVersionImageFile(serviceName: ServiceName, version: BuildVersion): File
+  def getVersionInfoFile(serviceName: ServiceName, version: BuildVersion): File = {
+    new File(getServiceDir(serviceName, version.client), getVersionInfoFileName(serviceName, version))
+  }
+
+  def getVersionImageFile(serviceName: ServiceName, version: BuildVersion): File = {
+    new File(getServiceDir(serviceName, version.client), getVersionImageFileName(serviceName, version))
+  }
+
+  def getDesiredVersion(serviceName: ServiceName)(implicit log: Logger): Option[BuildVersion] = {
+    getDesiredVersions() match {
+      case Some(versions) =>
+        versions.desiredVersions.get(serviceName)
+      case None =>
+        None
+    }
+  }
+
+  def getDesiredVersions()(implicit log: Logger): Option[DesiredVersions] = {
+    IOUtils.readFileToJson(getDesiredVersionsFile()).map(_.convertTo[DesiredVersions])
+  }
 
   def getDesiredVersionsFile(): File = {
     new File(directory, desiredVersionsFile)

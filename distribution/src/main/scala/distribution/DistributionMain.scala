@@ -33,8 +33,6 @@ object DistributionMain extends App {
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val directory = new File("directory")
-
   if (args.size < 1) {
     Utils.error(usage())
   }
@@ -61,12 +59,13 @@ object DistributionMain extends App {
           Utils.error("No config")
         }
 
-        val dir = new DeveloperDistributionDirectory(directory)
+        val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
 
         val stateUploader = new DeveloperStateUploader(dir)
         val faultUploader = new DeveloperFaultUploader(dir)
 
-        val selfUpdater = new SelfUpdater(dir)
+        val selfDistributionDir = new DistributionDirectory(new File(config.selfDistributionDirectory.getOrElse(config.distributionDirectory)))
+        val selfUpdater = new SelfUpdater(selfDistributionDir)
         val distribution = new DeveloperDistribution(dir, config, usersCredentials, stateUploader, faultUploader)
 
         stateUploader.start()
@@ -86,7 +85,7 @@ object DistributionMain extends App {
           Utils.error("No config")
         }
 
-        val dir = new ClientDistributionDirectory(directory)
+        val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
 
         val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId)
         val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)

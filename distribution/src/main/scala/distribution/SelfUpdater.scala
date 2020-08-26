@@ -10,7 +10,7 @@ import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IOUtils, Utils}
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.{LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.vyulabs.update.info.DesiredVersions._

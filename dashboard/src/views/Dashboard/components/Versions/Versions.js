@@ -64,9 +64,8 @@ const useStyles = makeStyles(theme => ({
     width: '100px'
   },
   refresh: {
-    width: '50px',
-    paddingLeft: '20px',
-    paddingRight: '20px'
+    paddingLeft: '10px',
+    paddingRight: '10px'
   }
 }));
 
@@ -86,6 +85,8 @@ const Versions = props => {
   }, [])
 
   React.useEffect(() => {
+    setInstalledDesiredVersions(new Map())
+    setInstanceVersions(new Map())
     getVersions(client)
   }, [client]);
 
@@ -182,8 +183,9 @@ const Versions = props => {
             </Select>
             <Button title="Refresh" className={classes.refresh} onClick={() => getVersions(client)}>
               <RefreshIcon/>
-              <InputLabel>{new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
-                     ":" + new Date().getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}</InputLabel>
+              <InputLabel>{new Date().getHours().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
+                ":" + new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
+                ":" + new Date().getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}</InputLabel>
             </Button>
           </Grid>
         }

@@ -1,6 +1,10 @@
 #!/bin/bash -e
 
 serviceToRun=distribution
-distribDirectoryUrl=`jq -r .distribDirectoryUrl distribution.json`
+selfDistributionDirectory=`jq -r .selfDistributionDirectory distribution.json`
+if [ "${selfDistributionDirectory}" == "null" ]; then
+  selfDistributionDirectory=`jq -r .distributionDirectory distribution.json`
+fi
+distribDirectoryUrl="file://`/bin/pwd`/${selfDistributionDirectory}"
 
 . update.sh

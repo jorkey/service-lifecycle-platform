@@ -1,7 +1,6 @@
 package com.vyulabs.update.distribution.developer
 
 import java.io.File
-import java.nio.channels.FileLock
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, ServiceName}
@@ -9,10 +8,9 @@ import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IOUtils
-import com.vyulabs.update.version.BuildVersion
-import org.slf4j.{LoggerFactory}
-
 import com.vyulabs.update.info.DesiredVersions._
+
+import org.slf4j.{LoggerFactory}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -44,6 +42,17 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     log.error(s"Can't create directory ${faultsDir}")
   }
 
+  override def getServiceDir(serviceName: ServiceName, clientName: Option[ClientName]): File = {
+    clientName match {
+      case Some(clientName) =>
+        val dir = new File(getServicesDir(clientName), serviceName)
+        if (!dir.exists()) dir.mkdir()
+        dir
+      case None =>
+        getServiceDir(serviceName)
+    }
+  }
+
   def getClientsDir() = clientsDir
 
   def getClientDir(clientName: ClientName): File = {
@@ -72,27 +81,8 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     dir
   }
 
-  def getServiceDir(serviceName: ServiceName, clientName: Option[ClientName]): File = {
-    val dir = clientName match {
-      case Some(clientName) =>
-        new File(getServicesDir(clientName), serviceName)
-      case None =>
-        new File(servicesDir, serviceName)
-    }
-    if (!dir.exists()) dir.mkdir()
-    dir
-  }
-
   def getFaultsDir() = {
     faultsDir
-  }
-
-  def getVersionInfoFile(serviceName: ServiceName, version: BuildVersion): File = {
-    new File(getServiceDir(serviceName, version.client), getVersionInfoFileName(serviceName, version))
-  }
-
-  def getVersionImageFile(serviceName: ServiceName, version: BuildVersion): File = {
-    new File(getServiceDir(serviceName, version.client), getVersionImageFileName(serviceName, version))
   }
 
   def getDesiredVersionsFile(clientName: ClientName): File = {
@@ -118,11 +108,6 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
 
   def getDeadInstancesStateFile(clientName: ClientName): File = {
     new File(getInstancesStateDir(clientName), deadInstancesStateFile)
-  }
-
-  def getDesiredVersion(serviceName: ServiceName): Option[BuildVersion] = {
-    IOUtils.readFileToJson(getDesiredVersionsFile(None)).map(_.convertTo[DesiredVersions])
-      .map(_.desiredVersions.get(serviceName)).flatten
   }
 
   def getDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
