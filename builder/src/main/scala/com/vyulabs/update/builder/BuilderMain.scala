@@ -71,16 +71,20 @@ object BuilderMain extends App {
       builder.makeVersion(author, serviceName, clientName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
+            val waitFor = (if (serviceName == Common.DistributionServiceName) {
+              Some(developerDistribution.getDistributionVersionPath)
+            } else if (serviceName == Common.ScriptsServiceName) {
+              Some(developerDistribution.getScriptsVersionPath)
+            } else {
+              None
+            }).map(path => (path, developerDistribution.getServerVersion(path)))
+              .filter { case (_, v) => v.isDefined && v.get.client == version.client }
+              .map(p => (p._1, p._2.get))
             builder.setDesiredVersions(version.client, Map(serviceName -> Some(version)))
-            if (serviceName == Common.DistributionServiceName && clientName.isEmpty) {
+            waitFor.foreach { case (path, version) =>
               log.info("Update distribution server")
-              if (!developerDistribution.waitForServerUpdated(version)) {
+              if (!developerDistribution.waitForServerUpdated(path, version)) {
                 log.error("Can't update distribution server")
-              }
-            } else if (serviceName == Common.ScriptsServiceName && clientName.isEmpty) {
-              log.info("Update distribution server scripts")
-              if (!developerDistribution.waitForServerScriptsUpdated(version)) {
-                log.error("Can't update distribution server scripts")
               }
             }
           }
@@ -144,15 +148,23 @@ object BuilderMain extends App {
       servicesVersions.get(Common.DistributionServiceName) match {
         case Some(Some(distributionVersion)) =>
           log.info("Update distribution server")
-          if (!developerDistribution.waitForServerUpdated(distributionVersion)) {
-            log.error("Can't update distribution server")
+          for (version <- developerDistribution.getServerVersion(developerDistribution.getDistributionVersionPath)) {
+            if (version.client == distributionVersion.client) {
+              if (!developerDistribution.waitForServerUpdated(developerDistribution.getDistributionVersionPath, distributionVersion)) {
+                log.error("Can't update distribution server")
+              }
+            }
           }
         case _ =>
           servicesVersions.get(Common.ScriptsServiceName) match {
             case Some(Some(scriptsVersion)) =>
               log.info("Update distribution server scripts")
-              if (!developerDistribution.waitForServerScriptsUpdated(scriptsVersion)) {
-                log.error("Can't update distribution server scripts")
+              for (version <- developerDistribution.getServerVersion(developerDistribution.getScriptsVersionPath)) {
+                if (version.client == scriptsVersion.client) {
+                  if (!developerDistribution.waitForServerUpdated(developerDistribution.getScriptsVersionPath, scriptsVersion)) {
+                    log.error("Can't update distribution server scripts")
+                  }
+                }
               }
             case _ =>
           }

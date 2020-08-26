@@ -79,51 +79,30 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     }
   }
 
-  def waitForServerUpdated(desiredVersion: BuildVersion): Boolean = {
-    log.info(s"Wait for distribution server updated to version ${desiredVersion}")
-    Thread.sleep(5000)
-    for (_ <- 0 until 25) {
-      if (exists(makeUrl(getDistributionVersionPath))) {
-        downloadToString(makeUrl(getDistributionVersionPath)) match {
-          case Some(content) =>
-            try {
-              val version = BuildVersion.parse(content)
-              if (version == desiredVersion) {
-                log.info(s"Distribution server is updated to version ${desiredVersion}")
-                return true
-              }
-            } catch {
-              case e: Exception =>
-                log.error(s"Parse build version error ${e.getMessage}")
-                return false
-            }
-          case None =>
-            return false
+  def getServerVersion(versionPath: String): Option[BuildVersion] = {
+    downloadToString(makeUrl(versionPath)) match {
+      case Some(content) =>
+        try {
+          Some(BuildVersion.parse(content))
+        } catch {
+          case e: Exception =>
+            log.error(s"Parse version error ${e.getMessage}")
+            None
         }
-      }
-      Thread.sleep(1000)
+      case None =>
+        None
     }
-    log.error(s"Timeout of waiting for distribution server become available")
-    false
   }
 
-  def waitForServerScriptsUpdated(desiredVersion: BuildVersion): Boolean = {
-    log.info(s"Wait for distribution server scripts updated to version ${desiredVersion}")
+  def waitForServerUpdated(versionPath: String, desiredVersion: BuildVersion): Boolean = {
+    log.info(s"Wait for distribution server updated")
     Thread.sleep(5000)
     for (_ <- 0 until 25) {
-      if (exists(makeUrl(getScriptsVersionPath))) {
-        downloadToString(makeUrl(getScriptsVersionPath)) match {
-          case Some(content) =>
-            try {
-              val version = BuildVersion.parse(content)
-              if (version == desiredVersion) {
-                log.info(s"Distribution server scripts is updated to version ${desiredVersion}")
-                return true
-              }
-            } catch {
-              case e: Exception =>
-                log.error(s"Parse build version error ${e.getMessage}")
-                return false
+      if (exists(makeUrl(versionPath))) {
+        getServerVersion(versionPath) match {
+          case Some(version) =>
+            if (version == desiredVersion) {
+              return true
             }
           case None =>
             return false

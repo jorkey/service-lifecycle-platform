@@ -290,13 +290,13 @@ class UpdateClient()(implicit log: Logger) {
       }
       developerVersions.get(Common.DistributionServiceName) match {
         case Some(newDistributionVersion) =>
-          if (!clientDistribution.waitForServerUpdated(newDistributionVersion)) {
+          if (!clientDistribution.waitForServerUpdated(clientDistribution.getDistributionVersionPath, newDistributionVersion)) {
             log.error("Update distribution server error")
             return false
           }
         case None =>
           for (newScriptsVersion <- developerVersions.get(Common.ScriptsServiceName)) {
-            if (!clientDistribution.waitForServerScriptsUpdated(newScriptsVersion)) {
+            if (!clientDistribution.waitForServerUpdated(clientDistribution.scriptsVersionPath, newScriptsVersion)) {
               log.error("Update scripts on distribution server error")
               return false
             }
