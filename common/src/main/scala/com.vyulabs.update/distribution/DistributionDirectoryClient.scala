@@ -102,6 +102,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
         getServerVersion(versionPath) match {
           case Some(version) =>
             if (version == desiredVersion) {
+              log.info(s"Distribution server is updated")
               return true
             }
           case None =>
