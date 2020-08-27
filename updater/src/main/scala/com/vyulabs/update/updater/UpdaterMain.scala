@@ -28,7 +28,7 @@ object UpdaterMain extends App { self =>
   val command = args(0)
   val arguments = Arguments.parse(args.drop(1))
 
-  var blacklist = Map.empty[ProfiledServiceName, Set[BuildVersion]]
+  var blacklist = Map.empty[ProfiledServiceName, BuildVersion]
 
   val config = UpdaterConfig().getOrElse {
     Utils.error("No config")
@@ -142,7 +142,17 @@ object UpdaterMain extends App { self =>
                   selfUpdater.needUpdate(Common.ScriptsServiceName, desiredVersions.desiredVersions.get(Common.ScriptsServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.ScriptsServiceName) -> version))
                   val toUpdate = needUpdate.filterNot { case (serviceName, version) =>
-                    blacklist.get(serviceName).getOrElse(Set.empty).contains(version)
+                    blacklist.get(serviceName) match {
+                      case Some(errorVersion) =>
+                        if (errorVersion == version) {
+                          true
+                        } else {
+                          blacklist -= serviceName
+                          false
+                        }
+                      case None =>
+                        false
+                    }
                   }
                   if (update(toUpdate)) {
                     return true
@@ -185,7 +195,7 @@ object UpdaterMain extends App { self =>
             log.error(s"Some versions are not installed: ${errorUpdates}. Add them to blacklist")
             errorUpdates.foreach { case (service, version) =>
               if (Common.isUpdateService(service.name) || serviceUpdaters.get(service).get.getUpdateError().map(_.critical).getOrElse(false)) {
-                blacklist += (service -> (blacklist.getOrElse(service, Set.empty) + version))
+                blacklist += (service -> version)
               }
             }
           }
