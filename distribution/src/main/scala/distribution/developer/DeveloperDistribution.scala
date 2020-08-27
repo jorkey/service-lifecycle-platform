@@ -24,9 +24,8 @@ import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, Instanc
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, ServicesVersions, TestSignature}
+import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersionsState, InstancesState, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.state.{InstanceVersionsState, InstancesState}
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
@@ -40,8 +39,8 @@ import com.vyulabs.update.utils.JsUtils._
 import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.config.ClientInfo._
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.state.InstancesState._
-import com.vyulabs.update.state.InstanceVersionsState._
+import com.vyulabs.update.info.InstancesState._
+import com.vyulabs.update.info.InstanceVersionsState._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.config.InstallProfile._
 import com.vyulabs.update.info.ServicesVersions._
@@ -349,11 +348,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
           state.instances.foreach { case (instanceId, servicesStates) =>
             servicesStates.directories.foreach { case (_, state) =>
               state.foreach { case (name, state) =>
-                for (version <- state.version) {
-                  var map = versions.getOrElse(name.service, Map.empty[BuildVersion, Set[InstanceId]])
-                  map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
-                  versions += (name.service -> map)
-                }
+                val version = state.version.getOrElse(BuildVersion.empty)
+                var map = versions.getOrElse(name.name, Map.empty[BuildVersion, Set[InstanceId]])
+                map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
+                versions += (name.name -> map)
               }
             }
           }

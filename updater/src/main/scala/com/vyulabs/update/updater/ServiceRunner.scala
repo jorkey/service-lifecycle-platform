@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
+import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.log.LogWriter
-import com.vyulabs.update.state.{ProfiledServiceName}
 import com.vyulabs.update.updater.uploaders.{FaultReport, FaultUploader, LogUploader}
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils, Utils}
 import com.vyulabs.update.version.BuildVersion

@@ -4,7 +4,8 @@ import java.io.File
 import java.util.Date
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.state.{ProfiledServiceName, ServiceState}
+import com.vyulabs.update.info.UpdateError
+import com.vyulabs.update.info.{ProfiledServiceName, ServiceState}
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
@@ -24,6 +25,7 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName,
   @volatile private var startDate = Option.empty[Date]
   @volatile private var version = Option.empty[BuildVersion]
   @volatile private var updateToVersion = Option.empty[BuildVersion]
+  @volatile private var updateError: Option[UpdateError] = None
   @volatile private var lastErrors = Option.empty[Seq[String]]
   @volatile private var lastExitCode = Option.empty[Int]
   @volatile private var failuresCount = Option.empty[Int]
@@ -34,19 +36,21 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName,
     Utils.error(s"Can't create directory ${serviceDirectory}")
   }
 
-  version = if (profiledServiceName.service == Common.UpdaterServiceName) {
+  version = if (profiledServiceName.name == Common.UpdaterServiceName) {
     Utils.getManifestBuildVersion(Common.UpdaterServiceName)
   } else {
-    IOUtils.readServiceVersion(profiledServiceName.service, currentServiceDirectory)
+    IOUtils.readServiceVersion(profiledServiceName.name, currentServiceDirectory)
   }
 
   log.info(s"Current version of service ${profiledServiceName} is ${version}")
 
   def getVersion() = version
 
+  def getUpdateError() = updateError
+
   def initFromState(state: ServiceState): Unit = {
     failuresCount = state.failuresCount
-    if (profiledServiceName.service == Common.UpdaterServiceName) {
+    if (profiledServiceName.name == Common.UpdaterServiceName) {
       if (updateToVersion.isEmpty) {
         failuresCount = Some(failuresCount.getOrElse(0) + 1)
       }
@@ -58,6 +62,7 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName,
     if (updateToVersion.isDefined) {
       info(s"Updated to version ${version}")
       updateToVersion = None
+      updateError = None
     } else {
       info(s"Installed version ${version}")
     }
@@ -74,14 +79,27 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName,
     updateRepository()
   }
 
+  def serviceRemoved(): Unit = synchronized {
+    this.startDate = None
+    this.version = None
+    updateRepository()
+  }
+
   def beginUpdateToVersion(serviceVersion: BuildVersion): Unit = synchronized {
     this.updateToVersion = Some(serviceVersion)
+    this.updateError = None
     info(s"Begin update to version ${serviceVersion}")
     updateRepository()
   }
 
   def beginUpdateScriptsToVersion(serviceVersion: BuildVersion): Unit = synchronized {
     info(s"Begin update scripts to version ${serviceVersion}")
+    updateRepository()
+  }
+
+  def updateError(critical: Boolean, msg: String): Unit = synchronized {
+    this.updateError = Some(UpdateError(critical, msg))
+    error(s"Update ${if (critical) "fatal " else ""}error: ${msg}")
     updateRepository()
   }
 
@@ -109,7 +127,7 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName,
   }
 
   def getState(): ServiceState = {
-    ServiceState(new Date(), startDate, version, updateToVersion, failuresCount, lastErrors, lastExitCode)
+    ServiceState(new Date(), startDate, version, updateToVersion, updateError, failuresCount, lastErrors, lastExitCode)
   }
 
   private def addLastError(error: String): Unit = {

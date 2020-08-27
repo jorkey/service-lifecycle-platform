@@ -1,20 +1,20 @@
-package com.vyulabs.update.state
+package com.vyulabs.update.info
 
 import java.io.File
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{CommonProfile, InstanceId, ServiceDirectory, ServiceName, ServiceProfile}
+import com.vyulabs.update.common.Common._
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
 
-case class ProfiledServiceName(service: ServiceName, profile: ServiceProfile) {
+case class ProfiledServiceName(name: ServiceName, profile: ServiceProfile) {
   override def toString: String = {
     if (profile != CommonProfile) {
-      service + "-" + profile
+      name + "-" + profile
     } else {
-      service
+      name
     }
   }
 }
@@ -45,16 +45,20 @@ object ProfiledServiceName {
   }
 }
 
-case class StateEvent(date: Date, message: String)
+case class UpdateError(critical: Boolean, error: String)
+
+object UpdateError extends DefaultJsonProtocol {
+  implicit val updateErrorJson = jsonFormat2(UpdateError.apply)
+}
 
 case class ServiceState(date: Date = new Date(), startDate: Option[Date] = None, version: Option[BuildVersion] = None, updateToVersion: Option[BuildVersion] = None,
-                        failuresCount: Option[Int] = None, lastErrors: Option[Seq[String]] = None, lastExitCode: Option[Int] = None)
+                        updateError: Option[UpdateError] = None, failuresCount: Option[Int] = None, lastErrors: Option[Seq[String]] = None, lastExitCode: Option[Int] = None)
 
 object ServiceState extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
   import com.vyulabs.update.version.BuildVersion._
 
-  implicit val serviceStateJson = jsonFormat7(ServiceState.apply)
+  implicit val serviceStateJson = jsonFormat8(ServiceState.apply)
 }
 
 case class ServicesState(directories: Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]) {

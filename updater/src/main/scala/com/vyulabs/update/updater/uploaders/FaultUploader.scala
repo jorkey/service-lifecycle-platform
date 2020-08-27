@@ -6,14 +6,14 @@ import java.util.Date
 
 import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.state.{ProfiledServiceName, ServiceState}
+import com.vyulabs.update.info.{ProfiledServiceName, ServiceState}
 import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
+import scala.collection.immutable.Queue
+import com.vyulabs.update.info.ServiceState._
+
 import org.slf4j.Logger
 import spray.json.enrichAny
-
-import scala.collection.immutable.Queue
-import com.vyulabs.update.state.ServiceState._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
@@ -97,7 +97,7 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
         IOUtils.deleteFileRecursively(tmpDirectory)
       }
       fault.reportFilesTmpDir.foreach(IOUtils.deleteFileRecursively(_))
-      if (!clientDirectory.uploadServiceFault(fault.profiledServiceName.service, archiveFile)) {
+      if (!clientDirectory.uploadServiceFault(fault.profiledServiceName.name, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }

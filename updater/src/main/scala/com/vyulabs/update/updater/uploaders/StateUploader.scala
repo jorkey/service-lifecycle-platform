@@ -4,9 +4,9 @@ import java.io.File
 import java.util.Date
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
+import com.vyulabs.update.common.Common.{InstanceId}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.state.{ProfiledServiceName, ServiceState, ServicesState}
+import com.vyulabs.update.info.{ProfiledServiceName, ServiceState, ServicesState}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger
 
@@ -23,7 +23,7 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
     servicesState.directories.foreach { case (directory, serviceStates) =>
       serviceStates.foreach { case (serviceName, serviceState) =>
         if (directory == directory) {
-          if (serviceName.service == Common.UpdaterServiceName) {
+          if (serviceName.name == Common.UpdaterServiceName) {
             for (date <- serviceState.startDate) {
               startDate = date
             }

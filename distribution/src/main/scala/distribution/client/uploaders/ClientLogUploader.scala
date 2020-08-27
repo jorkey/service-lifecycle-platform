@@ -7,9 +7,9 @@ import akka.http.scaladsl.server.Directives.{complete, failWith}
 import akka.http.scaladsl.server.Route
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
+import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.logs.ServiceLogs
-import com.vyulabs.update.state.ProfiledServiceName
 import com.vyulabs.update.utils.IOUtils
 import org.slf4j.LoggerFactory
 

@@ -1,8 +1,8 @@
 package com.vyulabs.update.distribution.client
 
-import com.vyulabs.update.common.Common.{ServiceDirectory, ServiceName, InstanceId}
+import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionWebPaths
-import com.vyulabs.update.state.ProfiledServiceName
+import com.vyulabs.update.info.ProfiledServiceName
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.

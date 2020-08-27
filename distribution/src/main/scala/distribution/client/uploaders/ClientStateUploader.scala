@@ -13,13 +13,13 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
-import com.vyulabs.update.state.{InstancesState, ProfiledServiceName, ServiceState, ServicesState}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import ServicesState._
+import com.vyulabs.update.info.{InstancesState, ProfiledServiceName, ServiceState, ServicesState}
+import com.vyulabs.update.info.ServicesState._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.

@@ -15,6 +15,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
+import com.vyulabs.update.info.{ProfiledServiceName, ServicesState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
@@ -23,7 +24,6 @@ import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, Cl
 import org.slf4j.LoggerFactory
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.logs.ServiceLogs._
-import com.vyulabs.update.state.{ProfiledServiceName, ServicesState}
 
 class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                          stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)

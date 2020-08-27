@@ -3,10 +3,11 @@ package distribution.developer.uploaders
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common.ClientName
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
+import com.vyulabs.update.info
+import com.vyulabs.update.info.{InstancesState, ServicesState}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.state.{InstancesState, ServicesState}
 import com.vyulabs.update.utils.IOUtils
-import com.vyulabs.update.state.InstancesState._
+import com.vyulabs.update.info.InstancesState._
 import org.slf4j.LoggerFactory
 import spray.json._
 
@@ -74,7 +75,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
                   case None =>
                     Map.empty
                 }
-                if (!IOUtils.writeJsonToFileWithLock(deadStatesFile, InstancesState(deadStates ++ newDeadStates).toJson)) {
+                if (!IOUtils.writeJsonToFileWithLock(deadStatesFile, info.InstancesState(deadStates ++ newDeadStates).toJson)) {
                   log.error(s"Can't write ${deadStatesFile}")
                 }
               }

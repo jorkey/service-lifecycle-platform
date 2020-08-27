@@ -3,8 +3,7 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.DesiredVersions
-import com.vyulabs.update.state.ProfiledServiceName
+import com.vyulabs.update.info.{DesiredVersions, ProfiledServiceName}
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
 import com.vyulabs.update.utils.{IOUtils, Utils}
@@ -28,6 +27,8 @@ object UpdaterMain extends App { self =>
 
   val command = args(0)
   val arguments = Arguments.parse(args.drop(1))
+
+  var blacklist = Map.empty[ProfiledServiceName, Set[BuildVersion]]
 
   val config = UpdaterConfig().getOrElse {
     Utils.error("No config")
@@ -53,8 +54,8 @@ object UpdaterMain extends App { self =>
         val updaterServiceController = instanceState.getServiceStateController(updaterServiceName).get
         val selfUpdater = SelfUpdater(updaterServiceController, clientDirectory)
 
-        val serviceUpdaters = servicesInstanceNames.foldLeft(Seq.empty[ServiceUpdater])((updaters, service) =>
-          updaters :+ new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, clientDirectory))
+        val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ProfiledServiceName, ServiceUpdater])((updaters, service) =>
+          updaters + (service -> new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, clientDirectory)))
 
         var lastUpdateTime = 0L
 
@@ -110,7 +111,7 @@ object UpdaterMain extends App { self =>
                 System.exit(9)
               }
             } else if (!servicesStarted) {
-              serviceUpdaters.foreach { updater =>
+              serviceUpdaters.values.foreach { updater =>
                 if (!updater.isExecuted()) {
                   updater.execute()
                 }
@@ -127,16 +128,23 @@ object UpdaterMain extends App { self =>
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
             clientDirectory.downloadDesiredVersions() match {
               case Some(desiredVersions) =>
-                val needUpdate = serviceUpdaters.foldLeft(Map.empty[ServiceUpdater, BuildVersion])((map, updater) => {
-                  updater.needUpdate(desiredVersions.desiredVersions.get(updater.profiledServiceName.service)) match {
+                var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, BuildVersion])((map, updater) => {
+                  updater._2.needUpdate(desiredVersions.desiredVersions.get(updater._1.name)) match {
                     case Some(version) =>
-                      map + (updater -> version)
+                      map + (updater._1 -> version)
                     case None =>
                       map
                   }
                 })
                 if (!needUpdate.isEmpty) {
-                  if (update(needUpdate, desiredVersions)) {
+                  selfUpdater.needUpdate(Common.UpdaterServiceName, desiredVersions.desiredVersions.get(Common.UpdaterServiceName)).foreach(version =>
+                    needUpdate += (ProfiledServiceName(Common.UpdaterServiceName) -> version))
+                  selfUpdater.needUpdate(Common.ScriptsServiceName, desiredVersions.desiredVersions.get(Common.ScriptsServiceName)).foreach(version =>
+                    needUpdate += (ProfiledServiceName(Common.ScriptsServiceName) -> version))
+                  val toUpdate = needUpdate.filterNot { case (serviceName, version) =>
+                    blacklist.get(serviceName).getOrElse(Set.empty).contains(version)
+                  }
+                  if (update(toUpdate)) {
                     return true
                   }
                 }
@@ -148,28 +156,45 @@ object UpdaterMain extends App { self =>
           false
         }
 
-        def update(needUpdate: Map[ServiceUpdater, BuildVersion], desiredVersions: DesiredVersions): Boolean = {
-          var errored = needUpdate.filterNot { case (updater, version) =>
-            updater.beginInstall(version)
-          }
-          val needRestart = selfUpdater.maybeBeginSelfUpdate(desiredVersions)
-          errored ++= needUpdate.filterKeys(!errored.contains(_)).filterNot { case (updater, version) =>
-            updater.finishInstall(version)
-          }
-          if (!needRestart) {
-            errored ++= needUpdate.filterKeys(!errored.contains(_)).filterNot { case (updater, _) =>
-              updater.execute()
+        def update(toUpdate: Map[ProfiledServiceName, BuildVersion]): Boolean = {
+          var errorUpdates = toUpdate.filterNot { case (service, version) =>
+            if (Common.isUpdateService(service.name)) {
+              selfUpdater.beginServiceUpdate(service.name, version)
+            } else {
+              serviceUpdaters.get(service).get.beginInstall(version)
             }
           }
-          if (!errored.isEmpty) {
-            log.error(s"Some versions are not installed: ${errored.map{ case (updater, version) => (updater.profiledServiceName, version)} }")
+          errorUpdates ++= toUpdate.filterKeys(!errorUpdates.contains(_)).filterNot { case (service, version) =>
+            if (!Common.isUpdateService(service.name)) {
+              serviceUpdaters.get(service).get.finishInstall(version)
+            } else {
+              true
+            }
+          }
+          val needRestart = (toUpdate.keySet -- errorUpdates.keySet).exists(service => Common.isUpdateService(service.name))
+          if (!needRestart) {
+            errorUpdates ++= toUpdate.filterKeys(!errorUpdates.contains(_)).filterNot { case (service, _) =>
+              if (!Common.isUpdateService(service.name)) {
+                serviceUpdaters.get(service).get.execute()
+              } else {
+                true
+              }
+            }
+          }
+          if (!errorUpdates.isEmpty) {
+            log.error(s"Some versions are not installed: ${errorUpdates}. Add them to blacklist")
+            errorUpdates.foreach { case (service, version) =>
+              if (Common.isUpdateService(service.name) || serviceUpdaters.get(service).get.getUpdateError().map(_.critical).getOrElse(false)) {
+                blacklist += (service -> (blacklist.getOrElse(service, Set.empty) + version))
+              }
+            }
           }
           needRestart
         }
 
         def close(): Unit = {
           log.warn("Stop running services")
-          serviceUpdaters.foreach(_.close())
+          serviceUpdaters.values.foreach(_.close())
         }
       } catch {
         case e: Exception =>

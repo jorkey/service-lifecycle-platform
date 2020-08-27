@@ -4,8 +4,8 @@ import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.InstallConfig
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.state.ProfiledServiceName
-import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
+import com.vyulabs.update.info.{ProfiledServiceName, UpdateError}
+import com.vyulabs.update.updater.uploaders.FaultUploader
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -14,7 +14,7 @@ import org.slf4j.Logger
   * Copyright FanDate, Inc.
   */
 class ServiceUpdater(instanceId: InstanceId,
-                     val profiledServiceName: ProfiledServiceName,
+                     profiledServiceName: ProfiledServiceName,
                      state: ServiceStateController,
                      clientDirectory: ClientDistributionDirectoryClient)
                     (implicit log: Logger) {
@@ -31,6 +31,8 @@ class ServiceUpdater(instanceId: InstanceId,
     }
     faultUploader.close()
   }
+
+  def getUpdateError(): Option[UpdateError] = state.getUpdateError()
 
   def needUpdate(desiredVersion: Option[BuildVersion]): Option[BuildVersion] = {
     desiredVersion match {
@@ -54,7 +56,7 @@ class ServiceUpdater(instanceId: InstanceId,
       state.info("Begin install")
 
       if (!state.serviceDirectory.exists() && !state.serviceDirectory.mkdir()) {
-        state.error(s"Can't make directory ${state.serviceDirectory}")
+        state.updateError(true, s"Can't make directory ${state.serviceDirectory}")
         return false
       }
 
@@ -62,15 +64,15 @@ class ServiceUpdater(instanceId: InstanceId,
 
       state.info(s"Download version ${newVersion}")
       if (state.newServiceDirectory.exists() && !IOUtils.deleteFileRecursively(state.newServiceDirectory)) {
-        state.error(s"Can't remove directory ${state.newServiceDirectory}")
+        state.updateError(true, s"Can't remove directory ${state.newServiceDirectory}")
         return false
       }
       if (!state.newServiceDirectory.mkdir()) {
-        state.error(s"Can't make directory ${state.newServiceDirectory}")
+        state.updateError(true, s"Can't make directory ${state.newServiceDirectory}")
         return false
       }
-      if (!clientDirectory.downloadVersion(profiledServiceName.service, newVersion, state.newServiceDirectory)) {
-        state.error(s"Can't download ${profiledServiceName.service} version ${newVersion}")
+      if (!clientDirectory.downloadVersion(profiledServiceName.name, newVersion, state.newServiceDirectory)) {
+        state.updateError(false, s"Can't download ${profiledServiceName.name} version ${newVersion}")
         return false
       }
 
@@ -81,13 +83,13 @@ class ServiceUpdater(instanceId: InstanceId,
       args += ("PATH" -> System.getenv("PATH"))
 
       val installConfig = InstallConfig.read(state.newServiceDirectory).getOrElse {
-        state.error(s"No install config in the build directory")
+        state.updateError(true, s"No install config in the build directory")
         return false
       }
 
       for (command <- installConfig.installCommands.getOrElse(Seq.empty)) {
         if (!ProcessUtils.runProcess(command, args, state.newServiceDirectory, ProcessUtils.Logging.Realtime)) {
-          state.error(s"Install error")
+          state.updateError(true, s"Install error")
           return false
         }
       }
@@ -117,18 +119,20 @@ class ServiceUpdater(instanceId: InstanceId,
         }
 
         if (!IOUtils.deleteFileRecursively(state.currentServiceDirectory)) {
-          state.error(s"Can't delete ${state.currentServiceDirectory}")
+          state.updateError(true, s"Can't delete ${state.currentServiceDirectory}")
           return false
         }
+
+        state.serviceRemoved()
       }
 
       if (!state.newServiceDirectory.renameTo(state.currentServiceDirectory)) {
-        state.error(s"Can't rename ${state.newServiceDirectory} to ${state.currentServiceDirectory}")
+        state.updateError(true, s"Can't rename ${state.newServiceDirectory} to ${state.currentServiceDirectory}")
         return false
       }
 
       val installConfig = InstallConfig.read(state.currentServiceDirectory).getOrElse {
-        state.error(s"No install config in the build directory")
+        state.updateError(true, s"No install config in the build directory")
         return false
       }
 
@@ -140,12 +144,12 @@ class ServiceUpdater(instanceId: InstanceId,
 
       for (command <- installConfig.postInstallCommands.getOrElse(Seq.empty)) {
         if (!ProcessUtils.runProcess(command, args, state.currentServiceDirectory, ProcessUtils.Logging.Realtime)) {
-          state.error(s"Install error")
+          state.updateError(true, s"Install error")
           return false
         }
       }
 
-      IOUtils.writeServiceVersion(state.currentServiceDirectory, profiledServiceName.service, newVersion)
+      IOUtils.writeServiceVersion(state.currentServiceDirectory, profiledServiceName.name, newVersion)
 
       state.setVersion(newVersion)
 

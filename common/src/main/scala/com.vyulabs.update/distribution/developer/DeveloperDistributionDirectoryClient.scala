@@ -3,16 +3,15 @@ package com.vyulabs.update.distribution.developer
 import java.io._
 import java.net.URL
 
-import com.vyulabs.update.common.Common.{ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.ClientConfig
-import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions, InstancesState, ServicesVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
-import com.vyulabs.update.state.InstancesState
 import org.slf4j.Logger
 import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.info.ServicesVersions._
-import com.vyulabs.update.state.InstancesState._
+import InstancesState._
 import spray.json._
 
 /**
