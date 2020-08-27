@@ -35,6 +35,7 @@ EOF
 sudo sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
 [Unit]
 Description=${name}
+After=network.target
 
 [Service]
 User=ec2-user
@@ -48,6 +49,7 @@ Environment=${environment}
 ExecStart=`pwd`/updater.sh runServices services=${services}
 
 [Install]
+WantedBy=multi-user.target
 Alias=${name}.service
 
 EOF

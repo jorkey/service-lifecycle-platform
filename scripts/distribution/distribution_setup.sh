@@ -37,6 +37,7 @@ function createService() {
   sudo sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
 [Unit]
 Description=Update distribution server
+After=network.target
 
 [Service]
 User=ec2-user
@@ -49,6 +50,7 @@ WorkingDirectory=`pwd`
 ExecStart=`pwd`/distribution.sh "$@"
 
 [Install]
+WantedBy=multi-user.target
 Alias=distribution.service
 
 EOF
