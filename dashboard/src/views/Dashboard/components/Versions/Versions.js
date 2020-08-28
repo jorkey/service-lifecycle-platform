@@ -53,6 +53,10 @@ const useStyles = makeStyles(theme => ({
     width: '200px',
     color: 'red'
   },
+  directoryColumn: {
+    padding: '6px',
+    width: '400px'
+  },
   instancesColumn: {
     padding: '6px'
   },
@@ -119,21 +123,29 @@ const Versions = props => {
     if (!client || service != "builder") {
       const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : undefined
       if (versions && versions.length > 0) {
-        return versions.map(([version, instances], index) => {
+        const directoriesCount = versions.reduce((sum, [m, v]) => sum + Object.entries(v).length)
+        const rowsCount = Math.max(versions.length, directoriesCount)
+        return versions.map(([version, rawDirectories], index) => {
+          const directories = Object.entries(rawDirectories)
           return (<TableRow hover key={service}>
             { index == 0 ? (
             <>
-              <TableCell className={classes.serviceColumn} rowSpan={versions.length}>{service}</TableCell>
-              <TableCell className={classes.versionColumn} rowSpan={versions.length}>{desiredVersion}</TableCell>
-              { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={versions.length}>{installedDesiredVersion}</TableCell> : null }
+              <TableCell className={classes.serviceColumn} rowSpan={rowsCount}>{service}</TableCell>
+              <TableCell className={classes.versionColumn} rowSpan={rowsCount}>{desiredVersion}</TableCell>
+              { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={rowsCount}>{installedDesiredVersion}</TableCell> : null }
             </>) : null
             }
-            <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.instancesColumn:classes.alarmVersionColumn}>
+            <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.instancesColumn:classes.alarmVersionColumn} rowSpan={directories.length}>
               {version}
             </TableCell>
-            <TableCell className={classes.instancesColumn}>
-              <div>{concatInstances(Object.entries(instances))}</div>
-            </TableCell>
+            { directories.map(([directory, instances]) =>
+              (<>
+                <TableCell className={classes.directoryColumn}>{directory}</TableCell>
+                <TableCell className={classes.instancesColumn}>
+                  <div>{concatInstances(Object.entries(instances))}</div>
+                </TableCell>
+              </>))
+            }
           </TableRow>)
         })
       } else {
@@ -192,6 +204,7 @@ const Versions = props => {
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
                 <TableCell className={classes.versionColumn}>Desired Version</TableCell>
                 { client ? <TableCell className={classes.versionColumn}>Installed Version</TableCell> : null }
+                <TableCell className={classes.directoryColumn}>Directory</TableCell>
                 <TableCell className={classes.versionColumn}>Working Version</TableCell>
                 <TableCell className={classes.instancesColumn}>Instances</TableCell>
               </TableRow>

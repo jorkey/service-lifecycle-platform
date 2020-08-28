@@ -114,7 +114,7 @@ object InstancesState extends DefaultJsonProtocol {
   implicit val instancesStateJson = jsonFormat1(InstancesState.apply)
 }
 
-case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[InstanceId]]])
+case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]]])
 
 object InstanceVersionsState extends DefaultJsonProtocol {
   import com.vyulabs.update.version.BuildVersion._

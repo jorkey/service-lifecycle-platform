@@ -20,7 +20,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, InstanceId, ServiceName}
+import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
@@ -349,13 +349,15 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
       .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
       .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.BuilderServiceName))
       .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.ScriptsServiceName))
-    var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
-    state.directories.foreach { case (_, state) =>
+    var versions = Map.empty[ServiceName, Map[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]]]
+    state.directories.foreach { case (directory, state) =>
       state.foreach { case (name, state) =>
         val version = state.version.getOrElse(BuildVersion.empty)
-        var map = versions.getOrElse(name.name, Map.empty[BuildVersion, Set[InstanceId]])
-        map += (version -> (map.getOrElse(version, Set.empty) + config.instanceId))
-        versions += (name.name -> map)
+        var versionMap = versions.getOrElse(name.name, Map.empty[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]])
+        var dirMap = versionMap.getOrElse(version, Map.empty[ServiceDirectory, Set[InstanceId]])
+        dirMap += (directory -> (dirMap.getOrElse(directory, Set.empty) + config.instanceId))
+        versionMap += (version -> dirMap)
+        versions += (name.name -> versionMap)
       }
     }
     complete(InstanceVersionsState(versions))
