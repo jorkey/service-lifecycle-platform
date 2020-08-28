@@ -24,7 +24,7 @@ import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, Instanc
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersionsState, InstancesState, ServicesState, ServicesVersions, TestSignature}
+import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersions, InstancesState, ServicesState, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
@@ -40,7 +40,7 @@ import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.config.ClientInfo._
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.info.InstancesState._
-import com.vyulabs.update.info.InstanceVersionsState._
+import com.vyulabs.update.info.InstanceVersions._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.config.InstallProfile._
 import com.vyulabs.update.info.ServicesVersions._
@@ -91,10 +91,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                           complete(getClientsInfo())
                         } ~
                         path(instanceVersionsPath) {
-                          getInstanceVersionsState()
+                          getInstanceVersions()
                         } ~
                         path(instanceVersionsPath / ".*".r) { clientName =>
-                          getInstanceVersionsState(clientName)
+                          getInstanceVersions(clientName)
                         } ~
                         path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                           getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
@@ -344,40 +344,22 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
         .flatMapConcat(clients => Source.fromIterator(() => clients.iterator))
   }
 
-  private def getInstanceVersionsState(): Route = {
+  private def getInstanceVersions(): Route = {
     val state = ServicesState.getOwnInstanceState(Common.DistributionServiceName)
       .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
       .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.BuilderServiceName))
       .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.ScriptsServiceName))
-    var versions = Map.empty[ServiceName, Map[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]]]
-    state.directories.foreach { case (directory, state) =>
-      state.foreach { case (name, state) =>
-        val version = state.version.getOrElse(BuildVersion.empty)
-        var versionMap = versions.getOrElse(name.name, Map.empty[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]])
-        var dirMap = versionMap.getOrElse(version, Map.empty[ServiceDirectory, Set[InstanceId]])
-        dirMap += (directory -> (dirMap.getOrElse(directory, Set.empty) + config.instanceId))
-        versionMap += (version -> dirMap)
-        versions += (name.name -> versionMap)
-      }
-    }
-    complete(InstanceVersionsState(versions))
+    complete(InstanceVersions.empty.addVersions(config.instanceId, state))
   }
 
-  private def getInstanceVersionsState(clientName: ClientName): Route = {
+  private def getInstanceVersions(clientName: ClientName): Route = {
      onSuccess(getClientInstancesState(clientName).collect {
         case Some(state) =>
-          var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
+          var versions = InstanceVersions.empty
           state.instances.foreach { case (instanceId, servicesStates) =>
-            servicesStates.directories.foreach { case (_, state) =>
-              state.foreach { case (name, state) =>
-                val version = state.version.getOrElse(BuildVersion.empty)
-                var map = versions.getOrElse(name.name, Map.empty[BuildVersion, Set[InstanceId]])
-                map += (version -> (map.getOrElse(version, Set.empty) + instanceId))
-                versions += (name.name -> map)
-              }
-            }
+            versions = versions.addVersions(instanceId, servicesStates)
           }
-          InstanceVersionsState(versions)
+          versions
        }) { state => complete(state) }
   }
 

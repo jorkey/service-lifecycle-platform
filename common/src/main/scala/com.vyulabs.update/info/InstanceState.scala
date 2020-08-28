@@ -9,6 +9,8 @@ import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
 
+import scala.collection.mutable
+
 case class ProfiledServiceName(name: ServiceName, profile: ServiceProfile) {
   override def toString: String = {
     if (profile != CommonProfile) {
@@ -114,10 +116,27 @@ object InstancesState extends DefaultJsonProtocol {
   implicit val instancesStateJson = jsonFormat1(InstancesState.apply)
 }
 
-case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]]])
+case class InstanceVersions(versions: Map[ServiceName, Map[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]]]) {
+  def addVersions(instanceId: InstanceId, state: ServicesState): InstanceVersions = {
+    var newVersions = versions
+    state.directories.foreach { case (directory, state) =>
+      state.foreach { case (name, state) =>
+        val version = state.version.getOrElse(BuildVersion.empty)
+        var versionMap = newVersions.getOrElse(name.name, Map.empty[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]])
+        var dirMap = versionMap.getOrElse(version, Map.empty[ServiceDirectory, Set[InstanceId]])
+        dirMap += (directory -> (dirMap.getOrElse(directory, Set.empty) + instanceId))
+        versionMap += (version -> dirMap)
+        newVersions += (name.name -> versionMap)
+      }
+    }
+    InstanceVersions(newVersions)
+  }
+}
 
-object InstanceVersionsState extends DefaultJsonProtocol {
+object InstanceVersions extends DefaultJsonProtocol {
   import com.vyulabs.update.version.BuildVersion._
 
-  implicit val clientInstancesStateJson = jsonFormat1(InstanceVersionsState.apply)
+  implicit val clientInstancesStateJson = jsonFormat1(InstanceVersions.apply)
+
+  def empty = InstanceVersions(Map.empty)
 }
