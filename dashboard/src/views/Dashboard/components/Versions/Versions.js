@@ -55,7 +55,7 @@ const useStyles = makeStyles(theme => ({
   },
   directoryColumn: {
     padding: '6px',
-    width: '400px'
+    width: '300px'
   },
   instancesColumn: {
     padding: '6px'
@@ -121,44 +121,52 @@ const Versions = props => {
     }
 
     if (!client || service != "builder") {
-      const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : undefined
-      if (versions && versions.length > 0) {
-        const directoriesCount = versions.reduce((sum, [m, v]) => sum + Object.entries(v).length)
-        const rowsCount = Math.max(versions.length, directoriesCount)
-        return versions.map(([version, rawDirectories], index) => {
-          const directories = Object.entries(rawDirectories)
-          return (<TableRow hover key={service}>
-            { index == 0 ? (
-            <>
-              <TableCell className={classes.serviceColumn} rowSpan={rowsCount}>{service}</TableCell>
-              <TableCell className={classes.versionColumn} rowSpan={rowsCount}>{desiredVersion}</TableCell>
-              { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={rowsCount}>{installedDesiredVersion}</TableCell> : null }
-            </>) : null
-            }
-            <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.instancesColumn:classes.alarmVersionColumn} rowSpan={directories.length}>
-              {version}
-            </TableCell>
-            { directories.map(([directory, instances]) =>
-              (<>
-                <TableCell className={classes.directoryColumn}>{directory}</TableCell>
-                <TableCell className={classes.instancesColumn}>
-                  <div>{concatInstances(Object.entries(instances))}</div>
-                </TableCell>
-              </>))
-            }
-          </TableRow>)
-        })
-      } else {
-        return (
-          <TableRow hover key={service}>
-            <TableCell className={classes.serviceColumn}>{service}</TableCell>
-            <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
-            { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn}>{installedDesiredVersion}</TableCell> : null }
-            <TableCell className={classes.instancesColumn}/>
-            <TableCell className={classes.instancesColumn}/>
-          </TableRow>
-        )
+      let directoriesCount = 0
+      let rowsCount = 0
+      const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : []
+      if (versions) {
+        versions.forEach(([m, v]) => directoriesCount += Object.entries(v).length)
+        rowsCount = Math.max(1, Math.max(versions.length, directoriesCount))
       }
+      let versionIndex = 0
+      let directoryIndex = 0
+      return Array(rowsCount).fill(0).map((v, i) => i).map(row => {
+        const [version, directories] = (versions && versions.length != 0) ? versions[versionIndex] : [undefined, undefined]
+        const [directory, instances] = (directories && Object.entries(directories).length != 0) ? Object.entries(directories)[directoryIndex] : [undefined, undefined]
+        const renderVersion = directoryIndex == 0
+        const versionRows = (directories && Object.entries(directories).length != 0) ? Object.entries(directories).length : 1
+        if (directories && ++directoryIndex == Object.entries(directories).length) {
+          versionIndex++
+          directoryIndex = 0
+        }
+        return (<TableRow hover key={service}>
+          { row == 0 ? (
+              <>
+                <TableCell className={classes.serviceColumn} rowSpan={rowsCount}>{service}</TableCell>
+                <TableCell className={classes.versionColumn} rowSpan={rowsCount}>{desiredVersion}</TableCell>
+                { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={rowsCount}>{installedDesiredVersion}</TableCell> : null }
+              </>)
+            : null
+          }
+          { version ?
+              renderVersion ? (
+                <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={versionRows}>
+                  {version}
+                </TableCell> )
+              : null
+            : <TableCell className={classes.versionColumn}/>
+          }
+          { directory ?
+              <TableCell className={classes.directoryColumn}>{directory}</TableCell>
+            : <TableCell className={classes.directoryColumn}/> }
+          { instances ?
+              <TableCell className={classes.instancesColumn}>
+                <div>{concatInstances(Object.entries(instances))}</div>
+              </TableCell>
+            : <TableCell className={classes.instancesColumn}/>
+          }
+        </TableRow>)
+      })
     } else {
       return null
     }
@@ -204,14 +212,14 @@ const Versions = props => {
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
                 <TableCell className={classes.versionColumn}>Desired Version</TableCell>
                 { client ? <TableCell className={classes.versionColumn}>Installed Version</TableCell> : null }
-                <TableCell className={classes.directoryColumn}>Directory</TableCell>
                 <TableCell className={classes.versionColumn}>Working Version</TableCell>
+                <TableCell className={classes.directoryColumn}>Directory</TableCell>
                 <TableCell className={classes.instancesColumn}>Instances</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               { desiredVersions.sort().map(([service, desiredVersion]) =>
-                  <ServiceVersions key={service} service={service} desiredVersion={desiredVersion}/>) }
+                  <ServiceVersions service={service} desiredVersion={desiredVersion}/>) }
             </TableBody>
           </Table>
         </div>
