@@ -25,7 +25,7 @@ import com.vyulabs.update.info.ServicesState._
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.
   * Copyright FanDate, Inc.
   */
-class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL, instanceId: InstanceId)
+class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL, instanceId: InstanceId, installerDir: String)
                          (implicit system: ActorSystem, materializer: Materializer)
       extends Thread with DeveloperDistributionWebPaths with FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -98,7 +98,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
             }.merge(InstancesState(Map.empty + (instanceId ->
               ServicesState.getOwnInstanceState(Common.DistributionServiceName)
                 .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
-                .merge(ServicesState.getServiceInstanceState(new File("../install"), Common.InstallerServiceName)))))
+                .merge(ServicesState.getServiceInstanceState(new File(installerDir), Common.InstallerServiceName)))))
             log.debug("Upload instances state to developer distribution server")
             if (!developerDirectory.uploadInstancesState(states)) {
               log.error("Can't upload instances state")

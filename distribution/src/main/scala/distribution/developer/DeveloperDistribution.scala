@@ -14,7 +14,7 @@ import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.http.scaladsl.server.Route._
-import akka.http.scaladsl.model.StatusCodes.InternalServerError
+import akka.http.scaladsl.model.StatusCodes.{InternalServerError, Success}
 import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -24,7 +24,7 @@ import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, Instanc
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersionsState, InstancesState, ServicesVersions, TestSignature}
+import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersionsState, InstancesState, ServicesState, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
@@ -89,6 +89,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                         } ~
                         path(clientsInfoPath) {
                           complete(getClientsInfo())
+                        } ~
+                        path(instanceVersionsPath) {
+                          getInstanceVersionsState()
                         } ~
                         path(instanceVersionsPath / ".*".r) { clientName =>
                           getInstanceVersionsState(clientName)
@@ -339,6 +342,21 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
         .flatMapConcat(config => Source.future(config))
         .runFold(Seq.empty[ClientInfo])((seq, info) => seq ++ info))
         .flatMapConcat(clients => Source.fromIterator(() => clients.iterator))
+  }
+
+  private def getInstanceVersionsState(): Route = {
+    val state = ServicesState.getOwnInstanceState(Common.DistributionServiceName)
+      .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.BuilderServiceName))
+    var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
+    state.directories.foreach { case (_, state) =>
+      state.foreach { case (name, state) =>
+        val version = state.version.getOrElse(BuildVersion.empty)
+        var map = versions.getOrElse(name.name, Map.empty[BuildVersion, Set[InstanceId]])
+        map += (version -> (map.getOrElse(version, Set.empty) + config.instanceId))
+        versions += (name.name -> map)
+      }
+    }
+    complete(InstanceVersionsState(versions))
   }
 
   private def getInstanceVersionsState(clientName: ClientName): Route = {

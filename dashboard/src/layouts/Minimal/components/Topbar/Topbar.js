@@ -63,12 +63,6 @@ const Topbar = props => {
                 >
                   {distributionInfo.name}
                 </Typography>
-                <Typography className={classes.version}
-                            display="inline"
-                            variant="h5"
-                >
-                  v{distributionInfo.version}
-                </Typography>
               </>
             ) : null }
           </Grid>

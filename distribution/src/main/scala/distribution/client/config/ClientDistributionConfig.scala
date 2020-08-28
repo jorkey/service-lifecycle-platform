@@ -8,12 +8,13 @@ import com.vyulabs.update.utils.IOUtils
 import org.slf4j.Logger
 import spray.json._
 
-case class ClientDistributionConfig(port: Int, instanceId: InstanceId, distributionDirectory: String, developerDistributionUrl: URL)
+case class ClientDistributionConfig(port: Int, instanceId: InstanceId, developerDistributionUrl: URL,
+                                    distributionDirectory: String, installerDirectory: String)
 
 object ClientDistributionConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URLJson._
 
-  implicit val clientDistributionConfigJson = jsonFormat4(ClientDistributionConfig.apply)
+  implicit val clientDistributionConfigJson = jsonFormat5(ClientDistributionConfig.apply)
 
   def apply()(implicit log: Logger): Option[ClientDistributionConfig] = {
     val configFile = new File("distribution.json")

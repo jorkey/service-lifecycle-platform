@@ -44,17 +44,17 @@ function getDesiredVersions(client) {
   });
 }
 
+function getInstanceVersions(client) {
+  const path = '/api/' + (!client ? 'instance-versions' : ('instance-versions/' + client))
+  return get(path).then(versions => {
+    return versions.versions
+  });
+}
+
 function getInstalledDesiredVersions(client) {
   const path = '/api/installed-desired-versions/' + client
   return get(path).then(versions => {
     return versions.desiredVersions
-  });
-}
-
-function getInstanceVersions(client) {
-  const path = '/api/instance-versions/' + client
-  return get(path).then(versions => {
-    return versions.versions
   });
 }
 

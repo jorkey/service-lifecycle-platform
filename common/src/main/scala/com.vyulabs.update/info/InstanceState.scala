@@ -112,14 +112,6 @@ case class InstancesState(instances: Map[InstanceId, ServicesState]) {
 
 object InstancesState extends DefaultJsonProtocol {
   implicit val instancesStateJson = jsonFormat1(InstancesState.apply)
-
-  def getOwnInstanceState(instanceId: InstanceId, serviceName: ServiceName)(implicit log: Logger): InstancesState = {
-    InstancesState(Map.empty + (instanceId -> ServicesState.getOwnInstanceState(serviceName)))
-  }
-
-  def getServiceInstanceState(instanceId: InstanceId, directory: File, serviceName: ServiceName)(implicit log: Logger): InstancesState = {
-    InstancesState(Map.empty + (instanceId -> ServicesState.getServiceInstanceState(directory, serviceName)))
-  }
 }
 
 case class InstanceVersionsState(versions: Map[ServiceName, Map[BuildVersion, Set[InstanceId]]])

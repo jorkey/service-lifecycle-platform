@@ -89,13 +89,16 @@ const Versions = props => {
   const getVersions = (client) => {
     Utils.getDesiredVersions(client).then(versions => {
       setDesiredVersions(Object.entries(versions))
+      if (!client) {
+        setInstalledDesiredVersions(new Map(Object.entries(versions)))
+      }
     })
+    Utils.getInstanceVersions(client).then(versions => {
+      setInstanceVersions(new Map(Object.entries(versions))) })
     if (client) {
       Utils.getInstalledDesiredVersions(client).then(versions => {
         setInstalledDesiredVersions(new Map(Object.entries(versions)))
       })
-      Utils.getInstanceVersions(client).then(versions => {
-        setInstanceVersions(new Map(Object.entries(versions))) })
     }
   }
 
@@ -113,14 +116,7 @@ const Versions = props => {
       return result
     }
 
-    if (!client) {
-      return (
-        <TableRow hover key={service}>
-          <TableCell className={classes.serviceColumn}>{service}</TableCell>
-          <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
-        </TableRow>
-      )
-    } else if (service != "builder") {
+    if (service != "builder") {
       const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : undefined
       if (versions && versions.length > 0) {
         return versions.map(([version, instances], index) => {
@@ -129,7 +125,7 @@ const Versions = props => {
             <>
               <TableCell className={classes.serviceColumn} rowSpan={versions.length}>{service}</TableCell>
               <TableCell className={classes.versionColumn} rowSpan={versions.length}>{desiredVersion}</TableCell>
-              <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={versions.length}>{installedDesiredVersion}</TableCell>
+              { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={versions.length}>{installedDesiredVersion}</TableCell> : null }
             </>) : null
             }
             <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.instancesColumn:classes.alarmVersionColumn}>
@@ -145,7 +141,7 @@ const Versions = props => {
           <TableRow hover key={service}>
             <TableCell className={classes.serviceColumn}>{service}</TableCell>
             <TableCell className={classes.versionColumn}>{desiredVersion}</TableCell>
-            <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn}>{installedDesiredVersion}</TableCell>
+            { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn}>{installedDesiredVersion}</TableCell> : null }
             <TableCell className={classes.instancesColumn}/>
             <TableCell className={classes.instancesColumn}/>
           </TableRow>
@@ -195,9 +191,9 @@ const Versions = props => {
               <TableRow>
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
                 <TableCell className={classes.versionColumn}>Desired Version</TableCell>
-                { client ? <TableCell className={classes.versionColumn}>Installed Client Version</TableCell> : <TableCell/> }
-                { client ? <TableCell className={classes.versionColumn}>Working Client Version</TableCell> : <TableCell/> }
-                { client ? <TableCell className={classes.instancesColumn}>Client Instances</TableCell> : <TableCell/> }
+                { client ? <TableCell className={classes.versionColumn}>Installed Version</TableCell> : null }
+                <TableCell className={classes.versionColumn}>Working Version</TableCell>
+                <TableCell className={classes.instancesColumn}>Instances</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

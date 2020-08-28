@@ -51,9 +51,6 @@ const Topbar = props => {
 
   useEffect(() => {
     Utils.getDistributionInfo().then(info => setDistributionInfo(info))
-    /* TODO setInterval(() => {
-      Utils.getDistributionInfo().then(info => setDistributionInfo(info))
-    }, 10000)*/
   }, [])
 
   return (
@@ -71,12 +68,6 @@ const Topbar = props => {
                   display="inline"
                 >
                   {distributionInfo.name}
-                </Typography>
-                <Typography className={classes.version}
-                            display="inline"
-                            variant="h5"
-                >
-                  {distributionInfo.version}
                 </Typography>
               </>
             ) : null }

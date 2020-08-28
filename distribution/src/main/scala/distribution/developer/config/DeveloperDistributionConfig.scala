@@ -8,10 +8,11 @@ import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
 case class DeveloperDistributionConfig(name: String, instanceId: InstanceId, port: Int,
-                                       distributionDirectory: String, selfDistributionDirectory: Option[String])
+                                       distributionDirectory: String, selfDistributionDirectory: Option[String],
+                                       builderDirectory: String)
 
 object DeveloperDistributionConfig extends DefaultJsonProtocol {
-  implicit val developerDistributionConfigJson = jsonFormat5(DeveloperDistributionConfig.apply)
+  implicit val developerDistributionConfigJson = jsonFormat6(DeveloperDistributionConfig.apply)
 
   def apply()(implicit log: Logger): Option[DeveloperDistributionConfig] = {
     val configFile = new File("distribution.json")

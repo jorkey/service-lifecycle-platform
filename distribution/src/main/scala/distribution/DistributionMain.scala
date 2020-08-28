@@ -87,7 +87,7 @@ object DistributionMain extends App {
 
         val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
 
-        val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId)
+        val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId, config.installerDirectory)
         val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
         val logUploader = new ClientLogUploader(dir)
 
