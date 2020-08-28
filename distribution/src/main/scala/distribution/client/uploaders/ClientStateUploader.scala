@@ -98,7 +98,8 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
             }.merge(InstancesState(Map.empty + (instanceId ->
               ServicesState.getOwnInstanceState(Common.DistributionServiceName)
                 .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
-                .merge(ServicesState.getServiceInstanceState(new File(installerDir), Common.InstallerServiceName)))))
+                .merge(ServicesState.getServiceInstanceState(new File(installerDir), Common.InstallerServiceName))
+                .merge(ServicesState.getServiceInstanceState(new File(installerDir), Common.ScriptsServiceName)))))
             log.debug("Upload instances state to developer distribution server")
             if (!developerDirectory.uploadInstancesState(states)) {
               log.error("Can't upload instances state")

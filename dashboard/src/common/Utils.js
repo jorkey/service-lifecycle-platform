@@ -60,8 +60,8 @@ function getInstalledDesiredVersions(client) {
 
 function get(path) {
   console.log(`Get ${path}`)
-  const user = JSON.parse(localStorage.getItem('user'))
-  return fetchRequest('GET', path, user.authData).then(
+  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')): undefined
+  return fetchRequest('GET', path, user ? user.authData: undefined).then(
     data => { return data },
     response => {
       if (response.status === 401) {

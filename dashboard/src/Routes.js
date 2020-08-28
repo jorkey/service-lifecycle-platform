@@ -17,24 +17,25 @@ import {
 } from './views';
 
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
-  <Route {...rest} render = { props => (
-    localStorage.getItem('user')
+  <Route {...rest} render = { props => {
+    console.log("user " + localStorage.getItem('user'));
+    return localStorage.getItem('user')
       ? <Component {...props} />
-      : <Redirect to="/login" />
-  )} />
+      : <Redirect to="/login"/>
+  }} />
 )
 
 const LoginRoutes = () => {
   return (
-      <Switch>
-        <RouteWithLayout
-          component={LoginPageView}
-          exact
-          layout={MinimalLayout}
-          path="/login"
-        />
-        <LoginSwitchRoute path="/" component={Routes} />
-      </Switch>
+    <Switch>
+      <RouteWithLayout
+        component={LoginPageView}
+        exact
+        layout={MinimalLayout}
+        path="/login"
+      />
+      <LoginSwitchRoute path="/" component={Routes} />
+    </Switch>
   );
 }
 
