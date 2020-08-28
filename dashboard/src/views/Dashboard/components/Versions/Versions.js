@@ -116,7 +116,7 @@ const Versions = props => {
       return result
     }
 
-    if (service != "builder") {
+    if (!client || service != "builder") {
       const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : undefined
       if (versions && versions.length > 0) {
         return versions.map(([version, instances], index) => {

@@ -346,7 +346,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
 
   private def getInstanceVersionsState(): Route = {
     val state = ServicesState.getOwnInstanceState(Common.DistributionServiceName)
+      .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
       .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.BuilderServiceName))
+      .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.ScriptsServiceName))
     var versions = Map.empty[ServiceName, Map[BuildVersion, Set[InstanceId]]]
     state.directories.foreach { case (_, state) =>
       state.foreach { case (name, state) =>
