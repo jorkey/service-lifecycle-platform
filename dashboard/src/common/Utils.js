@@ -83,6 +83,7 @@ function fetchRequest(method, path, authData) {
     headers.Authorization = 'Basic ' + authData
   }
   requestInit.headers = headers
+  requestInit.cache = 'no-cache'
   return fetch(path, requestInit).then(response => {
     console.log("handleResponse")
     if (response.ok) {

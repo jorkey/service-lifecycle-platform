@@ -14,9 +14,8 @@ import org.slf4j.Logger
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceStateController(profiledServiceName: ProfiledServiceName,
-                             updateRepository: () => Unit)(implicit log: Logger) {
-  val serviceDirectory = new File(profiledServiceName.toString)
+class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRepository: () => Unit)(implicit log: Logger) {
+  val serviceDirectory = new File(if (profiledServiceName.name == Common.UpdaterServiceName) "." else profiledServiceName.toString)
   val currentServiceDirectory = new File(serviceDirectory, "current")
   val faultsDirectory = new File(serviceDirectory, "faults")
   val newServiceDirectory = new File(serviceDirectory, "new")

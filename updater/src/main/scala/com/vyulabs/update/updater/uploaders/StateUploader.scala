@@ -68,10 +68,9 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
 
   private def updateRepository(): Boolean = synchronized {
     log.info("Update instance state")
-    val ownState = ServicesState.getOwnInstanceState(Common.UpdaterServiceName)
     val scriptsState = ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName)
     val servicesState = services.foldLeft(ServicesState.empty)((state, service) =>
       state.merge(ServicesState(service._1, service._2.getState(), service._2.serviceDirectory.getCanonicalPath)))
-    clientDirectory.uploadServicesStates(instanceId, ownState.merge(scriptsState).merge(servicesState))
+    clientDirectory.uploadServicesStates(instanceId, scriptsState.merge(servicesState))
   }
 }
