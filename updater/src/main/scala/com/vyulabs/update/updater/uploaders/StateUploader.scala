@@ -70,9 +70,8 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
     log.info("Update instance state")
     val ownState = ServicesState.getOwnInstanceState(Common.UpdaterServiceName)
     val scriptsState = ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName)
-    val states = services.foldLeft(Map.empty[ProfiledServiceName, ServiceState])((states, service) => {
-      states + (service._1 -> service._2.getState()) })
-    val servicesState = ServicesState(Map.empty + (new java.io.File(".").getCanonicalPath() -> states))
+    val servicesState = services.foldLeft(ServicesState.empty)((state, service) =>
+      state.merge(ServicesState(service._1, service._2.getState(), service._2.serviceDirectory.getCanonicalPath)))
     clientDirectory.uploadServicesStates(instanceId, ownState.merge(scriptsState).merge(servicesState))
   }
 }

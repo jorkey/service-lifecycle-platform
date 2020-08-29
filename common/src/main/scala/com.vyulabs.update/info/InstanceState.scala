@@ -84,6 +84,14 @@ object ServicesState extends DefaultJsonProtocol {
 
   implicit val servicesStateJson = jsonFormat1(ServicesState.apply)
 
+  def empty = ServicesState(Map.empty)
+
+  def apply(name: ProfiledServiceName, state: ServiceState, directory: ServiceDirectory): ServicesState = {
+    val states = Map.empty[ProfiledServiceName, ServiceState] + (name -> state)
+    val directories = Map.empty[ServiceDirectory, Map[ProfiledServiceName, ServiceState]] + (directory -> states)
+    ServicesState(directories)
+  }
+
   def getOwnInstanceState(serviceName: ServiceName)(implicit log: Logger): ServicesState = {
     val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName))
     val directoryState = Map.empty + (ProfiledServiceName(serviceName) -> ownState)
