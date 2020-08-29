@@ -121,36 +121,45 @@ const Versions = props => {
     }
 
     if (!client || service != "builder") {
-      let directoriesCount = 0
-      let rowsCount = 0
       const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : []
-      if (versions) {
-        versions.forEach(([m, v]) => directoriesCount += Object.entries(v).length)
-        rowsCount = Math.max(1, Math.max(versions.length, directoriesCount))
-      }
-      let versionIndex = 0
-      let directoryIndex = 0
-      return Array(rowsCount).fill(0).map((v, i) => i).map(row => {
-        const [version, directories] = (versions && versions.length != 0) ? versions[versionIndex] : [undefined, undefined]
-        const [directory, instances] = (directories && Object.entries(directories).length != 0) ? Object.entries(directories)[directoryIndex] : [undefined, undefined]
-        const renderVersion = directoryIndex == 0
-        const versionRows = (directories && Object.entries(directories).length != 0) ? Object.entries(directories).length : 1
-        if (directories && ++directoryIndex == Object.entries(directories).length) {
-          versionIndex++
-          directoryIndex = 0
+      let versionIndex = versions.length, version = undefined
+      let directories = [], directoryIndex = 0
+      let rowsStack = []
+      for (let row=0; ; row++) {
+        directoryIndex--
+        if (directoryIndex < 0) {
+          versionIndex--
+          if (row && versionIndex < 0) {
+            break
+          }
+          if (versionIndex >= 0) {
+            const [ver, dirs] = versions[versionIndex]
+            version = ver
+            directories = Object.entries(dirs)
+          } else {
+            version = undefined
+            directories = []
+          }
+          directoryIndex = directories.length - 1
         }
-        return (<TableRow hover key={service}>
-          { row == 0 ? (
+        let directory = undefined, instances = []
+        if (directoryIndex >= 0) {
+          const [dir, inst] = directories[directoryIndex]
+          directory = dir
+          instances = Object.entries(inst)
+        }
+        rowsStack.push(<TableRow hover key={service + "-" + row}>
+          { (versionIndex <= 0 && directoryIndex <= 0) ? (
               <>
-                <TableCell className={classes.serviceColumn} rowSpan={rowsCount}>{service}</TableCell>
-                <TableCell className={classes.versionColumn} rowSpan={rowsCount}>{desiredVersion}</TableCell>
-                { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={rowsCount}>{installedDesiredVersion}</TableCell> : null }
+                <TableCell className={classes.serviceColumn} rowSpan={row+1}>{service}</TableCell>
+                <TableCell className={classes.versionColumn} rowSpan={row+1}>{desiredVersion}</TableCell>
+                { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={row+1}>{installedDesiredVersion}</TableCell> : null }
               </>)
             : null
           }
           { version ?
-              renderVersion ? (
-                <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={versionRows}>
+            directoryIndex == 0 ? (
+                <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={Math.max(directories.length, 1)}>
                   {version}
                 </TableCell> )
               : null
@@ -159,14 +168,19 @@ const Versions = props => {
           { directory ?
               <TableCell className={classes.directoryColumn}>{directory}</TableCell>
             : <TableCell className={classes.directoryColumn}/> }
-          { instances ?
+          { instances.length != 0 ?
               <TableCell className={classes.instancesColumn}>
-                <div>{concatInstances(Object.entries(instances))}</div>
+                <div>{concatInstances(instances)}</div>
               </TableCell>
             : <TableCell className={classes.instancesColumn}/>
           }
         </TableRow>)
-      })
+      }
+      let rows = []
+      while (rowsStack.length) {
+        rows.push(rowsStack.pop())
+      }
+      return rows
     } else {
       return null
     }
@@ -219,7 +233,7 @@ const Versions = props => {
             </TableHead>
             <TableBody>
               { desiredVersions.sort().map(([service, desiredVersion]) =>
-                  <ServiceVersions service={service} desiredVersion={desiredVersion}/>) }
+                  <ServiceVersions key={service} service={service} desiredVersion={desiredVersion}/>) }
             </TableBody>
           </Table>
         </div>
