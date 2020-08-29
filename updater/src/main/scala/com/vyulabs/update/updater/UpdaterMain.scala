@@ -145,8 +145,10 @@ object UpdaterMain extends App { self =>
                     blacklist.get(serviceName) match {
                       case Some(errorVersion) =>
                         if (errorVersion == version) {
+                          log.info(s"Version ${version} of service ${serviceName} is blacklisted.")
                           true
                         } else {
+                          log.info(s"Clear blacklist for service ${serviceName}.")
                           blacklist -= serviceName
                           false
                         }
