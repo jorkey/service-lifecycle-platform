@@ -69,7 +69,8 @@ if [ "$1" == "developer" ]; then
   "name: " ${name},
   "instanceId: " ${instanceId},
   "port" : ${port},
-  "distributionDirectory": "directory"
+  "distributionDirectory": "directory",
+  "builderDirectory": "../build"
 }
 EOF
 
@@ -85,6 +86,7 @@ elif [ "$1" == "client" ]; then
   "instanceId: " ${instanceId},
   "port" : ${port},
   "distributionDirectory": "directory",
+  "installerDirectory": "../install",
   "developerDistributionUrl" : "${distribDirectoryUrl}"
 }
 EOF

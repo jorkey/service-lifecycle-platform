@@ -109,7 +109,7 @@ const Versions = props => {
   const ServiceVersions = props => {
     const { service, desiredVersion } = props;
 
-    const installedDesiredVersion = installedDesiredVersions.get(service)
+    const installedVersion = installedDesiredVersions.get(service)
 
     const concatInstances = (instances) => {
       let result = "";
@@ -124,12 +124,21 @@ const Versions = props => {
       const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : []
       let versionIndex = versions.length, version = undefined
       let directories = [], directoryIndex = 0
+      let rows = []
       let rowsStack = []
-      for (let row=0; ; row++) {
+      let alarmedService = false
+      for (let rowNum=0; ; rowNum++) {
         directoryIndex--
         if (directoryIndex < 0) {
           versionIndex--
-          if (row && versionIndex < 0) {
+          if (rowNum && versionIndex < 0) {
+            if (alarmedService) {
+              while (rowsStack.length) {
+                rows.push(rowsStack.pop())
+              }
+            } else {
+              rowsStack = []
+            }
             break
           }
           if (versionIndex >= 0) {
@@ -148,37 +157,39 @@ const Versions = props => {
           directory = dir
           instances = Object.entries(inst)
         }
-        rowsStack.push(<TableRow hover key={service + "-" + row}>
-          { (versionIndex <= 0 && directoryIndex <= 0) ? (
+        let installedVersionAlarm = installedVersion && Version.compare(installedVersion, desiredVersion, false)
+        let workingVersionAlarm = version && installedVersion && Version.compare(version, installedVersion, true)
+        alarmedService = alarmedService || installedVersionAlarm || workingVersionAlarm
+        rowsStack.push(<TableRow hover key={service + "-" + rowNum}>
+          {(versionIndex <= 0 && directoryIndex <= 0) ? (
               <>
-                <TableCell className={classes.serviceColumn} rowSpan={row+1}>{service}</TableCell>
-                <TableCell className={classes.versionColumn} rowSpan={row+1}>{desiredVersion}</TableCell>
-                { client ? <TableCell className={!Version.compare(installedDesiredVersion, desiredVersion, false)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={row+1}>{installedDesiredVersion}</TableCell> : null }
+                <TableCell className={classes.serviceColumn} rowSpan={rowNum + 1}>{service}</TableCell>
+                <TableCell className={classes.versionColumn} rowSpan={rowNum + 1}>{desiredVersion}</TableCell>
+                {client ?
+                  <TableCell className={!installedVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
+                             rowSpan={rowNum + 1}>{installedVersion}</TableCell> : null}
               </>)
             : null
           }
-          { version ?
+          {version ?
             directoryIndex == 0 ? (
-                <TableCell className={!Version.compare(version, installedDesiredVersion, true)?classes.versionColumn:classes.alarmVersionColumn} rowSpan={Math.max(directories.length, 1)}>
+                <TableCell className={!workingVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
+                           rowSpan={Math.max(directories.length, 1)}>
                   {version}
-                </TableCell> )
+                </TableCell>)
               : null
             : <TableCell className={classes.versionColumn}/>
           }
-          { directory ?
-              <TableCell className={classes.directoryColumn}>{directory}</TableCell>
-            : <TableCell className={classes.directoryColumn}/> }
-          { instances.length != 0 ?
-              <TableCell className={classes.instancesColumn}>
-                <div>{concatInstances(instances)}</div>
-              </TableCell>
+          {directory ?
+            <TableCell className={classes.directoryColumn}>{directory}</TableCell>
+            : <TableCell className={classes.directoryColumn}/>}
+          {instances.length != 0 ?
+            <TableCell className={classes.instancesColumn}>
+              <div>{concatInstances(instances)}</div>
+            </TableCell>
             : <TableCell className={classes.instancesColumn}/>
           }
         </TableRow>)
-      }
-      let rows = []
-      while (rowsStack.length) {
-        rows.push(rowsStack.pop())
       }
       return rows
     } else {
