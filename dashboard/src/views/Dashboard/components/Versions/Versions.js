@@ -17,9 +17,11 @@ import {
   TableRow,
   Select
 } from '@material-ui/core';
-import Grid from "@material-ui/core/Grid";
 import {Version} from "../../../../common/Version";
 import RefreshIcon from "@material-ui/icons/Refresh";
+import FormGroup from "@material-ui/core/FormGroup";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Checkbox from "@material-ui/core/Checkbox";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -60,13 +62,15 @@ const useStyles = makeStyles(theme => ({
   instancesColumn: {
     padding: '6px'
   },
+  formControlLabel: {
+    paddingLeft: '10px'
+  },
   clientSelect: {
     width: '100px'
   },
-  refresh: {
-    paddingLeft: '10px',
-    paddingRight: '10px'
-  }
+  onlyAlerts: {
+    paddingRight: '2px'
+  },
 }));
 
 const Versions = props => {
@@ -79,12 +83,14 @@ const Versions = props => {
   const [desiredVersions, setDesiredVersions] = useState([])
   const [installedDesiredVersions, setInstalledDesiredVersions] = useState(new Map())
   const [instanceVersions, setInstanceVersions] = useState(new Map())
+  const [onlyAlerts, setOnlyAlerts] = useState(false)
 
   React.useEffect(() => {
     Utils.getClients().then(clients => setClients(clients))
   }, [])
 
   React.useEffect(() => {
+    setDesiredVersions([])
     setInstalledDesiredVersions(new Map())
     setInstanceVersions(new Map())
     getVersions(client)
@@ -126,13 +132,13 @@ const Versions = props => {
       let directories = [], directoryIndex = 0
       let rows = []
       let rowsStack = []
-      let alarmedService = false
+      let alertService = false
       for (let rowNum=0; ; rowNum++) {
         directoryIndex--
         if (directoryIndex < 0) {
           versionIndex--
           if (rowNum && versionIndex < 0) {
-            if (alarmedService) {
+            if (!onlyAlerts || alertService) {
               while (rowsStack.length) {
                 rows.push(rowsStack.pop())
               }
@@ -159,7 +165,7 @@ const Versions = props => {
         }
         let installedVersionAlarm = installedVersion && Version.compare(installedVersion, desiredVersion, false)
         let workingVersionAlarm = version && installedVersion && Version.compare(version, installedVersion, true)
-        alarmedService = alarmedService || installedVersionAlarm || workingVersionAlarm
+        alertService = alertService || installedVersionAlarm || workingVersionAlarm
         rowsStack.push(<TableRow hover key={service + "-" + rowNum}>
           {(versionIndex <= 0 && directoryIndex <= 0) ? (
               <>
@@ -204,29 +210,44 @@ const Versions = props => {
     >
       <CardHeader
         action={
-          <Grid>
-            <InputLabel>Client</InputLabel>
-            <Select
-              title="Select client"
-              className={classes.clientSelect}
-              native
-              value={client}
-              onChange={(event) => {
-                setClient(event.target.value);
-              }}
-              >
-              <option aria-label="" />
-              { clients.map( client => <option key={client}>{client}</option> ) }
-            </Select>
-            <Button title="Refresh" className={classes.refresh} onClick={() => getVersions(client)}>
-              <RefreshIcon/>
-              <InputLabel>{new Date().getHours().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
-                ":" + new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
-                ":" + new Date().getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}</InputLabel>
-            </Button>
-          </Grid>
+          <FormGroup row>
+            <FormControlLabel
+              label="Client"
+              className={classes.formControlLabel}
+              control={ <Select
+                    title="Select client"
+                    className={classes.clientSelect}
+                    native
+                    value={client}
+                    onChange={(event) => {
+                      setClient(event.target.value);
+                    }}
+                  >
+                  <option aria-label="" />
+                  { clients.map( client => <option key={client}>{client}</option> ) }
+                </Select> }
+            />
+            <FormControlLabel
+              label="Only Alerts"
+              className={classes.formControlLabel}
+              control={ <Checkbox
+                className={classes.onlyAlerts}
+                checked={onlyAlerts}
+                onChange={event => setOnlyAlerts(event.target.checked)}
+              /> }
+            />
+            <FormControlLabel
+              className={classes.formControlLabel}
+              control={ <Button title="Refresh" onClick={() => getVersions(client)}>
+                <RefreshIcon/>
+                <InputLabel>{new Date().getHours().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
+                  ":" + new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
+                  ":" + new Date().getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}</InputLabel>
+              </Button> }
+            />
+          </FormGroup>
         }
-        title="Versions"
+        title={onlyAlerts ? "Version Alerts" : "Versions" }
       />
       <Divider />
       <CardContent className={classes.content}>
