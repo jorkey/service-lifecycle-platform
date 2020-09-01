@@ -67,10 +67,10 @@ const LoginPage = () => {
       >
         <Grid
           item
-          lg={3}
-          md={4}
-          xm={5}
-          xs={6}
+          lg={2}
+          md={3}
+          xm={4}
+          xs={5}
         >
           <div className={classes.content}>
             <form name="form" onSubmit={handleSubmit}>

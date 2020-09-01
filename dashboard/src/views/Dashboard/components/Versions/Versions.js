@@ -81,7 +81,7 @@ const Versions = props => {
   const [client, setClient] = useState()
   const [clients, setClients] = useState([])
   const [desiredVersions, setDesiredVersions] = useState([])
-  const [installedDesiredVersions, setInstalledDesiredVersions] = useState(new Map())
+  const [clientVersions, setClientVersions] = useState(new Map())
   const [instanceVersions, setInstanceVersions] = useState(new Map())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
@@ -91,7 +91,7 @@ const Versions = props => {
 
   React.useEffect(() => {
     setDesiredVersions([])
-    setInstalledDesiredVersions(new Map())
+    setClientVersions(new Map())
     setInstanceVersions(new Map())
     getVersions(client)
   }, [client]);
@@ -100,14 +100,14 @@ const Versions = props => {
     Utils.getDesiredVersions(client).then(versions => {
       setDesiredVersions(Object.entries(versions))
       if (!client) {
-        setInstalledDesiredVersions(new Map(Object.entries(versions)))
+        setClientVersions(new Map(Object.entries(versions)))
       }
     })
     Utils.getInstanceVersions(client).then(versions => {
       setInstanceVersions(new Map(Object.entries(versions))) })
     if (client) {
       Utils.getInstalledDesiredVersions(client).then(versions => {
-        setInstalledDesiredVersions(new Map(Object.entries(versions)))
+        setClientVersions(new Map(Object.entries(versions)))
       })
     }
   }
@@ -115,7 +115,7 @@ const Versions = props => {
   const ServiceVersions = props => {
     const { service, desiredVersion } = props;
 
-    const installedVersion = installedDesiredVersions.get(service)
+    const installedVersion = clientVersions.get(service)
 
     const concatInstances = (instances) => {
       let result = "";
@@ -257,7 +257,7 @@ const Versions = props => {
               <TableRow>
                 <TableCell className={classes.serviceColumn}>Service</TableCell>
                 <TableCell className={classes.versionColumn}>Desired Version</TableCell>
-                { client ? <TableCell className={classes.versionColumn}>Installed Version</TableCell> : null }
+                { client ? <TableCell className={classes.versionColumn}>Client Version</TableCell> : null }
                 <TableCell className={classes.versionColumn}>Working Version</TableCell>
                 <TableCell className={classes.directoryColumn}>Directory</TableCell>
                 <TableCell className={classes.instancesColumn}>Instances</TableCell>
