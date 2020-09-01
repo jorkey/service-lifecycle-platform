@@ -1,8 +1,10 @@
 #!/bin/bash -e
 
 serviceToRun=distribution
-selfDistributionDirectory=`jq -r .selfDistributionDirectory distribution.json`
-if [ "${selfDistributionDirectory}" == "null" ]; then
+selfDistributionClient=`jq -r .selfDistributionClient distribution.json`
+if [ "${selfDistributionClient}" != "null" ]; then
+  selfDistributionDirectory="directory/clients/${selfDistributionClient}"
+else
   selfDistributionDirectory=`jq -r .distributionDirectory distribution.json`
 fi
 distribDirectoryUrl="file://`/bin/pwd`/${selfDistributionDirectory}"

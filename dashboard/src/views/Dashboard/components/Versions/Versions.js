@@ -126,81 +126,77 @@ const Versions = props => {
       return result
     }
 
-    if (!client || service != "builder") {
-      const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : []
-      let versionIndex = versions.length, version = undefined
-      let directories = [], directoryIndex = 0
-      let rows = []
-      let rowsStack = []
-      let alertService = false
-      for (let rowNum=0; ; rowNum++) {
-        directoryIndex--
-        if (directoryIndex < 0) {
-          versionIndex--
-          if (rowNum && versionIndex < 0) {
-            if (!onlyAlerts || alertService) {
-              while (rowsStack.length) {
-                rows.push(rowsStack.pop())
-              }
-            } else {
-              rowsStack = []
+    const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : []
+    let versionIndex = versions.length, version = undefined
+    let directories = [], directoryIndex = 0
+    let rows = []
+    let rowsStack = []
+    let alertService = false
+    for (let rowNum=0; ; rowNum++) {
+      directoryIndex--
+      if (directoryIndex < 0) {
+        versionIndex--
+        if (rowNum && versionIndex < 0) {
+          if (!onlyAlerts || alertService) {
+            while (rowsStack.length) {
+              rows.push(rowsStack.pop())
             }
-            break
-          }
-          if (versionIndex >= 0) {
-            const [ver, dirs] = versions[versionIndex]
-            version = ver
-            directories = Object.entries(dirs)
           } else {
-            version = undefined
-            directories = []
+            rowsStack = []
           }
-          directoryIndex = directories.length - 1
+          break
         }
-        let directory = undefined, instances = []
-        if (directoryIndex >= 0) {
-          const [dir, inst] = directories[directoryIndex]
-          directory = dir
-          instances = Object.entries(inst)
+        if (versionIndex >= 0) {
+          const [ver, dirs] = versions[versionIndex]
+          version = ver
+          directories = Object.entries(dirs)
+        } else {
+          version = undefined
+          directories = []
         }
-        let installedVersionAlarm = installedVersion && Version.compare(installedVersion, desiredVersion, false)
-        let workingVersionAlarm = version && installedVersion && Version.compare(version, installedVersion, true)
-        alertService = alertService || installedVersionAlarm || workingVersionAlarm
-        rowsStack.push(<TableRow hover key={service + "-" + rowNum}>
-          {(versionIndex <= 0 && directoryIndex <= 0) ? (
-              <>
-                <TableCell className={classes.serviceColumn} rowSpan={rowNum + 1}>{service}</TableCell>
-                <TableCell className={classes.versionColumn} rowSpan={rowNum + 1}>{desiredVersion}</TableCell>
-                {client ?
-                  <TableCell className={!installedVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
-                             rowSpan={rowNum + 1}>{installedVersion}</TableCell> : null}
-              </>)
-            : null
-          }
-          {version ?
-            directoryIndex == 0 ? (
-                <TableCell className={!workingVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
-                           rowSpan={Math.max(directories.length, 1)}>
-                  {version}
-                </TableCell>)
-              : null
-            : <TableCell className={classes.versionColumn}/>
-          }
-          {directory ?
-            <TableCell className={classes.directoryColumn}>{directory}</TableCell>
-            : <TableCell className={classes.directoryColumn}/>}
-          {instances.length != 0 ?
-            <TableCell className={classes.instancesColumn}>
-              <div>{concatInstances(instances)}</div>
-            </TableCell>
-            : <TableCell className={classes.instancesColumn}/>
-          }
-        </TableRow>)
+        directoryIndex = directories.length - 1
       }
-      return rows
-    } else {
-      return null
+      let directory = undefined, instances = []
+      if (directoryIndex >= 0) {
+        const [dir, inst] = directories[directoryIndex]
+        directory = dir
+        instances = Object.entries(inst)
+      }
+      let installedVersionAlarm = installedVersion && Version.compare(installedVersion, desiredVersion, false)
+      let workingVersionAlarm = version && installedVersion && Version.compare(version, installedVersion, true)
+      alertService = alertService || installedVersionAlarm || workingVersionAlarm
+      rowsStack.push(<TableRow hover key={service + "-" + rowNum}>
+        {(versionIndex <= 0 && directoryIndex <= 0) ? (
+            <>
+              <TableCell className={classes.serviceColumn} rowSpan={rowNum + 1}>{service}</TableCell>
+              <TableCell className={classes.versionColumn} rowSpan={rowNum + 1}>{desiredVersion}</TableCell>
+              {client ?
+                <TableCell className={!installedVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
+                           rowSpan={rowNum + 1}>{installedVersion}</TableCell> : null}
+            </>)
+          : null
+        }
+        {version ?
+          directoryIndex == 0 ? (
+              <TableCell className={!workingVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
+                         rowSpan={Math.max(directories.length, 1)}>
+                {version}
+              </TableCell>)
+            : null
+          : <TableCell className={classes.versionColumn}/>
+        }
+        {directory ?
+          <TableCell className={classes.directoryColumn}>{directory}</TableCell>
+          : <TableCell className={classes.directoryColumn}/>}
+        {instances.length != 0 ?
+          <TableCell className={classes.instancesColumn}>
+            <div>{concatInstances(instances)}</div>
+          </TableCell>
+          : <TableCell className={classes.instancesColumn}/>
+        }
+      </TableRow>)
     }
+    return rows
   }
 
   return (
@@ -223,7 +219,6 @@ const Versions = props => {
                       setClient(event.target.value);
                     }}
                   >
-                  <option aria-label="" />
                   { clients.map( client => <option key={client}>{client}</option> ) }
                 </Select> }
             />

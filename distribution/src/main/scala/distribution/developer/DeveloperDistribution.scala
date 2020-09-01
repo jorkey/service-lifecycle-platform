@@ -353,14 +353,20 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
   }
 
   private def getInstanceVersions(clientName: ClientName): Route = {
-     onSuccess(getClientInstancesState(clientName).collect {
+    if (config.selfDistributionClient.contains(clientName)) {
+      getInstanceVersions()
+    } else {
+      onSuccess(getClientInstancesState(clientName).collect {
         case Some(state) =>
           var versions = InstanceVersions.empty
           state.instances.foreach { case (instanceId, servicesStates) =>
             versions = versions.addVersions(instanceId, servicesStates)
           }
           versions
-       }) { state => complete(state) }
+        case None =>
+          InstanceVersions.empty
+      }) { state => complete(state) }
+    }
   }
 
   private def getClientConfig(clientName: ClientName): Future[Option[ClientConfig]] = {

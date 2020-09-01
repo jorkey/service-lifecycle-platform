@@ -8,7 +8,8 @@ import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
 case class DeveloperDistributionConfig(name: String, instanceId: InstanceId, port: Int,
-                                       distributionDirectory: String, selfDistributionDirectory: Option[String],
+                                       distributionDirectory: String,
+                                       selfDistributionClient: Option[ClientName],
                                        builderDirectory: String)
 
 object DeveloperDistributionConfig extends DefaultJsonProtocol {
