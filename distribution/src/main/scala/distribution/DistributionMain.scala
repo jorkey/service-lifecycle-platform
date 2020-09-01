@@ -64,7 +64,8 @@ object DistributionMain extends App {
         val stateUploader = new DeveloperStateUploader(dir)
         val faultUploader = new DeveloperFaultUploader(dir)
 
-        val selfDistributionDir = new DistributionDirectory(config.selfDistributionClient.map(dir.getClientDir(_)).getOrElse(dir))
+        val selfDistributionDir = config.selfDistributionClient
+          .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
         val distribution = new DeveloperDistribution(dir, config, usersCredentials, stateUploader, faultUploader)
 
