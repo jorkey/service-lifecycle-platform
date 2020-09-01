@@ -109,7 +109,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                           path(versionsInfoPath / ".*".r / ".*".r) { (service, clientName) =>
                             complete(dir.getVersionsInfo(dir.getServiceDir(service, Some(clientName))))
                           } ~
-                          path(desiredVersionsPath) {
+                          path(desiredVersionsPath) { // TODO сделать обработку независимой от роли
                             getDesiredVersionsRoute(getDesiredVersions(None))
                           } ~
                           path(desiredVersionsPath / ".*".r) { clientName =>

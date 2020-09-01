@@ -116,9 +116,11 @@ const Versions = props => {
       Utils.getInstanceVersions(client).then(versions => {
         setInstanceVersions(new Map(Object.entries(versions)))
       })
-      Utils.getInstalledDesiredVersions(client).then(versions => {
-        setClientVersions(new Map(Object.entries(versions)))
-      })
+      if (client != "distribution") {
+        Utils.getInstalledDesiredVersions(client).then(versions => {
+          setClientVersions(new Map(Object.entries(versions)))
+        })
+      }
     }
   }
 
