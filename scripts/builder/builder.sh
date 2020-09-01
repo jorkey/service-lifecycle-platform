@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
 serviceToRun=builder
-distribDirectoryUrl=`jq -r .developerDistributionUrl builder.json`
+## TODO заменить на developerDistributionUrl после перехода на новые API endpoints
+distribDirectoryUrl=`jq -r .updateDistributionUrl builder.json`
 
 . update.sh

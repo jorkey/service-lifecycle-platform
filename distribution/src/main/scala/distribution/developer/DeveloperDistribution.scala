@@ -79,7 +79,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                     get {
                       path(distributionInfoPath) {
                         complete(DistributionInfo(config.name, Utils.getManifestBuildVersion(Common.DistributionServiceName)
-                          .getOrElse(BuildVersion.empty)))
+                          .getOrElse(BuildVersion.empty), None))
                       }
                     } ~
                     authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>

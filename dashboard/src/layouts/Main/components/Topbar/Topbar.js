@@ -50,7 +50,10 @@ const Topbar = props => {
   const [distributionInfo, setDistributionInfo] = useState([]);
 
   useEffect(() => {
-    Utils.getDistributionInfo().then(info => setDistributionInfo(info))
+    Utils.getDistributionInfo().then(info => {
+      localStorage.setItem('distribution', JSON.stringify(info))
+      setDistributionInfo(info)
+    })
   }, [])
 
   return (

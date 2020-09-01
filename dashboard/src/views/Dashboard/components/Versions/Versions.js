@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useRef, useState} from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
@@ -85,27 +85,37 @@ const Versions = props => {
   const [instanceVersions, setInstanceVersions] = useState(new Map())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
+  const distributionClient = false // TODO localStorage.getItem('distribution').client
+
   React.useEffect(() => {
-    Utils.getClients().then(clients => setClients(clients))
+    if (!distributionClient) {
+      Utils.getClients().then(clients => {
+        setClients(clients)
+        if (clients.length) {
+          setClient(clients[0])
+        }
+      })
+    }
   }, [])
 
   React.useEffect(() => {
     setDesiredVersions([])
     setClientVersions(new Map())
     setInstanceVersions(new Map())
-    getVersions(client)
+    getClientVersions(client)
   }, [client]);
 
-  const getVersions = (client) => {
-    Utils.getDesiredVersions(client).then(versions => {
-      setDesiredVersions(Object.entries(versions))
-      if (!client) {
-        setClientVersions(new Map(Object.entries(versions)))
-      }
-    })
-    Utils.getInstanceVersions(client).then(versions => {
-      setInstanceVersions(new Map(Object.entries(versions))) })
+  const getClientVersions = (client) => {
     if (client) {
+      Utils.getDesiredVersions(client).then(versions => {
+        setDesiredVersions(Object.entries(versions))
+        if (client == "distribution") {
+          setClientVersions(new Map(Object.entries(versions)))
+        }
+      })
+      Utils.getInstanceVersions(client).then(versions => {
+        setInstanceVersions(new Map(Object.entries(versions)))
+      })
       Utils.getInstalledDesiredVersions(client).then(versions => {
         setClientVersions(new Map(Object.entries(versions)))
       })
@@ -115,7 +125,7 @@ const Versions = props => {
   const ServiceVersions = props => {
     const { service, desiredVersion } = props;
 
-    const installedVersion = clientVersions.get(service)
+    const clientVersion = clientVersions.get(service)
 
     const concatInstances = (instances) => {
       let result = "";
@@ -162,17 +172,17 @@ const Versions = props => {
         directory = dir
         instances = Object.entries(inst)
       }
-      let installedVersionAlarm = installedVersion && Version.compare(installedVersion, desiredVersion, false)
-      let workingVersionAlarm = version && installedVersion && Version.compare(version, installedVersion, true)
-      alertService = alertService || installedVersionAlarm || workingVersionAlarm
+      let clientVersionAlarm = clientVersion && Version.compare(clientVersion, desiredVersion, false)
+      let workingVersionAlarm = version && clientVersion && Version.compare(version, clientVersion, true)
+      alertService = alertService || clientVersionAlarm || workingVersionAlarm
       rowsStack.push(<TableRow hover key={service + "-" + rowNum}>
         {(versionIndex <= 0 && directoryIndex <= 0) ? (
             <>
               <TableCell className={classes.serviceColumn} rowSpan={rowNum + 1}>{service}</TableCell>
               <TableCell className={classes.versionColumn} rowSpan={rowNum + 1}>{desiredVersion}</TableCell>
-              {client ?
-                <TableCell className={!installedVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
-                           rowSpan={rowNum + 1}>{installedVersion}</TableCell> : null}
+              { (!distributionClient && client != "distribution") ?
+                <TableCell className={!clientVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
+                           rowSpan={rowNum + 1}>{clientVersion}</TableCell> : null}
             </>)
           : null
         }
@@ -233,7 +243,7 @@ const Versions = props => {
             />
             <FormControlLabel
               className={classes.formControlLabel}
-              control={ <Button title="Refresh" onClick={() => getVersions(client)}>
+              control={ <Button title="Refresh" onClick={() => getClientVersions(client)}>
                 <RefreshIcon/>
                 <InputLabel>{new Date().getHours().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
                   ":" + new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
@@ -247,22 +257,23 @@ const Versions = props => {
       <Divider />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell className={classes.serviceColumn}>Service</TableCell>
-                <TableCell className={classes.versionColumn}>Desired Version</TableCell>
-                { client ? <TableCell className={classes.versionColumn}>Client Version</TableCell> : null }
-                <TableCell className={classes.versionColumn}>Working Version</TableCell>
-                <TableCell className={classes.directoryColumn}>Directory</TableCell>
-                <TableCell className={classes.instancesColumn}>Instances</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              { desiredVersions.sort().map(([service, desiredVersion]) =>
-                  <ServiceVersions key={service} service={service} desiredVersion={desiredVersion}/>) }
-            </TableBody>
-          </Table>
+          { distributionClient || client ?
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell className={classes.serviceColumn}>Service</TableCell>
+                  <TableCell className={classes.versionColumn}>Desired Version</TableCell>
+                  { (!distributionClient && client != "distribution") ? <TableCell className={classes.versionColumn}>Client Version</TableCell> : null }
+                  <TableCell className={classes.versionColumn}>Working Version</TableCell>
+                  <TableCell className={classes.directoryColumn}>Directory</TableCell>
+                  <TableCell className={classes.instancesColumn}>Instances</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                { desiredVersions.sort().map(([service, desiredVersion]) =>
+                    <ServiceVersions key={service} service={service} desiredVersion={desiredVersion}/>) }
+              </TableBody>
+            </Table> : null }
         </div>
       </CardContent>
     </Card>
