@@ -149,10 +149,15 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
           log.error(s"Can't open ${file}", e)
           return false
       }
+    var stat = false
     try {
-      download(url, output)
+      stat = download(url, output)
+      stat
     } finally {
       output.close()
+      if (!stat) {
+        file.delete()
+      }
     }
   }
 
