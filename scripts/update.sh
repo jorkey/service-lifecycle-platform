@@ -18,6 +18,7 @@ function download {
   rm -f ${outputFile}
   local http_code
   if ! http_code=`curl ${url} --output ${outputFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
+    rm -f ${outputFile}
     exit 1
   elif [[ ${url} == http* ]] && [[ $http_code != "200" ]]; then
     if [ -f ${outputFile} ]; then

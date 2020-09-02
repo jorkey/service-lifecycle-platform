@@ -33,9 +33,11 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistribu
     log.info(s"Downloading ${serviceName} of version ${toVersion}")
     if (!clientDirectory.downloadVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
       state.updateError(false, s"Downloading ${serviceName} error")
+      return false
     }
     if (!IOUtils.writeServiceVersion(new File("."), serviceName, toVersion)) {
       state.updateError(true, s"Set ${serviceName} version error")
+      return false
     }
     true
   }
