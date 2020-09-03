@@ -121,7 +121,7 @@ export const ServiceVersions = props => {
         </TableCell> : <TableCell className={classes.instancesColumn}/>}
       {instance ?
         <TableCell className={classes.infoColumn}>
-          <Info client={client} instance={instance} directory={directory} service={service}/>
+          <Info client={client} instance={instance} directory={directory} service={service} alert={workingVersionAlarm}/>
         </TableCell> : <TableCell className={classes.infoColumn}/>}
     </TableRow>)
   }

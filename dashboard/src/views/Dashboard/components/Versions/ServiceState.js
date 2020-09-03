@@ -5,6 +5,7 @@ import {Utils} from "../../../../common";
 import {Table, TableBody} from "@material-ui/core";
 import TableCell from "@material-ui/core/TableCell";
 import InfoIcon from "@material-ui/icons/Info";
+import AlertIcon from "@material-ui/icons/Error";
 import TableRow from "@material-ui/core/TableRow";
 
 const useStyles = makeStyles(theme => ({
@@ -13,6 +14,13 @@ const useStyles = makeStyles(theme => ({
     width: 25,
     height: 25,
     opacity: 0.5
+  },
+  alertIcon: {
+    paddingTop: 5,
+    width: 25,
+    height: 25,
+    opacity: 0.5,
+    color: "red"
   },
   stateColumn: {
     padding: '4px'
@@ -23,18 +31,24 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export const Info = (props) => {
-  const { client, instance, directory, service } = props
+  const { client, instance, directory, service, alert } = props
   const classes = useStyles()
 
   const [anchor, setAnchor] = React.useState()
 
   return (
     <>
-      <InfoIcon
-        className={classes.infoIcon}
-        onMouseEnter={(event) => setAnchor(event.currentTarget)}
-        onMouseLeave={() => setAnchor(null)}
-      />
+      {alert ?
+        <AlertIcon
+          className={classes.alertIcon}
+          onMouseEnter={(event) => setAnchor(event.currentTarget)}
+          onMouseLeave={() => setAnchor(null)}
+        /> :
+        <InfoIcon
+          className={classes.infoIcon}
+          onMouseEnter={(event) => setAnchor(event.currentTarget)}
+          onMouseLeave={() => setAnchor(null)}
+        />}
       <ServiceState anchor={anchor} client={client} instance={instance} directory={directory} service={service}/>
     </>)
 }
