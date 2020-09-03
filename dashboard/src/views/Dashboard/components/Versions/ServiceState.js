@@ -43,20 +43,20 @@ export const ServiceState = (props) => {
   const {anchor, client, instance, directory, service} = props
   const classes = useStyles()
 
-  const [state, setState] = useState()
+  const [state, setState] = useState([])
   const open = Boolean(anchor)
 
   if (open) {
-    if (!state) {
+    if (!state.length) {
       Utils.getServiceState(client, instance, directory, service).then(state => {
         setState(state)
       })
     }
-  } else if (state) {
-    setState(null)
+  } else if (state.length) {
+    setState([])
   }
 
-  return state && (state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
+  return state && (state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
         id="mouse-over-popover"
         className={classes.statePopover}
         classes={{
@@ -76,6 +76,8 @@ export const ServiceState = (props) => {
       >
         <Table>
           <TableBody>
+            {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
+              <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
             {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
               <TableCell className={classes.stateColumn}>{state.updateToVersion}</TableCell></TableRow>):null}
             {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>Update Error</TableCell>
@@ -86,6 +88,3 @@ export const ServiceState = (props) => {
         </Table>
       </Popover>) : null
 }
-
-//{state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
-//  <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
