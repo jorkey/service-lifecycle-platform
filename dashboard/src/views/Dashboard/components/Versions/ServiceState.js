@@ -21,8 +21,7 @@ const useStyles = makeStyles(theme => ({
 
 export const Info = (props) => {
   const { client, instance, directory, service } = props
-
-  const classes = useStyles();
+  const classes = useStyles()
 
   const [anchor, setAnchor] = React.useState()
 

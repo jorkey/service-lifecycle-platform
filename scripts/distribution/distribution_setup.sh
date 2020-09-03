@@ -69,9 +69,9 @@ EOF
 if [ "$role" == "developer" ]; then
   cat << EOF > distribution.json
 {
-  "name: " ${name},
-  "instanceId: " ${instanceId},
-  "port" : ${port},
+  "name": "${name}",
+  "instanceId": "${instanceId}",
+  "port": ${port},
   "distributionDirectory": "directory",
   "builderDirectory": "../build"
 }
@@ -82,9 +82,9 @@ EOF
 elif [ "$role" == "client" ]; then
   cat << EOF > distribution.json
 {
-  "name: " ${name},
-  "instanceId: " ${instanceId},
-  "port" : ${port},
+  "name": "${name}",
+  "instanceId": "${instanceId}",
+  "port": ${port},
   "distributionDirectory": "directory",
   "installerDirectory": "../install",
   "developerDistributionUrl" : "${distribDirectoryUrl}"
