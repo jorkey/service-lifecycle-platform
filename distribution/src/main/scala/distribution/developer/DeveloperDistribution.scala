@@ -14,7 +14,7 @@ import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.http.scaladsl.server.Route._
-import akka.http.scaladsl.model.StatusCodes.{InternalServerError, Success}
+import akka.http.scaladsl.model.StatusCodes.{InternalServerError, NotFound, Success}
 import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -24,7 +24,7 @@ import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, Instanc
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersions, InstancesState, ServicesState, ServicesVersions, TestSignature}
+import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersions, InstancesState, ProfiledServiceName, ServicesState, ServicesVersions, TestSignature}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
@@ -95,6 +95,9 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                         } ~
                         path(instanceVersionsPath / ".*".r) { clientName =>
                           getInstanceVersions(clientName)
+                        } ~
+                        path(serviceStatePath / ".*".r / ".*".r /  ".*".r / ".*".r) { (clientName, instanceId, directory, service) =>
+                          getServiceState(clientName, instanceId, directory, service)
                         } ~
                         path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                           getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
@@ -366,6 +369,31 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
         case None =>
           InstanceVersions.empty
       }) { state => complete(state) }
+    }
+  }
+
+  private def getServiceState(clientName: ClientName, instanceId: InstanceId,
+                              directory: ServiceDirectory, serviceName: ServiceName): Route = {
+    onSuccess(getClientInstancesState(clientName)) {
+      case Some(instancesState) =>
+        instancesState.instances.get(instanceId) match {
+          case Some(servicesState) =>
+            servicesState.directories.get(directory) match {
+              case Some(directoryState) =>
+                directoryState.get(serviceName) match {
+                  case Some(state) =>
+                    complete(state)
+                  case None =>
+                    complete(StatusCodes.NotFound)
+                }
+              case None =>
+                complete(StatusCodes.NotFound)
+            }
+          case None =>
+            complete(StatusCodes.NotFound)
+        }
+      case None =>
+        complete(StatusCodes.NotFound)
     }
   }
 

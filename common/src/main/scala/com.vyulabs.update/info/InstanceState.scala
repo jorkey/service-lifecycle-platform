@@ -63,7 +63,7 @@ object ServiceState extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat8(ServiceState.apply)
 }
 
-case class ServicesState(directories: Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]) {
+case class ServicesState(directories: Map[ServiceDirectory, Map[ServiceName, ServiceState]]) {
   def merge(servicesState: ServicesState): ServicesState = {
     var mergedState = directories
     servicesState.directories.foreach { case (directory, directoryState) =>
@@ -86,21 +86,21 @@ object ServicesState extends DefaultJsonProtocol {
 
   def empty = ServicesState(Map.empty)
 
-  def apply(name: ProfiledServiceName, state: ServiceState, directory: ServiceDirectory): ServicesState = {
-    val states = Map.empty[ProfiledServiceName, ServiceState] + (name -> state)
-    val directories = Map.empty[ServiceDirectory, Map[ProfiledServiceName, ServiceState]] + (directory -> states)
+  def apply(name: ServiceName, state: ServiceState, directory: ServiceDirectory): ServicesState = {
+    val states = Map.empty[ServiceName, ServiceState] + (name -> state)
+    val directories = Map.empty[ServiceDirectory, Map[ServiceName, ServiceState]] + (directory -> states)
     ServicesState(directories)
   }
 
   def getOwnInstanceState(serviceName: ServiceName)(implicit log: Logger): ServicesState = {
     val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName))
-    val directoryState = Map.empty + (ProfiledServiceName(serviceName) -> ownState)
+    val directoryState = Map.empty + (serviceName -> ownState)
     ServicesState(Map.empty + (new File(".").getCanonicalPath() -> directoryState))
   }
 
   def getServiceInstanceState(directory: File, serviceName: ServiceName)(implicit log: Logger): ServicesState = {
     val ownState = ServiceState(version = IOUtils.readServiceVersion(serviceName, directory))
-    val directoryState = Map.empty + (ProfiledServiceName(serviceName) -> ownState)
+    val directoryState = Map.empty + (serviceName -> ownState)
     ServicesState(Map.empty + (directory.getCanonicalPath() -> directoryState))
   }
 }
@@ -130,11 +130,11 @@ case class InstanceVersions(versions: Map[ServiceName, Map[BuildVersion, Map[Ser
     state.directories.foreach { case (directory, state) =>
       state.foreach { case (name, state) =>
         val version = state.version.getOrElse(BuildVersion.empty)
-        var versionMap = newVersions.getOrElse(name.name, Map.empty[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]])
+        var versionMap = newVersions.getOrElse(name, Map.empty[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]])
         var dirMap = versionMap.getOrElse(version, Map.empty[ServiceDirectory, Set[InstanceId]])
         dirMap += (directory -> (dirMap.getOrElse(directory, Set.empty) + instanceId))
         versionMap += (version -> dirMap)
-        newVersions += (name.name -> versionMap)
+        newVersions += (name -> versionMap)
       }
     }
     InstanceVersions(newVersions)

@@ -2,7 +2,7 @@
 
 if [ -z "$4" ]
 then
-  >&2 echo "Use: $0 cloudProvider name services distribDirectoryUrl [environment]"
+  >&2 echo "Use: $0 <cloudProvider> <name> <services> <distribDirectoryUrl> [environment]"
   exit 1
 fi
 

@@ -21,6 +21,7 @@ trait DistributionWebPaths {
   val userInfoPath = "user-info"
   val clientsInfoPath = "clients-info"
   val instanceVersionsPath = "instance-versions"
+  val serviceStatePath = "service-state"
   val versionImagePath = "version-image"
   val versionInfoPath = "version-info"
   val versionsInfoPath = "versions-info"
