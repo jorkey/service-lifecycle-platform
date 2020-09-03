@@ -118,10 +118,24 @@ case class InstancesState(instances: Map[InstanceId, ServicesState]) {
     }
     InstancesState(mergedState)
   }
+
+  def addState(instanceId: InstanceId, state: ServicesState): InstancesState = {
+    var mergedInstances = instances
+    val mergedState = mergedInstances.get(instanceId) match {
+      case Some(instance) =>
+        instance.merge(state)
+      case None =>
+        state
+    }
+    mergedInstances += (instanceId -> mergedState)
+    InstancesState(mergedInstances)
+  }
 }
 
 object InstancesState extends DefaultJsonProtocol {
   implicit val instancesStateJson = jsonFormat1(InstancesState.apply)
+
+  def empty = InstancesState(Map.empty)
 }
 
 case class InstanceVersions(versions: Map[ServiceName, Map[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]]]) {

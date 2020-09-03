@@ -91,7 +91,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                           complete(getClientsInfo())
                         } ~
                         path(instanceVersionsPath) {
-                          getInstanceVersions()
+                          complete(getInstanceVersions())
                         } ~
                         path(instanceVersionsPath / ".*".r) { clientName =>
                           getInstanceVersions(clientName)
@@ -347,29 +347,32 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
         .flatMapConcat(clients => Source.fromIterator(() => clients.iterator))
   }
 
-  private def getInstanceVersions(): Route = {
-    val state = ServicesState.getOwnInstanceState(Common.DistributionServiceName)
+  private def getServicesState(): ServicesState = {
+    ServicesState.getOwnInstanceState(Common.DistributionServiceName)
       .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
       .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.BuilderServiceName))
       .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.ScriptsServiceName))
-    complete(InstanceVersions.empty.addVersions(config.instanceId, state))
+  }
+
+  private def getInstancesState(): InstancesState = {
+    InstancesState.empty.addState(config.instanceId, getServicesState())
+  }
+
+  private def getInstanceVersions(): InstanceVersions = {
+    InstanceVersions.empty.addVersions(config.instanceId, getServicesState())
   }
 
   private def getInstanceVersions(clientName: ClientName): Route = {
-    if (config.selfDistributionClient.contains(clientName)) {
-      getInstanceVersions()
-    } else {
-      onSuccess(getClientInstancesState(clientName).collect {
-        case Some(state) =>
-          var versions = InstanceVersions.empty
-          state.instances.foreach { case (instanceId, servicesStates) =>
-            versions = versions.addVersions(instanceId, servicesStates)
-          }
-          versions
-        case None =>
-          InstanceVersions.empty
-      }) { state => complete(state) }
-    }
+    onSuccess(getClientInstancesState(clientName).collect {
+      case Some(state) =>
+        var versions = InstanceVersions.empty
+        state.instances.foreach { case (instanceId, servicesStates) =>
+          versions = versions.addVersions(instanceId, servicesStates)
+        }
+        versions
+      case None =>
+        InstanceVersions.empty
+    }) { state => complete(state) }
   }
 
   private def getServiceState(clientName: ClientName, instanceId: InstanceId,
@@ -396,7 +399,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
             complete(StatusCodes.NotFound)
         }
       case None =>
-        log.debug(s"Client ${clientName} is not found")
+        log.debug(s"Client ${clientName} state is not found")
         complete(StatusCodes.NotFound)
     }
   }
@@ -419,15 +422,19 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
 
   private def getClientInstancesState(clientName: ClientName): Future[Option[InstancesState]] = {
     val promise = Promise[Option[InstancesState]]()
-    getFileContentWithLock(dir.getInstancesStateFile(clientName)).onComplete { bytes =>
-      try {
-        val instancesState = bytes.get.decodeString("utf8").parseJson.convertTo[InstancesState]
-        promise.success(Some(instancesState))
-      } catch {
-        case _: FileNotFoundException =>
-          promise.success(None)
-        case ex: Exception =>
-          promise.failure(ex)
+    if (config.selfDistributionClient.contains(clientName)) {
+      promise.success(Some(getInstancesState()))
+    } else {
+      getFileContentWithLock(dir.getInstancesStateFile(clientName)).onComplete { bytes =>
+        try {
+          val instancesState = bytes.get.decodeString("utf8").parseJson.convertTo[InstancesState]
+          promise.success(Some(instancesState))
+        } catch {
+          case _: FileNotFoundException =>
+            promise.success(None)
+          case ex: Exception =>
+            promise.failure(ex)
+        }
       }
     }
     promise.future
