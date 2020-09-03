@@ -47,12 +47,12 @@ export const ServiceState = (props) => {
   const open = Boolean(anchor)
 
   if (open) {
-    if (!state.length) {
+    if (state.length == 0) {
       Utils.getServiceState(client, instance, directory, service).then(state => {
         setState(state)
       })
     }
-  } else if (state.length) {
+  } else if (state.length != 0) {
     setState([])
   }
 
