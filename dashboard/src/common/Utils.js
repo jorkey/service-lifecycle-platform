@@ -49,7 +49,7 @@ function getInstanceVersions(client) {
 }
 
 function getServiceState(client, instanceId, directory, service) {
-  return apiGet( "service-state", instanceId, directory, service).then(state => {
+  return apiGet( "service-state", client, instanceId, directory, service).then(state => {
     return state
   });
 }
