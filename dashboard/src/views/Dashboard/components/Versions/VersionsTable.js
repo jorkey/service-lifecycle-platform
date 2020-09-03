@@ -28,8 +28,9 @@ const useStyles = makeStyles(theme => ({
     padding: '4px'
   },
   infoColumn: {
+    width: '30px',
     padding: '4px',
-    width: '30px'
+    paddingRight: '10px'
   }
 }));
 
