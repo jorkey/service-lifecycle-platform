@@ -384,16 +384,20 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                   case Some(state) =>
                     complete(state)
                   case None =>
-                    complete(StatusCodes.NotFound, s"Service ${serviceName} is not found")
+                    log.debug(s"Service ${serviceName} is not found")
+                    complete(StatusCodes.NotFound)
                 }
               case None =>
-                complete(StatusCodes.NotFound, s"Directory ${directory} is not found")
+                log.debug(s"Directory ${directory} is not found")
+                complete(StatusCodes.NotFound)
             }
           case None =>
-            complete(StatusCodes.NotFound, s"Instance ${instanceId} is not found")
+            log.debug(s"Instance ${instanceId} is not found")
+            complete(StatusCodes.NotFound)
         }
       case None =>
-        complete(StatusCodes.NotFound, s"Client ${clientName} is not found")
+        log.debug(s"Client ${clientName} is not found")
+        complete(StatusCodes.NotFound)
     }
   }
 
