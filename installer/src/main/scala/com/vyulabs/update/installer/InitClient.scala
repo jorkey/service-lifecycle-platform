@@ -181,7 +181,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
           None
         }})
     if (!ProcessUtils.runProcess("bash",
-        Seq( "distribution_setup.sh", "client", cloudProvider, name, distributionServicePort.toString, developerDistribution.url.toString),
+        Seq( "./distribution_setup.sh", "client", cloudProvider, name, distributionServicePort.toString, developerDistribution.url.toString),
         Map.empty, distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error("Can't setup distribution server")
       return false

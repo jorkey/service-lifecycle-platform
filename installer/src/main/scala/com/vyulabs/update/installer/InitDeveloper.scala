@@ -200,7 +200,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     if (!ProcessUtils.runProcess("bash",
-        Seq("distribution_setup.sh", "developer", distributionServicePort.toString),
+        Seq("./distribution_setup.sh", "developer", distributionServicePort.toString),
         Map.empty, distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error("Can't setup distribution server")
       return false
