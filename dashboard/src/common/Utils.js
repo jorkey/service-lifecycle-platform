@@ -27,47 +27,49 @@ function logout() {
 }
 
 function getDistributionInfo() {
-  const path ="/api/distribution-info"
-  return apiGet(path);
+  return apiGet("distribution-info");
 }
 
 function getClients() {
-  const path ="/api/clients-info"
-  return apiGet(path).then(clients => {
+  return apiGet("clients-info").then(clients => {
     return clients.map(client => client.name)
   });
 }
 
 function getDesiredVersions(client) {
-  const path = "/api/" + (!client ? "desired-versions" : ("desired-versions/" + client))
-  return apiGet(path).then(versions => {
+  return apiGet("desired-versions", client).then(versions => {
     return versions.desiredVersions
   });
 }
 
 function getInstanceVersions(client) {
-  const path = "/api/" + (!client ? "instance-versions" : ("instance-versions/" + client))
-  return apiGet(path).then(versions => {
+  return apiGet("instance-versions", client).then(versions => {
     return versions.versions
   });
 }
 
 function getServiceState(client, instanceId, directory, service) {
-  const path = "/api/service-state/" + client + "/" + encodeURIComponent(instanceId) + "/" + encodeURIComponent(directory) + "/" + encodeURIComponent(service)
-  return apiGet(path).then(state => {
+  return apiGet( "service-state", instanceId, directory, service).then(state => {
     return state
   });
 }
 
 function getInstalledDesiredVersions(client) {
-  return apiGet(["installed-desired-versions", client]).then(versions => {
+  return apiGet("installed-desired-versions", client).then(versions => {
     return versions.desiredVersions
   });
 }
 
-function apiGet(path) {
-  let pathStr = ""
-  path.foreach (p => { pathStr += "/" + encodeURIComponent(pathStr) })
+function apiGet(p1, p2, p3, p4, p5, p6, p7, p8) {
+  let pathStr = "/api"
+  if (p1) { pathStr += "/" + encodeURIComponent(p1) }
+  if (p2) { pathStr += "/" + encodeURIComponent(p2) }
+  if (p3) { pathStr += "/" + encodeURIComponent(p3) }
+  if (p4) { pathStr += "/" + encodeURIComponent(p4) }
+  if (p5) { pathStr += "/" + encodeURIComponent(p5) }
+  if (p6) { pathStr += "/" + encodeURIComponent(p6) }
+  if (p7) { pathStr += "/" + encodeURIComponent(p7) }
+  if (p8) { pathStr += "/" + encodeURIComponent(p8) }
   console.log(`Get ${pathStr}`)
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")): undefined
   return fetchRequest("GET", pathStr, user ? user.authData: undefined).then(

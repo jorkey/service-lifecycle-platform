@@ -15,7 +15,7 @@ elif [ "$2" == "client" ]; then
   if [ -z "$5" ]; then
     exitUsage
   fi
-  distribDirectoryUrl=$4
+  distribDirectoryUrl=$5
 else
   exitUsage
 fi
@@ -24,9 +24,6 @@ cloudProvider=$1
 role=$2
 name=$3
 port=$4
-if [ "$role" == "client" ]; then
-  developerDirectoryUrl=$5
-fi
 
 serviceToSetup=distribution
 . update.sh
