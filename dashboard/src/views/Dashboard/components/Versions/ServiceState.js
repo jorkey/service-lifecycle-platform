@@ -14,6 +14,9 @@ const useStyles = makeStyles(theme => ({
     height: 25,
     opacity: 0.5
   },
+  stateColumn: {
+    padding: '4px',
+  },
   statePopover: {
     pointerEvents: 'none',
   }
@@ -73,10 +76,14 @@ export const ServiceState = (props) => {
       >
         <Table>
           <TableBody>
-            {state.startDate?(<TableRow><TableCell>Start Date</TableCell><TableCell>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
-            {state.updateToVersion?(<TableRow><TableCell>Updating To</TableCell><TableCell>{state.updateToVersion}</TableCell></TableRow>):null}
-            {state.updateError?(<TableRow><TableCell>Update Error</TableCell><TableCell>{state.updateError}</TableCell></TableRow>):null}
-            {state.failuresCount?(<TableRow><TableCell>Failures Count</TableCell><TableCell>{state.failuresCount}</TableCell></TableRow>):null}
+            {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
+              <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
+            {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
+              <TableCell className={classes.stateColumn}>{state.updateToVersion}</TableCell></TableRow>):null}
+            {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>Update Error</TableCell>
+              <TableCell className={classes.stateColumn}>{state.updateError}</TableCell></TableRow>):null}
+            {state.failuresCount?(<TableRow><TableCell className={classes.stateColumn}>Failures Count</TableCell>
+              <TableCell className={classes.stateColumn}>{state.failuresCount}</TableCell></TableRow>):null}
           </TableBody>
         </Table>
       </Popover>) : null
