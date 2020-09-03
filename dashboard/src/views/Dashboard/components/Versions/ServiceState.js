@@ -41,13 +41,16 @@ export const ServiceState = (props) => {
   const classes = useStyles();
 
   const [state, setState] = useState()
-
   const open = Boolean(anchor)
 
   if (open) {
-    Utils.getServiceState(client, instance, directory, service).then(state => {
-      setState(state)
-    })
+    if (!state) {
+      Utils.getServiceState(client, instance, directory, service).then(state => {
+        setState(state)
+      })
+    }
+  } else if (state) {
+    setState(null)
   }
 
   return state && (state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
