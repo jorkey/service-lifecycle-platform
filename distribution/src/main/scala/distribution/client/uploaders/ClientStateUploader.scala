@@ -11,7 +11,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
+import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import org.slf4j.LoggerFactory
@@ -32,8 +32,8 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
 
   private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
 
-  private var instancesStates = Map.empty[InstanceId, Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]]
-  private var statesToUpload = Map.empty[InstanceId, Map[ServiceDirectory, Map[ProfiledServiceName, ServiceState]]]
+  private var instancesStates = Map.empty[InstanceId, Map[ServiceDirectory, Map[ServiceName, ServiceState]]]
+  private var statesToUpload = Map.empty[InstanceId, Map[ServiceDirectory, Map[ServiceName, ServiceState]]]
 
   private val expirationPeriod = FiniteDuration.apply(1, TimeUnit.MINUTES).toMillis
   private val uploadInterval = 10000

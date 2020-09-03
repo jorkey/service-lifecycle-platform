@@ -6,7 +6,7 @@ import java.util.Date
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{InstanceId}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.{ProfiledServiceName, ServiceState, ServicesState}
+import com.vyulabs.update.info.{ProfiledServiceName, ServicesState}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger
 
@@ -19,17 +19,18 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
   private var startDate = new Date()
 
   for (servicesState <- clientDirectory.downloadServicesState(instanceId)) {
-    val directory = new java.io.File(".").getCanonicalPath()
     servicesState.directories.foreach { case (directory, serviceStates) =>
       serviceStates.foreach { case (serviceName, serviceState) =>
         if (directory == directory) {
-          if (serviceName.name == Common.UpdaterServiceName) {
+          if (serviceName == Common.UpdaterServiceName) {
             for (date <- serviceState.startDate) {
               startDate = date
             }
           } else {
-            for (state <- services.get(serviceName)) {
-              state.initFromState(serviceState)
+            services.foreach { case (name, controller) =>
+              if (name == serviceName && controller.serviceDirectory.getCanonicalPath == directory) {
+                controller.initFromState(serviceState)
+              }
             }
           }
         }
@@ -70,7 +71,7 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
     log.info("Update instance state")
     val scriptsState = ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName)
     val servicesState = services.foldLeft(ServicesState.empty)((state, service) =>
-      state.merge(ServicesState(service._1, service._2.getState(), service._2.serviceDirectory.getCanonicalPath)))
+      state.merge(ServicesState(service._1.name, service._2.getState(), service._2.serviceDirectory.getCanonicalPath)))
     clientDirectory.uploadServicesStates(instanceId, scriptsState.merge(servicesState))
   }
 }

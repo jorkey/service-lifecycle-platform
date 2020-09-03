@@ -59,11 +59,13 @@ object InstallerMain extends App {
 
         case "initClient" =>
           val initClient = new InitClient()
+          val cloudProvider = arguments.getValue("cloudProvider")
+          val distributionName = arguments.getValue("distributionName")
           val adminRepositoryUrl = new URI(arguments.getValue("adminRepositoryUrl"))
           val clientDistributionUrl = new URL(arguments.getValue("clientDistributionUrl"))
           val developerDistributionUrl = new URL(arguments.getValue("developerDistributionUrl"))
           val distributionServicePort = arguments.getIntValue("distributionServicePort")
-          if (!initClient.initClient(adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
+          if (!initClient.initClient(cloudProvider, distributionName, adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl, distributionServicePort)) {
             Utils.error("Init client error")
           }
 

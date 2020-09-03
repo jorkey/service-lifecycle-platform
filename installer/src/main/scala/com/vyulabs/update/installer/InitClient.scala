@@ -29,7 +29,8 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private val adminRepositoryDir = new File("..", "admin")
   private val distributionDir = new File("..", "distrib")
 
-  def initClient(adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
+  def initClient(cloudProvider: String, distributionName: String,
+                 adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
                  distributionServicePort: Int): Boolean = {
     val developerDistribution = new DeveloperDistributionDirectoryClient(developerDistributionUrl)
     val clientDistribution = new ClientDistributionDirectory(new File(distributionDir, "directory"))
@@ -39,7 +40,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Init distribution directory")
-    if (!initDistribDirectory(clientDistribution, developerDistribution, distributionServicePort)) {
+    if (!initDistribDirectory(cloudProvider, distributionName, clientDistribution, developerDistribution, distributionServicePort)) {
       log.error("Can't init distribution directory")
       return false
     }
@@ -106,7 +107,8 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def initDistribDirectory(clientDistribution: ClientDistributionDirectory,
+  private def initDistribDirectory(cloudProvider: String, name: String,
+                                   clientDistribution: ClientDistributionDirectory,
                                    developerDistribution: DeveloperDistributionDirectoryClient,
                                    distributionServicePort: Int): Boolean = {
     if (!distributionDir.exists()) {
@@ -133,7 +135,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Setup distribution server")
-    if (!setupDistributionServer(clientDistribution, developerDistribution, desiredVersions, distributionServicePort)) {
+    if (!setupDistributionServer(cloudProvider, name, clientDistribution, developerDistribution, desiredVersions, distributionServicePort)) {
       log.error("Can't setup distribution server")
       return false
     }
@@ -166,7 +168,8 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       clientDistribution.getVersionInfoFile(serviceName, buildVersion))
   }
 
-  private def setupDistributionServer(clientDistribution: ClientDistributionDirectory,
+  private def setupDistributionServer(cloudProvider: String, name: String,
+                                      clientDistribution: ClientDistributionDirectory,
                                       developerDistribution: DeveloperDistributionDirectoryClient,
                                       desiredVersions: Map[ServiceName, BuildVersion],
                                       distributionServicePort: Int): Boolean = {
@@ -178,7 +181,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
           None
         }})
     if (!ProcessUtils.runProcess("bash",
-        Seq( "distribution_setup.sh", "client", distributionServicePort.toString, developerDistribution.url.toString),
+        Seq( "distribution_setup.sh", "client", cloudProvider, name, distributionServicePort.toString, developerDistribution.url.toString),
         Map.empty, distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error("Can't setup distribution server")
       return false
