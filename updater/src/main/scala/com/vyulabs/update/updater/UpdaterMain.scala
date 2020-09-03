@@ -194,9 +194,10 @@ object UpdaterMain extends App { self =>
             }
           }
           if (!errorUpdates.isEmpty) {
-            log.error(s"Some versions are not installed: ${errorUpdates}. Add them to blacklist")
+            log.error(s"Some versions are not installed: ${errorUpdates}")
             errorUpdates.foreach { case (service, version) =>
               if (Common.isUpdateService(service.name) || serviceUpdaters.get(service).get.getUpdateError().map(_.critical).getOrElse(false)) {
+                log.error(s"Add service ${service} version ${version} to blacklist")
                 blacklist += (service -> version)
               }
             }

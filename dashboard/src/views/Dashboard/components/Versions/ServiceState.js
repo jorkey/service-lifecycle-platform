@@ -80,8 +80,8 @@ export const ServiceState = (props) => {
               <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
             {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
               <TableCell className={classes.stateColumn}>{state.updateToVersion}</TableCell></TableRow>):null}
-            {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>Update Error</TableCell>
-              <TableCell className={classes.stateColumn}>{state.updateError}</TableCell></TableRow>):null}
+            {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>{state.updateError.critical?"Critical Update Error":"Update Error"}</TableCell>
+              <TableCell className={classes.stateColumn}>{state.updateError.error}</TableCell></TableRow>):null}
             {state.failuresCount?(<TableRow><TableCell className={classes.stateColumn}>Failures Count</TableCell>
               <TableCell className={classes.stateColumn}>{state.failuresCount}</TableCell></TableRow>):null}
           </TableBody>
