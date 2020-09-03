@@ -15,10 +15,10 @@ const useStyles = makeStyles(theme => ({
     opacity: 0.5
   },
   stateColumn: {
-    padding: '4px',
+    padding: '4px'
   },
   statePopover: {
-    pointerEvents: 'none',
+    pointerEvents: 'none'
   }
 }));
 
@@ -40,8 +40,8 @@ export const Info = (props) => {
 }
 
 export const ServiceState = (props) => {
-  const {anchor, client, instance, directory, service} = props;
-  const classes = useStyles();
+  const {anchor, client, instance, directory, service} = props
+  const classes = useStyles()
 
   const [state, setState] = useState()
   const open = Boolean(anchor)
