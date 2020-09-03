@@ -119,9 +119,10 @@ export const ServiceVersions = props => {
         <TableCell className={classes.instancesColumn}>
           <Typography>{instance}</Typography>
         </TableCell> : <TableCell className={classes.instancesColumn}/>}
-      <TableCell className={classes.infoColumn}>
-        <Info client={client} instance={instance} directory={directory} service={service}/>
-      </TableCell>
+      {instance ?
+        <TableCell className={classes.infoColumn}>
+          <Info client={client} instance={instance} directory={directory} service={service}/>
+        </TableCell> : <TableCell className={classes.infoColumn}/>}
     </TableRow>)
   }
   return rows

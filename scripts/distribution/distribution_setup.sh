@@ -1,17 +1,17 @@
 #!/bin/bash -e
 
 function exitUsage() {
-  >&2 echo "Use: $0 <cloudProvider> developer <name> <port> or"
-  >&2 echo "     $0 <cloudProvider> client <name> <port> <developerDirectoryUrl>"
+  >&2 echo "Use: $0 developer <cloudProvider> <name> <port> or"
+  >&2 echo "     $0 client <cloudProvider> <name> <port> <developerDirectoryUrl>"
   exit 1
 }
 
-if [ "$2" == "developer" ]; then
+if [ "$1" == "developer" ]; then
   if [ -z "$4" ]; then
     exitUsage
   fi
   distribDirectoryUrl=file://`/bin/pwd`/directory
-elif [ "$2" == "client" ]; then
+elif [ "$1" == "client" ]; then
   if [ -z "$5" ]; then
     exitUsage
   fi
@@ -20,8 +20,8 @@ else
   exitUsage
 fi
 
-cloudProvider=$1
-role=$2
+role=$1
+cloudProvider=$2
 name=$3
 port=$4
 
