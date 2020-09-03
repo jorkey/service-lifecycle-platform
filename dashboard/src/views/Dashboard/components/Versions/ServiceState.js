@@ -76,8 +76,6 @@ export const ServiceState = (props) => {
       >
         <Table>
           <TableBody>
-            {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
-              <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
             {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
               <TableCell className={classes.stateColumn}>{state.updateToVersion}</TableCell></TableRow>):null}
             {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>Update Error</TableCell>
@@ -88,3 +86,6 @@ export const ServiceState = (props) => {
         </Table>
       </Popover>) : null
 }
+
+//{state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
+//  <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
