@@ -208,7 +208,7 @@ function runService {
       exit 1
     fi
     command="/usr/bin/java"
-    args="-Xmx1G -jar ${serviceToRun}-${buildVersion}.jar"
+    args="-Xmx2G -jar ${serviceToRun}-${buildVersion}.jar"
   fi
 
   if tty -s; then
