@@ -5,7 +5,7 @@ import java.net.URL
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.ClientConfig
-import com.vyulabs.update.info.{DesiredVersions, InstancesState, ServicesVersions, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions, InstancesState, ServicesVersions, TestedVersions, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import org.slf4j.Logger
 import com.vyulabs.update.config.ClientConfig._
@@ -31,6 +31,12 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     log.info(s"Download desired versions")
     val url = makeUrl(getDownloadDesiredVersionsPath(common))
     downloadToJson(url).map(_.convertTo[DesiredVersions])
+  }
+
+  def downloadTestedVersions(): Option[TestedVersions] = {
+    log.info(s"Download tested versions")
+    val url = makeUrl(getDownloadTestedVersionsPath())
+    downloadToJson(url).map(_.convertTo[TestedVersions])
   }
 
   def uploadInstalledDesiredVersions(file: File): Boolean = {
