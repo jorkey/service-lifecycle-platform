@@ -35,7 +35,7 @@ EOF
 sudo sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
 [Unit]
 Description=${name}
-After=apt-daily.service
+After=network.target
 
 [Service]
 User=ec2-user
