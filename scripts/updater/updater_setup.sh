@@ -36,6 +36,7 @@ sudo sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
 [Unit]
 Description=${name}
 After=multi-user.target
+Before=apt-daily.service
 
 [Service]
 User=ec2-user
