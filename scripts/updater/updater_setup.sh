@@ -35,8 +35,7 @@ EOF
 sudo sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
 [Unit]
 Description=${name}
-After=multi-user.target
-Before=apt-daily.service
+After=syslog.target network.target systemd-user-sessions.service network-online.target
 
 [Service]
 User=ec2-user
