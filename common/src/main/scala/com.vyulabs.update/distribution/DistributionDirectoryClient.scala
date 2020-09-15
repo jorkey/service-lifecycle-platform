@@ -219,7 +219,6 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
       writer.append(CRLF).flush
 
       copy(input, output)
-      output.flush
 
       writer.append(CRLF).flush
       writer.append("--" + boundary + "--").append(CRLF).flush()
@@ -235,6 +234,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     var len = in.read(buffer)
     while (len > 0) {
       out.write(buffer, 0, len)
+      out.flush
       len = in.read(buffer)
     }
   }
