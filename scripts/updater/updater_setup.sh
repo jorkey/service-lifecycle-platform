@@ -35,7 +35,7 @@ EOF
 sudo sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
 [Unit]
 Description=${name}
-After=syslog.target network.target systemd-user-sessions.service network-online.target
+After=network.target
 
 [Service]
 User=ec2-user
@@ -57,4 +57,4 @@ EOF
 echo "Service ${name} is created"
 
 sudo systemctl daemon-reload
-sudo systemctl restart update-${name}.service
+# sudo systemctl restart update-${name}.service
