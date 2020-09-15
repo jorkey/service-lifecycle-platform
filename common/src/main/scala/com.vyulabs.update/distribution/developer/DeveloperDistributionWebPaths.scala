@@ -59,6 +59,14 @@ trait DeveloperDistributionWebPaths extends DistributionWebPaths {
     }
   }
 
+  def getDownloadTestedVersionsPath(common: Boolean = false): String = {
+    if (!common) {
+      downloadDesiredVersionsPath
+    } else {
+      downloadDesiredVersionsPath + "?common=true"
+    }
+  }
+
   def getUploadDesiredVersionsPath(clientName: Option[ClientName]): String = {
     clientName match {
       case Some(clientName) =>

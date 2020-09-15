@@ -482,7 +482,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                       installProfile.get match {
                         case Some(installProfile) =>
                           val filteredVersions = desiredVersions.desiredVersions.filterKeys(installProfile.services.contains(_))
-                          promise.success(Some(DesiredVersions(filteredVersions, desiredVersions.testSignatures)))
+                          promise.success(Some(DesiredVersions(filteredVersions)))
                         case None =>
                           promise.failure(new IOException(s"Can't find install profile '${clientConfig.installProfile}''"))
                       }
