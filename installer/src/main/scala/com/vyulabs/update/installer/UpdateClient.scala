@@ -54,41 +54,36 @@ class UpdateClient()(implicit log: Logger) {
           log.error("You may use option servicesOnly only with localConfigOnly for client that requires preliminary testing")
           return false
         }
+        log.info("Get developer desired versions")
+        val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
+          log.error(s"Can't get developer desired versions")
+          return false
+        }
+        val testCondition = clientConfig.testClientMatch match {
+          case Some(testClientMatch) =>
+            val regexp = testClientMatch
+            developerDesiredVersions.testSignatures.exists { signatures => signatures.exists(signature =>
+              signature.clientName match {
+                case regexp() =>
+                  true
+                case _ =>
+                  false
+              })
+            }
+          case None =>
+            true
+        }
+        if (!testCondition && !localConfigOnly) {
+          log.error("Developer desired versions are not tested")
+          return false
+        }
         log.info("Get client desired versions")
         val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.desiredVersions).getOrElse {
           log.warn(s"Can't get client desired versions")
           return false
         }
         var developerVersions = if (!localConfigOnly) {
-          clientConfig.testClientMatch match {
-            case Some(testClientMatch) =>
-              val developerTestedVersions = developerDistribution.downloadTestedVersions().getOrElse {
-                log.error(s"Can't get developer tested versions")
-                return false
-              }
-              val regexp = testClientMatch
-              val testCondition = developerTestedVersions.testSignatures.exists { signatures =>
-                signatures.exists(signature =>
-                  signature.clientName match {
-                    case regexp() =>
-                      true
-                    case _ =>
-                      false
-                  })
-              }
-              if (!testCondition && !localConfigOnly) {
-                log.error("Developer desired versions are not tested")
-                return false
-              }
-              developerTestedVersions.testedVersions
-            case None =>
-              log.info("Get developer desired versions")
-              val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
-                log.error(s"Can't get developer desired versions")
-                return false
-              }
-              developerDesiredVersions.desiredVersions
-          }
+          developerDesiredVersions.desiredVersions
         } else {
           clientDesiredVersions.mapValues(_.original())
         }

@@ -133,7 +133,7 @@ export const VersionsTable = props => {
   const {client, distributionClient, desiredVersions, clientVersions, instanceVersions, onlyAlerts} = props;
   const classes = useStyles();
 
-  return (client || distributionClient) ? (<Table stickyHeader>
+  return (client || distributionClient) ? (<Table>
     <TableHead>
       <TableRow>
         <TableCell className={classes.serviceColumn}>Service</TableCell>
