@@ -13,7 +13,7 @@ import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.Distribution
+import com.vyulabs.update.distribution.DistributionUtils
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
 import com.vyulabs.update.info.{ProfiledServiceName, ServicesState}
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -28,7 +28,7 @@ import com.vyulabs.update.logs.ServiceLogs._
 class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
                          stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
                         (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
-    extends Distribution(dir, usersCredentials) with ClientDistributionWebPaths with SprayJsonSupport {
+    extends ClientDistributionUtils(dir, usersCredentials) with ClientDistributionWebPaths with SprayJsonSupport {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val prefix = "update"
@@ -216,10 +216,5 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
         }
       }
     Http().bindAndHandle(route, "0.0.0.0", port)
-  }
-
-  protected def getDesiredVersion(serviceName: ServiceName, image: Boolean): Route = {
-    val future = getDesiredVersions(dir.getDesiredVersionsFile())
-    getDesiredVersion(serviceName, future, image)
   }
 }

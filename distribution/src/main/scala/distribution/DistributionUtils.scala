@@ -1,19 +1,19 @@
 package com.vyulabs.update.distribution
 
-import java.io.{File, FileNotFoundException, IOException}
+import java.io.{File, IOException}
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes.{InternalServerError, NotFound}
-import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{complete, failWith, fileUpload, getFromBrowseableDirectory, getFromFile}
 import com.vyulabs.update.common.Common.{ServiceName, UserName}
 import com.vyulabs.update.version.BuildVersion
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.{AuthenticationDirective, Credentials, FileInfo}
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, ExceptionHandler, Route, RouteResult}
+import akka.http.scaladsl.server.directives.{Credentials, FileInfo}
+import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.util.ByteString
@@ -32,8 +32,8 @@ import com.vyulabs.update.lock.{SmartFileLock, SmartFilesLocker}
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.json._
 
-class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredentials)
-                  (implicit system: ActorSystem, materializer: Materializer, filesLocker: SmartFilesLocker) extends DistributionWebPaths {
+class DistributionUtils(dir: DistributionDirectory, usersCredentials: UsersCredentials)
+                       (implicit system: ActorSystem, materializer: Materializer, filesLocker: SmartFilesLocker) extends DistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
   private val maxVersions = 10
 
@@ -43,7 +43,7 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
       complete((StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}"))
   }
 
-  // TODO remove parameter 'image' when all usages will 'false'
+    // TODO remove parameter 'image' when all usages will 'false'
   protected def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]], image: Boolean): Route = {
     onSuccess(future) { desiredVersions =>
       desiredVersions match {
@@ -56,33 +56,48 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
                 getFromFileWithLock(dir.getVersionImageFile(serviceName, version))
               }
             case None =>
-              complete((InternalServerError, s"No desired version for service ${serviceName}"))
+              complete(NotFound)
           }
         case None =>
-          complete((InternalServerError, s"No desired versions"))
+          complete(NotFound)
       }
     }
   }
 
-  protected def getDesiredVersions(targetFile: File): Future[Option[DesiredVersions]] = {
-    val promise = Promise[Option[DesiredVersions]]()
-    getFileContentWithLock(targetFile).onComplete { bytes =>
-      try {
-        import com.vyulabs.update.info.DesiredVersions._
-        val desiredVersions = bytes.get.decodeString("utf8").parseJson.convertTo[DesiredVersions]
-        promise.success(Some(desiredVersions))
-      } catch {
-          case _: FileNotFoundException =>
-            promise.success(None)
-          case ex: Exception =>
-            promise.failure(ex)
+  protected def futureResult2Route(future: Future[Unit]): Route = {
+    onSuccess(future)(complete(StatusCodes.OK))
+  }
+
+  protected def futureJson2Route[T](future: Future[Option[T]])(implicit format: RootJsonFormat[T]): Route = {
+    onSuccess(future) {
+      _ match {
+        case Some(desiredVersions) =>
+          complete(desiredVersions)
+        case None =>
+          complete(NotFound)
       }
+    }
+  }
+
+  protected def parseJsonFileWithLock[T](targetFile: File)(implicit format: RootJsonFormat[T]): Future[Option[T]] = {
+    val promise = Promise[Option[T]]()
+    getFileContentWithLock(targetFile).onComplete {
+      case Success(bytes) =>
+        bytes match {
+          case Some(bytes) =>
+            val desiredVersions = bytes.decodeString("utf8").parseJson.convertTo[T]
+            promise.success(Some(desiredVersions))
+          case None =>
+            promise.success(None)
+        }
+      case Failure(ex) =>
+        promise.failure(ex)
     }
     promise.future
   }
 
-  protected def getFileContentWithLock(targetFile: File)(implicit materializer: Materializer): Future[ByteString] = {
-    val promise = Promise[ByteString]()
+  protected def getFileContentWithLock(targetFile: File)(implicit materializer: Materializer): Future[Option[ByteString]] = {
+    val promise = Promise[Option[ByteString]]()
     if (targetFile.exists()) {
       try {
         filesLocker.tryLock(targetFile, true) match {
@@ -90,14 +105,13 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
             val future = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())((b1, b2) => {
               b1 ++ b2
             }))
-            future.onComplete { futureBytes =>
-              lock.release()
-              try {
-                promise.success(futureBytes.get)
-              } catch {
-                case ex: Exception =>
-                  promise.failure(ex)
-              }
+            future.onComplete {
+              case Success(futureBytes) =>
+                lock.release()
+                promise.success(Some(futureBytes))
+              case Failure(ex) =>
+                lock.release()
+                promise.failure(ex)
             }
           case None =>
             log.info(s"Can't lock ${targetFile} in shared mode. Retry attempt after pause")
@@ -108,60 +122,54 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
           promise.failure(ex)
       }
     } else {
-      promise.failure(new FileNotFoundException())
+      promise.success(None)
     }
     promise.future
   }
 
-  protected def overwriteFileContentWithLock(targetFile: File, replaceContent: (ByteString) => Option[ByteString])
-                                            (implicit materializer: Materializer): Future[Boolean] = {
-    val promise = Promise[Boolean]()
-    if (targetFile.exists()) {
-      try {
-        filesLocker.tryLock(targetFile, false) match {
-          case Some(lock) =>
-            val inputFuture = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())(_ ++ _))
-            inputFuture.onComplete { futureBytes =>
-              try {
-                replaceContent(futureBytes.get) match {
-                  case Some(content) =>
-                    val sink = FileIO.toPath(targetFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))
-                    val outputFuture = Source.single(content).runWith(sink)
-                    outputFuture.onComplete { result =>
-                      try {
-                        result.get.status match {
-                          case Success(_) =>
-                            promise.success(true)
-                          case Failure(ex) =>
-                            promise.failure(ex)
-                        }
-                      } catch {
-                        case ex: Exception =>
-                          promise.failure(ex)
-                      } finally {
-                        lock.release()
-                      }
-                    }
-                  case None =>
-                    lock.release()
-                    promise.success(false)
+  protected def overwriteFileContentWithLock(targetFile: File, replaceContent: (Option[ByteString]) => ByteString)
+                                            (implicit materializer: Materializer): Future[Unit] = {
+    val promise = Promise[Unit]()
+    try {
+      filesLocker.tryLock(targetFile, false) match {
+        case Some(lock) =>
+          def write(oldContent: Option[ByteString]): Unit = {
+            val newContent = replaceContent(oldContent)
+            val sink = FileIO.toPath(targetFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))
+            val outputFuture = Source.single(newContent).runWith(sink)
+            outputFuture.onComplete {
+              case Success(result) =>
+                lock.release()
+                result.status match {
+                  case Success(_) =>
+                    promise.success()
+                  case Failure(ex) =>
+                    promise.failure(ex)
                 }
-              } catch {
-                case ex: Exception =>
-                  lock.release()
-                  promise.failure(ex)
-              }
+              case Failure(ex) =>
+                lock.release()
+                promise.failure(ex)
             }
-          case None =>
-            log.info(s"Can't lock ${targetFile} in not shared mode. Retry attempt after pause")
-            after(FiniteDuration(100, TimeUnit.MILLISECONDS), system.scheduler)(overwriteFileContentWithLock(targetFile, replaceContent))
-        }
-      } catch {
-        case ex: Exception =>
-          promise.failure(ex)
+          }
+          if (targetFile.exists()) {
+            val inputFuture = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())(_ ++ _))
+            inputFuture.onComplete {
+              case Success(bytes) =>
+                write(Some(bytes))
+              case Failure(ex) =>
+                lock.release()
+                promise.failure(ex)
+            }
+          } else {
+            write(None)
+          }
+        case None =>
+          log.info(s"Can't lock ${targetFile} in not shared mode. Retry attempt after pause")
+          after(FiniteDuration(100, TimeUnit.MILLISECONDS), system.scheduler)(overwriteFileContentWithLock(targetFile, replaceContent))
       }
-    } else {
-      promise.failure(new FileNotFoundException())
+    } catch {
+      case ex: Exception =>
+        promise.failure(ex)
     }
     promise.future
   }
@@ -278,14 +286,20 @@ class Distribution(dir: DistributionDirectory, usersCredentials: UsersCredential
     }
   }
 
-  protected def uploadFileToJson(fieldName: String, json: (JsValue) => Route)(implicit materializer: Materializer): Route = {
+  protected def uploadFileToJson(fieldName: String, processUpload: (JsValue) => Future[Unit])
+                                (implicit materializer: Materializer): Route = {
     fileUpload(fieldName) {
       case (_, byteSource) =>
         val sink = Sink.fold[ByteString, ByteString](ByteString())(_ ++ _)
         val result = byteSource.runWith(sink)
-        onSuccess(result) { result =>
-          json(result.decodeString("utf8").parseJson)
+        val promise = Promise[Unit]()
+        result.onComplete {
+          case Success(result) =>
+            processUpload(result.decodeString("utf8").parseJson).onComplete(promise.complete(_))
+          case Failure(ex) =>
+            promise.failure(ex)
         }
+        futureResult2Route(promise.future)
     }
   }
 

@@ -67,15 +67,13 @@ class UpdateClient()(implicit log: Logger) {
                 return false
               }
               val regexp = testClientMatch
-              val testCondition = developerTestedVersions.testSignatures.exists { signatures =>
-                signatures.exists(signature =>
-                  signature.clientName match {
-                    case regexp() =>
-                      true
-                    case _ =>
-                      false
-                  })
-              }
+              val testCondition = developerTestedVersions.testSignatures.exists(signature =>
+                signature.clientName match {
+                  case regexp() =>
+                    true
+                  case _ =>
+                    false
+                })
               if (!testCondition && !localConfigOnly) {
                 log.error("Developer desired versions are not tested")
                 return false
@@ -225,21 +223,21 @@ class UpdateClient()(implicit log: Logger) {
           log.error("Error of getting client desired versions")
           return false
         }.mapValues(version => BuildVersion(version.client, version.build))
-        val commonDeveloperDesiredVersionsMap = developerDistribution.downloadDesiredVersions(common = true).getOrElse {
+        val developerDesiredVersionsMap = developerDistribution.downloadDesiredVersions().getOrElse {
           log.error("Error of getting developer desired versions")
           return false
         }.desiredVersions
-        if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(commonDeveloperDesiredVersionsMap)) {
-          log.error("Common client versions are different from common developer versions:")
+        if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(developerDesiredVersionsMap)) {
+          log.error("Client versions are different from developer versions:")
           clientDesiredVersionsMap foreach {
             case (serviceName, version) =>
-              commonDeveloperDesiredVersionsMap.get(serviceName) match {
+              developerDesiredVersionsMap.get(serviceName) match {
                 case Some(commonVersion) if commonVersion != version =>
                   log.info(s"  service ${serviceName} version ${version} != ${commonVersion}")
                 case _ =>
               }
           }
-          commonDeveloperDesiredVersionsMap foreach {
+          developerDesiredVersionsMap foreach {
             case (serviceName, commonVersion) =>
               if (!clientDesiredVersionsMap.get(serviceName).isDefined) {
                 log.info(s"  service ${serviceName} version ${commonVersion} is not installed")
@@ -247,10 +245,14 @@ class UpdateClient()(implicit log: Logger) {
           }
           clientDesiredVersionsMap foreach {
             case (serviceName, version) =>
-              if (!commonDeveloperDesiredVersionsMap.get(serviceName).isDefined) {
+              if (!developerDesiredVersionsMap.get(serviceName).isDefined) {
                 log.info(s"  service ${serviceName} is not the developer common service")
               }
           }
+          return false
+        }
+        if (developerDesiredVersionsMap.values.find(_.client.isDefined).isDefined) {
+          log.error("Desired versions contain personal versions")
           return false
         }
         if (!developerDistribution.uploadTestedVersions(ServicesVersions(clientDesiredVersionsMap))) {

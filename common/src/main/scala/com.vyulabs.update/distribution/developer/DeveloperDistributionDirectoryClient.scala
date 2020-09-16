@@ -35,7 +35,7 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
 
   def downloadTestedVersions(): Option[TestedVersions] = {
     log.info(s"Download tested versions")
-    val url = makeUrl(getDownloadTestedVersionsPath())
+    val url = makeUrl(apiPathPrefix + "/" + testedVersionsPath)
     downloadToJson(url).map(_.convertTo[TestedVersions])
   }
 
@@ -46,7 +46,7 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
 
   def uploadTestedVersions(testedVersions: ServicesVersions): Boolean = {
     log.info(s"Upload tested versions")
-    uploadFromJson(makeUrl(uploadTestedVersionsPath),
+    uploadFromJson(makeUrl(apiPathPrefix + "/" + testedVersionsPath),
       testedVersionsName, uploadTestedVersionsPath, testedVersions.toJson)
   }
 

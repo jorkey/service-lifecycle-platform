@@ -24,6 +24,8 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   protected val faultsDir = new File(directory, "faults")
   protected val profilesDir = new File(directory, "profiles")
 
+  protected val testedVersionsFile = "tested-versions-%s.json"
+
   protected val instancesStateFile = "instances-state.json"
   protected val deadInstancesStateFile = "dead-instances-state.json"
 
@@ -100,6 +102,10 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
       case None =>
         getDesiredVersionsFile()
     }
+  }
+
+  def getTestedVersionsFile(profileName: InstallProfileName): File = {
+    new File(directory, testedVersionsFile.format(profileName))
   }
 
   def getInstancesStateFile(clientName: ClientName): File = {

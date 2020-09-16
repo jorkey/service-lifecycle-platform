@@ -1,9 +1,7 @@
 package distribution.developer
 
-import java.io.{File, FileNotFoundException, IOException}
-import java.util.Date
+import java.io.{File, IOException}
 
-import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.common.EntityStreamingSupport
@@ -11,20 +9,15 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{ContentType, StatusCodes}
 import akka.http.scaladsl.model.MediaTypes._
 import akka.http.scaladsl.model.HttpCharsets._
+import akka.http.scaladsl.model.StatusCodes.NotFound
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.http.scaladsl.server.Route._
-import akka.http.scaladsl.model.StatusCodes.{InternalServerError, NotFound, Success}
 import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, InstanceId, ServiceDirectory, ServiceName}
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.distribution.Distribution
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, DistributionInfo, InstanceVersions, InstancesState, ProfiledServiceName, ServicesState, ServicesVersions, TestSignature}
+import com.vyulabs.update.info.{DistributionInfo, InstancesState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
@@ -32,24 +25,17 @@ import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateU
 import distribution.developer.config.DeveloperDistributionConfig
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
-import spray.json._
-import com.vyulabs.update.utils.JsUtils._
-import com.vyulabs.update.config.ClientConfig._
-import com.vyulabs.update.config.ClientInfo._
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.info.InstancesState._
-import com.vyulabs.update.info.InstanceVersions._
-import com.vyulabs.update.info.DesiredVersions._
-import com.vyulabs.update.config.InstallProfile._
-import com.vyulabs.update.info.ServicesVersions._
 import com.vyulabs.update.utils.Utils
+import spray.json.RootJsonFormat
 
 class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: DeveloperDistributionConfig, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
                            (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
-      extends Distribution(dir, usersCredentials) with DeveloperDistributionWebPaths with SprayJsonSupport {
+      extends DeveloperDistributionUtils(dir, config, usersCredentials) with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
 
@@ -113,10 +99,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             complete(dir.getVersionsInfo(dir.getServiceDir(service, Some(clientName))))
                           } ~
                           path(desiredVersionsPath) { // TODO сделать обработку независимой от роли
-                            getDesiredVersionsRoute(getDesiredVersions(None))
+                            futureJson2Route(getDesiredVersions(None))
                           } ~
                           path(desiredVersionsPath / ".*".r) { clientName =>
-                            getDesiredVersionsRoute(getClientDesiredVersions(clientName))
+                            futureJson2Route(getClientDesiredVersions(clientName))
                           } ~
                           path(installedDesiredVersionsPath / ".*".r) { clientName =>
                             getFromFileWithLock(dir.getInstalledDesiredVersionsFile(clientName))
@@ -136,12 +122,13 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             getFromFile(dir.getClientConfigFile(userName))
                           } ~
                           path(desiredVersionsPath) {
-                            parameter("common".as[Boolean] ? false) { common =>
-                              getDesiredVersionsRoute(if (!common) getClientDesiredVersions(userName) else getDesiredVersions(None))
-                            }
+                            futureJson2Route(getClientDesiredVersions(userName))
                           } ~
                           path(desiredVersionPath / ".*".r) { service =>
                             getDesiredVersion(service, getClientDesiredVersions(userName), false)
+                          } ~
+                          path(testedVersionsPath) {
+                            futureJson2Route(getTestedVersions(userName))
                           }
                         }
                       } ~
@@ -219,7 +206,7 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             } ~
                               path(downloadDesiredVersionsPath) {
                                 parameter("client".?) { clientName =>
-                                  getDesiredVersionsRoute(getDesiredVersions(clientName))
+                                  futureJson2Route(getDesiredVersions(clientName))
                                 }
                               } ~
                               path(downloadDesiredVersionPath / ".*".r) { service =>
@@ -240,14 +227,14 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                             } ~
                               path(downloadDesiredVersionsPath) {
                                 parameter("common".as[Boolean] ? false) { common =>
-                                  getDesiredVersionsRoute(if (!common) getClientDesiredVersions(userName) else getDesiredVersions(None))
+                                  futureJson2Route(if (!common) getClientDesiredVersions(userName) else getDesiredVersions(None))
                                 }
                               } ~
                               path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
                                 if (client.isEmpty) {
-                                  getDesiredVersionsRoute(getDesiredVersions(None))
+                                  futureJson2Route(getDesiredVersions(None))
                                 } else if (client == userName) {
-                                  getDesiredVersionsRoute(getClientDesiredVersions(userName))
+                                  futureJson2Route(getClientDesiredVersions(userName))
                                 } else {
                                   failWith(new IOException("invalid request"))
                                 }
@@ -322,241 +309,5 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
         }
       }
     Http().bindAndHandle(route, "0.0.0.0", config.port)
-  }
-
-  private def getDesiredVersionsRoute(future: Future[Option[DesiredVersions]]): Route = {
-    onSuccess(future) { desiredVersions =>
-      desiredVersions match {
-        case Some(desiredVersions) =>
-          complete(desiredVersions)
-        case None =>
-          complete((InternalServerError, s"No desired versions"))
-      }
-    }
-  }
-
-  private def getClientsInfo(): Source[ClientInfo, NotUsed] = {
-    Source.future(
-      Source(dir.getClientsDir().list().toList)
-        .map(clientName => getClientConfig(clientName).map {
-          case Some(config) => Some(ClientInfo(clientName, config.installProfile, config.testClientMatch))
-          case None => None
-        })
-        .flatMapConcat(config => Source.future(config))
-        .runFold(Seq.empty[ClientInfo])((seq, info) => seq ++ info))
-        .flatMapConcat(clients => Source.fromIterator(() => clients.iterator))
-  }
-
-  private def getServicesState(): ServicesState = {
-    ServicesState.getOwnInstanceState(Common.DistributionServiceName)
-      .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
-      .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.BuilderServiceName))
-      .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.ScriptsServiceName))
-  }
-
-  private def getInstancesState(): InstancesState = {
-    InstancesState.empty.addState(config.instanceId, getServicesState())
-  }
-
-  private def getInstanceVersions(): InstanceVersions = {
-    InstanceVersions.empty.addVersions(config.instanceId, getServicesState())
-  }
-
-  private def getInstanceVersions(clientName: ClientName): Route = {
-    onSuccess(getClientInstancesState(clientName).collect {
-      case Some(state) =>
-        var versions = InstanceVersions.empty
-        state.instances.foreach { case (instanceId, servicesStates) =>
-          versions = versions.addVersions(instanceId, servicesStates)
-        }
-        versions
-      case None =>
-        InstanceVersions.empty
-    }) { state => complete(state) }
-  }
-
-  private def getServiceState(clientName: ClientName, instanceId: InstanceId,
-                              directory: ServiceDirectory, serviceName: ServiceName): Route = {
-    onSuccess(getClientInstancesState(clientName)) {
-      case Some(instancesState) =>
-        instancesState.instances.get(instanceId) match {
-          case Some(servicesState) =>
-            servicesState.directories.get(directory) match {
-              case Some(directoryState) =>
-                directoryState.get(serviceName) match {
-                  case Some(state) =>
-                    complete(state)
-                  case None =>
-                    log.debug(s"Service ${serviceName} is not found")
-                    complete(StatusCodes.NotFound)
-                }
-              case None =>
-                log.debug(s"Directory ${directory} is not found")
-                complete(StatusCodes.NotFound)
-            }
-          case None =>
-            log.debug(s"Instance ${instanceId} is not found")
-            complete(StatusCodes.NotFound)
-        }
-      case None =>
-        log.debug(s"Client ${clientName} state is not found")
-        complete(StatusCodes.NotFound)
-    }
-  }
-
-  private def getClientConfig(clientName: ClientName): Future[Option[ClientConfig]] = {
-    val promise = Promise[Option[ClientConfig]]()
-    getFileContentWithLock(dir.getClientConfigFile(clientName)).onComplete { bytes =>
-      try {
-        val clientConfig = bytes.get.decodeString("utf8").parseJson.convertTo[ClientConfig]
-        promise.success(Some(clientConfig))
-      } catch {
-        case _: FileNotFoundException =>
-          promise.success(None)
-        case ex: Exception =>
-          promise.failure(ex)
-      }
-    }
-    promise.future
-  }
-
-  private def getClientInstancesState(clientName: ClientName): Future[Option[InstancesState]] = {
-    val promise = Promise[Option[InstancesState]]()
-    if (config.selfDistributionClient.contains(clientName)) {
-      promise.success(Some(getInstancesState()))
-    } else {
-      getFileContentWithLock(dir.getInstancesStateFile(clientName)).onComplete { bytes =>
-        try {
-          val instancesState = bytes.get.decodeString("utf8").parseJson.convertTo[InstancesState]
-          promise.success(Some(instancesState))
-        } catch {
-          case _: FileNotFoundException =>
-            promise.success(None)
-          case ex: Exception =>
-            promise.failure(ex)
-        }
-      }
-    }
-    promise.future
-  }
-
-  private def getInstallProfile(profileName: InstallProfileName): Future[Option[InstallProfile]] = {
-    val promise = Promise[Option[InstallProfile]]()
-    val file = dir.getInstallProfileFile(profileName)
-    getFileContentWithLock(file).onComplete { bytes =>
-      try {
-        val installProfile = bytes.get.decodeString("utf8").parseJson.convertTo[InstallProfile]
-        promise.success(Some(installProfile))
-      } catch {
-        case _: FileNotFoundException =>
-          promise.success(None)
-        case ex: Exception =>
-          promise.failure(ex)
-      }
-    }
-    promise.future
-  }
-
-  private def getDesiredVersions(clientName: Option[ClientName]): Future[Option[DesiredVersions]] = {
-    getDesiredVersions(dir.getDesiredVersionsFile(clientName))
-  }
-
-  private def getClientDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
-    filterDesiredVersionsByProfile(clientName, getMergedDesiredVersions(clientName))
-  }
-
-  private def filterDesiredVersionsByProfile(clientName: ClientName,
-                                             future: Future[Option[DesiredVersions]]): Future[Option[DesiredVersions]] = {
-    val promise = Promise[Option[DesiredVersions]]()
-    future.onComplete { desiredVersions =>
-      desiredVersions.get match {
-        case Some(desiredVersions) =>
-          val future = getClientConfig(clientName)
-          future.onComplete { clientConfig =>
-            try {
-              clientConfig.get match {
-                case Some(clientConfig) =>
-                  val future = getInstallProfile(clientConfig.installProfile)
-                  future.onComplete { installProfile =>
-                    try {
-                      installProfile.get match {
-                        case Some(installProfile) =>
-                          val filteredVersions = desiredVersions.desiredVersions.filterKeys(installProfile.services.contains(_))
-                          promise.success(Some(DesiredVersions(filteredVersions)))
-                        case None =>
-                          promise.failure(new IOException(s"Can't find install profile '${clientConfig.installProfile}''"))
-                      }
-                    } catch {
-                      case e: Exception =>
-                        promise.failure(e)
-                    }
-                  }
-                case None =>
-                  promise.failure(new IOException(s"Can't find client '${clientName}' config"))
-              }
-            } catch {
-              case e: Exception =>
-                promise.failure(e)
-            }
-          }
-        case None =>
-          promise.success(None)
-      }
-    }
-    promise.future
-  }
-
-  private def getMergedDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
-    val promise = Promise[Option[DesiredVersions]]()
-    val future = getDesiredVersions(None)
-    future.onComplete { commonDesiredVersions =>
-      val future = getDesiredVersions(Some(clientName))
-      future.onComplete { clientDesiredVersions =>
-        try {
-          val commonJson = commonDesiredVersions.get.map(_.toJson)
-          val clientJson = clientDesiredVersions.get.map(_.toJson)
-          val mergedJson = (commonJson, clientJson) match {
-            case (Some(commonJson), Some(clientJson)) =>
-              Some(commonJson.merge(clientJson))
-            case (Some(commonConfig), None) =>
-              Some(commonConfig)
-            case (None, Some(clientConfig)) =>
-              Some(clientConfig)
-            case (None, None) =>
-              None
-          }
-          promise.success(mergedJson.map(_.convertTo[DesiredVersions]))
-          null
-        } catch {
-          case e: Exception =>
-            promise.failure(e)
-        }
-      }
-    }
-    promise.future
-  }
-
-  private def uploadTestedVersions(clientName: ClientName): Route = {
-    uploadFileToJson(testedVersionsName, (json) => {
-      val future = overwriteFileContentWithLock(dir.getDesiredVersionsFile(None), content => {
-        val desiredVersions = content.decodeString("utf8").parseJson.convertTo[DesiredVersions]
-        val testedVersions = json.convertTo[ServicesVersions]
-        if (desiredVersions.desiredVersions.equals(testedVersions.servicesVersions)) {
-          val testRecord = TestSignature(clientName, new Date())
-          val testSignatures = desiredVersions.testSignatures.getOrElse(Seq.empty) :+ testRecord
-          val testedDesiredVersions = DesiredVersions(desiredVersions.desiredVersions, Some(testSignatures))
-          Some(ByteString(testedDesiredVersions.toJson.sortedPrint.getBytes("utf8")))
-        } else {
-          None
-        }
-      })
-      onSuccess(future) { result =>
-        if (result) {
-          complete(StatusCodes.OK)
-        } else {
-          failWith(new IOException("Current common desired versions are not equals tested versions"))
-        }
-      }
-    })
   }
 }
