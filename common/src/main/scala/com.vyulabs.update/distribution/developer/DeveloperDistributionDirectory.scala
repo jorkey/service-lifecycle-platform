@@ -55,6 +55,10 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
 
   def getClientsDir() = clientsDir
 
+  def getClients(): Set[ClientName] = {
+    getClientsDir().list().toSet
+  }
+
   def getClientDir(clientName: ClientName): File = {
     val dir = new File(clientsDir, clientName)
     if (!dir.exists()) dir.mkdir()

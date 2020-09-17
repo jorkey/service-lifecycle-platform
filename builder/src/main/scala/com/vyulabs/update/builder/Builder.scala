@@ -153,7 +153,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
                   return None
                 }
               }
-              if (!copyFile(in, out, file => !copyCommand.except.contains(in.toPath.relativize(file.toPath).toString),
+              if (!copyFile(in, out, file => !copyCommand.except.getOrElse(Set.empty).contains(in.toPath.relativize(file.toPath).toString),
                             copyCommand.settings.getOrElse(Map.empty))) {
                 return None
               }
