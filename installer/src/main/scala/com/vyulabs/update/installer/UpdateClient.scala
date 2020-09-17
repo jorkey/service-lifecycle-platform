@@ -345,7 +345,7 @@ class UpdateClient()(implicit log: Logger) {
       val configDir = adminRepository.getServiceSettingsDir(serviceName)
       if (configDir.exists()) {
         log.info(s"Merge private settings files")
-        if (!mergeSettings(clientDistribution, serviceName, buildDir, configDir)) {
+        if (!mergeSettings(clientDistribution, serviceName, buildDir, configDir, toVersion)) {
           return false
         }
       }
@@ -390,7 +390,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def mergeSettings(clientDistribution: ClientDistributionDirectoryClient,
-                            serviceName: ServiceName, buildDirectory: File, localDirectory: File, subPath: String = ""): Boolean = {
+                            serviceName: ServiceName, buildDirectory: File, localDirectory: File,
+                            version: BuildVersion, subPath: String = ""): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {
       if (localFile.isDirectory) {
         val newSubPath = subPath + "/" + localFile.getName
@@ -399,7 +400,7 @@ class UpdateClient()(implicit log: Logger) {
           log.error(s"Can't make ${buildSubDirectory}")
           return false
         }
-        if (!mergeSettings(clientDistribution, serviceName, buildDirectory, localDirectory, newSubPath)) {
+        if (!mergeSettings(clientDistribution, serviceName, buildDirectory, localDirectory, version, newSubPath)) {
           return false
         }
       } else {
@@ -428,6 +429,7 @@ class UpdateClient()(implicit log: Logger) {
           val filePath = if (subPath.isEmpty) sourceName else subPath + "/" + sourceName
           val buildConf = new File(buildDirectory, filePath)
           var preSettings = Map.empty[String, String]
+          preSettings += ("version" -> version.toString)
           preSettings += ("distribDirectoryUrl" -> clientDistribution.url.toString)
           val definesSettings = DefinesSettings(localFile, preSettings).getOrElse {
             return false
