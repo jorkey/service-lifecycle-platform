@@ -206,6 +206,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
         val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
         connection.setRequestProperty("Authorization", "Basic " + encoded)
       }
+      connection.setChunkedStreamingMode(0)
       connection.setConnectTimeout(10000)
       connection.setReadTimeout(30000)
       connection.setDoOutput(true)

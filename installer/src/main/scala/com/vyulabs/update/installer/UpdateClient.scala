@@ -1,10 +1,11 @@
 package com.vyulabs.update.installer
 
 import java.io.File
+import java.util.Date
 
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
@@ -14,7 +15,6 @@ import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.enrichAny
-
 import com.vyulabs.update.info.DesiredVersions._
 
 /**
@@ -352,7 +352,7 @@ class UpdateClient()(implicit log: Logger) {
       }
 
       log.info(s"Upload version ${toVersion} of service ${serviceName}")
-      val clientVersionInfo = VersionInfo(toVersion, versionInfo.author, versionInfo.branches, versionInfo.date, versionInfo.comment)
+      val clientVersionInfo = VersionInfo(toVersion, versionInfo.author, versionInfo.branches, new Date(), versionInfo.comment)
       if (!clientDistribution.uploadVersion(serviceName, clientVersionInfo, buildDir)) {
         return false
       }
