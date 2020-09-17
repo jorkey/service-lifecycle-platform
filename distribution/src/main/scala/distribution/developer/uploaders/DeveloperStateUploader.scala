@@ -22,11 +22,12 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private var client2instancesState = Map.empty[ClientName, InstancesState]
-  private var stopping = false
 
   private val expireInstanceStateTime = 60 * 1000L
   private val expireDiedInstanceStateTime = 24 * 60 * 60 * 1000L
   private var expireTimes = Map.empty[ClientName, Long]
+
+  private var stopping = false
 
   def close(): Unit = {
     self.synchronized {
@@ -56,7 +57,9 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
           if (stopping) {
             return
           }
-          client2instancesState.foldLeft(Map.empty[ClientName, InstancesState])((m, e) => m + (e._1 -> e._2))
+          val states = client2instancesState.foldLeft(Map.empty[ClientName, InstancesState])((m, e) => m + (e._1 -> e._2))
+          client2instancesState = Map.empty
+          states
         }
         processNewStates(states)
         expireClientStates()
