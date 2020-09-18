@@ -227,6 +227,10 @@ class UpdateClient()(implicit log: Logger) {
           log.error("Error of getting developer desired versions")
           return false
         }.desiredVersions
+        /*if (developerDesiredVersionsMap.values.find(_.client.isDefined).isDefined) {
+          log.error("Desired versions contain personal versions")
+          return false
+        }*/
         if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(developerDesiredVersionsMap)) {
           log.error("Client versions are different from developer versions:")
           clientDesiredVersionsMap foreach {
@@ -249,10 +253,6 @@ class UpdateClient()(implicit log: Logger) {
                 log.info(s"  service ${serviceName} is not the developer common service")
               }
           }
-          return false
-        }
-        if (developerDesiredVersionsMap.values.find(_.client.isDefined).isDefined) {
-          log.error("Desired versions contain personal versions")
           return false
         }
         if (!developerDistribution.uploadTestedVersions(ServicesVersions(clientDesiredVersionsMap))) {
