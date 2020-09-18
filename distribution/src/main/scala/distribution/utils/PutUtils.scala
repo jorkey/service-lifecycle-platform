@@ -85,6 +85,7 @@ trait PutUtils extends SprayJsonSupport {
   def overwriteFileContentWithLock(targetFile: File, replaceContent: (Option[ByteString]) => ByteString): Future[Unit] = {
     val promise = Promise[Unit]()
     try {
+      val exists = targetFile.exists()
       filesLocker.tryLock(targetFile, false) match {
         case Some(lock) =>
           def write(oldContent: Option[ByteString]): Unit = {
@@ -105,7 +106,7 @@ trait PutUtils extends SprayJsonSupport {
                 promise.failure(ex)
             }
           }
-          if (targetFile.exists()) {
+          if (exists) {
             val inputFuture = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())(_ ++ _))
             inputFuture.onComplete {
               case Success(bytes) =>
