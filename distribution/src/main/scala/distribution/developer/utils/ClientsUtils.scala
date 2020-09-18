@@ -183,7 +183,7 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
           overwriteFileContentWithLock(dir.getTestedVersionsFile(config.installProfile), content => {
             val testedVersions =
               try { content.map(_.decodeString("utf8").parseJson.convertTo[TestedVersions]) }
-              catch { case ex => log.error("Exception", ex); None }
+              catch { case ex: Exception => log.error("Exception", ex); None }
             val versions = json.convertTo[ServicesVersions]
             val testRecord = TestSignature(clientName, new Date())
             val testSignatures = testedVersions match {
