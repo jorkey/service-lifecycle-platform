@@ -48,6 +48,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
       instancesStates += (instanceId -> (instancesStates.getOrElse(instanceId, Map.empty) ++ servicesState.directories))
       statesToUpload += (instanceId -> (statesToUpload.getOrElse(instanceId, Map.empty) ++ servicesState.directories))
     }
+    log.debug("receiveState StatusCodes.OK")
     complete(StatusCodes.OK)
   }
 
