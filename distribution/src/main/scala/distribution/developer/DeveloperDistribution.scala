@@ -29,12 +29,12 @@ import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution
 import distribution.developer.utils.{ClientsUtils, StateUtils}
-import distribution.utils.{CommonUtils, IoUtils, VersionUtils}
+import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 
 class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config: DeveloperDistributionConfig, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
                            (implicit val system: ActorSystem, val materializer: Materializer, val filesLocker: SmartFilesLocker)
-       extends Distribution(usersCredentials) with ClientsUtils with StateUtils with IoUtils with VersionUtils with CommonUtils
+       extends Distribution(usersCredentials) with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
           with DeveloperDistributionWebPaths with SprayJsonSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
 

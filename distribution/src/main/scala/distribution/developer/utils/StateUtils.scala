@@ -15,7 +15,7 @@ import com.vyulabs.update.info.InstanceVersions._
 import com.vyulabs.update.info._
 import com.vyulabs.update.lock.SmartFilesLocker
 import distribution.developer.config.DeveloperDistributionConfig
-import distribution.utils.IoUtils
+import distribution.utils.GetUtils
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}
@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import spray.json._
 
-trait StateUtils extends IoUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
+trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   implicit val system: ActorSystem

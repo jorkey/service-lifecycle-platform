@@ -1,6 +1,6 @@
 package distribution.developer.utils
 
-import java.io.{IOException}
+import java.io.IOException
 import java.util.Date
 
 import akka.NotUsed
@@ -19,7 +19,7 @@ import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.info._
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.JsUtils._
-import distribution.utils.IoUtils
+import distribution.utils.{GetUtils, PutUtils}
 import org.slf4j.LoggerFactory
 import spray.json._
 
@@ -27,7 +27,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-trait ClientsUtils extends IoUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
+trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   implicit val system: ActorSystem

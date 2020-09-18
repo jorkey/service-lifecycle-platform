@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future}
 
-trait VersionUtils extends IoUtils with DistributionWebPaths with SprayJsonSupport {
+trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
   private val maxVersions = 10
 
