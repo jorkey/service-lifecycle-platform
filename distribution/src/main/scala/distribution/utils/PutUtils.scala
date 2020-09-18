@@ -89,7 +89,7 @@ trait PutUtils extends SprayJsonSupport {
         case Some(lock) =>
           def write(oldContent: Option[ByteString]): Unit = {
             log.debug("4")
-            val newContent = replaceContent(oldContent)
+            val newContent = try { replaceContent(oldContent) } catch { case ex=> log.error("exception", ex); null }
             val sink = FileIO.toPath(targetFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))
             val outputFuture = Source.single(newContent).runWith(sink)
             outputFuture.onComplete {
@@ -115,8 +115,10 @@ trait PutUtils extends SprayJsonSupport {
             val inputFuture = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())(_ ++ _))
             inputFuture.onComplete {
               case Success(bytes) =>
+                log.debug("2--")
                 write(Some(bytes))
               case Failure(ex) =>
+                log.debug(s"2- ${ex.getMessage}")
                 lock.release()
                 promise.failure(ex)
             }
