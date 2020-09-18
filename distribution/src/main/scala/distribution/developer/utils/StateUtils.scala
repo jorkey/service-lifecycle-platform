@@ -62,7 +62,7 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
                 val instancesState = bytes.decodeString("utf8").parseJson.convertTo[InstancesState]
                 promise.success(Some(instancesState))
               } catch {
-                case ex =>
+                case ex: Exception =>
                   promise.failure(ex)
               }
             case None =>

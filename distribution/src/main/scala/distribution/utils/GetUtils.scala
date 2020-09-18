@@ -39,7 +39,7 @@ trait GetUtils extends SprayJsonSupport {
               val desiredVersions = bytes.decodeString("utf8").parseJson.convertTo[T]
               promise.success(Some(desiredVersions))
             } catch {
-              case ex =>
+              case ex: Exception =>
                 promise.failure(ex)
             }
           case None =>

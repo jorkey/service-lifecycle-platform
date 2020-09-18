@@ -55,7 +55,7 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
               val clientConfig = bytes.decodeString("utf8").parseJson.convertTo[ClientConfig]
               promise.success(clientConfig)
             } catch {
-              case ex =>
+              case ex: Exception =>
                 promise.failure(ex)
             }
           case None =>
@@ -89,7 +89,7 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
               val installProfile = bytes.decodeString("utf8").parseJson.convertTo[InstallProfile]
               promise.success(installProfile)
             } catch {
-              case ex =>
+              case ex: Exception =>
                 promise.failure(ex)
             }
           case None =>
