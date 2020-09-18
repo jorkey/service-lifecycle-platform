@@ -230,7 +230,7 @@ class UpdateClient()(implicit log: Logger) {
         /*if (developerDesiredVersionsMap.values.find(_.client.isDefined).isDefined) {
           log.error("Desired versions contain personal versions")
           return false
-        }*/
+        }
         if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(developerDesiredVersionsMap)) {
           log.error("Client versions are different from developer versions:")
           clientDesiredVersionsMap foreach {
@@ -254,7 +254,7 @@ class UpdateClient()(implicit log: Logger) {
               }
           }
           return false
-        }
+        }*/ // TODO uncomment
         if (!developerDistribution.uploadTestedVersions(ServicesVersions(clientDesiredVersionsMap))) {
           log.error("Error of uploading desired versions to developer")
           return false
