@@ -35,8 +35,13 @@ trait GetUtils extends SprayJsonSupport {
       case Success(bytes) =>
         bytes match {
           case Some(bytes) =>
-            val desiredVersions = bytes.decodeString("utf8").parseJson.convertTo[T]
-            promise.success(Some(desiredVersions))
+            try {
+              val desiredVersions = bytes.decodeString("utf8").parseJson.convertTo[T]
+              promise.success(Some(desiredVersions))
+            } catch {
+              case ex =>
+                promise.failure(ex)
+            }
           case None =>
             promise.success(None)
         }

@@ -51,8 +51,13 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
       case Success(bytes) =>
         bytes match {
           case Some(bytes) =>
-            val clientConfig = bytes.decodeString("utf8").parseJson.convertTo[ClientConfig]
-            promise.success(clientConfig)
+            try {
+              val clientConfig = bytes.decodeString("utf8").parseJson.convertTo[ClientConfig]
+              promise.success(clientConfig)
+            } catch {
+              case ex =>
+                promise.failure(ex)
+            }
           case None =>
             promise.failure(new IOException(s"Can't find config of client ${clientName}"))
         }
@@ -80,8 +85,13 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
       case Success(bytes) =>
         bytes match {
           case Some(bytes) =>
-            val installProfile = bytes.decodeString("utf8").parseJson.convertTo[InstallProfile]
-            promise.success(installProfile)
+            try {
+              val installProfile = bytes.decodeString("utf8").parseJson.convertTo[InstallProfile]
+              promise.success(installProfile)
+            } catch {
+              case ex =>
+                promise.failure(ex)
+            }
           case None =>
             promise.failure(new IOException(s"Can't find profile ${profileName}"))
         }
@@ -170,10 +180,10 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
       val promise = Promise[Unit]()
       getClientConfig(clientName).onComplete {
         case Success(config) =>
-          log.debug("1")
           overwriteFileContentWithLock(dir.getTestedVersionsFile(config.installProfile), content => {
-            log.debug("-1")
-            val testedVersions = content.map(_.decodeString("utf8").parseJson.convertTo[TestedVersions])
+            val testedVersions =
+              try { content.map(_.decodeString("utf8").parseJson.convertTo[TestedVersions]) }
+              catch { case ex => log.error("Exception", ex); None }
             val versions = json.convertTo[ServicesVersions]
             val testRecord = TestSignature(clientName, new Date())
             val testSignatures = testedVersions match {
@@ -187,20 +197,12 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
                 Seq(testRecord)
             }
             val newTestedVersions = TestedVersions(versions.servicesVersions, testSignatures)
-            log.debug("-2")
             ByteString(newTestedVersions.toJson.sortedPrint.getBytes("utf8"))
-          }).onComplete {
-            log.debug("10")
-            promise.complete(_)
-          }
+          }).onComplete { promise.complete(_) }
         case Failure(e) =>
-          log.debug("20")
           promise.failure(e)
       }
-      onSuccess(promise.future) {
-        log.debug("30")
-        complete(StatusCodes.OK)
-      }
+      onSuccess(promise.future)(complete(StatusCodes.OK))
     })
   }
 }

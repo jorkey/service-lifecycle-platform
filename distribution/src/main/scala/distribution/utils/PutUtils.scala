@@ -88,42 +88,33 @@ trait PutUtils extends SprayJsonSupport {
       filesLocker.tryLock(targetFile, false) match {
         case Some(lock) =>
           def write(oldContent: Option[ByteString]): Unit = {
-            log.debug("4")
-            val newContent = try { replaceContent(oldContent) } catch { case ex=> log.error("exception", ex); null }
+            val newContent = replaceContent(oldContent)
             val sink = FileIO.toPath(targetFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING))
             val outputFuture = Source.single(newContent).runWith(sink)
             outputFuture.onComplete {
               case Success(result) =>
-                log.debug("5")
                 lock.release()
                 result.status match {
                   case Success(_) =>
-                    log.debug("7")
                     promise.success()
                   case Failure(ex) =>
-                    log.debug("8")
                     promise.failure(ex)
                 }
               case Failure(ex) =>
-                log.debug("6")
                 lock.release()
                 promise.failure(ex)
             }
           }
           if (targetFile.exists()) {
-            log.debug("2")
             val inputFuture = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())(_ ++ _))
             inputFuture.onComplete {
               case Success(bytes) =>
-                log.debug("2--")
                 write(Some(bytes))
               case Failure(ex) =>
-                log.debug(s"2- ${ex.getMessage}")
                 lock.release()
                 promise.failure(ex)
             }
           } else {
-            log.debug("3")
             write(None)
           }
         case None =>
