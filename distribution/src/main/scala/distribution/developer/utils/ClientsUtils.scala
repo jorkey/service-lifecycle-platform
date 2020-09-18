@@ -170,7 +170,9 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
       val promise = Promise[Unit]()
       getClientConfig(clientName).onComplete {
         case Success(config) =>
+          log.debug("1")
           overwriteFileContentWithLock(dir.getTestedVersionsFile(config.installProfile), content => {
+            log.debug("-1")
             val testedVersions = content.map(_.decodeString("utf8").parseJson.convertTo[TestedVersions])
             val versions = json.convertTo[ServicesVersions]
             val testRecord = TestSignature(clientName, new Date())
@@ -185,12 +187,20 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
                 Seq(testRecord)
             }
             val newTestedVersions = TestedVersions(versions.servicesVersions, testSignatures)
+            log.debug("-2")
             ByteString(newTestedVersions.toJson.sortedPrint.getBytes("utf8"))
-          }).onComplete { promise.complete(_) }
+          }).onComplete {
+            log.debug("10")
+            promise.complete(_)
+          }
         case Failure(e) =>
+          log.debug("20")
           promise.failure(e)
       }
-      onSuccess(promise.future)(complete(StatusCodes.OK))
+      onSuccess(promise.future) {
+        log.debug("30")
+        complete(StatusCodes.OK)
+      }
     })
   }
 }
