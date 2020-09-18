@@ -9,7 +9,6 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{ContentType, StatusCodes}
 import akka.http.scaladsl.model.MediaTypes._
 import akka.http.scaladsl.model.HttpCharsets._
-import akka.http.scaladsl.model.StatusCodes.NotFound
 import akka.http.scaladsl.server.Directives.{path, _}
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.http.scaladsl.server.Route._
@@ -23,20 +22,20 @@ import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
 import distribution.developer.config.DeveloperDistributionConfig
-import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.info.InstancesState._
 import com.vyulabs.update.utils.Utils
-import spray.json.RootJsonFormat
+import distribution.Distribution
+import distribution.developer.utils.{ClientsUtils, StateUtils}
+import distribution.utils.{CommonUtils, IoUtils, VersionUtils}
 
-class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: DeveloperDistributionConfig, usersCredentials: UsersCredentials,
+class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config: DeveloperDistributionConfig, usersCredentials: UsersCredentials,
                             stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
-                           (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
-      extends DeveloperDistributionUtils(dir, config, usersCredentials) with DeveloperDistributionWebPaths with SprayJsonSupport {
-  private implicit val log = LoggerFactory.getLogger(this.getClass)
+                           (implicit val system: ActorSystem, val materializer: Materializer, val filesLocker: SmartFilesLocker)
+       extends Distribution(usersCredentials) with ClientsUtils with StateUtils with IoUtils with VersionUtils with CommonUtils
+          with DeveloperDistributionWebPaths with SprayJsonSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
 
   def run(): Unit = {
@@ -59,7 +58,6 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                         AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
                       case rejection =>
                         rejection
-
                     })
                   } {
                     get {
@@ -77,10 +75,10 @@ class DeveloperDistribution(dir: DeveloperDistributionDirectory, config: Develop
                           complete(getClientsInfo())
                         } ~
                         path(instanceVersionsPath) {
-                          complete(getInstanceVersions())
+                          complete(getOwnInstanceVersions())
                         } ~
                         path(instanceVersionsPath / ".*".r) { clientName =>
-                          getInstanceVersions(clientName)
+                          getClientInstanceVersions(clientName)
                         } ~
                         path(serviceStatePath / ".*".r / ".*".r /  ".*".r / ".*".r) { (clientName, instanceId, directory, service) =>
                           getServiceState(clientName, instanceId, directory, service)

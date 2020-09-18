@@ -94,7 +94,7 @@ object DistributionMain extends App {
 
         val selfUpdater = new SelfUpdater(dir)
 
-        val distribution = new ClientDistribution(dir, config.port, usersCredentials, stateUploader, logUploader, faultUploader)
+        val distribution = new ClientDistribution(dir, config, usersCredentials, stateUploader, logUploader, faultUploader)
 
         stateUploader.start()
         logUploader.start()

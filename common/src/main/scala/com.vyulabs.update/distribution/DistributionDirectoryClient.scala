@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
-import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.info.VersionInfo
 import com.vyulabs.update.utils.{IOUtils, ZipUtils}

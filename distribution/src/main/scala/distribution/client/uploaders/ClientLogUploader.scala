@@ -13,6 +13,8 @@ import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.utils.IOUtils
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.{Future, Promise}
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.12.19.
   * Copyright FanDate, Inc.
@@ -41,7 +43,8 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
     join()
   }
 
-  def receiveLogs(instanceId: InstanceId, profiledServiceName: ProfiledServiceName, serviceLogs: ServiceLogs): Route = {
+  def receiveLogs(instanceId: InstanceId, profiledServiceName: ProfiledServiceName, serviceLogs: ServiceLogs): Future[Unit] = {
+    val promise = Promise.apply[Unit]
     log.debug(s"Receive logs from instance ${instanceId} service ${profiledServiceName.toString}")
     self.synchronized {
       for (writerInit <- serviceLogs.writerInit) {
@@ -56,7 +59,7 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
         }
         val instanceDir = new File(directory, instanceId)
         if (!instanceDir.exists() && !instanceDir.mkdir()) {
-          return failWith(new IOException(s"Can't make directory ${instanceDir}"))
+          return promise.failure(new IOException(s"Can't make directory ${instanceDir}")).future
         }
         for (writer <- instanceServices.get(profiledServiceName)) {
           log.info(s"Close log writer for service ${profiledServiceName} of instance ${instanceId}")
@@ -66,7 +69,7 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
         log.info(s"Open log writer for service ${profiledServiceName} of instance ${instanceId}")
         val serviceDir = new File(instanceDir, profiledServiceName.toString)
         if (!serviceDir.exists() && !serviceDir.mkdir()) {
-          return failWith(new IOException(s"Can't make directory ${serviceDir}"))
+          return promise.failure(new IOException(s"Can't make directory ${serviceDir}")).future
         }
         val writer = new LogWriter(serviceDir,
           writerInit.maxFileSizeMB * 1024 * 1024, writerInit.maxFilesCount, writerInit.filePrefix,
@@ -77,7 +80,7 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
         case Some(instanceServices) =>
           val instanceDir = new File(directory, instanceId)
           if (!instanceDir.exists() && !instanceDir.mkdir()) {
-            return failWith(new IOException(s"Can't make directory ${instanceDir}"))
+            return promise.failure(new IOException(s"Can't make directory ${instanceDir}")).future
           } else {
             instancesTimestamps += (instanceId -> System.currentTimeMillis())
             instanceServices.get(profiledServiceName) match {
@@ -87,12 +90,12 @@ class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self 
                 }
                 writer.flush()
               case None =>
-                return complete(StatusCodes.NotAcceptable, s"Logging of service ${profiledServiceName} is not initialized")
+                return promise.failure(new IOException(s"Logging of service ${profiledServiceName} is not initialized")).future
             }
           }
-          complete(StatusCodes.OK)
+          return promise.success().future
         case None =>
-          return complete(StatusCodes.NotAcceptable, s"Logging of instance ${instanceId} is not initialized")
+          return promise.failure(new IOException(s"Logging of instance ${instanceId} is not initialized")).future
       }
     }
   }

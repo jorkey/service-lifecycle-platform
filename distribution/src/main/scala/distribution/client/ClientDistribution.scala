@@ -12,8 +12,6 @@ import akka.http.scaladsl.server.Route.seal
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.DistributionUtils
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
 import com.vyulabs.update.info.{ProfiledServiceName, ServicesState}
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -21,15 +19,19 @@ import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
-import org.slf4j.LoggerFactory
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.logs.ServiceLogs._
+import distribution.Distribution
+import distribution.client.config.ClientDistributionConfig
+import distribution.client.utils.ClientVersionUtils
+import distribution.utils.{CommonUtils, IoUtils, VersionUtils}
 
-class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCredentials: UsersCredentials,
+class ClientDistribution(val dir: ClientDistributionDirectory, config: ClientDistributionConfig, usersCredentials: UsersCredentials,
                          stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
-                        (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
-    extends ClientDistributionUtils(dir, usersCredentials) with ClientDistributionWebPaths with SprayJsonSupport {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
+                        (implicit val system: ActorSystem, val materializer: Materializer, val filesLocker: SmartFilesLocker)
+    extends Distribution(usersCredentials) with ClientVersionUtils with IoUtils with VersionUtils with CommonUtils
+      with ClientDistributionWebPaths with SprayJsonSupport {
+
+  implicit val directory = dir
 
   private val prefix = "update"
 
@@ -71,7 +73,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                           getFromFileWithLock(dir.getDesiredVersionsFile())
                         } ~
                         path(desiredVersionPath / ".*".r) { service =>
-                          getDesiredVersion(service, false)
+                          getClientDesiredVersion(service, false)
                         } ~
                         path(servicesStatePath / ".*".r) { (instanceId) =>
                           stateUploader.getInstanceState(instanceId)
@@ -107,7 +109,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                           path(serviceLogsPath / ".*".r / ".*".r) { (instanceId, profiledServiceName) =>
                             uploadFileToJson(serviceLogsName, (json) => {
                               val serviceLogs = json.convertTo[ServiceLogs]
-                              logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs)
+                              onSuccess(logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs))(complete(StatusCodes.OK))
                             })
                           } ~
                           path(serviceFaultPath / ".*".r) { (serviceName) =>
@@ -163,7 +165,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                       } ~
                       path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
                         parameter("image".as[Boolean] ? true) { image =>
-                          getDesiredVersion(service, image)
+                          getClientDesiredVersion(service, image)
                         }
                       } ~
                       path(prefix / downloadInstanceStatePath / ".*".r) { (instanceId) =>
@@ -199,7 +201,7 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
                             path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, profiledServiceName) =>
                               uploadFileToJson(serviceLogsName, (json) => {
                                 val serviceLogs = json.convertTo[ServiceLogs]
-                                logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs)
+                                onSuccess(logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs))(complete(StatusCodes.OK))
                               })
                             } ~
                             path(prefix / uploadServiceFaultPath / ".*".r) { (serviceName) =>
@@ -215,6 +217,6 @@ class ClientDistribution(dir: ClientDistributionDirectory, port: Int, usersCrede
           }
         }
       }
-    Http().bindAndHandle(route, "0.0.0.0", port)
+    Http().bindAndHandle(route, "0.0.0.0", config.port)
   }
 }
