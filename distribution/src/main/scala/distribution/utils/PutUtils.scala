@@ -69,20 +69,11 @@ trait PutUtils extends SprayJsonSupport {
       case (_, byteSource) =>
         val sink = Sink.fold[ByteString, ByteString](ByteString())(_ ++ _)
         val result = byteSource.runWith(sink)
-        val promise = Promise[Unit]()
-        result.onComplete {
+        onComplete(result) {
           case Success(result) =>
-            log.debug(s"read success ${result.size}")
-            val r = processUpload(result.decodeString("utf8").parseJson)
-            log.debug(s"read success ret ${r}")
-            r
+            processUpload(result.decodeString("utf8").parseJson)
           case Failure(ex) =>
-            log.debug(s"read failure ${ex.getMessage}")
-            promise.failure(ex)
-        }
-        onSuccess(promise.future) {
-          log.debug(s"--- complete ---")
-          complete(StatusCodes.OK)
+            failWith(ex)
         }
     }
   }
