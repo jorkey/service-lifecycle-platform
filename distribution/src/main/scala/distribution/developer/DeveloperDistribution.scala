@@ -91,16 +91,16 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                         } ~
                         authorize(userCredentials.role == UserRole.Administrator) {
                           path(versionsInfoPath / ".*".r) { service =>
-                            complete(dir.getVersionsInfo(dir.getServiceDir(service, None)))
+                            complete(getVersionsInfo(dir.getServiceDir(service, None)))
                           } ~
                           path(versionsInfoPath / ".*".r / ".*".r) { (service, clientName) =>
-                            complete(dir.getVersionsInfo(dir.getServiceDir(service, Some(clientName))))
+                            complete(getVersionsInfo(dir.getServiceDir(service, Some(clientName))))
                           } ~
                           path(desiredVersionsPath) { // TODO сделать обработку независимой от роли
-                            futureJson2Route(getDesiredVersions(None))
+                            complete(getDesiredVersions(None))
                           } ~
                           path(desiredVersionsPath / ".*".r) { clientName =>
-                            futureJson2Route(getClientDesiredVersions(clientName))
+                            complete(getClientDesiredVersions(clientName))
                           } ~
                           path(installedDesiredVersionsPath / ".*".r) { clientName =>
                             getFromFileWithLock(dir.getInstalledDesiredVersionsFile(clientName))
@@ -120,13 +120,13 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                             getFromFile(dir.getClientConfigFile(userName))
                           } ~
                           path(desiredVersionsPath) {
-                            futureJson2Route(getClientDesiredVersions(userName))
+                            complete(getClientDesiredVersions(userName))
                           } ~
                           path(desiredVersionPath / ".*".r) { service =>
                             getDesiredVersion(service, getClientDesiredVersions(userName), false)
                           } ~
                           path(testedVersionsPath) {
-                            futureJson2Route(getTestedVersions(userName))
+                            complete(getTestedVersions(userName))
                           }
                         }
                       } ~
@@ -194,12 +194,12 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                           authorize(userCredentials.role == UserRole.Administrator) {
                             path(downloadVersionsInfoPath / ".*".r) { service =>
                               parameter("client".?) { clientName =>
-                                complete(dir.getVersionsInfo(dir.getServiceDir(service, clientName)))
+                                complete(getVersionsInfo(dir.getServiceDir(service, clientName)))
                               }
                             } ~
                               path(downloadDesiredVersionsPath) {
                                 parameter("client".?) { clientName =>
-                                  futureJson2Route(getDesiredVersions(clientName))
+                                  complete(getDesiredVersions(clientName))
                                 }
                               } ~
                               path(downloadDesiredVersionPath / ".*".r) { service =>
@@ -220,14 +220,14 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                             } ~
                               path(downloadDesiredVersionsPath) {
                                 parameter("common".as[Boolean] ? false) { common =>
-                                  futureJson2Route(if (!common) getClientDesiredVersions(userName) else getDesiredVersions(None))
+                                  complete(if (!common) getClientDesiredVersions(userName) else getDesiredVersions(None))
                                 }
                               } ~
                               path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
                                 if (client.isEmpty) {
-                                  futureJson2Route(getDesiredVersions(None))
+                                  complete(getDesiredVersions(None))
                                 } else if (client == userName) {
-                                  futureJson2Route(getClientDesiredVersions(userName))
+                                  complete(getClientDesiredVersions(userName))
                                 } else {
                                   failWith(new IOException("invalid request"))
                                 }

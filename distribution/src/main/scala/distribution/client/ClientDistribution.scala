@@ -67,7 +67,7 @@ class ClientDistribution(val dir: ClientDistributionDirectory, config: ClientDis
                           getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                         } ~
                         path(versionsInfoPath / ".*".r) { (service) =>
-                          complete(dir.getVersionsInfo(dir.getServiceDir(service)))
+                          complete(getVersionsInfo(dir.getServiceDir(service)))
                         } ~
                         path(desiredVersionsPath) {
                           getFromFileWithLock(dir.getDesiredVersionsFile())
@@ -158,7 +158,7 @@ class ClientDistribution(val dir: ClientDistributionDirectory, config: ClientDis
                         getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                       } ~
                       path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                        complete(dir.getVersionsInfo(dir.getServiceDir(service)))
+                        complete(getVersionsInfo(dir.getServiceDir(service)))
                       } ~
                       path(prefix / downloadDesiredVersionsPath) {
                         getFromFileWithLock(dir.getDesiredVersionsFile())

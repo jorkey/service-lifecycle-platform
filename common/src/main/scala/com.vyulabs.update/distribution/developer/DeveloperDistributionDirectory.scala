@@ -1,16 +1,16 @@
 package com.vyulabs.update.distribution.developer
 
 import java.io.File
+import java.util.regex.{MatchResult, Pattern}
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, InstallProfileName, ServiceName}
+import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.info.DesiredVersions._
-
-import org.slf4j.{LoggerFactory}
+import org.slf4j.LoggerFactory
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -77,8 +77,23 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     dir
   }
 
-  def getInstallProfileFile(profileName: InstallProfileName): File = {
-    new File(profilesDir, Common.InstallProfileFileName.format(profileName))
+  def getProfiles(): Set[ProfileName] = {
+    profilesDir.list().map { name =>
+      val pattern = Pattern.compile(Common.ProfileFileNamePattern)
+      val matcher = pattern.matcher(name)
+      if (matcher.find()) {
+        Some(matcher.group(2))
+      } else {
+        None
+      }
+    }.flatten.toSet
+  }
+
+  def getProfileFile(profileName: ProfileName): File = {
+    val pattern = Pattern.compile(Common.ProfileFileNamePattern)
+    val matcher = pattern.matcher(Common.ProfileFileNameMatch)
+    val fileName = matcher.replaceAll((r: MatchResult) => { r.group(1) + profileName + r.group(3) })
+    new File(profilesDir, fileName)
   }
 
   def getInstancesStateDir(clientName: ClientName): File = {
@@ -108,7 +123,7 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     }
   }
 
-  def getTestedVersionsFile(profileName: InstallProfileName): File = {
+  def getTestedVersionsFile(profileName: ProfileName): File = {
     new File(directory, testedVersionsFile.format(profileName))
   }
 

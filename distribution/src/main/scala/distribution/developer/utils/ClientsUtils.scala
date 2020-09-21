@@ -78,9 +78,9 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
     promise.future
   }
 
-  def getInstallProfile(profileName: InstallProfileName): Future[InstallProfile] = {
+  def getInstallProfile(profileName: ProfileName): Future[InstallProfile] = {
     val promise = Promise[InstallProfile]()
-    val file = dir.getInstallProfileFile(profileName)
+    val file = dir.getProfileFile(profileName)
     getFileContentWithLock(file).onComplete {
       case Success(bytes) =>
         bytes match {

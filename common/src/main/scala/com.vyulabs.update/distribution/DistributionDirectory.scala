@@ -3,11 +3,10 @@ package com.vyulabs.update.distribution
 import java.io.File
 
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.info.{DesiredVersions, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IOUtils
 import com.vyulabs.update.version.BuildVersion
-import com.vyulabs.update.info.VersionInfo._
 
 import org.slf4j.Logger
 
@@ -68,23 +67,6 @@ class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFile
 
   def getVersionImageFileName(serviceName: ServiceName, version: BuildVersion): String = {
     serviceName + "-" + version + ".zip"
-  }
-
-  def getVersionsInfo(directory: File)(implicit log: Logger): VersionsInfo = {
-    var versions = Seq.empty[VersionInfo]
-    if (directory.exists()) {
-      for (file <- directory.listFiles()) {
-        if (file.getName.endsWith("-info.json")) {
-          try {
-            versions ++= IOUtils.readFileToJson(file).map(_.convertTo[VersionInfo])
-          } catch {
-            case e: Exception =>
-              log.error(s"Parse file ${file} error", e)
-          }
-        }
-      }
-    }
-    VersionsInfo(versions)
   }
 
   def removeVersion(serviceName: ServiceName, version: BuildVersion): Unit = {

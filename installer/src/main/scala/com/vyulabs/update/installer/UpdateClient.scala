@@ -250,7 +250,7 @@ class UpdateClient()(implicit log: Logger) {
           clientDesiredVersionsMap foreach {
             case (serviceName, version) =>
               if (!developerDesiredVersionsMap.get(serviceName).isDefined) {
-                log.info(s"  service ${serviceName} is not the developer common service")
+                log.info(s"  service ${serviceName} is not the developer service")
               }
           }
           return false

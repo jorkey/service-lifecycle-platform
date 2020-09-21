@@ -29,9 +29,9 @@ trait GetUtils extends SprayJsonSupport {
   implicit val materializer: Materializer
   implicit val filesLocker: SmartFilesLocker
 
-  def parseJsonFileWithLock[T](targetFile: File)(implicit format: RootJsonFormat[T]): Future[Option[T]] = {
+  def parseJsonFileWithLock[T](file: File)(implicit format: RootJsonFormat[T]): Future[Option[T]] = {
     val promise = Promise[Option[T]]()
-    getFileContentWithLock(targetFile).onComplete {
+    getFileContentWithLock(file).onComplete {
       case Success(bytes) =>
         bytes match {
           case Some(bytes) =>
