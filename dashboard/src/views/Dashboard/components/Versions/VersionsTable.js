@@ -1,10 +1,11 @@
-import {Version} from "../../../../common";
-import {Table, TableBody, TableCell, TableHead, TableRow} from "@material-ui/core";
-import React from "react";
-import {makeStyles} from "@material-ui/styles";
-import Typography from "@material-ui/core/Typography";
-import {Info} from "./ServiceState";
+import {Version} from '../../../../common';
+import {Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
+import React from 'react';
+import {makeStyles} from '@material-ui/styles';
+import Typography from '@material-ui/core/Typography';
+import {Info} from './ServiceState';
 
+// eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
   serviceColumn: {
     width: '200px',
@@ -92,29 +93,46 @@ export const ServiceVersions = props => {
     let clientVersionAlarm = clientVersion && Version.compare(clientVersion, desiredVersion, false)
     let workingVersionAlarm = version && clientVersion && Version.compare(version, clientVersion, true)
     alertService = alertService || clientVersionAlarm || workingVersionAlarm
-    rowsStack.push(<TableRow hover key={service + "-" + rowNum}>
+    rowsStack.push(<TableRow
+      hover
+      key={service + '-' + rowNum}
+    >
       {(versionIndex <= 0 && directoryIndex <= 0 && instanceIndex <= 0) ? (
-          <>
-            <TableCell className={classes.serviceColumn} rowSpan={rowNum + 1}>{service}</TableCell>
-            <TableCell className={classes.versionColumn} rowSpan={rowNum + 1}>{desiredVersion}</TableCell>
-            { (!distributionClient && client != "distribution") ?
-              <TableCell className={!clientVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
-                         rowSpan={rowNum + 1}>{clientVersion}</TableCell> : null}
-          </>)
+        <>
+          <TableCell
+            className={classes.serviceColumn}
+            rowSpan={rowNum + 1}
+          >{service}</TableCell>
+          <TableCell
+            className={classes.versionColumn}
+            rowSpan={rowNum + 1}
+          >{desiredVersion}</TableCell>
+          { (!distributionClient && client != 'distribution') ?
+            <TableCell
+              className={!clientVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
+              rowSpan={rowNum + 1}
+            >{clientVersion}</TableCell> : null}
+        </>)
         : null
       }
       {version ?
         (directoryIndex == 0 && instanceIndex == 0) ? (
-            <TableCell className={!workingVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn} rowSpan={versionRowNum + 1}>
-              {version}
-            </TableCell>)
+          <TableCell
+            className={!workingVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
+            rowSpan={versionRowNum + 1}
+          >
+            {version}
+          </TableCell>)
           : null
         : <TableCell className={classes.versionColumn}/>
       }
       {directory ?
         instanceIndex == 0 ? (
-            <TableCell className={classes.directoryColumn} rowSpan={instances.length}>{directory}</TableCell>)
-            : null
+          <TableCell
+            className={classes.directoryColumn}
+            rowSpan={instances.length}
+          >{directory}</TableCell>)
+          : null
         : <TableCell className={classes.directoryColumn}/>}
       {instance ?
         <TableCell className={classes.instancesColumn}>
@@ -122,7 +140,13 @@ export const ServiceVersions = props => {
         </TableCell> : <TableCell className={classes.instancesColumn}/>}
       {instance ?
         <TableCell className={classes.infoColumn}>
-          <Info client={client} instance={instance} directory={directory} service={service} alert={workingVersionAlarm}/>
+          <Info
+            alert={workingVersionAlarm}
+            client={client}
+            directory={directory}
+            instance={instance}
+            service={service}
+          />
         </TableCell> : <TableCell className={classes.infoColumn}/>}
     </TableRow>)
   }
@@ -147,8 +171,16 @@ export const VersionsTable = props => {
     </TableHead>
     <TableBody>
       { desiredVersions.sort().map(([service, desiredVersion]) =>
-        <ServiceVersions key={service} client={client} distributionclient={distributionClient} service={service}
-                         desiredVersion={desiredVersion} clientVersions={clientVersions} instanceVersions={instanceVersions} onlyAlerts={onlyAlerts}/>) }
+        <ServiceVersions
+          client={client}
+          clientVersions={clientVersions}
+          desiredVersion={desiredVersion}
+          distributionclient={distributionClient}
+          instanceVersions={instanceVersions}
+          key={service}
+          onlyAlerts={onlyAlerts}
+          service={service}
+        />) }
     </TableBody>
   </Table>) : null
 }

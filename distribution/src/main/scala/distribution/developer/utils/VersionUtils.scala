@@ -11,8 +11,29 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-trait VersionUtils extends distribution.utils.VersionUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
+trait VersionUtils extends ClientsUtils with distribution.utils.VersionUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   implicit val dir: DeveloperDistributionDirectory
+
+  override protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
+    val promise = Promise.apply[Set[BuildVersion]]()
+    val desiredVersion = parseJsonFileWithLock[DesiredVersions](dir.getDesiredVersionsFile()).map(
+      versions => versions.map(_.desiredVersions.get(serviceName))).map(version => version.getOrElse(None))
+    val clientDesiredVersions = dir.getClients().map { clientName =>
+      parseJsonFileWithLock[DesiredVersions](dir.getDesiredVersionsFile(clientName)).map(
+        versions => versions.map(_.desiredVersions.get(serviceName))).map(version => version.getOrElse(None))
+    }
+    val testedVersions = dir.getProfiles().map { profileName =>
+      parseJsonFileWithLock[TestedVersions](dir.getTestedVersionsFile(profileName)).map(
+        versions => versions.map(_.testedVersions.get(serviceName))).map(version => version.getOrElse(None))
+    }
+    Future.sequence(Set(desiredVersion) ++ clientDesiredVersions ++ testedVersions).onComplete {
+      case Success(versions) =>
+        promise.success(versions.flatten)
+      case Failure(ex) =>
+        promise.failure(ex)
+    }
+    promise.future
+  }
 }

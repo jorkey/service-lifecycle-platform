@@ -59,7 +59,9 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
             getBusyVersions(serviceName).onComplete {
               case Success(busyVersions) =>
                 var notUsedVersions =
-                  versionsInfo.versions.filterNot(version => busyVersions.contains(version.version)).sortBy(_.date.getTime).map(_.version)
+                  versionsInfo.versions.filterNot(
+                    version => { version.version == buildVersion ||
+                      busyVersions.contains(version.version) }).sortBy(_.date.getTime).map(_.version)
                 log.info("Not used versions " + notUsedVersions)
                 while (notUsedVersions.size > maxVersions) {
                   val lastVersion = notUsedVersions.head

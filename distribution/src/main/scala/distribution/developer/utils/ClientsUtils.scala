@@ -38,7 +38,7 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
 
   def getClientsInfo(): Source[ClientInfo, NotUsed] = {
     Source.future(
-      Source(dir.getClientsDir().list().toList)
+      Source(dir.getClients())
         .map(clientName => getClientConfig(clientName).map(config => ClientInfo(clientName, config.installProfile, config.testClientMatch)))
         .flatMapConcat(config => Source.future(config))
         .runFold(Seq.empty[ClientInfo])((seq, info) => seq :+ info))

@@ -16,7 +16,7 @@
     ],
     "quotes": [
       2,
-      "single"
+      "double"
     ],
     "react/display-name": 1,
     "react/forbid-prop-types": 0,

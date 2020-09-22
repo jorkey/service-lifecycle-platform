@@ -1,8 +1,8 @@
-import React, {useRef, useState} from 'react';
-import clsx from 'clsx';
-import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/styles';
-import { Utils } from '../../../../common';
+import React, {useRef, useState} from "react";
+import clsx from "clsx";
+import PropTypes from "prop-types";
+import { makeStyles } from "@material-ui/styles";
+import { Utils } from "../../../../common";
 import {
   Card,
   CardHeader,
@@ -11,7 +11,7 @@ import {
   Divider,
   InputLabel,
   Select
-} from '@material-ui/core';
+} from "@material-ui/core";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
@@ -27,23 +27,23 @@ const useStyles = makeStyles(theme => ({
     minWidth: 800
   },
   statusContainer: {
-    display: 'flex',
-    alignItems: 'center'
+    display: "flex",
+    alignItems: "center"
   },
   status: {
     marginRight: theme.spacing(1)
   },
   actions: {
-    justifyContent: 'flex-end'
+    justifyContent: "flex-end"
   },
   formControlLabel: {
-    paddingLeft: '10px'
+    paddingLeft: "10px"
   },
   clientSelect: {
-    width: '100px'
+    width: "100px"
   },
   onlyAlerts: {
-    paddingRight: '2px'
+    paddingRight: "2px"
   }
 }));
 
@@ -65,6 +65,7 @@ const Versions = props => {
       Utils.getClients().then(clients => {
         setClients(clients)
         if (clients.length) {
+          console.info("clients[0] " + JSON.stringify(clients[0]))
           setClient(clients[0])
         }
       })
@@ -80,17 +81,17 @@ const Versions = props => {
 
   const getClientVersions = (client) => {
     if (client) {
-      Utils.getDesiredVersions(client).then(versions => {
+      Utils.getDesiredVersions(client.name).then(versions => {
         setDesiredVersions(Object.entries(versions))
-        if (client == "distribution") {
+        if (client.name == "distribution") {
           setClientVersions(new Map(Object.entries(versions)))
         }
       })
-      Utils.getInstanceVersions(client).then(versions => {
+      Utils.getInstanceVersions(client.name).then(versions => {
         setInstanceVersions(new Map(Object.entries(versions)))
       })
-      if (client != "distribution") {
-        Utils.getInstalledDesiredVersions(client).then(versions => {
+      if (client.name != "distribution") {
+        Utils.getInstalledDesiredVersions(client.name).then(versions => {
           setClientVersions(new Map(Object.entries(versions)))
         })
       }
@@ -106,48 +107,59 @@ const Versions = props => {
         action={
           <FormGroup row>
             <FormControlLabel
+              className={classes.formControlLabel}
+              control={<Select
+                className={classes.clientSelect}
+                native
+                onChange={(event) => {
+                  const client = clients.find(client => client.name == event.target.value)
+                  if (client) {
+                    setClient(client)
+                  }
+                }}
+                title="Select client"
+                value={client ? client.name : undefined}
+              >
+                { clients.map( client => <option key={client.name}>{client.name}</option> ) }
+              </Select>}
               label="Client"
-              className={classes.formControlLabel}
-              control={ <Select
-                    title="Select client"
-                    className={classes.clientSelect}
-                    native
-                    value={client}
-                    onChange={(event) => {
-                      setClient(event.target.value);
-                    }}
-                  >
-                  { clients.map( client => <option key={client}>{client}</option> ) }
-                </Select> }
             />
             <FormControlLabel
-              label="Only Alerts"
               className={classes.formControlLabel}
-              control={ <Checkbox
-                className={classes.onlyAlerts}
+              control={<Checkbox
                 checked={onlyAlerts}
+                className={classes.onlyAlerts}
                 onChange={event => setOnlyAlerts(event.target.checked)}
-              /> }
+              />}
+              label="Only Alerts"
             />
             <FormControlLabel
               className={classes.formControlLabel}
-              control={ <Button title="Refresh" onClick={() => getClientVersions(client)}>
+              control={<Button
+                onClick={() => getClientVersions(client.name)}
+                title="Refresh"
+              >
                 <RefreshIcon/>
                 <InputLabel>{new Date().getHours().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
                   ":" + new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
                   ":" + new Date().getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}</InputLabel>
-              </Button> }
+              </Button>}
             />
           </FormGroup>
         }
-        title={onlyAlerts ? "Version Alerts" : "Versions" }
+        title={onlyAlerts ? "Version Alerts" : "Versions"}
       />
       <Divider />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <VersionsTable client={client} distributionclient={distributionClient}
-                         desiredVersions={desiredVersions} clientVersions={clientVersions} instanceVersions={instanceVersions}
-                         onlyAlerts={onlyAlerts}/>
+          <VersionsTable
+            client={client}
+            clientVersions={clientVersions}
+            desiredVersions={desiredVersions}
+            distributionclient={distributionClient}
+            instanceVersions={instanceVersions}
+            onlyAlerts={onlyAlerts}
+          />
         </div>
       </CardContent>
     </Card>

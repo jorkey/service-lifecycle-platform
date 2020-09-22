@@ -28,7 +28,7 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
             }
           } else {
             services.foreach { case (name, controller) =>
-              if (name == serviceName && controller.serviceDirectory.getCanonicalPath == directory) {
+              if (name.name == serviceName && controller.serviceDirectory.getCanonicalPath == directory) {
                 controller.initFromState(serviceState)
               }
             }
