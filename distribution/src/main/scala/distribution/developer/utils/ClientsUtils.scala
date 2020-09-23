@@ -133,15 +133,11 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
       case Success(desiredVersions) =>
         desiredVersions match {
           case Some(desiredVersions) =>
-            log.debug("11")
             getClientInstallProfile(clientName).onComplete {
               case Success(installProfile) =>
-                log.debug("12")
                 val filteredVersions = desiredVersions.desiredVersions.filterKeys(installProfile.services.contains(_))
-                log.debug(s"13 ${filteredVersions}")
                 promise.success(Some(DesiredVersions(filteredVersions)))
               case Failure(ex) =>
-                log.debug("14")
                 promise.failure(ex)
             }
           case None =>
