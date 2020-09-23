@@ -153,9 +153,9 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
     val promise = Promise[Option[DesiredVersions]]()
     getClientConfig(clientName).onComplete {
       case Success(config) =>
-        val commonVersionsPromise = Promise[Option[Map[ServiceName, BuildVersion]]]()
-        config.testClientMatch match {
+        (config.testClientMatch match {
           case Some(testClientMatch) =>
+            val promise = Promise[Option[Map[ServiceName, BuildVersion]]]()
             getTestedVersionsByProfile(config.installProfile).onComplete {
               case Success(testedVersions) =>
                 testedVersions match {
@@ -169,22 +169,22 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
                           false
                       })
                     if (testCondition) {
-                      commonVersionsPromise.success(Some(testedVersions.testedVersions))
+                      promise.success(Some(testedVersions.testedVersions))
                     } else {
                       log.info(s"Desired versions for client ${clientName} are not tested")
-                      commonVersionsPromise.success(None)
+                      promise.success(None)
                     }
                   case None =>
                     log.info(s"Desired versions for client ${clientName} are not found")
-                    commonVersionsPromise.success(None)
+                    promise.success(None)
                 }
               case Failure(ex) =>
-                commonVersionsPromise.failure(ex)
+                promise.failure(ex)
             }
+            promise.future
           case None =>
             getDesiredVersions(None).map(_.map(_.desiredVersions))
-        }
-        commonVersionsPromise.future.onComplete {
+        }).onComplete {
           case Success(commonDesiredVersions) =>
             getDesiredVersions(Some(clientName)).onComplete {
               case Success(clientDesiredVersions) =>
