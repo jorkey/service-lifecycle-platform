@@ -87,7 +87,6 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
     log.debug(s"51 ${profileName}")
     val promise = Promise[InstallProfile]()
     val file = dir.getProfileFile(profileName)
-    log.debug(s"51- ${file}")
     getFileContentWithLock(file).onComplete {
       case Success(bytes) =>
         log.debug(s"52")
