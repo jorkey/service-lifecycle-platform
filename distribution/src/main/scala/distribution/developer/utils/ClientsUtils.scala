@@ -174,6 +174,9 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
                       log.info(s"Desired versions for client ${clientName} are not tested")
                       commonVersionsPromise.success(None)
                     }
+                  case None =>
+                    log.info(s"Desired versions for client ${clientName} are not found")
+                    commonVersionsPromise.success(None)
                 }
               case Failure(ex) =>
                 commonVersionsPromise.failure(ex)
