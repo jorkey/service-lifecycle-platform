@@ -1,6 +1,6 @@
 package distribution.utils
 
-import java.io.{File}
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
@@ -17,9 +17,8 @@ import com.vyulabs.update.lock.{SmartFileLock, SmartFilesLocker}
 import org.slf4j.LoggerFactory
 import spray.json._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 trait GetUtils extends SprayJsonSupport {
@@ -28,6 +27,8 @@ trait GetUtils extends SprayJsonSupport {
   implicit val system: ActorSystem
   implicit val materializer: Materializer
   implicit val filesLocker: SmartFilesLocker
+
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
   def parseJsonFileWithLock[T](file: File)(implicit format: RootJsonFormat[T]): Future[Option[T]] = {
     val promise = Promise[Option[T]]()

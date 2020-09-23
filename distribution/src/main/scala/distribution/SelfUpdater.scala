@@ -10,10 +10,10 @@ import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IOUtils, Utils}
-import org.slf4j.{LoggerFactory}
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.slf4j.LoggerFactory
 import com.vyulabs.update.info.DesiredVersions._
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 9.12.19.
@@ -26,6 +26,8 @@ class SelfUpdater(dir: DistributionDirectory)
 
   private val scriptsVersion = IOUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
   private var stopping = false
+
+  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
   def close(): Unit = {
     self.synchronized {

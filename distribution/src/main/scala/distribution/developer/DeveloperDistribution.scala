@@ -24,7 +24,6 @@ import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateU
 import distribution.developer.config.DeveloperDistributionConfig
 
 import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution

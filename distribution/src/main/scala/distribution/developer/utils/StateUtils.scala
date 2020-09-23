@@ -18,10 +18,8 @@ import distribution.developer.config.DeveloperDistributionConfig
 import distribution.utils.GetUtils
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import spray.json._
 
 trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
@@ -33,6 +31,8 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
 
   val dir: DeveloperDistributionDirectory
   val config: DeveloperDistributionConfig
+
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
   def getOwnServicesState(): ServicesState = {
     ServicesState.getOwnInstanceState(Common.DistributionServiceName)

@@ -5,17 +5,16 @@ import java.io.{File, IOException}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes.{InternalServerError, NotFound}
 import akka.http.scaladsl.server.Directives.{complete, failWith, _}
-import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
+import akka.http.scaladsl.server.{Route, RouteResult}
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ServiceName, UserName}
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, TestedVersions, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions, VersionInfo, VersionsInfo}
 import com.vyulabs.update.utils.{IOUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with SprayJsonSupport {
@@ -23,6 +22,8 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   private val maxVersions = 10
 
   implicit val dir: DistributionDirectory
+
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
     // TODO remove parameter 'image' when all usages will 'false'
   def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]], image: Boolean): Route = {

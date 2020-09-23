@@ -24,8 +24,7 @@ import distribution.utils.{GetUtils, PutUtils}
 import org.slf4j.LoggerFactory
 import spray.json._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
@@ -36,6 +35,8 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
 
   val filesLocker: SmartFilesLocker
   val dir: DeveloperDistributionDirectory
+
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
   def getClientsInfo(): Source[ClientInfo, NotUsed] = {
     Source.future(

@@ -19,9 +19,8 @@ import com.vyulabs.update.lock.{SmartFileLock, SmartFilesLocker}
 import org.slf4j.LoggerFactory
 import spray.json._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 trait PutUtils extends SprayJsonSupport {
@@ -30,6 +29,8 @@ trait PutUtils extends SprayJsonSupport {
   implicit val system: ActorSystem
   implicit val materializer: Materializer
   implicit val filesLocker: SmartFilesLocker
+
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
   def fileUploadWithLock(fieldName: String, targetFile: File): Route = {
     fileUpload(fieldName) {
