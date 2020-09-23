@@ -70,10 +70,13 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
 
   def getClientInstallProfile(clientName: ClientName): Future[InstallProfile] = {
     val promise = Promise[InstallProfile]()
+    log.debug("21")
     getClientConfig(clientName).onComplete {
       case Success(clientConfig) =>
+        log.debug("22")
         getInstallProfile(clientConfig.installProfile).onComplete { promise.complete(_) }
       case Failure(ex) =>
+        log.debug("23")
         promise.failure(ex)
     }
     promise.future

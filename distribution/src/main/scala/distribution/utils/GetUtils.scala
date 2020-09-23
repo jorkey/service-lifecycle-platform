@@ -53,7 +53,9 @@ trait GetUtils extends SprayJsonSupport {
 
   def getFileContentWithLock(targetFile: File): Future[Option[ByteString]] = {
     val promise = Promise[Option[ByteString]]()
+    log.debug(s"31 ${targetFile}")
     if (targetFile.exists()) {
+      log.debug("32")
       try {
         filesLocker.tryLock(targetFile, true) match {
           case Some(lock) =>
@@ -77,6 +79,7 @@ trait GetUtils extends SprayJsonSupport {
           promise.failure(ex)
       }
     } else {
+      log.debug("33")
       promise.success(None)
     }
     promise.future
