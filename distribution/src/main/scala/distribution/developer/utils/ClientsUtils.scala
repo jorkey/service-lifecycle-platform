@@ -186,10 +186,11 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
           case None =>
             getDesiredVersions(None).map(_.map(_.desiredVersions))
         }).onComplete {
-          case Success(commonDesiredVersions) =>
+          case Success(developerVersions) =>
+            log.info(s"developer versions ${developerVersions} ${developerVersions.size}")
             getDesiredVersions(Some(clientName)).onComplete {
               case Success(clientDesiredVersions) =>
-                val commonJson = commonDesiredVersions.map(_.toJson)
+                val commonJson = developerVersions.map(_.toJson)
                 val clientJson = clientDesiredVersions.map(_.toJson)
                 val mergedJson = (commonJson, clientJson) match {
                   case (Some(commonJson), Some(clientJson)) =>

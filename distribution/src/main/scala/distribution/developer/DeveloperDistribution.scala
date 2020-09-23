@@ -23,7 +23,6 @@ import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
 import distribution.developer.config.DeveloperDistributionConfig
 
-import scala.concurrent.ExecutionContext
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution
