@@ -34,7 +34,7 @@ object Common {
   val InstallConfigFileName = "install.json"
   val ClientConfigFileName = "client.json"
 
-  val ProfileFileNamePattern = "profile-(.*?).json"
+  val ProfileFileNamePattern = "(profile-)(.*?)(.json)"
   val ProfileFileNameMatch = "profile-x.json"
 
   val CommonProfile = "common"
