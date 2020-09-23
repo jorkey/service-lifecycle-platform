@@ -19,6 +19,7 @@ import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.info._
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.JsUtils._
+import com.vyulabs.update.version.BuildVersion
 import distribution.utils.{GetUtils, PutUtils}
 import org.slf4j.LoggerFactory
 import spray.json._
@@ -109,7 +110,11 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
     filterDesiredVersionsByProfile(clientName, getMergedDesiredVersions(clientName))
   }
 
-  def getTestedVersions(clientName: ClientName): Future[Option[TestedVersions]] = {
+  def getTestedVersionsByProfile(profileName: ProfileName): Future[Option[TestedVersions]] = {
+    parseJsonFileWithLock[TestedVersions](dir.getTestedVersionsFile(profileName))
+  }
+
+  def getTestedVersionsByClient(clientName: ClientName): Future[Option[TestedVersions]] = {
     val promise = Promise[Option[TestedVersions]]()
     getClientConfig(clientName).onComplete {
       case Success(config) =>
@@ -146,29 +151,61 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
 
   def getMergedDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
     val promise = Promise[Option[DesiredVersions]]()
-    val future = getDesiredVersions(None)
-    future.onComplete {
-      case Success(commonDesiredVersions) =>
-        val future = getDesiredVersions(Some(clientName))
-        future.onComplete {
-          case Success(clientDesiredVersions) =>
-            val commonJson = commonDesiredVersions.map(_.toJson)
-            val clientJson = clientDesiredVersions.map(_.toJson)
-            val mergedJson = (commonJson, clientJson) match {
-              case (Some(commonJson), Some(clientJson)) =>
-                Some(commonJson.merge(clientJson))
-              case (Some(commonConfig), None) =>
-                Some(commonConfig)
-              case (None, Some(clientConfig)) =>
-                Some(clientConfig)
-              case (None, None) =>
-                None
+    getClientConfig(clientName).onComplete {
+      case Success(config) =>
+        val commonVersionsPromise = Promise[Option[Map[ServiceName, BuildVersion]]]()
+        config.testClientMatch match {
+          case Some(testClientMatch) =>
+            getTestedVersionsByProfile(config.installProfile).onComplete {
+              case Success(testedVersions) =>
+                testedVersions match {
+                  case Some(testedVersions) =>
+                    val regexp = testClientMatch
+                    val testCondition = testedVersions.testSignatures.exists(signature =>
+                      signature.clientName match {
+                        case regexp() =>
+                          true
+                        case _ =>
+                          false
+                      })
+                    if (testCondition) {
+                      commonVersionsPromise.success(Some(testedVersions.testedVersions))
+                    } else {
+                      log.info(s"Desired versions for client ${clientName} are not tested")
+                      commonVersionsPromise.success(None)
+                    }
+                }
+              case Failure(ex) =>
+                commonVersionsPromise.failure(ex)
             }
-            promise.success(mergedJson.map(_.convertTo[DesiredVersions]))
-            null
+          case None =>
+            getDesiredVersions(None).map(_.map(_.desiredVersions))
+        }
+        commonVersionsPromise.future.onComplete {
+          case Success(commonDesiredVersions) =>
+            getDesiredVersions(Some(clientName)).onComplete {
+              case Success(clientDesiredVersions) =>
+                val commonJson = commonDesiredVersions.map(_.toJson)
+                val clientJson = clientDesiredVersions.map(_.toJson)
+                val mergedJson = (commonJson, clientJson) match {
+                  case (Some(commonJson), Some(clientJson)) =>
+                    Some(commonJson.merge(clientJson))
+                  case (Some(commonConfig), None) =>
+                    Some(commonConfig)
+                  case (None, Some(clientConfig)) =>
+                    Some(clientConfig)
+                  case (None, None) =>
+                    None
+                }
+                promise.success(mergedJson.map(_.convertTo[DesiredVersions]))
+                null
+              case Failure(e) =>
+                promise.failure(e)
+            }
           case Failure(e) =>
             promise.failure(e)
         }
+        promise.future
       case Failure(e) =>
         promise.failure(e)
     }

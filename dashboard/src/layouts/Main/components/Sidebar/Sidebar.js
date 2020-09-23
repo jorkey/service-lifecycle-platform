@@ -4,10 +4,10 @@ import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import { Divider, Drawer } from '@material-ui/core';
 import DashboardIcon from '@material-ui/icons/Dashboard';
-import BubbleChartIcon from "@material-ui/icons/BubbleChart";
-import PeopleIcon from "@material-ui/icons/People";
-import ListIcon from "@material-ui/icons/List";
-import ErrorIcon from "@material-ui/icons/Error";
+import BubbleChartIcon from '@material-ui/icons/BubbleChart';
+import PeopleIcon from '@material-ui/icons/People';
+import ListIcon from '@material-ui/icons/List';
+import ErrorIcon from '@material-ui/icons/Error';
 
 import { Profile, SidebarNav } from './components';
 
@@ -69,7 +69,7 @@ const Sidebar = props => {
 
   return (
     <Drawer
-      anchor="left"
+      anchor='left'
       classes={{ paper: classes.drawer }}
       onClose={onClose}
       open={open}

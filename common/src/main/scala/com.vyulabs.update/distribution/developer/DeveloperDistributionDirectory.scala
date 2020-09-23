@@ -62,9 +62,7 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   }
 
   def getClientDir(clientName: ClientName): File = {
-    val dir = new File(clientsDir, clientName)
-    if (!dir.exists()) dir.mkdir()
-    dir
+    new File(clientsDir, clientName)
   }
 
   def getClientConfigFile(clientName: ClientName): File = {

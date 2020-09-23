@@ -6,7 +6,7 @@ import TextField from '@material-ui/core/TextField';
 import Alert from '@material-ui/lab/Alert';
 
 import { makeStyles } from '@material-ui/core/styles';
-import {Grid} from "@material-ui/core";
+import {Grid} from '@material-ui/core';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -47,11 +47,11 @@ const LoginPage = () => {
 
     Utils.login(userName, password).then(
       user => {
-        window.location.replace("/")
+        window.location.replace('/')
       },
       response => {
-        const error = (response.status === 401)?"Authorization error":response.status + ": " + response.statusText;
-        console.log("Login error " + error)
+        const error = (response.status === 401)?'Authorization error':response.status + ': ' + response.statusText;
+        console.log('Login error ' + error)
         setLoading(false)
         setError(error.toString())
       }
@@ -62,7 +62,7 @@ const LoginPage = () => {
     <div className={classes.root}>
       <Grid
         container
-        justify="center"
+        justify='center'
         spacing={4}
       >
         <Grid
@@ -73,42 +73,42 @@ const LoginPage = () => {
           xs={5}
         >
           <div className={classes.content}>
-            <form name="form" onSubmit={handleSubmit}>
+            <form name='form' onSubmit={handleSubmit}>
               <TextField
-                variant="outlined"
-                margin="normal"
+                variant='outlined'
+                margin='normal'
                 required
                 fullWidth
-                id="username"
-                label="User Name"
-                name="username"
-                autoComplete="email"
+                id='username'
+                label='User Name'
+                name='username'
+                autoComplete='email'
                 autoFocus
                 onChange={handleUserNameChange}
               />
               <TextField
-                variant="outlined"
-                margin="normal"
+                variant='outlined'
+                margin='normal'
                 required
                 fullWidth
-                name="password"
-                label="Password"
-                type="password"
-                id="password"
-                autoComplete="current-password"
+                name='password'
+                label='Password'
+                type='password'
+                id='password'
+                autoComplete='current-password'
                 onChange={handlePasswordChange}
               />
               <Button
                 disabled={loading}
-                type="submit"
+                type='submit'
                 fullWidth
-                variant="contained"
-                color="primary"
+                variant='contained'
+                color='primary'
                 className={classes.submit}
               >
                 Sign In
               </Button>
-              {error && <Alert severity="error">{error}</Alert>}
+              {error && <Alert severity='error'>{error}</Alert>}
             </form>
           </div>
         </Grid>

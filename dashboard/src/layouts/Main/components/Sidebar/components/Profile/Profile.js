@@ -34,11 +34,11 @@ const Profile = props => {
     >
       <Typography
         className={classes.name}
-        variant="h4"
+        variant='h4'
       >
         {user.name}
       </Typography>
-      <Typography variant="body2">{user.role}</Typography>
+      <Typography variant='body2'>{user.role}</Typography>
     </div>
   );
 };

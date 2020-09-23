@@ -34,7 +34,7 @@ function parseVersion(version) {
   const body = (index != -1) ? version.substring(index + 1) : version
   const index1 = body.indexOf('_')
   const versionBody = (index1 != -1) ? body.substring(0, index1) : body
-  const build = versionBody.split(".").map(Number)
+  const build = versionBody.split('.').map(Number)
   const localBuild = (index1 != -1) ? Number(body.substring(index1 + 1)) : null
   return [client, build, localBuild]
 }

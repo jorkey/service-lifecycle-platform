@@ -33,12 +33,6 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     downloadToJson(url).map(_.convertTo[DesiredVersions])
   }
 
-  def downloadTestedVersions(): Option[TestedVersions] = {
-    log.info(s"Download tested versions")
-    val url = makeUrl(apiPathPrefix + "/" + testedVersionsPath)
-    downloadToJson(url).map(_.convertTo[TestedVersions])
-  }
-
   def uploadInstalledDesiredVersions(file: File): Boolean = {
     log.info(s"Upload installed desired versions")
     uploadFromFile(makeUrl(apiPathPrefix + "/" + installedDesiredVersionsPath), desiredVersionsName, file)

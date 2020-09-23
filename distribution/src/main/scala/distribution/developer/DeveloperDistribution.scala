@@ -125,8 +125,8 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                           path(desiredVersionPath / ".*".r) { service =>
                             getDesiredVersion(service, getClientDesiredVersions(userName), false)
                           } ~
-                          path(testedVersionsPath) {
-                            complete(getTestedVersions(userName))
+                          path(testedVersionsPath) { // TODO remove
+                            complete(getTestedVersionsByClient(userName))
                           }
                         }
                       } ~

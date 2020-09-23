@@ -1,12 +1,12 @@
-import React, {useState} from "react";
-import Popover from "@material-ui/core/Popover";
-import {makeStyles} from "@material-ui/styles";
-import {Utils} from "../../../../common";
-import {Table, TableBody} from "@material-ui/core";
-import TableCell from "@material-ui/core/TableCell";
-import InfoIcon from "@material-ui/icons/Info";
-import AlertIcon from "@material-ui/icons/Error";
-import TableRow from "@material-ui/core/TableRow";
+import React, {useState} from 'react';
+import Popover from '@material-ui/core/Popover';
+import {makeStyles} from '@material-ui/styles';
+import {Utils} from '../../../../common';
+import {Table, TableBody} from '@material-ui/core';
+import TableCell from '@material-ui/core/TableCell';
+import InfoIcon from '@material-ui/icons/Info';
+import AlertIcon from '@material-ui/icons/Error';
+import TableRow from '@material-ui/core/TableRow';
 
 const useStyles = makeStyles(theme => ({
   infoIcon: {
@@ -20,7 +20,7 @@ const useStyles = makeStyles(theme => ({
     width: 25,
     height: 25,
     opacity: 0.5,
-    color: "red"
+    color: 'red'
   },
   stateColumn: {
     padding: '4px'
@@ -62,7 +62,7 @@ export const ServiceState = (props) => {
 
   if (open) {
     if (state.length == 0) {
-      Utils.getServiceState(client, instance, directory, service).then(state => {
+      Utils.getServiceState(client.name, instance, directory, service).then(state => {
         setState(state)
       })
     }
@@ -71,34 +71,34 @@ export const ServiceState = (props) => {
   }
 
   return state && (state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
-        id="mouse-over-popover"
-        className={classes.statePopover}
-        classes={{
-          paper: classes.paper,
-        }}
-        open={open}
-        anchorEl={anchor}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        disableRestoreFocus
-      >
-        <Table>
-          <TableBody>
-            {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
-              <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
-            {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
-              <TableCell className={classes.stateColumn}>{state.updateToVersion}</TableCell></TableRow>):null}
-            {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>{state.updateError.critical?"Critical Update Error":"Update Error"}</TableCell>
-              <TableCell className={classes.stateColumn}>{state.updateError.error}</TableCell></TableRow>):null}
-            {state.failuresCount?(<TableRow><TableCell className={classes.stateColumn}>Failures Count</TableCell>
-              <TableCell className={classes.stateColumn}>{state.failuresCount}</TableCell></TableRow>):null}
-          </TableBody>
-        </Table>
-      </Popover>) : null
+    id='mouse-over-popover'
+    className={classes.statePopover}
+    classes={{
+      paper: classes.paper,
+    }}
+    open={open}
+    anchorEl={anchor}
+    anchorOrigin={{
+      vertical: 'bottom',
+      horizontal: 'left',
+    }}
+    transformOrigin={{
+      vertical: 'top',
+      horizontal: 'left',
+    }}
+    disableRestoreFocus
+  >
+    <Table>
+      <TableBody>
+        {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
+          <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
+        {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
+          <TableCell className={classes.stateColumn}>{state.updateToVersion}</TableCell></TableRow>):null}
+        {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>{state.updateError.critical?'Critical Update Error':'Update Error'}</TableCell>
+          <TableCell className={classes.stateColumn}>{state.updateError.error}</TableCell></TableRow>):null}
+        {state.failuresCount?(<TableRow><TableCell className={classes.stateColumn}>Failures Count</TableCell>
+          <TableCell className={classes.stateColumn}>{state.failuresCount}</TableCell></TableRow>):null}
+      </TableBody>
+    </Table>
+  </Popover>) : null
 }

@@ -60,33 +60,15 @@ class UpdateClient()(implicit log: Logger) {
           return false
         }
         var developerVersions = if (!localConfigOnly) {
-          clientConfig.testClientMatch match {
-            case Some(testClientMatch) =>
-              val developerTestedVersions = developerDistribution.downloadTestedVersions().getOrElse {
-                log.error(s"Can't get developer tested versions")
-                return false
-              }
-              val regexp = testClientMatch
-              val testCondition = developerTestedVersions.testSignatures.exists(signature =>
-                signature.clientName match {
-                  case regexp() =>
-                    true
-                  case _ =>
-                    false
-                })
-              if (!testCondition) {
-                log.error("Developer desired versions are not tested")
-                return false
-              }
-              developerTestedVersions.testedVersions
-            case None =>
-              log.info("Get developer desired versions")
-              val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
-                log.error(s"Can't get developer desired versions")
-                return false
-              }
-              developerDesiredVersions.desiredVersions
+          log.info("Get developer desired versions")
+          val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
+            log.error(s"Can't get developer desired versions.")
+            if (clientConfig.testClientMatch.isDefined) {
+              log.error("May be developer desired versions are not tested")
+            }
+            return false
           }
+          developerDesiredVersions.desiredVersions
         } else {
           clientDesiredVersions.mapValues(_.original())
         }

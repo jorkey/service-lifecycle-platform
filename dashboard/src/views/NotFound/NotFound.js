@@ -25,7 +25,7 @@ const NotFound = () => {
     <div className={classes.root}>
       <Grid
         container
-        justify="center"
+        justify='center'
         spacing={4}
       >
         <Grid
@@ -34,10 +34,10 @@ const NotFound = () => {
           xs={12}
         >
           <div className={classes.content}>
-            <Typography variant="h1">
+            <Typography variant='h1'>
               404: The page you are looking for isn’t here
             </Typography>
-            <Typography variant="subtitle2">
+            <Typography variant='subtitle2'>
               You either tried some shady route or you came here by mistake.
               Whichever it is, try using the navigation
             </Typography>

@@ -36,9 +36,8 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export const ServiceVersions = props => {
-  const { client, distributionClient, service, desiredVersion, clientVersions, instanceVersions, onlyAlerts } = props;
+  const { client, service, desiredVersion, clientVersions, instanceVersions, onlyAlerts } = props;
   const classes = useStyles();
-
   const clientVersion = clientVersions.get(service)
   const versions = instanceVersions.get(service) ? Object.entries(instanceVersions.get(service)) : []
   let versionIndex = versions.length, version = undefined
@@ -85,8 +84,7 @@ export const ServiceVersions = props => {
       instanceIndex = instances.length - 1
     }
     if (instanceIndex >= 0) {
-      let index
-      [index, instance] = instances[instanceIndex]
+      [, instance] = instances[instanceIndex]
     } else {
       instance = undefined
     }
@@ -107,7 +105,7 @@ export const ServiceVersions = props => {
             className={classes.versionColumn}
             rowSpan={rowNum + 1}
           >{desiredVersion}</TableCell>
-          { (!distributionClient && client != 'distribution') ?
+          { client != 'distribution' ?
             <TableCell
               className={!clientVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
               rowSpan={rowNum + 1}
@@ -154,15 +152,15 @@ export const ServiceVersions = props => {
 }
 
 export const VersionsTable = props => {
-  const {client, distributionClient, desiredVersions, clientVersions, instanceVersions, onlyAlerts} = props;
+  const {client, developerVersions, clientVersions, instanceVersions, onlyAlerts} = props;
   const classes = useStyles();
 
-  return (client || distributionClient) ? (<Table stickyHeader>
+  return client ? (<Table stickyHeader>
     <TableHead>
       <TableRow>
         <TableCell className={classes.serviceColumn}>Service</TableCell>
         <TableCell className={classes.versionColumn}>Desired Version</TableCell>
-        { (!distributionClient && client != "distribution") ? <TableCell className={classes.versionColumn}>Client Version</TableCell> : null }
+        { client != 'distribution' ? <TableCell className={classes.versionColumn}>Client Version</TableCell> : null }
         <TableCell className={classes.versionColumn}>Working Version</TableCell>
         <TableCell className={classes.directoryColumn}>Directory</TableCell>
         <TableCell className={classes.instancesColumn}>Instances</TableCell>
@@ -170,12 +168,11 @@ export const VersionsTable = props => {
       </TableRow>
     </TableHead>
     <TableBody>
-      { desiredVersions.sort().map(([service, desiredVersion]) =>
+      { developerVersions.sort().map(([service, desiredVersion]) =>
         <ServiceVersions
           client={client}
           clientVersions={clientVersions}
           desiredVersion={desiredVersion}
-          distributionclient={distributionClient}
           instanceVersions={instanceVersions}
           key={service}
           onlyAlerts={onlyAlerts}

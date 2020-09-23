@@ -7,8 +7,8 @@ import {AppBar, Toolbar, Badge, Hidden, IconButton, Typography, Button} from '@m
 import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
 import BuildIcon from '@material-ui/icons/Build';
-import Grid from "@material-ui/core/Grid";
-import {Utils} from "../../../../common/Utils";
+import Grid from '@material-ui/core/Grid';
+import {Utils} from '../../../../common/Utils';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -62,13 +62,13 @@ const Topbar = props => {
       className={clsx(classes.root, className)}
     >
       <Toolbar>
-        <RouterLink to="/">
+        <RouterLink to='/'>
           <Grid className={classes.logo}>
             <BuildIcon/>
             { distributionInfo.name ? (
               <>
                 <Typography className={classes.distributionName}
-                  display="inline"
+                  display='inline'
                 >
                   {distributionInfo.name}
                 </Typography>
@@ -78,17 +78,17 @@ const Topbar = props => {
         </RouterLink>
         <div className={classes.flexGrow} />
         <Hidden mdDown>
-          <IconButton title="Logout"
+          <IconButton title='Logout'
             className={classes.signOutButton}
-            color="inherit"
-            href="/login"
+            color='inherit'
+            href='/login'
           >
           <InputIcon />
           </IconButton>
         </Hidden>
         <Hidden lgUp>
           <IconButton
-            color="inherit"
+            color='inherit'
             onClick={onSidebarOpen}
           >
             <MenuIcon />

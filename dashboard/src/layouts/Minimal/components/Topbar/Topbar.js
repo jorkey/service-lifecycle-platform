@@ -4,9 +4,9 @@ import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import {AppBar, Toolbar, Typography} from '@material-ui/core';
-import Grid from "@material-ui/core/Grid";
-import BuildIcon from "@material-ui/icons/Build";
-import {Utils} from "../../../../common";
+import Grid from '@material-ui/core/Grid';
+import BuildIcon from '@material-ui/icons/Build';
+import {Utils} from '../../../../common';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -49,17 +49,17 @@ const Topbar = props => {
     <AppBar
       {...rest}
       className={clsx(classes.root, className)}
-      color="primary"
-      position="fixed"
+      color='primary'
+      position='fixed'
     >
       <Toolbar>
-        <RouterLink to="/">
+        <RouterLink to='/'>
           <Grid className={classes.logo}>
             <BuildIcon/>
             { distributionInfo.name ? (
               <>
                 <Typography className={classes.distributionName}
-                            display="inline"
+                            display='inline'
                 >
                   {distributionInfo.name}
                 </Typography>

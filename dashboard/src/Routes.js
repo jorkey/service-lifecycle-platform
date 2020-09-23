@@ -18,10 +18,10 @@ import {
 
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   <Route {...rest} render = { props => {
-    console.log("user " + localStorage.getItem('user'));
+    console.log('user ' + localStorage.getItem('user'));
     return localStorage.getItem('user')
       ? <Component {...props} />
-      : <Redirect to="/login"/>
+      : <Redirect to='/login'/>
   }} />
 )
 
@@ -32,9 +32,9 @@ const LoginRoutes = () => {
         component={LoginPageView}
         exact
         layout={MinimalLayout}
-        path="/login"
+        path='/login'
       />
-      <LoginSwitchRoute path="/" component={Routes} />
+      <LoginSwitchRoute path='/' component={Routes} />
     </Switch>
   );
 }
@@ -44,46 +44,46 @@ const Routes = () => {
     <Switch>
       <Redirect
         exact
-        from="/"
-        to="/dashboard"
+        from='/'
+        to='/dashboard'
       />
       <RouteWithLayout
         component={DashboardView}
         exact
         layout={MainLayout}
-        path="/dashboard"
+        path='/dashboard'
       />
       <RouteWithLayout
         component={ServicesView}
         exact
         layout={MainLayout}
-        path="/services"
+        path='/services'
       />
       <RouteWithLayout
         component={ClientsView}
         exact
         layout={MainLayout}
-        path="/clients"
+        path='/clients'
       />
       <RouteWithLayout
         component={LoggingView}
         exact
         layout={MainLayout}
-        path="/logging"
+        path='/logging'
       />
       <RouteWithLayout
         component={FailuresView}
         exact
         layout={MainLayout}
-        path="/failures"
+        path='/failures'
       />
       <RouteWithLayout
         component={NotFoundView}
         exact
         layout={MinimalLayout}
-        path="/not-found"
+        path='/not-found'
       />
-      <Redirect to="/not-found" />
+      <Redirect to='/not-found' />
     </Switch>
   );
 };
