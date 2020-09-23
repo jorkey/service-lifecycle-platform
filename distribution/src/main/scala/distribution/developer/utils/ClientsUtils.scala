@@ -151,13 +151,17 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
 
   def getMergedDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
     val promise = Promise[Option[DesiredVersions]]()
+    log.debug("1")
     getClientConfig(clientName).onComplete {
       case Success(config) =>
+        log.debug("2")
         (config.testClientMatch match {
           case Some(testClientMatch) =>
+            log.debug("3")
             val promise = Promise[Option[Map[ServiceName, BuildVersion]]]()
             getTestedVersionsByProfile(config.installProfile).onComplete {
               case Success(testedVersions) =>
+                log.debug("4")
                 testedVersions match {
                   case Some(testedVersions) =>
                     val regexp = testClientMatch
@@ -183,12 +187,15 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
             }
             promise.future
           case None =>
+            log.debug("5")
             getDesiredVersions(None).map(_.map(_.desiredVersions))
         }).onComplete {
-          case Success(commonDesiredVersions) =>
+          case Success(desiredVersions) =>
+            log.debug("6")
             getDesiredVersions(Some(clientName)).onComplete {
               case Success(clientDesiredVersions) =>
-                val commonJson = commonDesiredVersions.map(_.toJson)
+                log.debug("7")
+                val commonJson = desiredVersions.map(_.toJson)
                 val clientJson = clientDesiredVersions.map(_.toJson)
                 val mergedJson = (commonJson, clientJson) match {
                   case (Some(commonJson), Some(clientJson)) =>
@@ -201,15 +208,15 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
                     None
                 }
                 promise.success(mergedJson.map(_.convertTo[DesiredVersions]))
-                null
               case Failure(e) =>
                 promise.failure(e)
             }
           case Failure(e) =>
+            log.debug("8")
             promise.failure(e)
         }
-        promise.future
       case Failure(e) =>
+        log.debug("9")
         promise.failure(e)
     }
     promise.future

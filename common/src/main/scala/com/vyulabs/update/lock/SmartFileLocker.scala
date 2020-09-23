@@ -57,7 +57,7 @@ private[lock] class SmartFileLocker(val file: File, filesAssessor: SmartFilesLoc
           } else {
             sharedSmartLocks += accessLock
           }
-          log.debug(s"Locked ${file.getName}, shared ${shared}")
+          //log.debug(s"Locked ${file.getName}, shared ${shared}")
           Some(accessLock)
         } else {
           None
@@ -102,6 +102,6 @@ private[lock] class SmartFileLocker(val file: File, filesAssessor: SmartFilesLoc
     if (needClose) {
       filesAssessor.close(this)
     }
-    log.debug(s"Unlocked ${file.getName}, shared ${accessLock.shared}")
+    //log.debug(s"Unlocked ${file.getName}, shared ${accessLock.shared}")
   }
 }
