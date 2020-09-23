@@ -20,6 +20,7 @@ import com.vyulabs.update.info._
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.JsUtils._
 import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.BuildVersion._
 import distribution.utils.{GetUtils, PutUtils}
 import org.slf4j.LoggerFactory
 import spray.json._
@@ -191,9 +192,11 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
             getDesiredVersions(Some(clientName)).onComplete {
               case Success(clientDesiredVersions) =>
                 log.info(s"client versions ${clientDesiredVersions}")
-                val commonJson = developerVersions.map(_.toJson)
+                val developerJson = developerVersions.map(_.toJson)
+                log.info(s"developer json ${developerJson}")
                 val clientJson = clientDesiredVersions.map(_.toJson)
-                val mergedJson = (commonJson, clientJson) match {
+                log.info(s"client json ${clientJson}")
+                val mergedJson = (developerJson, clientJson) match {
                   case (Some(commonJson), Some(clientJson)) =>
                     Some(commonJson.merge(clientJson))
                   case (Some(commonConfig), None) =>
