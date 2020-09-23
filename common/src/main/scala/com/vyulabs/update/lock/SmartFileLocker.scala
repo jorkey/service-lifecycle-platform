@@ -3,7 +3,7 @@ package com.vyulabs.update.lock
 import java.io.{File, RandomAccessFile}
 import java.nio.channels.FileLock
 
-import org.slf4j.Logger
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.02.20.
@@ -15,7 +15,9 @@ class SmartFileLock(val shared: Boolean, private[lock] val locker: SmartFileLock
   }
 }
 
-private[lock] class SmartFileLocker(val file: File, filesAssessor: SmartFilesLocker)(implicit log: Logger) {
+private[lock] class SmartFileLocker(val file: File, filesAssessor: SmartFilesLocker) {
+  private implicit val log = LoggerFactory.getLogger(this.getClass)
+
   private var lock = Option.empty[FileLock]
   private var exclusivelySmartLock = Option.empty[SmartFileLock]
   private var sharedSmartLocks = Set.empty[SmartFileLock]
