@@ -59,6 +59,7 @@ trait GetUtils extends SprayJsonSupport {
       try {
         filesLocker.tryLock(targetFile, true) match {
           case Some(lock) =>
+            log.debug("32-")
             val future = FileIO.fromPath(targetFile.toPath).runWith(Sink.fold[ByteString, ByteString](ByteString())((b1, b2) => {
               b1 ++ b2
             }))

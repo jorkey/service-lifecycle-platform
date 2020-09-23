@@ -73,7 +73,8 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
     log.debug("21")
     getClientConfig(clientName).onComplete {
       case Success(clientConfig) =>
-        log.debug("22")
+        log.debug(s"22")
+        log.debug(s"22- ${clientConfig.installProfile}")
         getInstallProfile(clientConfig.installProfile).onComplete { promise.complete(_) }
       case Failure(ex) =>
         log.debug("23")
@@ -83,23 +84,29 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
   }
 
   def getInstallProfile(profileName: ProfileName): Future[InstallProfile] = {
+    log.debug(s"51 ${profileName}")
     val promise = Promise[InstallProfile]()
     val file = dir.getProfileFile(profileName)
     getFileContentWithLock(file).onComplete {
       case Success(bytes) =>
+        log.debug(s"52")
         bytes match {
           case Some(bytes) =>
             try {
+              log.debug(s"53")
               val installProfile = bytes.decodeString("utf8").parseJson.convertTo[InstallProfile]
               promise.success(installProfile)
             } catch {
               case ex: Exception =>
+                log.debug(s"54")
                 promise.failure(ex)
             }
           case None =>
+            log.debug(s"55")
             promise.failure(new IOException(s"Can't find profile ${profileName}"))
         }
       case Failure(ex) =>
+        log.debug(s"56")
         promise.failure(ex)
     }
     promise.future
