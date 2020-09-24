@@ -205,7 +205,7 @@ function runService {
       fi
     else
       if [ ! -f ${serviceToRun}-${buildVersion}.jar ]; then
-        >&2 echo "No <${serviceToRun}-${buildVersion}>.jar in the build."
+        >&2 echo "No <${serviceToRun}-${buildVersion}>.jar in the build"
         exit 1
       fi
       command="/usr/bin/java"
@@ -234,10 +234,10 @@ function runService {
       wait ${child}
       local status=$?
       set -e
-      echo "Service ${serviceToRun} is terminated with status ${status}."
+      echo "Service ${serviceToRun} is terminated with status ${status}"
     fi
     if [ "$status" == "9" ]; then
-      echo "Update and restart ${serviceToRun}."
+      echo "Update and restart ${serviceToRun}"
     else
       exit ${status}
     fi
