@@ -213,9 +213,11 @@ function runService {
     fi
 
     if tty -s; then
+      set +e
       echo "Run ${command} ${args} $@"
-      exec ${command} ${args} "$@"
+      ${command} ${args} "$@"
       local status=$?
+      set -e
     else
       local child
       function trapKill {
@@ -234,7 +236,7 @@ function runService {
       set -e
       echo "Service ${serviceToRun} is terminated with status ${status}."
     fi
-    if [ $status == "9" ]; then
+    if [ "$status" == "9" ]; then
       echo "Update and restart ${serviceToRun}."
     else
       exit ${status}

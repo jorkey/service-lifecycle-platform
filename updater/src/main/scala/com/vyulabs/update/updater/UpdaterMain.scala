@@ -107,8 +107,7 @@ object UpdaterMain extends App { self =>
                 self.notify()
               }
               if (mustExitToUpdate) {
-                log.info("Exit with status 9 to update")
-                System.exit(9)
+                Utils.restartToUpdate("Restart to update")
               }
             } else if (!servicesStarted) {
               serviceUpdaters.values.foreach { updater =>

@@ -90,6 +90,11 @@ object Utils {
     sys.exit(1)
   }
 
+  def restartToUpdate(msg: String)(implicit log: Logger): Nothing = {
+    log.error(msg)
+    sys.exit(9)
+  }
+
   object RegexJson {
     implicit object RegexFormat extends RootJsonFormat[Regex] {
       def write(value: Regex) = JsString(value.toString)

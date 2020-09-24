@@ -74,7 +74,7 @@ class SelfUpdater(dir: DistributionDirectory)
             case _ =>
               log.info("Terminate to update")
               system.terminate() andThen {
-                sys.exit(9)
+                Utils.restartToUpdate("Restart to update")
               }
           }
         }

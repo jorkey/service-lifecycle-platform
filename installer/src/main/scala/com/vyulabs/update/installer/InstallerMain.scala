@@ -3,11 +3,9 @@ package com.vyulabs.update.installer
 import java.io.File
 import java.net.{URI, URL}
 
-import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.config.{ClientConfig, InstallProfile}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.installer.config.InstallerConfig
@@ -91,9 +89,14 @@ object InstallerMain extends App {
             Utils.error("Use option localConfigOnly with servicesOnly")
           }
           val setDesiredVersions = arguments.getOptionBooleanValue("setDesiredVersions").getOrElse(true)
-          if (!updateClient.installUpdates(adminRepository, clientDistribution, developerDistribution,
-               servicesOnly, localConfigOnly, setDesiredVersions)) {
+          val result = updateClient.installUpdates(adminRepository, clientDistribution, developerDistribution,
+               servicesOnly, localConfigOnly, setDesiredVersions)
+          if (result == InstallResult.Complete) {
+            log.info("Updates successfully installed")
+          } else if (result == InstallResult.Failure) {
             Utils.error("Install update error")
+          } else if (result == InstallResult.NeedRestartToUpdate) {
+            Utils.restartToUpdate("Restart to update")
           }
 
         case "getDesiredVersions" =>

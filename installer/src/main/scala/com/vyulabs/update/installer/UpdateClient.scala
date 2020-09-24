@@ -16,6 +16,7 @@ import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.enrichAny
 import com.vyulabs.update.info.DesiredVersions._
+import com.vyulabs.update.installer.InstallResult.InstallResult
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -30,34 +31,34 @@ class UpdateClient()(implicit log: Logger) {
                      developerDistribution: DeveloperDistributionDirectoryClient,
                      servicesOnly: Option[Set[ServiceName]],
                      localConfigOnly: Boolean,
-                     assignDesiredVersions: Boolean): Boolean = {
+                     assignDesiredVersions: Boolean): InstallResult = {
     val gitLock = adminRepository.buildUpdateLock()
     if (gitLock.lock(ClientAdminRepository.makeStartOfUpdatesMessage(servicesOnly, localConfigOnly, assignDesiredVersions),
         s"Continue install of updates")) {
-      var completed = false
+      var success = false
       var clientVersions = Map.empty[ServiceName, BuildVersion]
       try {
         if (buildDir.exists() && !IOUtils.deleteFileRecursively(buildDir)) {
           log.error(s"Can't remove directory ${buildDir}")
-          return false
+          return InstallResult.Failure
         }
         if (!buildDir.mkdir()) {
           log.error(s"Can't make directory ${buildDir}")
-          return false
+          return InstallResult.Failure
         }
         log.info("Get client config")
         val clientConfig = developerDistribution.downloadClientConfig().getOrElse {
           log.error(s"Can't get client config")
-          return false
+          return InstallResult.Failure
         }
         if (clientConfig.testClientMatch.isDefined && servicesOnly.isDefined && !localConfigOnly) {
           log.error("You may use option servicesOnly only with localConfigOnly for client that requires preliminary testing")
-          return false
+          return InstallResult.Failure
         }
         log.info("Get client desired versions")
         val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.desiredVersions).getOrElse {
           log.warn(s"Can't get client desired versions")
-          return false
+          return InstallResult.Failure
         }
         var developerVersions = if (!localConfigOnly) {
           log.info("Get developer desired versions")
@@ -66,7 +67,7 @@ class UpdateClient()(implicit log: Logger) {
             if (clientConfig.testClientMatch.isDefined) {
               log.error("May be developer desired versions are not tested")
             }
-            return false
+            return InstallResult.Failure
           }
           developerDesiredVersions.desiredVersions
         } else {
@@ -80,7 +81,7 @@ class UpdateClient()(implicit log: Logger) {
           case (serviceName, developerVersion) =>
             val existingVersions = clientDistribution.downloadVersionsInfo(serviceName).getOrElse {
               log.error(s"Error of getting service ${serviceName} versions list")
-              return false
+              return InstallResult.Failure
             }.versions
               .map(_.version)
               .filter(_.original() == developerVersion)
@@ -112,20 +113,17 @@ class UpdateClient()(implicit log: Logger) {
             clientVersions += (serviceName -> clientVersion)
         }
         log.info("Install updates")
-        if (!installVersions(adminRepository, clientDistribution, developerDistribution,
-            developerVersions, clientVersions, assignDesiredVersions)) {
-          return false
-        }
-        log.info("Updates successfully installed.")
-        completed = true
-        true
+        val result = installVersions(adminRepository, clientDistribution, developerDistribution,
+          developerVersions, clientVersions, assignDesiredVersions)
+        success = result != InstallResult.Failure
+        result
       } catch {
         case ex: Exception =>
           log.error("Exception", ex)
-          false
+          InstallResult.Failure
       } finally {
-        adminRepository.processLogFile(completed)
-        if (!gitLock.unlock(ClientAdminRepository.makeEndOfUpdatesMessage(completed, clientVersions))) {
+        adminRepository.processLogFile(success)
+        if (!gitLock.unlock(ClientAdminRepository.makeEndOfUpdatesMessage(success, clientVersions))) {
           log.error("Can't unlock admin repository")
         }
         if (!clientVersions.isEmpty) {
@@ -134,7 +132,7 @@ class UpdateClient()(implicit log: Logger) {
       }
     } else {
       log.error("Can't lock admin repository")
-      false
+      InstallResult.Failure
     }
   }
 
@@ -262,43 +260,42 @@ class UpdateClient()(implicit log: Logger) {
                               developerDistribution: DeveloperDistributionDirectoryClient,
                               developerVersions: Map[ServiceName, BuildVersion],
                               clientVersions: Map[ServiceName, BuildVersion],
-                              assignDesiredVersions: Boolean): Boolean = {
+                              assignDesiredVersions: Boolean): InstallResult = {
     if (assignDesiredVersions && developerVersions.get(Common.InstallerServiceName).isDefined) {
       if (!installVersions(adminRepository, clientDistribution, developerDistribution,
         developerVersions.filterKeys(
           serviceName => {
             serviceName == Common.InstallerServiceName || serviceName == Common.DistributionServiceName
           }), clientVersions)) {
-        return false
+        return InstallResult.Failure
       }
-      log.info("Exit with status 9 to update")
-      System.exit(9)
+      return InstallResult.NeedRestartToUpdate
     }
     if (!installVersions(adminRepository, clientDistribution, developerDistribution, developerVersions, clientVersions)) {
-      return false
+      return InstallResult.Failure
     }
     if (assignDesiredVersions) {
       log.info("Set desired versions")
       if (!setDesiredVersions(adminRepository, clientDistribution, clientVersions.map(entry => (entry._1, Some(entry._2))))) {
         log.error("Set desired versions error")
-        return false
+        return InstallResult.Failure
       }
       developerVersions.get(Common.DistributionServiceName) match {
         case Some(newDistributionVersion) =>
           if (!clientDistribution.waitForServerUpdated(clientDistribution.getDistributionVersionPath, newDistributionVersion)) {
             log.error("Update distribution server error")
-            return false
+            return InstallResult.Failure
           }
         case None =>
           for (newScriptsVersion <- developerVersions.get(Common.ScriptsServiceName)) {
             if (!clientDistribution.waitForServerUpdated(clientDistribution.getScriptsVersionPath, newScriptsVersion)) {
               log.error("Update scripts on distribution server error")
-              return false
+              return InstallResult.Failure
             }
           }
       }
     }
-    true
+    InstallResult.Complete
   }
 
   private def installVersions(adminRepository: ClientAdminRepository,
@@ -480,4 +477,9 @@ class UpdateClient()(implicit log: Logger) {
       case name => name
     }
   }
+}
+
+object InstallResult extends Enumeration {
+  type InstallResult = Value
+  val Complete, Failure, NeedRestartToUpdate = Value
 }
