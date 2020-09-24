@@ -263,13 +263,19 @@ class UpdateClient()(implicit log: Logger) {
                               developerVersions: Map[ServiceName, BuildVersion],
                               clientVersions: Map[ServiceName, BuildVersion],
                               assignDesiredVersions: Boolean): Boolean = {
-    developerVersions.foreach {
-      case (serviceName, version) =>
-        if (!installVersion(adminRepository, clientDistribution, developerDistribution, serviceName, version,
-            clientVersions.get(serviceName).get)) {
-          log.error(s"Can't install desired version ${version} of service ${serviceName}")
-          return false
-        }
+    if (assignDesiredVersions && developerVersions.get(Common.InstallerServiceName).isDefined) {
+      if (!installVersions(adminRepository, clientDistribution, developerDistribution,
+        developerVersions.filterKeys(
+          serviceName => {
+            serviceName == Common.InstallerServiceName || serviceName == Common.DistributionServiceName
+          }), clientVersions)) {
+        return false
+      }
+      log.info("Exit with status 9 to update")
+      System.exit(9)
+    }
+    if (!installVersions(adminRepository, clientDistribution, developerDistribution, developerVersions, clientVersions)) {
+      return false
     }
     if (assignDesiredVersions) {
       log.info("Set desired versions")
@@ -291,6 +297,22 @@ class UpdateClient()(implicit log: Logger) {
             }
           }
       }
+    }
+    true
+  }
+
+  private def installVersions(adminRepository: ClientAdminRepository,
+                              clientDistribution: ClientDistributionDirectoryClient,
+                              developerDistribution: DeveloperDistributionDirectoryClient,
+                              developerVersions: Map[ServiceName, BuildVersion],
+                              clientVersions: Map[ServiceName, BuildVersion]): Boolean = {
+    developerVersions.foreach {
+      case (serviceName, version) =>
+        if (!installVersion(adminRepository, clientDistribution, developerDistribution, serviceName, version,
+          clientVersions.get(serviceName).get)) {
+          log.error(s"Can't install desired version ${version} of service ${serviceName}")
+          return false
+        }
     }
     true
   }

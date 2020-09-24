@@ -48,7 +48,6 @@ After=network.target
 User=ec2-user
 KillMode=process
 Restart=always
-RestartSec=0
 StartLimitInterval=0
 LimitCORE=infinity
 WorkingDirectory=`pwd`
