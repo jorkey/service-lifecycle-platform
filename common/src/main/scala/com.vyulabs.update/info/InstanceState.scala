@@ -93,14 +93,15 @@ object ServicesState extends DefaultJsonProtocol {
     ServicesState(directories)
   }
 
-  def getOwnInstanceState(serviceName: ServiceName)(implicit log: Logger): ServicesState = {
+  def getOwnInstanceState(serviceName: ServiceName, startDate: Date)(implicit log: Logger): ServicesState = {
     val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName),
-      installDate = IOUtils.getServiceInstallTime(serviceName, new File(".")))
+      installDate = IOUtils.getServiceInstallTime(serviceName, new File(".")),
+      startDate = Some(startDate))
     val directoryState = Map.empty + (serviceName -> ownState)
     ServicesState(Map.empty + (new File(".").getCanonicalPath() -> directoryState))
   }
 
-  def getServiceInstanceState(directory: File, serviceName: ServiceName)(implicit log: Logger): ServicesState = {
+  def getServiceInstanceState(serviceName: ServiceName, directory: File)(implicit log: Logger): ServicesState = {
     val ownState = ServiceState(version = IOUtils.readServiceVersion(serviceName, directory),
       installDate = IOUtils.getServiceInstallTime(serviceName, directory))
     val directoryState = Map.empty + (serviceName -> ownState)

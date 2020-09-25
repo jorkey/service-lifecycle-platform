@@ -2,6 +2,7 @@ package distribution.client.uploaders
 
 import java.io.File
 import java.net.URL
+import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import com.vyulabs.update.distribution.DistributionMain
 import com.vyulabs.update.info.{InstancesState, ProfiledServiceName, ServiceState, ServicesState}
 import com.vyulabs.update.info.ServicesState._
 
@@ -96,10 +98,10 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
               statesToUpload = Map.empty
               InstancesState(states.mapValues(ServicesState(_)))
             }.merge(InstancesState(Map.empty + (instanceId ->
-              ServicesState.getOwnInstanceState(Common.DistributionServiceName)
-                .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
-                .merge(ServicesState.getServiceInstanceState(new File(installerDir), Common.InstallerServiceName))
-                .merge(ServicesState.getServiceInstanceState(new File(installerDir), Common.ScriptsServiceName)))))
+              ServicesState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))
+                .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))
+                .merge(ServicesState.getServiceInstanceState(Common.InstallerServiceName, new File(installerDir)))
+                .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(installerDir))))))
             log.debug("Upload instances state to developer distribution server")
             if (!developerDirectory.uploadInstancesState(states)) {
               log.error("Can't upload instances state")

@@ -1,6 +1,7 @@
 package distribution.developer.utils
 
 import java.io.{File, IOException}
+import java.util.Date
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
@@ -10,6 +11,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common._
+import com.vyulabs.update.distribution.DistributionMain
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
 import com.vyulabs.update.info.InstanceVersions._
 import com.vyulabs.update.info._
@@ -35,10 +37,10 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
   def getOwnServicesState(): ServicesState = {
-    ServicesState.getOwnInstanceState(Common.DistributionServiceName)
-      .merge(ServicesState.getServiceInstanceState(new File("."), Common.ScriptsServiceName))
-      .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.BuilderServiceName))
-      .merge(ServicesState.getServiceInstanceState(new File(config.builderDirectory), Common.ScriptsServiceName))
+    ServicesState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))
+      .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))
+      .merge(ServicesState.getServiceInstanceState(Common.BuilderServiceName, new File(config.builderDirectory)))
+      .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(config.builderDirectory)))
   }
 
   def getOwnInstancesState(): InstancesState = {
