@@ -4,14 +4,15 @@ import java.io.File
 import java.nio.file.Files
 import java.util.Date
 
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.{ProfiledServiceName, ServiceState}
+import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName, ServiceState}
 import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
+
 import scala.collection.immutable.Queue
 import com.vyulabs.update.info.ServiceState._
-
 import org.slf4j.Logger
 import spray.json.enrichAny
 
@@ -19,8 +20,7 @@ import spray.json.enrichAny
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
   * Copyright FanDate, Inc.
   */
-case class FaultReport(instanceId: InstanceId, serviceDirectory: ServiceDirectory, profiledServiceName: ProfiledServiceName,
-                       state: ServiceState, reportFilesTmpDir: Option[File], logTail: Queue[String])
+case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 
 class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirectoryClient)
                    (implicit log: Logger) extends Thread { self =>
@@ -73,22 +73,22 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
         log.error(s"Can't create directory ${serviceDir}")
         return false
       }
-      val archivedFileName = s"${fault.profiledServiceName}_${fault.state.version.getOrElse(BuildVersion.empty)}_${fault.instanceId}_${Utils.serializeISO8601Date(new Date())}_fault.zip"
+      val archivedFileName = s"${fault.info.profiledServiceName}_${fault.info.state.version.getOrElse(BuildVersion.empty)}_${fault.info.instanceId}_${Utils.serializeISO8601Date(fault.info.date)}_fault.zip"
       val archiveFile = new File(serviceDir, archivedFileName)
-      val tmpDirectory = Files.createTempDirectory(s"fault-${fault.profiledServiceName}").toFile
-      val stateInfoFile = new File(tmpDirectory, "state.json")
-      val logTailFile = new File(tmpDirectory, s"${fault.profiledServiceName}.log")
+      val tmpDirectory = Files.createTempDirectory(s"fault-${fault.info.profiledServiceName}").toFile
+      val faultInfoFile = new File(tmpDirectory, Common.FaultInfoFileName)
+      val logTailFile = new File(tmpDirectory, s"${fault.info.profiledServiceName}.log")
       try {
-        if (!IOUtils.writeJsonToFile(stateInfoFile, fault.state.toJson)) {
+        if (!IOUtils.writeJsonToFile(faultInfoFile, fault.info.toJson)) {
           log.error(s"Can't write file with state")
           return false
         }
-        val logs = fault.logTail.foldLeft(new String) { (sum, line) => sum + '\n' + line }
+        val logs = fault.info.logTail.foldLeft(new String) { (sum, line) => sum + '\n' + line }
         if (!IOUtils.writeBytesToFile(logTailFile, logs.getBytes("utf8"))) {
           log.error(s"Can't write file with tail of logs")
           return false
         }
-        val filesToZip = fault.reportFilesTmpDir.toSeq :+ stateInfoFile :+ logTailFile
+        val filesToZip = fault.reportFilesTmpDir.toSeq :+ faultInfoFile :+ logTailFile
         if (!ZipUtils.zip(archiveFile, filesToZip)) {
           log.error(s"Can't zip ${filesToZip} to ${archiveFile}")
           return false
@@ -97,7 +97,7 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
         IOUtils.deleteFileRecursively(tmpDirectory)
       }
       fault.reportFilesTmpDir.foreach(IOUtils.deleteFileRecursively(_))
-      if (!clientDirectory.uploadServiceFault(fault.profiledServiceName.name, archiveFile)) {
+      if (!clientDirectory.uploadServiceFault(fault.info.profiledServiceName.name, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }

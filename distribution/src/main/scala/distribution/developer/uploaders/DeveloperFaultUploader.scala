@@ -34,7 +34,7 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
 
   def receiveFault(clientName: ClientName, serviceName: ServiceName, fileName: String, source: Source[ByteString, Any]): Route = {
     log.info(s"Receive fault file ${fileName} from client ${clientName}")
-    val serviceDir = new File(directory, serviceName.toString)
+    val serviceDir = new File(directory, serviceName)
     if (!serviceDir.exists() && !serviceDir.mkdir()) {
       return failWith(new IOException(s"Can't make directory ${serviceDir}"))
     }
