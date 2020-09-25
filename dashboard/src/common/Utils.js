@@ -32,7 +32,7 @@ function getDistributionInfo() {
 
 function getClients() {
   return apiGet('clients-info').then(clients => {
-    return clients
+    return clients.map(client => client.name)
   });
 }
 

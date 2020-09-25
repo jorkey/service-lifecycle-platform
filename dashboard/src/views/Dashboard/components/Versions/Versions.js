@@ -76,17 +76,17 @@ const Versions = props => {
 
   const getClientVersions = (client) => {
     if (client) {
-      Utils.getDesiredVersions(client.name).then(versions => {
+      Utils.getDesiredVersions(client).then(versions => {
         setDeveloperVersions(Object.entries(versions))
-        if (client.name == 'distribution') {
+        if (client == 'distribution') {
           setClientVersions(new Map(Object.entries(versions)))
         }
       })
-      Utils.getInstanceVersions(client.name).then(versions => {
+      Utils.getInstanceVersions(client).then(versions => {
         setInstanceVersions(new Map(Object.entries(versions)))
       })
-      if (client.name != 'distribution') {
-        Utils.getInstalledDesiredVersions(client.name).then(versions => {
+      if (client != 'distribution') {
+        Utils.getInstalledDesiredVersions(client).then(versions => {
           setClientVersions(new Map(Object.entries(versions)))
         })
       }
@@ -106,16 +106,11 @@ const Versions = props => {
               control={<Select
                 className={classes.clientSelect}
                 native
-                onChange={(event) => {
-                  const client = clients.find(client => client.name == event.target.value)
-                  if (client) {
-                    setClient(client)
-                  }
-                }}
+                onChange={(event) => setClient(event.target.value)}
                 title='Select client'
-                value={client ? client.name : undefined}
+                value={client}
               >
-                { clients.map( client => <option key={client.name}>{client.name}</option> ) }
+                { clients.map( client => <option key={client}>{client}</option> ) }
               </Select>}
               label='Client'
             />
@@ -131,7 +126,7 @@ const Versions = props => {
             <FormControlLabel
               className={classes.formControlLabel}
               control={<Button
-                onClick={() => getClientVersions(client.name)}
+                onClick={() => getClientVersions(client)}
                 title='Refresh'
               >
                 <RefreshIcon/>

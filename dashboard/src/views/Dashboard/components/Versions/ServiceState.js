@@ -62,7 +62,7 @@ export const ServiceState = (props) => {
 
   if (open) {
     if (state.length == 0) {
-      Utils.getServiceState(client.name, instance, directory, service).then(state => {
+      Utils.getServiceState(client, instance, directory, service).then(state => {
         setState(state)
       })
     }
