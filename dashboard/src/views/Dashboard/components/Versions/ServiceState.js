@@ -70,7 +70,7 @@ export const ServiceState = (props) => {
     setState([])
   }
 
-  return state && (state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
+  return state && (state.installDate || state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
     id='mouse-over-popover'
     className={classes.statePopover}
     classes={{
