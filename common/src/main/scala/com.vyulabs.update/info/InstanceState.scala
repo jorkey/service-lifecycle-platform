@@ -53,8 +53,9 @@ object UpdateError extends DefaultJsonProtocol {
   implicit val updateErrorJson = jsonFormat2(UpdateError.apply)
 }
 
-case class ServiceState(date: Date = new Date(), startDate: Option[Date] = None, version: Option[BuildVersion] = None, updateToVersion: Option[BuildVersion] = None,
-                        updateError: Option[UpdateError] = None, failuresCount: Option[Int] = None, lastErrors: Option[Seq[String]] = None, lastExitCode: Option[Int] = None)
+case class ServiceState(date: Date = new Date(), installDate: Option[Date] = None, startDate: Option[Date] = None,
+                        version: Option[BuildVersion] = None, updateToVersion: Option[BuildVersion] = None,
+                        updateError: Option[UpdateError] = None, failuresCount: Option[Int] = None, lastExitCode: Option[Int] = None)
 
 object ServiceState extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
@@ -93,13 +94,15 @@ object ServicesState extends DefaultJsonProtocol {
   }
 
   def getOwnInstanceState(serviceName: ServiceName)(implicit log: Logger): ServicesState = {
-    val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName))
+    val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName),
+      installDate = IOUtils.getServiceInstallTime(serviceName, new File(".")))
     val directoryState = Map.empty + (serviceName -> ownState)
     ServicesState(Map.empty + (new File(".").getCanonicalPath() -> directoryState))
   }
 
   def getServiceInstanceState(directory: File, serviceName: ServiceName)(implicit log: Logger): ServicesState = {
-    val ownState = ServiceState(version = IOUtils.readServiceVersion(serviceName, directory))
+    val ownState = ServiceState(version = IOUtils.readServiceVersion(serviceName, directory),
+      installDate = IOUtils.getServiceInstallTime(serviceName, directory))
     val directoryState = Map.empty + (serviceName -> ownState)
     ServicesState(Map.empty + (directory.getCanonicalPath() -> directoryState))
   }

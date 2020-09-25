@@ -72,9 +72,6 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                         path(clientsInfoPath) {
                           complete(getClientsInfo())
                         } ~
-                        path(instanceVersionsPath) {
-                          complete(getOwnInstanceVersions())
-                        } ~
                         path(instanceVersionsPath / ".*".r) { clientName =>
                           getClientInstanceVersions(clientName)
                         } ~

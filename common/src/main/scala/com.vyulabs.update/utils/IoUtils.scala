@@ -1,13 +1,13 @@
 package com.vyulabs.update.utils
 
 import java.io._
+import java.util.Date
 
 import com.typesafe.config._
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.version.BuildVersion
-
 import org.slf4j.Logger
 import spray.json._
 
@@ -200,6 +200,15 @@ object IOUtils {
           log.error(s"Can't parse ${str}", ex)
           None
       }
+    } else {
+      None
+    }
+  }
+
+  def getServiceInstallTime(serviceName: ServiceName, directory: File)(implicit log: Logger): Option[Date] = {
+    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
+    if (versionMarkFile.exists()) {
+      Some(new Date(versionMarkFile.lastModified()))
     } else {
       None
     }

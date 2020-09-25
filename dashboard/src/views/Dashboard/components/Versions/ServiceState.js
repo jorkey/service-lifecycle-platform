@@ -90,6 +90,8 @@ export const ServiceState = (props) => {
   >
     <Table>
       <TableBody>
+        {state.installDate?(<TableRow><TableCell className={classes.stateColumn}>Install Date</TableCell>
+          <TableCell className={classes.stateColumn}>{new Date(state.installDate).toLocaleString()}</TableCell></TableRow>):null}
         {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
           <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
         {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>

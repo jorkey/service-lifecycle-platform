@@ -21,11 +21,11 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
   val newServiceDirectory = new File(serviceDirectory, "new")
   val logHistoryDirectory = new File(serviceDirectory, "log.history")
 
+  @volatile private var installDate = Option.empty[Date]
   @volatile private var startDate = Option.empty[Date]
   @volatile private var version = Option.empty[BuildVersion]
   @volatile private var updateToVersion = Option.empty[BuildVersion]
   @volatile private var updateError: Option[UpdateError] = None
-  @volatile private var lastErrors = Option.empty[Seq[String]]
   @volatile private var lastExitCode = Option.empty[Int]
   @volatile private var failuresCount = Option.empty[Int]
 
@@ -57,6 +57,7 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
   }
 
   def setVersion(version: BuildVersion): Unit = synchronized {
+    this.installDate = Some(new Date())
     this.version = Some(version)
     if (updateToVersion.isDefined) {
       info(s"Updated to version ${version}")
@@ -108,13 +109,11 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
 
   def error(message: String): Unit = {
     log.error(s"Service ${profiledServiceName}: ${message}")
-    addLastError(message)
     updateRepository()
   }
 
   def error(message: String, exception: Throwable): Unit = {
     log.error(s"Service ${profiledServiceName}: ${message}", exception)
-    addLastError(message + ": " + exception.toString)
     updateRepository()
   }
 
@@ -126,13 +125,6 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
   }
 
   def getState(): ServiceState = {
-    ServiceState(new Date(), startDate, version, updateToVersion, updateError, failuresCount, lastErrors, lastExitCode)
-  }
-
-  private def addLastError(error: String): Unit = {
-    lastErrors = Some(lastErrors.getOrElse(Seq.empty) :+ error)
-    if (lastErrors.get.size == maxLastErrors + 1) {
-      lastErrors = Some(lastErrors.get.drop(1))
-    }
+    ServiceState(new Date(), installDate, startDate, version, updateToVersion, updateError, failuresCount, lastExitCode)
   }
 }
