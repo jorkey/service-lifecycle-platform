@@ -12,7 +12,9 @@ import java.net.URI
 import java.nio.file.Path
 
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException
+import org.eclipse.jgit.submodule.SubmoduleWalk
 import org.eclipse.jgit.transport.RefSpec
+
 import scala.annotation.tailrec
 
 /**
@@ -320,6 +322,12 @@ object GitRepository {
         if (git.getRepository.getBranch() != branch) {
           log.info(s"Current branch is ${git.getRepository.getBranch()}. Need branch ${branch}")
           return None
+        }
+        val walk = SubmoduleWalk.forIndex(git.getRepository)
+        while (walk.next) {
+          val submoduleRepository = walk.getRepository
+          Git.wrap(submoduleRepository).pull().call()
+          submoduleRepository.close
         }
         git.pull().call()
         toClose = None

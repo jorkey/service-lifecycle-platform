@@ -36,6 +36,11 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
           with DeveloperDistributionWebPaths with SprayJsonSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
 
+  import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+  import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
+  import org.mongodb.scala.bson.codecs.Macros._
+
+
   def run(): Unit = {
     val route: Route =
       get {
