@@ -112,11 +112,6 @@ lazy val akkaDependencies = Seq(
   dependencies.akkaHttpTestKit
 )
 
-lazy val mongoDbDependencies = Seq(
-  dependencies.mongoDb,
-  dependencies.akkaMongoDb
-)
-
 lazy val sprayDependencies = Seq(
   dependencies.sprayJson
 )
@@ -147,10 +142,6 @@ lazy val dependencies =
     val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
     val akkaHttpSpray = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
     val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
-
-    // MongoDB
-    val mongoDb = "org.mongodb" %% "mongodb-driver-reactivestreams" % "4.1.0"
-    val akkaMongoDb = "com.lightbend.akka" %% "akka-stream-alpakka-mongodb" % "2.0.2"
 
     // Spray Json
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
