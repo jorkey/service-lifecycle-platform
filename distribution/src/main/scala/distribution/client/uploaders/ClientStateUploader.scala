@@ -122,10 +122,10 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
   private def removeOldStates(): Unit = {
     self.synchronized {
       instancesStates = instancesStates.map { case (instanceId, state) =>
-        (instanceId, state.mapValues ( state =>
-          state.filter { case (_, state) =>
+        (instanceId, state.map { case (key, state) =>
+          (key, state.filter { case (_, state) =>
             System.currentTimeMillis() - state.date.getTime < expirationPeriod
-          }))
+          })})
       }.filter { case (_, state) =>
         !state.isEmpty
       }
