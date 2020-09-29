@@ -70,7 +70,7 @@ lazy val updater = project
 lazy val distribution = project
   .in(file("distribution"))
   .settings(
-    libraryDependencies ++= (baseDependencies ++ akkaDependencies ++ mongoDbDependencies),
+    libraryDependencies ++= (baseDependencies ++ akkaDependencies),
     assemblySettings
   )
   .dependsOn(
