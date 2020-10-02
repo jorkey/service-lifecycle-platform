@@ -70,7 +70,7 @@ lazy val updater = project
 lazy val distribution = project
   .in(file("distribution"))
   .settings(
-    libraryDependencies ++= (baseDependencies ++ akkaDependencies),
+    libraryDependencies ++= (baseDependencies ++ akkaDependencies ++ mongoDependencies ++ sangriaDependencies),
     assemblySettings
   )
   .dependsOn(
@@ -116,6 +116,16 @@ lazy val sprayDependencies = Seq(
   dependencies.sprayJson
 )
 
+lazy val mongoDependencies = Seq(
+  dependencies.mongoDb
+)
+
+lazy val sangriaDependencies = Seq(
+  dependencies.sangria,
+  dependencies.sangriaSprayJson,
+  dependencies.sangriaAkkaStreams
+)
+
 lazy val dependencies =
   new {
     val akkaVersion = "2.6.7"
@@ -123,7 +133,7 @@ lazy val dependencies =
 
     // Logging
     val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
-    
+
     // Config
     val config = "com.typesafe" % "config" % "1.3.2"
 
@@ -143,11 +153,19 @@ lazy val dependencies =
     val akkaHttpSpray = "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
     val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
 
+    // Misc
+    val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "5.6.1.202002131546-r"
+
+    // MongoDB
+    val mongoDb = "com.lightbend.akka" %% "akka-stream-alpakka-mongodb" % "2.0.2"
+
     // Spray Json
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
 
-    // Misc
-    val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "5.6.1.202002131546-r"
+    // Sangria
+    val sangria = "org.sangria-graphql" %% "sangria" % "2.0.0"
+    val sangriaSprayJson = "org.sangria-graphql" %% "sangria-spray-json" % "1.0.1"
+    val sangriaAkkaStreams = "org.sangria-graphql" %% "sangria-akka-streams" % "1.0.2"
   }
 
 lazy val assemblySettings = Seq(
