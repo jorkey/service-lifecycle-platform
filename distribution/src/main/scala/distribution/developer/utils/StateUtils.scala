@@ -27,14 +27,13 @@ import spray.json._
 trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val system: ActorSystem
-  implicit val materializer: Materializer
-  implicit val filesLocker: SmartFilesLocker
+  protected implicit val system: ActorSystem
+  protected implicit val materializer: Materializer
+  protected implicit val executionContext: ExecutionContext
+  protected implicit val filesLocker: SmartFilesLocker
 
-  val dir: DeveloperDistributionDirectory
-  val config: DeveloperDistributionConfig
-
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  protected val dir: DeveloperDistributionDirectory
+  protected val config: DeveloperDistributionConfig
 
   def getOwnServicesState(): ServicesState = {
     ServicesState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))

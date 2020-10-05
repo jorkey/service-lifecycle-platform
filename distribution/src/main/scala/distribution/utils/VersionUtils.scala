@@ -21,9 +21,8 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   private implicit val log = LoggerFactory.getLogger(this.getClass)
   private val maxVersions = 10
 
-  implicit val dir: DistributionDirectory
-
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  protected implicit val dir: DistributionDirectory
+  protected implicit val executionContext: ExecutionContext
 
     // TODO remove parameter 'image' when all usages will 'false'
   def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]], image: Boolean): Route = {

@@ -31,13 +31,12 @@ import scala.util.{Failure, Success}
 trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val system: ActorSystem
-  implicit val materializer: Materializer
+  protected implicit val system: ActorSystem
+  protected implicit val materializer: Materializer
+  protected implicit val executionContext: ExecutionContext
 
-  val filesLocker: SmartFilesLocker
-  val dir: DeveloperDistributionDirectory
-
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  protected val filesLocker: SmartFilesLocker
+  protected val dir: DeveloperDistributionDirectory
 
   def getClientsInfo(): Source[ClientInfo, NotUsed] = {
     Source.future(

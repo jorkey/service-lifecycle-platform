@@ -23,12 +23,19 @@ import com.vyulabs.update.info.VersionsInfoJson._
 import distribution.Distribution
 import distribution.client.config.ClientDistributionConfig
 import distribution.client.utils.ClientVersionUtils
+import distribution.graphql.GraphQL
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 
-class ClientDistribution(val dir: ClientDistributionDirectory, config: ClientDistributionConfig, usersCredentials: UsersCredentials,
-                         stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
-                        (implicit val system: ActorSystem, val materializer: Materializer, val filesLocker: SmartFilesLocker)
-    extends Distribution(usersCredentials) with ClientVersionUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
+import scala.concurrent.ExecutionContext
+
+class ClientDistribution(protected val dir: ClientDistributionDirectory,
+                         config: ClientDistributionConfig, usersCredentials: UsersCredentials,
+                         graphql: GraphQL, stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
+                        (implicit protected val system: ActorSystem,
+                         protected val materializer: Materializer,
+                         protected val executionContext: ExecutionContext,
+                         protected val filesLocker: SmartFilesLocker)
+    extends Distribution(usersCredentials, graphql) with ClientVersionUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
       with ClientDistributionWebPaths with SprayJsonSupport {
 
   implicit val directory = dir

@@ -24,11 +24,10 @@ import scala.util.{Failure, Success}
 trait GetUtils extends SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val system: ActorSystem
-  implicit val materializer: Materializer
-  implicit val filesLocker: SmartFilesLocker
-
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  protected implicit val system: ActorSystem
+  protected implicit val materializer: Materializer
+  protected implicit val executionContext: ExecutionContext
+  protected implicit val filesLocker: SmartFilesLocker
 
   def parseJsonFileWithLock[T](file: File)(implicit format: RootJsonFormat[T]): Future[Option[T]] = {
     val promise = Promise[Option[T]]()

@@ -26,11 +26,10 @@ import scala.util.{Failure, Success}
 trait PutUtils extends SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val system: ActorSystem
-  implicit val materializer: Materializer
-  implicit val filesLocker: SmartFilesLocker
-
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  protected implicit val system: ActorSystem
+  protected implicit val materializer: Materializer
+  protected implicit val executionContext: ExecutionContext
+  protected implicit val filesLocker: SmartFilesLocker
 
   def fileUploadWithLock(fieldName: String, targetFile: File): Route = {
     fileUpload(fieldName) {

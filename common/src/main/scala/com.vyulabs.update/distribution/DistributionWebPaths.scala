@@ -12,6 +12,8 @@ import com.vyulabs.update.version.BuildVersion
 trait DistributionWebPaths {
   // New paths
 
+  val graphqlPathPrefix = "graphql"
+  val interactiveGraphqlPathPrefix = "graphiql"
   val apiPathPrefix = "api"
   val uiPathPrefix = "ui"
 

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 trait CommonUtils extends SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val dir: DistributionDirectory
+  protected implicit val dir: DistributionDirectory
 
   def browse(path: Option[String]): Route = {
     val file = path match {

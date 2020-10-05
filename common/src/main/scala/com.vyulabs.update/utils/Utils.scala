@@ -2,14 +2,14 @@ package com.vyulabs.update.utils
 
 import java.io.IOException
 import java.net.{URI, URL}
-import java.text.SimpleDateFormat
+import java.text.{ParseException, SimpleDateFormat}
 import java.util.{Date, TimeZone}
 import java.util.jar.Attributes
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
-import spray.json.{JsString, JsValue, RootJsonFormat}
+import spray.json.{JsString, JsValue, RootJsonFormat, deserializationError}
 
 import scala.util.matching.Regex
 
@@ -25,11 +25,16 @@ object Utils {
     dateFormat.format(date)
   }
 
-  def parseISO8601Date(dateStr: String): Date = {
+  def parseISO8601Date(dateStr: String): Option[Date] = {
     val timezone = TimeZone.getTimeZone("UTC")
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     dateFormat.setTimeZone(timezone)
-    dateFormat.parse(dateStr)
+    try {
+      Some(dateFormat.parse(dateStr))
+    } catch {
+      case _: ParseException =>
+        None
+    }
   }
 
   def isServiceNeedUpdate(serviceName: ServiceName,
@@ -119,7 +124,9 @@ object Utils {
   object DateJson {
     implicit object DateJsonFormat extends RootJsonFormat[Date] {
       def write(value: Date) = JsString(serializeISO8601Date(value))
-      def read(value: JsValue) = parseISO8601Date(value.asInstanceOf[JsString].value)
+      def read(value: JsValue) = parseISO8601Date(value.asInstanceOf[JsString].value).getOrElse {
+        deserializationError(s"Parse date error. Value is ${value}")
+      }
     }
   }
 }

@@ -22,17 +22,27 @@ import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
 import distribution.developer.config.DeveloperDistributionConfig
-
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution
 import distribution.developer.utils.{ClientsUtils, StateUtils}
+import distribution.graphql.GraphQL
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
+import spray.json.JsValue
 
-class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config: DeveloperDistributionConfig, usersCredentials: UsersCredentials,
-                            stateUploader: DeveloperStateUploader, faultUploader: DeveloperFaultUploader)
-                           (implicit val system: ActorSystem, val materializer: Materializer, val filesLocker: SmartFilesLocker)
-       extends Distribution(usersCredentials) with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
+import scala.concurrent.ExecutionContext
+
+class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
+                            protected val config: DeveloperDistributionConfig,
+                            protected val usersCredentials: UsersCredentials,
+                            protected val graphql: GraphQL,
+                            protected val stateUploader: DeveloperStateUploader,
+                            protected val faultUploader: DeveloperFaultUploader)
+                           (implicit protected val system: ActorSystem,
+                            protected val materializer: Materializer,
+                            protected val executionContext: ExecutionContext,
+                            protected val filesLocker: SmartFilesLocker)
+       extends Distribution(usersCredentials, graphql) with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
           with DeveloperDistributionWebPaths with SprayJsonSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
 
@@ -47,6 +57,14 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
         logResult(resultLogger _) {
           handleExceptions(exceptionHandler) {
             extractRequestContext { ctx =>
+              pathPrefix(graphqlPathPrefix) {
+                entity(as[JsValue]) { requestJson =>
+                  graphql.endpoint(requestJson)
+                }
+              } ~
+              pathPrefix(interactiveGraphqlPathPrefix) {
+                getFromResource("graphiql.html")
+              } ~
               pathPrefix(apiPathPrefix) {
                 seal {
                   mapRejections { rejections => // Prevent browser to invoke basic auth popup.

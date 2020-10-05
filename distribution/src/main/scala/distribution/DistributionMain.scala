@@ -21,7 +21,13 @@ import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
+import distribution.client.graphql.ClientGraphQLSchema
+import distribution.developer.graphql.DeveloperGraphQLSchema
+import distribution.graphql.{GraphQL, GraphQLContext}
+import distribution.mongo.MongoDb
 import spray.json._
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.04.19.
@@ -49,9 +55,14 @@ object DistributionMain extends App {
     val command = args(0)
     val arguments = Arguments.parse(args.drop(1))
 
+    implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+
     implicit val filesLocker = new SmartFilesLocker()
 
     val usersCredentials = UsersCredentials()
+
+    val mongoDb = new MongoDb("distribution")
+    val graphqlContext = GraphQLContext(mongoDb)
 
     command match {
       case "developer" =>
@@ -67,7 +78,8 @@ object DistributionMain extends App {
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val distribution = new DeveloperDistribution(dir, config, usersCredentials, stateUploader, faultUploader)
+        val graphql = new GraphQL(DeveloperGraphQLSchema.SchemaDefinition, graphqlContext)
+        val distribution = new DeveloperDistribution(dir, config, usersCredentials, graphql, stateUploader, faultUploader)
 
         stateUploader.start()
         selfUpdater.start()
@@ -93,8 +105,8 @@ object DistributionMain extends App {
         val logUploader = new ClientLogUploader(dir)
 
         val selfUpdater = new SelfUpdater(dir)
-
-        val distribution = new ClientDistribution(dir, config, usersCredentials, stateUploader, logUploader, faultUploader)
+        val graphql = new GraphQL(ClientGraphQLSchema.SchemaDefinition, graphqlContext)
+        val distribution = new ClientDistribution(dir, config, usersCredentials, graphql, stateUploader, logUploader, faultUploader)
 
         stateUploader.start()
         logUploader.start()
