@@ -11,7 +11,7 @@ import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName}
 import com.vyulabs.update.log.LogWriter
-import com.vyulabs.update.updater.uploaders.{FaultReport, FaultUploader, LogUploader}
+import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
 import com.vyulabs.update.utils.{IOUtils, ProcessUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
@@ -144,8 +144,8 @@ class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledService
             None
         }
         val info = FaultInfo(new Date(),  instanceId,
-          new java.io.File(".").getCanonicalPath(), profiledServiceName, state.getState(), logTail)
-        faultUploader.addFaultReport(FaultReport(info, reportFilesTmpDir))
+          new java.io.File(".").getCanonicalPath(), profiledServiceName.name, profiledServiceName.profile, state.getState(), logTail)
+        faultUploader.addFaultReport(info, reportFilesTmpDir)
         val restartOnFault = processParameters.map(_.config.restartOnFault.getOrElse(true)).getOrElse(false)
         if (restartOnFault) {
           state.info("Try to restart service")

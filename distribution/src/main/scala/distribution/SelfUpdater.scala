@@ -20,14 +20,12 @@ import scala.concurrent.ExecutionContext
   * Copyright FanDate, Inc.
   */
 class SelfUpdater(dir: DistributionDirectory)
-                 (implicit filesLocker: SmartFilesLocker, system: ActorSystem, materializer: Materializer)
+                 (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext, filesLocker: SmartFilesLocker)
     extends Thread with DeveloperDistributionWebPaths { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val scriptsVersion = IOUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
   private var stopping = false
-
-  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
   def close(): Unit = {
     self.synchronized {

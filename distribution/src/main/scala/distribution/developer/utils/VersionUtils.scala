@@ -13,12 +13,10 @@ import scala.util.{Failure, Success}
 trait VersionUtils extends ClientsUtils with distribution.utils.VersionUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val dir: DeveloperDistributionDirectory
-
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  protected implicit val executionContext: ExecutionContext
+  protected implicit val dir: DeveloperDistributionDirectory
 
   override protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
-    val promise = Promise.apply[Set[BuildVersion]]()
     val desiredVersion = parseJsonFileWithLock[DesiredVersions](dir.getDesiredVersionsFile()).map(
       versions => versions.map(_.desiredVersions.get(serviceName))).map(version => version.getOrElse(None))
     val clientDesiredVersions = dir.getClients().map { clientName =>
@@ -29,6 +27,7 @@ trait VersionUtils extends ClientsUtils with distribution.utils.VersionUtils wit
       parseJsonFileWithLock[TestedVersions](dir.getTestedVersionsFile(profileName)).map(
         versions => versions.map(_.testedVersions.get(serviceName))).map(version => version.getOrElse(None))
     }
+    val promise = Promise.apply[Set[BuildVersion]]()
     Future.sequence(Set(desiredVersion) ++ clientDesiredVersions ++ testedVersions).onComplete {
       case Success(versions) =>
         promise.success(versions.flatten)

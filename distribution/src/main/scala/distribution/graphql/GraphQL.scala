@@ -40,7 +40,6 @@ class GraphQL(schema: Schema[GraphQLContext, Unit], context: GraphQLContext) ext
       case Failure(error) =>
         complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
     }
-
   }
 
   def executeQuery(query: Document, operation: Option[String], vars: JsObject)

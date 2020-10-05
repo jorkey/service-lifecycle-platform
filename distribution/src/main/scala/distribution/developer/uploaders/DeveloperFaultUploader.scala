@@ -3,25 +3,38 @@ package distribution.developer.uploaders
 import java.io.{File, IOException}
 import java.util.concurrent.TimeUnit
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
+import com.vyulabs.update.info.{ClientFaultInfo, FaultInfo}
+import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IOUtils, ZipUtils}
+import distribution.mongo.MongoDbCollection
+import distribution.utils.GetUtils
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 18.12.19.
   * Copyright FanDate, Inc.
   */
-class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
-                            (implicit materializer: Materializer) extends DeveloperDistributionWebPaths { self =>
+class DeveloperFaultUploader(mongoDbCollection: MongoDbCollection[ClientFaultInfo],
+                             protected val dir: DeveloperDistributionDirectory)
+                            (implicit protected val system: ActorSystem,
+                             protected val materializer: Materializer,
+                             protected val executionContext: ExecutionContext,
+                             protected val filesLocker: SmartFilesLocker)
+        extends DeveloperDistributionWebPaths with GetUtils { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val directory = dir.getFaultsDir()
@@ -49,37 +62,43 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
     onSuccess(result) { result =>
       result.status match {
         case Success(_) =>
-          new ProcessFaultReportTask(clientDir, file).start()
-          complete(StatusCodes.OK)
+          complete(Future.apply(processFaultReportTask(clientName, clientDir, file)).map(_ => OK))
         case Failure(ex) =>
-          return failWith(ex)
+          failWith(ex)
       }
     }
   }
 
-  class ProcessFaultReportTask(dir: File, file: File) extends Thread {
+  private def processFaultReportTask(clientName: ClientName, dir: File, file: File): Unit = {
     implicit val log = LoggerFactory.getLogger(getClass)
 
-    override def run(): Unit = {
-      if (file.getName.endsWith(".zip")) {
-        val faultDir = new File(dir, file.getName.substring(0, file.getName.length - 4))
-        if (faultDir.exists()) {
-          IOUtils.deleteFileRecursively(faultDir)
-        }
-        if (faultDir.mkdir()) {
-          if (ZipUtils.unzip(file, faultDir)) {
-            file.delete()
+    if (file.getName.endsWith(".zip")) {
+      val faultDir = new File(dir, file.getName.substring(0, file.getName.length - 4))
+      if (faultDir.exists()) {
+        IOUtils.deleteFileRecursively(faultDir)
+      }
+      if (faultDir.mkdir()) {
+        if (ZipUtils.unzip(file, faultDir)) {
+          file.delete()
+          val faultInfoFile = new File(faultDir, Common.FaultInfoFileName)
+          parseJsonFileWithLock[FaultInfo](faultInfoFile).foreach { faultInfo =>
+            faultInfo match {
+              case Some(faultInfo) =>
+                mongoDbCollection.insert(ClientFaultInfo(clientName, faultInfo))
+              case None =>
+                log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${faultDir}")
+            }
           }
-        } else {
-          log.error(s"Can't make directory ${faultDir}")
         }
+      } else {
+        log.error(s"Can't make directory ${file}")
       }
-      self.synchronized {
-        IOUtils.maybeDeleteOldFiles(dir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
-        IOUtils.maybeDeleteExcessFiles(dir, maxClientServiceReportsCount, downloadingFiles)
-        IOUtils.maybeFreeSpace(dir, maxClientServiceDirectoryCapacity, downloadingFiles)
-        downloadingFiles -= file
-      }
+    }
+    self.synchronized {
+      IOUtils.maybeDeleteOldFiles(dir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
+      IOUtils.maybeDeleteExcessFiles(dir, maxClientServiceReportsCount, downloadingFiles)
+      IOUtils.maybeFreeSpace(dir, maxClientServiceDirectoryCapacity, downloadingFiles)
+      downloadingFiles -= file
     }
   }
 }

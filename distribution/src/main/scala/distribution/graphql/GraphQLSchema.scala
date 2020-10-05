@@ -29,7 +29,6 @@ object GraphQLSchema {
     })
 
   implicit val BuildVersionType = deriveObjectType[Unit, BuildVersion]()
-  implicit val ProfiledServiceNameType = deriveObjectType[Unit, ProfiledServiceName]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()

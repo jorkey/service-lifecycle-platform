@@ -7,6 +7,7 @@ import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
+import com.vyulabs.update.info.ClientFaultInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
@@ -73,7 +74,7 @@ object DistributionMain extends App {
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
 
         val stateUploader = new DeveloperStateUploader(dir)
-        val faultUploader = new DeveloperFaultUploader(dir)
+        val faultUploader = new DeveloperFaultUploader(mongoDb.getCollection[ClientFaultInfo]("faults"), dir)
 
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
