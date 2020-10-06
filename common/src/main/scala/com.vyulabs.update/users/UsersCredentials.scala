@@ -7,7 +7,7 @@ import java.util.Base64
 import com.typesafe.config.Config
 import com.vyulabs.update.common.Common.UserName
 import com.vyulabs.update.users.UserRole.UserRole
-import com.vyulabs.update.utils.{IOUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import org.slf4j.{Logger, LoggerFactory}
@@ -89,7 +89,7 @@ object UsersCredentials extends DefaultJsonProtocol {
 
     if (credentialsFile.exists()) {
       log.debug(s"Parse ${credentialsFile}")
-      IOUtils.readFileToJson(credentialsFile).getOrElse {
+      IoUtils.readFileToJson(credentialsFile).getOrElse {
         Utils.error(s"Can't read ${credentialsFile}")
       }.convertTo[UsersCredentials]
     } else {

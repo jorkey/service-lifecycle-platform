@@ -3,7 +3,7 @@ package distribution.developer.config
 import java.io.File
 
 import com.vyulabs.update.common.Common.{ClientName, InstanceId}
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.utils.IoUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
@@ -18,7 +18,7 @@ object DeveloperDistributionConfig extends DefaultJsonProtocol {
   def apply()(implicit log: Logger): Option[DeveloperDistributionConfig] = {
     val configFile = new File("distribution.json")
     if (configFile.exists()) {
-      IOUtils.readFileToJson(configFile).map(_.convertTo[DeveloperDistributionConfig])
+      IoUtils.readFileToJson(configFile).map(_.convertTo[DeveloperDistributionConfig])
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

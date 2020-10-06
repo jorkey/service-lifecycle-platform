@@ -2,7 +2,7 @@ package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.InstallConfig
-import com.vyulabs.update.utils.{IOUtils, ProcessUtils}
+import com.vyulabs.update.utils.{IoUtils, ProcessUtils}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.{ProfiledServiceName, UpdateError}
 import com.vyulabs.update.updater.uploaders.FaultUploader
@@ -63,7 +63,7 @@ class ServiceUpdater(instanceId: InstanceId,
       state.beginUpdateToVersion(newVersion)
 
       state.info(s"Download version ${newVersion}")
-      if (state.newServiceDirectory.exists() && !IOUtils.deleteFileRecursively(state.newServiceDirectory)) {
+      if (state.newServiceDirectory.exists() && !IoUtils.deleteFileRecursively(state.newServiceDirectory)) {
         state.updateError(true, s"Can't remove directory ${state.newServiceDirectory}")
         return false
       }
@@ -118,7 +118,7 @@ class ServiceUpdater(instanceId: InstanceId,
           this.serviceRunner = None
         }
 
-        if (!IOUtils.deleteFileRecursively(state.currentServiceDirectory)) {
+        if (!IoUtils.deleteFileRecursively(state.currentServiceDirectory)) {
           state.updateError(true, s"Can't delete ${state.currentServiceDirectory}")
           return false
         }
@@ -149,7 +149,7 @@ class ServiceUpdater(instanceId: InstanceId,
         }
       }
 
-      IOUtils.writeServiceVersion(state.currentServiceDirectory, profiledServiceName.name, newVersion)
+      IoUtils.writeServiceVersion(state.currentServiceDirectory, profiledServiceName.name, newVersion)
 
       state.setVersion(newVersion)
 

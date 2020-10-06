@@ -11,7 +11,7 @@ import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IOUtils, ProcessUtils, ZipUtils}
+import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.enrichAny
@@ -77,7 +77,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                    adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
     log.info(s"Create ${InstallerConfig.configFile}")
     val config = InstallerConfig(adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl)
-    if (!IOUtils.writeJsonToFile(InstallerConfig.configFile, config.toJson)) {
+    if (!IoUtils.writeJsonToFile(InstallerConfig.configFile, config.toJson)) {
       return false
     }
     log.info("Update installer.sh")
@@ -91,12 +91,12 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     val installerFile = new File("installer.sh")
-    val content = new String(IOUtils.readFileToBytes(installerFile).getOrElse {
+    val content = new String(IoUtils.readFileToBytes(installerFile).getOrElse {
       log.error(s"Read file ${installerFile} error")
       return false
     }, "utf8")
     installerFile.renameTo(File.createTempFile("installer", "sh"))
-    if (!IOUtils.writeBytesToFile(installerFile, content.getBytes("utf8"))) {
+    if (!IoUtils.writeBytesToFile(installerFile, content.getBytes("utf8"))) {
       log.error(s"Write file ${installerFile} error")
       return false
     }
@@ -130,7 +130,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Write desired versions")
-    if (!IOUtils.writeJsonToFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toJson)) {
+    if (!IoUtils.writeJsonToFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toJson)) {
       log.error("Can't write desired versions")
       return false
     }

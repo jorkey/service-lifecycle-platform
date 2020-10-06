@@ -17,7 +17,7 @@ import scala.annotation.tailrec
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
   * Copyright FanDate, Inc.
   */
-object IOUtils {
+object IoUtils {
   def readFileToBytes(file: File)(implicit log: Logger): Option[Array[Byte]] = {
     try {
       val in = new FileInputStream(file)
@@ -260,7 +260,7 @@ object IOUtils {
         log.error(s"Can't make directory ${directory}")
         return false
       }
-    } else if (!IOUtils.deleteDirectoryContents(directory)) {
+    } else if (!IoUtils.deleteDirectoryContents(directory)) {
       log.error(s"Can't delete directory ${directory} contents")
       return false
     }
@@ -350,5 +350,14 @@ object IOUtils {
           log.error(s"Can't delete ${file}")
         }
       }
+  }
+
+  def listFiles(file: File, path: String = ""): Seq[String] = {
+    if (file.isDirectory) {
+      file.listFiles().foldLeft(Seq.empty[String])((list, file) => list ++ listFiles(file, path + file.getName +
+        (if (file.isDirectory) "/" else "")))
+    } else {
+      Seq(path)
+    }
   }
 }

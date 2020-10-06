@@ -8,7 +8,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName, ServiceState}
 import com.vyulabs.update.info.FaultInfo._
-import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
+import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 
 import scala.collection.immutable.Queue
@@ -79,12 +79,12 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
       val faultInfoFile = new File(tmpDirectory, Common.FaultInfoFileName)
       val logTailFile = new File(tmpDirectory, s"${profiledServiceName}.log")
       try {
-        if (!IOUtils.writeJsonToFile(faultInfoFile, fault.info.toJson)) {
+        if (!IoUtils.writeJsonToFile(faultInfoFile, fault.info.toJson)) {
           log.error(s"Can't write file with state")
           return false
         }
         val logs = fault.info.logTail.foldLeft(new String) { (sum, line) => sum + '\n' + line }
-        if (!IOUtils.writeBytesToFile(logTailFile, logs.getBytes("utf8"))) {
+        if (!IoUtils.writeBytesToFile(logTailFile, logs.getBytes("utf8"))) {
           log.error(s"Can't write file with tail of logs")
           return false
         }
@@ -94,14 +94,14 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
           return false
         }
       } finally {
-        IOUtils.deleteFileRecursively(tmpDirectory)
+        IoUtils.deleteFileRecursively(tmpDirectory)
       }
-      fault.reportFilesTmpDir.foreach(IOUtils.deleteFileRecursively(_))
+      fault.reportFilesTmpDir.foreach(IoUtils.deleteFileRecursively(_))
       if (!clientDirectory.uploadServiceFault(profiledServiceName.name, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }
-      IOUtils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, Set(archiveFile))
+      IoUtils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, Set(archiveFile))
       true
     } catch {
       case ex: Exception =>

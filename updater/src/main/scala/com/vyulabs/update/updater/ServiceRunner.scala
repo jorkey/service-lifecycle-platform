@@ -12,7 +12,7 @@ import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName}
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
-import com.vyulabs.update.utils.{IOUtils, ProcessUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -171,7 +171,7 @@ class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledService
           val dirName = state.getVersion().getOrElse(BuildVersion.empty).toString + s"-${Utils.serializeISO8601Date(new Date())}" +
             (if (failed) "-failed" else "")
           val saveDir = new File(state.logHistoryDirectory, s"${dirName}.log")
-          if (!saveDir.exists() || IOUtils.deleteFileRecursively(saveDir)) {
+          if (!saveDir.exists() || IoUtils.deleteFileRecursively(saveDir)) {
             if (logDirectory.exists()) {
               if (!logDirectory.renameTo(saveDir)) {
                 log.error(s"Can't rename ${logDirectory} to ${saveDir}")
@@ -182,7 +182,7 @@ class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledService
           } else {
             log.error(s"Can't delete ${saveDir}")
           }
-          IOUtils.maybeFreeSpace(state.logHistoryDirectory, maxLogHistoryDirCapacity, Set.empty)
+          IoUtils.maybeFreeSpace(state.logHistoryDirectory, maxLogHistoryDirCapacity, Set.empty)
         } else {
           state.error(s"Can't make directory ${state.logHistoryDirectory}")
         }

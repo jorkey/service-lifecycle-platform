@@ -4,7 +4,7 @@ import java.io.File
 import java.util.Date
 
 import com.vyulabs.update.common.Common._
-import com.vyulabs.update.utils.{IOUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
@@ -95,15 +95,15 @@ object ServicesState extends DefaultJsonProtocol {
 
   def getOwnInstanceState(serviceName: ServiceName, startDate: Date)(implicit log: Logger): ServicesState = {
     val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName),
-      installDate = IOUtils.getServiceInstallTime(serviceName, new File(".")),
+      installDate = IoUtils.getServiceInstallTime(serviceName, new File(".")),
       startDate = Some(startDate))
     val directoryState = Map.empty + (serviceName -> ownState)
     ServicesState(Map.empty + (new File(".").getCanonicalPath() -> directoryState))
   }
 
   def getServiceInstanceState(serviceName: ServiceName, directory: File)(implicit log: Logger): ServicesState = {
-    val ownState = ServiceState(version = IOUtils.readServiceVersion(serviceName, directory),
-      installDate = IOUtils.getServiceInstallTime(serviceName, directory))
+    val ownState = ServiceState(version = IoUtils.readServiceVersion(serviceName, directory),
+      installDate = IoUtils.getServiceInstallTime(serviceName, directory))
     val directoryState = Map.empty + (serviceName -> ownState)
     ServicesState(Map.empty + (directory.getCanonicalPath() -> directoryState))
   }

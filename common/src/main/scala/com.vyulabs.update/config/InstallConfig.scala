@@ -3,7 +3,7 @@ package com.vyulabs.update.config
 import java.io.File
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.utils.IoUtils
 import org.slf4j.Logger
 
 import spray.json._
@@ -19,7 +19,7 @@ object InstallConfig extends DefaultJsonProtocol {
   def read(directory: File)(implicit log: Logger): Option[InstallConfig] = {
     val configFile = new File(directory, Common.InstallConfigFileName)
     if (configFile.exists()) {
-      IOUtils.readFileToJson(configFile).map(config => config.convertTo[InstallConfig])
+      IoUtils.readFileToJson(configFile).map(config => config.convertTo[InstallConfig])
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

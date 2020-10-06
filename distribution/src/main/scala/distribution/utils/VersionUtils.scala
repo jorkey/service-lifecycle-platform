@@ -10,7 +10,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
 import com.vyulabs.update.info.{DesiredVersions, VersionInfo, VersionsInfo}
-import com.vyulabs.update.utils.{IOUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 
@@ -135,7 +135,7 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   }
 
   def getServiceVersion(serviceName: ServiceName, directory: File): Route = {
-    IOUtils.readServiceVersion(serviceName, directory) match {
+    IoUtils.readServiceVersion(serviceName, directory) match {
       case Some(version) =>
         complete(version.toString)
       case None =>

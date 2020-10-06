@@ -6,7 +6,7 @@ import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.{DesiredVersions, ProfiledServiceName}
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
-import com.vyulabs.update.utils.{IOUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.LoggerFactory
 

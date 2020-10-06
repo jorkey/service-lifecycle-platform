@@ -6,7 +6,7 @@ import java.net.URI
 import com.vyulabs.libs.git.{GitLock, GitRepository}
 import com.vyulabs.update.distribution.{AdminRepository, GitRepositoryUtils}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -40,7 +40,7 @@ class DeveloperAdminRepository(repository: GitRepository)(implicit log: Logger) 
       }
       1
     } else {
-      val bytes = IOUtils.readFileToBytes(updateSequenceFile).getOrElse {
+      val bytes = IoUtils.readFileToBytes(updateSequenceFile).getOrElse {
         return None
       }
       new String(bytes, "utf8").toInt
@@ -49,7 +49,7 @@ class DeveloperAdminRepository(repository: GitRepository)(implicit log: Logger) 
   }
 
   def writeUpdateSequence(updateSequence: Int): Boolean = {
-    if (!IOUtils.writeBytesToFile(updateSequenceFile, updateSequence.toString.getBytes("utf8"))) {
+    if (!IoUtils.writeBytesToFile(updateSequenceFile, updateSequence.toString.getBytes("utf8"))) {
       return false
     }
     repository.add(updateSequenceFile)
@@ -62,7 +62,7 @@ class DeveloperAdminRepository(repository: GitRepository)(implicit log: Logger) 
         removeFile(logFile)
       }
     } else {
-      if (IOUtils.copyFile(new File("log/builder.log"), logFile)) {
+      if (IoUtils.copyFile(new File("log/builder.log"), logFile)) {
         addFileToCommit(logFile)
       }
     }

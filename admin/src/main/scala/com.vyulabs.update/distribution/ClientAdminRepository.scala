@@ -8,7 +8,7 @@ import java.net.URI
 
 import com.vyulabs.update.distribution.{AdminRepository, GitRepositoryUtils}
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
 
 /**
@@ -59,7 +59,7 @@ class ClientAdminRepository(repository: GitRepository)(implicit log: Logger) ext
         removeFile(logFile)
       }
     } else {
-      if (IOUtils.copyFile(new File("log/installer.log"), logFile)) {
+      if (IoUtils.copyFile(new File("log/installer.log"), logFile)) {
         addFileToCommit(logFile)
       }
     }

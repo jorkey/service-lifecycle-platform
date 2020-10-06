@@ -5,7 +5,7 @@ import java.io.File
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.info.{DesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
 
 import org.slf4j.Logger
@@ -54,7 +54,7 @@ class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFile
   }
 
   def getDesiredVersions()(implicit log: Logger): Option[DesiredVersions] = {
-    IOUtils.readFileToJson(getDesiredVersionsFile()).map(_.convertTo[DesiredVersions])
+    IoUtils.readFileToJson(getDesiredVersionsFile()).map(_.convertTo[DesiredVersions])
   }
 
   def getDesiredVersionsFile(): File = {

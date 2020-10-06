@@ -8,7 +8,7 @@ import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.info
 import com.vyulabs.update.info.{InstancesState, ServicesState}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.info.InstancesState._
 import org.slf4j.LoggerFactory
 import spray.json._
@@ -101,12 +101,12 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
 
   private def updateInstancesState(clientName: ClientName, states: Map[InstanceId, ServicesState]): Unit = {
     val statesFile = dir.getInstancesStateFile(clientName)
-    val oldStates = IOUtils.readFileToJsonWithLock(statesFile)
+    val oldStates = IoUtils.readFileToJsonWithLock(statesFile)
       .map(_.convertTo[InstancesState]).map(_.instances).getOrElse(Map.empty)
     val newStates = filterExpiredStates(states, expireInstanceStateTime)
     val newDeadStates = oldStates.filterKeys(!newStates.contains(_))
     updateDeadInstancesState(clientName, newStates.keySet, newDeadStates)
-    if (!IOUtils.writeJsonToFileWithLock(dir.getInstancesStateFile(clientName), InstancesState(newStates).toJson)) {
+    if (!IoUtils.writeJsonToFileWithLock(dir.getInstancesStateFile(clientName), InstancesState(newStates).toJson)) {
       log.error(s"Can't write ${statesFile}")
     }
   }
@@ -114,25 +114,25 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
   private def updateDeadInstancesState(clientName: ClientName, liveInstances: Set[InstanceId],
                                        newDeadStates: Map[InstanceId, ServicesState]): Unit = {
     val deadStatesFile = dir.getDeadInstancesStateFile(clientName)
-    val deadStates = IOUtils.readFileToJsonWithLock(deadStatesFile).map(_.convertTo[InstancesState]) match {
+    val deadStates = IoUtils.readFileToJsonWithLock(deadStatesFile).map(_.convertTo[InstancesState]) match {
       case Some(deadInstancesState) =>
         deadInstancesState.instances.filterKeys(!liveInstances.contains(_))
       case None =>
         Map.empty[InstanceId, ServicesState]
     }
-    if (!IOUtils.writeJsonToFileWithLock(deadStatesFile, info.InstancesState(deadStates ++ newDeadStates).toJson)) {
+    if (!IoUtils.writeJsonToFileWithLock(deadStatesFile, info.InstancesState(deadStates ++ newDeadStates).toJson)) {
       log.error(s"Can't write ${deadStatesFile}")
     }
   }
 
   private def expireInstancesState(statesFile: File, expireTime: Long): Unit = {
-    val states = IOUtils.readFileToJsonWithLock(statesFile).map(_.convertTo[InstancesState]) match {
+    val states = IoUtils.readFileToJsonWithLock(statesFile).map(_.convertTo[InstancesState]) match {
       case Some(instancesState) =>
         filterExpiredStates(instancesState.instances, expireTime)
       case None =>
         Map.empty[InstanceId, ServicesState]
     }
-    if (!IOUtils.writeJsonToFileWithLock(statesFile, info.InstancesState(states).toJson)) {
+    if (!IoUtils.writeJsonToFileWithLock(statesFile, info.InstancesState(states).toJson)) {
       log.error(s"Can't write ${statesFile}")
     }
   }

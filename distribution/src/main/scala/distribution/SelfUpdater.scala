@@ -9,7 +9,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IOUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import org.slf4j.LoggerFactory
 import com.vyulabs.update.info.DesiredVersions._
 
@@ -24,7 +24,7 @@ class SelfUpdater(dir: DistributionDirectory)
     extends Thread with DeveloperDistributionWebPaths { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val scriptsVersion = IOUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
+  private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
   private var stopping = false
 
   def close(): Unit = {
@@ -47,7 +47,7 @@ class SelfUpdater(dir: DistributionDirectory)
             return
           }
         }
-        val desiredVersions = IOUtils.readFileToJsonWithLock(dir.getDesiredVersionsFile()) match {
+        val desiredVersions = IoUtils.readFileToJsonWithLock(dir.getDesiredVersionsFile()) match {
           case Some(json) =>
             try {
               json.convertTo[DesiredVersions].desiredVersions

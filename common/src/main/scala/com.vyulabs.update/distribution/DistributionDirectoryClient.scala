@@ -8,7 +8,7 @@ import java.util.Base64
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.info.VersionInfo
-import com.vyulabs.update.utils.{IOUtils, ZipUtils}
+import com.vyulabs.update.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.JsValue
@@ -68,7 +68,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
         log.error("Can't zip build directory")
         return false
       }
-      if (!IOUtils.writeJsonToFile(infoTmpFile, versionInfo.toJson)) {
+      if (!IoUtils.writeJsonToFile(infoTmpFile, versionInfo.toJson)) {
         return false
       }
       uploadVersionImage(serviceName, versionInfo.version, infoTmpFile, imageTmpFile)

@@ -4,7 +4,7 @@ import java.io.File
 import java.net.URI
 
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.utils.IOUtils
+import com.vyulabs.update.utils.IoUtils
 import org.slf4j.Logger
 import spray.json._
 
@@ -26,7 +26,7 @@ object SourcesConfig extends DefaultJsonProtocol {
   def fromFile(directory: File)(implicit log: Logger): Option[SourcesConfig] = {
     val configFile = new File(directory, "sources.json")
     if (configFile.exists()) {
-      IOUtils.readFileToJson(configFile).map(_.convertTo[SourcesConfig])
+      IoUtils.readFileToJson(configFile).map(_.convertTo[SourcesConfig])
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

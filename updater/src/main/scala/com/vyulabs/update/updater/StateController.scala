@@ -6,7 +6,7 @@ import java.util.Date
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.info.UpdateError
 import com.vyulabs.update.info.{ProfiledServiceName, ServiceState}
-import com.vyulabs.update.utils.{IOUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 
@@ -38,7 +38,7 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
   version = if (profiledServiceName.name == Common.UpdaterServiceName) {
     Utils.getManifestBuildVersion(Common.UpdaterServiceName)
   } else {
-    IOUtils.readServiceVersion(profiledServiceName.name, currentServiceDirectory)
+    IoUtils.readServiceVersion(profiledServiceName.name, currentServiceDirectory)
   }
 
   log.info(s"Current version of service ${profiledServiceName} is ${version}")

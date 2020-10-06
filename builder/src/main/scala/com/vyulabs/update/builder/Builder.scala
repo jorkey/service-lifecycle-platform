@@ -8,14 +8,14 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.distribution.{AdminRepository, GitRepositoryUtils}
 import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.builder.config.SourcesConfig
-import com.vyulabs.update.utils.{IOUtils, ProcessUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
 import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.IOUtils.copyFile
+import com.vyulabs.update.utils.IoUtils.copyFile
 import com.vyulabs.update.version.BuildVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
@@ -37,7 +37,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
     if (!serviceDir.exists() && !serviceDir.mkdirs()) {
       log.error(s"Can't create directory ${serviceDir}")
     }
-    IOUtils.synchronize[Option[BuildVersion]](new File(serviceDir, builderLockFile), false,
+    IoUtils.synchronize[Option[BuildVersion]](new File(serviceDir, builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
           log.info(s"Another builder creates version for ${serviceName} - wait ...")
@@ -64,7 +64,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
             val sourceDir = new File(serviceDir, "source")
             val buildDir = new File(serviceDir, "build")
 
-            if (buildDir.exists() && !IOUtils.deleteFileRecursively(buildDir)) {
+            if (buildDir.exists() && !IoUtils.deleteFileRecursively(buildDir)) {
               log.error(s"Can't delete build directory ${buildDir}")
               return None
             }
@@ -166,7 +166,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
                 log.error(s"Build repository already contains file ${configFile}")
                 return None
               }
-              if (!IOUtils.writeJsonToFile(configFile, installConfig.toJson)) {
+              if (!IoUtils.writeJsonToFile(configFile, installConfig.toJson)) {
                 return None
               }
             }
@@ -212,7 +212,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
   def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
                         (implicit log: Logger): Boolean = {
     log.info(s"Upload desired versions ${servicesVersions}" + (if (clientName.isDefined) s" for client ${clientName.get}" else ""))
-    IOUtils.synchronize[Boolean](new File(".", builderLockFile), false,
+    IoUtils.synchronize[Boolean](new File(".", builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
           log.info("Another builder is running - wait ...")
@@ -247,7 +247,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
           } finally {
             for (desiredVersions <- newDesiredVersions) {
               val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-              if (!IOUtils.writeJsonToFile(desiredVersionsFile, desiredVersions.toJson)) {
+              if (!IoUtils.writeJsonToFile(desiredVersionsFile, desiredVersions.toJson)) {
                 return false
               }
               if (!adminRepository.addFileToCommit(desiredVersionsFile)) {

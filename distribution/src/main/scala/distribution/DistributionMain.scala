@@ -7,11 +7,11 @@ import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
-import com.vyulabs.update.info.ClientFaultInfo
+import com.vyulabs.update.info.ClientFaultReport
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
-import com.vyulabs.update.utils.{IOUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import distribution.client.ClientDistribution
 import distribution.client.config.ClientDistributionConfig
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
@@ -74,7 +74,7 @@ object DistributionMain extends App {
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
 
         val stateUploader = new DeveloperStateUploader(dir)
-        val faultUploader = new DeveloperFaultUploader(mongoDb.getCollection[ClientFaultInfo]("faults"), dir)
+        val faultUploader = new DeveloperFaultUploader(mongoDb.getCollection[ClientFaultReport]("faults"), dir)
 
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
@@ -133,7 +133,7 @@ object DistributionMain extends App {
           Utils.error(s"User ${userName} credentials already exists")
         }
         usersCredentials.addUser(userName, UserCredentials(role, PasswordHash(password)))
-        if (!IOUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
+        if (!IoUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
           Utils.error("Can't save credentials file")
         }
         sys.exit()
@@ -141,7 +141,7 @@ object DistributionMain extends App {
       case "removeUser" =>
         val userName = arguments.getValue("userName")
         usersCredentials.removeUser(userName)
-        if (!IOUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
+        if (!IoUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
           Utils.error("Can't save credentials file")
         }
         sys.exit()
@@ -152,7 +152,7 @@ object DistributionMain extends App {
         usersCredentials.getCredentials(userName) match {
           case Some(credentials) =>
             credentials.password = PasswordHash(password)
-            if (!IOUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
+            if (!IoUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
               Utils.error("Can't save credentials file")
             }
           case None =>
