@@ -118,8 +118,8 @@ lazy val sprayDependencies = Seq(
 
 lazy val dependencies =
   new {
-    val akkaVersion = "2.6.7"
-    val akkaHttpVersion = "10.1.12"
+    val akkaVersion = "2.6.9"
+    val akkaHttpVersion = "10.2.1"
 
     // Logging
     val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"

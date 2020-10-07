@@ -1,9 +1,10 @@
 package com.vyulabs.update.distribution
 
-import java.io.File
+import java.io.{File, FileInputStream}
 
-import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.actor.ActorSystem
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
@@ -21,6 +22,10 @@ import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
+import java.security.{KeyStore, SecureRandom}
+
+import distribution.config.HttpsConfig
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
 
 /**
@@ -53,6 +58,9 @@ object DistributionMain extends App {
 
     val usersCredentials = UsersCredentials()
 
+    implicit val system = ActorSystem()
+    implicit val dispatcher = system.dispatcher
+
     command match {
       case "developer" =>
         val config = DeveloperDistributionConfig().getOrElse {
@@ -79,7 +87,9 @@ object DistributionMain extends App {
           }
         })
 
-        distribution.run()
+        config.port.foreach(port => Http().newServerAt("0.0.0.0", port).bind(distribution.route))
+        config.https.foreach(https => Http().newServerAt("0.0.0.0", https.port)
+          .enableHttps(makeHttpsContext(https)).bind(distribution.route))
 
       case "client" =>
         val config = ClientDistributionConfig().getOrElse {
@@ -110,7 +120,9 @@ object DistributionMain extends App {
           }
         })
 
-        distribution.run()
+        config.port.foreach(port => Http().newServerAt("0.0.0.0", port).bind(distribution.route))
+        config.https.foreach(https => Http().newServerAt("0.0.0.0", https.port)
+          .enableHttps(makeHttpsContext(https)).bind(distribution.route))
 
       case "addUser" =>
         val userName = arguments.getValue("userName")
@@ -154,6 +166,22 @@ object DistributionMain extends App {
     case ex: Throwable =>
       log.error("Exception", ex)
       Utils.error(ex.getMessage)
-      sys.exit(1)
+  }
+
+  def makeHttpsContext(config: HttpsConfig): HttpsConnectionContext = {
+    val keyStore = KeyStore.getInstance("PKCS12")
+    val keyStoreStream = new FileInputStream(new File(config.keyStoreFile))
+
+    keyStore.load(keyStoreStream, config.keyStorePassword.toCharArray)
+
+    val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+    keyManagerFactory.init(keyStore, config.keyStorePassword.toCharArray)
+
+    val trustManagerFactory = TrustManagerFactory.getInstance("SunX509")
+    trustManagerFactory.init(keyStore)
+
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagerFactory.getKeyManagers, trustManagerFactory.getTrustManagers, new SecureRandom)
+    ConnectionContext.httpsServer(sslContext)
   }
 }
