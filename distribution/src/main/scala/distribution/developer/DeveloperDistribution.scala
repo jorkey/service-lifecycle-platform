@@ -36,7 +36,7 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
           with DeveloperDistributionWebPaths with SprayJsonSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
 
-  val route: Route =
+  val route: Route = {
     get {
       path(pingPath) {
         complete("pong")
@@ -295,4 +295,5 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
         }
       }
     }
+  }
 }

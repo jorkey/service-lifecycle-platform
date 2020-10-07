@@ -43,8 +43,8 @@ object DistributionMain extends App {
   }
 
   def usage() =
-    "Arguments: developer <port=value>\n" +
-    "           client <clientName=value> <developerDirectoryUrl=value> <port=value>\n" +
+    "Arguments: developer\n" +
+    "           client\n" +
     "           addUser <userName=value> <role=value>\n" +
     "           removeUser <userName=value>\n" +
     "           changePassword <userName=value>"
