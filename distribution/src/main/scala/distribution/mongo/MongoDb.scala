@@ -3,6 +3,7 @@ package distribution.mongo
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
+import com.mongodb.client.model.Projections
 import com.mongodb.client.result.DeleteResult
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
 import org.bson.Document
@@ -43,14 +44,17 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[Document])
       }
   }
 
-  def find(filter: Bson)(implicit reader: JsonReader[T]): Future[Seq[T]] = {
-    Source.fromPublisher(collection.find(filter)).map(_.toJson.parseJson.convertTo[T])
+  def find(filters: Bson, sort: Option[Bson] = None, limit: Option[Int])(implicit reader: JsonReader[T]): Future[Seq[T]] = {
+    var find = collection.find(filters)
+    sort.foreach(sort => find = find.sort(sort))
+    limit.foreach(limit => find = find.limit(limit))
+    Source.fromPublisher(find).map(_.toJson.parseJson.convertTo[T])
       .log(s"Find in Mongo DB collection ${name}")
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
-  def delete(filter: Bson): Future[Boolean] = {
-    Source.fromPublisher(collection.deleteOne(filter))
+  def delete(filters: Bson): Future[Boolean] = {
+    Source.fromPublisher(collection.deleteOne(filters))
       .log(s"Delete from Mongo DB collection ${name}")
       .runWith(Sink.headOption[DeleteResult]).map(_ => true)
       .recover {
