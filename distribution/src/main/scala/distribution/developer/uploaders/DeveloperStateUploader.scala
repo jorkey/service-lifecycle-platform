@@ -138,11 +138,16 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
   }
 
   private def filterExpiredStates(states: Map[InstanceId, ServicesState], expireTime: Long): Map[InstanceId, ServicesState] = {
-    states
-      .mapValues(_.directories.mapValues(_.filter { case (_, serviceState) =>
-        (System.currentTimeMillis() - serviceState.date.getTime) < expireTime
-      }).filterNot(_._2.isEmpty))
-      .filterNot(_._2.isEmpty)
-      .mapValues(ServicesState(_))
+    states.map {
+      case (key, states) =>
+        (key, states.directories.map {
+            case (key, states) =>
+              (key, states.filter {
+                case (_, serviceState) =>
+                  (System.currentTimeMillis() - serviceState.date.getTime) < expireTime
+              })
+        }.filterNot(_._2.isEmpty))
+    }.filterNot(_._2.isEmpty)
+    .mapValues(ServicesState(_))
   }
 }

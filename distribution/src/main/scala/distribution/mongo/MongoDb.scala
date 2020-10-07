@@ -44,7 +44,7 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[Document])
       }
   }
 
-  def find(filters: Bson, sort: Option[Bson] = None, limit: Option[Int])(implicit reader: JsonReader[T]): Future[Seq[T]] = {
+  def find(filters: Bson, sort: Option[Bson] = None, limit: Option[Int] = None)(implicit reader: JsonReader[T]): Future[Seq[T]] = {
     var find = collection.find(filters)
     sort.foreach(sort => find = find.sort(sort))
     limit.foreach(limit => find = find.limit(limit))

@@ -1,9 +1,10 @@
 package com.vyulabs.update.distribution
 
-import java.io.File
+import java.io.{File, FileInputStream}
 
-import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.actor.ActorSystem
+import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
@@ -26,6 +27,10 @@ import distribution.client.graphql.ClientGraphQLSchema
 import distribution.developer.graphql.DeveloperGraphQLSchema
 import distribution.graphql.{GraphQL, GraphQLContext}
 import distribution.mongo.MongoDb
+import java.security.{KeyStore, SecureRandom}
+
+import distribution.config.SslConfig
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
 
 import scala.concurrent.ExecutionContext
@@ -45,14 +50,13 @@ object DistributionMain extends App {
   }
 
   def usage() =
-    "Arguments: developer <port=value>\n" +
-    "           client <clientName=value> <developerDirectoryUrl=value> <port=value>\n" +
+    "Arguments: developer\n" +
+    "           client\n" +
     "           addUser <userName=value> <role=value>\n" +
     "           removeUser <userName=value>\n" +
     "           changePassword <userName=value>"
 
   try {
-
     val command = args(0)
     val arguments = Arguments.parse(args.drop(1))
 
@@ -92,7 +96,9 @@ object DistributionMain extends App {
           }
         })
 
-        distribution.run()
+        val server = Http().newServerAt("0.0.0.0", config.port)
+        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        server.bind(distribution.route)
 
       case "client" =>
         val config = ClientDistributionConfig().getOrElse {
@@ -123,7 +129,9 @@ object DistributionMain extends App {
           }
         })
 
-        distribution.run()
+        val server = Http().newServerAt("0.0.0.0", config.port)
+        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        server.bind(distribution.route)
 
       case "addUser" =>
         val userName = arguments.getValue("userName")
@@ -167,6 +175,22 @@ object DistributionMain extends App {
     case ex: Throwable =>
       log.error("Exception", ex)
       Utils.error(ex.getMessage)
-      sys.exit(1)
+  }
+
+  def makeHttpsContext(config: SslConfig): HttpsConnectionContext = {
+    val keyStore = KeyStore.getInstance("PKCS12")
+    val keyStoreStream = new FileInputStream(new File(config.keyStoreFile))
+
+    keyStore.load(keyStoreStream, config.keyStorePassword.toCharArray)
+
+    val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+    keyManagerFactory.init(keyStore, config.keyStorePassword.toCharArray)
+
+    val trustManagerFactory = TrustManagerFactory.getInstance("SunX509")
+    trustManagerFactory.init(keyStore)
+
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagerFactory.getKeyManagers, trustManagerFactory.getTrustManagers, new SecureRandom)
+    ConnectionContext.httpsServer(sslContext)
   }
 }
