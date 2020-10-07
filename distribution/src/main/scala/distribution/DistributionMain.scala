@@ -24,7 +24,7 @@ import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
 import java.security.{KeyStore, SecureRandom}
 
-import distribution.config.HttpsConfig
+import distribution.config.SslConfig
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
 
@@ -87,9 +87,9 @@ object DistributionMain extends App {
           }
         })
 
-        config.port.foreach(port => Http().newServerAt("0.0.0.0", port).bind(distribution.route))
-        config.https.foreach(https => Http().newServerAt("0.0.0.0", https.port)
-          .enableHttps(makeHttpsContext(https)).bind(distribution.route))
+        val server = Http().newServerAt("0.0.0.0", config.port)
+        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        server.bind(distribution.route)
 
       case "client" =>
         val config = ClientDistributionConfig().getOrElse {
@@ -120,9 +120,9 @@ object DistributionMain extends App {
           }
         })
 
-        config.port.foreach(port => Http().newServerAt("0.0.0.0", port).bind(distribution.route))
-        config.https.foreach(https => Http().newServerAt("0.0.0.0", https.port)
-          .enableHttps(makeHttpsContext(https)).bind(distribution.route))
+        val server = Http().newServerAt("0.0.0.0", config.port)
+        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        server.bind(distribution.route)
 
       case "addUser" =>
         val userName = arguments.getValue("userName")
@@ -168,7 +168,7 @@ object DistributionMain extends App {
       Utils.error(ex.getMessage)
   }
 
-  def makeHttpsContext(config: HttpsConfig): HttpsConnectionContext = {
+  def makeHttpsContext(config: SslConfig): HttpsConnectionContext = {
     val keyStore = KeyStore.getInstance("PKCS12")
     val keyStoreStream = new FileInputStream(new File(config.keyStoreFile))
 

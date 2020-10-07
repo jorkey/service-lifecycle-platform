@@ -4,18 +4,18 @@ import java.io.File
 
 import com.vyulabs.update.common.Common.{ClientName, InstanceId}
 import com.vyulabs.update.utils.IOUtils
-import distribution.config.HttpsConfig
+import distribution.config.SslConfig
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
 case class DeveloperDistributionConfig(name: String, instanceId: InstanceId,
-                                       port: Option[Int], https: Option[HttpsConfig],
+                                       port: Int, ssl: Option[SslConfig],
                                        distributionDirectory: String,
                                        selfDistributionClient: Option[ClientName],
                                        builderDirectory: String)
 
 object DeveloperDistributionConfig extends DefaultJsonProtocol {
-  import HttpsConfig._
+  import SslConfig._
 
   implicit val developerDistributionConfigJson = jsonFormat7(DeveloperDistributionConfig.apply)
 
