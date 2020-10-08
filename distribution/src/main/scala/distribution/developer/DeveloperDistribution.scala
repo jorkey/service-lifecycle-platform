@@ -26,7 +26,7 @@ import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution
 import distribution.developer.utils.{ClientsUtils, StateUtils}
-import distribution.graphql.GraphQL
+import distribution.graphql.Graphql
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 import spray.json.JsValue
 
@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext
 class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             protected val config: DeveloperDistributionConfig,
                             protected val usersCredentials: UsersCredentials,
-                            protected val graphql: GraphQL,
+                            protected val graphql: Graphql,
                             protected val stateUploader: DeveloperStateUploader,
                             protected val faultUploader: DeveloperFaultUploader)
                            (implicit protected val system: ActorSystem,

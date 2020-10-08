@@ -17,7 +17,7 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 14.01.16.
   * Copyright FanDate, Inc.
   */
-class DistributionTest extends FlatSpecLike with ScalatestRouteTest with Matchers with Directives {
+class ServerTest extends FlatSpecLike with ScalatestRouteTest with Matchers with Directives {
 
   behavior of "Distribution"
 

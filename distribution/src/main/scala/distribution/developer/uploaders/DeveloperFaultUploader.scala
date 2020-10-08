@@ -86,8 +86,8 @@ class DeveloperFaultUploader(collection: MongoDbCollection[ClientFaultReport],
           parseJsonFileWithLock[FaultInfo](faultInfoFile).foreach { faultInfo =>
             faultInfo match {
               case Some(faultInfo) =>
-                Await.result(collection.insert(ClientFaultReport(clientName, faultInfo, dirName,
-                  IoUtils.listFiles(faultDir))), Duration.Undefined)
+                Await.result(collection.insert(ClientFaultReport(clientName, dirName,
+                  IoUtils.listFiles(faultDir), faultInfo)), Duration.Undefined)
               case None =>
                 log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${faultDir}")
             }
@@ -106,8 +106,8 @@ class DeveloperFaultUploader(collection: MongoDbCollection[ClientFaultReport],
       (reports.toSet -- remainReports.toSet).foreach { report =>
         Await.result(collection.delete(Filters.and(
           Filters.eq("clientName", report.clientName),
-          Filters.eq("directoryName", report.directory))), Duration.Undefined)
-        val faultDir = new File(clientDir, report.directory)
+          Filters.eq("directoryName", report.reportDirectory))), Duration.Undefined)
+        val faultDir = new File(clientDir, report.reportDirectory)
         IoUtils.deleteFileRecursively(faultDir)
       }
       downloadingFiles -= file

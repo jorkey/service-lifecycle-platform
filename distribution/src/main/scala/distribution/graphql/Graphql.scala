@@ -17,9 +17,9 @@ import spray.json.{JsObject, JsString, JsValue}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-case class GraphQLContext(mongoDb: MongoDb)
+case class GraphqlContext(mongoDb: MongoDb)
 
-class GraphQL(schema: Schema[GraphQLContext, Unit], context: GraphQLContext) extends SprayJsonSupport {
+class Graphql(schema: Schema[GraphqlContext, Unit], context: GraphqlContext) extends SprayJsonSupport {
   protected implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def endpoint(requestJSON: JsValue)(implicit ec: ExecutionContext): Route = {

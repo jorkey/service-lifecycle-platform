@@ -13,7 +13,7 @@ import scala.collection.mutable
 
 case class ProfiledServiceName(name: ServiceName, profile: ServiceProfile) {
   override def toString: String = {
-    if (profile != CommonProfile) {
+    if (profile != CommonServiceProfile) {
       name + "-" + profile
     } else {
       name
@@ -28,7 +28,7 @@ object ProfiledServiceName {
   }
 
   def apply(serviceName: ServiceName): ProfiledServiceName = {
-    ProfiledServiceName(serviceName, CommonProfile)
+    ProfiledServiceName(serviceName, CommonServiceProfile)
   }
 
   def apply(serviceName: ServiceName, serviceProfile: ServiceProfile): ProfiledServiceName = {
@@ -38,7 +38,7 @@ object ProfiledServiceName {
   def parse(name: String): ProfiledServiceName = {
     val fields = name.split("-")
     if (fields.size == 1) {
-      ProfiledServiceName(fields(0), CommonProfile)
+      ProfiledServiceName(fields(0), CommonServiceProfile)
     } else if (fields.size == 2) {
       ProfiledServiceName(fields(0), fields(1))
     } else {

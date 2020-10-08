@@ -39,7 +39,7 @@ object Common {
   val ProfileFileNamePattern = "(profile-)(.*?)(.json)"
   val ProfileFileNameMatch = "profile-x.json"
 
-  val CommonProfile = "common"
+  val CommonServiceProfile = "common"
 
   val ClientAdmin = "admin"
 

@@ -25,7 +25,7 @@ import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
 import distribution.client.graphql.ClientGraphQLSchema
 import distribution.developer.graphql.DeveloperGraphQLSchema
-import distribution.graphql.{GraphQL, GraphQLContext}
+import distribution.graphql.{Graphql, GraphqlContext}
 import distribution.mongo.MongoDb
 import java.security.{KeyStore, SecureRandom}
 
@@ -33,7 +33,8 @@ import distribution.config.SslConfig
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.04.19.
@@ -67,7 +68,7 @@ object DistributionMain extends App {
     val usersCredentials = UsersCredentials()
 
     val mongoDb = new MongoDb("distribution")
-    val graphqlContext = GraphQLContext(mongoDb)
+    val graphqlContext = GraphqlContext(mongoDb)
 
     command match {
       case "developer" =>
@@ -78,12 +79,14 @@ object DistributionMain extends App {
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
 
         val stateUploader = new DeveloperStateUploader(dir)
-        val faultUploader = new DeveloperFaultUploader(mongoDb.getCollection[ClientFaultReport]("faults"), dir)
+
+        val faultsCollection = Await.result(mongoDb.getOrCreateCollection[ClientFaultReport]("faults"), Duration.Undefined)
+        val faultUploader = new DeveloperFaultUploader(faultsCollection, dir)
 
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val graphql = new GraphQL(DeveloperGraphQLSchema.SchemaDefinition, graphqlContext)
+        val graphql = new Graphql(DeveloperGraphQLSchema.SchemaDefinition, graphqlContext)
         val distribution = new DeveloperDistribution(dir, config, usersCredentials, graphql, stateUploader, faultUploader)
 
         stateUploader.start()
@@ -112,7 +115,7 @@ object DistributionMain extends App {
         val logUploader = new ClientLogUploader(dir)
 
         val selfUpdater = new SelfUpdater(dir)
-        val graphql = new GraphQL(ClientGraphQLSchema.SchemaDefinition, graphqlContext)
+        val graphql = new Graphql(ClientGraphQLSchema.SchemaDefinition, graphqlContext)
         val distribution = new ClientDistribution(dir, config, usersCredentials, graphql, stateUploader, logUploader, faultUploader)
 
         stateUploader.start()

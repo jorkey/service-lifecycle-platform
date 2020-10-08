@@ -15,7 +15,7 @@ object FaultInfo extends DefaultJsonProtocol {
   implicit val faultInfoJson = jsonFormat7(FaultInfo.apply)
 }
 
-case class ClientFaultReport(clientName: ClientName, directory: String, files: Seq[String],
+case class ClientFaultReport(clientName: ClientName, reportDirectory: String, reportFiles: Seq[String],
                              date: Date, instanceId: InstanceId, serviceDirectory: ServiceDirectory,
                              serviceName: ServiceName, serviceProfile: ServiceProfile,
                              state: ServiceState, logTail: Seq[String])
@@ -23,8 +23,8 @@ case class ClientFaultReport(clientName: ClientName, directory: String, files: S
 object ClientFaultReport extends DefaultJsonProtocol {
   implicit val clientFaultInfoJson = jsonFormat10(ClientFaultReport.apply)
 
-  def apply(clientName: ClientName, faultInfo: FaultInfo, directory: String, files: Seq[String]): ClientFaultReport = {
-    ClientFaultReport(clientName, directory, files,
+  def apply(clientName: ClientName, reportDirectory: String, reportFiles: Seq[String], faultInfo: FaultInfo): ClientFaultReport = {
+    ClientFaultReport(clientName, reportDirectory, reportFiles,
       faultInfo.date, faultInfo.instanceId, faultInfo.serviceDirectory,
       faultInfo.serviceName, faultInfo.serviceProfile,
       faultInfo.state, faultInfo.logTail)

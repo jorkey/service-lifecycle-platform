@@ -1,12 +1,12 @@
 package distribution.client.graphql
 
-import distribution.graphql.GraphQLContext
+import distribution.graphql.GraphqlContext
 import sangria.schema._
 
 object ClientGraphQLSchema {
   val QueryType = ObjectType(
     "Query",
-    fields[GraphQLContext, Unit](
+    fields[GraphqlContext, Unit](
     )
   )
 
