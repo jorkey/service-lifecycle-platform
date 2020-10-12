@@ -160,7 +160,7 @@ class UpdateClient()(implicit log: Logger) {
               case None =>
                 map - entry._1
             }}
-        val desiredVersions = new DesiredVersions(newVersions )
+        val desiredVersions = new DesiredVersions(newVersions)
         if (!clientDistribution.uploadDesiredVersions(desiredVersions)) {
           log.error("Error of uploading desired versions")
           return false

@@ -117,7 +117,7 @@ lazy val sprayDependencies = Seq(
 )
 
 lazy val mongoDependencies = Seq(
-  dependencies.mongoDb
+  dependencies.mongoDbDriver
 )
 
 lazy val sangriaDependencies = Seq(
@@ -157,7 +157,9 @@ lazy val dependencies =
     val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "5.6.1.202002131546-r"
 
     // MongoDB
-    val mongoDb = "com.lightbend.akka" %% "akka-stream-alpakka-mongodb" % "2.0.2"
+    val mongoDbDriver = "org.mongodb" % "mongodb-driver-reactivestreams" % "1.13.1"
+    //val mongoDbAkka = "com.lightbend.akka" %% "akka-stream-alpakka-mongodb" % "2.0.2"
+    //val mongoDbScalaBson = "org.mongodb.scala" %% "mongo-scala-bson" % "4.1.0"
 
     // Spray Json
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"

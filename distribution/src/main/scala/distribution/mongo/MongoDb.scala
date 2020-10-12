@@ -1,25 +1,32 @@
 package distribution.mongo
 
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
+import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.DeleteResult
+import com.mongodb.connection.ClusterSettings
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
 import org.bson.{BsonDocument, Document}
 import org.bson.conversions.Bson
 import org.slf4j.LoggerFactory
 import spray.json._
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 
 class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27017")
              (implicit executionContext: ExecutionContext) {
   implicit val system = ActorSystem(s"MongoDB_${dbName}")
   implicit val materializer = ActorMaterializer()
 
-  private val client = MongoClients.create(connectionString)
+  private val client = MongoClients.create(MongoClientSettings.builder
+    .applyConnectionString(new ConnectionString(connectionString))
+      .applyToClusterSettings((builder: ClusterSettings.Builder) => builder.serverSelectionTimeout(1, TimeUnit.SECONDS))
+      .build)
+
   private val db = client.getDatabase(dbName)
 
   def getCollectionNames(): Future[Seq[String]] = {
@@ -48,24 +55,19 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 
   def getOrCreateCollection[T](name: String): Future[MongoDbCollection[T]] = {
-    import scala.util.{Success, Failure}
-    val promise = Promise.apply[MongoDbCollection[T]]
-    collectionExists(name).onComplete {
-      case Success(true) =>
-        promise.success(new MongoDbCollection[T](name, db.getCollection(name)))
-      case Success(false) =>
-        createCollection(name).foreach { _ =>
-          getCollection[T](name).onComplete {
-            case Success(result) =>
-              promise.success(result)
-            case Failure(ex) =>
-              promise.failure(ex)
-          }
+    for {
+      exists <- collectionExists(name)
+      collection <- {
+        if (exists) {
+          Future(new MongoDbCollection[T](name, db.getCollection(name)))
+        } else {
+          for {
+            _ <- createCollection(name)
+            collection <- getCollection[T](name)
+          } yield collection
         }
-      case Failure(ex) =>
-        promise.failure(ex)
-    }
-    promise.future
+      }
+    } yield collection
   }
 }
 

@@ -1,20 +1,20 @@
 package distribution.developer.graphql
 
-import com.mongodb.client.model.{Filters, Projections, Sorts}
+import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.info.FaultInfo
 import distribution.graphql.GraphqlContext
-import distribution.graphql.GraphQLSchema._
+import distribution.graphql.GraphqlSchema._
 import sangria.schema._
 
 import collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext}
 
-object DeveloperGraphQLSchema {
+object DeveloperGraphqlSchema {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
-  val Client = Argument("client", StringType)
-  val Service = Argument("service", StringType)
+  val Client = Argument("clientName", StringType)
+  val Service = Argument("serviceName", StringType)
   val Last = Argument("last", IntType)
 
   val QueryType = ObjectType(

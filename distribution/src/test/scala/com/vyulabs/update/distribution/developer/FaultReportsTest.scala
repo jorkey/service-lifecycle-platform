@@ -7,13 +7,17 @@ import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.info.{ClientFaultReport, ServiceState}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import com.vyulabs.update.common.Common._
-import distribution.mongo.{MongoDb, MongoDbCollection}
+import distribution.developer.graphql.DeveloperGraphqlSchema
+import distribution.graphql.{Graphql, GraphqlContext}
+import distribution.mongo.MongoDb
+import sangria.macros.LiteralGraphQLStringContext
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
 
-import Await._
 import spray.json._
+
+import Await._
 
 class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "AdaptationMeasure"
@@ -22,8 +26,10 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val mongo = new MongoDb("test")
 
-  val collection = result(mongo.getOrCreateCollection[ClientFaultReport](collectionName), FiniteDuration(3, TimeUnit.SECONDS))
   val collectionName = "faults"
+  val collection = result(mongo.getOrCreateCollection[ClientFaultReport](collectionName), FiniteDuration(3, TimeUnit.SECONDS))
+
+  val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, GraphqlContext(mongo))
 
   val client1 = "client1"
   val client2 = "client1"
@@ -32,6 +38,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val instance1 = "instance1"
 
   override def beforeAll() = {
+    collection.drop().map(assert(_))
     assert(result(collection.dropItems(), FiniteDuration(3, TimeUnit.SECONDS)))
     assert(result(collection.insert(
       ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
@@ -43,80 +50,17 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "change status in depend of frames delivery delays" in {
-
+    val query =
+      graphql"""
+        query ClientFaultsQuery {
+          faults (client: "client1", service: "runner") {
+            date
+            instanceId
+          }
+        }
+      """
+    val future = graphql.executeQuery(query)
+    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
+    println(result)
   }
-
-  /*
-  "StartWars Schema" should {
-    "correctly identify R2-D2 as the hero of the Star Wars Saga" in {
-      val query =
-        graphql"""
-       query HeroNameQuery {
-         hero {
-           name
-         }
-       }
-     """
-
-      executeQuery(query) should be (parse(
-        """
-       {
-         "data": {
-           "hero": {
-             "name": "R2-D2"
-           }
-         }
-       }
-     """).right.get)
-    }
-
-    "allow to fetch Han Solo using his ID provided through variables" in {
-      val query =
-        graphql"""
-       query FetchSomeIDQuery($$humanId: String!) {
-         human(id: $$humanId) {
-           name
-           friends {
-             id
-             name
-           }
-         }
-       }
-     """
-
-      executeQuery(query, vars = Json.obj("humanId" -> Json.fromString("1002"))) should be (parse(
-        """
-       {
-         "data": {
-           "human": {
-             "name": "Han Solo",
-             "friends": [
-               {
-                 "id": "1000",
-                 "name": "Luke Skywalker"
-               },
-               {
-                 "id": "1003",
-                 "name": "Leia Organa"
-               },
-               {
-                 "id": "2001",
-                 "name": "R2-D2"
-               }
-             ]
-           }
-         }
-       }
-      """).right.get)
-    }
-  }
-
-  def executeQuery(query: Document, vars: Json = Json.obj()) = {
-    val futureResult = Executor.execute(StarWarsSchema, query,
-      variables = vars,
-      userContext = new CharacterRepo,
-      deferredResolver = DeferredResolver.fetchers(SchemaDefinition.characters))
-
-    Await.result(futureResult, 10.seconds)
-  }*/
 }

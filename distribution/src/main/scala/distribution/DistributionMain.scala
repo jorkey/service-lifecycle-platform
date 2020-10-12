@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
 import distribution.client.graphql.ClientGraphQLSchema
-import distribution.developer.graphql.DeveloperGraphQLSchema
+import distribution.developer.graphql.DeveloperGraphqlSchema
 import distribution.graphql.{Graphql, GraphqlContext}
 import distribution.mongo.MongoDb
 import java.security.{KeyStore, SecureRandom}
@@ -86,7 +86,7 @@ object DistributionMain extends App {
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val graphql = new Graphql(DeveloperGraphQLSchema.SchemaDefinition, graphqlContext)
+        val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, graphqlContext)
         val distribution = new DeveloperDistribution(dir, config, usersCredentials, graphql, stateUploader, faultUploader)
 
         stateUploader.start()

@@ -11,7 +11,7 @@ import sangria.schema._
 import sangria.macros.derive._
 import sangria.validation.Violation
 
-object GraphQLSchema {
+object GraphqlSchema {
   private case object DateCoerceViolation extends Violation {
     override def errorMessage: String = "Error during parsing Date"
   }

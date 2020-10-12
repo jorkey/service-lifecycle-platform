@@ -42,7 +42,7 @@ class Graphql(schema: Schema[GraphqlContext, Unit], context: GraphqlContext) ext
     }
   }
 
-  def executeQuery(query: Document, operation: Option[String], vars: JsObject)
+  def executeQuery(query: Document, operation: Option[String] = None, vars: JsObject = JsObject.empty)
                   (implicit executionContext: ExecutionContext): Future[(StatusCode, JsValue)] = {
     Executor.execute(
       schema,
