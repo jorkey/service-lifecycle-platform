@@ -1,15 +1,22 @@
 package com.vyulabs.update.distribution.developer
 
+import java.io.File
+import java.nio.file.Files
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.ActorMaterializer
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.info.{ClientFaultReport, ServiceState}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import com.vyulabs.update.common.Common._
-import distribution.developer.graphql.DeveloperGraphqlSchema
-import distribution.graphql.{Graphql, GraphqlContext}
+import com.vyulabs.update.lock.SmartFilesLocker
+import distribution.config.SslConfig
+import distribution.developer.config.DeveloperDistributionConfig
+import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
+import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
 import sangria.macros.LiteralGraphQLStringContext
 
@@ -22,14 +29,21 @@ import Await._
 class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "AdaptationMeasure"
 
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer = ActorMaterializer()
+
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  implicit val filesLocker = new SmartFilesLocker()
 
   val mongo = new MongoDb("test")
 
   val collectionName = "faults"
   val collection = result(mongo.getOrCreateCollection[ClientFaultReport](collectionName), FiniteDuration(300, TimeUnit.SECONDS))
 
-  val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, GraphqlContext(mongo))
+  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder")
+
+  val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
+  val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, DeveloperGraphqlContext(config, dir, mongo))
 
   val client1 = "client1"
   val client2 = "client2"

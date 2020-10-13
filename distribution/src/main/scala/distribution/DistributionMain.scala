@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
-import distribution.client.graphql.ClientGraphQLSchema
-import distribution.developer.graphql.DeveloperGraphqlSchema
-import distribution.graphql.{Graphql, GraphqlContext}
+import distribution.client.graphql.{ClientGraphQLSchema, ClientGraphqlContext}
+import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
+import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
 import java.security.{KeyStore, SecureRandom}
 
@@ -68,7 +68,6 @@ object DistributionMain extends App {
     val usersCredentials = UsersCredentials()
 
     val mongoDb = new MongoDb("distribution")
-    val graphqlContext = GraphqlContext(mongoDb)
 
     command match {
       case "developer" =>
@@ -78,6 +77,9 @@ object DistributionMain extends App {
 
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
 
+        val graphqlContext = DeveloperGraphqlContext(config, dir, mongoDb)
+        val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, graphqlContext)
+
         val stateUploader = new DeveloperStateUploader(dir)
 
         val faultsCollection = Await.result(mongoDb.getOrCreateCollection[ClientFaultReport]("faults"), Duration.Undefined)
@@ -86,7 +88,6 @@ object DistributionMain extends App {
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, graphqlContext)
         val distribution = new DeveloperDistribution(dir, config, usersCredentials, graphql, stateUploader, faultUploader)
 
         stateUploader.start()
@@ -110,12 +111,14 @@ object DistributionMain extends App {
 
         val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
 
+        val graphqlContext = ClientGraphqlContext(dir, mongoDb)
+        val graphql = new Graphql(ClientGraphQLSchema.SchemaDefinition, graphqlContext)
+
         val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId, config.installerDirectory)
         val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
         val logUploader = new ClientLogUploader(dir)
 
         val selfUpdater = new SelfUpdater(dir)
-        val graphql = new Graphql(ClientGraphQLSchema.SchemaDefinition, graphqlContext)
         val distribution = new ClientDistribution(dir, config, usersCredentials, graphql, stateUploader, logUploader, faultUploader)
 
         stateUploader.start()

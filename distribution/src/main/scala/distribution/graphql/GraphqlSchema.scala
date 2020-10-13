@@ -2,7 +2,11 @@ package distribution.graphql
 
 import java.util.Date
 
-import com.vyulabs.update.info.{ClientFaultReport, FaultInfo, ProfiledServiceName, ServiceState, UpdateError}
+import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
+import com.vyulabs.update.config.ClientInfo
+import com.vyulabs.update.info.{ClientFaultReport, InstanceVersions, ServiceState, UpdateError}
+import com.vyulabs.update.users.UserInfo
+import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import sangria.ast.StringValue
@@ -27,8 +31,12 @@ object GraphqlSchema {
       case _ => Left(DateCoerceViolation)
     })
 
+  implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
+  implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
+  implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
   implicit val BuildVersionType = deriveObjectType[Unit, BuildVersion]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
+  //implicit val InstanceVersionsType = deriveObjectType[Unit, InstanceVersions]()
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 }

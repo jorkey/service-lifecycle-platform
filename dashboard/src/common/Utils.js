@@ -13,7 +13,13 @@ export const Utils = {
 function login(user, password) {
   const authData = window.btoa(user + ':' + password)
   const path ='/api/user-info'
-  return fetchRequest('GET', path, authData).then(user => {
+  const init = {}
+  init.method = 'GET'
+  const headers = { 'Content-Type': 'application/json' }
+  headers.Authorization = 'Basic ' + authData
+  init.headers = headers
+  init.cache = 'no-cache'
+  return fetchRequest(path, init).then(user => {
     if (user) {
       user.authData = authData
       localStorage.setItem('user', JSON.stringify(user))
@@ -60,61 +66,45 @@ function getInstalledDesiredVersions(client) {
   });
 }
 
-function getFaults(client, service) {
-
+function getFaults(client, service, limit) {
+  const query = `query Faults($client: String, $service: String, limit: Int) {
+    faults(client: $client, service: $service, limit: $limit)
+  }`;
+  const variables = { client, service, limit }
+  graphqlQuery(query, variables)
 }
 
 function graphqlQuery(query, variables) {
-  let pathStr = '/graphql'
-  return fetchRequest('POST', pathStr, user ? user.authData: undefined).then(
-    data => { return data },
-    response => {
-      if (response.status === 401) {
-        logout()
-        // eslint-disable-next-line no-restricted-globals
-        location.reload(true)
-      } else {
-        return Promise.reject(response)
-      }
-    })
-}
-
-function apiGet(p1, p2, p3, p4, p5, p6, p7, p8) {
-  let pathStr = '/api'
-  if (p1) { pathStr += '/' + encodeURIComponent(p1) }
-  if (p2) { pathStr += '/' + encodeURIComponent(p2) }
-  if (p3) { pathStr += '/' + encodeURIComponent(p3) }
-  if (p4) { pathStr += '/' + encodeURIComponent(p4) }
-  if (p5) { pathStr += '/' + encodeURIComponent(p5) }
-  if (p6) { pathStr += '/' + encodeURIComponent(p6) }
-  if (p7) { pathStr += '/' + encodeURIComponent(p7) }
-  if (p8) { pathStr += '/' + encodeURIComponent(p8) }
-  console.log(`Get ${pathStr}`)
+  const path = '/graphql'
   const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')): undefined
-  return fetchRequest('GET', pathStr, user ? user.authData: undefined).then(
-    data => { return data },
-    response => {
-      if (response.status === 401) {
-        logout()
-        // eslint-disable-next-line no-restricted-globals
-        location.reload(true)
-      } else {
-        return Promise.reject(response)
-      }
-    })
-}
-
-function fetchRequest(method, path, authData) {
-  console.log(`Fetch ${method} ${path}`)
-  const requestInit = {}
-  requestInit.method = method
-  const headers = { 'Content-Type': 'application/json' }
+  const authData = user ? user.authData: undefined
+  const init = {}
+  init.method = 'POST'
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json' }
   if (authData) {
     headers.Authorization = 'Basic ' + authData
   }
-  requestInit.headers = headers
-  requestInit.cache = 'no-cache'
-  return fetch(path, requestInit).then(response => {
+  init.headers = headers
+  init.cache = 'no-cache'
+  init.body = JSON.stringify({query, variables})
+  return fetchRequest(path, init).then(
+    data => { return data },
+    response => {
+      if (response.status === 401) {
+        logout()
+        // eslint-disable-next-line no-restricted-globals
+        location.reload(true)
+      } else {
+        return Promise.reject(response)
+      }
+    })
+}
+
+function fetchRequest(path, init) {
+  console.log(`Fetch ${path} ${init}`)
+  return fetch(path, init).then(response => {
     console.log('handleResponse')
     if (response.ok) {
       return response.text().then(text => {
@@ -126,4 +116,38 @@ function fetchRequest(method, path, authData) {
       return Promise.reject(response)
     }
   })
+}
+
+function apiGet(p1, p2, p3, p4, p5, p6, p7, p8) {
+  let path = '/api'
+  if (p1) { path += '/' + encodeURIComponent(p1) }
+  if (p2) { path += '/' + encodeURIComponent(p2) }
+  if (p3) { path += '/' + encodeURIComponent(p3) }
+  if (p4) { path += '/' + encodeURIComponent(p4) }
+  if (p5) { path += '/' + encodeURIComponent(p5) }
+  if (p6) { path += '/' + encodeURIComponent(p6) }
+  if (p7) { path += '/' + encodeURIComponent(p7) }
+  if (p8) { path += '/' + encodeURIComponent(p8) }
+  console.log(`Get ${path}`)
+  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')): undefined
+  const authData = user ? user.authData: undefined
+  const init = {}
+  init.method = 'GET'
+  const headers = { 'Content-Type': 'application/json' }
+  if (authData) {
+    headers.Authorization = 'Basic ' + authData
+  }
+  init.headers = headers
+  init.cache = 'no-cache'
+  return fetchRequest(path, init).then(
+    data => { return data },
+    response => {
+      if (response.status === 401) {
+        logout()
+        // eslint-disable-next-line no-restricted-globals
+        location.reload(true)
+      } else {
+        return Promise.reject(response)
+      }
+    })
 }

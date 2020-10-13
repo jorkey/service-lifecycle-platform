@@ -22,6 +22,7 @@ import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, Cl
 import com.vyulabs.update.info.VersionsInfoJson._
 import distribution.Distribution
 import distribution.client.config.ClientDistributionConfig
+import distribution.client.graphql.ClientGraphqlContext
 import distribution.client.utils.ClientVersionUtils
 import distribution.graphql.Graphql
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
@@ -30,7 +31,8 @@ import scala.concurrent.ExecutionContext
 
 class ClientDistribution(protected val dir: ClientDistributionDirectory,
                          config: ClientDistributionConfig, usersCredentials: UsersCredentials,
-                         graphql: Graphql, stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
+                         graphql: Graphql[ClientGraphqlContext],
+                         stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext,

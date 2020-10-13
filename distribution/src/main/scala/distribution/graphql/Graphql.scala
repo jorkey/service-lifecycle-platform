@@ -3,19 +3,17 @@ package distribution.graphql
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK}
-import distribution.mongo.MongoDb
+import distribution.GraphqlContext
 import org.slf4j.LoggerFactory
 import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError}
 import sangria.marshalling.sprayJson._
 import sangria.schema.Schema
-import spray.json.{JsObject, JsString, JsValue}
+import spray.json.{JsObject, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class GraphqlContext(mongoDb: MongoDb)
-
-class Graphql(schema: Schema[GraphqlContext, Unit], context: GraphqlContext) extends SprayJsonSupport {
+class Graphql[Context <: GraphqlContext](schema: Schema[Context, Unit], context: Context) extends SprayJsonSupport {
   protected implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def executeQuery(query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty)

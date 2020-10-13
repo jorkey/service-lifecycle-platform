@@ -5,11 +5,19 @@ import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.{ExceptionHandler, RouteResult}
 import akka.http.scaladsl.server.directives.Credentials
 import com.vyulabs.update.common.Common.UserName
+import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UsersCredentials}
 import distribution.graphql.Graphql
+import distribution.mongo.MongoDb
 import org.slf4j.LoggerFactory
 
-class Distribution(usersCredentials: UsersCredentials, protected val graphQL: Graphql) {
+trait GraphqlContext {
+  val dir: DistributionDirectory
+  val mongoDb: MongoDb
+}
+
+class Distribution[Context <: GraphqlContext](usersCredentials: UsersCredentials, protected val graphQL: Graphql[Context]) {
   protected implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val exceptionHandler = ExceptionHandler {

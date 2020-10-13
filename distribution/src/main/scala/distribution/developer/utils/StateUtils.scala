@@ -76,8 +76,8 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
     promise.future
   }
 
-  def getClientInstanceVersions(clientName: ClientName): Route = {
-    onSuccess(getClientInstancesState(clientName).collect {
+  def getClientInstanceVersions(clientName: ClientName): Future[InstanceVersions] = {
+    getClientInstancesState(clientName).collect {
       case Some(state) =>
         var versions = InstanceVersions.empty
         state.instances.foreach { case (instanceId, servicesStates) =>
@@ -86,7 +86,7 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
         versions
       case None =>
         InstanceVersions.empty
-    }) { state => complete(state) }
+    }
   }
 
   def getServiceState(clientName: ClientName, instanceId: InstanceId,

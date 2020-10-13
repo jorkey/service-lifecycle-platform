@@ -25,6 +25,7 @@ import distribution.developer.config.DeveloperDistributionConfig
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution
+import distribution.developer.graphql.DeveloperGraphqlContext
 import distribution.developer.utils.{ClientsUtils, StateUtils}
 import distribution.graphql.Graphql
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
@@ -37,7 +38,7 @@ import scala.util.{Failure, Success}
 class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             protected val config: DeveloperDistributionConfig,
                             protected val usersCredentials: UsersCredentials,
-                            protected val graphql: Graphql,
+                            protected val graphql: Graphql[DeveloperGraphqlContext],
                             protected val stateUploader: DeveloperStateUploader,
                             protected val faultUploader: DeveloperFaultUploader)
                            (implicit protected val system: ActorSystem,
@@ -121,7 +122,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             complete(getClientsInfo())
                           } ~
                           path(instanceVersionsPath / ".*".r) { clientName =>
-                            getClientInstanceVersions(clientName)
+                            complete(getClientInstanceVersions(clientName))
                           } ~
                           path(serviceStatePath / ".*".r / ".*".r / ".*".r / ".*".r) { (clientName, instanceId, directory, service) =>
                             getServiceState(clientName, instanceId, directory, service)

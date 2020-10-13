@@ -38,13 +38,11 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
   protected val filesLocker: SmartFilesLocker
   protected val dir: DeveloperDistributionDirectory
 
-  def getClientsInfo(): Source[ClientInfo, NotUsed] = {
-    Source.future(
-      Source(dir.getClients())
-        .map(clientName => getClientConfig(clientName).map(config => ClientInfo(clientName, config.installProfile, config.testClientMatch)))
-        .flatMapConcat(config => Source.future(config))
-        .runFold(Seq.empty[ClientInfo])((seq, info) => seq :+ info))
-      .flatMapConcat(clients => Source.fromIterator(() => clients.iterator))
+  def getClientsInfo(): Future[Seq[ClientInfo]] = {
+    Source(dir.getClients())
+      .map(clientName => getClientConfig(clientName).map(config => ClientInfo(clientName, config.installProfile, config.testClientMatch)))
+      .flatMapConcat(config => Source.future(config))
+      .runFold(Seq.empty[ClientInfo])((seq, info) => seq :+ info)
   }
 
   def getClientConfig(clientName: ClientName): Future[ClientConfig] = {
@@ -161,7 +159,7 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
               case Success(testedVersions) =>
                 testedVersions match {
                   case Some(testedVersions) =>
-                    val regexp = testClientMatch
+                    val regexp = testClientMatch.r
                     val testCondition = testedVersions.testSignatures.exists(signature =>
                       signature.clientName match {
                         case regexp() =>
