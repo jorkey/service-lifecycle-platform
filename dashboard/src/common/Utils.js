@@ -60,6 +60,25 @@ function getInstalledDesiredVersions(client) {
   });
 }
 
+function getFaults(client, service) {
+
+}
+
+function graphqlQuery(query, variables) {
+  let pathStr = '/graphql'
+  return fetchRequest('POST', pathStr, user ? user.authData: undefined).then(
+    data => { return data },
+    response => {
+      if (response.status === 401) {
+        logout()
+        // eslint-disable-next-line no-restricted-globals
+        location.reload(true)
+      } else {
+        return Promise.reject(response)
+      }
+    })
+}
+
 function apiGet(p1, p2, p3, p4, p5, p6, p7, p8) {
   let pathStr = '/api'
   if (p1) { pathStr += '/' + encodeURIComponent(p1) }

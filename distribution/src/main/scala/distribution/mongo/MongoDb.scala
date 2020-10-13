@@ -23,9 +23,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   implicit val materializer = ActorMaterializer()
 
   private val client = MongoClients.create(MongoClientSettings.builder
-    .applyConnectionString(new ConnectionString(connectionString))
-      .applyToClusterSettings((builder: ClusterSettings.Builder) => builder.serverSelectionTimeout(1, TimeUnit.SECONDS))
-      .build)
+    .applyConnectionString(new ConnectionString(connectionString)).build)
 
   private val db = client.getDatabase(dbName)
 
