@@ -43,7 +43,9 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder")
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
-  val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, DeveloperGraphqlContext(config, dir, mongo))
+
+  val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, None)
+  val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition)
 
   val client1 = "client1"
   val client2 = "client2"
@@ -73,7 +75,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val query =
       graphql"""
         query {
-          faults (clientName: "client1", last: 1) {
+          faults (client: "client1", last: 1) {
             clientName
             reportDirectory
             serviceName
@@ -82,7 +84,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(query)
+    val future = graphql.executeQuery(graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult(result)((OK,
       ("""{"data":{"faults":[""" +
@@ -94,7 +96,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val query =
       graphql"""
         query {
-          faults (serviceName: "serviceA", last: 1) {
+          faults (service: "serviceA", last: 1) {
             clientName
             reportDirectory
             serviceName
@@ -103,7 +105,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(query)
+    val future = graphql.executeQuery(graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult(result)((OK,
       ("""{"data":{"faults":[""" +
@@ -114,8 +116,8 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   it should "get fault reports for specified service in parameters" in {
     val query =
       graphql"""
-        query FaultsQuery($$serviceName: String!) {
-          faults (serviceName: $$serviceName) {
+        query FaultsQuery($$service: String!) {
+          faults (service: $$service) {
             clientName
             reportDirectory
             serviceName
@@ -124,7 +126,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(query, None, variables = JsObject("serviceName" -> JsString("serviceB")))
+    val future = graphql.executeQuery(graphqlContext, query, None, variables = JsObject("service" -> JsString("serviceB")))
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult(result)((OK,
       ("""{"data":{"faults":[""" +

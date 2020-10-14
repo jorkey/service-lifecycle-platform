@@ -25,9 +25,11 @@ import distribution.developer.config.DeveloperDistributionConfig
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution
+import distribution.client.graphql.ClientGraphqlContext
 import distribution.developer.graphql.DeveloperGraphqlContext
 import distribution.developer.utils.{ClientsUtils, StateUtils}
 import distribution.graphql.Graphql
+import distribution.mongo.MongoDb
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 import sangria.parser.QueryParser
 import spray.json._
@@ -36,6 +38,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
+                            protected val mongoDb: MongoDb,
                             protected val config: DeveloperDistributionConfig,
                             protected val usersCredentials: UsersCredentials,
                             protected val graphql: Graphql[DeveloperGraphqlContext],
@@ -73,7 +76,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         case Some(obj: JsObject) => obj
                         case _ => JsObject.empty
                       }
-                      complete(graphql.executeQuery(queryAst, operation, variables))
+                      val context = DeveloperGraphqlContext(config, dir, mongoDb, None)
+                      complete(graphql.executeQuery(context, queryAst, operation, variables))
                     case Failure(error) =>
                       complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
                   }
@@ -86,7 +90,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         case Some(obj: JsObject) => obj
                         case _ => JsObject.empty
                       }
-                      complete(graphql.executeQuery(queryAst, operation, vars))
+                      val context = DeveloperGraphqlContext(config, dir, mongoDb, None)
+                      complete(graphql.executeQuery(context, queryAst, operation, vars))
                     case Failure(error) =>
                       complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
                   }
@@ -113,10 +118,10 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         .getOrElse(BuildVersion.empty), None))
                     }
                   } ~
-                    authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                    authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
                       get {
                         path(userInfoPath) {
-                          complete(UserInfo(userName, None, userCredentials.role))
+                          complete(UserInfo(userName, userRole))
                         } ~
                           path(clientsInfoPath) {
                             complete(getClientsInfo())
@@ -133,7 +138,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                           } ~
-                          authorize(userCredentials.role == UserRole.Administrator) {
+                          authorize(userRole == UserRole.Administrator) {
                             path(versionsInfoPath / ".*".r) { service =>
                               complete(getVersionsInfo(dir.getServiceDir(service, None)))
                             } ~
@@ -159,7 +164,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 getServiceVersion(Common.ScriptsServiceName, new File("."))
                               }
                           } ~
-                          authorize(userCredentials.role == UserRole.Client) {
+                          authorize(userRole == UserRole.Client) {
                             path(clientConfigPath) {
                               getFromFile(dir.getClientConfigFile(userName))
                             } ~
@@ -175,7 +180,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           }
                       } ~
                         post {
-                          authorize(userCredentials.role == UserRole.Administrator) {
+                          authorize(userRole == UserRole.Administrator) {
                             path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                               val buildVersion = BuildVersion.parse(version)
                               versionImageUpload(service, buildVersion)
@@ -191,7 +196,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(Some(clientName)))
                               }
                           } ~
-                            authorize(userCredentials.role == UserRole.Client) {
+                            authorize(userRole == UserRole.Client) {
                               path(installedDesiredVersionsPath) {
                                 fileUploadWithLock(desiredVersionsName, dir.getInstalledDesiredVersionsFile(userName))
                               } ~
@@ -228,7 +233,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
 
                 })
               } {
-                authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
                   get {
                       path(downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                         getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
@@ -236,7 +241,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                       path(downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                         getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                       } ~
-                      authorize(userCredentials.role == UserRole.Administrator) {
+                      authorize(userRole == UserRole.Administrator) {
                         path(downloadVersionsInfoPath / ".*".r) { service =>
                           parameter("client".?) { clientName =>
                             complete(getVersionsInfo(dir.getServiceDir(service, clientName)))
@@ -259,7 +264,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             getServiceVersion(Common.ScriptsServiceName, new File("."))
                           }
                       } ~
-                      authorize(userCredentials.role == UserRole.Client) {
+                      authorize(userRole == UserRole.Client) {
                         path(downloadClientConfigPath) {
                           getFromFile(dir.getClientConfigFile(userName))
                         } ~
@@ -285,7 +290,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                       }
                   } ~
                     post {
-                      authorize(userCredentials.role == UserRole.Administrator) {
+                      authorize(userRole == UserRole.Administrator) {
                         path(uploadVersionPath / ".*".r / ".*".r) { (service, version) =>
                           val buildVersion = BuildVersion.parse(version)
                           versionImageUpload(service, buildVersion)
@@ -300,7 +305,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             }
                           }
                       } ~
-                        authorize(userCredentials.role == UserRole.Client) {
+                        authorize(userRole == UserRole.Client) {
                           path(uploadTestedVersionsPath) {
                             uploadTestedVersions(userName)
                           } ~
@@ -321,8 +326,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
           get {
             path(browsePath) {
               seal {
-                authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                  authorize(userCredentials.role == UserRole.Administrator) {
+                authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
+                  authorize(userRole == UserRole.Administrator) {
                     browse(None)
                   }
                 }
@@ -330,8 +335,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
             } ~
             pathPrefix(browsePath / ".*".r) { path =>
               seal {
-                authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                  authorize(userCredentials.role == UserRole.Administrator) {
+                authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
+                  authorize(userRole == UserRole.Administrator) {
                     browse(Some(path))
                   }
                 }

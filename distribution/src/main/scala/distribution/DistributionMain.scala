@@ -77,8 +77,7 @@ object DistributionMain extends App {
 
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
 
-        val graphqlContext = DeveloperGraphqlContext(config, dir, mongoDb)
-        val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition, graphqlContext)
+        val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition)
 
         val stateUploader = new DeveloperStateUploader(dir)
 
@@ -88,7 +87,7 @@ object DistributionMain extends App {
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val distribution = new DeveloperDistribution(dir, config, usersCredentials, graphql, stateUploader, faultUploader)
+        val distribution = new DeveloperDistribution(dir, mongoDb, config, usersCredentials, graphql, stateUploader, faultUploader)
 
         stateUploader.start()
         selfUpdater.start()
@@ -111,15 +110,14 @@ object DistributionMain extends App {
 
         val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
 
-        val graphqlContext = ClientGraphqlContext(dir, mongoDb)
-        val graphql = new Graphql(ClientGraphQLSchema.SchemaDefinition, graphqlContext)
+        val graphql = new Graphql(ClientGraphQLSchema.SchemaDefinition)
 
         val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId, config.installerDirectory)
         val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
         val logUploader = new ClientLogUploader(dir)
 
         val selfUpdater = new SelfUpdater(dir)
-        val distribution = new ClientDistribution(dir, config, usersCredentials, graphql, stateUploader, logUploader, faultUploader)
+        val distribution = new ClientDistribution(dir, mongoDb, config, usersCredentials, graphql, stateUploader, logUploader, faultUploader)
 
         stateUploader.start()
         logUploader.start()

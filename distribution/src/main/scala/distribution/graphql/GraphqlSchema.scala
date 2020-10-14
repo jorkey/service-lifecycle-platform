@@ -31,12 +31,16 @@ object GraphqlSchema {
       case _ => Left(DateCoerceViolation)
     })
 
+  // Common
+
   implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
   implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
   implicit val BuildVersionType = deriveObjectType[Unit, BuildVersion]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
-  //implicit val InstanceVersionsType = deriveObjectType[Unit, InstanceVersions]()
+
+  // Fault
+
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 }

@@ -99,10 +99,10 @@ object UsersCredentials extends DefaultJsonProtocol {
   }
 }
 
-case class UserInfo(name: UserName, fullName: Option[String], role: UserRole)
+case class UserInfo(name: UserName, role: UserRole)
 
 object UserInfo extends DefaultJsonProtocol {
   import UserRole._
 
-  implicit val userInfoJson = jsonFormat3(UserInfo.apply)
+  implicit val userInfoJson = jsonFormat2(UserInfo.apply)
 }

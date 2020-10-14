@@ -4,7 +4,7 @@ import scala.sys.process.Process
 
 name := "update"
 
-scalaVersion in ThisBuild := "2.12.8"
+scalaVersion in ThisBuild := "2.12.12"
 
 lazy val update = project
   .in(file("."))

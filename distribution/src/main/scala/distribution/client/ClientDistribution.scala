@@ -16,7 +16,7 @@ import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, Clie
 import com.vyulabs.update.info.{ProfiledServiceName, ServicesState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
-import com.vyulabs.update.users.{UserRole, UsersCredentials}
+import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
 import com.vyulabs.update.info.VersionsInfoJson._
@@ -25,14 +25,19 @@ import distribution.client.config.ClientDistributionConfig
 import distribution.client.graphql.ClientGraphqlContext
 import distribution.client.utils.ClientVersionUtils
 import distribution.graphql.Graphql
+import distribution.mongo.MongoDb
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 
 import scala.concurrent.ExecutionContext
 
 class ClientDistribution(protected val dir: ClientDistributionDirectory,
-                         config: ClientDistributionConfig, usersCredentials: UsersCredentials,
-                         graphql: Graphql[ClientGraphqlContext],
-                         stateUploader: ClientStateUploader, logUploader: ClientLogUploader, faultUploader: ClientFaultUploader)
+                         protected val mongoDb: MongoDb,
+                         protected val config: ClientDistributionConfig,
+                         protected val usersCredentials: UsersCredentials,
+                         protected val graphql: Graphql[ClientGraphqlContext],
+                         protected val stateUploader: ClientStateUploader,
+                         protected val logUploader: ClientLogUploader,
+                         protected val faultUploader: ClientFaultUploader)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext,
@@ -66,7 +71,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
 
                   })
                 } {
-                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                  authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, role) =>
                     get {
                       path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                         getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
@@ -94,7 +99,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         }
                     } ~
                       post {
-                        authorize(userCredentials.role == UserRole.Administrator) {
+                        authorize(role == UserRole.Administrator) {
                           path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
                             versionImageUpload(service, buildVersion)
@@ -107,7 +112,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                               fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
                             }
                         } ~
-                          authorize(userCredentials.role == UserRole.Service) {
+                          authorize(role == UserRole.Service) {
                             path(servicesStatePath / ".*".r) { instanceId =>
                               uploadFileToJson(servicesStateName, (json) => {
                                 val servicesState = json.convertTo[ServicesState]
@@ -133,15 +138,15 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
             } ~
               get {
                 path(prefix / browsePath) {
-                  authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                    authorize(userCredentials.role == UserRole.Administrator) {
+                  authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
+                    authorize(userRole == UserRole.Administrator) {
                       browse(None)
                     }
                   }
                 } ~
                   pathPrefix(prefix / browsePath / ".*".r) { path =>
-                    authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
-                      authorize(userCredentials.role == UserRole.Administrator) {
+                    authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
+                      authorize(userRole == UserRole.Administrator) {
                         browse(Some(path))
                       }
                     }
@@ -156,7 +161,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                   case rejection => rejection
                 })
               } {
-                authenticateBasic(realm = "Distribution", authenticate) { case (userName, userCredentials) =>
+                authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
                   log.debug(s"Old API request ${ctx.request.toString()} from ${userName}")
                   get {
                     path(prefix / downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
@@ -179,7 +184,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                       path(prefix / downloadInstanceStatePath / ".*".r) { (instanceId) =>
                         stateUploader.getInstanceState(instanceId)
                       } ~
-                      authorize(userCredentials.role == UserRole.Administrator) {
+                      authorize(userRole == UserRole.Administrator) {
                         path(prefix / getDistributionVersionPath) {
                           getVersion()
                         } ~
@@ -189,7 +194,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                       }
                   } ~
                     post {
-                      authorize(userCredentials.role == UserRole.Administrator) {
+                      authorize(userRole == UserRole.Administrator) {
                         path(prefix / uploadVersionPath / ".*".r / ".*".r) { (service, version) =>
                           val buildVersion = BuildVersion.parse(version)
                           versionImageUpload(service, buildVersion)
@@ -202,7 +207,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                             fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
                           }
                       } ~
-                        authorize(userCredentials.role == UserRole.Service) {
+                        authorize(userRole == UserRole.Service) {
                           path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
                             complete(StatusCodes.BadRequest) // New format
                           } ~
