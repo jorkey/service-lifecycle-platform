@@ -12,7 +12,7 @@ import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.utils.{ClientsUtils, StateUtils}
-import distribution.graphql.GraphqlContext
+import distribution.graphql.{AuthorizationException, GraphqlContext}
 import distribution.graphql.GraphqlSchema._
 import distribution.mongo.MongoDb
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
@@ -65,12 +65,8 @@ object DeveloperGraphqlSchema {
   val QueryType = ObjectType(
     "Query",
     fields[DeveloperGraphqlContext, Unit](
-      /*Field("user", fieldType = UserInfoType,
-        resolve = c => {
-          c.ctx.dir.
-        }
-
-        ),*/
+      Field("user", fieldType = UserInfoType,
+        resolve = c => { c.ctx.userInfo.getOrElse(throw AuthorizationException("You are not logged in")) } ),
       Field("clients", ListType(ClientInfoType),
         resolve = c => c.ctx.getClientsInfo()),
       Field("instanceVersions", InstanceVersionsType,

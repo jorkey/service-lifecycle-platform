@@ -90,7 +90,13 @@ function graphqlQuery(query, variables) {
   init.cache = 'no-cache'
   init.body = JSON.stringify({query, variables})
   return fetchRequest(path, init).then(
-    data => { return data },
+    data => {
+      if (data.data) {
+        return data
+      } else {
+        return data.errors.message
+      }
+    },
     response => {
       if (response.status === 401) {
         logout()
