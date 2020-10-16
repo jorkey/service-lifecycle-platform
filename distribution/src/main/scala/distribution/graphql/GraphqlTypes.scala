@@ -33,7 +33,21 @@ object GraphqlTypes {
 
   // Common
 
-  implicit val BuildVersionType = deriveObjectType[Unit, BuildVersion]()
+  case object BuildVersionViolation extends Violation {
+    override def errorMessage: String = "Error during parsing BuildVersion"
+  }
+
+  implicit val BuildVersionType = ScalarType[BuildVersion]("BuildVersion",
+    coerceOutput = (version, _) => version.toString,
+    coerceInput = {
+      case StringValue(version, _, _ , _ , _) => Right(BuildVersion.parse(version))
+      case _ => Left(BuildVersionViolation)
+    },
+    coerceUserInput = {
+      case version: String => Right(BuildVersion.parse(version))
+      case _ => Left(BuildVersionViolation)
+    })
+
   implicit val VersionInfoType = deriveObjectType[Unit, VersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, VersionsInfo]()
 

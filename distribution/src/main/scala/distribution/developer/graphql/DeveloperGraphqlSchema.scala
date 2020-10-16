@@ -66,7 +66,7 @@ object DeveloperGraphqlSchema {
   val Instance = Argument("instance", StringType)
   val Directory = Argument("directory", StringType)
   val Service = Argument("service", StringType)
-  val Version = Argument("version", StringType)
+  val Version = Argument("version", BuildVersionType)
 
   val OptionClient = Argument("client", OptionInputType(StringType))
   val OptionService = Argument("service", OptionInputType(StringType))
@@ -82,11 +82,9 @@ object DeveloperGraphqlSchema {
   val AdministratorQueries = ObjectType(
     "Query",
      CommonQueries ++ fields[DeveloperGraphqlContext, Unit](
-       Field("clientsInfo", ListType(ClientInfoType),
-         resolve = c => c.ctx.getClientsInfo()),
        Field("versionInfo", VersionInfoType,
          arguments = Service :: Version :: Nil,
-         resolve = c => { c.ctx.parseJsonFileWithLock[VersionInfo](c.ctx.dir.getVersionInfoFile(c.arg(Service), BuildVersion.parse(c.arg(Version))))
+         resolve = c => { c.ctx.parseJsonFileWithLock[VersionInfo](c.ctx.dir.getVersionInfoFile(c.arg(Service), c.arg(Version)))
            .map(_.getOrElse(throw NotFoundException())) }),
        Field("versionsInfo", VersionsInfoType,
          arguments = Service :: OptionClient :: Nil,
@@ -97,9 +95,11 @@ object DeveloperGraphqlSchema {
        Field("desiredVersion", BuildVersionType,
          arguments = Service :: Nil,
          resolve = c => { c.ctx.getDesiredVersion(c.arg(Service), c.ctx.getDesiredVersions(None)).map(_.getOrElse(throw NotFoundException())) }),
-       Field("serviceVersion", BuildVersionType,
+       Field("ownServiceVersion", BuildVersionType,
          arguments = Service :: Nil,
          resolve = c => { c.ctx.getServiceVersion(c.arg(Service), new File(c.arg(Directory))).getOrElse(throw NotFoundException()) }),
+       Field("clientsInfo", ListType(ClientInfoType),
+         resolve = c => c.ctx.getClientsInfo()),
        Field("mergedDesiredVersions", DesiredVersionsType,
          arguments = Client :: Nil,
          resolve = c => { c.ctx.getClientDesiredVersions(c.arg(Client)).map(_.getOrElse(throw NotFoundException())) }),

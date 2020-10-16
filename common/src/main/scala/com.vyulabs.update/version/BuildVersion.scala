@@ -52,7 +52,7 @@ object BuildVersion {
     def read(value: JsValue) = BuildVersion.parse(value.asInstanceOf[JsString].value)
   }
 
-  def apply(build: Seq[Int]): BuildVersion = {
+  def apply(build: Int*): BuildVersion = {
     new BuildVersion(None, build)
   }
 
@@ -60,7 +60,7 @@ object BuildVersion {
     new BuildVersion(None, build, localBuild)
   }
 
-  def apply(clientName: Common.ClientName, build: Seq[Int]): BuildVersion = {
+  def apply(clientName: Common.ClientName, build: Int*): BuildVersion = {
     new BuildVersion(Some(clientName), build)
   }
 
@@ -82,7 +82,7 @@ object BuildVersion {
     new BuildVersion(client, build, localBuild)
   }
 
-  val empty = apply(Seq(0))
+  val empty = apply(0)
 
   val ordering: Ordering[BuildVersion] = Ordering.fromLessThan[BuildVersion]((version1, version2) => {
     if (version1.client != version2.client) {
