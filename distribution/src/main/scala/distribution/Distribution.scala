@@ -5,10 +5,10 @@ import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.{ExceptionHandler, RouteResult}
 import akka.http.scaladsl.server.directives.Credentials
 import com.vyulabs.update.users.{PasswordHash, UserInfo, UsersCredentials}
-import distribution.graphql.{Graphql, GraphqlContext}
+import distribution.graphql.{Graphql}
 import org.slf4j.LoggerFactory
 
-class Distribution[Context <: GraphqlContext](usersCredentials: UsersCredentials, protected val graphQL: Graphql[Context]) {
+class Distribution(usersCredentials: UsersCredentials, protected val graphQL: Graphql) {
   protected implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val exceptionHandler = ExceptionHandler {

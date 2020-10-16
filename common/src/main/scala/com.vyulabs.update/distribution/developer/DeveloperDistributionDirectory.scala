@@ -134,6 +134,6 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
   }
 
   def getDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
-    IoUtils.readFileToJson(getDesiredVersionsFile(clientName)).map(_.convertTo[DesiredVersions])
+    IoUtils.readFileToJson[DesiredVersions](getDesiredVersionsFile(clientName))
   }
 }

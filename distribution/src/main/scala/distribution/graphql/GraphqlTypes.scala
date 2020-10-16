@@ -2,9 +2,9 @@ package distribution.graphql
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
-import com.vyulabs.update.config.ClientInfo
-import com.vyulabs.update.info.{ClientFaultReport, InstanceVersions, ServiceState, UpdateError}
+import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.info.{ClientFaultReport, DesiredVersions, ServiceState, UpdateError, VersionInfo, VersionsInfo}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -14,7 +14,7 @@ import sangria.schema._
 import sangria.macros.derive._
 import sangria.validation.Violation
 
-object GraphqlSchema {
+object GraphqlTypes {
   private case object DateCoerceViolation extends Violation {
     override def errorMessage: String = "Error during parsing Date"
   }
@@ -33,10 +33,24 @@ object GraphqlSchema {
 
   // Common
 
+  implicit val BuildVersionType = deriveObjectType[Unit, BuildVersion]()
+  implicit val VersionInfoType = deriveObjectType[Unit, VersionInfo]()
+  implicit val VersionsInfoType = deriveObjectType[Unit, VersionsInfo]()
+
+  case class ServiceVersion(serviceName: ServiceName, buildVersion: BuildVersion)
+  implicit val ServiceVersionType = deriveObjectType[Unit, ServiceVersion]()
+  implicit val DesiredVersionsType = ObjectType.apply[Unit, DesiredVersions]("DesiredVersions",
+    fields[Unit, DesiredVersions](
+      Field("desiredVersions", ListType(ServiceVersionType), resolve = c => {
+        c.value.desiredVersions.map(entry => ServiceVersion(entry._1, entry._2)).toSeq
+      })
+    )
+  )
+
   implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
+  implicit val ClientConfigInfoType = deriveObjectType[Unit, ClientConfig]()
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
   implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
-  implicit val BuildVersionType = deriveObjectType[Unit, BuildVersion]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
 

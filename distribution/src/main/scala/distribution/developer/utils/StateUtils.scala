@@ -90,31 +90,38 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
   }
 
   def getServiceState(clientName: ClientName, instanceId: InstanceId,
-                      directory: ServiceDirectory, serviceName: ServiceName): Route = {
-    onSuccess(getClientInstancesState(clientName)) {
-      case Some(instancesState) =>
-        instancesState.instances.get(instanceId) match {
-          case Some(servicesState) =>
-            servicesState.directories.get(directory) match {
-              case Some(directoryState) =>
-                directoryState.get(serviceName) match {
-                  case Some(state) =>
-                    complete(state)
+                      directory: ServiceDirectory, serviceName: ServiceName): Future[Option[ServiceState]] = {
+    for {
+      instancesState <- getClientInstancesState(clientName)
+      serviceState <- {
+        Future(instancesState match {
+          case Some(instancesState) =>
+            instancesState.instances.get(instanceId) match {
+              case Some(servicesState) =>
+                servicesState.directories.get(directory) match {
+                  case Some(directoryState) =>
+                    directoryState.get(serviceName) match {
+                      case Some(state) =>
+                        Some(state)
+                      case None =>
+                        log.debug(s"Service ${serviceName} is not found")
+                        None
+                    }
                   case None =>
-                    log.debug(s"Service ${serviceName} is not found")
-                    complete(StatusCodes.NotFound)
+                    log.debug(s"Directory ${directory} is not found")
+                    None
                 }
               case None =>
-                log.debug(s"Directory ${directory} is not found")
-                complete(StatusCodes.NotFound)
+                log.debug(s"Instance ${instanceId} is not found")
+                None
             }
           case None =>
-            log.debug(s"Instance ${instanceId} is not found")
-            complete(StatusCodes.NotFound)
-        }
-      case None =>
-        log.debug(s"Client ${clientName} state is not found")
-        complete(StatusCodes.NotFound)
+            log.debug(s"Client ${clientName} state is not found")
+            None
+        })
+      }
+    } yield {
+      serviceState
     }
   }
 }

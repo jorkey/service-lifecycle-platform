@@ -26,6 +26,10 @@ class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFile
     servicesDir.mkdir()
   }
 
+  def drop(): Unit = {
+    IoUtils.deleteFileRecursively(directory)
+  }
+
   def getServiceDir(serviceName: ServiceName, clientName: Option[ClientName]): File = {
     getServiceDir(serviceName)
   }
@@ -54,7 +58,7 @@ class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFile
   }
 
   def getDesiredVersions()(implicit log: Logger): Option[DesiredVersions] = {
-    IoUtils.readFileToJson(getDesiredVersionsFile()).map(_.convertTo[DesiredVersions])
+    IoUtils.readFileToJson[DesiredVersions](getDesiredVersionsFile())
   }
 
   def getDesiredVersionsFile(): File = {

@@ -44,7 +44,7 @@ object UpdateConfig extends DefaultJsonProtocol {
     val configFile = new File(directory, Common.UpdateConfigFileName)
     if (configFile.exists()) {
       import UpdateConfig._
-      IoUtils.readFileToJson(configFile).map(config => config.convertTo[UpdateConfig])
+      IoUtils.readFileToJson[UpdateConfig](configFile)
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

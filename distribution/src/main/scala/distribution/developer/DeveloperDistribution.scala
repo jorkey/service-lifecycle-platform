@@ -26,7 +26,7 @@ import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
 import distribution.Distribution
 import distribution.client.graphql.ClientGraphqlContext
-import distribution.developer.graphql.DeveloperGraphqlContext
+import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.developer.utils.{ClientsUtils, StateUtils}
 import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
@@ -41,7 +41,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             protected val mongoDb: MongoDb,
                             protected val config: DeveloperDistributionConfig,
                             protected val usersCredentials: UsersCredentials,
-                            protected val graphql: Graphql[DeveloperGraphqlContext],
+                            protected val graphql: Graphql,
                             protected val stateUploader: DeveloperStateUploader,
                             protected val faultUploader: DeveloperFaultUploader)
                            (implicit protected val system: ActorSystem,
@@ -63,37 +63,41 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
         handleExceptions(exceptionHandler) {
           extractRequestContext { ctx =>
             pathPrefix(graphqlPathPrefix) {
-              post {
-                entity(as[JsValue]) { requestJson =>
-                  val JsObject(fields) = requestJson
-                  val JsString(query) = fields("query")
-                  QueryParser.parse(query) match {
-                    case Success(queryAst) =>
-                      val operation = fields.get("operation") collect {
-                        case JsString(op) => op
-                      }
-                      val variables = fields.get("variables") match {
-                        case Some(obj: JsObject) => obj
-                        case _ => JsObject.empty
-                      }
-                      val context = DeveloperGraphqlContext(config, dir, mongoDb, None)
-                      complete(graphql.executeQuery(context, queryAst, operation, variables))
-                    case Failure(error) =>
-                      complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
+              authenticateBasic(realm = "Distribution", authenticate) { case userInfo =>
+                post {
+                  entity(as[JsValue]) { requestJson =>
+                    val JsObject(fields) = requestJson
+                    val JsString(query) = fields("query")
+                    QueryParser.parse(query) match {
+                      case Success(queryAst) =>
+                        val operation = fields.get("operation") collect {
+                          case JsString(op) => op
+                        }
+                        val variables = fields.get("variables") match {
+                          case Some(obj: JsObject) => obj
+                          case _ => JsObject.empty
+                        }
+                        val context = DeveloperGraphqlContext(config, dir, mongoDb, userInfo)
+                        complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
+                          context, queryAst, operation, variables))
+                      case Failure(error) =>
+                        complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
+                    }
                   }
-                }
-              } ~ get {
-                parameters("query", "operation".?, "variables".?) { (query, operation, variables) =>
-                  QueryParser.parse(query) match {
-                    case Success(queryAst) =>
-                      val vars = variables.map(_.parseJson) match {
-                        case Some(obj: JsObject) => obj
-                        case _ => JsObject.empty
-                      }
-                      val context = DeveloperGraphqlContext(config, dir, mongoDb, None)
-                      complete(graphql.executeQuery(context, queryAst, operation, vars))
-                    case Failure(error) =>
-                      complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
+                } ~ get {
+                  parameters("query", "operation".?, "variables".?) { (query, operation, variables) =>
+                    QueryParser.parse(query) match {
+                      case Success(queryAst) =>
+                        val vars = variables.map(_.parseJson) match {
+                          case Some(obj: JsObject) => obj
+                          case _ => JsObject.empty
+                        }
+                        val context = DeveloperGraphqlContext(config, dir, mongoDb, userInfo)
+                        complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
+                          context, queryAst, operation, vars))
+                      case Failure(error) =>
+                        complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
+                    }
                   }
                 }
               }
@@ -120,62 +124,59 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                   } ~
                     authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
                       get {
-                        path(userInfoPath) {
+                        path(userInfoPath) { // deprecated
                           complete(UserInfo(userName, userRole))
                         } ~
-                          path(clientsInfoPath) {
+                          path(clientsInfoPath) { // deprecated
                             complete(getClientsInfo())
                           } ~
-                          path(instanceVersionsPath / ".*".r) { clientName =>
+                          path(instanceVersionsPath / ".*".r) { clientName => // deprecated
                             complete(getClientInstanceVersions(clientName))
                           } ~
-                          path(serviceStatePath / ".*".r / ".*".r / ".*".r / ".*".r) { (clientName, instanceId, directory, service) =>
-                            getServiceState(clientName, instanceId, directory, service)
+                          path(serviceStatePath / ".*".r / ".*".r / ".*".r / ".*".r) { (clientName, instanceId, directory, service) => // deprecated
+                            complete(getServiceState(clientName, instanceId, directory, service))
                           } ~
                           path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                             getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                           } ~
-                          path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
+                          path(versionInfoPath / ".*".r / ".*".r) { (service, version) => // deprecated
                             getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                           } ~
                           authorize(userRole == UserRole.Administrator) {
-                            path(versionsInfoPath / ".*".r) { service =>
+                            path(versionsInfoPath / ".*".r) { service => // deprecated
                               complete(getVersionsInfo(dir.getServiceDir(service, None)))
                             } ~
-                              path(versionsInfoPath / ".*".r / ".*".r) { (service, clientName) =>
+                              path(versionsInfoPath / ".*".r / ".*".r) { (service, clientName) => // deprecated
                                 complete(getVersionsInfo(dir.getServiceDir(service, Some(clientName))))
                               } ~
-                              path(desiredVersionsPath) { // TODO сделать обработку независимой от роли
+                              path(desiredVersionsPath) { // TODO сделать обработку независимой от роли // deprecated
                                 complete(getDesiredVersions(None))
                               } ~
-                              path(desiredVersionsPath / ".*".r) { clientName =>
+                              path(desiredVersionsPath / ".*".r) { clientName => // deprecated
                                 complete(getClientDesiredVersions(clientName))
                               } ~
-                              path(installedDesiredVersionsPath / ".*".r) { clientName =>
-                                getFromFileWithLock(dir.getInstalledDesiredVersionsFile(clientName))
+                              path(installedDesiredVersionsPath / ".*".r) { clientName => // deprecated
+                                complete(getInstalledDesiredVersions(clientName))
                               } ~
-                              path(desiredVersionPath / ".*".r) { service =>
-                                getDesiredVersion(service, getDesiredVersions(None), false)
+                              path(desiredVersionPath / ".*".r) { service => // deprecated
+                                complete(getDesiredVersion(service, getDesiredVersions(None)))
                               } ~
-                              path(distributionVersionPath) {
-                                getVersion()
+                              path(distributionVersionPath) { // deprecated
+                                complete(getVersion())
                               } ~
-                              path(scriptsVersionPath) {
-                                getServiceVersion(Common.ScriptsServiceName, new File("."))
+                              path(scriptsVersionPath) { // deprecated
+                                complete(getServiceVersion(Common.ScriptsServiceName, new File(".")))
                               }
                           } ~
                           authorize(userRole == UserRole.Client) {
                             path(clientConfigPath) {
-                              getFromFile(dir.getClientConfigFile(userName))
+                              complete(getClientConfig(userName)) // deprecated
                             } ~
                               path(desiredVersionsPath) {
-                                complete(getClientDesiredVersions(userName))
+                                complete(getClientDesiredVersions(userName)) // deprecated
                               } ~
-                              path(desiredVersionPath / ".*".r) { service =>
-                                getDesiredVersion(service, getClientDesiredVersions(userName), false)
-                              } ~
-                              path(testedVersionsPath) { // TODO remove
-                                complete(getTestedVersionsByClient(userName))
+                              path(desiredVersionPath / ".*".r) { service => // deprecated
+                                complete(getDesiredVersion(service, getClientDesiredVersions(userName)))
                               }
                           }
                       } ~
@@ -253,15 +254,13 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             }
                           } ~
                           path(downloadDesiredVersionPath / ".*".r) { service =>
-                            parameter("image".as[Boolean] ? true) { image =>
-                              getDesiredVersion(service, getDesiredVersions(None), image)
-                            }
+                            complete(getDesiredVersion(service, getDesiredVersions(None)))
                           } ~
                           path(getDistributionVersionPath) {
-                            getVersion()
+                            complete(getVersion())
                           } ~
                           path(getScriptsVersionPath) {
-                            getServiceVersion(Common.ScriptsServiceName, new File("."))
+                            complete(getServiceVersion(Common.ScriptsServiceName, new File(".")))
                           }
                       } ~
                       authorize(userRole == UserRole.Client) {
@@ -283,9 +282,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             }
                           } ~
                           path(downloadDesiredVersionPath / ".*".r) { service =>
-                            parameter("image".as[Boolean] ? true) { image =>
-                              getDesiredVersion(service, getClientDesiredVersions(userName), image)
-                            }
+                            complete(getDesiredVersion(service, getClientDesiredVersions(userName)))
                           }
                       }
                   } ~

@@ -19,7 +19,7 @@ object InstallerConfig extends DefaultJsonProtocol {
 
   def apply()(implicit log: Logger): Option[InstallerConfig] = {
     if (configFile.exists()) {
-      IoUtils.readFileToJson(configFile).map(_.convertTo[InstallerConfig])
+      IoUtils.readFileToJson[InstallerConfig](configFile)
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

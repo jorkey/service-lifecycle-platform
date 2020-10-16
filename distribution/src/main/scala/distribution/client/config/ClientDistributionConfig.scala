@@ -22,7 +22,7 @@ object ClientDistributionConfig extends DefaultJsonProtocol {
   def apply()(implicit log: Logger): Option[ClientDistributionConfig] = {
     val configFile = new File("distribution.json")
     if (configFile.exists()) {
-      IoUtils.readFileToJson(configFile).map(_.convertTo[ClientDistributionConfig])
+      IoUtils.readFileToJson[ClientDistributionConfig](configFile)
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

@@ -139,13 +139,13 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     val scriptsVersionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
-    if (!IoUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(Common.ScriptsServiceName, nextVersion), scriptsVersionInfo.toJson)) {
+    if (!IoUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(Common.ScriptsServiceName, nextVersion), scriptsVersionInfo)) {
       log.error(s"Can't write scripts version info")
       return false
     }
     var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.desiredVersions).getOrElse(Map.empty)
     desiredVersions += Common.ScriptsServiceName -> nextVersion
-    if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toJson)) {
+    if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions))) {
       log.error("Can't write desired versions")
       return false
     }
@@ -172,13 +172,13 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       }
       imageJar.delete()
       val versionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
-      if (!IoUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(serviceName, nextVersion), versionInfo.toJson)) {
+      if (!IoUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(serviceName, nextVersion), versionInfo)) {
         log.error(s"Can't write version info of service ${serviceName}")
         return false
       }
       var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.desiredVersions).getOrElse(Map.empty)
       desiredVersions += serviceName -> nextVersion
-      if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions).toJson)) {
+      if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions))) {
         log.error("Can't write desired versions")
         return false
       }

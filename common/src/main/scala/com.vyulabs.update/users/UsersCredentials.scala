@@ -89,9 +89,9 @@ object UsersCredentials extends DefaultJsonProtocol {
 
     if (credentialsFile.exists()) {
       log.debug(s"Parse ${credentialsFile}")
-      IoUtils.readFileToJson(credentialsFile).getOrElse {
+      IoUtils.readFileToJson[UsersCredentials](credentialsFile).getOrElse {
         Utils.error(s"Can't read ${credentialsFile}")
-      }.convertTo[UsersCredentials]
+      }
     } else {
       log.info(s"File ${credentialsFile} not exists")
       new UsersCredentials(Map.empty)

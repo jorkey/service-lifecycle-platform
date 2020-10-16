@@ -67,6 +67,15 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
       }
     } yield collection
   }
+
+  def dropDatabase(): Future[Boolean] = {
+    Source.fromPublisher(db.drop())
+      .log(s"Drop Mongo DB database ${db.getName}")
+      .runWith(Sink.headOption[Success]).map(_ => true)
+      .recover {
+        case ex: Exception => false
+      }
+  }
 }
 
 class MongoDbCollection[T](name: String, collection: MongoCollection[Document])

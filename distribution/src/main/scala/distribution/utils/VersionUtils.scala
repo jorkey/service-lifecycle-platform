@@ -25,23 +25,24 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   protected implicit val executionContext: ExecutionContext
 
     // TODO remove parameter 'image' when all usages will 'false'
-  def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]], image: Boolean): Route = {
-    onSuccess(future) { desiredVersions =>
-      desiredVersions match {
-        case Some(desiredVersions) =>
-          desiredVersions.desiredVersions.get(serviceName) match {
-            case Some(version) =>
-              if (!image) {
-                complete(version.toString)
-              } else {
-                getFromFileWithLock(dir.getVersionImageFile(serviceName, version))
-              }
-            case None =>
-              complete(NotFound, s"Desired version fot service ${serviceName} is not found")
-          }
-        case None =>
-          complete(NotFound, "Desired versions is not found")
+  def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]]): Future[Option[BuildVersion]] = {
+    for {
+      desiredVersions <- future
+      version <- {
+        Future(desiredVersions match {
+          case Some(desiredVersions) =>
+            desiredVersions.desiredVersions.get(serviceName) match {
+              case Some(version) =>
+                Some(version)
+              case None =>
+                None
+            }
+          case None =>
+            None
+        })
       }
+    } yield {
+      version
     }
   }
 
@@ -125,21 +126,11 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     }
   }
 
-  def getVersion(): Route = {
-    Utils.getManifestBuildVersion(Common.DistributionServiceName) match {
-      case Some(version) =>
-        complete(version.toString)
-      case None =>
-        complete((InternalServerError, s"Version is not defined in manifest"))
-    }
+  def getVersion(): Option[BuildVersion] = {
+    Utils.getManifestBuildVersion(Common.DistributionServiceName)
   }
 
-  def getServiceVersion(serviceName: ServiceName, directory: File): Route = {
-    IoUtils.readServiceVersion(serviceName, directory) match {
-      case Some(version) =>
-        complete(version.toString)
-      case None =>
-        complete((InternalServerError, s"Can't found version of scripts"))
-    }
+  def getServiceVersion(serviceName: ServiceName, directory: File): Option[BuildVersion] = {
+    IoUtils.readServiceVersion(serviceName, directory) // TODO move to async
   }
 }

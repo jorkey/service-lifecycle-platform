@@ -12,6 +12,7 @@ import com.vyulabs.update.info.{ClientFaultReport, ServiceState}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
@@ -36,13 +37,13 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder")
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb("test")
+  val mongo = new MongoDb(getClass.getName)
 
   val collectionName = "faults"
   val collection = result(mongo.getOrCreateCollection[ClientFaultReport](collectionName), FiniteDuration(300, TimeUnit.SECONDS))
 
-  val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, None)
-  val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition)
+  val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("user", UserRole.Administrator))
+  val graphql = new Graphql()
 
   val client1 = "client1"
   val client2 = "client2"
@@ -51,7 +52,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val instance2 = "instance2"
 
   override def beforeAll() = {
-    collection.drop().map(assert(_))
+    collection.drop().foreach(assert(_))
     assert(result(collection.dropItems(), FiniteDuration(3, TimeUnit.SECONDS)))
     assert(result(collection.insert(
       ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
@@ -65,7 +66,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
-    collection.drop().map(assert(_))
+    mongo.dropDatabase().foreach(assert(_))
   }
 
   it should "get last fault reports for specified client" in {
@@ -81,7 +82,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(graphqlContext, query)
+    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
       ("""{"data":{"faults":[""" +
@@ -102,7 +103,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(graphqlContext, query)
+    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
       ("""{"data":{"faults":[""" +
@@ -123,7 +124,8 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(graphqlContext, query, None, variables = JsObject("service" -> JsString("serviceB")))
+    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition,
+      graphqlContext, query, None, variables = JsObject("service" -> JsString("serviceB")))
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
       ("""{"data":{"faults":[""" +

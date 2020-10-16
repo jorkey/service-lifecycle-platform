@@ -34,7 +34,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                          protected val mongoDb: MongoDb,
                          protected val config: ClientDistributionConfig,
                          protected val usersCredentials: UsersCredentials,
-                         protected val graphql: Graphql[ClientGraphqlContext],
+                         protected val graphql: Graphql,
                          protected val stateUploader: ClientStateUploader,
                          protected val logUploader: ClientLogUploader,
                          protected val faultUploader: ClientFaultUploader)
@@ -86,16 +86,16 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           getFromFileWithLock(dir.getDesiredVersionsFile())
                         } ~
                         path(desiredVersionPath / ".*".r) { service =>
-                          getClientDesiredVersion(service, false)
+                          complete(getClientDesiredVersion(service))
                         } ~
                         path(servicesStatePath / ".*".r) { (instanceId) =>
                           stateUploader.getInstanceState(instanceId)
                         } ~
                         path(distributionVersionPath) {
-                          getVersion()
+                          complete(getVersion())
                         } ~
                         path(scriptsVersionPath) {
-                          getServiceVersion(Common.ScriptsServiceName, new File("."))
+                          complete(getServiceVersion(Common.ScriptsServiceName, new File(".")))
                         }
                     } ~
                       post {
@@ -177,19 +177,17 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         getFromFileWithLock(dir.getDesiredVersionsFile())
                       } ~
                       path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
-                        parameter("image".as[Boolean] ? true) { image =>
-                          getClientDesiredVersion(service, image)
-                        }
+                        complete(getClientDesiredVersion(service))
                       } ~
                       path(prefix / downloadInstanceStatePath / ".*".r) { (instanceId) =>
                         stateUploader.getInstanceState(instanceId)
                       } ~
                       authorize(userRole == UserRole.Administrator) {
                         path(prefix / getDistributionVersionPath) {
-                          getVersion()
+                          complete(getVersion())
                         } ~
                           path(prefix / getScriptsVersionPath) {
-                            getServiceVersion(Common.ScriptsServiceName, new File("."))
+                            complete(getServiceVersion(Common.ScriptsServiceName, new File(".")))
                           }
                       }
                   } ~

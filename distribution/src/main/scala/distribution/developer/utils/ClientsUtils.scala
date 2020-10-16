@@ -105,6 +105,10 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
     parseJsonFileWithLock[DesiredVersions](dir.getDesiredVersionsFile(clientName))
   }
 
+  def getInstalledDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
+    parseJsonFileWithLock[DesiredVersions](dir.getInstalledDesiredVersionsFile(clientName))
+  }
+
   def getClientDesiredVersions(clientName: ClientName): Future[Option[DesiredVersions]] = {
     filterDesiredVersionsByProfile(clientName, getMergedDesiredVersions(clientName))
   }

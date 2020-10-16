@@ -49,12 +49,12 @@ object IoUtils {
     }).getOrElse(None)
   }
 
-  def readFileToJson(file: File)(implicit log: Logger): Option[JsValue] = {
-    readFileToBytes(file).map(new String(_, "utf8").parseJson)
+  def readFileToJson[T](file: File)(implicit reader: JsonReader[T], log: Logger): Option[T] = {
+    readFileToBytes(file).map(new String(_, "utf8").parseJson.convertTo[T])
   }
 
-  def readFileToJsonWithLock(file: File)(implicit log: Logger): Option[JsValue] = {
-    readFileToBytes(file).map(new String(_, "utf8").parseJson)
+  def readFileToJsonWithLock[T](file: File)(implicit reader: JsonReader[T], log: Logger): Option[T] = {
+    readFileToBytes(file).map(new String(_, "utf8").parseJson.convertTo[T])
   }
 
   def writeBytesToFile(file: File, data: Array[Byte])(implicit log: Logger): Boolean = {
@@ -80,13 +80,13 @@ object IoUtils {
     }).getOrElse(false)
   }
 
-  def writeJsonToFile(file: File, json: JsValue)(implicit log: Logger): Boolean = {
-    writeBytesToFile(file, json.sortedPrint.getBytes("utf8"))
+  def writeJsonToFile[T](file: File, obj: T)(implicit writer: JsonWriter[T], log: Logger): Boolean = {
+    writeBytesToFile(file, obj.toJson.sortedPrint.getBytes("utf8"))
   }
 
-  def writeJsonToFileWithLock(file: File, json: JsValue)
-                                (implicit filesLocker: SmartFilesLocker, log: Logger): Boolean = {
-    writeBytesToFileWithLock(file, json.sortedPrint.getBytes("utf8"))
+  def writeJsonToFileWithLock[T](file: File, obj: T)
+                                (implicit writer: JsonWriter[T], filesLocker: SmartFilesLocker, log: Logger): Boolean = {
+    writeBytesToFileWithLock(file, obj.toJson.sortedPrint.getBytes("utf8"))
   }
 
   def writeConfigToFile(file: File, config: Config)(implicit log: Logger): Boolean = {

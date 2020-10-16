@@ -19,7 +19,7 @@ object InstallConfig extends DefaultJsonProtocol {
   def read(directory: File)(implicit log: Logger): Option[InstallConfig] = {
     val configFile = new File(directory, Common.InstallConfigFileName)
     if (configFile.exists()) {
-      IoUtils.readFileToJson(configFile).map(config => config.convertTo[InstallConfig])
+      IoUtils.readFileToJson[InstallConfig](configFile)
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

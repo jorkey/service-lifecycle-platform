@@ -8,12 +8,15 @@ import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
 import com.vyulabs.update.info.DesiredVersions
 import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.version.BuildVersion
 import distribution.utils.{GetUtils, VersionUtils}
 
+import scala.concurrent.Future
+
 trait ClientVersionUtils extends GetUtils with VersionUtils with ClientDistributionWebPaths with SprayJsonSupport {
-  def getClientDesiredVersion(serviceName: ServiceName, image: Boolean)
-                                 (implicit system: ActorSystem, materializer: Materializer, filesLocker: SmartFilesLocker, dir: ClientDistributionDirectory): Route = {
+  def getClientDesiredVersion(serviceName: ServiceName)
+                                 (implicit system: ActorSystem, materializer: Materializer, filesLocker: SmartFilesLocker, dir: ClientDistributionDirectory): Future[Option[BuildVersion]] = {
     val future = parseJsonFileWithLock[DesiredVersions](dir.getDesiredVersionsFile())
-    getDesiredVersion(serviceName, future, image)
+    getDesiredVersion(serviceName, future)
   }
 }

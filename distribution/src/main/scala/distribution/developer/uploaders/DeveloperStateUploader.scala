@@ -101,8 +101,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
 
   private def updateInstancesState(clientName: ClientName, states: Map[InstanceId, ServicesState]): Unit = {
     val statesFile = dir.getInstancesStateFile(clientName)
-    val oldStates = IoUtils.readFileToJsonWithLock(statesFile)
-      .map(_.convertTo[InstancesState]).map(_.instances).getOrElse(Map.empty)
+    val oldStates = IoUtils.readFileToJsonWithLock[InstancesState](statesFile).map(_.instances).getOrElse(Map.empty)
     val newStates = filterExpiredStates(states, expireInstanceStateTime)
     val newDeadStates = oldStates.filterKeys(!newStates.contains(_))
     updateDeadInstancesState(clientName, newStates.keySet, newDeadStates)
@@ -114,7 +113,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
   private def updateDeadInstancesState(clientName: ClientName, liveInstances: Set[InstanceId],
                                        newDeadStates: Map[InstanceId, ServicesState]): Unit = {
     val deadStatesFile = dir.getDeadInstancesStateFile(clientName)
-    val deadStates = IoUtils.readFileToJsonWithLock(deadStatesFile).map(_.convertTo[InstancesState]) match {
+    val deadStates = IoUtils.readFileToJsonWithLock[InstancesState](deadStatesFile) match {
       case Some(deadInstancesState) =>
         deadInstancesState.instances.filterKeys(!liveInstances.contains(_))
       case None =>
@@ -126,7 +125,7 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
   }
 
   private def expireInstancesState(statesFile: File, expireTime: Long): Unit = {
-    val states = IoUtils.readFileToJsonWithLock(statesFile).map(_.convertTo[InstancesState]) match {
+    val states = IoUtils.readFileToJsonWithLock[InstancesState](statesFile) match {
       case Some(instancesState) =>
         filterExpiredStates(instancesState.instances, expireTime)
       case None =>

@@ -69,6 +69,8 @@ object DistributionMain extends App {
 
     val mongoDb = new MongoDb("distribution")
 
+    val graphql = new Graphql()
+
     command match {
       case "developer" =>
         val config = DeveloperDistributionConfig().getOrElse {
@@ -76,8 +78,6 @@ object DistributionMain extends App {
         }
 
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
-
-        val graphql = new Graphql(DeveloperGraphqlSchema.SchemaDefinition)
 
         val stateUploader = new DeveloperStateUploader(dir)
 
@@ -110,14 +110,13 @@ object DistributionMain extends App {
 
         val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
 
-        val graphql = new Graphql(ClientGraphQLSchema.SchemaDefinition)
-
         val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId, config.installerDirectory)
         val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
         val logUploader = new ClientLogUploader(dir)
 
         val selfUpdater = new SelfUpdater(dir)
-        val distribution = new ClientDistribution(dir, mongoDb, config, usersCredentials, graphql, stateUploader, logUploader, faultUploader)
+        val distribution = new ClientDistribution(dir, mongoDb, config, usersCredentials,
+          graphql, stateUploader, logUploader, faultUploader)
 
         stateUploader.start()
         logUploader.start()

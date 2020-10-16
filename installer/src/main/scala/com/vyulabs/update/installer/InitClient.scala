@@ -77,7 +77,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                    adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
     log.info(s"Create ${InstallerConfig.configFile}")
     val config = InstallerConfig(adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl)
-    if (!IoUtils.writeJsonToFile(InstallerConfig.configFile, config.toJson)) {
+    if (!IoUtils.writeJsonToFile(InstallerConfig.configFile, config)) {
       return false
     }
     log.info("Update installer.sh")
@@ -130,7 +130,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Write desired versions")
-    if (!IoUtils.writeJsonToFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions).toJson)) {
+    if (!IoUtils.writeJsonToFile(clientDistribution.getDesiredVersionsFile(), DesiredVersions(desiredVersions))) {
       log.error("Can't write desired versions")
       return false
     }

@@ -6,7 +6,7 @@ import distribution.graphql.GraphqlContext
 import distribution.mongo.MongoDb
 import sangria.schema._
 
-case class ClientGraphqlContext(dir: ClientDistributionDirectory, mongoDb: MongoDb, userInfo: Option[UserInfo]) extends GraphqlContext
+case class ClientGraphqlContext(dir: ClientDistributionDirectory, mongoDb: MongoDb, userInfo: UserInfo) extends GraphqlContext
 
 object ClientGraphQLSchema {
   val QueryType = ObjectType(

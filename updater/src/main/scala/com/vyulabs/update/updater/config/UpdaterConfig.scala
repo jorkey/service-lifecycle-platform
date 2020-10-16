@@ -18,7 +18,7 @@ object UpdaterConfig extends DefaultJsonProtocol {
   def apply()(implicit log: Logger): Option[UpdaterConfig] = {
     val configFile = new File("updater.json")
     if (configFile.exists()) {
-      IoUtils.readFileToJson(configFile).map(_.convertTo[UpdaterConfig])
+      IoUtils.readFileToJson[UpdaterConfig](configFile)
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

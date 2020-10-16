@@ -47,10 +47,10 @@ class SelfUpdater(dir: DistributionDirectory)
             return
           }
         }
-        val desiredVersions = IoUtils.readFileToJsonWithLock(dir.getDesiredVersionsFile()) match {
-          case Some(json) =>
+        val desiredVersions = IoUtils.readFileToJsonWithLock[DesiredVersions](dir.getDesiredVersionsFile()) match {
+          case Some(versions) =>
             try {
-              json.convertTo[DesiredVersions].desiredVersions
+              versions.desiredVersions
             } catch {
               case e: Exception =>
                 log.error("Can't init desired versions", e)
