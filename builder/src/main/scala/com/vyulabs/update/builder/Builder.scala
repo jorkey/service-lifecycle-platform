@@ -166,7 +166,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
                 log.error(s"Build repository already contains file ${configFile}")
                 return None
               }
-              if (!IoUtils.writeJsonToFile(configFile, installConfig.toJson)) {
+              if (!IoUtils.writeJsonToFile(configFile, installConfig)) {
                 return None
               }
             }
@@ -247,7 +247,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
           } finally {
             for (desiredVersions <- newDesiredVersions) {
               val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-              if (!IoUtils.writeJsonToFile(desiredVersionsFile, desiredVersions.toJson)) {
+              if (!IoUtils.writeJsonToFile(desiredVersionsFile, desiredVersions)) {
                 return false
               }
               if (!adminRepository.addFileToCommit(desiredVersionsFile)) {

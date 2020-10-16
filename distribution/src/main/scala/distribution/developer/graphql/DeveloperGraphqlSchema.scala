@@ -86,7 +86,7 @@ object DeveloperGraphqlSchema {
          arguments = Service :: Version :: Nil,
          resolve = c => { c.ctx.parseJsonFileWithLock[VersionInfo](c.ctx.dir.getVersionInfoFile(c.arg(Service), c.arg(Version)))
            .map(_.getOrElse(throw NotFoundException())) }),
-       Field("versionsInfo", VersionsInfoType,
+       Field("versionsInfo", ListType(VersionInfoType),
          arguments = Service :: OptionClient :: Nil,
          resolve = c => { c.ctx.getVersionsInfo(c.ctx.dir.getServiceDir(c.arg(Service), c.arg(OptionClient))) }),
        Field("desiredVersions", DesiredVersionsType,

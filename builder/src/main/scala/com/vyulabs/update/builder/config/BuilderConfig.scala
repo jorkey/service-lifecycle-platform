@@ -18,7 +18,7 @@ object BuilderConfig extends DefaultJsonProtocol {
   def apply()(implicit log: Logger): Option[BuilderConfig] = {
     val configFile = new File("builder.json")
     if (configFile.exists()) {
-      IoUtils.readFileToJson(configFile).map(_.convertTo[BuilderConfig])
+      IoUtils.readFileToJson[BuilderConfig](configFile)
     } else {
       log.error(s"Config file ${configFile} does not exist")
       None

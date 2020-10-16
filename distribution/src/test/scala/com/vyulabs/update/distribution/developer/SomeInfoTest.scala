@@ -46,10 +46,17 @@ class SomeInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   override def beforeAll() = {
     IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion(1, 1, 2)),
       VersionInfo(BuildVersion(1, 1, 2), "author1", Seq.empty, new Date(), None))
+    IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion(1, 1, 3)),
+      VersionInfo(BuildVersion(1, 1, 3), "author1", Seq.empty, new Date(), None))
 
     dir.getClientDir("client1").mkdir()
     IoUtils.writeJsonToFile(dir.getClientConfigFile("client1"),
       ClientConfig("common", Some("test")))
+
+    IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion("client1", 1, 1, 2)),
+      VersionInfo(BuildVersion("client1", 1, 1, 0), "author2", Seq.empty, new Date(), None))
+    IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion("client1", 1, 1, 3)),
+      VersionInfo(BuildVersion("client1", 1, 1, 1), "author2", Seq.empty, new Date(), None))
   }
 
   override protected def afterAll(): Unit = {
@@ -72,6 +79,40 @@ class SomeInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
       ("""{"data":{"versionInfo":{"version":"1.1.2","author":"author1"}}}""").parseJson))(result)
+  }
+
+  it should "return versions info" in {
+    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val query =
+      graphql"""
+        query {
+          versionsInfo (service: "service1") {
+            version
+            author
+          }
+        }
+      """
+    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
+    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
+    assertResult((OK,
+      ("""{"data":{"versionsInfo":[{"version":"1.1.2","author":"author1"},{"version":"1.1.3","author":"author1"}]}}""").parseJson))(result)
+  }
+
+  it should "return client versions info" in {
+    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val query =
+      graphql"""
+        query {
+          versionsInfo (service: "service1", client: "client1") {
+            version
+            author
+          }
+        }
+      """
+    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
+    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
+    assertResult((OK,
+      ("""{"data":{"versionsInfo":[{"version":"client1-1.1.0","author":"author2"},{"version":"client1-1.1.1","author":"author2"}]}}""").parseJson))(result)
   }
 
   it should "return user info" in {

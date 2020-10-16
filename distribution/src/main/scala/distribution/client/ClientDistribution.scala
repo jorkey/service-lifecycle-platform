@@ -13,7 +13,7 @@ import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
-import com.vyulabs.update.info.{ProfiledServiceName, ServicesState}
+import com.vyulabs.update.info.{ProfiledServiceName, ServicesState, VersionsInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
@@ -80,7 +80,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                         } ~
                         path(versionsInfoPath / ".*".r) { (service) =>
-                          complete(getVersionsInfo(dir.getServiceDir(service)))
+                          complete(getVersionsInfo(dir.getServiceDir(service)).map(VersionsInfo(_)))
                         } ~
                         path(desiredVersionsPath) {
                           getFromFileWithLock(dir.getDesiredVersionsFile())
@@ -171,7 +171,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                       } ~
                       path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                        complete(getVersionsInfo(dir.getServiceDir(service)))
+                        complete(getVersionsInfo(dir.getServiceDir(service)).map(VersionsInfo(_)))
                       } ~
                       path(prefix / downloadDesiredVersionsPath) {
                         getFromFileWithLock(dir.getDesiredVersionsFile())

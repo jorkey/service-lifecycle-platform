@@ -16,7 +16,7 @@ import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DistributionInfo, InstancesState}
+import com.vyulabs.update.info.{DistributionInfo, InstancesState, VersionsInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
@@ -144,10 +144,10 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           } ~
                           authorize(userRole == UserRole.Administrator) {
                             path(versionsInfoPath / ".*".r) { service => // deprecated
-                              complete(getVersionsInfo(dir.getServiceDir(service, None)))
+                              complete(getVersionsInfo(dir.getServiceDir(service, None)).map(VersionsInfo(_)))
                             } ~
                               path(versionsInfoPath / ".*".r / ".*".r) { (service, clientName) => // deprecated
-                                complete(getVersionsInfo(dir.getServiceDir(service, Some(clientName))))
+                                complete(getVersionsInfo(dir.getServiceDir(service, Some(clientName))).map(VersionsInfo(_)))
                               } ~
                               path(desiredVersionsPath) { // TODO сделать обработку независимой от роли // deprecated
                                 complete(getDesiredVersions(None))
@@ -245,7 +245,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                       authorize(userRole == UserRole.Administrator) {
                         path(downloadVersionsInfoPath / ".*".r) { service =>
                           parameter("client".?) { clientName =>
-                            complete(getVersionsInfo(dir.getServiceDir(service, clientName)))
+                            complete(getVersionsInfo(dir.getServiceDir(service, clientName)).map(VersionsInfo(_)))
                           }
                         } ~
                           path(downloadDesiredVersionsPath) {

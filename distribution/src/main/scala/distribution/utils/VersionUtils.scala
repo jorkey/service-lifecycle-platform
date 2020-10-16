@@ -56,11 +56,11 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
         log.info(s"Uploaded version ${buildVersion} of service ${serviceName}")
         val versionsDir = dir.getServiceDir(serviceName, buildVersion.client)
         getVersionsInfo(versionsDir).onComplete {
-          case Success(versionsInfo) =>
+          case Success(versions) =>
             getBusyVersions(serviceName).onComplete {
               case Success(busyVersions) =>
                 var notUsedVersions =
-                  versionsInfo.versions.filterNot(
+                  versions.filterNot(
                     version => { version.version == buildVersion ||
                       busyVersions.contains(version.version) }).sortBy(_.date.getTime).map(_.version)
                 log.info("Not used versions " + notUsedVersions)
@@ -98,7 +98,7 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     promise.future
   }
 
-  def getVersionsInfo(directory: File): Future[VersionsInfo] = {
+  def getVersionsInfo(directory: File): Future[Seq[VersionInfo]] = {
     var versions = Seq.empty[Future[Option[VersionInfo]]]
     if (directory.exists()) {
       for (file <- directory.listFiles()) {
@@ -107,10 +107,10 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
         }
       }
     }
-    val promise = Promise.apply[VersionsInfo]()
+    val promise = Promise.apply[Seq[VersionInfo]]()
     Future.sequence(versions).onComplete {
       case Success(versions) =>
-        promise.success(VersionsInfo(versions.flatten))
+        promise.success(versions.flatten)
       case Failure(ex) =>
         promise.failure(ex)
     }
