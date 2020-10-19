@@ -7,7 +7,7 @@ import java.util.Base64
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.info.VersionInfo
+import com.vyulabs.update.info.BuildVersionInfo
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
@@ -15,7 +15,7 @@ import spray.json.JsValue
 
 import scala.annotation.tailrec
 import spray.json._
-import com.vyulabs.update.info.VersionInfo._
+import com.vyulabs.update.info.BuildVersionInfo._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -31,8 +31,8 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
      downloadToFile(makeUrl(getDownloadVersionInfoPath(serviceName, buildVersion)), file)
   }
 
-  def downloadVersionInfo(serviceName: ServiceName, buildVersion: BuildVersion): Option[VersionInfo] = {
-    downloadToJson(makeUrl(getDownloadVersionInfoPath(serviceName, buildVersion))).map(_.convertTo[VersionInfo])
+  def downloadVersionInfo(serviceName: ServiceName, buildVersion: BuildVersion): Option[BuildVersionInfo] = {
+    downloadToJson(makeUrl(getDownloadVersionInfoPath(serviceName, buildVersion))).map(_.convertTo[BuildVersionInfo])
   }
 
   def downloadVersionImage(serviceName: ServiceName, buildVersion: BuildVersion, file: File): Boolean = {
@@ -60,7 +60,7 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     uploadFromFile(makeUrl(getUploadVersionInfoPath(serviceName, buildVersion)), versionInfoName, infoFile)
   }
 
-  def uploadVersion(serviceName: ServiceName, versionInfo: VersionInfo, buildDir: File): Boolean = {
+  def uploadVersion(serviceName: ServiceName, buildVersion: BuildVersion, buildVersionInfo: BuildVersionInfo, buildDir: File): Boolean = {
     val imageTmpFile = File.createTempFile("build", ".zip")
     val infoTmpFile = File.createTempFile("version-info", ".json")
     try {
@@ -68,10 +68,10 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
         log.error("Can't zip build directory")
         return false
       }
-      if (!IoUtils.writeJsonToFile(infoTmpFile, versionInfo.toJson)) {
+      if (!IoUtils.writeJsonToFile(infoTmpFile, buildVersionInfo.toJson)) {
         return false
       }
-      uploadVersionImage(serviceName, versionInfo.version, infoTmpFile, imageTmpFile)
+      uploadVersionImage(serviceName, buildVersion, infoTmpFile, imageTmpFile)
     } finally {
       imageTmpFile.delete()
       infoTmpFile.delete()

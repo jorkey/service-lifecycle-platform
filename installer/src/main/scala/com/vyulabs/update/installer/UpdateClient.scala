@@ -7,7 +7,7 @@ import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.AdminRepository
-import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, VersionInfo}
+import com.vyulabs.update.info.{DesiredVersions, ServicesVersions, BuildVersionInfo}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
@@ -360,8 +360,8 @@ class UpdateClient()(implicit log: Logger) {
       }
 
       log.info(s"Upload version ${toVersion} of service ${serviceName}")
-      val clientVersionInfo = VersionInfo(toVersion, versionInfo.author, versionInfo.branches, new Date(), versionInfo.comment)
-      if (!clientDistribution.uploadVersion(serviceName, clientVersionInfo, buildDir)) {
+      val clientVersionInfo = BuildVersionInfo(versionInfo.author, versionInfo.branches, new Date(), versionInfo.comment)
+      if (!clientDistribution.uploadVersion(serviceName, toVersion, clientVersionInfo, buildDir)) {
         return false
       }
       true

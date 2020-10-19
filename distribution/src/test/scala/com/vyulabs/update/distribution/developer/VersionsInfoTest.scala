@@ -7,9 +7,10 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
+import com.vyulabs.update.common.Common.CommonServiceProfile
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.info.{ProfiledServiceName, VersionInfo}
+import com.vyulabs.update.info.{ClientFaultReport, ProfiledServiceName, ServiceState, VersionInfo, BuildVersionInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.IoUtils
@@ -23,11 +24,12 @@ import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import scala.concurrent.Await.result
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
 
-class SomeInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
-  behavior of "AdaptationMeasure"
+class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+  behavior of "Version Info Requests"
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer = ActorMaterializer()
@@ -44,19 +46,28 @@ class SomeInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val graphql = new Graphql()
 
   override def beforeAll() = {
-    IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion(1, 1, 2)),
-      VersionInfo(BuildVersion(1, 1, 2), "author1", Seq.empty, new Date(), None))
-    IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion(1, 1, 3)),
-      VersionInfo(BuildVersion(1, 1, 3), "author1", Seq.empty, new Date(), None))
+    val versionInfoCollection = result(mongo.getOrCreateCollection[VersionInfo](), FiniteDuration(3, TimeUnit.SECONDS))
+    val clientInfoCollection = result(mongo.getOrCreateCollection[ClientInfo](), FiniteDuration(3, TimeUnit.SECONDS))
 
-    dir.getClientDir("client1").mkdir()
-    IoUtils.writeJsonToFile(dir.getClientConfigFile("client1"),
-      ClientConfig("common", Some("test")))
+    versionInfoCollection.drop().foreach(assert(_))
+    clientInfoCollection.drop().foreach(assert(_))
 
-    IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion("client1", 1, 1, 2)),
-      VersionInfo(BuildVersion("client1", 1, 1, 0), "author2", Seq.empty, new Date(), None))
-    IoUtils.writeJsonToFile(dir.getVersionInfoFile("service1", BuildVersion("client1", 1, 1, 3)),
-      VersionInfo(BuildVersion("client1", 1, 1, 1), "author2", Seq.empty, new Date(), None))
+    assert(result(versionInfoCollection.insert(
+      VersionInfo("service1", None, BuildVersion(1, 1, 2),
+        BuildVersionInfo("author1", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
+    assert(result(versionInfoCollection.insert(
+      VersionInfo("service1", None, BuildVersion(1, 1, 3),
+        BuildVersionInfo("author1", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
+
+    assert(result(clientInfoCollection.insert(
+      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
+
+    assert(result(versionInfoCollection.insert(
+      VersionInfo("service1", Some("client1"), BuildVersion("client1", 1, 1, 0),
+        BuildVersionInfo("author2", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
+    assert(result(versionInfoCollection.insert(
+      VersionInfo("service1", Some("client1"), BuildVersion("client1", 1, 1, 1),
+        BuildVersionInfo( "author2", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
   }
 
   override protected def afterAll(): Unit = {
@@ -69,16 +80,18 @@ class SomeInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val query =
       graphql"""
         query {
-          versionInfo (service: "service1", version: "1.1.2") {
+          versionsInfo (service: "service1", version: "1.1.2") {
             version
-            author
+            buildInfo {
+              author
+            }
           }
         }
       """
     val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
-      ("""{"data":{"versionInfo":{"version":"1.1.2","author":"author1"}}}""").parseJson))(result)
+      ("""{"data":{"versionsInfo":[{"version":"1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(result)
   }
 
   it should "return versions info" in {
@@ -88,14 +101,16 @@ class SomeInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         query {
           versionsInfo (service: "service1") {
             version
-            author
+            buildInfo {
+              author
+            }
           }
         }
       """
     val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"1.1.2","author":"author1"},{"version":"1.1.3","author":"author1"}]}}""").parseJson))(result)
+      ("""{"data":{"versionsInfo":[{"version":"1.1.2","buildInfo":{"author":"author1"}},{"version":"1.1.3","buildInfo":{"author":"author1"}}]}}""").parseJson))(result)
   }
 
   it should "return client versions info" in {
@@ -105,49 +120,15 @@ class SomeInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         query {
           versionsInfo (service: "service1", client: "client1") {
             version
-            author
+            buildInfo {
+              author
+            }
           }
         }
       """
     val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"client1-1.1.0","author":"author2"},{"version":"client1-1.1.1","author":"author2"}]}}""").parseJson))(result)
+      ("""{"data":{"versionsInfo":[{"version":"client1-1.1.0","buildInfo":{"author":"author2"}},{"version":"client1-1.1.1","buildInfo":{"author":"author2"}}]}}""").parseJson))(result)
   }
-
-  it should "return user info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("user1", UserRole.Client))
-    val query =
-      graphql"""
-        query {
-          userInfo {
-            name
-            role
-          }
-        }
-      """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"userInfo":{"name":"user1","role":"Client"}}}""").parseJson))(result)
-  }
-
-  it should "return clients info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
-        query {
-          clientsInfo {
-            name
-            installProfile
-            testClientMatch
-          }
-        }
-      """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"clientsInfo":[{"name":"client1","installProfile":"common","testClientMatch":"test"}]}}""").parseJson))(result)
-  }
-
 }

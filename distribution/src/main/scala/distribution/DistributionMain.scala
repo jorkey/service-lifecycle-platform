@@ -81,7 +81,7 @@ object DistributionMain extends App {
 
         val stateUploader = new DeveloperStateUploader(dir)
 
-        val faultsCollection = Await.result(mongoDb.getOrCreateCollection[ClientFaultReport]("faults"), Duration.Undefined)
+        val faultsCollection = Await.result(mongoDb.getOrCreateCollection[ClientFaultReport](), Duration.Undefined)
         val faultUploader = new DeveloperFaultUploader(faultsCollection, dir)
 
         val selfDistributionDir = config.selfDistributionClient

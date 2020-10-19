@@ -6,7 +6,7 @@ import java.util.Date
 import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
+import com.vyulabs.update.info.{DesiredVersions, BuildVersionInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
@@ -15,7 +15,7 @@ import org.slf4j.Logger
 import spray.json.enrichAny
 
 import com.vyulabs.update.info.DesiredVersions._
-import com.vyulabs.update.info.VersionInfo._
+import com.vyulabs.update.info.BuildVersionInfo._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.05.19.
@@ -130,7 +130,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private def copyScripts(developerDistribution: DeveloperDistributionDirectory): Boolean = {
     val nextVersion = developerDistribution.getDesiredVersion(Common.ScriptsServiceName) match {
       case Some(version) => version.next()
-      case None => BuildVersion(Seq(1, 0, 0))
+      case None => BuildVersion(1, 0, 0)
     }
     log.info(s"Create version ${nextVersion} of service ${Common.ScriptsServiceName}")
     val scriptsZip = new File("scripts.zip")
@@ -138,7 +138,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.error("Can't copy scripts jar file")
       return false
     }
-    val scriptsVersionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
+    val scriptsVersionInfo = BuildVersionInfo("administrator", Seq.empty, new Date(), Some("Initial version"))
     if (!IoUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(Common.ScriptsServiceName, nextVersion), scriptsVersionInfo)) {
       log.error(s"Can't write scripts version info")
       return false
@@ -157,7 +157,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     if (sourceJar.exists()) {
       val nextVersion = developerDistribution.getDesiredVersion(serviceName) match {
         case Some(version) => version.next()
-        case None => BuildVersion(Seq(1, 0, 0))
+        case None => BuildVersion(1, 0, 0)
       }
       log.info(s"Create version ${nextVersion} of service ${serviceName}")
       val imageJar = new File(s"${serviceName}-${nextVersion.toString}.jar")
@@ -171,7 +171,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
         return false
       }
       imageJar.delete()
-      val versionInfo = VersionInfo(nextVersion, "administrator", Seq.empty, new Date(), Some("Initial version"))
+      val versionInfo = BuildVersionInfo("administrator", Seq.empty, new Date(), Some("Initial version"))
       if (!IoUtils.writeJsonToFile(developerDistribution.getVersionInfoFile(serviceName, nextVersion), versionInfo)) {
         log.error(s"Can't write version info of service ${serviceName}")
         return false

@@ -80,7 +80,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                         } ~
                         path(versionsInfoPath / ".*".r) { (service) =>
-                          complete(getVersionsInfo(dir.getServiceDir(service)).map(VersionsInfo(_)))
+                          complete(getVersionsInfo(service))
                         } ~
                         path(desiredVersionsPath) {
                           getFromFileWithLock(dir.getDesiredVersionsFile())
@@ -171,7 +171,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                       } ~
                       path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                        complete(getVersionsInfo(dir.getServiceDir(service)).map(VersionsInfo(_)))
+                        complete(getVersionsInfo(service))
                       } ~
                       path(prefix / downloadDesiredVersionsPath) {
                         getFromFileWithLock(dir.getDesiredVersionsFile())

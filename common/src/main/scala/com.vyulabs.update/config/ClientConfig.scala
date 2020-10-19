@@ -9,8 +9,8 @@ object ClientConfig extends DefaultJsonProtocol {
   implicit val clientConfigJson = jsonFormat2(ClientConfig.apply)
 }
 
-case class ClientInfo(name: ClientName, installProfile: ProfileName, testClientMatch: Option[String])
+case class ClientInfo(name: ClientName, clientConfig: ClientConfig)
 
 object ClientInfo extends DefaultJsonProtocol {
-  implicit val clientInfoJson = jsonFormat3(ClientInfo.apply)
+  implicit val clientInfoJson = jsonFormat2(ClientInfo.apply)
 }

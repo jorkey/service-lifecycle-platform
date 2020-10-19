@@ -5,24 +5,24 @@ import java.util.Date
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{complete, onSuccess}
-import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.distribution.DistributionMain
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.InstanceVersions._
 import com.vyulabs.update.info._
 import com.vyulabs.update.lock.SmartFilesLocker
 import distribution.developer.config.DeveloperDistributionConfig
+import distribution.mongo.MongoDb
 import distribution.utils.GetUtils
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 import spray.json._
+
+import scala.collection.JavaConverters.asJavaIterableConverter
 
 trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -32,8 +32,9 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
   protected implicit val executionContext: ExecutionContext
   protected implicit val filesLocker: SmartFilesLocker
 
-  protected val dir: DeveloperDistributionDirectory
   protected val config: DeveloperDistributionConfig
+  protected val dir: DeveloperDistributionDirectory
+  protected val mongoDb: MongoDb
 
   def getOwnServicesState(): ServicesState = {
     ServicesState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))
@@ -123,5 +124,17 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
     } yield {
       serviceState
     }
+  }
+
+  def getClientFaultReports(clientName: Option[ClientName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[ClientFaultReport]] = {
+    val clientArg = clientName.map { client => Filters.eq("clientName", client) }
+    val serviceArg = serviceName.map { service => Filters.eq("serviceName", service) }
+    val filters = Filters.and((clientArg ++ serviceArg).asJava)
+    // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
+    val sort = last.map { last => Sorts.descending("_id") }
+    for {
+      collection <- mongoDb.getOrCreateCollection[ClientFaultReport]()
+      faults <- collection.find(filters, sort, last)
+    } yield faults
   }
 }

@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{ClientFaultReport, DesiredVersions, ServiceState, UpdateError, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, DesiredVersions, ServiceState, UpdateError, VersionInfo, VersionsInfo}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -48,6 +48,7 @@ object GraphqlTypes {
       case _ => Left(BuildVersionViolation)
     })
 
+  implicit val BuildVersionInfoType = deriveObjectType[Unit, BuildVersionInfo]()
   implicit val VersionInfoType = deriveObjectType[Unit, VersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, VersionsInfo]()
 
@@ -61,8 +62,8 @@ object GraphqlTypes {
     )
   )
 
-  implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
   implicit val ClientConfigInfoType = deriveObjectType[Unit, ClientConfig]()
+  implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
   implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()

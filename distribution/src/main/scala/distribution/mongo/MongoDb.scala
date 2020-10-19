@@ -1,14 +1,12 @@
 package distribution.mongo
 
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.DeleteResult
-import com.mongodb.connection.ClusterSettings
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
 import org.bson.{BsonDocument, Document}
 import org.bson.conversions.Bson
@@ -16,6 +14,7 @@ import org.slf4j.LoggerFactory
 import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27017")
              (implicit executionContext: ExecutionContext) {
@@ -33,35 +32,44 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
       .runWith(Sink.fold[Seq[String], String](Seq.empty[String])((seq, obj) => {seq :+ obj}))
   }
 
-  def collectionExists(name: String): Future[Boolean] = {
+  def collectionExists[T]()(implicit classTag: ClassTag[T]): Future[Boolean] = {
+    val name = classTag.runtimeClass.getSimpleName
     getCollectionNames().map(_.contains(name))
   }
 
-  def createCollection(name: String): Future[Unit] = {
+  def createCollection[T]()(implicit classTag: ClassTag[T]): Future[Unit] = {
+    val name = classTag.runtimeClass.getSimpleName
     Source.fromPublisher(db.createCollection(name))
       .log(s"Create Mongo DB collection ${name}")
       .runWith(Sink.headOption[Success]).map(_ => true)
   }
 
-  def getCollection[T](name: String): Future[MongoDbCollection[T]] = {
-    collectionExists(name).map(_ match {
+  def getCollection[T]()(implicit classTag: ClassTag[T]): Future[MongoDbCollection[T]] = {
+    val name = classTag.runtimeClass.getSimpleName
+    collectionExists[T]().map(_ match {
       case true =>
-        new MongoDbCollection(name, db.getCollection(name))
+        new MongoDbCollection[T](db.getCollection(name))
       case _ =>
         throw new IOException(s"Collection ${name} not exists")
     })
   }
 
-  def getOrCreateCollection[T](name: String): Future[MongoDbCollection[T]] = {
+  def getOrCreateCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): Future[MongoDbCollection[T]] = {
+    val name = suffix match {
+      case Some(suffix) =>
+        classTag.runtimeClass.getSimpleName + "-" + suffix
+      case None =>
+        classTag.runtimeClass.getSimpleName
+    }
     for {
-      exists <- collectionExists(name)
+      exists <- collectionExists[T]()
       collection <- {
         if (exists) {
-          Future(new MongoDbCollection[T](name, db.getCollection(name)))
+          Future(new MongoDbCollection[T](db.getCollection(name)))
         } else {
           for {
-            _ <- createCollection(name)
-            collection <- getCollection[T](name)
+            _ <- createCollection()
+            collection <- getCollection[T]()
           } yield collection
         }
       }
@@ -78,9 +86,11 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 }
 
-class MongoDbCollection[T](name: String, collection: MongoCollection[Document])
-                          (implicit materializer: ActorMaterializer, executionContext: ExecutionContext) {
+class MongoDbCollection[T](collection: MongoCollection[Document])
+                          (implicit materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
   implicit val log = LoggerFactory.getLogger(getClass)
+
+  val name = classTag.runtimeClass.getSimpleName
 
   def insert(obj: T)(implicit writer: JsonWriter[T]): Future[Boolean] = {
     val version = obj.toJson.compactPrint

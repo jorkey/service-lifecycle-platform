@@ -4,25 +4,22 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.mongodb.client.model.{Filters, Sorts}
-import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
-import com.vyulabs.update.info.{ClientFaultReport, InstanceVersions, VersionInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, InstanceVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.users.UserRole.UserRole
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.config.DeveloperDistributionConfig
-import distribution.developer.utils.{ClientsUtils, StateUtils}
-import distribution.graphql.{AuthorizationException, GraphqlContext, NotFoundException}
+import distribution.developer.utils.{ClientsUtils, StateUtils, VersionUtils}
+import distribution.graphql.{GraphqlContext, NotFoundException}
 import distribution.graphql.GraphqlTypes._
 import distribution.mongo.MongoDb
-import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
+import distribution.utils.{CommonUtils, GetUtils, PutUtils}
 import sangria.macros.derive.deriveObjectType
 
-import collection.JavaConverters._
 import scala.concurrent.ExecutionContext
 import sangria.schema._
 
@@ -70,7 +67,9 @@ object DeveloperGraphqlSchema {
 
   val OptionClient = Argument("client", OptionInputType(StringType))
   val OptionService = Argument("service", OptionInputType(StringType))
+  val OptionVersion = Argument("version", OptionInputType(BuildVersionType))
   val OptionLast = Argument("last", OptionInputType(IntType))
+  val OptionSummary = Argument("merged", OptionInputType(BooleanType))
 
   // Queries
 
@@ -82,27 +81,17 @@ object DeveloperGraphqlSchema {
   val AdministratorQueries = ObjectType(
     "Query",
      CommonQueries ++ fields[DeveloperGraphqlContext, Unit](
-       Field("versionInfo", VersionInfoType,
-         arguments = Service :: Version :: Nil,
-         resolve = c => { c.ctx.parseJsonFileWithLock[VersionInfo](c.ctx.dir.getVersionInfoFile(c.arg(Service), c.arg(Version)))
-           .map(_.getOrElse(throw NotFoundException())) }),
        Field("versionsInfo", ListType(VersionInfoType),
-         arguments = Service :: OptionClient :: Nil,
-         resolve = c => { c.ctx.getVersionsInfo(c.ctx.dir.getServiceDir(c.arg(Service), c.arg(OptionClient))) }),
+         arguments = Service :: OptionClient :: OptionVersion :: Nil,
+         resolve = c => { c.ctx.getVersionsInfo(c.arg(Service), clientName = c.arg(OptionClient), version = c.arg(OptionVersion)) }),
        Field("desiredVersions", DesiredVersionsType,
-         arguments = OptionClient :: Nil,
-         resolve = c => { c.ctx.getDesiredVersions(c.arg(OptionClient)).map(_.getOrElse(throw NotFoundException())) }),
-       Field("desiredVersion", BuildVersionType,
-         arguments = Service :: Nil,
-         resolve = c => { c.ctx.getDesiredVersion(c.arg(Service), c.ctx.getDesiredVersions(None)).map(_.getOrElse(throw NotFoundException())) }),
+         arguments = OptionClient :: OptionSummary :: Nil,
+         resolve = c => { c.ctx.getDesiredVersions(c.arg(OptionClient), c.arg(OptionSummary).getOrElse(false)).map(_.getOrElse(throw NotFoundException())) }),
        Field("ownServiceVersion", BuildVersionType,
          arguments = Service :: Nil,
          resolve = c => { c.ctx.getServiceVersion(c.arg(Service), new File(c.arg(Directory))).getOrElse(throw NotFoundException()) }),
        Field("clientsInfo", ListType(ClientInfoType),
          resolve = c => c.ctx.getClientsInfo()),
-       Field("mergedDesiredVersions", DesiredVersionsType,
-         arguments = Client :: Nil,
-         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(Client)).map(_.getOrElse(throw NotFoundException())) }),
        Field("installedDesiredVersions", DesiredVersionsType,
          arguments = Client :: Nil,
          resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(Client)).map(_.getOrElse(throw NotFoundException())) }),
@@ -115,17 +104,7 @@ object DeveloperGraphqlSchema {
            .map(_.getOrElse(throw NotFoundException())) }),
        Field("faultReports", ListType(ClientFaultReportType),
          arguments = OptionClient :: OptionService :: OptionLast :: Nil,
-         resolve = c => {
-           val clientArg = c.arg(OptionClient).map { client => Filters.eq("clientName", client) }
-           val serviceArg = c.arg(OptionService).map { service => Filters.eq("serviceName", service) }
-           val filters = Filters.and((clientArg ++ serviceArg).asJava)
-           // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
-           val sort = c.arg(OptionLast).map { last => Sorts.descending("_id") }
-           for {
-             collection <- c.ctx.mongoDb.getCollection[ClientFaultReport]("faults")
-             faults <- collection.find(filters, sort, c.arg(OptionLast))
-           } yield faults
-         })
+         resolve = c => { c.ctx.getClientFaultReports(c.arg(OptionClient), c.arg(OptionService), c.arg(OptionLast)) })
      ))
 
   val ClientQueries = ObjectType(

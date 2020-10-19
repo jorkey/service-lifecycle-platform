@@ -13,9 +13,9 @@ class BuildVersionTest extends FlatSpec with Matchers {
 
   it should "parse version" in {
     val version = BuildVersion.parse("1.2")
-    assertResult(BuildVersion(Seq(1, 2)))(version)
+    assertResult(BuildVersion(1, 2))(version)
     val clientVersion = BuildVersion.parse("client-1.2")
-    assertResult(BuildVersion(clientName, Seq(1, 2)))(clientVersion)
+    assertResult(BuildVersion(clientName, 1, 2))(clientVersion)
     val localVersion = BuildVersion.parse("3.2_1")
     assertResult(BuildVersion(Seq(3, 2), Some(1)))(localVersion)
     val localClientVersion = BuildVersion.parse("client-3.2_1")

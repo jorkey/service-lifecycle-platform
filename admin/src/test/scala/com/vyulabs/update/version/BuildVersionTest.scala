@@ -9,24 +9,24 @@ import org.scalatest.{FlatSpec, Matchers}
 class BuildVersionTest extends FlatSpec with Matchers {
   behavior of "BuildVersion"
 
-  val serviceName = "service"
+  val clientName = "client"
 
   it should "parse version" in {
-    val version = BuildVersion.parse("service-1.2")
-    assertResult(BuildVersion(serviceName, Seq(1, 2)))(version)
+    val version = BuildVersion.parse("client-1.2")
+    assertResult(BuildVersion(clientName, 1, 2))(version)
   }
 
   it should "serialize version" in {
-    val version = BuildVersion.parse("service-2.1")
-    assertResult("service-2.1")(version.toString)
+    val version = BuildVersion.parse("client-2.1")
+    assertResult("client-2.1")(version.toString)
   }
 
   it should "sort versions" in {
-    val version1 = BuildVersion.parse("service-5.1")
-    val version2 = BuildVersion.parse("service-2.3")
-    val version3 = BuildVersion.parse("service-1.1")
-    val version4 = BuildVersion.parse("service-1.1")
-    val version5 = BuildVersion.parse("service-2.3")
+    val version1 = BuildVersion.parse("client-5.1")
+    val version2 = BuildVersion.parse("client-2.3")
+    val version3 = BuildVersion.parse("client-1.1")
+    val version4 = BuildVersion.parse("client-1.1")
+    val version5 = BuildVersion.parse("client-2.3")
 
     val sorted = Seq(version1, version2, version3, version4, version5).sorted(BuildVersion.ordering)
     assertResult(Seq(version3, version4, version2, version5, version1))(sorted)

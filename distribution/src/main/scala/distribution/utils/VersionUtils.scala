@@ -3,17 +3,21 @@ package distribution.utils
 import java.io.{File, IOException}
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.model.StatusCodes.{InternalServerError, NotFound}
 import akka.http.scaladsl.server.Directives.{complete, failWith, _}
 import akka.http.scaladsl.server.{Route, RouteResult}
+import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ServiceName}
+import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
-import com.vyulabs.update.info.{DesiredVersions, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, DesiredVersions, VersionInfo, VersionsInfo}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
+import distribution.mongo.MongoDb
 import org.slf4j.LoggerFactory
 
+import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -21,7 +25,9 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   private implicit val log = LoggerFactory.getLogger(this.getClass)
   private val maxVersions = 10
 
-  protected implicit val dir: DistributionDirectory
+  protected val dir: DistributionDirectory
+  protected val mongoDb: MongoDb
+
   protected implicit val executionContext: ExecutionContext
 
     // TODO remove parameter 'image' when all usages will 'false'
@@ -51,6 +57,7 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   }
 
   def versionInfoUpload(serviceName: ServiceName, buildVersion: BuildVersion): Route = {
+    /* TODO graphql
     mapRouteResult {
       case result@RouteResult.Complete(_) =>
         log.info(s"Uploaded version ${buildVersion} of service ${serviceName}")
@@ -82,7 +89,8 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
         result
     } {
       versionUpload(versionInfoName, dir.getVersionInfoFile(serviceName, buildVersion))
-    }
+    }*/
+    complete(StatusCodes.OK)
   }
 
   protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
@@ -98,23 +106,18 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     promise.future
   }
 
-  def getVersionsInfo(directory: File): Future[Seq[VersionInfo]] = {
-    var versions = Seq.empty[Future[Option[VersionInfo]]]
-    if (directory.exists()) {
-      for (file <- directory.listFiles()) {
-        if (file.getName.endsWith("-info.json")) {
-          versions :+= parseJsonFileWithLock[VersionInfo](file)
-        }
-      }
-    }
-    val promise = Promise.apply[Seq[VersionInfo]]()
-    Future.sequence(versions).onComplete {
-      case Success(versions) =>
-        promise.success(versions.flatten)
-      case Failure(ex) =>
-        promise.failure(ex)
-    }
-    promise.future
+  import VersionInfo._
+
+  def getVersionsInfo(serviceName: ServiceName, clientName: Option[ClientName] = None,
+                      version: Option[BuildVersion] = None): Future[Seq[VersionInfo]] = {
+    val serviceArg = Filters.eq("serviceName", serviceName)
+    val clientArg = Filters.eq("clientName", clientName.getOrElse(null))
+    val versionArg = version.map { version => Filters.eq("version", version.toString) }
+    val filters = Filters.and((Seq(serviceArg, clientArg) ++ versionArg).asJava)
+    for {
+      collection <- mongoDb.getOrCreateCollection[VersionInfo]()
+      info <- collection.find(filters)
+    } yield info
   }
 
   private def versionUpload(fieldName: String, imageFile: File): Route = {

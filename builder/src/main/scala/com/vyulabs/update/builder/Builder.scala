@@ -12,7 +12,7 @@ import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
-import com.vyulabs.update.info.{DesiredVersions, VersionInfo}
+import com.vyulabs.update.info.{DesiredVersions, BuildVersionInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
@@ -172,8 +172,8 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
             }
 
             log.info(s"Upload version ${version} to distribution directory")
-            val versionInfo = VersionInfo(version, author, sourceBranches, new Date(), comment)
-            if (!directory.uploadVersion(serviceName, versionInfo, buildDir)) {
+            val buildVersionInfo = BuildVersionInfo(author, sourceBranches, new Date(), comment)
+            if (!directory.uploadVersion(serviceName, version, buildVersionInfo, buildDir)) {
               return None
             }
 

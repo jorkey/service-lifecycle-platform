@@ -56,7 +56,7 @@ object BuilderMain extends App {
                 case Some(_) =>
                   version
                 case None =>
-                  BuildVersion.apply(clientName, version.build)
+                  BuildVersion.apply(clientName, version.build, None)
               }
             case None =>
               version
