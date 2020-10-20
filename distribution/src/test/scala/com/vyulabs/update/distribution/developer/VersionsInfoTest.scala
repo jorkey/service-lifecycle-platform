@@ -7,13 +7,10 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
-import com.vyulabs.update.common.Common.CommonServiceProfile
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.info.{ClientFaultReport, ProfiledServiceName, ServiceState, VersionInfo, BuildVersionInfo}
+import com.vyulabs.update.info.{VersionInfo, BuildVersionInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}

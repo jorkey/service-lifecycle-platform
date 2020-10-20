@@ -206,7 +206,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
   }
 
   def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, BuildVersion]] = {
-    directory.downloadDesiredVersions(clientName).map(_.desiredVersions)
+    directory.downloadDesiredVersions(clientName).map(_.versions)
   }
 
   def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
@@ -229,7 +229,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
              s"Continue updating of desired versions")) {
           var newDesiredVersions = Option.empty[DesiredVersions]
           try {
-            var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.desiredVersions).getOrElse(Map.empty)
+            var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.versions).getOrElse(Map.empty)
             servicesVersions.foreach {
               case (serviceName, Some(version)) =>
                 desiredVersionsMap += (serviceName -> version)

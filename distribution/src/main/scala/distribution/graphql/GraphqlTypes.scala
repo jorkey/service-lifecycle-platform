@@ -56,8 +56,8 @@ object GraphqlTypes {
   implicit val ServiceVersionType = deriveObjectType[Unit, ServiceVersion]()
   implicit val DesiredVersionsType = ObjectType.apply[Unit, DesiredVersions]("DesiredVersions",
     fields[Unit, DesiredVersions](
-      Field("desiredVersions", ListType(ServiceVersionType), resolve = c => {
-        c.value.desiredVersions.map(entry => ServiceVersion(entry._1, entry._2)).toSeq
+      Field("versions", ListType(ServiceVersionType), resolve = c => {
+        c.value.versions.map(entry => ServiceVersion(entry._1, entry._2)).toSeq
       })
     )
   )

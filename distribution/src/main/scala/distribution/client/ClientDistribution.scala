@@ -22,8 +22,6 @@ import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, Cl
 import com.vyulabs.update.info.VersionsInfoJson._
 import distribution.Distribution
 import distribution.client.config.ClientDistributionConfig
-import distribution.client.graphql.ClientGraphqlContext
-import distribution.client.utils.ClientVersionUtils
 import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
@@ -42,7 +40,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext,
                          protected val filesLocker: SmartFilesLocker)
-    extends Distribution(usersCredentials, graphql) with ClientVersionUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
+    extends Distribution(usersCredentials, graphql) with GetUtils with PutUtils with VersionUtils with CommonUtils
       with ClientDistributionWebPaths with SprayJsonSupport {
 
   implicit val directory = dir
@@ -86,7 +84,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           getFromFileWithLock(dir.getDesiredVersionsFile())
                         } ~
                         path(desiredVersionPath / ".*".r) { service =>
-                          complete(getClientDesiredVersion(service))
+                          complete(getDesiredVersion(service, getDesiredVersions()))
                         } ~
                         path(servicesStatePath / ".*".r) { (instanceId) =>
                           stateUploader.getInstanceState(instanceId)
@@ -177,7 +175,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         getFromFileWithLock(dir.getDesiredVersionsFile())
                       } ~
                       path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
-                        complete(getClientDesiredVersion(service))
+                        complete(getDesiredVersion(service, getDesiredVersions()))
                       } ~
                       path(prefix / downloadInstanceStatePath / ".*".r) { (instanceId) =>
                         stateUploader.getInstanceState(instanceId)

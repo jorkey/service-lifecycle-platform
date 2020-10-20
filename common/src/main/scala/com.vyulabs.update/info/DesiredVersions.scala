@@ -4,7 +4,7 @@ import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.version.BuildVersion
 import spray.json.DefaultJsonProtocol
 
-case class DesiredVersions(desiredVersions: Map[ServiceName, BuildVersion])
+case class DesiredVersions(versions: Map[ServiceName, BuildVersion])
 
 object DesiredVersions extends DefaultJsonProtocol {
   implicit val desiredVersionsJson = jsonFormat1(DesiredVersions.apply)

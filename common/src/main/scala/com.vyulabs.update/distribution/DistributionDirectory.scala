@@ -51,7 +51,7 @@ class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFile
   def getDesiredVersion(serviceName: ServiceName)(implicit log: Logger): Option[BuildVersion] = {
     getDesiredVersions() match {
       case Some(versions) =>
-        versions.desiredVersions.get(serviceName)
+        versions.versions.get(serviceName)
       case None =>
         None
     }

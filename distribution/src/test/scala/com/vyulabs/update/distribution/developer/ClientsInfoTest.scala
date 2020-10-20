@@ -79,7 +79,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       graphql"""
         query {
           clientsInfo {
-            name
+            clientName
             clientConfig {
               installProfile
               testClientMatch
@@ -90,6 +90,6 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
     val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
     assertResult((OK,
-      ("""{"data":{"clientsInfo":[{"name":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(result)
+      ("""{"data":{"clientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(result)
   }
 }

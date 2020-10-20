@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
-import com.vyulabs.update.info.{BuildVersionInfo, InstanceVersions}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, InstanceVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.users.UserRole.UserRole
@@ -69,7 +69,7 @@ object DeveloperGraphqlSchema {
   val OptionService = Argument("service", OptionInputType(StringType))
   val OptionVersion = Argument("version", OptionInputType(BuildVersionType))
   val OptionLast = Argument("last", OptionInputType(IntType))
-  val OptionSummary = Argument("merged", OptionInputType(BooleanType))
+  val OptionMerged = Argument("merged", OptionInputType(BooleanType))
 
   // Queries
 
@@ -84,17 +84,17 @@ object DeveloperGraphqlSchema {
        Field("versionsInfo", ListType(VersionInfoType),
          arguments = Service :: OptionClient :: OptionVersion :: Nil,
          resolve = c => { c.ctx.getVersionsInfo(c.arg(Service), clientName = c.arg(OptionClient), version = c.arg(OptionVersion)) }),
-       Field("desiredVersions", DesiredVersionsType,
-         arguments = OptionClient :: OptionSummary :: Nil,
-         resolve = c => { c.ctx.getDesiredVersions(c.arg(OptionClient), c.arg(OptionSummary).getOrElse(false)).map(_.getOrElse(throw NotFoundException())) }),
        Field("ownServiceVersion", BuildVersionType,
          arguments = Service :: Nil,
-         resolve = c => { c.ctx.getServiceVersion(c.arg(Service), new File(c.arg(Directory))).getOrElse(throw NotFoundException()) }),
+         resolve = c => { c.ctx.getServiceVersion(c.arg(Service), new File(c.arg(Directory))) }),
        Field("clientsInfo", ListType(ClientInfoType),
          resolve = c => c.ctx.getClientsInfo()),
+       Field("desiredVersions", DesiredVersionsType,
+         arguments = OptionClient :: OptionMerged :: Nil,
+         resolve = c => { c.ctx.getDesiredVersions(c.arg(OptionClient), c.arg(OptionMerged).getOrElse(false)) }),
        Field("installedDesiredVersions", DesiredVersionsType,
          arguments = Client :: Nil,
-         resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(Client)).map(_.getOrElse(throw NotFoundException())) }),
+         resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(Client)) }),
        Field("instanceVersions", InstanceVersionsType,
          arguments = Client :: Nil,
          resolve = c => { c.ctx.getClientInstanceVersions(c.arg(Client)) }),
@@ -113,11 +113,10 @@ object DeveloperGraphqlSchema {
       Field("config", ClientConfigInfoType,
         resolve = c => { c.ctx.getClientConfig(c.ctx.userInfo.name) }),
       Field("desiredVersions", DesiredVersionsType,
-        resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name).map(_.getOrElse(throw NotFoundException())) }),
+        resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name) }),
       Field("desiredVersion", BuildVersionType,
         arguments = Service :: Nil,
-        resolve = c => { c.ctx.getDesiredVersion(c.arg(Service), c.ctx.getClientDesiredVersions(c.ctx.userInfo.name))
-          .map(_.getOrElse(throw NotFoundException())) }),
+        resolve = c => { c.ctx.getDesiredVersion(c.arg(Service), c.ctx.getClientDesiredVersions(c.ctx.userInfo.name)) }),
     )
   )
 

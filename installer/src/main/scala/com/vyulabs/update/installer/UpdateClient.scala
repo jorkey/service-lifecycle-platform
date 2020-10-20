@@ -56,7 +56,7 @@ class UpdateClient()(implicit log: Logger) {
           return InstallResult.Failure
         }
         log.info("Get client desired versions")
-        val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.desiredVersions).getOrElse {
+        val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.versions).getOrElse {
           log.warn(s"Can't get client desired versions")
           return InstallResult.Failure
         }
@@ -69,7 +69,7 @@ class UpdateClient()(implicit log: Logger) {
             }
             return InstallResult.Failure
           }
-          developerDesiredVersions.desiredVersions
+          developerDesiredVersions.versions
         } else {
           clientDesiredVersions.mapValues(_.original())
         }
@@ -137,7 +137,7 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   def getClientDesiredVersions(clientDistribution: ClientDistributionDirectoryClient): Option[Map[ServiceName, BuildVersion]] = {
-    clientDistribution.downloadDesiredVersions().map(_.desiredVersions)
+    clientDistribution.downloadDesiredVersions().map(_.versions)
   }
 
   def setDesiredVersions(adminRepository: ClientAdminRepository,
@@ -206,7 +206,7 @@ class UpdateClient()(implicit log: Logger) {
         val developerDesiredVersionsMap = developerDistribution.downloadDesiredVersions().getOrElse {
           log.error("Error of getting developer desired versions")
           return false
-        }.desiredVersions
+        }.versions
         if (developerDesiredVersionsMap.values.find(_.client.isDefined).isDefined) {
           log.error("Desired versions contain personal versions")
           return false

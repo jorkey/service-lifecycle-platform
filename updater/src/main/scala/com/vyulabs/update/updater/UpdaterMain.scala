@@ -128,7 +128,7 @@ object UpdaterMain extends App { self =>
             clientDirectory.downloadDesiredVersions() match {
               case Some(desiredVersions) =>
                 var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, BuildVersion])((map, updater) => {
-                  updater._2.needUpdate(desiredVersions.desiredVersions.get(updater._1.name)) match {
+                  updater._2.needUpdate(desiredVersions.versions.get(updater._1.name)) match {
                     case Some(version) =>
                       map + (updater._1 -> version)
                     case None =>
@@ -136,9 +136,9 @@ object UpdaterMain extends App { self =>
                   }
                 })
                 if (!needUpdate.isEmpty) {
-                  selfUpdater.needUpdate(Common.UpdaterServiceName, desiredVersions.desiredVersions.get(Common.UpdaterServiceName)).foreach(version =>
+                  selfUpdater.needUpdate(Common.UpdaterServiceName, desiredVersions.versions.get(Common.UpdaterServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.UpdaterServiceName) -> version))
-                  selfUpdater.needUpdate(Common.ScriptsServiceName, desiredVersions.desiredVersions.get(Common.ScriptsServiceName)).foreach(version =>
+                  selfUpdater.needUpdate(Common.ScriptsServiceName, desiredVersions.versions.get(Common.ScriptsServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.ScriptsServiceName) -> version))
                   val toUpdate = needUpdate.filterNot { case (serviceName, version) =>
                     blacklist.get(serviceName) match {

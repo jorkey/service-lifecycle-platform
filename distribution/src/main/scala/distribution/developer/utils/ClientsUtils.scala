@@ -8,11 +8,11 @@ import com.vyulabs.update.common.Common._
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
 import com.vyulabs.update.lock.SmartFilesLocker
+import distribution.graphql.NotFoundException
 import distribution.mongo.MongoDb
 import distribution.utils.{GetUtils, PutUtils}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
-import spray.json._
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
@@ -40,7 +40,7 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
   }
 
   def getClientConfig(clientName: ClientName): Future[ClientConfig] = {
-    getClientsInfo(Some(clientName)).map(_.head.clientConfig)
+    getClientsInfo(Some(clientName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${clientName} config")))
   }
 
   def getClientInstallProfile(clientName: ClientName): Future[InstallProfile] = {
@@ -54,7 +54,8 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
     val profileArg = Filters.eq("profileName", profileName)
     for {
       collection <- mongoDb.getOrCreateCollection[InstallProfile]()
-      profile <- collection.find(profileArg).map(_.head)
+      profile <- collection.find(profileArg).map(_.headOption
+        .getOrElse(throw NotFoundException(s"No install profile ${profileName}")))
     } yield profile
   }
 }

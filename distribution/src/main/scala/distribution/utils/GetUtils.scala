@@ -51,28 +51,6 @@ trait GetUtils extends SprayJsonSupport {
     promise.future
   }
 
-  def readJsonFileWithLock[T](file: File)(implicit format: RootJsonFormat[T]): Future[Option[T]] = {
-    val promise = Promise[Option[T]]()
-    getFileContentWithLock(file).onComplete {
-      case Success(bytes) =>
-        bytes match {
-          case Some(bytes) =>
-            try {
-              val desiredVersions = bytes.decodeString("utf8").parseJson.convertTo[T]
-              promise.success(Some(desiredVersions))
-            } catch {
-              case ex: Exception =>
-                promise.failure(ex)
-            }
-          case None =>
-            promise.success(None)
-        }
-      case Failure(ex) =>
-        promise.failure(ex)
-    }
-    promise.future
-  }
-
   def getFileContentWithLock(targetFile: File): Future[Option[ByteString]] = {
     val promise = Promise[Option[ByteString]]()
     if (targetFile.exists()) {

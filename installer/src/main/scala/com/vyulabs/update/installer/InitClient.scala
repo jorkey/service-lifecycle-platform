@@ -124,7 +124,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     val desiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
       log.error("Can't download desired versions")
       return false
-    }.desiredVersions
+    }.versions
     if (!downloadUpdateServices(clientDistribution, developerDistribution, desiredVersions)) {
       log.error("Can't download update services")
       return false

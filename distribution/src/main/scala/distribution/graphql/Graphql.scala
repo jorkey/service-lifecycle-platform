@@ -17,7 +17,7 @@ import spray.json.{JsObject, JsValue}
 import scala.concurrent.{ExecutionContext, Future}
 
 case class AuthorizationException(msg: String) extends Exception(msg)
-case class NotFoundException() extends Exception("Not found")
+case class NotFoundException(msg: String = "Not found") extends Exception(msg)
 
 trait UserContext {
   val userInfo: UserInfo
@@ -40,7 +40,10 @@ class Graphql() extends SprayJsonSupport {
 
   val errorHandler = ExceptionHandler(
     onException = {
-      case (m, AuthorizationException(message)) ⇒ HandledException(message)
+      case (m, e: Exception) ⇒ {
+        log.error("Exception", e)
+        HandledException(e.getMessage)
+      }
     }
   )
 

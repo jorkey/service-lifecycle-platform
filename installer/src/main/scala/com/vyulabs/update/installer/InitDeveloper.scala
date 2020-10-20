@@ -143,7 +143,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.error(s"Can't write scripts version info")
       return false
     }
-    var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.desiredVersions).getOrElse(Map.empty)
+    var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.versions).getOrElse(Map.empty)
     desiredVersions += Common.ScriptsServiceName -> nextVersion
     if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions))) {
       log.error("Can't write desired versions")
@@ -176,7 +176,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
         log.error(s"Can't write version info of service ${serviceName}")
         return false
       }
-      var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.desiredVersions).getOrElse(Map.empty)
+      var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.versions).getOrElse(Map.empty)
       desiredVersions += serviceName -> nextVersion
       if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions(desiredVersions))) {
         log.error("Can't write desired versions")

@@ -14,7 +14,9 @@ import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPa
 import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, DesiredVersions, VersionInfo, VersionsInfo}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
+import distribution.graphql.NotFoundException
 import distribution.mongo.MongoDb
+import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters.asJavaIterableConverter
@@ -30,26 +32,15 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
 
   protected implicit val executionContext: ExecutionContext
 
-    // TODO remove parameter 'image' when all usages will 'false'
-  def getDesiredVersion(serviceName: ServiceName, future: Future[Option[DesiredVersions]]): Future[Option[BuildVersion]] = {
+  def getDesiredVersions(): Future[DesiredVersions] = {
     for {
-      desiredVersions <- future
-      version <- {
-        Future(desiredVersions match {
-          case Some(desiredVersions) =>
-            desiredVersions.desiredVersions.get(serviceName) match {
-              case Some(version) =>
-                Some(version)
-              case None =>
-                None
-            }
-          case None =>
-            None
-        })
-      }
-    } yield {
-      version
-    }
+      collection <- mongoDb.getOrCreateCollection[DesiredVersions]()
+      profile <- collection.find(new BsonDocument()).map(_.headOption.getOrElse(throw NotFoundException("Desired versions are not found")))
+    } yield profile
+  }
+
+  def getDesiredVersion(serviceName: ServiceName, future: Future[DesiredVersions]): Future[BuildVersion] = {
+    future.map(_.versions.get(serviceName).getOrElse(throw NotFoundException(s"Service ${serviceName} is not defined in the desired versions")))
   }
 
   def versionImageUpload(serviceName: ServiceName, buildVersion: BuildVersion): Route = {
@@ -94,19 +85,8 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   }
 
   protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
-    val promise = Promise.apply[Set[BuildVersion]]()
-    parseJsonFileWithLock[DesiredVersions](dir.getDesiredVersionsFile()).onComplete {
-      case Success(Some(versions)) =>
-        promise.success(versions.desiredVersions.get(serviceName).toSet)
-      case Success(None) =>
-        promise.success(Set.empty)
-      case Failure(ex) =>
-        promise.failure(ex)
-    }
-    promise.future
+    getDesiredVersion(serviceName, getDesiredVersions()).map(Set(_)).recover { case _ => Set.empty[BuildVersion] }
   }
-
-  import VersionInfo._
 
   def getVersionsInfo(serviceName: ServiceName, clientName: Option[ClientName] = None,
                       version: Option[BuildVersion] = None): Future[Seq[VersionInfo]] = {
@@ -133,7 +113,7 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     Utils.getManifestBuildVersion(Common.DistributionServiceName)
   }
 
-  def getServiceVersion(serviceName: ServiceName, directory: File): Option[BuildVersion] = {
-    IoUtils.readServiceVersion(serviceName, directory) // TODO move to async
+  def getServiceVersion(serviceName: ServiceName, directory: File): BuildVersion = {
+    IoUtils.readServiceVersion(serviceName, directory).getOrElse(throw NotFoundException(s"Can't found service ${serviceName} version file")) // TODO move to async
   }
 }

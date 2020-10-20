@@ -149,7 +149,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 complete(getVersionsInfo(service, clientName = Some(clientName)))
                               } ~
                               path(desiredVersionsPath) { // TODO сделать обработку независимой от роли // deprecated
-                                complete(getCommonDesiredVersions())
+                                complete(getDesiredVersions())
                               } ~
                               path(desiredVersionsPath / ".*".r) { clientName => // deprecated
                                 complete(getClientDesiredVersions(clientName))
@@ -158,7 +158,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 complete(getInstalledDesiredVersions(clientName))
                               } ~
                               path(desiredVersionPath / ".*".r) { service => // deprecated
-                                complete(getDesiredVersion(service, getCommonDesiredVersions()))
+                                complete(getDesiredVersion(service, getDesiredVersions()))
                               } ~
                               path(distributionVersionPath) { // deprecated
                                 complete(getVersion())
@@ -252,12 +252,12 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 case Some(clientName) =>
                                   complete(getClientDesiredVersions(clientName))
                                 case None =>
-                                  complete(getCommonDesiredVersions())
+                                  complete(getDesiredVersions())
                               }
                             }
                           } ~
                           path(downloadDesiredVersionPath / ".*".r) { service =>
-                            complete(getDesiredVersion(service, getCommonDesiredVersions()))
+                            complete(getDesiredVersion(service, getDesiredVersions()))
                           } ~
                           path(getDistributionVersionPath) {
                             complete(getVersion())
@@ -272,12 +272,12 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         } ~
                           path(downloadDesiredVersionsPath) {
                             parameter("common".as[Boolean] ? false) { common =>
-                              complete(if (!common) getSummaryDesiredVersions(userName) else getCommonDesiredVersions())
+                              complete(if (!common) getDesiredVersions(Some(userName), true) else getDesiredVersions())
                             }
                           } ~
                           path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
                             if (client.isEmpty) {
-                              complete(getCommonDesiredVersions())
+                              complete(getDesiredVersions())
                             } else if (client == userName) {
                               complete(getClientDesiredVersions(userName))
                             } else {
