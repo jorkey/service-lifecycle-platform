@@ -2,15 +2,15 @@ package distribution.developer.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{complete, onSuccess}
+import akka.http.scaladsl.server.Directives.complete
 import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, ProfileTestedVersions, ServicesVersions, TestSignature, TestedVersions}
+import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, TestedVersions}
 import com.vyulabs.update.utils.JsUtils.MergedJsObject
 import com.vyulabs.update.version.BuildVersion
-import distribution.graphql.NotFoundException
+import distribution.graphql.{InvalidConfigException, NotFoundException}
 import distribution.utils.{GetUtils, PutUtils}
 import org.slf4j.LoggerFactory
 
@@ -60,9 +60,9 @@ trait VersionUtils extends distribution.utils.VersionUtils
   def getTestedVersionsByProfile(profileName: ProfileName): Future[TestedVersions] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
-      collection <- mongoDb.getOrCreateCollection[ProfileTestedVersions]()
-      profile <- collection.find(profileArg).map(_.headOption.map(_.testedVersions)
-        .getOrElse(throw NotFoundException(s"No tested version for profile ${profileName}")))
+      collection <- mongoDb.getOrCreateCollection[TestedVersions]()
+      profile <- collection.find(profileArg).map(_.headOption
+        .getOrElse(throw NotFoundException(s"No tested versions for profile ${profileName}")))
     } yield profile
   }
 
@@ -108,17 +108,20 @@ trait VersionUtils extends distribution.utils.VersionUtils
         }}
       clientDesiredVersions <- getClientDesiredVersions(clientName).map(v => Some(v.versions)).recover{ case e => None }
       versions <- Future {
-          val developerJson = developerVersions.toJson
-          val clientJson = clientDesiredVersions.map(_.toJson)
-          val mergedJson = (developerJson, clientJson) match {
-            case (commonJson, Some(clientJson)) =>
-              commonJson.merge(clientJson)
-            case (commonConfig, None) =>
-              commonConfig
-          }
-          val mergedVersions = mergedJson.convertTo[Map[ServiceName, BuildVersion]]
-          DesiredVersions(mergedVersions)
+        if (clientConfig.testClientMatch.isDefined && clientDesiredVersions.isDefined) {
+          throw InvalidConfigException("Client required preliminary testing shouldn't have personal desired versions")
         }
+        val developerJson = developerVersions.toJson
+        val clientJson = clientDesiredVersions.map(_.toJson)
+        val mergedJson = (developerJson, clientJson) match {
+          case (commonJson, Some(clientJson)) =>
+            commonJson.merge(clientJson)
+          case (commonConfig, None) =>
+            commonConfig
+        }
+        val mergedVersions = mergedJson.convertTo[Map[ServiceName, BuildVersion]]
+        DesiredVersions(mergedVersions)
+      }
     } yield versions
   }
 

@@ -18,6 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class AuthorizationException(msg: String) extends Exception(msg)
 case class NotFoundException(msg: String = "Not found") extends Exception(msg)
+case class InvalidConfigException(msg: String) extends Exception(msg)
 
 trait UserContext {
   val userInfo: UserInfo

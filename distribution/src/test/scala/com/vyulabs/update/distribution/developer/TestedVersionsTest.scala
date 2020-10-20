@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.info.{BuildVersionInfo, ClientDesiredVersions, DesiredVersions, VersionInfo}
+import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, TestSignature, TestedVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -22,11 +22,11 @@ import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
 import scala.concurrent.Await.result
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext}
 
-class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
-  behavior of "Desired Versions Info Requests"
+class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+  behavior of "Tested Versions Info Requests"
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer = ActorMaterializer()
@@ -44,11 +44,13 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
 
   override def beforeAll() = {
     val desiredVersionsCollection = result(mongo.getOrCreateCollection[DesiredVersions](), FiniteDuration(3, TimeUnit.SECONDS))
+    val testedVersionsCollection = result(mongo.getOrCreateCollection[TestedVersions](), FiniteDuration(3, TimeUnit.SECONDS))
     val installProfilesCollection = result(mongo.getOrCreateCollection[InstallProfile](), FiniteDuration(3, TimeUnit.SECONDS))
     val clientDesiredVersionsCollection = result(mongo.getOrCreateCollection[ClientDesiredVersions](), FiniteDuration(3, TimeUnit.SECONDS))
     val clientInfoCollection = result(mongo.getOrCreateCollection[ClientInfo](), FiniteDuration(3, TimeUnit.SECONDS))
 
     desiredVersionsCollection.drop().foreach(assert(_))
+    testedVersionsCollection.drop().foreach(assert(_))
     installProfilesCollection.drop().foreach(assert(_))
     clientDesiredVersionsCollection.drop().foreach(assert(_))
     clientInfoCollection.drop().foreach(assert(_))
@@ -59,15 +61,21 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
     assert(result(installProfilesCollection.insert(
       InstallProfile("common", Set("service1", "service2"))), FiniteDuration(3, TimeUnit.SECONDS)))
 
-    assert(result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", None))), FiniteDuration(3, TimeUnit.SECONDS)))
+    assert(result(testedVersionsCollection.insert(
+      TestedVersions("common", Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 2)), Seq(TestSignature("test", new Date())))), FiniteDuration(3, TimeUnit.SECONDS)))
 
     assert(result(clientInfoCollection.insert(
-      ClientInfo("client2", ClientConfig("common", None))), FiniteDuration(3, TimeUnit.SECONDS)))
+      ClientInfo("client1", ClientConfig("specific", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
+
+    assert(result(clientInfoCollection.insert(
+      ClientInfo("client2", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
 
     assert(result(clientDesiredVersionsCollection.insert(
       ClientDesiredVersions("client2",
         DesiredVersions(versions = Map("service2" -> BuildVersion("client2", 1, 1, 1))))), FiniteDuration(3, TimeUnit.SECONDS)))
+
+    assert(result(clientInfoCollection.insert(
+      ClientInfo("client3", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
   }
 
   override protected def afterAll(): Unit = {
@@ -75,44 +83,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
     mongo.dropDatabase().foreach(assert(_))
   }
 
-  it should "return common desired versions" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
-        query {
-          desiredVersions {
-            versions {
-               serviceName
-               buildVersion
-            }
-          }
-        }
-      """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.2"},""" +
-      """{"serviceName":"service2","buildVersion":"2.1.4"},{"serviceName":"service3","buildVersion":"3.2.1"}]}}}""").parseJson))(res)
-  }
-
-  it should "return client own desired versions" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
-        query {
-          desiredVersions (client: "client2") {
-            versions {
-               serviceName
-               buildVersion
-            }
-          }
-        }
-      """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"}]}}}""").parseJson))(res)
-  }
-
-  it should "return client without own versions merged desired versions" in {
+  it should "return error if no tested versions for the client's profile" in {
     val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
     val query =
       graphql"""
@@ -127,10 +98,10 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
       """
     val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
     assertResult((OK,
-      ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"2.1.4"}]}}}""").parseJson))(res)
+      ("""{"data":null,"errors":[{"message":"No tested versions for profile specific","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(res)
   }
 
-  it should "return client with own versions merged desired versions" in {
+  it should "return error if client required preliminary testing has personal desired versions" in {
     val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
     val query =
       graphql"""
@@ -145,6 +116,24 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
       """
     val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
     assertResult((OK,
-      ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"},{"serviceName":"service1","buildVersion":"1.1.2"}]}}}""").parseJson))(res)
+      ("""{"data":null,"errors":[{"message":"Client required preliminary testing shouldn't have personal desired versions","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(res)
+  }
+
+  it should "return tested versions" in {
+    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val query =
+      graphql"""
+        query {
+          desiredVersions (client: "client3", merged: true) {
+            versions {
+               serviceName
+               buildVersion
+            }
+          }
+        }
+      """
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    assertResult((OK,
+      ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.1"},{"serviceName":"service2","buildVersion":"2.1.2"}]}}}""").parseJson))(res)
   }
 }
