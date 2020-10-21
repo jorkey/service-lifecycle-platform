@@ -32,28 +32,6 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
       .runWith(Sink.fold[Seq[String], String](Seq.empty[String])((seq, obj) => {seq :+ obj}))
   }
 
-  def collectionExists[T]()(implicit classTag: ClassTag[T]): Future[Boolean] = {
-    val name = classTag.runtimeClass.getSimpleName
-    getCollectionNames().map(_.contains(name))
-  }
-
-  def createCollection[T]()(implicit classTag: ClassTag[T]): Future[Unit] = {
-    val name = classTag.runtimeClass.getSimpleName
-    Source.fromPublisher(db.createCollection(name))
-      .log(s"Create Mongo DB collection ${name}")
-      .runWith(Sink.headOption[Success]).map(_ => true)
-  }
-
-  def getCollection[T]()(implicit classTag: ClassTag[T]): Future[MongoDbCollection[T]] = {
-    val name = classTag.runtimeClass.getSimpleName
-    collectionExists[T]().map(_ match {
-      case true =>
-        new MongoDbCollection[T](db.getCollection(name))
-      case _ =>
-        throw new IOException(s"Collection ${name} not exists")
-    })
-  }
-
   def getOrCreateCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): Future[MongoDbCollection[T]] = {
     val name = suffix match {
       case Some(suffix) =>
@@ -62,16 +40,15 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
         classTag.runtimeClass.getSimpleName
     }
     for {
-      exists <- collectionExists[T]()
+      exists <- getCollectionNames().map(_.contains(name))
       collection <- {
-        if (exists) {
-          Future(new MongoDbCollection[T](db.getCollection(name)))
+        (if (!exists) {
+          Source.fromPublisher(db.createCollection(name))
+            .log(s"Create Mongo DB collection ${name}")
+            .runWith(Sink.headOption[Success])
         } else {
-          for {
-            _ <- createCollection()
-            collection <- getCollection[T]()
-          } yield collection
-        }
+          Future()
+        }).map(_ => new MongoDbCollection[T](db.getCollection(name)))
       }
     } yield collection
   }

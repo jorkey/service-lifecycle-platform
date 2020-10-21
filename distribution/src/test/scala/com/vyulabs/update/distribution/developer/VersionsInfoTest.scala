@@ -7,10 +7,12 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{VersionInfo, BuildVersionInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, VersionInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
+import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
@@ -38,11 +40,15 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder")
 
+  val ownServicesDir = Files.createTempDirectory("test").toFile
+
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
   val graphql = new Graphql()
 
   override def beforeAll() = {
+    IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, BuildVersion(1, 2, 3))
+
     val versionInfoCollection = result(mongo.getOrCreateCollection[VersionInfo](), FiniteDuration(3, TimeUnit.SECONDS))
     val clientInfoCollection = result(mongo.getOrCreateCollection[ClientInfo](), FiniteDuration(3, TimeUnit.SECONDS))
 
@@ -69,7 +75,23 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override protected def afterAll(): Unit = {
     dir.drop()
+    IoUtils.deleteFileRecursively(ownServicesDir)
     mongo.dropDatabase().foreach(assert(_))
+  }
+
+  it should "return own service info" in {
+    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val query =
+      graphql"""
+        query DistributionVersionQuery($$directory: String!) {
+          ownServiceVersion (service: "distribution", directory: $$directory)
+        }
+      """
+    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query,
+      None, variables = JsObject("directory" -> JsString(ownServicesDir.toString)))
+    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
+    assertResult((OK,
+      ("""{"data":{"ownServiceVersion":"1.2.3"}}""").parseJson))(result)
   }
 
   it should "return version info" in {

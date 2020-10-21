@@ -16,7 +16,7 @@ import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DistributionInfo, InstancesState, VersionsInfo}
+import com.vyulabs.update.info.{DistributionInfo, InstanceServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
@@ -129,12 +129,12 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           path(clientsInfoPath) { // deprecated
                             complete(getClientsInfo())
                           } ~
-                          path(instanceVersionsPath / ".*".r) { clientName => // deprecated
-                            complete(getClientInstanceVersions(clientName))
-                          } ~
-                          path(serviceStatePath / ".*".r / ".*".r / ".*".r / ".*".r) { (clientName, instanceId, directory, service) => // deprecated
-                            complete(getServiceState(clientName, instanceId, directory, service))
-                          } ~
+                          //path(instanceVersionsPath / ".*".r) { clientName => // deprecated
+                          //  complete(getClientInstanceVersions(clientName))
+                          //} ~
+                          //path(serviceStatePath / ".*".r / ".*".r / ".*".r / ".*".r) { (clientName, instanceId, directory, service) => // deprecated
+                          //  complete(getServiceState(clientName, instanceId, directory, service))
+                          //} ~
                           path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                             getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                           } ~
@@ -155,7 +155,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 complete(getClientDesiredVersions(clientName))
                               } ~
                               path(installedDesiredVersionsPath / ".*".r) { clientName => // deprecated
-                                complete(getInstalledDesiredVersions(clientName))
+                                complete(getInstalledVersions(clientName))
                               } ~
                               path(desiredVersionPath / ".*".r) { service => // deprecated
                                 complete(getDesiredVersion(service, getDesiredVersions()))
@@ -205,8 +205,10 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 } ~
                                 path(instancesStatePath) {
                                   uploadFileToJson(instancesStateName, (json) => {
-                                    val instancesState = json.convertTo[InstancesState]
-                                    stateUploader.receiveInstancesState(userName, instancesState)
+                                    /* TODO graphql
+                                    val instancesState = json.convertTo[InstanceServiceState]
+                                    stateUploader.receiveServicesState(userName, instancesState)
+                                     */
                                     complete(StatusCodes.OK)
                                   })
                                 } ~

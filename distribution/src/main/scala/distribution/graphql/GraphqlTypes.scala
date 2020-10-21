@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, DesiredVersions, ServiceState, UpdateError, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServiceState, DesiredVersions, DirectoryServiceState, InstanceServiceState, ServiceState, UpdateError, VersionInfo, VersionsInfo}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -30,8 +30,6 @@ object GraphqlTypes {
       case value: String => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
       case _ => Left(DateCoerceViolation)
     })
-
-  // Common
 
   case object BuildVersionViolation extends Violation {
     override def errorMessage: String = "Error during parsing BuildVersion"
@@ -68,8 +66,9 @@ object GraphqlTypes {
   implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
-
-  // Fault
+  implicit val DirectoryServiceStateType = deriveObjectType[Unit, DirectoryServiceState]()
+  implicit val InstanceServiceStateType = deriveObjectType[Unit, InstanceServiceState]()
+  implicit val ClientServiceStateType = deriveObjectType[Unit, ClientServiceState]()
 
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 }

@@ -4,14 +4,11 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, InstanceVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.users.UserRole.UserRole
-import com.vyulabs.update.version.BuildVersion
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.utils.{ClientsUtils, StateUtils, VersionUtils}
 import distribution.graphql.{GraphqlContext, NotFoundException}
@@ -33,30 +30,6 @@ case class DeveloperGraphqlContext(config: DeveloperDistributionConfig, dir: Dev
 object DeveloperGraphqlSchema {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
-  // Versions
-
-  case class DirectoryInstances(directory: ServiceDirectory, instances: Seq[InstanceId])
-  implicit val DirectoryInstancesType = deriveObjectType[Unit, DirectoryInstances]()
-
-  case class VersionDirectories(version: BuildVersion, directories: Seq[DirectoryInstances])
-  object VersionDirectories { def apply(version: BuildVersion, directories: Map[ServiceDirectory, Set[InstanceId]]) =
-    new VersionDirectories(version, directories.map(entry => DirectoryInstances(entry._1, entry._2.toSeq)).toSeq) }
-  implicit val VersionDirectoriesType = deriveObjectType[Unit, VersionDirectories]()
-
-  case class ServiceVersions(service: ServiceName, versions: Seq[VersionDirectories])
-  object ServiceVersions { def apply(service: ServiceName, versions: Map[BuildVersion, Map[ServiceDirectory, Set[InstanceId]]]) =
-    new ServiceVersions(service, versions.map(entry => VersionDirectories.apply(entry._1,
-      entry._2.map(entry => DirectoryInstances(entry._1, entry._2.toSeq)).toSeq)).toSeq) }
-  implicit val ServiceVersionsType = deriveObjectType[Unit, ServiceVersions]()
-
-  implicit val InstanceVersionsType = ObjectType.apply[Unit, InstanceVersions]("InstanceVersions",
-    fields[Unit, InstanceVersions](
-      Field("versions", ListType(ServiceVersionsType), resolve = c => {
-        c.value.versions.map(entry => ServiceVersions(entry._1, entry._2)).toSeq
-      })
-    )
-  )
-
   // Arguments
 
   val Client = Argument("client", StringType)
@@ -66,6 +39,8 @@ object DeveloperGraphqlSchema {
   val Version = Argument("version", BuildVersionType)
 
   val OptionClient = Argument("client", OptionInputType(StringType))
+  val OptionInstance = Argument("instance", OptionInputType(StringType))
+  val OptionDirectory = Argument("directory", OptionInputType(StringType))
   val OptionService = Argument("service", OptionInputType(StringType))
   val OptionVersion = Argument("version", OptionInputType(BuildVersionType))
   val OptionLast = Argument("last", OptionInputType(IntType))
@@ -81,27 +56,23 @@ object DeveloperGraphqlSchema {
   val AdministratorQueries = ObjectType(
     "Query",
      CommonQueries ++ fields[DeveloperGraphqlContext, Unit](
+       Field("ownServiceVersion", BuildVersionType,
+         arguments = Service :: Directory :: Nil,
+         resolve = c => { c.ctx.getServiceVersion(c.arg(Service), new File(c.arg(Directory))) }),
        Field("versionsInfo", ListType(VersionInfoType),
          arguments = Service :: OptionClient :: OptionVersion :: Nil,
          resolve = c => { c.ctx.getVersionsInfo(c.arg(Service), clientName = c.arg(OptionClient), version = c.arg(OptionVersion)) }),
-       Field("ownServiceVersion", BuildVersionType,
-         arguments = Service :: Nil,
-         resolve = c => { c.ctx.getServiceVersion(c.arg(Service), new File(c.arg(Directory))) }),
        Field("clientsInfo", ListType(ClientInfoType),
          resolve = c => c.ctx.getClientsInfo()),
        Field("desiredVersions", DesiredVersionsType,
          arguments = OptionClient :: OptionMerged :: Nil,
          resolve = c => { c.ctx.getDesiredVersions(c.arg(OptionClient), c.arg(OptionMerged).getOrElse(false)) }),
-       Field("installedDesiredVersions", DesiredVersionsType,
+       Field("installedVersions", DesiredVersionsType,
          arguments = Client :: Nil,
-         resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(Client)) }),
-       Field("instanceVersions", InstanceVersionsType,
-         arguments = Client :: Nil,
-         resolve = c => { c.ctx.getClientInstanceVersions(c.arg(Client)) }),
-       Field("serviceState", ServiceStateType,
-         arguments = Client :: Instance :: Directory :: Service :: Nil,
-         resolve = c => { c.ctx.getServiceState(c.arg(Client), c.arg(Instance), c.arg(Directory), c.arg(Service))
-           .map(_.getOrElse(throw NotFoundException())) }),
+         resolve = c => { c.ctx.getInstalledVersions(c.arg(Client)) }),
+       Field("servicesState", ListType(ClientServiceStateType),
+         arguments = OptionClient :: OptionService :: OptionInstance :: OptionDirectory :: Nil,
+         resolve = c => { c.ctx.getServicesState(c.arg(OptionClient), c.arg(OptionService), c.arg(OptionInstance), c.arg(OptionDirectory)) }),
        Field("faultReports", ListType(ClientFaultReportType),
          arguments = OptionClient :: OptionService :: OptionLast :: Nil,
          resolve = c => { c.ctx.getClientFaultReports(c.arg(OptionClient), c.arg(OptionService), c.arg(OptionLast)) })

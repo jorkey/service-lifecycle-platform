@@ -1,6 +1,6 @@
 package distribution.developer.utils
 
-import java.io.{File, IOException}
+import java.io.File
 import java.util.Date
 
 import akka.actor.ActorSystem
@@ -16,13 +16,11 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.mongo.MongoDb
 import distribution.utils.GetUtils
+import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success}
-import spray.json._
-
 import scala.collection.JavaConverters.asJavaIterableConverter
+import scala.concurrent.{ExecutionContext, Future}
 
 trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -36,100 +34,40 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
   protected val dir: DeveloperDistributionDirectory
   protected val mongoDb: MongoDb
 
-  def getOwnServicesState(): ServicesState = {
-    ServicesState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))
-      .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))
-      .merge(ServicesState.getServiceInstanceState(Common.BuilderServiceName, new File(config.builderDirectory)))
-      .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(config.builderDirectory)))
-  }
+  mongoDb.getOrCreateCollection[ClientServiceState]().foreach { collection => {
+    collection.insert(
+      ClientServiceState("distribution", config.instanceId,
+        DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))))
+    collection.insert(
+      ClientServiceState("distribution", config.instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))))
+    collection.insert(
+      ClientServiceState("distribution", config.instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(config.builderDirectory))))
+    collection.insert(
+      ClientServiceState("distribution", config.instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(config.builderDirectory))))
+  }}
 
-  def getOwnInstancesState(): InstancesState = {
-    InstancesState.empty.addState(config.instanceId, getOwnServicesState())
-  }
-
-  def getOwnInstanceVersions(): InstanceVersions = {
-    InstanceVersions.empty.addVersions(config.instanceId, getOwnServicesState())
-  }
-
-  def getClientInstancesState(clientName: ClientName): Future[Option[InstancesState]] = {
-    val promise = Promise[Option[InstancesState]]()
-    if (config.selfDistributionClient.contains(clientName)) {
-      promise.success(Some(getOwnInstancesState()))
-    } else {
-      getFileContentWithLock(dir.getInstancesStateFile(clientName)).onComplete {
-        case Success(bytes) =>
-          bytes match {
-            case Some(bytes) =>
-              try {
-                val instancesState = bytes.decodeString("utf8").parseJson.convertTo[InstancesState]
-                promise.success(Some(instancesState))
-              } catch {
-                case ex: Exception =>
-                  promise.failure(ex)
-              }
-            case None =>
-              promise.success(None)
-          }
-        case Failure(ex) =>
-          promise.failure(ex)
-      }
-    }
-    promise.future
-  }
-
-  def getClientInstanceVersions(clientName: ClientName): Future[InstanceVersions] = {
-    getClientInstancesState(clientName).collect {
-      case Some(state) =>
-        var versions = InstanceVersions.empty
-        state.instances.foreach { case (instanceId, servicesStates) =>
-          versions = versions.addVersions(instanceId, servicesStates)
-        }
-        versions
-      case None =>
-        InstanceVersions.empty
-    }
-  }
-
-  def getServiceState(clientName: ClientName, instanceId: InstanceId,
-                      directory: ServiceDirectory, serviceName: ServiceName): Future[Option[ServiceState]] = {
+  def getServicesState(clientName: Option[ClientName], serviceName: Option[ServiceName],
+                       instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[ClientServiceState]] = {
+    val clientArg = clientName.map { client => Filters.eq("clientName", client) }
+    val serviceArg = serviceName.map { service => Filters.eq("serviceName", service) }
+    val instanceIdArg = instanceId.map { instanceId => Filters.eq("instanceId", instanceId) }
+    val directoryArg = directory.map { directory => Filters.eq("directory", directory) }
+    val args = clientArg ++ serviceArg ++ instanceIdArg ++ directoryArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      instancesState <- getClientInstancesState(clientName)
-      serviceState <- {
-        Future(instancesState match {
-          case Some(instancesState) =>
-            instancesState.instances.get(instanceId) match {
-              case Some(servicesState) =>
-                servicesState.directories.get(directory) match {
-                  case Some(directoryState) =>
-                    directoryState.get(serviceName) match {
-                      case Some(state) =>
-                        Some(state)
-                      case None =>
-                        log.debug(s"Service ${serviceName} is not found")
-                        None
-                    }
-                  case None =>
-                    log.debug(s"Directory ${directory} is not found")
-                    None
-                }
-              case None =>
-                log.debug(s"Instance ${instanceId} is not found")
-                None
-            }
-          case None =>
-            log.debug(s"Client ${clientName} state is not found")
-            None
-        })
-      }
-    } yield {
-      serviceState
-    }
+      collection <- mongoDb.getOrCreateCollection[ClientServiceState]()
+      profile <- collection.find(filters)
+    } yield profile
   }
 
   def getClientFaultReports(clientName: Option[ClientName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[ClientFaultReport]] = {
     val clientArg = clientName.map { client => Filters.eq("clientName", client) }
     val serviceArg = serviceName.map { service => Filters.eq("serviceName", service) }
-    val filters = Filters.and((clientArg ++ serviceArg).asJava)
+    val args = clientArg ++ serviceArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
     val sort = last.map { last => Sorts.descending("_id") }
     for {

@@ -20,8 +20,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.FiniteDuration
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vyulabs.update.distribution.DistributionMain
-import com.vyulabs.update.info.{InstancesState, ProfiledServiceName, ServiceState, ServicesState}
-import com.vyulabs.update.info.ServicesState._
+import com.vyulabs.update.info.{InstanceServiceState, ProfiledServiceName, ServiceState}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.
@@ -45,15 +44,17 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
 
   private var stopping = false
 
-  def receiveState(instanceId: InstanceId, servicesState: ServicesState): Route = {
+  def receiveState(instanceId: InstanceId, servicesState: Seq[InstanceServiceState]): Route = {
+    /* TODO graphql
     self.synchronized {
       instancesStates += (instanceId -> (instancesStates.getOrElse(instanceId, Map.empty) ++ servicesState.directories))
       statesToUpload += (instanceId -> (statesToUpload.getOrElse(instanceId, Map.empty) ++ servicesState.directories))
-    }
+    }*/
     complete(StatusCodes.OK)
   }
 
   def getInstanceState(instanceId: InstanceId): Route = {
+    /* TODO graphql
     self.synchronized {
       instancesStates.get(instanceId) match {
         case Some(state) =>
@@ -61,7 +62,8 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
         case None =>
           complete(StatusCodes.NotFound)
       }
-    }
+    }*/
+    complete(StatusCodes.NotFound)
   }
 
   def close(): Unit = {
@@ -73,6 +75,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
   }
 
   override def run(): Unit = {
+    /* TODO graphql
     log.info("State uploader started")
     try {
       while (true) {
@@ -96,14 +99,14 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
             val states = self.synchronized {
               val states = statesToUpload
               statesToUpload = Map.empty
-              InstancesState(states.mapValues(ServicesState(_)))
-            }.merge(InstancesState(Map.empty + (instanceId ->
+              InstancesStateMap(states.mapValues(ServicesState(_)))
+            }.merge(InstancesStateMap(Map.empty + (instanceId ->
               ServicesState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))
                 .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))
                 .merge(ServicesState.getServiceInstanceState(Common.InstallerServiceName, new File(installerDir)))
                 .merge(ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File(installerDir))))))
             log.debug("Upload instances state to developer distribution server")
-            if (!developerDirectory.uploadInstancesState(states)) {
+            if (!developerDirectory.uploadServicesState(states)) {
               log.error("Can't upload instances state")
             }
           } catch {
@@ -117,6 +120,7 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
       case ex: Exception =>
         log.error(s"State uploader thread is failed", ex)
     }
+     */
   }
 
   private def removeOldStates(): Unit = {

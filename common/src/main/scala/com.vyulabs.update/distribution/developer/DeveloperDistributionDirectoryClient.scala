@@ -5,13 +5,12 @@ import java.net.URL
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.ClientConfig
-import com.vyulabs.update.info.{DesiredVersions, InstancesState, ServicesVersions, TestedVersions, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions, InstanceServiceState, ServicesVersions}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import org.slf4j.Logger
 import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.info.DesiredVersions._
 import com.vyulabs.update.info.ServicesVersions._
-import InstancesState._
 import spray.json._
 
 /**
@@ -44,9 +43,11 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
       testedVersionsName, uploadTestedVersionsPath, testedVersions.toJson)
   }
 
-  def uploadInstancesState(instancesState: InstancesState): Boolean = {
-    uploadFromJson(makeUrl(apiPathPrefix + "/" + getInstancesStatePath()),
-      instancesStateName, instancesStatePath, instancesState.toJson)
+  def uploadServicesState(servicesState: Seq[InstanceServiceState]): Boolean = {
+    // TODO graphql
+    //uploadFromJson(makeUrl(apiPathPrefix + "/" + getInstancesStatePath()),
+    //  instancesStateName, instancesStatePath, servicesState.toJson)
+    false
   }
 
   def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {

@@ -3,7 +3,6 @@ package distribution.client
 import java.io.File
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.HttpChallenge
@@ -13,7 +12,7 @@ import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
-import com.vyulabs.update.info.{ProfiledServiceName, ServicesState, VersionsInfo}
+import com.vyulabs.update.info.{ProfiledServiceName}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
@@ -113,8 +112,10 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           authorize(role == UserRole.Service) {
                             path(servicesStatePath / ".*".r) { instanceId =>
                               uploadFileToJson(servicesStateName, (json) => {
-                                val servicesState = json.convertTo[ServicesState]
-                                stateUploader.receiveState(instanceId, servicesState)
+                                // TODO graphql
+                                //val servicesState = json.convertTo[ServicesState]
+                                //stateUploader.receiveState(instanceId, servicesState)
+                                complete(StatusCodes.OK)
                               })
                             } ~
                               path(serviceLogsPath / ".*".r / ".*".r) { (instanceId, profiledServiceName) =>
