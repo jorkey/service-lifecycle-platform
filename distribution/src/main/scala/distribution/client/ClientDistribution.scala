@@ -12,7 +12,7 @@ import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
-import com.vyulabs.update.info.{ProfiledServiceName}
+import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
@@ -22,13 +22,12 @@ import com.vyulabs.update.info.VersionsInfoJson._
 import distribution.Distribution
 import distribution.client.config.ClientDistributionConfig
 import distribution.graphql.Graphql
-import distribution.mongo.MongoDb
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 
 import scala.concurrent.ExecutionContext
 
 class ClientDistribution(protected val dir: ClientDistributionDirectory,
-                         protected val mongoDb: MongoDb,
+                         protected val collections: ClientDatabaseCollections,
                          protected val config: ClientDistributionConfig,
                          protected val usersCredentials: UsersCredentials,
                          protected val graphql: Graphql,
@@ -103,7 +102,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           } ~
                             path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                               val buildVersion = BuildVersion.parse(version)
-                              versionInfoUpload(service, buildVersion)
+                              complete(versionInfoUpload(service, buildVersion, null))
                             } ~
                             path(desiredVersionsPath) {
                               fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
@@ -198,7 +197,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         } ~
                           path(prefix / uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
-                            versionInfoUpload(service, buildVersion)
+                            complete(versionInfoUpload(service, buildVersion, null))
                           } ~
                           path(prefix / uploadDesiredVersionsPath) {
                             fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())

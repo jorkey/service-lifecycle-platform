@@ -8,11 +8,13 @@ import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServi
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.version.BuildVersion
 import sangria.ast.StringValue
 import sangria.schema._
 import sangria.macros.derive._
 import sangria.validation.Violation
+import spray.json.enrichAny
 
 object GraphqlTypes {
   private case object DateCoerceViolation extends Violation {
@@ -21,7 +23,7 @@ object GraphqlTypes {
 
   implicit val GraphQLDate = ScalarType[Date](
     "Date",
-    coerceOutput = (date, _) => date.toString,
+    coerceOutput = (date, _) => serializeISO8601Date(date),
     coerceInput = {
       case StringValue(value, _, _, _, _) => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
       case _ => Left(DateCoerceViolation)
@@ -71,4 +73,9 @@ object GraphqlTypes {
   implicit val ClientServiceStateType = deriveObjectType[Unit, ClientServiceState]()
 
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
+
+  implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildVersionInfo](
+    InputObjectTypeName("BuildVersionInfoInput")
+  )
+
 }

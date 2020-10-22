@@ -9,11 +9,11 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildVersionInfo, VersionInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
@@ -23,9 +23,8 @@ import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-import scala.concurrent.Await.result
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
 class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Version Info Requests"
@@ -44,60 +43,45 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
+  val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
+
+  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
     IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, BuildVersion(1, 2, 3))
 
-    val versionInfoCollection = result(mongo.getOrCreateCollection[VersionInfo](), FiniteDuration(3, TimeUnit.SECONDS))
-    val clientInfoCollection = result(mongo.getOrCreateCollection[ClientInfo](), FiniteDuration(3, TimeUnit.SECONDS))
+    val clientInfoCollection = result(collections.ClientInfo)
 
-    versionInfoCollection.drop().foreach(assert(_))
-    clientInfoCollection.drop().foreach(assert(_))
+    result(clientInfoCollection.drop())
 
-    assert(result(versionInfoCollection.insert(
-      VersionInfo("service1", None, BuildVersion(1, 1, 2),
-        BuildVersionInfo("author1", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
-    assert(result(versionInfoCollection.insert(
-      VersionInfo("service1", None, BuildVersion(1, 1, 3),
-        BuildVersionInfo("author1", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
-
-    assert(result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
-
-    assert(result(versionInfoCollection.insert(
-      VersionInfo("service1", Some("client1"), BuildVersion("client1", 1, 1, 0),
-        BuildVersionInfo("author2", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
-    assert(result(versionInfoCollection.insert(
-      VersionInfo("service1", Some("client1"), BuildVersion("client1", 1, 1, 1),
-        BuildVersionInfo( "author2", Seq.empty, new Date(), None))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(clientInfoCollection.insert(ClientInfo("client1", ClientConfig("common", Some("test")))))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
     IoUtils.deleteFileRecursively(ownServicesDir)
-    mongo.dropDatabase().foreach(assert(_))
+    result(mongo.dropDatabase())
   }
 
   it should "return own service info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    assertResult((OK,
+      ("""{"data":{"ownServiceVersion":"1.2.3"}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query DistributionVersionQuery($$directory: String!) {
           ownServiceVersion (service: "distribution", directory: $$directory)
         }
       """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query,
-      None, variables = JsObject("directory" -> JsString(ownServicesDir.toString)))
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"ownServiceVersion":"1.2.3"}}""").parseJson))(result)
+      ,
+      None, variables = JsObject("directory" -> JsString(ownServicesDir.toString)))))
   }
 
   it should "return version info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    assertResult((OK,
+      ("""{"data":{"versionsInfo":[{"version":"1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           versionsInfo (service: "service1", version: "1.1.2") {
             version
@@ -107,16 +91,56 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(result)
+    )))
   }
 
-  it should "return versions info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+  it should "add/get versions info" in {
+    import com.vyulabs.update.utils.Utils.DateJson._
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    assertResult((OK,
+      ("""{"data":{"addVersionInfo":{"version":"1.1.2"}}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+                  mutation AddVersionInfo($$date: Date!) {
+                    addVersionInfo (
+                      service: "service1",
+                      version: "1.1.2",
+                      buildInfo: {
+                        author: "author1",
+                        branches: [ "master" ]
+                        date: $$date
+                      }) {
+                      version
+                    }
+                  }
+                """
+        ,
+        variables = JsObject("date" -> new Date().toJson))))
+
+    assertResult((OK,
+      ("""{"data":{"addVersionInfo":{"version":"1.1.3"}}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+                  mutation AddVersionInfo($$date: Date!) {
+                    addVersionInfo (
+                      service: "service1",
+                      version: "1.1.3",
+                      buildInfo: {
+                        author: "author1",
+                        branches: [ "master" ]
+                        date: $$date
+                      }) {
+                      version
+                    }
+                  }
+                """
+        ,
+        variables = JsObject("date" -> new Date().toJson))))
+
+    assertResult((OK,
+      ("""{"data":{"versionsInfo":[{"version":"1.1.2","buildInfo":{"author":"author1"}},{"version":"1.1.3","buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
         query {
           versionsInfo (service: "service1") {
             version
@@ -126,16 +150,15 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"1.1.2","buildInfo":{"author":"author1"}},{"version":"1.1.3","buildInfo":{"author":"author1"}}]}}""").parseJson))(result)
+      ))
+    )
   }
 
   it should "return client versions info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    assertResult((OK,
+      ("""{"data":{"versionsInfo":[{"version":"client1-1.1.0","buildInfo":{"author":"author2"}},{"version":"client1-1.1.1","buildInfo":{"author":"author2"}}]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           versionsInfo (service: "service1", client: "client1") {
             version
@@ -144,10 +167,6 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             }
           }
         }
-      """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"client1-1.1.0","buildInfo":{"author":"author2"}},{"version":"client1-1.1.1","buildInfo":{"author":"author2"}}]}}""").parseJson))(result)
+      """)))
   }
 }

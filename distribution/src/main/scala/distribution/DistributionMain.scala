@@ -13,10 +13,10 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import distribution.client.ClientDistribution
+import distribution.client.{ClientDatabaseCollections, ClientDistribution}
 import distribution.client.config.ClientDistributionConfig
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
-import distribution.developer.DeveloperDistribution
+import distribution.developer.{DeveloperDatabaseCollections, DeveloperDistribution}
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
 import org.slf4j.LoggerFactory
@@ -78,16 +78,15 @@ object DistributionMain extends App {
         }
 
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
+        val collections = new DeveloperDatabaseCollections(mongoDb)
 
-        val stateUploader = new DeveloperStateUploader(dir)
-
-        val faultsCollection = Await.result(mongoDb.getOrCreateCollection[ClientFaultReport](), Duration.Undefined)
-        val faultUploader = new DeveloperFaultUploader(faultsCollection, dir)
+        val stateUploader = new DeveloperStateUploader(collections)
+        val faultUploader = new DeveloperFaultUploader(collections, dir)
 
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val distribution = new DeveloperDistribution(dir, mongoDb, config, usersCredentials, graphql, stateUploader, faultUploader)
+        val distribution = new DeveloperDistribution(dir, collections, config, usersCredentials, graphql, stateUploader, faultUploader)
 
         stateUploader.start()
         selfUpdater.start()
@@ -109,13 +108,14 @@ object DistributionMain extends App {
         }
 
         val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
+        val collections = new ClientDatabaseCollections(mongoDb)
 
         val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId, config.installerDirectory)
         val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
         val logUploader = new ClientLogUploader(dir)
 
         val selfUpdater = new SelfUpdater(dir)
-        val distribution = new ClientDistribution(dir, mongoDb, config, usersCredentials,
+        val distribution = new ClientDistribution(dir, collections, config, usersCredentials,
           graphql, stateUploader, logUploader, faultUploader)
 
         stateUploader.start()

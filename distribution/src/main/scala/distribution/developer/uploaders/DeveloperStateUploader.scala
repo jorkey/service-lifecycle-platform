@@ -1,23 +1,30 @@
 package distribution.developer.uploaders
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common.{ClientName, InstanceId}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.info
-import com.vyulabs.update.info.InstanceServiceState
+import com.vyulabs.update.info.{ClientServiceState, InstanceServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
+import distribution.developer.DeveloperDatabaseCollections
+import distribution.mongo.MongoDb
 import org.slf4j.LoggerFactory
 import spray.json._
+
+import scala.concurrent.Await.result
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 18.12.19.
   * Copyright FanDate, Inc.
   */
-class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
-                            (implicit filesLocker: SmartFilesLocker, materializer: Materializer) extends Thread { self =>
+class DeveloperStateUploader(collections: DeveloperDatabaseCollections)
+                            (implicit executionContext: ExecutionContext, materializer: Materializer) extends Thread { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val expireInstanceStateTime = 60 * 1000L
@@ -36,11 +43,12 @@ class DeveloperStateUploader(dir: DeveloperDistributionDirectory)
 
   def receiveServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Unit = {
     /* TODO graphql
-    log.info(s"Receive instances state of client ${clientName}")
-    self.synchronized {
-      client2instancesState += (clientName -> instancesState)
-      notify()
-    }*/
+    for {
+      collection <- mongoDb.getOrCreateCollection[ClientServiceState]()
+      l <- instancesState.map(state =>
+        collection.insert(ClientServiceState(clientName, state.instanceId, state.serviceName, state.directory, state.state)))
+    } yield
+     */
   }
 
   override def run(): Unit = {

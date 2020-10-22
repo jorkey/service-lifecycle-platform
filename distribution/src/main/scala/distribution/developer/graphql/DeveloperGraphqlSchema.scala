@@ -9,18 +9,19 @@ import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.users.UserRole.UserRole
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.utils.{ClientsUtils, StateUtils, VersionUtils}
-import distribution.graphql.{GraphqlContext, NotFoundException}
+import distribution.graphql.GraphqlContext
 import distribution.graphql.GraphqlTypes._
-import distribution.mongo.MongoDb
 import distribution.utils.{CommonUtils, GetUtils, PutUtils}
-import sangria.macros.derive.deriveObjectType
 
 import scala.concurrent.ExecutionContext
+import sangria.marshalling.sprayJson._
 import sangria.schema._
 
-case class DeveloperGraphqlContext(config: DeveloperDistributionConfig, dir: DeveloperDistributionDirectory, mongoDb: MongoDb, userInfo: UserInfo)
+case class DeveloperGraphqlContext(config: DeveloperDistributionConfig, dir: DeveloperDistributionDirectory,
+                                   collections: DeveloperDatabaseCollections, userInfo: UserInfo)
                                   (implicit protected val system: ActorSystem,
                                    protected val materializer: Materializer,
                                    protected val executionContext: ExecutionContext,
@@ -37,6 +38,8 @@ object DeveloperGraphqlSchema {
   val Directory = Argument("directory", StringType)
   val Service = Argument("service", StringType)
   val Version = Argument("version", BuildVersionType)
+
+  val BuildInfo = Argument("buildInfo", BuildVersionInfoInputType)
 
   val OptionClient = Argument("client", OptionInputType(StringType))
   val OptionInstance = Argument("instance", OptionInputType(StringType))
@@ -91,7 +94,19 @@ object DeveloperGraphqlSchema {
     )
   )
 
-  val AdministratorSchemaDefinition = Schema(query = AdministratorQueries)
+  // Mutations
+
+  val CommonMutations = fields[DeveloperGraphqlContext, Unit](
+    Field("addVersionInfo", VersionInfoType,
+      arguments = Service :: Version :: BuildInfo :: Nil,
+      resolve = c => { c.ctx.versionInfoUpload(c.arg(Service), c.arg(Version), c.arg(BuildInfo)) })
+  )
+
+  val AdministratorMutations = ObjectType(
+    "Mutation",
+    CommonMutations)
+
+  val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations))
   val ClientSchemaDefinition = Schema(query = ClientQueries)
 
   def SchemaDefinition(userRole: UserRole): Schema[DeveloperGraphqlContext, Unit] = {

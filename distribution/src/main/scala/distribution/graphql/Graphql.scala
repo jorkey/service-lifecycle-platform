@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole.UserRole
-import distribution.mongo.MongoDb
+import distribution.DatabaseCollections
 import org.slf4j.LoggerFactory
 import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, ExceptionHandler, Executor, HandledException, QueryAnalysisError}
@@ -33,7 +33,7 @@ trait UserContext {
 
 trait GraphqlContext extends UserContext {
   val dir: DistributionDirectory
-  val mongoDb: MongoDb
+  val collections: DatabaseCollections
 }
 
 class Graphql() extends SprayJsonSupport {

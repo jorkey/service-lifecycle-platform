@@ -13,8 +13,8 @@ import com.vyulabs.update.distribution.DistributionMain
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
 import com.vyulabs.update.info._
 import com.vyulabs.update.lock.SmartFilesLocker
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
-import distribution.mongo.MongoDb
 import distribution.utils.GetUtils
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -32,9 +32,9 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
 
   protected val config: DeveloperDistributionConfig
   protected val dir: DeveloperDistributionDirectory
-  protected val mongoDb: MongoDb
+  protected val collections: DeveloperDatabaseCollections
 
-  mongoDb.getOrCreateCollection[ClientServiceState]().foreach { collection => {
+  collections.ClientServiceState.foreach { collection => {
     collection.insert(
       ClientServiceState("distribution", config.instanceId,
         DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))))
@@ -58,7 +58,7 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
     val args = clientArg ++ serviceArg ++ instanceIdArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- mongoDb.getOrCreateCollection[ClientServiceState]()
+      collection <- collections.ClientServiceState
       profile <- collection.find(filters)
     } yield profile
   }
@@ -71,7 +71,7 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
     val sort = last.map { last => Sorts.descending("_id") }
     for {
-      collection <- mongoDb.getOrCreateCollection[ClientFaultReport]()
+      collection <- collections.ClientFaultReport
       faults <- collection.find(filters, sort, last)
     } yield faults
   }

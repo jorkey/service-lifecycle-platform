@@ -42,7 +42,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
   def getClientDesiredVersions(clientName: ClientName): Future[DesiredVersions] = {
     val clientArg = Filters.eq("clientName", clientName)
     for {
-      collection <- mongoDb.getOrCreateCollection[ClientDesiredVersions]()
+      collection <- collections.ClientDesiredVersions
       profile <- collection.find(clientArg).map(_.headOption.map(_.desiredVersions)
         .getOrElse(throw NotFoundException(s"No personal desired versions for client ${clientName}")))
     } yield profile
@@ -51,7 +51,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
   def getInstalledVersions(clientName: ClientName): Future[DesiredVersions] = {
     val clientArg = Filters.eq("clientName", clientName)
     for {
-      collection <- mongoDb.getOrCreateCollection[ClientDesiredVersions](Some(s"Installed"))
+      collection <- collections.ClientDesiredVersions
       profile <- collection.find(clientArg).map(_.headOption.map(_.desiredVersions)
         .getOrElse(throw NotFoundException(s"No installed desired versions for client ${clientName}")))
     } yield profile
@@ -60,7 +60,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
   def getTestedVersionsByProfile(profileName: ProfileName): Future[TestedVersions] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
-      collection <- mongoDb.getOrCreateCollection[TestedVersions]()
+      collection <- collections.TestedVersions
       profile <- collection.find(profileArg).map(_.headOption
         .getOrElse(throw NotFoundException(s"No tested versions for profile ${profileName}")))
     } yield profile

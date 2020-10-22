@@ -7,9 +7,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{VersionInfo}
+import com.vyulabs.update.info.VersionInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
@@ -38,24 +39,25 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
+  val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
 
   override def beforeAll() = {
-    val clientInfoCollection = result(mongo.getOrCreateCollection[ClientInfo](), FiniteDuration(3, TimeUnit.SECONDS))
+    val clientInfoCollection = result(collections.ClientInfo, FiniteDuration(3, TimeUnit.SECONDS))
 
-    clientInfoCollection.drop().foreach(assert(_))
+    result(clientInfoCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(clientInfoCollection.insert(
+      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    mongo.dropDatabase().foreach(assert(_))
+    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   it should "return user info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("user1", UserRole.Client))
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
     val query =
       graphql"""
         query {
@@ -72,7 +74,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return clients info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
     val query =
       graphql"""
         query {

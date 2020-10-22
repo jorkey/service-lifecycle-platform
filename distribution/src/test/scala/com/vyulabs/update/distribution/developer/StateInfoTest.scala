@@ -11,6 +11,7 @@ import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, Desir
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
@@ -19,7 +20,6 @@ import distribution.mongo.MongoDb
 import scala.concurrent.Await.result
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
-
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
@@ -40,34 +40,35 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
+  val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
 
   override def beforeAll() = {
-    val clientInfoCollection = result(mongo.getOrCreateCollection[ClientInfo](), FiniteDuration(3, TimeUnit.SECONDS))
-    val installedVersionsCollection = result(mongo.getOrCreateCollection[ClientDesiredVersions](Some("Installed")), FiniteDuration(3, TimeUnit.SECONDS))
-    val clientServiceStatesCollection = result(mongo.getOrCreateCollection[ClientServiceState](), FiniteDuration(3, TimeUnit.SECONDS))
+    val clientInfoCollection = result(collections.ClientInfo, FiniteDuration(3, TimeUnit.SECONDS))
+    val installedVersionsCollection = result(collections.ClientDesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
+    val clientServiceStatesCollection = result(collections.ClientServiceState, FiniteDuration(3, TimeUnit.SECONDS))
 
-    clientInfoCollection.drop().foreach(assert(_))
-    installedVersionsCollection.drop().foreach(assert(_))
+    result(clientInfoCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(installedVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(clientInfoCollection.insert(
+      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(installedVersionsCollection.insert(
+    result(installedVersionsCollection.insert(
       ClientDesiredVersions("client1",
-        DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 3))))), FiniteDuration(3, TimeUnit.SECONDS)))
+        DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 3))))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(clientServiceStatesCollection.insert(
-      ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(clientServiceStatesCollection.insert(
+      ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    mongo.dropDatabase().foreach(assert(_))
+    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   it should "return installed versions" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("user1", UserRole.Client))
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
     val query =
       graphql"""
         query {
@@ -86,7 +87,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return service state" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("user1", UserRole.Client))
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
     val query =
       graphql"""
         query {

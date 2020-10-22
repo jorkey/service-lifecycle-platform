@@ -17,6 +17,7 @@ import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory
 import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.mongo.MongoDbCollection
 import distribution.utils.GetUtils
 import org.slf4j.LoggerFactory
@@ -29,7 +30,7 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 18.12.19.
   * Copyright FanDate, Inc.
   */
-class DeveloperFaultUploader(collection: MongoDbCollection[ClientFaultReport],
+class DeveloperFaultUploader(collections: DeveloperDatabaseCollections,
                              protected val dir: DeveloperDistributionDirectory)
                             (implicit protected val system: ActorSystem,
                              protected val materializer: Materializer,
@@ -39,7 +40,6 @@ class DeveloperFaultUploader(collection: MongoDbCollection[ClientFaultReport],
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val directory = dir.getFaultsDir()
-  private var downloadingFiles = Set.empty[File]
 
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)
   private val maxClientServiceReportsCount = 100
@@ -56,7 +56,6 @@ class DeveloperFaultUploader(collection: MongoDbCollection[ClientFaultReport],
       return failWith(new IOException(s"Can't make directory ${clientDir}"))
     }
     val file = new File(clientDir, fileName)
-    self.synchronized { downloadingFiles += file }
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
     onSuccess(result) { result =>
@@ -86,8 +85,11 @@ class DeveloperFaultUploader(collection: MongoDbCollection[ClientFaultReport],
           parseJsonFileWithLock[FaultInfo](faultInfoFile).foreach { faultInfo =>
             faultInfo match {
               case Some(faultInfo) =>
-                Await.result(collection.insert(ClientFaultReport(clientName, dirName,
-                  IoUtils.listFiles(faultDir), faultInfo)), Duration.Undefined)
+                for {
+                  collection <- collections.ClientFaultReport
+                  result <- collection.insert(ClientFaultReport(clientName, dirName,
+                    IoUtils.listFiles(faultDir), faultInfo))
+                } yield result
               case None =>
                 log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${faultDir}")
             }
@@ -97,20 +99,21 @@ class DeveloperFaultUploader(collection: MongoDbCollection[ClientFaultReport],
         log.error(s"Can't make directory ${file}")
       }
     }
-    self.synchronized {
-      val reports = Await.result(collection.find(Filters.eq("client", clientName)), Duration.Undefined)
+    (for {
+      collection <- collections.ClientFaultReport
+      reports <- collection.find(Filters.eq("client", clientName))
+    } yield (collection, reports)).foreach { case (collection, reports) => {
       val remainReports = reports
         .sortBy(_.date)
         .filter(_.date.getTime + expirationPeriod >= System.currentTimeMillis())
         .take(maxClientServiceReportsCount)
       (reports.toSet -- remainReports.toSet).foreach { report =>
-        Await.result(collection.delete(Filters.and(
+        collection.delete(Filters.and(
           Filters.eq("clientName", report.clientName),
-          Filters.eq("directoryName", report.reportDirectory))), Duration.Undefined)
+          Filters.eq("directoryName", report.reportDirectory)))
         val faultDir = new File(clientDir, report.reportDirectory)
         IoUtils.deleteFileRecursively(faultDir)
       }
-      downloadingFiles -= file
-    }
+    }}
   }
 }

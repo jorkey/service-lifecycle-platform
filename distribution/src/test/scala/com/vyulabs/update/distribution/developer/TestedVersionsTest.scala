@@ -12,6 +12,7 @@ import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, TestSign
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
@@ -40,51 +41,52 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
+  val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
 
   override def beforeAll() = {
-    val desiredVersionsCollection = result(mongo.getOrCreateCollection[DesiredVersions](), FiniteDuration(3, TimeUnit.SECONDS))
-    val testedVersionsCollection = result(mongo.getOrCreateCollection[TestedVersions](), FiniteDuration(3, TimeUnit.SECONDS))
-    val installProfilesCollection = result(mongo.getOrCreateCollection[InstallProfile](), FiniteDuration(3, TimeUnit.SECONDS))
-    val clientDesiredVersionsCollection = result(mongo.getOrCreateCollection[ClientDesiredVersions](), FiniteDuration(3, TimeUnit.SECONDS))
-    val clientInfoCollection = result(mongo.getOrCreateCollection[ClientInfo](), FiniteDuration(3, TimeUnit.SECONDS))
+    val desiredVersionsCollection = result(collections.DesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
+    val testedVersionsCollection = result(collections.TestedVersions, FiniteDuration(3, TimeUnit.SECONDS))
+    val installProfilesCollection = result(collections.InstallProfile, FiniteDuration(3, TimeUnit.SECONDS))
+    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
+    val clientInfoCollection = result(collections.ClientInfo, FiniteDuration(3, TimeUnit.SECONDS))
 
-    desiredVersionsCollection.drop().foreach(assert(_))
-    testedVersionsCollection.drop().foreach(assert(_))
-    installProfilesCollection.drop().foreach(assert(_))
-    clientDesiredVersionsCollection.drop().foreach(assert(_))
-    clientInfoCollection.drop().foreach(assert(_))
+    result(desiredVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(testedVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(installProfilesCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(clientDesiredVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(clientInfoCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(desiredVersionsCollection.insert(
-      DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 2), "service2" -> BuildVersion(2, 1, 4), "service3" -> BuildVersion(3, 2, 1)))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(desiredVersionsCollection.insert(
+      DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 2), "service2" -> BuildVersion(2, 1, 4), "service3" -> BuildVersion(3, 2, 1)))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(installProfilesCollection.insert(
-      InstallProfile("common", Set("service1", "service2"))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(installProfilesCollection.insert(
+      InstallProfile("common", Set("service1", "service2"))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(testedVersionsCollection.insert(
-      TestedVersions("common", Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 2)), Seq(TestSignature("test", new Date())))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(testedVersionsCollection.insert(
+      TestedVersions("common", Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 2)), Seq(TestSignature("test", new Date())))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("specific", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(clientInfoCollection.insert(
+      ClientInfo("client1", ClientConfig("specific", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(clientInfoCollection.insert(
-      ClientInfo("client2", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(clientInfoCollection.insert(
+      ClientInfo("client2", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(clientDesiredVersionsCollection.insert(
+    result(clientDesiredVersionsCollection.insert(
       ClientDesiredVersions("client2",
-        DesiredVersions(versions = Map("service2" -> BuildVersion("client2", 1, 1, 1))))), FiniteDuration(3, TimeUnit.SECONDS)))
+        DesiredVersions(versions = Map("service2" -> BuildVersion("client2", 1, 1, 1))))), FiniteDuration(3, TimeUnit.SECONDS))
 
-    assert(result(clientInfoCollection.insert(
-      ClientInfo("client3", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS)))
+    result(clientInfoCollection.insert(
+      ClientInfo("client3", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    mongo.dropDatabase().foreach(assert(_))
+    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   it should "return error if no tested versions for the client's profile" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
     val query =
       graphql"""
         query {
@@ -102,7 +104,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return error if client required preliminary testing has personal desired versions" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
     val query =
       graphql"""
         query {
@@ -120,7 +122,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return tested versions" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
     val query =
       graphql"""
         query {

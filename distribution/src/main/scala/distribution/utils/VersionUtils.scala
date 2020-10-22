@@ -14,6 +14,8 @@ import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPa
 import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, DesiredVersions, VersionInfo, VersionsInfo}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
+import distribution.DatabaseCollections
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.graphql.NotFoundException
 import distribution.mongo.MongoDb
 import org.bson.BsonDocument
@@ -28,13 +30,13 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   private val maxVersions = 10
 
   protected val dir: DistributionDirectory
-  protected val mongoDb: MongoDb
+  protected val collections: DatabaseCollections
 
   protected implicit val executionContext: ExecutionContext
 
   def getDesiredVersions(): Future[DesiredVersions] = {
     for {
-      collection <- mongoDb.getOrCreateCollection[DesiredVersions]()
+      collection <- collections.DesiredVersions
       profile <- collection.find(new BsonDocument()).map(_.headOption.getOrElse(throw NotFoundException("Desired versions are not found")))
     } yield profile
   }
@@ -47,7 +49,15 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     versionUpload(versionName, dir.getVersionImageFile(serviceName, buildVersion))
   }
 
-  def versionInfoUpload(serviceName: ServiceName, buildVersion: BuildVersion): Route = {
+  def versionInfoUpload(serviceName: ServiceName, buildVersion: BuildVersion, buildInfo: BuildVersionInfo): Future[VersionInfo] = {
+    for {
+      collection <- collections.VersionInfo
+      profile <- {
+        val versionInfo = VersionInfo(serviceName, buildVersion.client, buildVersion, buildInfo)
+        collection.insert(versionInfo).map(_ => versionInfo)
+      }
+    } yield profile
+
     /* TODO graphql
     mapRouteResult {
       case result@RouteResult.Complete(_) =>
@@ -81,7 +91,6 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     } {
       versionUpload(versionInfoName, dir.getVersionInfoFile(serviceName, buildVersion))
     }*/
-    complete(StatusCodes.OK)
   }
 
   protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
@@ -95,7 +104,7 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     val versionArg = version.map { version => Filters.eq("version", version.toString) }
     val filters = Filters.and((Seq(serviceArg, clientArg) ++ versionArg).asJava)
     for {
-      collection <- mongoDb.getOrCreateCollection[VersionInfo]()
+      collection <- collections.VersionInfo
       info <- collection.find(filters)
     } yield info
   }

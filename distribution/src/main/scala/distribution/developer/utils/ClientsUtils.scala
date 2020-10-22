@@ -7,9 +7,8 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.lock.SmartFilesLocker
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.graphql.NotFoundException
-import distribution.mongo.MongoDb
 import distribution.utils.{GetUtils, PutUtils}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -25,16 +24,14 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
   protected implicit val executionContext: ExecutionContext
 
   protected val dir: DeveloperDistributionDirectory
-  protected val mongoDb: MongoDb
-
-  protected val filesLocker: SmartFilesLocker
+  protected val collections: DeveloperDatabaseCollections
 
   def getClientsInfo(clientName: Option[ClientName] = None): Future[Seq[ClientInfo]] = {
     val clientArg = clientName.map(Filters.eq("clientName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- mongoDb.getOrCreateCollection[ClientInfo]()
+      collection <- collections.ClientInfo
       info <- collection.find(filters)
     } yield info
   }
@@ -53,7 +50,7 @@ trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebP
   def getInstallProfile(profileName: ProfileName): Future[InstallProfile] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
-      collection <- mongoDb.getOrCreateCollection[InstallProfile]()
+      collection <- collections.InstallProfile
       profile <- collection.find(profileArg).map(_.headOption
         .getOrElse(throw NotFoundException(s"No install profile ${profileName}")))
     } yield profile

@@ -37,7 +37,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
-                            protected val mongoDb: MongoDb,
+                            protected val collections: DeveloperDatabaseCollections,
                             protected val config: DeveloperDistributionConfig,
                             protected val usersCredentials: UsersCredentials,
                             protected val graphql: Graphql,
@@ -76,7 +76,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = DeveloperGraphqlContext(config, dir, mongoDb, userInfo)
+                        val context = DeveloperGraphqlContext(config, dir, collections, userInfo)
                         complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, variables))
                       case Failure(error) =>
@@ -91,7 +91,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = DeveloperGraphqlContext(config, dir, mongoDb, userInfo)
+                        val context = DeveloperGraphqlContext(config, dir, collections, userInfo)
                         complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, vars))
                       case Failure(error) =>
@@ -187,7 +187,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             } ~
                               path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                                 val buildVersion = BuildVersion.parse(version)
-                                versionInfoUpload(service, buildVersion)
+                                complete(versionInfoUpload(service, buildVersion, null))
                               } ~
                               path(desiredVersionsPath) {
                                 fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
@@ -299,7 +299,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         } ~
                           path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
-                            versionInfoUpload(service, buildVersion)
+                            complete(versionInfoUpload(service, buildVersion, null))
                           } ~
                           path(uploadDesiredVersionsPath) {
                             parameter("client".?) { clientName =>

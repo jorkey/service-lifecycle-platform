@@ -13,6 +13,7 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
@@ -38,10 +39,11 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
+  val collections = new DeveloperDatabaseCollections(mongo)
 
-  val collection = result(mongo.getOrCreateCollection[ClientFaultReport](), FiniteDuration(3, TimeUnit.SECONDS))
+  val collection = result(collections.ClientFaultReport, FiniteDuration(3, TimeUnit.SECONDS))
 
-  val graphqlContext = DeveloperGraphqlContext(config, dir, mongo, UserInfo("user", UserRole.Administrator))
+  val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user", UserRole.Administrator))
   val graphql = new Graphql()
 
   val client1 = "client1"
@@ -51,21 +53,20 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val instance2 = "instance2"
 
   override def beforeAll() = {
-    collection.drop().foreach(assert(_))
-    assert(result(collection.dropItems(), FiniteDuration(3, TimeUnit.SECONDS)))
-    assert(result(collection.insert(
+    result(collection.dropItems(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(collection.insert(
       ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS)))
-    assert(result(collection.insert(
+        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS))
+    result(collection.insert(
       ClientFaultReport(client2, "fault1", Seq("fault.info", "core1"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS)))
-    assert(result(collection.insert(
+        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS))
+    result(collection.insert(
       ClientFaultReport(client1, "fault2", Seq("fault.info", "core"),
-        new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS)))
+        new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   override protected def afterAll(): Unit = {
-    mongo.dropDatabase().foreach(assert(_))
+    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   it should "get last fault reports for specified client" in {
