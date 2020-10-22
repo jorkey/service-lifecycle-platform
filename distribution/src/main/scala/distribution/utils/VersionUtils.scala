@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Directives.{complete, failWith, _}
 import akka.http.scaladsl.server.{Route, RouteResult}
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{ClientName, ServiceName, UserName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
 import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, DesiredVersions, VersionInfo, VersionsInfo}
 import com.vyulabs.update.utils.{IoUtils, Utils}
@@ -49,7 +49,7 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     versionUpload(versionName, dir.getVersionImageFile(serviceName, buildVersion))
   }
 
-  def versionInfoUpload(serviceName: ServiceName, buildVersion: BuildVersion, buildInfo: BuildVersionInfo): Future[VersionInfo] = {
+  def addVersionInfo(serviceName: ServiceName, buildVersion: BuildVersion, buildInfo: BuildVersionInfo): Future[VersionInfo] = {
     for {
       collection <- collections.VersionInfo
       profile <- {
@@ -91,6 +91,18 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     } {
       versionUpload(versionInfoName, dir.getVersionInfoFile(serviceName, buildVersion))
     }*/
+  }
+
+  def removeVersionInfo(serviceName: ServiceName, clientName: Option[ClientName], version: Option[BuildVersion]): Future[Boolean] = {
+    var filters = Filters.eq("serviceName", serviceName)
+    clientName.foreach(clientName => filters = Filters.and(filters, Filters.eq("clientName", clientName)))
+    version.foreach(version => filters = Filters.and(filters, Filters.eq("version", version.toString)))
+    for {
+      collection <- collections.VersionInfo
+      profile <- {
+        collection.delete(filters).map(_.getDeletedCount > 0)
+      }
+    } yield profile
   }
 
   protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {

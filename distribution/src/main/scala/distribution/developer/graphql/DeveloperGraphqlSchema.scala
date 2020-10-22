@@ -99,7 +99,10 @@ object DeveloperGraphqlSchema {
   val CommonMutations = fields[DeveloperGraphqlContext, Unit](
     Field("addVersionInfo", VersionInfoType,
       arguments = Service :: Version :: BuildInfo :: Nil,
-      resolve = c => { c.ctx.versionInfoUpload(c.arg(Service), c.arg(Version), c.arg(BuildInfo)) })
+      resolve = c => { c.ctx.addVersionInfo(c.arg(Service), c.arg(Version), c.arg(BuildInfo)) }),
+    Field("removeVersionsInfo", BooleanType,
+      arguments = Service :: OptionClient :: OptionVersion :: Nil,
+      resolve = c => { c.ctx.removeVersionInfo(c.arg(Service), c.arg(OptionClient), c.arg(OptionVersion)) })
   )
 
   val AdministratorMutations = ObjectType(

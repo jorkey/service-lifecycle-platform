@@ -19,7 +19,7 @@ import distribution.mongo.MongoDb
 
 import scala.concurrent.Await.result
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
@@ -43,28 +43,32 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
 
+  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
+  
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.ClientInfo, FiniteDuration(3, TimeUnit.SECONDS))
-    val installedVersionsCollection = result(collections.ClientDesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
-    val clientServiceStatesCollection = result(collections.ClientServiceState, FiniteDuration(3, TimeUnit.SECONDS))
+    result(mongo.dropDatabase())
 
-    result(clientInfoCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(installedVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+    val clientInfoCollection = result(collections.ClientInfo)
+    val installedVersionsCollection = result(collections.ClientDesiredVersions)
+    val clientServiceStatesCollection = result(collections.ClientServiceState)
+
+    result(clientInfoCollection.drop())
+    result(installedVersionsCollection.drop())
 
     result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientInfo("client1", ClientConfig("common", Some("test")))))
 
     result(installedVersionsCollection.insert(
       ClientDesiredVersions("client1",
-        DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 3))))), FiniteDuration(3, TimeUnit.SECONDS))
+        DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 3))))))
 
     result(clientServiceStatesCollection.insert(
-      ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(mongo.dropDatabase())
   }
 
   it should "return installed versions" in {

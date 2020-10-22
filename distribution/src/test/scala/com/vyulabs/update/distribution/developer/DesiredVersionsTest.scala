@@ -24,7 +24,7 @@ import spray.json._
 
 import scala.concurrent.Await.result
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
 class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Desired Versions Info Requests"
@@ -44,37 +44,41 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
 
-  override def beforeAll() = {
-    val desiredVersionsCollection = result(collections.DesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
-    val installProfilesCollection = result(collections.InstallProfile, FiniteDuration(3, TimeUnit.SECONDS))
-    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
-    val clientInfoCollection = result(collections.ClientInfo, FiniteDuration(3, TimeUnit.SECONDS))
+  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
-    result(desiredVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(installProfilesCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(clientDesiredVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(clientInfoCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+  override def beforeAll() = {
+    result(mongo.dropDatabase())
+    
+    val desiredVersionsCollection = result(collections.DesiredVersions)
+    val installProfilesCollection = result(collections.InstallProfile)
+    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersions)
+    val clientInfoCollection = result(collections.ClientInfo)
+
+    result(desiredVersionsCollection.drop())
+    result(installProfilesCollection.drop())
+    result(clientDesiredVersionsCollection.drop())
+    result(clientInfoCollection.drop())
 
     result(desiredVersionsCollection.insert(
-      DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 2), "service2" -> BuildVersion(2, 1, 4), "service3" -> BuildVersion(3, 2, 1)))), FiniteDuration(3, TimeUnit.SECONDS))
+      DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 2), "service2" -> BuildVersion(2, 1, 4), "service3" -> BuildVersion(3, 2, 1)))))
 
     result(installProfilesCollection.insert(
-      InstallProfile("common", Set("service1", "service2"))), FiniteDuration(3, TimeUnit.SECONDS))
+      InstallProfile("common", Set("service1", "service2"))))
 
     result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", None))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientInfo("client1", ClientConfig("common", None))))
 
     result(clientInfoCollection.insert(
-      ClientInfo("client2", ClientConfig("common", None))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientInfo("client2", ClientConfig("common", None))))
 
     result(clientDesiredVersionsCollection.insert(
       ClientDesiredVersions("client2",
-        DesiredVersions(versions = Map("service2" -> BuildVersion("client2", 1, 1, 1))))), FiniteDuration(3, TimeUnit.SECONDS))
+        DesiredVersions(versions = Map("service2" -> BuildVersion("client2", 1, 1, 1))))))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(mongo.dropDatabase())
   }
 
   it should "return common desired versions" in {
@@ -90,7 +94,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
           }
         }
       """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
     assertResult((OK,
       ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.2"},""" +
       """{"serviceName":"service2","buildVersion":"2.1.4"},{"serviceName":"service3","buildVersion":"3.2.1"}]}}}""").parseJson))(res)
@@ -109,7 +113,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
           }
         }
       """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
     assertResult((OK,
       ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"}]}}}""").parseJson))(res)
   }
@@ -127,7 +131,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
           }
         }
       """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
     assertResult((OK,
       ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"2.1.4"}]}}}""").parseJson))(res)
   }
@@ -145,7 +149,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
           }
         }
       """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
     assertResult((OK,
       ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"},{"serviceName":"service1","buildVersion":"1.1.2"}]}}}""").parseJson))(res)
   }

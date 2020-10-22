@@ -23,7 +23,7 @@ import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
 import scala.concurrent.Await.result
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import scala.concurrent.duration.FiniteDuration
 
 class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
@@ -44,45 +44,43 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
 
-  override def beforeAll() = {
-    val desiredVersionsCollection = result(collections.DesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
-    val testedVersionsCollection = result(collections.TestedVersions, FiniteDuration(3, TimeUnit.SECONDS))
-    val installProfilesCollection = result(collections.InstallProfile, FiniteDuration(3, TimeUnit.SECONDS))
-    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersions, FiniteDuration(3, TimeUnit.SECONDS))
-    val clientInfoCollection = result(collections.ClientInfo, FiniteDuration(3, TimeUnit.SECONDS))
+  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
-    result(desiredVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(testedVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(installProfilesCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(clientDesiredVersionsCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
-    result(clientInfoCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+  override def beforeAll() = {
+    result(mongo.dropDatabase())
+
+    val desiredVersionsCollection = result(collections.DesiredVersions)
+    val testedVersionsCollection = result(collections.TestedVersions)
+    val installProfilesCollection = result(collections.InstallProfile)
+    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersions)
+    val clientInfoCollection = result(collections.ClientInfo)
 
     result(desiredVersionsCollection.insert(
-      DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 2), "service2" -> BuildVersion(2, 1, 4), "service3" -> BuildVersion(3, 2, 1)))), FiniteDuration(3, TimeUnit.SECONDS))
+      DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 2), "service2" -> BuildVersion(2, 1, 4), "service3" -> BuildVersion(3, 2, 1)))))
 
     result(installProfilesCollection.insert(
-      InstallProfile("common", Set("service1", "service2"))), FiniteDuration(3, TimeUnit.SECONDS))
+      InstallProfile("common", Set("service1", "service2"))))
 
     result(testedVersionsCollection.insert(
-      TestedVersions("common", Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 2)), Seq(TestSignature("test", new Date())))), FiniteDuration(3, TimeUnit.SECONDS))
+      TestedVersions("common", Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 2)), Seq(TestSignature("test", new Date())))))
 
     result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("specific", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientInfo("client1", ClientConfig("specific", Some("test")))))
 
     result(clientInfoCollection.insert(
-      ClientInfo("client2", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientInfo("client2", ClientConfig("common", Some("test")))))
 
     result(clientDesiredVersionsCollection.insert(
       ClientDesiredVersions("client2",
-        DesiredVersions(versions = Map("service2" -> BuildVersion("client2", 1, 1, 1))))), FiniteDuration(3, TimeUnit.SECONDS))
+        DesiredVersions(versions = Map("service2" -> BuildVersion("client2", 1, 1, 1))))))
 
     result(clientInfoCollection.insert(
-      ClientInfo("client3", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientInfo("client3", ClientConfig("common", Some("test")))))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(mongo.dropDatabase())
   }
 
   it should "return error if no tested versions for the client's profile" in {
@@ -98,7 +96,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"No tested versions for profile specific","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(res)
   }
@@ -116,7 +114,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Client required preliminary testing shouldn't have personal desired versions","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(res)
   }
@@ -134,7 +132,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query), FiniteDuration.apply(3, TimeUnit.SECONDS))
+    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
     assertResult((OK,
       ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.1"},{"serviceName":"service2","buildVersion":"2.1.2"}]}}}""").parseJson))(res)
   }

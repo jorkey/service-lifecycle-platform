@@ -11,7 +11,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import com.vyulabs.update.utils.{IoUtils, Utils}
+import com.vyulabs.update.utils.{IoUtils}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
@@ -25,6 +25,7 @@ import spray.json._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
+import com.vyulabs.update.utils.Utils.DateJson._
 
 class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Version Info Requests"
@@ -50,12 +51,6 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override def beforeAll() = {
     IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, BuildVersion(1, 2, 3))
-
-    val clientInfoCollection = result(collections.ClientInfo)
-
-    result(clientInfoCollection.drop())
-
-    result(clientInfoCollection.insert(ClientInfo("client1", ClientConfig("common", Some("test")))))
   }
 
   override protected def afterAll(): Unit = {
@@ -77,13 +72,31 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       None, variables = JsObject("directory" -> JsString(ownServicesDir.toString)))))
   }
 
-  it should "return version info" in {
+  it should "add/get version info" in {
     val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
     assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"addVersionInfo":{"version":"1.1.1"}}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+                  mutation AddVersionInfo($$date: Date!) {
+                    addVersionInfo (
+                      service: "service1",
+                      version: "1.1.1",
+                      buildInfo: {
+                        author: "author1",
+                        branches: [ "master" ]
+                        date: $$date
+                      }) {
+                      version
+                    }
+                  }
+                """,
+        variables = JsObject("date" -> new Date().toJson))))
+    assertResult((OK,
+      ("""{"data":{"versionsInfo":[{"version":"1.1.1","buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          versionsInfo (service: "service1", version: "1.1.2") {
+          versionsInfo (service: "service1", version: "1.1.1") {
             version
             buildInfo {
               author
@@ -92,10 +105,17 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """
     )))
+    assertResult((OK,
+      ("""{"data":{"removeVersionsInfo":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          removeVersionsInfo (service: "service1", version: "1.1.1")
+        }
+        """,
+        variables = JsObject("date" -> new Date().toJson))))
   }
 
   it should "add/get versions info" in {
-    import com.vyulabs.update.utils.Utils.DateJson._
     val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"addVersionInfo":{"version":"1.1.2"}}}""").parseJson))(
@@ -113,8 +133,7 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
                       version
                     }
                   }
-                """
-        ,
+                """,
         variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
@@ -133,8 +152,7 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
                       version
                     }
                   }
-                """
-        ,
+                """,
         variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
@@ -149,15 +167,43 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             }
           }
         }
-      """
-      ))
+      """))
     )
+
+    assertResult((OK,
+      ("""{"data":{"removeVersionsInfo":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          removeVersionsInfo (service: "service1")
+        }
+        """,
+        variables = JsObject("date" -> new Date().toJson))))
   }
 
-  it should "return client versions info" in {
+  it should "add/get client versions info" in {
     val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+
     assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"client1-1.1.0","buildInfo":{"author":"author2"}},{"version":"client1-1.1.1","buildInfo":{"author":"author2"}}]}}""").parseJson))(
+      ("""{"data":{"addVersionInfo":{"version":"client1-1.1.2"}}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+                  mutation AddVersionInfo($$date: Date!) {
+                    addVersionInfo (
+                      service: "service1",
+                      version: "client1-1.1.2",
+                      buildInfo: {
+                        author: "author1",
+                        branches: [ "master" ]
+                        date: $$date
+                      }) {
+                      version
+                    }
+                  }
+                """,
+        variables = JsObject("date" -> new Date().toJson))))
+
+    assertResult((OK,
+      ("""{"data":{"versionsInfo":[{"version":"client1-1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           versionsInfo (service: "service1", client: "client1") {
@@ -168,5 +214,14 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """)))
+
+  assertResult((OK,
+      ("""{"data":{"removeVersionsInfo":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          removeVersionsInfo (service: "service1", client: "client1")
+        }
+        """,
+        variables = JsObject("date" -> new Date().toJson))))
   }
 }

@@ -7,7 +7,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.VersionInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.developer.DeveloperDatabaseCollections
@@ -20,9 +19,8 @@ import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-import scala.concurrent.Await.result
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
 class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Client Info Requests"
@@ -42,18 +40,22 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val collections = new DeveloperDatabaseCollections(mongo)
   val graphql = new Graphql()
 
-  override def beforeAll() = {
-    val clientInfoCollection = result(collections.ClientInfo, FiniteDuration(3, TimeUnit.SECONDS))
+  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
-    result(clientInfoCollection.drop(), FiniteDuration(3, TimeUnit.SECONDS))
+  override def beforeAll() = {
+    result(mongo.dropDatabase())
+    
+    val clientInfoCollection = result(collections.ClientInfo)
+
+    result(clientInfoCollection.drop())
 
     result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", Some("test")))), FiniteDuration(3, TimeUnit.SECONDS))
+      ClientInfo("client1", ClientConfig("common", Some("test")))))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(mongo.dropDatabase())
   }
 
   it should "return user info" in {

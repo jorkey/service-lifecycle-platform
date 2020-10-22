@@ -21,7 +21,7 @@ import distribution.mongo.MongoDb
 import sangria.macros.LiteralGraphQLStringContext
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import spray.json._
 
 import Await._
@@ -41,7 +41,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val mongo = new MongoDb(getClass.getSimpleName)
   val collections = new DeveloperDatabaseCollections(mongo)
 
-  val collection = result(collections.ClientFaultReport, FiniteDuration(3, TimeUnit.SECONDS))
+  val collection = result(collections.ClientFaultReport)
 
   val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user", UserRole.Administrator))
   val graphql = new Graphql()
@@ -52,21 +52,24 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val instance1 = "instance1"
   val instance2 = "instance2"
 
+  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
+
   override def beforeAll() = {
-    result(collection.dropItems(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(mongo.dropDatabase())
+
     result(collection.insert(
       ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS))
+        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)))
     result(collection.insert(
       ClientFaultReport(client2, "fault1", Seq("fault.info", "core1"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS))
+        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)))
     result(collection.insert(
       ClientFaultReport(client1, "fault2", Seq("fault.info", "core"),
-        new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(), Seq.empty)), FiniteDuration(3, TimeUnit.SECONDS))
+        new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(), Seq.empty)))
   }
 
   override protected def afterAll(): Unit = {
-    result(mongo.dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    result(mongo.dropDatabase())
   }
 
   it should "get last fault reports for specified client" in {

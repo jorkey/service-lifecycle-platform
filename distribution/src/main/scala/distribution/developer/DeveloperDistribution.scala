@@ -187,7 +187,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             } ~
                               path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                                 val buildVersion = BuildVersion.parse(version)
-                                complete(versionInfoUpload(service, buildVersion, null))
+                                complete(addVersionInfo(service, buildVersion, null))
                               } ~
                               path(desiredVersionsPath) {
                                 fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
@@ -299,7 +299,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         } ~
                           path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
-                            complete(versionInfoUpload(service, buildVersion, null))
+                            complete(addVersionInfo(service, buildVersion, null))
                           } ~
                           path(uploadDesiredVersionsPath) {
                             parameter("client".?) { clientName =>

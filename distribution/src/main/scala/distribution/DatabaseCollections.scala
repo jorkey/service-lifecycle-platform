@@ -13,8 +13,7 @@ class DatabaseCollections(db: MongoDb)(implicit executionContext: ExecutionConte
   VersionInfo.foreach { collection =>
     collection.listIndexes().foreach { indexes =>
       if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("serviceName", "clientName"))
-        collection.createIndex(Indexes.ascending("version"), new IndexOptions().unique(true))
+        collection.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true))
       }
     }
   }
