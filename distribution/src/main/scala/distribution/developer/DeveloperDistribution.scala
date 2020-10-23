@@ -76,7 +76,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = DeveloperGraphqlContext(config, dir, collections, userInfo)
+                        val context = new DeveloperGraphqlContext(config, dir, collections, userInfo)
                         complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, variables))
                       case Failure(error) =>
@@ -91,7 +91,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = DeveloperGraphqlContext(config, dir, collections, userInfo)
+                        val context = new DeveloperGraphqlContext(config, dir, collections, userInfo)
                         complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, vars))
                       case Failure(error) =>
@@ -274,7 +274,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         } ~
                           path(downloadDesiredVersionsPath) {
                             parameter("common".as[Boolean] ? false) { common =>
-                              complete(if (!common) getDesiredVersions(Some(userName), true) else getDesiredVersions())
+                              complete(if (!common) getClientDesiredVersions(userName, true) else getDesiredVersions())
                             }
                           } ~
                           path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated

@@ -7,11 +7,11 @@ import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
-import com.vyulabs.update.info.DesiredVersions
+import com.vyulabs.update.info.{DesiredVersions, DesiredVersionsMap}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import org.slf4j.LoggerFactory
-import com.vyulabs.update.info.DesiredVersions._
+import com.vyulabs.update.info.DesiredVersionsMap._
 
 import scala.concurrent.ExecutionContext
 
@@ -50,7 +50,7 @@ class SelfUpdater(dir: DistributionDirectory)
         val desiredVersions = IoUtils.readFileToJsonWithLock[DesiredVersions](dir.getDesiredVersionsFile()) match {
           case Some(versions) =>
             try {
-              versions.versions
+              versions.toMap.versions
             } catch {
               case e: Exception =>
                 log.error("Can't init desired versions", e)

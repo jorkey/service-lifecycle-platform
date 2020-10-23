@@ -4,7 +4,7 @@ import java.util.Date
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServiceState, DesiredVersions, DirectoryServiceState, InstanceServiceState, ServiceState, UpdateError, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServiceState, DesiredVersions, DesiredVersionsMap, DirectoryServiceState, InstanceServiceState, ServiceState, ServiceVersion, UpdateError, VersionInfo, VersionsInfo}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -14,7 +14,6 @@ import sangria.ast.StringValue
 import sangria.schema._
 import sangria.macros.derive._
 import sangria.validation.Violation
-import spray.json.enrichAny
 
 object GraphqlTypes {
   private case object DateCoerceViolation extends Violation {
@@ -51,17 +50,8 @@ object GraphqlTypes {
   implicit val BuildVersionInfoType = deriveObjectType[Unit, BuildVersionInfo]()
   implicit val VersionInfoType = deriveObjectType[Unit, VersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, VersionsInfo]()
-
-  case class ServiceVersion(serviceName: ServiceName, buildVersion: BuildVersion)
   implicit val ServiceVersionType = deriveObjectType[Unit, ServiceVersion]()
-  implicit val DesiredVersionsType = ObjectType.apply[Unit, DesiredVersions]("DesiredVersions",
-    fields[Unit, DesiredVersions](
-      Field("versions", ListType(ServiceVersionType), resolve = c => {
-        c.value.versions.map(entry => ServiceVersion(entry._1, entry._2)).toSeq
-      })
-    )
-  )
-
+  implicit val DesiredVersionsType = deriveObjectType[Unit, DesiredVersions]()
   implicit val ClientConfigInfoType = deriveObjectType[Unit, ClientConfig]()
   implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
@@ -77,5 +67,10 @@ object GraphqlTypes {
   implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildVersionInfo](
     InputObjectTypeName("BuildVersionInfoInput")
   )
-
+  implicit val ServiceVersionInfoInputType = deriveInputObjectType[ServiceVersion](
+    InputObjectTypeName("ServiceVersionInput")
+  )
+  implicit val DesiredVersionsInputType = deriveInputObjectType[DesiredVersions](
+    InputObjectTypeName("DesiredVersionsInput")
+  )
 }

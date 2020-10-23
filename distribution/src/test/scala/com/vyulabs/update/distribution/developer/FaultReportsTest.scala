@@ -35,7 +35,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder")
+  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder", 5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
@@ -43,7 +43,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val collection = result(collections.ClientFaultReport)
 
-  val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user", UserRole.Administrator))
+  val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("user", UserRole.Administrator))
   val graphql = new Graphql()
 
   val client1 = "client1"

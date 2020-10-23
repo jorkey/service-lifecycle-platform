@@ -31,11 +31,6 @@ trait UserContext {
   }
 }
 
-trait GraphqlContext extends UserContext {
-  val dir: DistributionDirectory
-  val collections: DatabaseCollections
-}
-
 class Graphql() extends SprayJsonSupport {
   protected implicit val log = LoggerFactory.getLogger(this.getClass)
 

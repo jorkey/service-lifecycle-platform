@@ -83,6 +83,13 @@ class MongoDbCollection[T](collection: MongoCollection[Document])
       .runWith(Sink.head[Success])
   }
 
+  def replace(filters: Bson, obj: T)(implicit writer: JsonWriter[T]): Future[UpdateResult] = {
+    val version = obj.toJson.compactPrint
+    Source.fromPublisher(collection.replaceOne(filters, Document.parse(version)))
+      .log(s"Replace document in Mongo DB collection ${name}")
+      .runWith(Sink.head[UpdateResult])
+  }
+
   def find(filters: Bson, sort: Option[Bson] = None, limit: Option[Int] = None)(implicit reader: JsonReader[T]): Future[Seq[T]] = {
     var find = collection.find(filters)
     sort.foreach(sort => find = find.sort(sort))

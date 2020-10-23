@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.{DesiredVersions, ProfiledServiceName}
+import com.vyulabs.update.info.{DesiredVersionsMap, ProfiledServiceName}
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
 import com.vyulabs.update.utils.{IoUtils, Utils}
@@ -128,7 +128,7 @@ object UpdaterMain extends App { self =>
             clientDirectory.downloadDesiredVersions() match {
               case Some(desiredVersions) =>
                 var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, BuildVersion])((map, updater) => {
-                  updater._2.needUpdate(desiredVersions.versions.get(updater._1.name)) match {
+                  updater._2.needUpdate(desiredVersions.get(updater._1.name)) match {
                     case Some(version) =>
                       map + (updater._1 -> version)
                     case None =>
@@ -136,9 +136,11 @@ object UpdaterMain extends App { self =>
                   }
                 })
                 if (!needUpdate.isEmpty) {
-                  selfUpdater.needUpdate(Common.UpdaterServiceName, desiredVersions.versions.get(Common.UpdaterServiceName)).foreach(version =>
+                  selfUpdater.needUpdate(Common.UpdaterServiceName,
+                      desiredVersions.get(Common.UpdaterServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.UpdaterServiceName) -> version))
-                  selfUpdater.needUpdate(Common.ScriptsServiceName, desiredVersions.versions.get(Common.ScriptsServiceName)).foreach(version =>
+                  selfUpdater.needUpdate(Common.ScriptsServiceName,
+                      desiredVersions.get(Common.ScriptsServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.ScriptsServiceName) -> version))
                   val toUpdate = needUpdate.filterNot { case (serviceName, version) =>
                     blacklist.get(serviceName) match {

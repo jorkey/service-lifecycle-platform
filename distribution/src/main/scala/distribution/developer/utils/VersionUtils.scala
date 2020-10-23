@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, TestedVersions}
+import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, DesiredVersionsMap, TestedVersions}
 import com.vyulabs.update.utils.JsUtils.MergedJsObject
 import com.vyulabs.update.version.BuildVersion
 import distribution.graphql.{InvalidConfigException, NotFoundException}
@@ -26,17 +26,12 @@ trait VersionUtils extends distribution.utils.VersionUtils
   protected implicit val executionContext: ExecutionContext
   protected implicit val dir: DeveloperDistributionDirectory
 
-  def getDesiredVersions(clientName: Option[ClientName], merged: Boolean): Future[DesiredVersions] = {
-    clientName match {
-      case Some(clientName) =>
-        filterDesiredVersionsByProfile(clientName, if (merged) {
-          getMergedDesiredVersions(clientName)
-        } else {
-          getClientDesiredVersions(clientName)
-        })
-      case None =>
-        getDesiredVersions()
-    }
+  def getClientDesiredVersions(clientName: ClientName, merged: Boolean): Future[DesiredVersions] = {
+    filterDesiredVersionsByProfile(clientName, if (merged) {
+      getMergedDesiredVersions(clientName)
+    } else {
+      getClientDesiredVersions(clientName)
+    })
   }
 
   def getClientDesiredVersions(clientName: ClientName): Future[DesiredVersions] = {
@@ -77,7 +72,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
     for {
       desiredVersions <- future
       installProfile <- getClientInstallProfile(clientName)
-      versions <- Future(DesiredVersions(desiredVersions.versions.filterKeys(installProfile.services.contains(_))))
+      versions <- Future(DesiredVersions(desiredVersions.versions.filter(version => installProfile.services.contains(version.serviceName))))
     } yield versions
   }
 
@@ -104,9 +99,9 @@ trait VersionUtils extends distribution.utils.VersionUtils
               })
             } yield testedVersions
           case None =>
-            getDesiredVersions().map(_.versions)
+            getDesiredVersions().map(_.toMap).map(_.versions)
         }}
-      clientDesiredVersions <- getClientDesiredVersions(clientName).map(v => Some(v.versions)).recover{ case e => None }
+      clientDesiredVersions <- getClientDesiredVersions(clientName).map(_.toMap).map(v => Some(v.versions)).recover{ case e => None }
       versions <- Future {
         if (clientConfig.testClientMatch.isDefined && clientDesiredVersions.isDefined) {
           throw InvalidConfigException("Client required preliminary testing shouldn't have personal desired versions")
@@ -120,7 +115,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
             commonConfig
         }
         val mergedVersions = mergedJson.convertTo[Map[ServiceName, BuildVersion]]
-        DesiredVersions(mergedVersions)
+        DesiredVersions.fromMap(mergedVersions)
       }
     } yield versions
   }
@@ -160,9 +155,9 @@ trait VersionUtils extends distribution.utils.VersionUtils
   }
 
   override protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
-    val desiredVersion = getDesiredVersions().map(_.versions.get(serviceName))
+    val desiredVersion = getDesiredVersions().map(_.get(serviceName))
     val clientDesiredVersions = dir.getClients().map { clientName =>
-      getClientDesiredVersions(clientName).map(_.versions.get(serviceName))
+      getClientDesiredVersions(clientName).map(_.get(serviceName))
     }
     val testedVersions = dir.getProfiles().map { profileName =>
       getTestedVersionsByProfile(profileName).map(_.versions.get(serviceName))

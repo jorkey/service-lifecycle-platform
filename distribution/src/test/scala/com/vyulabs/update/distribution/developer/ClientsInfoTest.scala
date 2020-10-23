@@ -33,7 +33,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder")
+  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder", 5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
@@ -59,7 +59,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return user info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
+    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
     val query =
       graphql"""
         query {
@@ -76,7 +76,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return clients info" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
     val query =
       graphql"""
         query {

@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersions, ServiceState}
+import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersions, DesiredVersionsMap, ServiceState, ServiceVersion}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -36,7 +36,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder")
+  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder", 5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
@@ -60,7 +60,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     result(installedVersionsCollection.insert(
       ClientDesiredVersions("client1",
-        DesiredVersions(versions = Map("service1" -> BuildVersion(1, 1, 1), "service2" -> BuildVersion(2, 1, 3))))))
+        DesiredVersions(Seq(ServiceVersion("service1", BuildVersion(1, 1, 1)), ServiceVersion("service2", BuildVersion(2, 1, 3)))))))
 
     result(clientServiceStatesCollection.insert(
       ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))))
@@ -72,7 +72,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return installed versions" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
+    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
     val query =
       graphql"""
         query {
@@ -91,7 +91,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return service state" in {
-    val graphqlContext = DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
+    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
     val query =
       graphql"""
         query {
