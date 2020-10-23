@@ -5,7 +5,7 @@ import java.net.URL
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.ClientConfig
-import com.vyulabs.update.info.{DesiredVersions, DesiredVersionsMap, InstanceServiceState, ServicesVersions}
+import com.vyulabs.update.info.{DesiredVersions, InstanceServiceState, ServicesVersions}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import org.slf4j.Logger
 import com.vyulabs.update.config.ClientConfig._

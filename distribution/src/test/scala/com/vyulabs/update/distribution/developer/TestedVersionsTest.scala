@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, DesiredVersionsMap, ServiceVersion, TestSignature, TestedVersions}
+import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, ServiceVersion, TestSignature, TestedVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-import scala.concurrent.Await.result
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import scala.concurrent.duration.FiniteDuration
 

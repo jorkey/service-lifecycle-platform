@@ -5,11 +5,10 @@ import java.util.regex.{MatchResult, Pattern}
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
-import com.vyulabs.update.info.{DesiredVersions, DesiredVersionsMap}
+import com.vyulabs.update.info.{DesiredVersions}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.info.DesiredVersionsMap._
 import org.slf4j.LoggerFactory
 
 /**

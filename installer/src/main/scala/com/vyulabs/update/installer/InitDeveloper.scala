@@ -6,14 +6,12 @@ import java.util.Date
 import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, DesiredVersionsMap}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
-import spray.json.enrichAny
-import com.vyulabs.update.info.DesiredVersionsMap._
 import com.vyulabs.update.info.BuildVersionInfo._
 
 /**
@@ -142,7 +140,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.error(s"Can't write scripts version info")
       return false
     }
-    var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.toMap).map(_.versions).getOrElse(Map.empty)
+    var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.toMap).getOrElse(Map.empty)
     desiredVersions += Common.ScriptsServiceName -> nextVersion
     if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions.fromMap(desiredVersions))) {
       log.error("Can't write desired versions")
@@ -175,7 +173,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
         log.error(s"Can't write version info of service ${serviceName}")
         return false
       }
-      var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.toMap).map(_.versions).getOrElse(Map.empty)
+      var desiredVersions = developerDistribution.getDesiredVersions(None).map(_.toMap).getOrElse(Map.empty)
       desiredVersions += serviceName -> nextVersion
       if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions.fromMap(desiredVersions))) {
         log.error("Can't write desired versions")

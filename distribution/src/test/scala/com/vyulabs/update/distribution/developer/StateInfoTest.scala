@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersions, DesiredVersionsMap, ServiceState, ServiceVersion}
+import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersions, ServiceState, ServiceVersion}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -17,7 +17,6 @@ import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphql
 import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
 
-import scala.concurrent.Await.result
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}

@@ -11,28 +11,18 @@ object ServiceVersion extends DefaultJsonProtocol {
 }
 
 case class DesiredVersions(versions: Seq[ServiceVersion]) {
-  def toMap = DesiredVersionsMap.fromList(this)
-
   def get(serviceName: ServiceName) =
     versions.find(_.serviceName == serviceName).map(_.buildVersion)
+
+  def toMap = versions.foldLeft(Map.empty[ServiceName, BuildVersion])((map, version) =>
+    map + (version.serviceName -> version.buildVersion))
 }
 
 object DesiredVersions extends DefaultJsonProtocol {
   implicit val desiredVersionsJson = jsonFormat1(DesiredVersions.apply)
 
   def fromMap(versions: Map[ServiceName, BuildVersion]): DesiredVersions =
-    DesiredVersionsMap(versions).toList
-}
-
-case class DesiredVersionsMap(versions: Map[ServiceName, BuildVersion]) {
-  def toList = DesiredVersions(versions.map(entry => ServiceVersion(entry._1, entry._2)).toSeq)
-}
-
-object DesiredVersionsMap extends DefaultJsonProtocol {
-  def fromList(versions: DesiredVersions): DesiredVersionsMap = {
-    DesiredVersionsMap(versions.versions.foldLeft(Map.empty[ServiceName, BuildVersion])((map, version) =>
-      map + (version.serviceName -> version.buildVersion)))
-  }
+    DesiredVersions(versions.map(entry => ServiceVersion(entry._1, entry._2)).toSeq)
 }
 
 case class ClientDesiredVersions(clientName: ClientName, desiredVersions: DesiredVersions)

@@ -12,7 +12,7 @@ import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, DesiredVersionsMap}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
@@ -20,8 +20,6 @@ import com.vyulabs.update.version.BuildVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 import com.vyulabs.update.config.InstallConfig._
-import com.vyulabs.update.info.DesiredVersionsMap._
-import spray.json.enrichAny
 
 class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
@@ -204,7 +202,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
   }
 
   def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, BuildVersion]] = {
-    directory.downloadDesiredVersions(clientName).map(_.toMap).map(_.versions)
+    directory.downloadDesiredVersions(clientName).map(_.toMap)
   }
 
   def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
@@ -227,7 +225,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
              s"Continue updating of desired versions")) {
           var newDesiredVersions = Option.empty[DesiredVersions]
           try {
-            var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.toMap).map(_.versions).getOrElse(Map.empty)
+            var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(_.toMap).getOrElse(Map.empty)
             servicesVersions.foreach {
               case (serviceName, Some(version)) =>
                 desiredVersionsMap += (serviceName -> version)

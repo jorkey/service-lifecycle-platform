@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution
 import java.io.File
 
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.info.{DesiredVersions, DesiredVersionsMap}
+import com.vyulabs.update.info.{DesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion

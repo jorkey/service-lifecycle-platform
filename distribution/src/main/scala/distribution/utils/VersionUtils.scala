@@ -9,7 +9,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, DesiredVersionsMap, VersionInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, VersionInfo}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections

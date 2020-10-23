@@ -4,10 +4,9 @@ import java.net.URL
 
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
-import com.vyulabs.update.info.{DesiredVersions, DesiredVersionsMap, ServicesVersions, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersions, VersionsInfo}
 import org.slf4j.Logger
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.info.DesiredVersionsMap._
 import spray.json.enrichAny
 
 /**

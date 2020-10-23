@@ -2,9 +2,8 @@ package distribution.graphql
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServiceState, DesiredVersions, DesiredVersionsMap, DirectoryServiceState, InstanceServiceState, ServiceState, ServiceVersion, UpdateError, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServiceState, DesiredVersions, DirectoryServiceState, InstanceServiceState, ServiceState, ServiceVersion, UpdateError, VersionInfo, VersionsInfo}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils

@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, DesiredVersionsMap, TestedVersions}
+import com.vyulabs.update.info.{DesiredVersions, TestedVersions}
 import com.vyulabs.update.utils.JsUtils.MergedJsObject
 import com.vyulabs.update.version.BuildVersion
 import distribution.graphql.{InvalidConfigException, NotFoundException}
@@ -99,9 +99,9 @@ trait VersionUtils extends distribution.utils.VersionUtils
               })
             } yield testedVersions
           case None =>
-            getDesiredVersions().map(_.toMap).map(_.versions)
+            getDesiredVersions().map(_.toMap)
         }}
-      clientDesiredVersions <- getClientDesiredVersions(clientName).map(_.toMap).map(v => Some(v.versions)).recover{ case e => None }
+      clientDesiredVersions <- getClientDesiredVersions(clientName).map(_.toMap).map(Some(_)).recover { case e => None }
       versions <- Future {
         if (clientConfig.testClientMatch.isDefined && clientDesiredVersions.isDefined) {
           throw InvalidConfigException("Client required preliminary testing shouldn't have personal desired versions")

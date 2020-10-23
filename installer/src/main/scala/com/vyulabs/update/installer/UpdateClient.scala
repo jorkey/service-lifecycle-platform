@@ -7,7 +7,7 @@ import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.AdminRepository
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, DesiredVersionsMap, ServicesVersions}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, ServicesVersions}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
@@ -15,8 +15,8 @@ import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.enrichAny
-import com.vyulabs.update.info.DesiredVersionsMap._
 import com.vyulabs.update.installer.InstallResult.InstallResult
+import DesiredVersions._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -56,7 +56,7 @@ class UpdateClient()(implicit log: Logger) {
           return InstallResult.Failure
         }
         log.info("Get client desired versions")
-        val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.toMap).map(_.versions).getOrElse {
+        val clientDesiredVersions = clientDistribution.downloadDesiredVersions().map(_.toMap).getOrElse {
           log.warn(s"Can't get client desired versions")
           return InstallResult.Failure
         }
@@ -69,7 +69,7 @@ class UpdateClient()(implicit log: Logger) {
             }
             return InstallResult.Failure
           }
-          developerDesiredVersions.toMap.versions
+          developerDesiredVersions.toMap
         } else {
           clientDesiredVersions.mapValues(_.original())
         }
@@ -137,7 +137,7 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   def getClientDesiredVersions(clientDistribution: ClientDistributionDirectoryClient): Option[Map[ServiceName, BuildVersion]] = {
-    clientDistribution.downloadDesiredVersions().map(_.toMap).map(_.versions)
+    clientDistribution.downloadDesiredVersions().map(_.toMap)
   }
 
   def setDesiredVersions(adminRepository: ClientAdminRepository,
@@ -206,7 +206,7 @@ class UpdateClient()(implicit log: Logger) {
         val developerDesiredVersionsMap = developerDistribution.downloadDesiredVersions().getOrElse {
           log.error("Error of getting developer desired versions")
           return false
-        }.toMap.versions
+        }.toMap
         if (developerDesiredVersionsMap.values.find(_.client.isDefined).isDefined) {
           log.error("Desired versions contain personal versions")
           return false
