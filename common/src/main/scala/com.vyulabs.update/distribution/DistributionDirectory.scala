@@ -3,7 +3,6 @@ package com.vyulabs.update.distribution
 import java.io.File
 
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.info.{DesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
@@ -45,23 +44,6 @@ class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFile
 
   def getVersionImageFile(serviceName: ServiceName, version: BuildVersion): File = {
     new File(getServiceDir(serviceName, version.client), getVersionImageFileName(serviceName, version))
-  }
-
-  def getDesiredVersion(serviceName: ServiceName)(implicit log: Logger): Option[BuildVersion] = {
-    getDesiredVersions() match {
-      case Some(versions) =>
-        versions.get(serviceName)
-      case None =>
-        None
-    }
-  }
-
-  def getDesiredVersions()(implicit log: Logger): Option[DesiredVersions] = {
-    IoUtils.readFileToJson[DesiredVersions](getDesiredVersionsFile())
-  }
-
-  def getDesiredVersionsFile(): File = {
-    new File(directory, desiredVersionsFile)
   }
 
   def getVersionInfoFileName(serviceName: ServiceName, version: BuildVersion): String = {

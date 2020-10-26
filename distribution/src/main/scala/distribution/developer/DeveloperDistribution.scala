@@ -157,9 +157,9 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                               path(installedDesiredVersionsPath / ".*".r) { clientName => // deprecated
                                 complete(getInstalledVersions(clientName))
                               } ~
-                              path(desiredVersionPath / ".*".r) { service => // deprecated
-                                complete(getDesiredVersion(service, getDesiredVersions()))
-                              } ~
+                              //path(desiredVersionPath / ".*".r) { service => // deprecated
+                              //  complete(getDesiredVersion(service, getDesiredVersions()))
+                              //} ~
                               path(distributionVersionPath) { // deprecated
                                 complete(getVersion())
                               } ~
@@ -173,10 +173,10 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             } ~
                               path(desiredVersionsPath) {
                                 complete(getClientDesiredVersions(userName)) // deprecated
-                              } ~
-                              path(desiredVersionPath / ".*".r) { service => // deprecated
-                                complete(getDesiredVersion(service, getClientDesiredVersions(userName)))
-                              }
+                              } //~
+                              //path(desiredVersionPath / ".*".r) { service => // deprecated
+                              //  complete(getDesiredVersion(service, getClientDesiredVersions(userName)))
+                              //}
                           }
                       } ~
                         post {
@@ -188,13 +188,13 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                               path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                                 val buildVersion = BuildVersion.parse(version)
                                 complete(addVersionInfo(service, buildVersion, null))
-                              } ~
-                              path(desiredVersionsPath) {
-                                fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
-                              } ~
-                              path(desiredVersionsPath / ".*".r) { clientName =>
-                                fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(Some(clientName)))
-                              }
+                              } //~
+                              //path(desiredVersionsPath) {
+                              //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
+                              //} ~
+                              //path(desiredVersionsPath / ".*".r) { clientName =>
+                              //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(Some(clientName)))
+                              //}
                           } ~
                             authorize(userRole == UserRole.Client) {
                               path(installedDesiredVersionsPath) {
@@ -258,9 +258,9 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                               }
                             }
                           } ~
-                          path(downloadDesiredVersionPath / ".*".r) { service =>
-                            complete(getDesiredVersion(service, getDesiredVersions()))
-                          } ~
+                          //path(downloadDesiredVersionPath / ".*".r) { service =>
+                          //  complete(getDesiredVersion(service, getDesiredVersions()))
+                          //} ~
                           path(getDistributionVersionPath) {
                             complete(getVersion())
                           } ~
@@ -272,11 +272,11 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         path(downloadClientConfigPath) {
                           getFromFile(dir.getClientConfigFile(userName))
                         } ~
-                          path(downloadDesiredVersionsPath) {
-                            parameter("common".as[Boolean] ? false) { common =>
-                              complete(if (!common) getClientDesiredVersions(userName, true) else getDesiredVersions())
-                            }
-                          } ~
+                          //path(downloadDesiredVersionsPath) {
+                          //  parameter("common".as[Boolean] ? false) { common =>
+                          //    complete(if (!common) getClientDesiredVersions(userName, true) else getDesiredVersions())
+                          //  }
+                          //} ~
                           path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
                             if (client.isEmpty) {
                               complete(getDesiredVersions())
@@ -285,10 +285,10 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             } else {
                               failWith(new IOException("invalid request"))
                             }
-                          } ~
-                          path(downloadDesiredVersionPath / ".*".r) { service =>
-                            complete(getDesiredVersion(service, getClientDesiredVersions(userName)))
-                          }
+                          } //~
+                          //path(downloadDesiredVersionPath / ".*".r) { service =>
+                          //  complete(getDesiredVersion(service, getClientDesiredVersions(userName)))
+                          //}
                       }
                   } ~
                     post {
@@ -300,12 +300,12 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
                             complete(addVersionInfo(service, buildVersion, null))
-                          } ~
-                          path(uploadDesiredVersionsPath) {
-                            parameter("client".?) { clientName =>
-                              fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(clientName))
-                            }
-                          }
+                          } //~
+                          //path(uploadDesiredVersionsPath) {
+                          //  parameter("client".?) { clientName =>
+                          //    fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(clientName))
+                          //  }
+                          //}
                       } ~
                         authorize(userRole == UserRole.Client) {
                           path(uploadTestedVersionsPath) {

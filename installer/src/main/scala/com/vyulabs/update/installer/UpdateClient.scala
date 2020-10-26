@@ -7,7 +7,7 @@ import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.AdminRepository
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, ServicesVersions}
+import com.vyulabs.update.info.{BuildVersionInfo, ServicesVersions}
 import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
@@ -16,7 +16,6 @@ import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json.enrichAny
 import com.vyulabs.update.installer.InstallResult.InstallResult
-import DesiredVersions._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -142,55 +141,31 @@ class UpdateClient()(implicit log: Logger) {
 
   def setDesiredVersions(adminRepository: ClientAdminRepository,
                          clientDistribution: ClientDistributionDirectoryClient,
-                         versions: Map[ServiceName, Option[BuildVersion]]): Boolean = {
+                         desiredVersions: Map[ServiceName, Option[BuildVersion]]): Boolean = {
+    var completed = false
     val gitLock = adminRepository.buildDesiredVersionsLock()
-    if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(versions),
+    if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(desiredVersions),
         s"Continue of setting desired versions")) {
-      var newDesiredVersions = Option.empty[DesiredVersions]
       try {
-        val desiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
-          log.error("Error of getting desired versions")
-          return false
-        }
-        val newVersions =
-          versions.foldLeft(desiredVersionsMap) {
-            (map, entry) => entry._2 match {
-              case Some(version) =>
-                map + (entry._1 -> version)
-              case None =>
-                map - entry._1
-            }}
-        val desiredVersions = DesiredVersions.fromMap(newVersions)
         if (!clientDistribution.uploadDesiredVersions(desiredVersions)) {
           log.error("Error of uploading desired versions")
           return false
         }
-        newDesiredVersions = Some(desiredVersions)
-        true
+        completed = true
       } catch {
         case ex: Exception =>
           log.error("Exception", ex)
-          false
       } finally {
-        for (desiredVersions <- newDesiredVersions) {
-          val desiredVersionsFile = adminRepository.getDesiredVersionsFile()
-          if (!IoUtils.writeJsonToFile(desiredVersionsFile, desiredVersions.toJson)) {
-            return false
-          }
-          if (!adminRepository.addFileToCommit(desiredVersionsFile)) {
-            return false
-          }
-        }
-        adminRepository.processLogFile(!newDesiredVersions.isEmpty)
-        if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(!newDesiredVersions.isEmpty))) {
+        adminRepository.processLogFile(completed)
+        if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(completed))) {
           log.error("Can't unlock admin repository")
         }
-        adminRepository.tagServices(versions.map(_._1).toSeq)
+        adminRepository.tagServices(desiredVersions.map(_._1).toSeq)
       }
     } else {
       log.error("Can't lock admin repository")
-      false
     }
+    completed
   }
 
   def signVersionsAsTested(adminRepository: ClientAdminRepository,

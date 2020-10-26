@@ -11,7 +11,7 @@ import com.vyulabs.update.users.UserRole.UserRole
 import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.utils.{ClientsUtils, StateUtils, VersionUtils}
-import distribution.graphql.GraphqlContext
+import distribution.graphql.{GraphqlContext, NotFoundException}
 import distribution.graphql.GraphqlTypes._
 import distribution.utils.{CommonUtils, GetUtils, PutUtils}
 
@@ -37,10 +37,11 @@ object DeveloperGraphqlSchema {
     CommonAdministratorQueries[DeveloperGraphqlContext] ++ fields[DeveloperGraphqlContext, Unit](
        Field("clientsInfo", ListType(ClientInfoType),
          resolve = c => c.ctx.getClientsInfo()),
-       Field("clientDesiredVersions", DesiredVersionsType,
-         arguments = ClientArg :: OptionMergedArg :: Nil,
-         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(ClientArg), c.arg(OptionMergedArg).getOrElse(false)) }),
-       Field("installedVersions", DesiredVersionsType,
+       Field("clientDesiredVersions", ListType(DesiredVersionType),
+         arguments = ClientArg :: OptionServicesArg :: OptionMergedArg :: Nil,
+         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(ClientArg),
+           c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, c.arg(OptionMergedArg).getOrElse(false)) }),
+       Field("installedVersions", ListType(DesiredVersionType),
          arguments = ClientArg :: Nil,
          resolve = c => { c.ctx.getInstalledVersions(c.arg(ClientArg)) }),
        Field("servicesState", ListType(ClientServiceStateType),
@@ -56,11 +57,12 @@ object DeveloperGraphqlSchema {
     CommonQueries[DeveloperGraphqlContext] ++ fields[DeveloperGraphqlContext, Unit](
       Field("config", ClientConfigInfoType,
         resolve = c => { c.ctx.getClientConfig(c.ctx.userInfo.name) }),
-      Field("desiredVersions", DesiredVersionsType,
+      Field("desiredVersions", ListType(DesiredVersionType),
         resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name) }),
       Field("desiredVersion", BuildVersionType,
         arguments = ServiceArg :: Nil,
-        resolve = c => { c.ctx.getDesiredVersion(c.arg(ServiceArg), c.ctx.getClientDesiredVersions(c.ctx.userInfo.name)) }),
+        resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name).map(_.map(_.buildVersion)
+          .headOption.getOrElse(throw NotFoundException(s"Desired version is not found"))) }),
     )
   )
 

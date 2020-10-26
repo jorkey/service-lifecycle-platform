@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersions, ServiceVersion, TestSignature, TestedVersions}
+import com.vyulabs.update.info.{DesiredVersion}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -46,19 +46,20 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
+    /* TODO graphql
     result(mongo.dropDatabase())
 
-    val desiredVersionsCollection = result(collections.DesiredVersions)
+    val desiredVersionsCollection = result(collections.DesiredVersion)
     val testedVersionsCollection = result(collections.TestedVersions)
     val installProfilesCollection = result(collections.InstallProfile)
-    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersions)
+    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersion)
     val clientInfoCollection = result(collections.ClientInfo)
 
     result(desiredVersionsCollection.insert(
       DesiredVersions(Seq(
-        ServiceVersion("service1", BuildVersion(1, 1, 2)),
-        ServiceVersion("service2", BuildVersion(2, 1, 4)),
-        ServiceVersion("service3", BuildVersion(3, 2, 1))))))
+        DesiredVersion("service1", BuildVersion(1, 1, 2)),
+        DesiredVersion("service2", BuildVersion(2, 1, 4)),
+        DesiredVersion("service3", BuildVersion(3, 2, 1))))))
 
     result(installProfilesCollection.insert(
       InstallProfile("common", Set("service1", "service2"))))
@@ -75,10 +76,11 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     result(clientDesiredVersionsCollection.insert(
       ClientDesiredVersions("client2",
         DesiredVersions(Seq(
-          ServiceVersion("service2", BuildVersion("client2", 1, 1, 1)))))))
+          DesiredVersion("service2", BuildVersion("client2", 1, 1, 1)))))))
 
     result(clientInfoCollection.insert(
       ClientInfo("client3", ClientConfig("common", Some("test")))))
+     */
   }
 
   override protected def afterAll(): Unit = {

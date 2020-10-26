@@ -78,12 +78,12 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         path(versionsInfoPath / ".*".r) { (service) =>
                           complete(getVersionsInfo(service))
                         } ~
-                        path(desiredVersionsPath) {
-                          getFromFileWithLock(dir.getDesiredVersionsFile())
-                        } ~
-                        path(desiredVersionPath / ".*".r) { service =>
-                          complete(getDesiredVersion(service, getDesiredVersions()))
-                        } ~
+                        //path(desiredVersionsPath) {
+                        //  getFromFileWithLock(dir.getDesiredVersionsFile())
+                        //} ~
+                        //path(desiredVersionPath / ".*".r) { service =>
+                        //  complete(getDesiredVersion(service, getDesiredVersions()))
+                        //} ~
                         path(servicesStatePath / ".*".r) { (instanceId) =>
                           stateUploader.getInstanceState(instanceId)
                         } ~
@@ -103,10 +103,10 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                             path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                               val buildVersion = BuildVersion.parse(version)
                               complete(addVersionInfo(service, buildVersion, null))
-                            } ~
-                            path(desiredVersionsPath) {
-                              fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
-                            }
+                            } //~
+                            //path(desiredVersionsPath) {
+                            //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
+                            //}
                         } ~
                           authorize(role == UserRole.Service) {
                             path(servicesStatePath / ".*".r) { instanceId =>
@@ -171,12 +171,12 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                       path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
                         complete(getVersionsInfo(service))
                       } ~
-                      path(prefix / downloadDesiredVersionsPath) {
-                        getFromFileWithLock(dir.getDesiredVersionsFile())
-                      } ~
-                      path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
-                        complete(getDesiredVersion(service, getDesiredVersions()))
-                      } ~
+                      //path(prefix / downloadDesiredVersionsPath) {
+                      //  getFromFileWithLock(dir.getDesiredVersionsFile())
+                      //} ~
+                      //path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
+                      //  complete(getDesiredVersion(service, getDesiredVersions()))
+                      //} ~
                       path(prefix / downloadInstanceStatePath / ".*".r) { (instanceId) =>
                         stateUploader.getInstanceState(instanceId)
                       } ~
@@ -198,10 +198,10 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           path(prefix / uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
                             complete(addVersionInfo(service, buildVersion, null))
-                          } ~
-                          path(prefix / uploadDesiredVersionsPath) {
-                            fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
-                          }
+                          } //~
+                          //path(prefix / uploadDesiredVersionsPath) {
+                          //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
+                          //}
                       } ~
                         authorize(userRole == UserRole.Service) {
                           path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>

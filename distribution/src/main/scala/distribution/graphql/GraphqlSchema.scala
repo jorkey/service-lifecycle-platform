@@ -6,8 +6,9 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
+import com.vyulabs.update.info.OptionDesiredVersion
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.users.{UserInfo}
+import com.vyulabs.update.users.UserInfo
 import distribution.DatabaseCollections
 import distribution.config.DistributionConfig
 import distribution.graphql.GraphqlTypes._
@@ -35,12 +36,13 @@ object GraphqlSchema {
   val ServiceArg = Argument("service", StringType)
   val VersionArg = Argument("version", BuildVersionType)
   val BuildInfoArg = Argument("buildInfo", BuildVersionInfoInputType)
-  val DesiredVersionsArg = Argument("desiredVersions", DesiredVersionsInputType)
+  val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionArgInputType))
 
   val OptionClientArg = Argument("client", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
   val OptionDirectoryArg = Argument("directory", OptionInputType(StringType))
   val OptionServiceArg = Argument("service", OptionInputType(StringType))
+  val OptionServicesArg = Argument("services", OptionInputType(ListInputType(StringType)))
   val OptionVersionArg = Argument("version", OptionInputType(BuildVersionType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
@@ -59,8 +61,9 @@ object GraphqlSchema {
     Field("versionsInfo", ListType(VersionInfoType),
       arguments = ServiceArg :: OptionClientArg :: OptionVersionArg :: Nil,
       resolve = c => { c.ctx.getVersionsInfo(c.arg(ServiceArg), clientName = c.arg(OptionClientArg), version = c.arg(OptionVersionArg)) }),
-    Field("desiredVersions", DesiredVersionsType,
-      resolve = c => { c.ctx.getDesiredVersions() })
+    Field("desiredVersions", ListType(DesiredVersionType),
+      arguments = OptionServicesArg :: Nil,
+      resolve = c => { c.ctx.getDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
   )
 
   // Mutations

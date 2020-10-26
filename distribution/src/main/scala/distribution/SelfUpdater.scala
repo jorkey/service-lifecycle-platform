@@ -7,7 +7,6 @@ import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
-import com.vyulabs.update.info.{DesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import org.slf4j.LoggerFactory
@@ -46,6 +45,7 @@ class SelfUpdater(dir: DistributionDirectory)
             return
           }
         }
+        /* TODO graphql
         val desiredVersions = IoUtils.readFileToJsonWithLock[DesiredVersions](dir.getDesiredVersionsFile()) match {
           case Some(versions) =>
             try {
@@ -74,7 +74,7 @@ class SelfUpdater(dir: DistributionDirectory)
                 Utils.restartToUpdate("Restart to update")
               }
           }
-        }
+        } */
       }
     } catch {
       case ex: Exception =>

@@ -40,13 +40,14 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Init install directory")
+    /* TODO graphql
     if (!initInstallDirectory(
         clientDistribution.getVersionImageFile(Common.ScriptsServiceName,
         clientDistribution.getDesiredVersion(Common.ScriptsServiceName).get),
         adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl)) {
       log.error("Can't init install repository")
       return false
-    }
+    }*/
     log.info("Client is initialized successfully.")
     true
   }
@@ -120,16 +121,17 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.error("Can't download desired versions")
       return false
     }
-    val desiredVersionsMap = desiredVersions.toMap
+    val desiredVersionsMap = desiredVersions
     if (!downloadUpdateServices(clientDistribution, developerDistribution, desiredVersionsMap)) {
       log.error("Can't download update services")
       return false
     }
     log.info("Write desired versions")
+    /* TODO graphql
     if (!IoUtils.writeJsonToFile(clientDistribution.getDesiredVersionsFile(), desiredVersions)) {
       log.error("Can't write desired versions")
       return false
-    }
+    }*/
     log.info("Setup distribution server")
     if (!setupDistributionServer(cloudProvider, name, clientDistribution, developerDistribution,
         desiredVersionsMap, distributionServicePort)) {

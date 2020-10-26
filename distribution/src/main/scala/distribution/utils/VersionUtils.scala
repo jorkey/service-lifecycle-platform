@@ -1,15 +1,18 @@
 package distribution.utils
 
+import java.awt.Taskbar.Feature
 import java.io.{File, IOException}
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives.{failWith, _}
 import akka.http.scaladsl.server.Route
-import com.mongodb.client.model.Filters
+import com.mongodb.{ConnectionString, MongoClientSettings}
+import com.mongodb.client.model.{Filters, Sorts}
+import com.mongodb.reactivestreams.client.MongoClients
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, VersionInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersion, OptionDesiredVersion, VersionInfo}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
@@ -85,7 +88,7 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
   }
 
   protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
-    getDesiredVersion(serviceName, getDesiredVersions()).map(Set(_)).recover { case _ => Set.empty[BuildVersion] }
+    getDesiredVersions(Set(serviceName)).map(_.map(_.buildVersion).toSet)
   }
 
   def getVersionsInfo(serviceName: ServiceName, clientName: Option[ClientName] = None,
@@ -100,26 +103,44 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     } yield info
   }
 
-  def setDesiredVersions(desiredVersions: DesiredVersions): Future[Boolean] = {
+  def setDesiredVersions(desiredVersions: Seq[OptionDesiredVersion]): Future[Boolean] = {
     log.info(s"Set desired versions")
+
     for {
-      collection <- collections.DesiredVersions
+      collection <- collections.DesiredVersion
       result <- {
-        collection.replace(new BsonDocument(), desiredVersions).map(_.getMatchedCount > 0)
+        var toReplace = Seq.empty[DesiredVersion]
+        var toRemove = Set.empty[ServiceName]
+        desiredVersions.foreach {
+          case OptionDesiredVersion(serviceName, Some(version)) =>
+            toReplace :+= DesiredVersion(serviceName, version)
+          case OptionDesiredVersion(serviceName, None) =>
+            toRemove += serviceName
+        }
+        for { // TODO graphql transaction
+          replace <- Future.sequence(toReplace.map(collection.replace(new BsonDocument(), _).map(_ => true)))
+          remove <- if (!toRemove.isEmpty) {
+              collection.delete(Filters.and(toRemove.map(Filters.eq("serviceName", _)).asJava)).map(_ => true)
+            } else {
+              Future(true)
+            }
+          result <- Future(replace.find(_ == false).isEmpty && remove)
+        } yield result
       }
     } yield result
   }
 
-  def getDesiredVersions(): Future[DesiredVersions] = {
+  def getDesiredVersions(serviceNames: Set[ServiceName] = Set.empty): Future[Seq[DesiredVersion]] = {
+    val filters = if (!serviceNames.isEmpty) Filters.and(serviceNames.map(Filters.eq("serviceName", _)).asJava) else new BsonDocument()
+    val sort = Sorts.ascending("serviceName")
     for {
-      collection <- collections.DesiredVersions
-      profile <- collection.find(new BsonDocument()).map(_.headOption.getOrElse(throw NotFoundException("Desired versions are not found")))
+      collection <- collections.DesiredVersion
+      profile <- collection.find(filters, Some(sort))
     } yield profile
   }
 
-  def getDesiredVersion(serviceName: ServiceName, future: Future[DesiredVersions]): Future[BuildVersion] = {
-    future.map(_.get(serviceName)
-      .getOrElse(throw NotFoundException(s"Service ${serviceName} is not defined in the desired versions")))
+  def getDesiredVersion(serviceName: ServiceName): Future[Option[BuildVersion]] = {
+    getDesiredVersions(Set(serviceName)).map(_.headOption.map(_.buildVersion))
   }
 
   def getVersion(): Option[BuildVersion] = {

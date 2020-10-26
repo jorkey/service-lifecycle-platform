@@ -5,11 +5,12 @@ import java.net.URL
 
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.config.ClientConfig
-import com.vyulabs.update.info.{DesiredVersions, InstanceServiceState, ServicesVersions}
+import com.vyulabs.update.info.{DesiredVersion, InstanceServiceState, ServicesVersions}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import org.slf4j.Logger
 import com.vyulabs.update.config.ClientConfig._
 import com.vyulabs.update.info.ServicesVersions._
+import com.vyulabs.update.version.BuildVersion
 import spray.json._
 
 /**
@@ -25,10 +26,11 @@ class DeveloperDistributionDirectoryClient(val url: URL)(implicit log: Logger) e
     downloadToJson(url).map(_.convertTo[ClientConfig])
   }
 
-  def downloadDesiredVersions(common: Boolean = false): Option[DesiredVersions] = {
+  def downloadDesiredVersions(common: Boolean = false): Option[Map[ServiceName, BuildVersion]] = {
     log.info(s"Download desired versions")
     val url = makeUrl(getDownloadDesiredVersionsPath(common))
-    downloadToJson(url).map(_.convertTo[DesiredVersions])
+    downloadToJson(url).map(_.convertTo[Seq[DesiredVersion]]
+      .foldLeft(Map.empty[ServiceName, BuildVersion])((map, e) => map + (e.serviceName -> e.buildVersion)))
   }
 
   def uploadInstalledDesiredVersions(file: File): Boolean = {

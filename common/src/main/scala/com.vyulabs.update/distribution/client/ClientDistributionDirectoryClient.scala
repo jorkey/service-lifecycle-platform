@@ -4,11 +4,12 @@ import java.io.File
 import java.net.URL
 
 import com.vyulabs.update.common.Common.{InstanceId, ServiceName}
-import com.vyulabs.update.info.{DesiredVersions, DirectoryServiceState, ProfiledServiceName, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersion, DirectoryServiceState, ProfiledServiceName, VersionsInfo}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.logs.ServiceLogs._
+import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
 import spray.json._
 
@@ -28,14 +29,15 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     }
   }
 
-  def downloadDesiredVersions(): Option[DesiredVersions] = {
+  def downloadDesiredVersions(): Option[Map[ServiceName, BuildVersion]] = {
     val url = makeUrl(downloadDesiredVersionsPath)
     if (!exists(url)) {
       return None
     }
     downloadToJson(url) match {
       case Some(json) =>
-        Some(json.convertTo[DesiredVersions])
+        Some(json.convertTo[Seq[DesiredVersion]].foldLeft(Map.empty[ServiceName, BuildVersion])((map, entry) =>
+          map + (entry.serviceName -> entry.buildVersion)))
       case None =>
         None
     }
@@ -54,8 +56,10 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     }
   }
 
-  def uploadDesiredVersions(desiredVersions: DesiredVersions): Boolean = {
-    uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
+  def uploadDesiredVersions(desiredVersions: Map[ServiceName, Option[BuildVersion]]): Boolean = {
+    // TODO graphql
+    //uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
+    false
   }
 
   def uploadServicesStates(servicesState: Seq[DirectoryServiceState]): Boolean = {

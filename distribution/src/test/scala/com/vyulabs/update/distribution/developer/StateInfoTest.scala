@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersions, ServiceState, ServiceVersion}
+import com.vyulabs.update.info.{ClientServiceState, ServiceState, DesiredVersion}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -48,7 +48,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     result(mongo.dropDatabase())
 
     val clientInfoCollection = result(collections.ClientInfo)
-    val installedVersionsCollection = result(collections.ClientDesiredVersions)
+    val installedVersionsCollection = result(collections.ClientDesiredVersion)
     val clientServiceStatesCollection = result(collections.ClientServiceState)
 
     result(clientInfoCollection.drop())
@@ -57,9 +57,9 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     result(clientInfoCollection.insert(
       ClientInfo("client1", ClientConfig("common", Some("test")))))
 
-    result(installedVersionsCollection.insert(
-      ClientDesiredVersions("client1",
-        DesiredVersions(Seq(ServiceVersion("service1", BuildVersion(1, 1, 1)), ServiceVersion("service2", BuildVersion(2, 1, 3)))))))
+    //result(installedVersionsCollection.insert(
+    //  ClientDesiredVersions("client1",
+    //    DesiredVersions(Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3)))))))
 
     result(clientServiceStatesCollection.insert(
       ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))))

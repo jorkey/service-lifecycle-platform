@@ -6,7 +6,7 @@ import java.util.Date
 import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions}
+import com.vyulabs.update.info.{BuildVersionInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
@@ -125,6 +125,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   }
 
   private def copyScripts(developerDistribution: DeveloperDistributionDirectory): Boolean = {
+    /* TODO graphql
     val nextVersion = developerDistribution.getDesiredVersion(Common.ScriptsServiceName) match {
       case Some(version) => version.next()
       case None => BuildVersion(1, 0, 0)
@@ -145,11 +146,12 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     if (!IoUtils.writeJsonToFile(developerDistribution.getDesiredVersionsFile(None), DesiredVersions.fromMap(desiredVersions))) {
       log.error("Can't write desired versions")
       return false
-    }
+    }*/
     true
   }
 
   private def copyUpdateService(serviceName: ServiceName, developerDistribution: DeveloperDistributionDirectory): Boolean = {
+    /* TODO graphql
     val sourceJar = new File(s"${serviceName.toString}.jar")
     if (sourceJar.exists()) {
       val nextVersion = developerDistribution.getDesiredVersion(serviceName) match {
@@ -184,6 +186,8 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.error(s"File ${sourceJar} is not exist")
       false
     }
+    */
+    false
   }
 
   private def setupDistributionServer(distributionServicePort: Int): Boolean = {

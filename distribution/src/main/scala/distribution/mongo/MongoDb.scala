@@ -3,7 +3,7 @@ package distribution.mongo
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.mongodb.client.model.{IndexOptions, Indexes}
+import com.mongodb.client.model.{IndexOptions, Indexes, ReplaceOptions}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
@@ -85,7 +85,7 @@ class MongoDbCollection[T](collection: MongoCollection[Document])
 
   def replace(filters: Bson, obj: T)(implicit writer: JsonWriter[T]): Future[UpdateResult] = {
     val version = obj.toJson.compactPrint
-    Source.fromPublisher(collection.replaceOne(filters, Document.parse(version)))
+    Source.fromPublisher(collection.replaceOne(filters, Document.parse(version), new ReplaceOptions().upsert(true)))
       .log(s"Replace document in Mongo DB collection ${name}")
       .runWith(Sink.head[UpdateResult])
   }

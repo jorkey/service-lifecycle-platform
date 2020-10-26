@@ -137,12 +137,13 @@ class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUr
   }
 
   private def mayBeUploadInstalledDesiredVersions(): Unit = {
+    /* TODO graphql
     val file = dir.getDesiredVersionsFile()
     val lmt = file.lastModified()
     if (lmt != desiredVersionsLmt) {
       if (developerDirectory.uploadInstalledDesiredVersions(file)) {
         desiredVersionsLmt = lmt
       }
-    }
+    }*/
   }
 }

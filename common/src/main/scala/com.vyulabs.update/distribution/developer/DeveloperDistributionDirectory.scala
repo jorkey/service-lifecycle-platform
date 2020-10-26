@@ -5,8 +5,8 @@ import java.util.regex.{MatchResult, Pattern}
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
-import com.vyulabs.update.info.{DesiredVersions}
 import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.info.DesiredVersion
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
 import org.slf4j.LoggerFactory
@@ -111,15 +111,6 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     new File(getClientDir(clientName), installedDesiredVersionsFile)
   }
 
-  def getDesiredVersionsFile(clientName: Option[ClientName]): File = {
-    clientName match {
-      case Some(clientName) =>
-        getDesiredVersionsFile(clientName)
-      case None =>
-        getDesiredVersionsFile()
-    }
-  }
-
   def getTestedVersionsFile(profileName: ProfileName): File = {
     new File(directory, testedVersionsFile.format(profileName))
   }
@@ -132,7 +123,7 @@ class DeveloperDistributionDirectory(directory: File)(implicit filesLocker: Smar
     new File(getInstancesStateDir(clientName), deadInstancesStateFile)
   }
 
-  def getDesiredVersions(clientName: Option[ClientName]): Option[DesiredVersions] = {
-    IoUtils.readFileToJson[DesiredVersions](getDesiredVersionsFile(clientName))
+  def getDesiredVersions(clientName: Option[ClientName]): Option[Seq[DesiredVersion]] = {
+    None
   }
 }
