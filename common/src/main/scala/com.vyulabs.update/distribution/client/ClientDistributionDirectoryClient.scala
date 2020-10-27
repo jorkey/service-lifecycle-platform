@@ -56,7 +56,7 @@ class ClientDistributionDirectoryClient(val url: URL)(implicit log: Logger) exte
     }
   }
 
-  def uploadDesiredVersions(desiredVersions: Map[ServiceName, Option[BuildVersion]]): Boolean = {
+  def uploadDesiredVersions(desiredVersions: Seq[DesiredVersion]): Boolean = {
     // TODO graphql
     //uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
     false

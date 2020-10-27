@@ -10,7 +10,6 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.DatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
-import distribution.developer.graphql.DeveloperGraphqlSchema
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -43,10 +42,6 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
 
   override def beforeAll() = {
     result(mongo.dropDatabase())
-    
-    val desiredVersionsCollection = result(collections.DesiredVersion)
-
-    result(desiredVersionsCollection.drop())
   }
 
   override protected def afterAll(): Unit = {
@@ -58,10 +53,10 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
     val graphqlContext = new GraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
-      ("""{"data":{"setDesiredVersions":true}}""").parseJson))(
+      ("""{"data":{"desiredVersions":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         mutation {
-          setDesiredVersions (
+          desiredVersions (
             versions: [
                { serviceName: "service1", buildVersion: "1.1.2"},
                { serviceName: "service2", buildVersion: "2.1.4"}
@@ -82,22 +77,10 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
       """)))
 
     assertResult((OK,
-      ("""{"data":{"setDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        mutation {
-          setDesiredVersions (
-            versions: [
-               { serviceName: "service2" }
-            ]
-          )
-        }
-      """)))
-
-    assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          desiredVersions {
+          desiredVersions (services: ["service1"]) {
              serviceName
              buildVersion
           }

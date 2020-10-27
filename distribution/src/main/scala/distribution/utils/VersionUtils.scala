@@ -1,18 +1,15 @@
 package distribution.utils
 
-import java.awt.Taskbar.Feature
 import java.io.{File, IOException}
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives.{failWith, _}
 import akka.http.scaladsl.server.Route
-import com.mongodb.{ConnectionString, MongoClientSettings}
-import com.mongodb.client.model.{Filters, Sorts}
-import com.mongodb.reactivestreams.client.MongoClients
+import com.mongodb.client.model.{Filters}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersion, OptionDesiredVersion, VersionInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersion, DesiredVersions, VersionInfo}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
@@ -103,39 +100,19 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     } yield info
   }
 
-  def setDesiredVersions(desiredVersions: Seq[OptionDesiredVersion]): Future[Boolean] = {
-    log.info(s"Set desired versions")
-
+  def setDesiredVersions(desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+    log.info(s"Set desired versions ${desiredVersions}")
     for {
-      collection <- collections.DesiredVersion
-      result <- {
-        var toReplace = Seq.empty[DesiredVersion]
-        var toRemove = Set.empty[ServiceName]
-        desiredVersions.foreach {
-          case OptionDesiredVersion(serviceName, Some(version)) =>
-            toReplace :+= DesiredVersion(serviceName, version)
-          case OptionDesiredVersion(serviceName, None) =>
-            toRemove += serviceName
-        }
-        for { // TODO graphql transaction
-          replace <- Future.sequence(toReplace.map(collection.replace(new BsonDocument(), _).map(_ => true)))
-          remove <- if (!toRemove.isEmpty) {
-              collection.delete(Filters.and(toRemove.map(Filters.eq("serviceName", _)).asJava)).map(_ => true)
-            } else {
-              Future(true)
-            }
-          result <- Future(replace.find(_ == false).isEmpty && remove)
-        } yield result
-      }
+      collection <- collections.DesiredVersions
+      result <- collection.replace(new BsonDocument(), DesiredVersions(desiredVersions)).map(_ => true)
     } yield result
   }
 
   def getDesiredVersions(serviceNames: Set[ServiceName] = Set.empty): Future[Seq[DesiredVersion]] = {
-    val filters = if (!serviceNames.isEmpty) Filters.and(serviceNames.map(Filters.eq("serviceName", _)).asJava) else new BsonDocument()
-    val sort = Sorts.ascending("serviceName")
     for {
-      collection <- collections.DesiredVersion
-      profile <- collection.find(filters, Some(sort))
+      collection <- collections.DesiredVersions
+      profile <- collection.find(new BsonDocument()).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion]))
+        .map(_.filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)).sortBy(_.serviceName))
     } yield profile
   }
 

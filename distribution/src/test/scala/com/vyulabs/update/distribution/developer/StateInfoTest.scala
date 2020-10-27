@@ -48,7 +48,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     result(mongo.dropDatabase())
 
     val clientInfoCollection = result(collections.ClientInfo)
-    val installedVersionsCollection = result(collections.ClientDesiredVersion)
+    val installedVersionsCollection = result(collections.ClientDesiredVersions)
     val clientServiceStatesCollection = result(collections.ClientServiceState)
 
     result(clientInfoCollection.drop())

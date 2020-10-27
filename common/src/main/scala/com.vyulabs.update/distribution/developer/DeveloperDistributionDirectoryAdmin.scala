@@ -4,7 +4,7 @@ import java.net.URL
 
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectoryClient
-import com.vyulabs.update.info.{DesiredVersion, OptionDesiredVersion, VersionsInfo}
+import com.vyulabs.update.info.{DesiredVersion, VersionsInfo}
 import org.slf4j.Logger
 import com.vyulabs.update.info.VersionsInfoJson._
 import spray.json.enrichAny
@@ -42,7 +42,7 @@ class DeveloperDistributionDirectoryAdmin(val url: URL)(implicit log: Logger) ex
     }
   }
 
-  def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[OptionDesiredVersion]): Boolean = {
+  def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[DesiredVersion]): Boolean = {
     clientName match {
       case Some(clientName) =>
         log.info(s"Upload desired versions for client ${clientName}")

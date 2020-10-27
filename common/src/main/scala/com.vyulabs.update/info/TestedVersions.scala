@@ -2,17 +2,16 @@ package com.vyulabs.update.info
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.common.Common.{ClientName, ProfileName}
 import spray.json.DefaultJsonProtocol
 
-case class TestSignature(profileName: ProfileName, clientName: ClientName, date: Date)
-case class TestedVersion(profileName: ProfileName, serviceName: ServiceName, version: BuildVersion)
+case class TestSignature(clientName: ClientName, date: Date)
 
-object TestedVersion extends DefaultJsonProtocol {
+case class TestedVersions(profileName: ProfileName, versions: Seq[DesiredVersion], signatures: Seq[TestSignature])
+
+object TestedVersions extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
-  import com.vyulabs.update.version.BuildVersion._
 
-  implicit val testSignatureJson = jsonFormat3(TestSignature.apply)
-  implicit val testedVersionsJson = jsonFormat3(TestedVersion.apply)
+  implicit val testSignatureJson = jsonFormat2(TestSignature.apply)
+  implicit val testedVersionsJson = jsonFormat3(TestedVersions.apply)
 }

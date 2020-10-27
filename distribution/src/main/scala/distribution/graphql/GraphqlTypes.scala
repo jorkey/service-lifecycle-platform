@@ -3,7 +3,7 @@ package distribution.graphql
 import java.util.Date
 
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServiceState, DesiredVersion, OptionDesiredVersion, DirectoryServiceState, InstanceServiceState, ServiceState, UpdateError, VersionInfo, VersionsInfo}
+import com.vyulabs.update.info.{BuildVersionInfo, ClientFaultReport, ClientServiceState, DesiredVersion, DirectoryServiceState, InstanceServiceState, ServiceState, UpdateError, VersionInfo, VersionsInfo}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -63,6 +63,5 @@ object GraphqlTypes {
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 
   implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildVersionInfo](InputObjectTypeName("BuildVersionInfoInput"))
-  implicit val ServiceVersionInfoInputType = deriveInputObjectType[DesiredVersion](InputObjectTypeName("ServiceVersionInput"))
-  implicit val DesiredVersionArgInputType = deriveInputObjectType[OptionDesiredVersion](InputObjectTypeName("DesiredVersionArgInput"))
+  implicit val DesiredVersionInfoInputType = deriveInputObjectType[DesiredVersion](InputObjectTypeName("DesiredVersionInput"))
 }

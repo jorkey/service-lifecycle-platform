@@ -7,15 +7,18 @@ import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.DesiredVersion
+import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, DesiredVersions, TestedVersions}
+import com.vyulabs.update.utils.JsUtils.MergedJsObject
 import com.vyulabs.update.version.BuildVersion
+import distribution.graphql.{InvalidConfigException, NotFoundException}
 import distribution.utils.{GetUtils, PutUtils}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
+import spray.json._
+import spray.json.DefaultJsonProtocol._
 
 trait VersionUtils extends distribution.utils.VersionUtils
     with ClientsUtils with GetUtils with PutUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
@@ -23,6 +26,14 @@ trait VersionUtils extends distribution.utils.VersionUtils
 
   protected implicit val executionContext: ExecutionContext
   protected implicit val dir: DeveloperDistributionDirectory
+
+  def setClientDesiredVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+    log.info(s"Set client ${clientName} desired versions ${desiredVersions}")
+    for {
+      collection <- collections.ClientDesiredVersions
+      result <- collection.replace(new BsonDocument(), ClientDesiredVersions(clientName, desiredVersions)).map(_ => true)
+    } yield result
+  }
 
   def getClientDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName], merged: Boolean): Future[Seq[DesiredVersion]] = {
     filterDesiredVersionsByProfile(clientName, if (merged) {
@@ -38,36 +49,30 @@ trait VersionUtils extends distribution.utils.VersionUtils
 
   def getClientDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName] = Set.empty): Future[Seq[DesiredVersion]] = {
     val clientArg = Filters.eq("clientName", clientName)
-    val serviceArgs = serviceNames.map(Filters.eq("serviceName", _))
-    val args = Seq(clientArg) ++ serviceArgs
-    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- collections.ClientDesiredVersion
-      profile <- collection.find(filters).map(_.map(v => DesiredVersion(v.serviceName, v.buildVersion)))
+      collection <- collections.ClientDesiredVersions
+      profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion])
+        .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)))
     } yield profile
   }
 
   def getInstalledVersions(clientName: ClientName): Future[Seq[DesiredVersion]] = {
     val clientArg = Filters.eq("clientName", clientName)
     for {
-      collection <- collections.ClientDesiredVersion
-      profile <- collection.find(clientArg).map(_.map(v => DesiredVersion(v.serviceName, v.buildVersion)))
+      collection <- collections.ClientDesiredVersions
+      profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion]))
     } yield profile
   }
 
-  def getTestedVersionsByProfile(profileName: ProfileName): Future[Seq[DesiredVersion]] = {
+  def getTestedVersionsByProfile(profileName: ProfileName): Future[Option[TestedVersions]] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
-      collection <- collections.TestedVersion
-      profile <- collection.find(profileArg).map(_.map(v => DesiredVersion(v.serviceName, v.version)))
+      collection <- collections.TestedVersions
+      profile <- collection.find(profileArg).map(_.headOption)
     } yield profile
   }
 
-  def getTestedVersionByProfile(profileName: ProfileName, serviceName: ServiceName): Future[Option[BuildVersion]] = {
-    getTestedVersionsByProfile(profileName).map(_.find(_.serviceName == serviceName).map(_.buildVersion))
-  }
-
-  def getTestedVersionsByClient(clientName: ClientName): Future[Seq[DesiredVersion]] = {
+  def getTestedVersionsByClient(clientName: ClientName): Future[Option[TestedVersions]] = {
     for {
       config <- getClientConfig(clientName)
       testedVersions <- getTestedVersionsByProfile(config.installProfile)
@@ -83,50 +88,47 @@ trait VersionUtils extends distribution.utils.VersionUtils
   }
 
   def getMergedDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName]): Future[Seq[DesiredVersion]] = {
-    /* TODO graphql
     for {
       clientConfig <- getClientConfig(clientName)
       developerVersions <- { clientConfig.testClientMatch match {
           case Some(testClientMatch) =>
             for {
               testedVersions <- getTestedVersionsByProfile(clientConfig.installProfile).map(testedVersions => {
-                  val regexp = testClientMatch.r
-                  val testCondition = testedVersions.signatures.exists(signature =>
-                    signature.clientName match {
-                      case regexp() =>
-                        true
-                      case _ =>
-                        false
-                    })
-                  if (testCondition) {
-                    testedVersions.versions
-                  } else {
-                    throw NotFoundException(s"Desired versions for client ${clientName} are not tested")
-                  }
+                testedVersions match {
+                  case Some(testedVersions) =>
+                    val regexp = testClientMatch.r
+                    val testCondition = testedVersions.signatures.exists(signature =>
+                      signature.clientName match {
+                        case regexp() =>
+                          true
+                        case _ =>
+                          false
+                      })
+                    if (testCondition) {
+                      testedVersions.versions
+                    } else {
+                      throw NotFoundException(s"Desired versions for client ${clientName} are not tested by clients ${testClientMatch}")
+                    }
+                  case None =>
+                    throw NotFoundException(s"Desired versions for client ${clientName} are not tested by anyone")
+                }
               })
             } yield testedVersions
           case None =>
             getDesiredVersions()
-        }}
-      clientDesiredVersions <- getClientDesiredVersions(clientName).map(DesiredVersion.toMap(_))
+        }}.map(DesiredVersions.toMap(_))
+      clientDesiredVersions <- getClientDesiredVersions(clientName, serviceNames).map(DesiredVersions.toMap(_))
       versions <- Future {
         if (clientConfig.testClientMatch.isDefined && !clientDesiredVersions.isEmpty) {
           throw InvalidConfigException("Client required preliminary testing shouldn't have personal desired versions")
         }
         val developerJson = developerVersions.toJson
-        val clientJson = clientDesiredVersions.map(_.toJson)
-        val mergedJson = (developerJson, clientJson) match {
-          case (commonJson, Some(clientJson)) =>
-            commonJson.merge(clientJson)
-          case (commonConfig, None) =>
-            commonConfig
-        }
+        val clientJson = clientDesiredVersions.toJson
+        val mergedJson = developerJson.merge(clientJson)
         val mergedVersions = mergedJson.convertTo[Map[ServiceName, BuildVersion]]
         DesiredVersions.fromMap(mergedVersions)
       }
     } yield versions
-     */
-    Future(Seq.empty[DesiredVersion])
   }
 
   def uploadTestedVersions(clientName: ClientName): Route = {
@@ -169,7 +171,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
       getClientDesiredVersion(clientName, serviceName, true)
     }
     val testedVersions = dir.getProfiles().map { profileName =>
-      getTestedVersionByProfile(profileName, serviceName)
+      getTestedVersionsByProfile(profileName).map(_.map(_.versions.find(_.serviceName == serviceName)).flatten.map(_.buildVersion))
     }
     val promise = Promise.apply[Set[BuildVersion]]()
     Future.sequence(Set(desiredVersion) ++ clientDesiredVersions ++ testedVersions).onComplete {

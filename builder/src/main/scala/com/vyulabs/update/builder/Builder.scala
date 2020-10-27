@@ -12,7 +12,7 @@ import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersion, OptionDesiredVersion}
+import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersion, DesiredVersions}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
@@ -202,7 +202,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
   }
 
   def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, BuildVersion]] = {
-    directory.downloadDesiredVersions(clientName).map(DesiredVersion.toMap(_))
+    directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_))
   }
 
   def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
@@ -225,7 +225,14 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
         if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(servicesVersions),
              s"Continue updating of desired versions")) {
           try {
-            if (!directory.uploadDesiredVersions(clientName, OptionDesiredVersion.fromMap(servicesVersions))) {
+            var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_)).getOrElse(Map.empty)
+            servicesVersions.foreach {
+              case (serviceName, Some(version)) =>
+                desiredVersionsMap += (serviceName -> version)
+              case (serviceName, None) =>
+                desiredVersionsMap -= serviceName
+            }
+            if (!directory.uploadDesiredVersions(clientName, DesiredVersions.fromMap(desiredVersionsMap))) {
               log.error("Can't update desired versions")
               return false
             }

@@ -2,7 +2,7 @@ package distribution.developer
 
 import com.mongodb.client.model.{IndexOptions, Indexes}
 import com.vyulabs.update.config.{ClientInfo, InstallProfile}
-import com.vyulabs.update.info.{ClientDesiredVersion, ClientFaultReport, ClientServiceState, TestedVersion}
+import com.vyulabs.update.info.{ClientDesiredVersions, ClientFaultReport, ClientServiceState, TestedVersions}
 import distribution.DatabaseCollections
 import distribution.mongo.MongoDb
 
@@ -11,9 +11,9 @@ import scala.concurrent.ExecutionContext
 class DeveloperDatabaseCollections(db: MongoDb)(implicit executionContext: ExecutionContext) extends DatabaseCollections(db) {
   val InstallProfile = db.getOrCreateCollection[InstallProfile]()
   val ClientInfo = db.getOrCreateCollection[ClientInfo]()
-  val TestedVersion = db.getOrCreateCollection[TestedVersion]()
-  val ClientDesiredVersion = db.getOrCreateCollection[ClientDesiredVersion]()
-  val ClientInstalledVersion = db.getOrCreateCollection[ClientDesiredVersion](Some("Installed"))
+  val TestedVersions = db.getOrCreateCollection[TestedVersions]()
+  val ClientDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]()
+  val ClientInstalledVersions = db.getOrCreateCollection[ClientDesiredVersions](Some("Installed"))
   val ClientFaultReport = db.getOrCreateCollection[ClientFaultReport]()
   val ClientServiceState = db.getOrCreateCollection[ClientServiceState]()
 
@@ -25,29 +25,26 @@ class DeveloperDatabaseCollections(db: MongoDb)(implicit executionContext: Execu
     }
   }
 
-  TestedVersion.foreach { collection =>
+  TestedVersions.foreach { collection =>
     collection.listIndexes().foreach { indexes =>
       if (indexes.isEmpty) {
         collection.createIndex(Indexes.ascending("profileName"))
-        collection.createIndex(Indexes.ascending("serviceName"))
       }
     }
   }
 
-  ClientDesiredVersion.foreach { collection =>
+  ClientDesiredVersions.foreach { collection =>
     collection.listIndexes().foreach { indexes =>
       if (indexes.isEmpty) {
         collection.createIndex(Indexes.ascending("clientName"))
-        collection.createIndex(Indexes.ascending("serviceName"))
       }
     }
   }
 
-  ClientInstalledVersion.foreach { collection =>
+  ClientInstalledVersions.foreach { collection =>
     collection.listIndexes().foreach { indexes =>
       if (indexes.isEmpty) {
         collection.createIndex(Indexes.ascending("clientName"))
-        collection.createIndex(Indexes.ascending("serviceName"))
       }
     }
   }

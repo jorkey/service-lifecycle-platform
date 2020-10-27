@@ -6,7 +6,6 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.info.OptionDesiredVersion
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UserInfo
 import distribution.DatabaseCollections
@@ -36,7 +35,7 @@ object GraphqlSchema {
   val ServiceArg = Argument("service", StringType)
   val VersionArg = Argument("version", BuildVersionType)
   val BuildInfoArg = Argument("buildInfo", BuildVersionInfoInputType)
-  val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionArgInputType))
+  val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionInfoInputType))
 
   val OptionClientArg = Argument("client", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
@@ -75,7 +74,7 @@ object GraphqlSchema {
     Field("removeVersion", BooleanType,
       arguments = ServiceArg :: VersionArg :: Nil,
       resolve = c => { c.ctx.removeVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
-    Field("setDesiredVersions", BooleanType,
+    Field("desiredVersions", BooleanType,
       arguments = DesiredVersionsArg :: Nil,
       resolve = c => { c.ctx.setDesiredVersions(c.arg(DesiredVersionsArg)) })
   )

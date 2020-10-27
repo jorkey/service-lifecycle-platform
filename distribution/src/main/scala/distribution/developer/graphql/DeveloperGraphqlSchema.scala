@@ -70,7 +70,11 @@ object DeveloperGraphqlSchema {
 
   val AdministratorMutations = ObjectType(
     "Mutation",
-    CommonAdministratorMutations[DeveloperGraphqlContext])
+    CommonAdministratorMutations[DeveloperGraphqlContext] ++ fields[DeveloperGraphqlContext, Unit](
+    Field("clientDesiredVersions", BooleanType,
+      arguments = ClientArg :: DesiredVersionsArg :: Nil,
+      resolve = c => { c.ctx.setClientDesiredVersions(c.arg(ClientArg), c.arg(DesiredVersionsArg)) }))
+  )
 
   val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations))
   val ClientSchemaDefinition = Schema(query = ClientQueries)

@@ -7,14 +7,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.info.{DesiredVersion}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import com.vyulabs.update.version.BuildVersion
 import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
-import distribution.graphql.Graphql
+import distribution.graphql.{Graphql, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -45,38 +43,13 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
-    /* TODO graphql
     result(mongo.dropDatabase())
-    
-    val desiredVersionsCollection = result(collections.DesiredVersion)
-    val installProfilesCollection = result(collections.InstallProfile)
-    val clientDesiredVersionsCollection = result(collections.ClientDesiredVersion)
+
+    val installProfileCollection = result(collections.InstallProfile)
     val clientInfoCollection = result(collections.ClientInfo)
 
-    result(desiredVersionsCollection.drop())
-    result(installProfilesCollection.drop())
-    result(clientDesiredVersionsCollection.drop())
-    result(clientInfoCollection.drop())
-
-    result(desiredVersionsCollection.insert(
-      DesiredVersions(Seq(
-        DesiredVersion("service1", BuildVersion(1, 1, 2)),
-        DesiredVersion("service2", BuildVersion(2, 1, 4)),
-        DesiredVersion("service3", BuildVersion(3, 2, 1))))))
-
-    result(installProfilesCollection.insert(
-      InstallProfile("common", Set("service1", "service2"))))
-
-    result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", None))))
-
-    result(clientInfoCollection.insert(
-      ClientInfo("client2", ClientConfig("common", None))))
-
-    result(clientDesiredVersionsCollection.insert(
-      ClientDesiredVersions("client2",
-        DesiredVersions(Seq(DesiredVersion("service2", BuildVersion("client2", 1, 1, 1)))))))
-     */
+    result(installProfileCollection.insert(InstallProfile("common", Set("service1", "service2"))))
+    result(clientInfoCollection.insert(ClientInfo("client2", ClientConfig("common", None))))
   }
 
   override protected def afterAll(): Unit = {
@@ -84,76 +57,99 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
     result(mongo.dropDatabase())
   }
 
-  it should "return common desired versions" in {
+  it should "set/get client own desired versions" in {
     val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
-        query {
-          desiredVersions {
-            versions {
-               serviceName
-               buildVersion
-            }
-          }
-        }
-      """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
-    assertResult((OK,
-      ("""{"data":{"desiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.2"},""" +
-      """{"serviceName":"service2","buildVersion":"2.1.4"},{"serviceName":"service3","buildVersion":"3.2.1"}]}}}""").parseJson))(res)
-  }
 
-  it should "return client own desired versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+    assertResult((OK,
+      ("""{"data":{"clientDesiredVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          clientDesiredVersions (
+            client: "client2",
+            versions: [
+               { serviceName: "service2", buildVersion: "client2-1.1.1" }
+            ]
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"}]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions (client: "client2") {
-            versions {
-               serviceName
-               buildVersion
-            }
+             serviceName
+             buildVersion
           }
         }
-      """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
-    assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":{"versions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"}]}}}""").parseJson))(res)
-  }
+      """)))
 
-  it should "return client without own versions merged desired versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+    assertResult((OK,
+      ("""{"data":{"clientDesiredVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          clientDesiredVersions (
+            client: "client2",
+            versions: []
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"clientDesiredVersions":[]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          clientDesiredVersions (client: "client1", merged: true) {
-            versions {
-               serviceName
-               buildVersion
-            }
+          clientDesiredVersions (client: "client2") {
+             serviceName
+             buildVersion
           }
         }
-      """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
-    assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":{"versions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"2.1.4"}]}}}""").parseJson))(res)
+      """)))
   }
 
-  it should "return client with own versions merged desired versions" in {
+  it should "return client merged desired versions" in {
     val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+
+    assertResult((OK,
+      ("""{"data":{"desiredVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          desiredVersions (
+            versions: [
+               { serviceName: "service1", buildVersion: "1.1.2"},
+               { serviceName: "service2", buildVersion: "2.1.4"}
+            ]
+          )
+        }
+      """)))
+
+
+    assertResult((OK,
+      ("""{"data":{"clientDesiredVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          clientDesiredVersions (
+            client: "client2",
+            versions: [
+               { serviceName: "service2", buildVersion: "client2-1.1.1" }
+            ]
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"client2-1.1.1"}]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions (client: "client2", merged: true) {
-            versions {
-               serviceName
-               buildVersion
-            }
+             serviceName
+             buildVersion
           }
         }
-      """
-    val res = result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query))
-    assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":{"versions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"},{"serviceName":"service1","buildVersion":"1.1.2"}]}}}""").parseJson))(res)
+      """))
+    )
+
+    result(collections.DesiredVersions.map(_.dropItems()))
+    result(collections.ClientDesiredVersions.map(_.dropItems()))
   }
 }

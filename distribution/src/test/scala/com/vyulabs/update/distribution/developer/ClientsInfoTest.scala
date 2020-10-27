@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.developer.DeveloperDatabaseCollections
@@ -44,10 +44,8 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override def beforeAll() = {
     result(mongo.dropDatabase())
-    
-    val clientInfoCollection = result(collections.ClientInfo)
 
-    result(clientInfoCollection.drop())
+    val clientInfoCollection = result(collections.ClientInfo)
 
     result(clientInfoCollection.insert(
       ClientInfo("client1", ClientConfig("common", Some("test")))))
