@@ -1,13 +1,12 @@
 package distribution.developer.utils
 
+import java.util.Date
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.complete
-import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, DesiredVersions, TestedVersions}
+import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, DesiredVersions, TestSignature, TestedVersions}
 import com.vyulabs.update.utils.JsUtils.MergedJsObject
 import com.vyulabs.update.version.BuildVersion
 import distribution.graphql.{InvalidConfigException, NotFoundException}
@@ -21,7 +20,7 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 
 trait VersionUtils extends distribution.utils.VersionUtils
-    with ClientsUtils with GetUtils with PutUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
+    with ClientsUtils with GetUtils with PutUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected implicit val executionContext: ExecutionContext
@@ -56,6 +55,13 @@ trait VersionUtils extends distribution.utils.VersionUtils
     } yield profile
   }
 
+  def setInstalledVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+    for {
+      collection <- collections.ClientInstalledVersions
+      result <- collection.replace(new BsonDocument(), ClientDesiredVersions(clientName, desiredVersions)).map(_ => true)
+    } yield result
+  }
+
   def getInstalledVersions(clientName: ClientName): Future[Seq[DesiredVersion]] = {
     val clientArg = Filters.eq("clientName", clientName)
     for {
@@ -64,19 +70,33 @@ trait VersionUtils extends distribution.utils.VersionUtils
     } yield profile
   }
 
-  def getTestedVersionsByProfile(profileName: ProfileName): Future[Option[TestedVersions]] = {
+  def setTestedVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+    for {
+      clientConfig <- getClientConfig(clientName)
+      testedVersions <- getTestedVersions(clientConfig.installProfile)
+      result <- {
+        val testRecord = TestSignature(clientName, new Date())
+        val testSignatures = testedVersions match {
+          case Some(testedVersions) if testedVersions.versions.equals(desiredVersions) =>
+            testedVersions.signatures :+ testRecord
+          case _ =>
+            Seq(testRecord)
+        }
+        val newTestedVersions = TestedVersions(clientConfig.installProfile, desiredVersions, testSignatures)
+        for {
+          collection <- collections.TestedVersions
+          result <- collection.replace(new BsonDocument(), newTestedVersions).map(_ => true)
+        } yield result
+      }
+    } yield result
+  }
+
+  def getTestedVersions(profileName: ProfileName): Future[Option[TestedVersions]] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
       collection <- collections.TestedVersions
       profile <- collection.find(profileArg).map(_.headOption)
     } yield profile
-  }
-
-  def getTestedVersionsByClient(clientName: ClientName): Future[Option[TestedVersions]] = {
-    for {
-      config <- getClientConfig(clientName)
-      testedVersions <- getTestedVersionsByProfile(config.installProfile)
-    } yield testedVersions
   }
 
   def filterDesiredVersionsByProfile(clientName: ClientName, future: Future[Seq[DesiredVersion]]): Future[Seq[DesiredVersion]] = {
@@ -93,7 +113,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
       developerVersions <- { clientConfig.testClientMatch match {
           case Some(testClientMatch) =>
             for {
-              testedVersions <- getTestedVersionsByProfile(clientConfig.installProfile).map(testedVersions => {
+              testedVersions <- getTestedVersions(clientConfig.installProfile).map(testedVersions => {
                 testedVersions match {
                   case Some(testedVersions) =>
                     val regexp = testClientMatch.r
@@ -107,10 +127,10 @@ trait VersionUtils extends distribution.utils.VersionUtils
                     if (testCondition) {
                       testedVersions.versions
                     } else {
-                      throw NotFoundException(s"Desired versions for client ${clientName} are not tested by clients ${testClientMatch}")
+                      throw NotFoundException(s"Desired versions for profile ${clientConfig.installProfile} are not tested by clients ${testClientMatch}")
                     }
                   case None =>
-                    throw NotFoundException(s"Desired versions for client ${clientName} are not tested by anyone")
+                    throw NotFoundException(s"Desired versions for profile ${clientConfig.installProfile} are not tested by anyone")
                 }
               })
             } yield testedVersions
@@ -131,47 +151,13 @@ trait VersionUtils extends distribution.utils.VersionUtils
     } yield versions
   }
 
-  def uploadTestedVersions(clientName: ClientName): Route = {
-    // TODO graphql
-    /*uploadFileToJson(testedVersionsName, (json) => {
-      val promise = Promise[Unit]()
-      getClientConfig(clientName).onComplete {
-        case Success(config) =>
-          overwriteFileContentWithLock(dir.getTestedVersionsFile(config.installProfile), content => {
-            val testedVersions =
-              try { content.map(_.decodeString("utf8").parseJson.convertTo[TestedVersions]) }
-              catch { case ex: Exception => log.error("Exception", ex); None }
-            val versions = json.convertTo[ServicesVersions]
-            val testRecord = TestSignature(clientName, new Date())
-            val testSignatures = testedVersions match {
-              case Some(testedVersions) =>
-                if (testedVersions.versions.equals(versions.servicesVersions)) {
-                  testedVersions.signatures :+ testRecord
-                } else {
-                  Seq(testRecord)
-                }
-              case None =>
-                Seq(testRecord)
-            }
-            val newTestedVersions = TestedVersions(versions.servicesVersions, testSignatures)
-            ByteString(newTestedVersions.toJson.sortedPrint.getBytes("utf8"))
-          }).onComplete { promise.complete(_) }
-        case Failure(e) =>
-          promise.failure(e)
-      }
-      onSuccess(promise.future)(complete(StatusCodes.OK))
-    })*/
-
-    complete(StatusCodes.OK)
-  }
-
   override protected def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
     val desiredVersion = getDesiredVersion(serviceName)
     val clientDesiredVersions = dir.getClients().map { clientName =>
       getClientDesiredVersion(clientName, serviceName, true)
     }
     val testedVersions = dir.getProfiles().map { profileName =>
-      getTestedVersionsByProfile(profileName).map(_.map(_.versions.find(_.serviceName == serviceName)).flatten.map(_.buildVersion))
+      getTestedVersions(profileName).map(_.map(_.versions.find(_.serviceName == serviceName)).flatten.map(_.buildVersion))
     }
     val promise = Promise.apply[Set[BuildVersion]]()
     Future.sequence(Set(desiredVersion) ++ clientDesiredVersions ++ testedVersions).onComplete {

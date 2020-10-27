@@ -200,9 +200,9 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                               path(installedDesiredVersionsPath) {
                                 fileUploadWithLock(desiredVersionsName, dir.getInstalledDesiredVersionsFile(userName))
                               } ~
-                                path(testedVersionsPath) {
-                                  uploadTestedVersions(userName)
-                                } ~
+                                //path(testedVersionsPath) {
+                                //  uploadTestedVersions(userName)
+                                //} ~
                                 path(instancesStatePath) {
                                   uploadFileToJson(instancesStateName, (json) => {
                                     /* TODO graphql
@@ -308,9 +308,9 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           //}
                       } ~
                         authorize(userRole == UserRole.Client) {
-                          path(uploadTestedVersionsPath) {
-                            uploadTestedVersions(userName)
-                          } ~
+                          //path(uploadTestedVersionsPath) {
+                          //  uploadTestedVersions(userName)
+                          //} ~
                             path(uploadInstancesStatePath) {
                               complete(StatusCodes.BadRequest) // New format
                             } ~

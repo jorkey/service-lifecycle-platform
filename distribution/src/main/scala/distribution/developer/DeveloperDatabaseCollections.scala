@@ -61,7 +61,7 @@ class DeveloperDatabaseCollections(db: MongoDb)(implicit executionContext: Execu
   ClientServiceState.foreach { collection =>
     collection.listIndexes().foreach { indexes =>
       if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("clientName"))
+        collection.createIndex(Indexes.ascending("clientName")/*, new IndexOptions().expireAfter()*/)
         collection.createIndex(Indexes.ascending("instanceId"))
       }
     }

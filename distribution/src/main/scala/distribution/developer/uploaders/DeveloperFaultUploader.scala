@@ -35,8 +35,7 @@ class DeveloperFaultUploader(collections: DeveloperDatabaseCollections,
                             (implicit protected val system: ActorSystem,
                              protected val materializer: Materializer,
                              protected val executionContext: ExecutionContext,
-                             protected val filesLocker: SmartFilesLocker)
-        extends DeveloperDistributionWebPaths with GetUtils { self =>
+                             protected val filesLocker: SmartFilesLocker) extends GetUtils { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val directory = dir.getFaultsDir()

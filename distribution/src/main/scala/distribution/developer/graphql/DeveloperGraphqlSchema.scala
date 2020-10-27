@@ -58,11 +58,9 @@ object DeveloperGraphqlSchema {
       Field("config", ClientConfigInfoType,
         resolve = c => { c.ctx.getClientConfig(c.ctx.userInfo.name) }),
       Field("desiredVersions", ListType(DesiredVersionType),
-        resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name) }),
-      Field("desiredVersion", BuildVersionType,
-        arguments = ServiceArg :: Nil,
-        resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name).map(_.map(_.buildVersion)
-          .headOption.getOrElse(throw NotFoundException(s"Desired version is not found"))) }),
+        arguments = OptionServicesArg :: Nil,
+        resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name,
+          c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, true) }),
     )
   )
 
@@ -77,7 +75,19 @@ object DeveloperGraphqlSchema {
   )
 
   val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations))
-  val ClientSchemaDefinition = Schema(query = ClientQueries)
+
+  val ClientMutations = ObjectType(
+    "Mutation",
+    CommonAdministratorMutations[DeveloperGraphqlContext] ++ fields[DeveloperGraphqlContext, Unit](
+      Field("testedVersions", BooleanType,
+        arguments = DesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.setTestedVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
+      Field("installedVersions", BooleanType,
+        arguments = DesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.setInstalledVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }))
+  )
+
+  val ClientSchemaDefinition = Schema(query = ClientQueries, mutation = Some(ClientMutations))
 
   def SchemaDefinition(userRole: UserRole): Schema[DeveloperGraphqlContext, Unit] = {
     userRole match {

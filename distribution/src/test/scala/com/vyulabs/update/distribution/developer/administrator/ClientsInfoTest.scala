@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.developer
+package com.vyulabs.update.distribution.developer.administrator
 
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -6,7 +6,8 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.developer.DeveloperDatabaseCollections
@@ -58,25 +59,25 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   it should "return user info" in {
     val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
-    val query =
-      graphql"""
+    assertResult((OK,
+      ("""{"data":{"userInfo":{"name":"user1","role":"Client"}}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           userInfo {
             name
             role
           }
         }
-      """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"userInfo":{"name":"user1","role":"Client"}}}""").parseJson))(result)
+      """))
+    )
   }
 
   it should "return clients info" in {
     val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
-    val query =
-      graphql"""
+    assertResult((OK,
+      ("""{"data":{"clientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
         query {
           clientsInfo {
             clientName
@@ -86,10 +87,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             }
           }
         }
-      """
-    val future = graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, query)
-    val result = Await.result(future, FiniteDuration.apply(1, TimeUnit.SECONDS))
-    assertResult((OK,
-      ("""{"data":{"clientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(result)
+      """))
+    )
   }
 }

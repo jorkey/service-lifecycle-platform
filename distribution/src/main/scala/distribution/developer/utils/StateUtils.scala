@@ -49,6 +49,14 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
         DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(config.builderDirectory))))
   }}
 
+  def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
+    for {
+      collection <- collections.ClientServiceState
+      result <- Future.sequence(instancesState.map(state =>
+        collection.insert(ClientServiceState(clientName, state.instanceId, state.serviceName, state.directory, state.state)))).map(_ => true)
+    } yield result
+  }
+
   def getServicesState(clientName: Option[ClientName], serviceName: Option[ServiceName],
                        instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[ClientServiceState]] = {
     val clientArg = clientName.map { client => Filters.eq("clientName", client) }
