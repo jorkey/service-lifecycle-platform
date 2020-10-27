@@ -16,7 +16,7 @@ import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.utils.Utils.DateJson._
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
-import distribution.config.DistributionConfig
+import distribution.config.{DistributionConfig, VersionHistoryConfig}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -38,9 +38,6 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = new DistributionConfig { val port = 0; val ssl = None; val instanceId = "instance1"; val distributionDirectory = "distribution";
-    override val versionsHistorySize: Int = 3 }
-
   val ownServicesDir = Files.createTempDirectory("test").toFile
 
   val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
@@ -48,7 +45,7 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val collections = new DatabaseCollections(mongo)
   val graphql = new Graphql()
 
-  val graphqlContext = GraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+  val graphqlContext = GraphqlContext(VersionHistoryConfig(5), dir, collections, UserInfo("admin", UserRole.Administrator))
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 

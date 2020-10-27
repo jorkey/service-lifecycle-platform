@@ -10,6 +10,7 @@ import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.config.VersionHistoryConfig
 import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
@@ -34,11 +35,11 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder", 5)
+  val versionHistoryConfig = VersionHistoryConfig(5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
-  val collections = new DeveloperDatabaseCollections(mongo)
+  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
@@ -59,7 +60,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   }
 
   it should "set/get client own desired versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":true}}""").parseJson))(
@@ -109,7 +110,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   }
 
   it should "return client merged desired versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":true}}""").parseJson))(

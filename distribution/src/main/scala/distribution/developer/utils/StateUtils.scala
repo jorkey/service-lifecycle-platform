@@ -30,30 +30,14 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
   protected implicit val executionContext: ExecutionContext
   protected implicit val filesLocker: SmartFilesLocker
 
-  protected val config: DeveloperDistributionConfig
   protected val dir: DeveloperDistributionDirectory
   protected val collections: DeveloperDatabaseCollections
 
-  collections.ClientServiceState.foreach { collection => {
-    collection.insert(
-      ClientServiceState("distribution", config.instanceId,
-        DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))))
-    collection.insert(
-      ClientServiceState("distribution", config.instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))))
-    collection.insert(
-      ClientServiceState("distribution", config.instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(config.builderDirectory))))
-    collection.insert(
-      ClientServiceState("distribution", config.instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(config.builderDirectory))))
-  }}
-
   def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
     for {
-      collection <- collections.ClientServiceState
+      collection <- collections.ClientServiceStates
       result <- Future.sequence(instancesState.map(state =>
-        collection.insert(ClientServiceState(clientName, state.instanceId, state.serviceName, state.directory, state.state)))).map(_ => true)
+        collection.insert(ClientServiceState(clientName, state.instanceId, state.serviceName, state.directory, state.state, new Date())))).map(_ => true)
     } yield result
   }
 
@@ -66,7 +50,7 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
     val args = clientArg ++ serviceArg ++ instanceIdArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- collections.ClientServiceState
+      collection <- collections.ClientServiceStates
       profile <- collection.find(filters)
     } yield profile
   }

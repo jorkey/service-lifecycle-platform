@@ -21,6 +21,7 @@ import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, Cl
 import com.vyulabs.update.info.VersionsInfoJson._
 import distribution.Distribution
 import distribution.client.config.ClientDistributionConfig
+import distribution.config.VersionHistoryConfig
 import distribution.graphql.Graphql
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 
@@ -42,6 +43,8 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
       with ClientDistributionWebPaths with SprayJsonSupport {
 
   implicit val directory = dir
+
+  protected val versionHistoryConfig = config.versionHistory
 
   private val prefix = "update"
 

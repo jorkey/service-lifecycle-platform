@@ -28,7 +28,6 @@ import distribution.Distribution
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.developer.utils.{ClientsUtils, StateUtils, VersionUtils}
 import distribution.graphql.Graphql
-import distribution.mongo.MongoDb
 import distribution.utils.{CommonUtils, GetUtils, PutUtils}
 import sangria.parser.QueryParser
 import spray.json._
@@ -50,6 +49,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
        extends Distribution(usersCredentials, graphql) with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
           with DeveloperDistributionWebPaths with SprayJsonSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
+
+  protected val versionHistoryConfig = config.versionHistory
 
   val route: Route = {
     get {
@@ -76,7 +77,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = new DeveloperGraphqlContext(config, dir, collections, userInfo)
+                        val context = new DeveloperGraphqlContext(config.versionHistory, dir, collections, userInfo)
                         complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, variables))
                       case Failure(error) =>
@@ -91,7 +92,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = new DeveloperGraphqlContext(config, dir, collections, userInfo)
+                        val context = new DeveloperGraphqlContext(config.versionHistory, dir, collections, userInfo)
                         complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, vars))
                       case Failure(error) =>
@@ -117,7 +118,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                 } {
                   get {
                     path(distributionInfoPath) {
-                      complete(DistributionInfo(config.name, Utils.getManifestBuildVersion(Common.DistributionServiceName)
+                      complete(DistributionInfo(config.title, Utils.getManifestBuildVersion(Common.DistributionServiceName)
                         .getOrElse(BuildVersion.empty), None))
                     }
                   } ~

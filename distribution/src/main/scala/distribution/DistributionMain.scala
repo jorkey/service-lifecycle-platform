@@ -67,8 +67,6 @@ object DistributionMain extends App {
 
     val usersCredentials = UsersCredentials()
 
-    val mongoDb = new MongoDb("distribution")
-
     val graphql = new Graphql()
 
     command match {
@@ -77,8 +75,11 @@ object DistributionMain extends App {
           Utils.error("No config")
         }
 
+        val mongoDb = new MongoDb("distribution", config.mongoDb)
+
         val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
-        val collections = new DeveloperDatabaseCollections(mongoDb)
+        val collections = new DeveloperDatabaseCollections(mongoDb, config.instanceId,
+          config.builderDirectory, config.instanceState.expireSec)
 
         val stateUploader = new DeveloperStateUploader(collections)
         val faultUploader = new DeveloperFaultUploader(collections, dir)
@@ -98,14 +99,16 @@ object DistributionMain extends App {
           }
         })
 
-        val server = Http().newServerAt("0.0.0.0", config.port)
-        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        val server = Http().newServerAt("0.0.0.0", config.network.port)
+        config.network.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
         server.bind(distribution.route)
 
       case "client" =>
         val config = ClientDistributionConfig().getOrElse {
           Utils.error("No config")
         }
+
+        val mongoDb = new MongoDb("distribution", config.mongoDb)
 
         val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
         val collections = new ClientDatabaseCollections(mongoDb)
@@ -132,8 +135,8 @@ object DistributionMain extends App {
           }
         })
 
-        val server = Http().newServerAt("0.0.0.0", config.port)
-        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        val server = Http().newServerAt("0.0.0.0", config.network.port)
+        config.network.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
         server.bind(distribution.route)
 
       case "addUser" =>

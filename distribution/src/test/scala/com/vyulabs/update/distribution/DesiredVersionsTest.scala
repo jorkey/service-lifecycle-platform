@@ -9,6 +9,7 @@ import akka.stream.ActorMaterializer
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.DatabaseCollections
+import distribution.config.VersionHistoryConfig
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
@@ -31,8 +32,6 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder", 5)
-
   val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
   val collections = new DatabaseCollections(mongo)
@@ -50,7 +49,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   }
 
   it should "set/get common desired versions" in {
-    val graphqlContext = new GraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext(VersionHistoryConfig(5), dir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":true}}""").parseJson))(

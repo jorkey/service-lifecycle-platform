@@ -4,6 +4,7 @@ import java.io.File
 import java.util.Date
 
 import com.vyulabs.update.common.Common._
+import com.vyulabs.update.utils.Utils.DateJson.DateJsonFormat
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
@@ -47,12 +48,12 @@ object DirectoryServiceState extends DefaultJsonProtocol {
 
 case class InstanceServiceState(instanceId: InstanceId, serviceName: ServiceName, directory: ServiceDirectory, state: ServiceState)
 
-case class ClientServiceState(clientName: ClientName, instanceId: InstanceId, serviceName: ServiceName, directory: ServiceDirectory, state: ServiceState)
+case class ClientServiceState(clientName: ClientName, instanceId: InstanceId, serviceName: ServiceName, directory: ServiceDirectory, state: ServiceState, date: Date)
 
 object ClientServiceState extends DefaultJsonProtocol {
-  implicit val clientServiceStateJson = jsonFormat5(ClientServiceState.apply)
+  implicit val clientServiceStateJson = jsonFormat6(ClientServiceState.apply)
 
   def apply(clientName: ClientName, instanceId: InstanceId, state: DirectoryServiceState): ClientServiceState = {
-    ClientServiceState(clientName, instanceId, state.serviceName, state.directory, state.state)
+    ClientServiceState(clientName, instanceId, state.serviceName, state.directory, state.state, new Date())
   }
 }

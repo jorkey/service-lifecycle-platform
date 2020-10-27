@@ -13,6 +13,7 @@ import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, TestSigna
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
+import distribution.config.VersionHistoryConfig
 import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
@@ -37,11 +38,11 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder", 5)
+  val versionHistoryConfig = VersionHistoryConfig(5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
-  val collections = new DeveloperDatabaseCollections(mongo)
+  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
@@ -56,7 +57,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "set installed versions" in {
-    val graphqlContext1 = new DeveloperGraphqlContext(config, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext1 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
 
     assertResult((OK,
       ("""{"data":{"installedVersions":true}}""").parseJson))(

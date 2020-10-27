@@ -10,6 +10,7 @@ import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.config.VersionHistoryConfig
 import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
@@ -34,11 +35,11 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
   implicit val filesLocker = new SmartFilesLocker()
 
-  val config = DeveloperDistributionConfig("Distribution", "instance1", 0, None, "distribution", None, "builder", 5)
+  val versionHistoryConfig = VersionHistoryConfig(5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
-  val collections = new DeveloperDatabaseCollections(mongo)
+  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
@@ -58,7 +59,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return user info" in {
-    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("user1", UserRole.Client))
+    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user1", UserRole.Client))
     assertResult((OK,
       ("""{"data":{"userInfo":{"name":"user1","role":"Client"}}}""").parseJson))(
       result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -73,7 +74,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return clients info" in {
-    val graphqlContext = new DeveloperGraphqlContext(config, dir, collections, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("admin", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"clientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(
       result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext,

@@ -5,20 +5,23 @@ import java.net.URL
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.utils.IoUtils
-import distribution.config.{DistributionConfig, SslConfig}
+import distribution.config.{DistributionConfig, InstanceStateConfig, NetworkConfig, SslConfig, VersionHistoryConfig}
 import org.slf4j.Logger
 import spray.json._
 
-case class ClientDistributionConfig(port: Int, ssl: Option[SslConfig],
-                                    instanceId: InstanceId, developerDistributionUrl: URL,
-                                    distributionDirectory: String, installerDirectory: String,
-                                    versionsHistorySize: Int) extends DistributionConfig
+case class ClientDistributionConfig(title: String,
+                                    instanceId: InstanceId,
+                                    mongoDb: String,
+                                    distributionDirectory: String,
+                                    network: NetworkConfig,
+                                    versionHistory: VersionHistoryConfig,
+                                    instanceState: InstanceStateConfig,
+                                    developerDistributionUrl: URL,
+                                    installerDirectory: String) extends DistributionConfig
 
 object ClientDistributionConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URLJson._
-  import SslConfig._
-
-  implicit val clientDistributionConfigJson = jsonFormat7(ClientDistributionConfig.apply)
+  implicit val clientDistributionConfigJson = jsonFormat9(ClientDistributionConfig.apply)
 
   def apply()(implicit log: Logger): Option[ClientDistributionConfig] = {
     val configFile = new File("distribution.json")

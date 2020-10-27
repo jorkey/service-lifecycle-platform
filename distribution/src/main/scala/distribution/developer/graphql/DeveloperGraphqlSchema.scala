@@ -8,24 +8,23 @@ import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.users.UserRole.UserRole
+import distribution.config.VersionHistoryConfig
 import distribution.developer.DeveloperDatabaseCollections
-import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.utils.{ClientsUtils, StateUtils, VersionUtils}
-import distribution.graphql.{GraphqlContext, NotFoundException}
+import distribution.graphql.GraphqlContext
 import distribution.graphql.GraphqlTypes._
 import distribution.utils.{CommonUtils, GetUtils, PutUtils}
 
 import scala.concurrent.ExecutionContext
 import sangria.schema._
 
-class DeveloperGraphqlContext(override val config: DeveloperDistributionConfig,
+class DeveloperGraphqlContext(override val versionHistoryConfig: VersionHistoryConfig,
                               override val dir: DeveloperDistributionDirectory,
                               override val collections: DeveloperDatabaseCollections,
                               userInfo: UserInfo)
                             (implicit system: ActorSystem, materializer: Materializer,
                              executionContext: ExecutionContext, filesLocker: SmartFilesLocker)
-    extends GraphqlContext(config, dir, collections, userInfo)
-  with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils {}
+    extends GraphqlContext(versionHistoryConfig, dir, collections, userInfo) with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
 
 object DeveloperGraphqlSchema {
   import distribution.graphql.GraphqlSchema._

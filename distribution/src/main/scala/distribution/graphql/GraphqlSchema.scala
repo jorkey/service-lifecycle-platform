@@ -9,7 +9,7 @@ import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UserInfo
 import distribution.DatabaseCollections
-import distribution.config.DistributionConfig
+import distribution.config.{VersionHistoryConfig}
 import distribution.graphql.GraphqlTypes._
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 
@@ -17,12 +17,12 @@ import scala.concurrent.ExecutionContext
 import sangria.marshalling.sprayJson._
 import sangria.schema._
 
-case class GraphqlContext(config: DistributionConfig, dir: DistributionDirectory,
-                         collections: DatabaseCollections, userInfo: UserInfo)
+case class GraphqlContext(versionHistoryConfig: VersionHistoryConfig,
+                          dir: DistributionDirectory, collections: DatabaseCollections, userInfo: UserInfo)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext,
-                         protected val filesLocker: SmartFilesLocker) extends GetUtils with PutUtils with VersionUtils with CommonUtils {}
+                         protected val filesLocker: SmartFilesLocker) extends GetUtils with PutUtils with VersionUtils with CommonUtils
 
 object GraphqlSchema {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))

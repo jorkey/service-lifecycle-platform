@@ -5,7 +5,7 @@ import java.io.{File, IOException}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives.{failWith, _}
 import akka.http.scaladsl.server.Route
-import com.mongodb.client.model.{Filters}
+import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
@@ -13,7 +13,7 @@ import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersion, DesiredVersion
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
-import distribution.config.DistributionConfig
+import distribution.config.{NetworkConfig, VersionHistoryConfig}
 import distribution.graphql.NotFoundException
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -24,7 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  protected val config: DistributionConfig
+  protected val versionHistoryConfig: VersionHistoryConfig
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
@@ -59,8 +59,8 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
       complete <- {
         val notUsedVersions = versions.filterNot(version => busyVersions.contains(version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
-        if (notUsedVersions.size > config.versionsHistorySize) {
-          Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versionsHistorySize).map { version =>
+        if (notUsedVersions.size > versionHistoryConfig.maxSize) {
+          Future.sequence(notUsedVersions.take(notUsedVersions.size - versionHistoryConfig.maxSize).map { version =>
             removeVersion(serviceName, version)
           })
         } else {
