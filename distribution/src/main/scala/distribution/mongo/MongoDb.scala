@@ -1,5 +1,7 @@
 package distribution.mongo
 
+import java.util.Date
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -7,6 +9,9 @@ import com.mongodb.client.model.{IndexOptions, ReplaceOptions}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
+import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersion, ServiceState}
+import distribution.mongo.MongoDb.codecRegistry
 import org.bson.{BsonDocument, Document}
 import org.bson.conversions.Bson
 import org.slf4j.LoggerFactory
@@ -36,7 +41,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 
   def getCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): MongoDbCollection[T] = {
-    new MongoDbCollection[T](db.getCollection(getCollectionName(suffix)))
+    new MongoDbCollection[T](db.getCollection(getCollectionName(suffix), classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry))
   }
 
   def createCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): Future[MongoDbCollection[T]] = {
@@ -70,22 +75,29 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 }
 
-class MongoDbCollection[T](collection: MongoCollection[Document])
+object MongoDb {
+  import org.bson.codecs.configuration.CodecRegistries.{fromRegistries, fromProviders}
+  import org.mongodb.scala.bson.codecs.Macros._
+
+  private val codecRegistry = fromRegistries(fromProviders(classOf[ClientServiceState], classOf[ServiceState],
+    classOf[ClientDesiredVersions], classOf[DesiredVersion], classOf[InstallProfile], classOf[ClientInfo], classOf[ClientConfig]),
+    MongoClientSettings.getDefaultCodecRegistry())
+}
+
+class MongoDbCollection[T](collection: MongoCollection[T])
                           (implicit materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
   implicit val log = LoggerFactory.getLogger(getClass)
 
-  val name = classTag.runtimeClass.getSimpleName
+  private val name = classTag.runtimeClass.getSimpleName
 
   def insert(obj: T)(implicit writer: JsonWriter[T]): Future[Success] = {
-    val version = obj.toJson.compactPrint
-    Source.fromPublisher(collection.insertOne(Document.parse(version)))
+    Source.fromPublisher(collection.insertOne(obj))
       .log(s"Insert to Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }
 
   def replace(filters: Bson, obj: T)(implicit writer: JsonWriter[T]): Future[UpdateResult] = {
-    val version = obj.toJson.compactPrint
-    Source.fromPublisher(collection.replaceOne(filters, Document.parse(version), new ReplaceOptions().upsert(true)))
+    Source.fromPublisher(collection.replaceOne(filters, obj, new ReplaceOptions().upsert(true)))
       .log(s"Replace document in Mongo DB collection ${name}")
       .runWith(Sink.head[UpdateResult])
   }
@@ -94,7 +106,7 @@ class MongoDbCollection[T](collection: MongoCollection[Document])
     var find = collection.find(filters)
     sort.foreach(sort => find = find.sort(sort))
     limit.foreach(limit => find = find.limit(limit))
-    Source.fromPublisher(find).map(_.toJson.parseJson.convertTo[T])
+    Source.fromPublisher(find)
       .log(s"Find in Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }

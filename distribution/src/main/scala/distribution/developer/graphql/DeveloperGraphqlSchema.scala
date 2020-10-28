@@ -1,7 +1,5 @@
 package distribution.developer.graphql
 
-import java.io.File
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory

@@ -14,7 +14,7 @@ import distribution.DatabaseCollections
 import distribution.mongo.MongoDb
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class DeveloperDatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory: String,
                                    instanceStateExpireSec: Int)
@@ -29,70 +29,43 @@ class DeveloperDatabaseCollections(db: MongoDb, instanceId: InstanceId, builderD
   val ClientFaultReport = db.getOrCreateCollection[ClientFaultReport]()
   val ClientServiceStates = db.getOrCreateCollection[ClientServiceState]()
 
-  ClientInfo.foreach { collection =>
-    collection.listIndexes().foreach { indexes =>
-      if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true))
-      }
+  val result = for {
+    clientInfo <- ClientInfo
+    clientInfoIndexes <- clientInfo.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true))
+    testedVersions <- TestedVersions
+    testedVersionsIndexes <- testedVersions.createIndex(Indexes.ascending("profileName"))
+    clientDesiredVersions <- ClientDesiredVersions
+    clientDesiredVersionsIndexes <- clientDesiredVersions.createIndex(Indexes.ascending("clientName"))
+    clientInstalledVersions <- ClientInstalledVersions
+    clientInstalledVersionsIndexes <- clientInstalledVersions.createIndex(Indexes.ascending("clientName"))
+    clientFaultReport <- ClientFaultReport
+    clientFaultReportIndexes <- clientFaultReport.createIndex(Indexes.ascending("clientName"))
+    clientServiceStates <- ClientServiceStates
+    clientServiceStatesIndexes <- {
+      Future.sequence(Seq(
+        clientServiceStates.createIndex(Indexes.ascending("clientName")),
+        clientServiceStates.createIndex(Indexes.ascending("instanceId")),
+        clientServiceStates.createIndex(Indexes.ascending("date"),
+          new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))))
     }
-  }
-
-  TestedVersions.foreach { collection =>
-    collection.listIndexes().foreach { indexes =>
-      if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("profileName"))
-      }
+    stateInserts <- {
+      Future.sequence(Seq(
+        clientServiceStates.insert(
+          ClientServiceState("distribution", instanceId,
+            DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart)))),
+        clientServiceStates.insert(
+          ClientServiceState("distribution", instanceId,
+            DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))),
+        clientServiceStates.insert(
+          ClientServiceState("distribution", instanceId,
+            DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(builderDirectory)))),
+        clientServiceStates.insert(
+          ClientServiceState("distribution", instanceId,
+            DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(builderDirectory))))
+      ))
     }
-  }
+  } yield (clientInfoIndexes, testedVersionsIndexes, clientDesiredVersionsIndexes, clientInstalledVersionsIndexes, clientFaultReportIndexes, clientServiceStatesIndexes,
+           stateInserts)
 
-  ClientDesiredVersions.foreach { collection =>
-    collection.listIndexes().foreach { indexes =>
-      if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("clientName"))
-      }
-    }
-  }
-
-  ClientInstalledVersions.foreach { collection =>
-    collection.listIndexes().foreach { indexes =>
-      if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("clientName"))
-      }
-    }
-  }
-
-  ClientFaultReport.foreach { collection =>
-    collection.listIndexes().foreach { indexes =>
-      if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("clientName"))
-        collection.createIndex(Indexes.ascending("serviceName"))
-      }
-    }
-  }
-
-  ClientServiceStates.foreach { collection =>
-    collection.listIndexes().foreach { indexes =>
-      if (indexes.isEmpty) {
-        collection.createIndex(Indexes.ascending("clientName"))
-        collection.createIndex(Indexes.ascending("instanceId"))
-        collection.createIndex(Indexes.ascending("date"),
-          new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
-      }
-    }
-  }
-
-  ClientServiceStates.foreach { collection => {
-    collection.insert(
-      ClientServiceState("distribution", instanceId,
-        DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart))))
-    collection.insert(
-      ClientServiceState("distribution", instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))))
-    collection.insert(
-      ClientServiceState("distribution", instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(builderDirectory))))
-    collection.insert(
-      ClientServiceState("distribution", instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(builderDirectory))))
-  }}
+  result.foreach(_ => log.info("Developer collections are ready"))
 }
