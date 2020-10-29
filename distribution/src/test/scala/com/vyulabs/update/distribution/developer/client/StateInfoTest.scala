@@ -7,8 +7,9 @@ import java.util.concurrent.TimeUnit
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.alpakka.mongodb.scaladsl.{MongoSink, MongoSource}
 import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import com.mongodb.MongoClientSettings
 import com.mongodb.reactivestreams.client.{MongoClient, MongoClients}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
@@ -66,20 +67,23 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     import org.bson.codecs.configuration.CodecRegistries.fromProviders
     import org.mongodb.scala.bson.codecs.Macros._
 
-    case class Number(_id: Int, date: Date)
+    case class Number(id: Int, date: Date, l: Option[String], branches: Seq[String])
     val codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), fromProviders(classOf[Number]))
 
     val client = MongoClients.create("mongodb://localhost:27017")
     val db = client.getDatabase("MongoSourceSpec")
     val numbersColl = db
-      .getCollection("numbers1", classOf[Number])
+      .getCollection("numbers2", classOf[Number])
       .withCodecRegistry(codecRegistry)
 
     implicit val system = ActorSystem()
     implicit val mat = ActorMaterializer()
 
-    val source = Source.single(Number(0, new Date()))
-    //result(source.runWith(MongoSink.insertOne(numbersColl))(mat))
+    val source = Source.single(Number(1, new Date(), Some("qwe"), Seq("asdf")))
+    result(source.runWith(MongoSink.insertOne(numbersColl))(mat))
+
+    val sink = Sink.ignore
+    result(MongoSource[Number](numbersColl.find()).runWith(sink)(mat))
   }
 
   it should "set installed versions" in {

@@ -1,7 +1,5 @@
 package distribution.mongo
 
-import java.util.Date
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -9,13 +7,10 @@ import com.mongodb.client.model.{IndexOptions, ReplaceOptions}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersion, ServiceState}
-import distribution.mongo.MongoDb.codecRegistry
+import org.bson.codecs.configuration.CodecRegistry
 import org.bson.{BsonDocument, Document}
 import org.bson.conversions.Bson
 import org.slf4j.LoggerFactory
-import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -40,11 +35,11 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
     getCollectionNames().map(_.contains(getCollectionName(suffix)))
   }
 
-  def getCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): MongoDbCollection[T] = {
+  def getCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): MongoDbCollection[T] = {
     new MongoDbCollection[T](db.getCollection(getCollectionName(suffix), classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry))
   }
 
-  def createCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): Future[MongoDbCollection[T]] = {
+  def createCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
     val name = getCollectionName(suffix)
     Source.fromPublisher(db.createCollection(name))
       .log(s"Create Mongo DB collection ${name}")
@@ -52,7 +47,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
       .map(_ => getCollection[T](suffix))
   }
 
-  def getOrCreateCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): Future[MongoDbCollection[T]] = {
+  def getOrCreateCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
     for {
       exists <- collectionExists[T](suffix)
       collection <- if (!exists) createCollection[T](suffix) else Future(getCollection[T](suffix))
@@ -75,34 +70,25 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 }
 
-object MongoDb {
-  import org.bson.codecs.configuration.CodecRegistries.{fromRegistries, fromProviders}
-  import org.mongodb.scala.bson.codecs.Macros._
-
-  private val codecRegistry = fromRegistries(fromProviders(classOf[ClientServiceState], classOf[ServiceState],
-    classOf[ClientDesiredVersions], classOf[DesiredVersion], classOf[InstallProfile], classOf[ClientInfo], classOf[ClientConfig]),
-    MongoClientSettings.getDefaultCodecRegistry())
-}
-
 class MongoDbCollection[T](collection: MongoCollection[T])
                           (implicit materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
   implicit val log = LoggerFactory.getLogger(getClass)
 
   private val name = classTag.runtimeClass.getSimpleName
 
-  def insert(obj: T)(implicit writer: JsonWriter[T]): Future[Success] = {
+  def insert(obj: T): Future[Success] = {
     Source.fromPublisher(collection.insertOne(obj))
       .log(s"Insert to Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }
 
-  def replace(filters: Bson, obj: T)(implicit writer: JsonWriter[T]): Future[UpdateResult] = {
+  def replace(filters: Bson, obj: T): Future[UpdateResult] = {
     Source.fromPublisher(collection.replaceOne(filters, obj, new ReplaceOptions().upsert(true)))
       .log(s"Replace document in Mongo DB collection ${name}")
       .runWith(Sink.head[UpdateResult])
   }
 
-  def find(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None)(implicit reader: JsonReader[T]): Future[Seq[T]] = {
+  def find(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[T]] = {
     var find = collection.find(filters)
     sort.foreach(sort => find = find.sort(sort))
     limit.foreach(limit => find = find.limit(limit))

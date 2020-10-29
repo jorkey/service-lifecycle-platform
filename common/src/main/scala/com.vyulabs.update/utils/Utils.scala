@@ -123,7 +123,7 @@ object Utils {
 
   object DateJson {
     implicit object DateJsonFormat extends RootJsonFormat[Date] {
-      def write(value: Date) = JsString(s"""ISODate("${serializeISO8601Date(value)}")""")
+      def write(value: Date) = JsString(serializeISO8601Date(value))
       def read(value: JsValue) = parseISO8601Date(value.asInstanceOf[JsString].value).getOrElse {
         deserializationError(s"Parse date error. Value is ${value}")
       }

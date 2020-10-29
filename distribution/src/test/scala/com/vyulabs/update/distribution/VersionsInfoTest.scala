@@ -17,6 +17,7 @@ import com.vyulabs.update.utils.Utils.DateJson._
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
 import distribution.config.{DistributionConfig, VersionHistoryConfig}
+import distribution.developer.graphql.DeveloperGraphqlSchema
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -42,6 +43,9 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName)
+
+  result(mongo.dropDatabase())
+
   val collections = new DatabaseCollections(mongo)
   val graphql = new Graphql()
 
@@ -49,17 +53,28 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
-  override def beforeAll() = {
-    IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, BuildVersion(1, 2, 3))
-  }
-
   override protected def afterAll(): Unit = {
     dir.drop()
     IoUtils.deleteFileRecursively(ownServicesDir)
     result(mongo.dropDatabase())
   }
 
+  it should "return user info" in {
+    assertResult((OK,
+      ("""{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          userInfo {
+            name
+            role
+          }
+        }
+      """))
+    )
+  }
+
   it should "return own service info" in {
+    IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, BuildVersion(1, 2, 3))
     assertResult((OK,
       ("""{"data":{"ownServiceVersion":"1.2.3"}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -173,6 +188,6 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   def removeVersions(): Unit = {
-    mongo.getCollection[VersionInfo]().dropItems()
+    result(collections.VersionInfo.map(_.dropItems()))
   }
 }

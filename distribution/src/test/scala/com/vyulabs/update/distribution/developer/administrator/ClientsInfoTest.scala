@@ -14,7 +14,7 @@ import distribution.config.VersionHistoryConfig
 import distribution.developer.DeveloperDatabaseCollections
 import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
-import distribution.graphql.Graphql
+import distribution.graphql.{Graphql, GraphqlContext}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -57,21 +57,6 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   override protected def afterAll(): Unit = {
     dir.drop()
     result(mongo.dropDatabase())
-  }
-
-  it should "return user info" in {
-    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user1", UserRole.Client))
-    assertResult((OK,
-      ("""{"data":{"userInfo":{"name":"user1","role":"Client"}}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          userInfo {
-            name
-            role
-          }
-        }
-      """))
-    )
   }
 
   it should "return clients info" in {
