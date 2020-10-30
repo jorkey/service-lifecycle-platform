@@ -42,7 +42,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
+  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 10)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
@@ -59,12 +59,12 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       ClientDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
 
     result(clientServiceStatesCollection.insert(
-      ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))), new Date())))
+      ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))))
   }
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    result(mongo.dropDatabase())
+    //result(mongo.dropDatabase())
   }
 
   it should "return installed versions" in {

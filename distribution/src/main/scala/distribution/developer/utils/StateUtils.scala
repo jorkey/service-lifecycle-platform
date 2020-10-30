@@ -37,7 +37,7 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
     for {
       collection <- collections.ClientServiceStates
       result <- Future.sequence(instancesState.map(state =>
-        collection.insert(ClientServiceState(clientName, state.instanceId, state.serviceName, state.directory, state.state, new Date())))).map(_ => true)
+        collection.insert(ClientServiceState(clientName, state.instanceId, state.serviceName, state.directory, state.state)))).map(_ => true)
     } yield result
   }
 

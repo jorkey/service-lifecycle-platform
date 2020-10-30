@@ -35,6 +35,7 @@ object GraphqlSchema {
   val VersionArg = Argument("version", BuildVersionType)
   val BuildInfoArg = Argument("buildInfo", BuildVersionInfoInputType)
   val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionInfoInputType))
+  val InstancesStateArg = Argument("state", ListInputType(InstanceServiceStateInputType))
 
   val OptionClientArg = Argument("client", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))

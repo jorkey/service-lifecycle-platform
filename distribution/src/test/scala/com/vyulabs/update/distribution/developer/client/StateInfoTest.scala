@@ -1,18 +1,11 @@
 package com.vyulabs.update.distribution.developer.client
 
 import java.nio.file.Files
-import java.util.Date
 import java.util.concurrent.TimeUnit
 
-import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
-import akka.stream.alpakka.mongodb.scaladsl.{MongoSink, MongoSource}
 import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Sink, Source}
-import com.mongodb.MongoClientSettings
-import com.mongodb.reactivestreams.client.{MongoClient, MongoClients}
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, TestSignature, TestedVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -20,12 +13,9 @@ import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.config.VersionHistoryConfig
 import distribution.developer.DeveloperDatabaseCollections
-import distribution.developer.config.DeveloperDistributionConfig
 import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
-import org.bson.codecs.configuration.CodecRegistries.fromCodecs
-import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
@@ -84,4 +74,26 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))
     result(collections.ClientInstalledVersions.map(_.dropItems()))
   }
+
+  it should "set services state" in {
+    val graphqlContext1 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+
+    assertResult((OK,
+      ("""{"data":{"servicesState":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
+        mutation {
+          servicesState (
+            versions: [
+               { serviceName: "service1", buildVersion: "1.1.1" },
+               { serviceName: "service2", buildVersion: "2.1.1" }
+            ]
+          )
+        }
+      """)))
+
+    Thread.sleep(2000)
+
+    result(collections.ClientInstalledVersions.map(_.find().map(assertResult(_)(ClientDesiredVersions("client1",
+      Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))
+    result(collections.ClientInstalledVersions.map(_.dropItems()))
 }

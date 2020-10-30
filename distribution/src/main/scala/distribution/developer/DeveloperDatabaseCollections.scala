@@ -61,7 +61,7 @@ class DeveloperDatabaseCollections(db: MongoDb, instanceId: InstanceId, builderD
       Future.sequence(Seq(
         clientServiceStates.createIndex(Indexes.ascending("clientName")),
         clientServiceStates.createIndex(Indexes.ascending("instanceId")),
-        clientServiceStates.createIndex(Indexes.ascending("date"),
+        clientServiceStates.createIndex(Indexes.ascending("state.date"),
           new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))))
     }
     stateInserts <- {

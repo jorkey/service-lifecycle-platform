@@ -81,7 +81,10 @@ object DeveloperGraphqlSchema {
         resolve = c => { c.ctx.setTestedVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
       Field("installedVersions", BooleanType,
         arguments = DesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setInstalledVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }))
+        resolve = c => { c.ctx.setInstalledVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
+      Field("servicesState", BooleanType,
+        arguments = InstancesStateArg :: Nil,
+        resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }))
   )
 
   val ClientSchemaDefinition = Schema(query = ClientQueries, mutation = Some(ClientMutations))
