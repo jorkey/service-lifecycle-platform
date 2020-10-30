@@ -41,15 +41,13 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val versionHistoryConfig = VersionHistoryConfig(5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName)
+  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
   
   override def beforeAll() = {
-    result(mongo.dropDatabase())
-
     val clientInfoCollection = result(collections.ClientInfo)
     val installedVersionsCollection = result(collections.ClientDesiredVersions)
     val clientServiceStatesCollection = result(collections.ClientServiceStates)

@@ -3,7 +3,7 @@ package distribution.mongo
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.mongodb.client.model.{IndexOptions, ReplaceOptions}
+import com.mongodb.client.model.{Filters, IndexOptions, ReplaceOptions}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}

@@ -33,15 +33,11 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   implicit val filesLocker = new SmartFilesLocker()
 
   val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName)
+  val mongo = new MongoDb(getClass.getSimpleName);  result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
-
-  override def beforeAll() = {
-    result(mongo.dropDatabase())
-  }
 
   override protected def afterAll(): Unit = {
     dir.drop()

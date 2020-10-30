@@ -38,7 +38,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val versionHistoryConfig = VersionHistoryConfig(5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName)
+  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
 
   val collection = result(collections.ClientFaultReport)
@@ -55,8 +55,6 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
-    result(mongo.dropDatabase())
-
     result(collection.insert(
       ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
         new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)))

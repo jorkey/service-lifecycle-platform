@@ -7,11 +7,14 @@ import java.util.concurrent.TimeUnit
 import com.mongodb.client.model.{IndexOptions, Indexes}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.config.{ClientInfo, InstallProfile}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
 import com.vyulabs.update.distribution.DistributionMain
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientFaultReport, ClientServiceState, DirectoryServiceState, TestedVersions}
+import com.vyulabs.update.info.{ClientDesiredVersions, ClientFaultReport, ClientServiceState, DirectoryServiceState, ServiceState, TestSignature, TestedVersions}
 import distribution.DatabaseCollections
 import distribution.mongo.MongoDb
+import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.mongodb.scala.bson.codecs.Macros._
+import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,6 +23,19 @@ class DeveloperDatabaseCollections(db: MongoDb, instanceId: InstanceId, builderD
                                    instanceStateExpireSec: Int)
                                   (implicit executionContext: ExecutionContext) extends DatabaseCollections(db) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
+
+  override implicit def codecRegistry = fromRegistries(super.codecRegistry, fromProviders(
+    IterableCodecProvider.apply,
+    classOf[InstallProfile],
+    classOf[ClientConfig],
+    classOf[ClientInfo],
+    classOf[ServiceState],
+    classOf[ClientServiceState],
+    classOf[ClientDesiredVersions],
+    classOf[ClientFaultReport],
+    classOf[TestedVersions],
+    classOf[TestSignature]
+  ))
 
   val InstallProfile = db.getOrCreateCollection[InstallProfile]()
   val ClientInfo = db.getOrCreateCollection[ClientInfo]()

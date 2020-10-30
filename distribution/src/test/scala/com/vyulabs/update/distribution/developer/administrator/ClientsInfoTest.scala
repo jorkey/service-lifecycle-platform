@@ -38,10 +38,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val versionHistoryConfig = VersionHistoryConfig(5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName)
-
-  result(mongo.dropDatabase())
-
+  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
   val graphql = new Graphql()
 

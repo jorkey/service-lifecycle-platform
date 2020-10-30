@@ -119,7 +119,7 @@ lazy val sprayDependencies = Seq(
 lazy val mongoDependencies = Seq(
   dependencies.mongoDbDriver,
   dependencies.mongoDbScalaBson,
-  dependencies.mongoDbAkka
+  //dependencies.mongoDbAkka
 )
 
 lazy val sangriaDependencies = Seq(

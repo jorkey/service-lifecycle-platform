@@ -25,6 +25,7 @@ import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphql
 import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
 import org.bson.codecs.configuration.CodecRegistries.fromCodecs
+import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
@@ -58,32 +59,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override protected def afterAll(): Unit = {
     dir.drop()
-    //result(mongo.dropDatabase())
-  }
-
-  it should "qwe" in {
-
-    import org.bson.codecs.configuration.CodecRegistries.{fromRegistries}
-    import org.bson.codecs.configuration.CodecRegistries.fromProviders
-    import org.mongodb.scala.bson.codecs.Macros._
-
-    case class Number(id: Int, date: Date, l: Option[String], branches: Seq[String])
-    val codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), fromProviders(classOf[Number]))
-
-    val client = MongoClients.create("mongodb://localhost:27017")
-    val db = client.getDatabase("MongoSourceSpec")
-    val numbersColl = db
-      .getCollection("numbers2", classOf[Number])
-      .withCodecRegistry(codecRegistry)
-
-    implicit val system = ActorSystem()
-    implicit val mat = ActorMaterializer()
-
-    val source = Source.single(Number(1, new Date(), Some("qwe"), Seq("asdf")))
-    result(source.runWith(MongoSink.insertOne(numbersColl))(mat))
-
-    val sink = Sink.ignore
-    result(MongoSource[Number](numbersColl.find()).runWith(sink)(mat))
+    result(mongo.dropDatabase())
   }
 
   it should "set installed versions" in {
@@ -106,6 +82,6 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     result(collections.ClientInstalledVersions.map(_.find().map(assertResult(_)(ClientDesiredVersions("client1",
       Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))
-    //result(collections.ClientInstalledVersions.map(_.dropItems()))
+    result(collections.ClientInstalledVersions.map(_.dropItems()))
   }
 }

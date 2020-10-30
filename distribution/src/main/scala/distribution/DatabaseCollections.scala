@@ -2,7 +2,7 @@ package distribution
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.{IndexOptions, Indexes}
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.config.ClientInfo
 import com.vyulabs.update.info._
 import distribution.mongo.MongoDb
 import org.slf4j.LoggerFactory
@@ -10,8 +10,9 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.ExecutionContext
 import com.vyulabs.update.version.BuildVersion
 import org.bson.{BsonReader, BsonWriter}
-import org.bson.codecs.{Codec, DecoderContext, EncoderContext, MapCodec}
+import org.bson.codecs.{Codec, DecoderContext, EncoderContext}
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
+import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
 
 class BuildVersionCodec extends Codec[BuildVersion] {
@@ -26,15 +27,17 @@ class BuildVersionCodec extends Codec[BuildVersion] {
   override def getEncoderClass: Class[BuildVersion] = classOf[BuildVersion]
 }
 
-
 class DatabaseCollections(db: MongoDb)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
+  implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
+    IterableCodecProvider.apply,
+    classOf[ClientInfo],
     classOf[BuildVersionInfo],
     classOf[VersionInfo],
+    classOf[DesiredVersion],
     classOf[DesiredVersions]),
-    fromCodecs(new BuildVersionCodec(), new MapCodec()))
+    fromCodecs(new BuildVersionCodec()))
 
   val VersionInfo = db.getOrCreateCollection[VersionInfo]()
   val DesiredVersions = db.getOrCreateCollection[DesiredVersions]()

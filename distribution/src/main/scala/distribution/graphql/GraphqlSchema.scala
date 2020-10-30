@@ -23,7 +23,6 @@ case class GraphqlContext(versionHistoryConfig: VersionHistoryConfig,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext,
                          protected val filesLocker: SmartFilesLocker) extends GetUtils with PutUtils with VersionUtils with CommonUtils
-
 object GraphqlSchema {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 

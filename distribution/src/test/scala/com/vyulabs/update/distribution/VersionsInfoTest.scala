@@ -42,14 +42,11 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val ownServicesDir = Files.createTempDirectory("test").toFile
 
   val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName)
-
-  result(mongo.dropDatabase())
-
+  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo)
   val graphql = new Graphql()
 
-  val graphqlContext = GraphqlContext(VersionHistoryConfig(5), dir, collections, UserInfo("admin", UserRole.Administrator))
+  val graphqlContext = GraphqlContext(VersionHistoryConfig(3), dir, collections, UserInfo("admin", UserRole.Administrator))
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
