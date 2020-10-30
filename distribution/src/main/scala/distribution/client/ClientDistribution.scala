@@ -78,7 +78,7 @@ class ClientDistribution(val dir: ClientDistributionDirectory, config: ClientDis
                           stateUploader.getInstanceState(instanceId)
                         } ~
                         path(distributionVersionPath) {
-                          getVersion()
+                          getServiceVersion(Common.DistributionServiceName, new File("."))
                         } ~
                         path(scriptsVersionPath) {
                           getServiceVersion(Common.ScriptsServiceName, new File("."))
@@ -172,7 +172,7 @@ class ClientDistribution(val dir: ClientDistributionDirectory, config: ClientDis
                       } ~
                       authorize(userCredentials.role == UserRole.Administrator) {
                         path(prefix / getDistributionVersionPath) {
-                          getVersion()
+                          getServiceVersion(Common.DistributionServiceName, new File("."))
                         } ~
                           path(prefix / getScriptsVersionPath) {
                             getServiceVersion(Common.ScriptsServiceName, new File("."))

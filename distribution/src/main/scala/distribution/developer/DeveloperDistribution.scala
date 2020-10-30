@@ -22,9 +22,8 @@ import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
 import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
 import distribution.developer.config.DeveloperDistributionConfig
-
 import com.vyulabs.update.info.VersionsInfoJson._
-import com.vyulabs.update.utils.Utils
+import com.vyulabs.update.utils.{IOUtils, Utils}
 import distribution.Distribution
 import distribution.developer.utils.{ClientsUtils, StateUtils}
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
@@ -59,7 +58,7 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                 } {
                   get {
                     path(distributionInfoPath) {
-                      complete(DistributionInfo(config.name, Utils.getManifestBuildVersion(Common.DistributionServiceName)
+                      complete(DistributionInfo(config.name, IOUtils.readServiceVersion(Common.DistributionServiceName, new File("."))
                         .getOrElse(BuildVersion.empty), None))
                     }
                   } ~
@@ -103,7 +102,7 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                           getDesiredVersion(service, getDesiredVersions(None), false)
                         } ~
                         path(distributionVersionPath) {
-                          getVersion()
+                          getServiceVersion(Common.DistributionServiceName, new File("."))
                         } ~
                         path(scriptsVersionPath) {
                           getServiceVersion(Common.ScriptsServiceName, new File("."))
@@ -202,7 +201,7 @@ class DeveloperDistribution(val dir: DeveloperDistributionDirectory, val config:
                               }
                             } ~
                             path(getDistributionVersionPath) {
-                              getVersion()
+                              getServiceVersion(Common.DistributionServiceName, new File("."))
                             } ~
                             path(getScriptsVersionPath) {
                               getServiceVersion(Common.ScriptsServiceName, new File("."))

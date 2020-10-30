@@ -35,11 +35,8 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
     Utils.error(s"Can't create directory ${serviceDirectory}")
   }
 
-  version = if (profiledServiceName.name == Common.UpdaterServiceName) {
-    Utils.getManifestBuildVersion(Common.UpdaterServiceName)
-  } else {
-    IOUtils.readServiceVersion(profiledServiceName.name, currentServiceDirectory)
-  }
+  version = IOUtils.readServiceVersion(profiledServiceName.name,
+    if (profiledServiceName.name == Common.UpdaterServiceName) serviceDirectory else currentServiceDirectory)
 
   log.info(s"Current version of service ${profiledServiceName} is ${version}")
 
