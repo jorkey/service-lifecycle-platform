@@ -91,7 +91,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    result(collections.TestedVersions.map(_.dropItems()))
+    result(collections.ClientTestedVersions.map(_.dropItems()))
   }
 
   it should "return error if no tested versions for the client's profile" in {
@@ -110,7 +110,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   it should "return error if client required preliminary testing has personal desired versions" in {
     val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
-    result(collections.TestedVersions.map(_.insert(TestedVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
+    result(collections.ClientTestedVersions.map(_.insert(TestedVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
     result(collections.ClientDesiredVersions.map(_.insert(ClientDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Client required preliminary testing shouldn't have personal desired versions","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(

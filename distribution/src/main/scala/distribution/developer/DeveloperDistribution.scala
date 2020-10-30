@@ -16,11 +16,11 @@ import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DistributionInfo, InstanceServiceState}
+import com.vyulabs.update.info.{DistributionInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
-import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
+import distribution.developer.uploaders.{DeveloperFaultUploader}
 import distribution.developer.config.DeveloperDistributionConfig
 import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
@@ -40,7 +40,6 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             protected val config: DeveloperDistributionConfig,
                             protected val usersCredentials: UsersCredentials,
                             protected val graphql: Graphql,
-                            protected val stateUploader: DeveloperStateUploader,
                             protected val faultUploader: DeveloperFaultUploader)
                            (implicit protected val system: ActorSystem,
                             protected val materializer: Materializer,

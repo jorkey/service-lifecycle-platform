@@ -59,7 +59,8 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       ClientDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
 
     result(clientServiceStatesCollection.insert(
-      ClientServiceState("client1", "instance1", "service1", "directory1", ServiceState(version = Some(BuildVersion(1, 1, 0))))))
+      ClientServiceState("client1", "instance1", "service1", "directory1",
+        ServiceState(date = new Date(), None, None, version = Some(BuildVersion(1, 1, 0)), None, None, None, None))))
   }
 
   override protected def afterAll(): Unit = {

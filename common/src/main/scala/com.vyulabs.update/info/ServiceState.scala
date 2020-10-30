@@ -16,9 +16,9 @@ object UpdateError extends DefaultJsonProtocol {
   implicit val updateErrorJson = jsonFormat2(UpdateError.apply)
 }
 
-case class ServiceState(date: Date = new Date(), installDate: Option[Date] = None, startDate: Option[Date] = None,
-                        version: Option[BuildVersion] = None, updateToVersion: Option[BuildVersion] = None,
-                        updateError: Option[UpdateError] = None, failuresCount: Option[Int] = None, lastExitCode: Option[Int] = None)
+case class ServiceState(date: Date, installDate: Option[Date], startDate: Option[Date],
+                        version: Option[BuildVersion], updateToVersion: Option[BuildVersion],
+                        updateError: Option[UpdateError], failuresCount: Option[Int], lastExitCode: Option[Int])
 
 object ServiceState extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
@@ -33,15 +33,16 @@ object DirectoryServiceState extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat3(DirectoryServiceState.apply)
 
   def getOwnInstanceState(serviceName: ServiceName, startDate: Date)(implicit log: Logger): DirectoryServiceState = {
-    val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName),
-      installDate = IoUtils.getServiceInstallTime(serviceName, new File(".")),
-      startDate = Some(startDate))
+    val ownState = ServiceState(date = new Date(), installDate = IoUtils.getServiceInstallTime(serviceName, new File(".")),
+      startDate = Some(startDate), version = Utils.getManifestBuildVersion(serviceName),
+      updateToVersion = None, updateError = None, failuresCount = None, lastExitCode = None)
     DirectoryServiceState(serviceName, new File(".").getCanonicalPath(), ownState)
   }
 
   def getServiceInstanceState(serviceName: ServiceName, directory: File)(implicit log: Logger): DirectoryServiceState = {
-    val ownState = ServiceState(version = IoUtils.readServiceVersion(serviceName, directory),
-      installDate = IoUtils.getServiceInstallTime(serviceName, directory))
+    val ownState = ServiceState(date = new Date(), installDate = IoUtils.getServiceInstallTime(serviceName, directory),
+      startDate = None, version = IoUtils.readServiceVersion(serviceName, directory),
+      updateToVersion = None, updateError = None, failuresCount = None, lastExitCode = None)
     DirectoryServiceState(serviceName, directory.getCanonicalPath(), ownState)
   }
 }

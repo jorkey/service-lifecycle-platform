@@ -9,7 +9,6 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.info.VersionInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.IoUtils
@@ -17,7 +16,6 @@ import com.vyulabs.update.utils.Utils.DateJson._
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
 import distribution.config.{DistributionConfig, VersionHistoryConfig}
-import distribution.developer.graphql.DeveloperGraphqlSchema
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}

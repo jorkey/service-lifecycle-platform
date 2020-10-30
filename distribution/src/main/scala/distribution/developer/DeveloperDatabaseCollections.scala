@@ -39,16 +39,16 @@ class DeveloperDatabaseCollections(db: MongoDb, instanceId: InstanceId, builderD
 
   val InstallProfile = db.getOrCreateCollection[InstallProfile]()
   val ClientInfo = db.getOrCreateCollection[ClientInfo]()
-  val TestedVersions = db.getOrCreateCollection[TestedVersions]()
   val ClientDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]()
   val ClientInstalledVersions = db.getOrCreateCollection[ClientDesiredVersions](Some("Installed"))
+  val ClientTestedVersions = db.getOrCreateCollection[TestedVersions]()
   val ClientFaultReport = db.getOrCreateCollection[ClientFaultReport]()
   val ClientServiceStates = db.getOrCreateCollection[ClientServiceState]()
 
   val result = for {
     clientInfo <- ClientInfo
     clientInfoIndexes <- clientInfo.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true))
-    testedVersions <- TestedVersions
+    testedVersions <- ClientTestedVersions
     testedVersionsIndexes <- testedVersions.createIndex(Indexes.ascending("profileName"))
     clientDesiredVersions <- ClientDesiredVersions
     clientDesiredVersionsIndexes <- clientDesiredVersions.createIndex(Indexes.ascending("clientName"))

@@ -1,13 +1,15 @@
 package com.vyulabs.update.distribution.developer.client
 
 import java.nio.file.Files
+import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, TestSignature, TestedVersions}
+import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersion, ServiceState, TestSignature, TestedVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -23,6 +25,8 @@ import spray.json._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
+import com.vyulabs.update.utils.Utils.DateJson._
+import org.scalactic.Prettifier
 
 class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Tested Versions Info Requests"
@@ -38,26 +42,50 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val versionHistoryConfig = VersionHistoryConfig(5)
 
   val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName)
-
-  result(mongo.dropDatabase())
-
+  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 1)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
+
+  override protected def beforeAll(): Unit = {
+    result(collections.ClientInfo.map(_.insert(ClientInfo("client1", ClientConfig("common", Some("test"))))))
+  }
 
   override protected def afterAll(): Unit = {
     dir.drop()
     result(mongo.dropDatabase())
   }
 
+  it should "set tested versions" in {
+    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+
+    assertResult((OK,
+      ("""{"data":{"testedVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          testedVersions (
+            versions: [
+              { serviceName: "service1", buildVersion: "1.1.2" },
+              { serviceName: "service2", buildVersion: "2.1.2" }
+            ]
+          )
+        }
+      """)))
+
+    val date = new Date()
+    result(collections.ClientTestedVersions.map(v => result(v.find().map(_.map(v => TestedVersions(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
+      .map(assertResult(_)(Seq(TestedVersions("common",
+        Seq(DesiredVersion("service1", BuildVersion(1, 1, 2)), DesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date)))))))))
+    result(collections.ClientTestedVersions.map(_.dropItems()))
+  }
+
   it should "set installed versions" in {
-    val graphqlContext1 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
 
     assertResult((OK,
       ("""{"data":{"installedVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
+      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           installedVersions (
             versions: [
@@ -68,32 +96,42 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    Thread.sleep(2000)
-
-    result(collections.ClientInstalledVersions.map(_.find().map(assertResult(_)(ClientDesiredVersions("client1",
-      Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))
+    result(collections.ClientInstalledVersions.map(v => result(v.find().map(assertResult(_)(Seq(ClientDesiredVersions("client1",
+      Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))))
     result(collections.ClientInstalledVersions.map(_.dropItems()))
   }
 
   it should "set services state" in {
     val graphqlContext1 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
-
     assertResult((OK,
       ("""{"data":{"servicesState":true}}""").parseJson))(
       result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
-        mutation {
+        mutation ServicesState($$date: Date!) {
           servicesState (
-            versions: [
-               { serviceName: "service1", buildVersion: "1.1.1" },
-               { serviceName: "service2", buildVersion: "2.1.1" }
+            state: [
+              { instanceId: "instance1", serviceName: "service1", directory: "dir",
+                  state: { date: $$date, version: "1.2.3" }
+              }
             ]
           )
         }
-      """)))
+      """, variables = JsObject("date" -> new Date().toJson))))
 
-    Thread.sleep(2000)
+    val graphqlContext2 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
+    assertResult((OK,
+      ("""{"data":{"servicesState":[{"instanceId":"instance1","state":{"version":"1.2.3"}}]}}""").parseJson))(
+      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""
+        query {
+          servicesState (client: "client1", service: "service1") {
+            instanceId
+            state {
+              version
+            }
+          }
+        }
+      """))
+    )
 
-    result(collections.ClientInstalledVersions.map(_.find().map(assertResult(_)(ClientDesiredVersions("client1",
-      Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))
-    result(collections.ClientInstalledVersions.map(_.dropItems()))
+    result(collections.ClientServiceStates.map(_.dropItems()))
+  }
 }

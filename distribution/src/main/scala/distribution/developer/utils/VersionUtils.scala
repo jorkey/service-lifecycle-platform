@@ -84,7 +84,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
         }
         val newTestedVersions = TestedVersions(clientConfig.installProfile, desiredVersions, testSignatures)
         for {
-          collection <- collections.TestedVersions
+          collection <- collections.ClientTestedVersions
           result <- collection.replace(new BsonDocument(), newTestedVersions).map(_ => true)
         } yield result
       }
@@ -94,7 +94,7 @@ trait VersionUtils extends distribution.utils.VersionUtils
   def getTestedVersions(profileName: ProfileName): Future[Option[TestedVersions]] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
-      collection <- collections.TestedVersions
+      collection <- collections.ClientTestedVersions
       profile <- collection.find(profileArg).map(_.headOption)
     } yield profile
   }

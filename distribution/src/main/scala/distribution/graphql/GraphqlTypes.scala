@@ -64,22 +64,9 @@ object GraphqlTypes {
   implicit val ClientServiceStateType = deriveObjectType[Unit, ClientServiceState]()
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 
-  implicit val toInputDate = new ToInput[Date, JsValue] {
-    import com.vyulabs.update.utils.Utils.DateJson._
-    override def toInput(date: Date): (JsValue, InputUnmarshaller[JsValue]) =
-      (date.toJson, sangria.marshalling.sprayJson.SprayJsonInputUnmarshaller)
-  }
-
-  implicit def toInputOption[T] = new ToInput[Option[T], JsValue] {
-    import com.vyulabs.update.utils.Utils.DateJson._
-    override def toInput(value: Option[T]): (JsValue, InputUnmarshaller[JsValue]) = value match {
-      case Some(date) => (date.toJson, sangria.marshalling.sprayJson.SprayJsonInputUnmarshaller)
-      case None => (JsNull, sangria.marshalling.sprayJson.SprayJsonInputUnmarshaller)
-    }
-  }
-
   implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildVersionInfo](InputObjectTypeName("BuildVersionInfoInput"))
   implicit val DesiredVersionInfoInputType = deriveInputObjectType[DesiredVersion](InputObjectTypeName("DesiredVersionInput"))
+  implicit val UpdateErrorInputType = deriveInputObjectType[UpdateError](InputObjectTypeName("UpdateErrorInput"))
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))
   implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))
 }

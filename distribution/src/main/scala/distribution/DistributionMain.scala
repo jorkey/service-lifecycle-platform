@@ -18,7 +18,7 @@ import distribution.client.config.ClientDistributionConfig
 import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
 import distribution.developer.{DeveloperDatabaseCollections, DeveloperDistribution}
 import distribution.developer.config.DeveloperDistributionConfig
-import distribution.developer.uploaders.{DeveloperFaultUploader, DeveloperStateUploader}
+import distribution.developer.uploaders.{DeveloperFaultUploader}
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
@@ -81,20 +81,17 @@ object DistributionMain extends App {
         val collections = new DeveloperDatabaseCollections(mongoDb, config.instanceId,
           config.builderDirectory, config.instanceState.expireSec)
 
-        val stateUploader = new DeveloperStateUploader(collections)
         val faultUploader = new DeveloperFaultUploader(collections, dir)
 
         val selfDistributionDir = config.selfDistributionClient
           .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val distribution = new DeveloperDistribution(dir, collections, config, usersCredentials, graphql, stateUploader, faultUploader)
+        val distribution = new DeveloperDistribution(dir, collections, config, usersCredentials, graphql, faultUploader)
 
-        stateUploader.start()
         selfUpdater.start()
 
         Runtime.getRuntime.addShutdownHook(new Thread() {
           override def run(): Unit = {
-            stateUploader.close()
             selfUpdater.close()
           }
         })

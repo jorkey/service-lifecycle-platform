@@ -57,13 +57,13 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   override def beforeAll() = {
     result(collection.insert(
       ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)))
+        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))
     result(collection.insert(
       ClientFaultReport(client2, "fault1", Seq("fault.info", "core1"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(), Seq.empty)))
+        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))
     result(collection.insert(
       ClientFaultReport(client1, "fault2", Seq("fault.info", "core"),
-        new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(), Seq.empty)))
+        new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))
   }
 
   override protected def afterAll(): Unit = {
