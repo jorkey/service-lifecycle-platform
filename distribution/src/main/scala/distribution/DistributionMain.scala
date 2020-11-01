@@ -87,8 +87,8 @@ object DistributionMain extends App {
           }
         })
 
-        val server = Http().newServerAt("0.0.0.0", config.port)
-        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        var server = Http().newServerAt("0.0.0.0", config.port)
+        config.ssl.foreach(ssl => server = server.enableHttps(makeHttpsContext(ssl)))
         server.bind(distribution.route)
 
       case "client" =>
@@ -120,8 +120,8 @@ object DistributionMain extends App {
           }
         })
 
-        val server = Http().newServerAt("0.0.0.0", config.port)
-        config.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
+        var server = Http().newServerAt("0.0.0.0", config.port)
+        config.ssl.foreach(ssl => server = server.enableHttps(makeHttpsContext(ssl)))
         server.bind(distribution.route)
 
       case "addUser" =>
