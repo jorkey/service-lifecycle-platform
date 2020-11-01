@@ -27,7 +27,7 @@ class BuildVersionCodec extends Codec[BuildVersion] {
   override def getEncoderClass: Class[BuildVersion] = classOf[BuildVersion]
 }
 
-class DatabaseCollections(db: MongoDb)(implicit executionContext: ExecutionContext) {
+class DatabaseCollection(db: MongoDb)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
