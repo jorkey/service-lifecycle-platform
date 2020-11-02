@@ -3,10 +3,8 @@ package com.vyulabs.update.distribution
 import java.io.File
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.developer.DeveloperDistributionWebPaths
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import org.slf4j.LoggerFactory
@@ -18,8 +16,7 @@ import scala.concurrent.ExecutionContext
   * Copyright FanDate, Inc.
   */
 class SelfUpdater(dir: DistributionDirectory)
-                 (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext, filesLocker: SmartFilesLocker)
-    extends Thread with DeveloperDistributionWebPaths { self =>
+                 (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext, filesLocker: SmartFilesLocker) extends Thread { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))

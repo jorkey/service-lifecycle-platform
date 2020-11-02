@@ -1,30 +1,29 @@
-package distribution.developer.utils
+package distribution.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.Common._
+import com.vyulabs.update.common.Common.{ClientName, ProfileName}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import distribution.developer.DeveloperDatabaseCollections
+import com.vyulabs.update.distribution.DistributionDirectory
+import distribution.DatabaseCollections
 import distribution.graphql.NotFoundException
-import distribution.utils.{GetUtils, PutUtils}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientsUtils extends GetUtils with PutUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
+trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
 
-  protected val dir: DeveloperDistributionDirectory
-  protected val collections: DeveloperDatabaseCollections
+  protected val dir: DistributionDirectory
+  protected val collections: DatabaseCollections
 
   def getClientsInfo(clientName: Option[ClientName] = None): Future[Seq[ClientInfo]] = {
     val clientArg = clientName.map(Filters.eq("clientName", _))

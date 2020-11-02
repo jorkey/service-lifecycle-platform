@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.developer.administrator
+package com.vyulabs.update.distribution.administrator
 
 import java.nio.file.Files
 import java.util.Date
@@ -8,16 +8,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.Common._
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
 import com.vyulabs.update.info.{ClientFaultReport, ServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
-import distribution.developer.DeveloperDatabaseCollections
-import distribution.developer.config.DeveloperDistributionConfig
-import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
-import distribution.graphql.Graphql
+import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import sangria.macros.LiteralGraphQLStringContext
@@ -37,13 +35,13 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val versionHistoryConfig = VersionHistoryConfig(5)
 
-  val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
+  val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
+  val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 100)
 
   val collection = result(collections.ClientFaultReport)
 
-  val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user", UserRole.Administrator))
+  val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user", UserRole.Administrator))
   val graphql = new Graphql()
 
   val client1 = "client1"
@@ -75,7 +73,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       ("""{"data":{"faultReports":[""" +
        """{"clientName":"client1","reportDirectory":"fault2","serviceName":"serviceB","instanceId":"instance2","reportFiles":["fault.info","core"]}""" +
       """]}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           faultReports (client: "client1", last: 1) {
             clientName
@@ -94,7 +92,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       ("""{"data":{"faultReports":[""" +
         """{"clientName":"client2","reportDirectory":"fault1","serviceName":"serviceA","instanceId":"instance1","reportFiles":["fault.info","core1"]}""" +
         """]}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           faultReports (service: "serviceA", last: 1) {
             clientName
@@ -113,7 +111,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       ("""{"data":{"faultReports":[""" +
         """{"clientName":"client1","reportDirectory":"fault2","serviceName":"serviceB","instanceId":"instance2","reportFiles":["fault.info","core"]}""" +
         """]}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition,
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition,
         graphqlContext, graphql"""
           query FaultsQuery($$service: String!) {
             faultReports (service: $$service) {

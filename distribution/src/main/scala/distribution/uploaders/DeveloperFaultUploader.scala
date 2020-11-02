@@ -1,4 +1,4 @@
-package distribution.developer.uploaders
+package distribution.uploaders
 
 import java.io.{File, IOException}
 import java.util.concurrent.TimeUnit
@@ -13,25 +13,23 @@ import akka.util.ByteString
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
-import distribution.developer.DeveloperDatabaseCollections
-import distribution.mongo.MongoDbCollection
+import distribution.DatabaseCollections
 import distribution.utils.GetUtils
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 18.12.19.
   * Copyright FanDate, Inc.
   */
-class DeveloperFaultUploader(collections: DeveloperDatabaseCollections,
-                             protected val dir: DeveloperDistributionDirectory)
+class DeveloperFaultUploader(collections: DatabaseCollections,
+                             protected val dir: DistributionDirectory)
                             (implicit protected val system: ActorSystem,
                              protected val materializer: Materializer,
                              protected val executionContext: ExecutionContext,

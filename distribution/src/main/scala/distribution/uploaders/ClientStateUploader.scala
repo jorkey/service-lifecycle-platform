@@ -1,4 +1,4 @@
-package distribution.client.uploaders
+package distribution.uploaders
 
 import java.io.File
 import java.net.URL
@@ -13,25 +13,23 @@ import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName}
-import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectory
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vyulabs.update.distribution.DistributionMain
+import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirectoryClient, DistributionMain}
 import com.vyulabs.update.info.{InstanceServiceState, ProfiledServiceName, ServiceState}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 22.05.19.
   * Copyright FanDate, Inc.
   */
-class ClientStateUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL, instanceId: InstanceId, installerDir: String)
+class ClientStateUploader(dir: DistributionDirectory, developerDirectoryUrl: URL, instanceId: InstanceId, installerDir: String)
                          (implicit system: ActorSystem, materializer: Materializer)
-      extends Thread with DeveloperDistributionWebPaths with FutureDirectives with SprayJsonSupport { self =>
+      extends Thread with FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
+  private val developerDirectory = new DistributionDirectoryClient(developerDirectoryUrl)
 
   private var instancesStates = Map.empty[InstanceId, Map[ServiceDirectory, Map[ServiceName, ServiceState]]]
   private var statesToUpload = Map.empty[InstanceId, Map[ServiceDirectory, Map[ServiceName, ServiceState]]]

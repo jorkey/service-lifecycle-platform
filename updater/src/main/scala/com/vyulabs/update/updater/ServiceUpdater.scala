@@ -2,8 +2,8 @@ package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.InstallConfig
+import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
 import com.vyulabs.update.info.{ProfiledServiceName, UpdateError}
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import com.vyulabs.update.version.BuildVersion
@@ -16,7 +16,7 @@ import org.slf4j.Logger
 class ServiceUpdater(instanceId: InstanceId,
                      profiledServiceName: ProfiledServiceName,
                      state: ServiceStateController,
-                     clientDirectory: ClientDistributionDirectoryClient)
+                     clientDirectory: DistributionDirectoryClient)
                     (implicit log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
 

@@ -1,28 +1,21 @@
-package distribution.developer.utils
-
-import java.io.File
-import java.util.Date
+package distribution.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common._
-import com.vyulabs.update.distribution.DistributionMain
-import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info._
+import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceDirectory, ServiceName}
+import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, InstanceServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
-import distribution.developer.DeveloperDatabaseCollections
-import distribution.developer.config.DeveloperDistributionConfig
-import distribution.utils.GetUtils
+import distribution.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJsonSupport {
+trait StateUtils extends GetUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected implicit val system: ActorSystem
@@ -30,8 +23,8 @@ trait StateUtils extends GetUtils with DeveloperDistributionWebPaths with SprayJ
   protected implicit val executionContext: ExecutionContext
   protected implicit val filesLocker: SmartFilesLocker
 
-  protected val dir: DeveloperDistributionDirectory
-  protected val collections: DeveloperDatabaseCollections
+  protected val dir: DistributionDirectory
+  protected val collections: DatabaseCollections
 
   def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
     for {

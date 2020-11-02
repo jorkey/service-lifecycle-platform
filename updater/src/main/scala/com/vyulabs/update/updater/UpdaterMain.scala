@@ -2,8 +2,8 @@ package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.{ProfiledServiceName}
+import com.vyulabs.update.distribution.DistributionDirectoryClient
+import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
 import com.vyulabs.update.utils.{IoUtils, Utils}
@@ -44,7 +44,7 @@ object UpdaterMain extends App { self =>
 
       val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
 
-      val clientDirectory = new ClientDistributionDirectoryClient(config.clientDistributionUrl)
+      val clientDirectory = new DistributionDirectoryClient(config.clientDistributionUrl)
 
       val instanceState = new StateUploader(config.instanceId, servicesInstanceNames + updaterServiceName, clientDirectory)
 
@@ -125,7 +125,7 @@ object UpdaterMain extends App { self =>
 
         def maybeUpdate(): Boolean = {
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
-            clientDirectory.downloadDesiredVersions() match {
+            clientDirectory.downloadInstalledDesiredVersions() match {
               case Some(desiredVersions) =>
                 var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, BuildVersion])((map, updater) => {
                   updater._2.needUpdate(desiredVersions.get(updater._1.name)) match {

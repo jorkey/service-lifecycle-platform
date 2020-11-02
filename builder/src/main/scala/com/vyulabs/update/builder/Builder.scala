@@ -5,15 +5,14 @@ import java.net.URI
 import java.util.Date
 
 import com.vyulabs.libs.git.GitRepository
-import com.vyulabs.update.distribution.{AdminRepository, GitRepositoryUtils}
+import com.vyulabs.update.distribution.{AdminRepository, DistributionDirectory, DistributionDirectoryClient, GitRepositoryUtils}
 import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.builder.config.SourcesConfig
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersion, DesiredVersions}
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
+import com.vyulabs.update.info.{BuildInfo, DesiredVersion, DesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
 import com.vyulabs.update.version.BuildVersion
@@ -21,7 +20,7 @@ import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 import com.vyulabs.update.config.InstallConfig._
 
-class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
+class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
 
   def makeVersion(author: String, serviceName: ServiceName,
@@ -68,12 +67,14 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
             log.info("Get existing versions")
             val version = newVersion match {
               case Some(version) =>
+                /* TODO graphql
                 if (directory.isVersionExists(serviceName, version)) {
                   log.error(s"Version ${version} already exists")
                   return None
-                }
+                }*/
                 version
               case None =>
+                /* TOFO graphql
                 directory.downloadVersionsInfo(clientName, serviceName) match {
                   case Some(versions) if (!versions.versions.isEmpty) =>
                     val lastVersion = versions.versions.sortBy(_.version)(BuildVersion.ordering).last
@@ -83,6 +84,8 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
                     log.error("No existing versions")
                     BuildVersion(clientName, Seq(1, 0, 0))
                 }
+                 */
+                null
             }
 
             log.info(s"Generate version ${version}")
@@ -168,10 +171,11 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
             }
 
             log.info(s"Upload version ${version} to distribution directory")
-            val buildVersionInfo = BuildVersionInfo(author, sourceBranches, new Date(), comment)
+            val buildVersionInfo = BuildInfo(author, sourceBranches, new Date(), comment)
+            /* TODO graphql
             if (!directory.uploadVersion(serviceName, version, buildVersionInfo, buildDir)) {
               return None
-            }
+            }*/
 
             log.info(s"Mark source repositories with version ${version}")
             for (repository <- sourceRepositories) {
@@ -202,7 +206,9 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
   }
 
   def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, BuildVersion]] = {
-    directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_))
+    // TODO graphql
+    //directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_))
+    null
   }
 
   def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
@@ -225,6 +231,8 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
         if (gitLock.lock(AdminRepository.makeStartOfSettingDesiredVersionsMessage(servicesVersions),
              s"Continue updating of desired versions")) {
           try {
+            // TODO graphql
+/*
             var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_)).getOrElse(Map.empty)
             servicesVersions.foreach {
               case (serviceName, Some(version)) =>
@@ -238,6 +246,7 @@ class Builder(directory: DeveloperDistributionDirectoryAdmin, adminRepositoryUrl
             }
             log.info(s"Desired versions are successfully uploaded")
             completed = true
+ */
           } finally {
             adminRepository.processLogFile(completed)
             if (!gitLock.unlock(AdminRepository.makeEndOfSettingDesiredVersionsMessage(completed))) {

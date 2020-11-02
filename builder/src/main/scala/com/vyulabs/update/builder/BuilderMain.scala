@@ -4,7 +4,7 @@ import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
+import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirectoryClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.BuildVersion
@@ -38,7 +38,7 @@ object BuilderMain extends App {
     Utils.error("No config")
   }
 
-  val developerDistribution = new DeveloperDistributionDirectoryAdmin(config.developerDistributionUrl)
+  val developerDistribution = new DistributionDirectoryClient(config.developerDistributionUrl)
 
   command match {
     case "buildVersion" =>
@@ -71,6 +71,7 @@ object BuilderMain extends App {
       builder.makeVersion(author, serviceName, clientName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
+            /* TODO graphql
             val waitFor = (if (serviceName == Common.DistributionServiceName) {
               Some(developerDistribution.getDistributionVersionPath)
             } else if (serviceName == Common.ScriptsServiceName) {
@@ -86,7 +87,7 @@ object BuilderMain extends App {
               if (!developerDistribution.waitForServerUpdated(path, version)) {
                 log.error("Can't update distribution server")
               }
-            })
+            })*/
           }
         case None =>
           log.error("Make version error")
@@ -145,6 +146,7 @@ object BuilderMain extends App {
         Utils.error("Set desired versions error")
       }
 
+      /* TODO graphql
       servicesVersions.get(Common.DistributionServiceName) match {
         case Some(Some(distributionVersion)) =>
           log.info("Update distribution server")
@@ -168,7 +170,7 @@ object BuilderMain extends App {
               }
             case _ =>
           }
-      }
+      }*/
     case command =>
       Utils.error(s"Invalid command ${command}\n${usage()}")
   }

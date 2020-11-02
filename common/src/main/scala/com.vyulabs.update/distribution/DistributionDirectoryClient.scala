@@ -5,9 +5,8 @@ import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-import com.typesafe.config.{Config, ConfigFactory, ConfigParseOptions}
-import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.info.BuildVersionInfo
+import com.typesafe.config.ConfigParseOptions
+import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceName}
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
@@ -15,28 +14,23 @@ import spray.json.JsValue
 
 import scala.annotation.tailrec
 import spray.json._
-import com.vyulabs.update.info.BuildVersionInfo._
+import com.vyulabs.update.info.{DesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, InstanceServiceState, ProfiledServiceName, ServicesVersions}
+import DistributionWebPaths._
+import com.vyulabs.update.logs.ServiceLogs
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends DistributionWebPaths {
+class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
 
   def isVersionExists(serviceName: ServiceName, buildVersion: BuildVersion): Boolean = {
-    exists(makeUrl(getDownloadVersionPath(serviceName, buildVersion)))
-  }
-
-  def downloadVersionInfoFile(serviceName: ServiceName, buildVersion: BuildVersion, file: File): Boolean = {
-     downloadToFile(makeUrl(getDownloadVersionInfoPath(serviceName, buildVersion)), file)
-  }
-
-  def downloadVersionInfo(serviceName: ServiceName, buildVersion: BuildVersion): Option[BuildVersionInfo] = {
-    downloadToJson(makeUrl(getDownloadVersionInfoPath(serviceName, buildVersion))).map(_.convertTo[BuildVersionInfo])
+    // TODO graphql
+    false
   }
 
   def downloadVersionImage(serviceName: ServiceName, buildVersion: BuildVersion, file: File): Boolean = {
-    downloadToFile(makeUrl(getDownloadVersionPath(serviceName, buildVersion)), file)
+    downloadToFile(makeUrl(downloadVersionPath(serviceName, buildVersion)), file)
   }
 
   def downloadVersion(serviceName: ServiceName, buildVersion: BuildVersion, directory: File): Boolean = {
@@ -55,42 +49,31 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
     }
   }
 
-  def uploadVersionImage(serviceName: ServiceName, buildVersion: BuildVersion, infoFile: File, imageFile: File): Boolean = {
-    uploadFromFile(makeUrl(getUploadVersionPath(serviceName, buildVersion)), versionName, imageFile) &&
-    uploadFromFile(makeUrl(getUploadVersionInfoPath(serviceName, buildVersion)), versionInfoName, infoFile)
-  }
-
-  def uploadVersion(serviceName: ServiceName, buildVersion: BuildVersion, buildVersionInfo: BuildVersionInfo, buildDir: File): Boolean = {
+  def uploadDeveloperVersion(serviceName: ServiceName, buildVersion: BuildVersion, buildVersionInfo: DeveloperVersionInfo, buildDir: File): Boolean = {
     val imageTmpFile = File.createTempFile("build", ".zip")
-    val infoTmpFile = File.createTempFile("version-info", ".json")
     try {
       if (!ZipUtils.zip(imageTmpFile, buildDir)) {
         log.error("Can't zip build directory")
         return false
       }
-      if (!IoUtils.writeJsonToFile(infoTmpFile, buildVersionInfo.toJson)) {
-        return false
-      }
-      uploadVersionImage(serviceName, buildVersion, infoTmpFile, imageTmpFile)
+      uploadFromFile(makeUrl(uploadVersionPath(serviceName, buildVersion)), "developerVersion", imageTmpFile)
+      // TODO graphql
+      // set version info
+      false
     } finally {
       imageTmpFile.delete()
-      infoTmpFile.delete()
     }
   }
 
+  def uploadTestedVersions(servicesVersions: ServicesVersions): Boolean = {
+    // TODO graphql
+    false
+  }
+
   def getServerVersion(versionPath: String): Option[BuildVersion] = {
-    downloadToString(makeUrl(versionPath)) match {
-      case Some(content) =>
-        try {
-          Some(BuildVersion.parse(content))
-        } catch {
-          case e: Exception =>
-            log.error(s"Parse version error ${e.getMessage}")
-            None
-        }
-      case None =>
-        None
-    }
+    // TODO graphql
+    // set version info
+    null
   }
 
   def waitForServerUpdated(versionPath: String, desiredVersion: BuildVersion): Boolean = {
@@ -111,6 +94,70 @@ class DistributionDirectoryClient(url: URL)(implicit log: Logger) extends Distri
       Thread.sleep(1000)
     }
     log.error(s"Timeout of waiting for distribution server become available")
+    false
+  }
+
+  def downloadVersionsInfo(clientName: Option[ClientName], serviceName: ServiceName): Option[DeveloperVersionsInfo] = {
+    // TODO graphql
+    None
+  }
+
+  def downloadInstalledDesiredVersions(): Option[Map[ServiceName, BuildVersion]] = {
+    // TODO graphql
+    None
+  }
+
+  def downloadDeveloperDesiredVersionsForMe(): Option[Map[ServiceName, BuildVersion]] = {
+    null
+  }
+
+  def downloadDeveloperDesiredVersions(clientName: Option[ClientName]): Option[Seq[DesiredVersion]] = {
+    clientName match {
+      case Some(clientName) =>
+        log.info(s"Download desired versions for client ${clientName}")
+      case None =>
+        log.info(s"Download desired versions")
+    }
+    // TODO graphql
+    null
+  }
+
+  def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[DesiredVersion]): Boolean = {
+    clientName match {
+      case Some(clientName) =>
+        log.info(s"Upload desired versions for client ${clientName}")
+      case None =>
+        log.info(s"Upload desired versions")
+    }
+    // TODO graphql
+    false
+  }
+
+  def uploadDesiredVersions(desiredVersions: Seq[DesiredVersion]): Boolean = {
+    // TODO graphql
+    //uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
+    false
+  }
+
+  def uploadServicesStates(servicesState: Seq[DirectoryServiceState]): Boolean = {
+    // TODO graphql
+    false
+  }
+
+  def uploadServiceLogs(instanceId: InstanceId, profiledServiceName: ProfiledServiceName, serviceLogs: ServiceLogs): Boolean = {
+    // TODO graphql
+    false
+  }
+
+  def uploadServiceFault(serviceName: ServiceName, faultFile: File): Boolean = {
+    // TODO graphql
+    false
+  }
+
+  def uploadServicesState(servicesState: Seq[InstanceServiceState]): Boolean = {
+    // TODO graphql
+    //uploadFromJson(makeUrl(apiPathPrefix + "/" + getInstancesStatePath()),
+    //  instancesStateName, instancesStatePath, servicesState.toJson)
     false
   }
 

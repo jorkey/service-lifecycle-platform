@@ -41,7 +41,7 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo)
+  val collections = new DatabaseCollections(mongo, "instance1", None, 20)
   val graphql = new Graphql()
 
   val graphqlContext = GraphqlContext(VersionHistoryConfig(3), dir, collections, UserInfo("admin", UserRole.Administrator))
@@ -183,6 +183,6 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   def removeVersions(): Unit = {
-    result(collections.VersionInfo.map(_.dropItems()))
+    result(collections.DeveloperVersionInfo.map(_.dropItems()))
   }
 }

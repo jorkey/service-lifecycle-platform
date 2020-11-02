@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.developer.client
+package com.vyulabs.update.distribution.client
 
 import java.nio.file.Files
 import java.util.Date
@@ -8,15 +8,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersion, ServiceState, TestSignature, TestedVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.config.VersionHistoryConfig
-import distribution.developer.DeveloperDatabaseCollections
-import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
-import distribution.graphql.Graphql
+import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -26,7 +24,7 @@ import spray.json._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import com.vyulabs.update.utils.Utils.DateJson._
-import org.scalactic.Prettifier
+import distribution.DatabaseCollections
 
 class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Tested Versions Info Requests"
@@ -41,9 +39,9 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val versionHistoryConfig = VersionHistoryConfig(5)
 
-  val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
+  val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 1)
+  val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 1)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
@@ -58,11 +56,11 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "set tested versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
 
     assertResult((OK,
       ("""{"data":{"testedVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           testedVersions (
             versions: [
@@ -81,11 +79,11 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "set installed versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
 
     assertResult((OK,
       ("""{"data":{"installedVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           installedVersions (
             versions: [
@@ -96,16 +94,16 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    result(collections.ClientInstalledVersions.map(v => result(v.find().map(assertResult(_)(Seq(ClientDesiredVersions("client1",
+    result(collections.ClientInstalledDesiredVersions.map(v => result(v.find().map(assertResult(_)(Seq(ClientDesiredVersions("client1",
       Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))))
-    result(collections.ClientInstalledVersions.map(_.dropItems()))
+    result(collections.ClientInstalledDesiredVersions.map(_.dropItems()))
   }
 
   it should "set services state" in {
-    val graphqlContext1 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext1 = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
     assertResult((OK,
       ("""{"data":{"servicesState":true}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
         mutation ServicesState($$date: Date!) {
           servicesState (
             state: [
@@ -117,10 +115,10 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """, variables = JsObject("date" -> new Date().toJson))))
 
-    val graphqlContext2 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
+    val graphqlContext2 = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instanceId":"instance1","state":{"version":"1.2.3"}}]}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""
         query {
           servicesState (client: "client1", service: "service1") {
             instanceId

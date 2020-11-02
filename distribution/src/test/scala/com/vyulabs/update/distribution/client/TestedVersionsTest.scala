@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.developer.client
+package com.vyulabs.update.distribution.client
 
 import java.nio.file.Files
 import java.util.Date
@@ -8,16 +8,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, TestSignature, TestedVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
+import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
-import distribution.developer.DeveloperDatabaseCollections
-import distribution.developer.config.DeveloperDistributionConfig
-import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
-import distribution.graphql.Graphql
+import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -40,9 +38,9 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val versionHistoryConfig = VersionHistoryConfig(5)
 
-  val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
+  val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 100)
+  val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 100)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
@@ -63,11 +61,11 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "set/get tested versions" in {
-    val graphqlContext1 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("test-client", UserRole.Client))
+    val graphqlContext1 = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("test-client", UserRole.Client))
 
     assertResult((OK,
       ("""{"data":{"testedVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
         mutation {
           testedVersions (
             versions: [
@@ -78,11 +76,11 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    val graphqlContext2 = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext2 = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","buildVersion":"1.1.1"},{"serviceName":"service2","buildVersion":"2.1.1"}]}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext2, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext2, graphql"""
         query {
           desiredVersions {
             serviceName
@@ -95,10 +93,10 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return error if no tested versions for the client's profile" in {
-    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested by anyone","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           desiredVersions {
             serviceName
@@ -109,12 +107,12 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return error if client required preliminary testing has personal desired versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
     result(collections.ClientTestedVersions.map(_.insert(TestedVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
     result(collections.ClientDesiredVersions.map(_.insert(ClientDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Client required preliminary testing shouldn't have personal desired versions","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.ClientSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
         graphql"""
         query {
           desiredVersions {

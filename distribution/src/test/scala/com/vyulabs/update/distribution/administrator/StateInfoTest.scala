@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.developer.administrator
+package com.vyulabs.update.distribution.administrator
 
 import java.nio.file.Files
 import java.util.Date
@@ -8,16 +8,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersion, ServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
+import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
-import distribution.developer.DeveloperDatabaseCollections
-import distribution.developer.config.DeveloperDistributionConfig
-import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
-import distribution.graphql.Graphql
+import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -40,9 +38,9 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val versionHistoryConfig = VersionHistoryConfig(5)
 
-  val dir = new DeveloperDistributionDirectory(Files.createTempDirectory("test").toFile)
+  val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DeveloperDatabaseCollections(mongo, "self-instance", "builder", 10)
+  val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 10)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
@@ -69,10 +67,10 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return installed versions" in {
-    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user1", UserRole.Client))
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user1", UserRole.Client))
     assertResult((OK,
       ("""{"data":{"installedVersions":[{"serviceName":"service1","buildVersion":"1.1.1"},{"serviceName":"service2","buildVersion":"2.1.3"}]}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           installedVersions (client: "client1") {
              serviceName
@@ -83,10 +81,10 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "return service state" in {
-    val graphqlContext = new DeveloperGraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user1", UserRole.Client))
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user1", UserRole.Client))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instanceId":"instance1","state":{"version":"1.1.0"}}]}}""").parseJson))(
-      result(graphql.executeQuery(DeveloperGraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           servicesState (client: "client1", service: "service1") {
             instanceId

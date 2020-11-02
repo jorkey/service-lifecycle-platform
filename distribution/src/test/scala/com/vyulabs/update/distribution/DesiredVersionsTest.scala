@@ -10,7 +10,6 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
-import distribution.developer.config.DeveloperDistributionConfig
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -34,7 +33,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
 
   val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val mongo = new MongoDb(getClass.getSimpleName);  result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo)
+  val collections = new DatabaseCollections(mongo, "instance1", None, 20)
   val graphql = new Graphql()
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))

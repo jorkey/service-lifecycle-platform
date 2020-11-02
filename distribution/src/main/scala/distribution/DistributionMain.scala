@@ -6,34 +6,24 @@ import akka.stream.ActorMaterializer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.client.ClientDistributionDirectory
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
-import com.vyulabs.update.info.ClientFaultReport
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import distribution.client.{ClientDatabaseCollections, ClientDistribution}
-import distribution.client.config.ClientDistributionConfig
-import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
-import distribution.developer.{DeveloperDatabaseCollections, DeveloperDistribution}
-import distribution.developer.config.DeveloperDistributionConfig
-import distribution.developer.uploaders.{DeveloperFaultUploader}
+import distribution.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader, DeveloperFaultUploader}
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
-import distribution.client.graphql.{ClientGraphQLSchema, ClientGraphqlContext}
-import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
 import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
 import java.security.{KeyStore, SecureRandom}
 
-import distribution.config.SslConfig
+import distribution.{DatabaseCollections, DeveloperDistribution}
+import distribution.config.{DistributionConfig, SslConfig}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 
 /**
@@ -67,24 +57,39 @@ object DistributionMain extends App {
 
     val usersCredentials = UsersCredentials()
 
-    val graphql = new Graphql()
-
     command match {
-      case "developer" =>
-        val config = DeveloperDistributionConfig().getOrElse {
+      case "run" =>
+
+        val graphql = new Graphql()
+
+        val config = DistributionConfig.readFromFile().getOrElse {
           Utils.error("No config")
         }
 
         val mongoDb = new MongoDb("distribution", config.mongoDb)
 
-        val dir = new DeveloperDistributionDirectory(new File(config.distributionDirectory))
-        val collections = new DeveloperDatabaseCollections(mongoDb, config.instanceId,
-          config.builderDirectory, config.instanceState.expireSec)
+        val dir = new DistributionDirectory(new File(config.distributionDirectory))
+        val collections = new DatabaseCollections(mongoDb, config.instanceId,
+          config.developer.map(_.builderDirectory), config.instanceState.expireSec)
 
         val faultUploader = new DeveloperFaultUploader(collections, dir)
+        for (client <- config.client) {
+          // TODO graphql
+          val stateUploader = new ClientStateUploader(null, client.developerDistributionUrl, config.instanceId, client.installerDirectory)
+          val clientFaultUploader = new ClientFaultUploader(null, client.developerDistributionUrl)
+          stateUploader.start()
+          clientFaultUploader.start()
+          Runtime.getRuntime.addShutdownHook(new Thread() {
+            override def run(): Unit = {
+              stateUploader.close()
+              clientFaultUploader.close()
+            }
+          })
+        }
 
-        val selfDistributionDir = config.selfDistributionClient
-          .map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
+        val selfDistributionDir: DistributionDirectory = null // TODO graphql
+          // config.selfDistributionClient
+          //.map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
         val distribution = new DeveloperDistribution(dir, collections, config, usersCredentials, graphql, faultUploader)
 
@@ -96,46 +101,12 @@ object DistributionMain extends App {
           }
         })
 
-        val server = Http().newServerAt("0.0.0.0", config.network.port)
-        config.network.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
-        server.bind(distribution.route)
-
-      case "client" =>
-        val config = ClientDistributionConfig().getOrElse {
-          Utils.error("No config")
+        var server = Http().newServerAt("0.0.0.0", config.network.port)
+        config.network.ssl.foreach {
+          log.info("Enable https")
+          ssl => server = server.enableHttps(makeHttpsContext(ssl))
         }
-
-        val mongoDb = new MongoDb("distribution", config.mongoDb)
-
-        val dir = new ClientDistributionDirectory(new File(config.distributionDirectory))
-        val collections = new ClientDatabaseCollections(mongoDb)
-
-        val stateUploader = new ClientStateUploader(dir, config.developerDistributionUrl, config.instanceId, config.installerDirectory)
-        val faultUploader = new ClientFaultUploader(dir, config.developerDistributionUrl)
-        val logUploader = new ClientLogUploader(dir)
-
-        val selfUpdater = new SelfUpdater(dir)
-        val distribution = new ClientDistribution(dir, collections, config, usersCredentials,
-          graphql, stateUploader, logUploader, faultUploader)
-
-        stateUploader.start()
-        logUploader.start()
-        faultUploader.start()
-        selfUpdater.start()
-
-        Runtime.getRuntime.addShutdownHook(new Thread() {
-          override def run(): Unit = {
-            stateUploader.close()
-            logUploader.close()
-            faultUploader.close()
-            selfUpdater.close()
-          }
-        })
-
-        val server = Http().newServerAt("0.0.0.0", config.network.port)
-        config.network.ssl.foreach(ssl => server.enableHttps(makeHttpsContext(ssl)))
         server.bind(distribution.route)
-
       case "addUser" =>
         val userName = arguments.getValue("userName")
         val role = UserRole.withName(arguments.getValue("role"))

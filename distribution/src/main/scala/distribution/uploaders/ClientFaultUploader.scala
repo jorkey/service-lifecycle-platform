@@ -1,4 +1,4 @@
-package distribution.client.uploaders
+package distribution.uploaders
 
 import java.io.{File, IOException}
 import java.net.URL
@@ -10,9 +10,8 @@ import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Keep, Source}
 import akka.util.ByteString
-import com.vyulabs.update.common.Common.{ServiceName}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectory
-import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectoryClient, DeveloperDistributionWebPaths}
+import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirectoryClient}
 import com.vyulabs.update.utils.IoUtils
 import org.slf4j.LoggerFactory
 
@@ -23,12 +22,12 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.12.19.
   * Copyright FanDate, Inc.
   */
-class ClientFaultUploader(dir: ClientDistributionDirectory, developerDirectoryUrl: URL)
+class ClientFaultUploader(dir: DistributionDirectory, developerDirectoryUrl: URL)
                          (implicit materializer: Materializer)
-      extends Thread with DeveloperDistributionWebPaths { self =>
+      extends Thread { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
+  private val developerDirectory = new DistributionDirectoryClient(developerDirectoryUrl)
 
   private val maxFilesCount = 50
   private val maxServiceDirectoryCapacity = 1000 * 1024 * 1024

@@ -1,12 +1,9 @@
-package distribution.client.uploaders
+package distribution.uploaders
 
 import java.io.{File, IOException}
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{complete, failWith}
-import akka.http.scaladsl.server.Route
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.distribution.client.ClientDistributionDirectory
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.logs.ServiceLogs
@@ -19,7 +16,7 @@ import scala.concurrent.{Future, Promise}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.12.19.
   * Copyright FanDate, Inc.
   */
-class ClientLogUploader(dir: ClientDistributionDirectory) extends Thread { self =>
+class ClientLogUploader(dir: DistributionDirectory) extends Thread { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val instanceDeadTimeout: Long = 24 * 60 * 60 * 1000

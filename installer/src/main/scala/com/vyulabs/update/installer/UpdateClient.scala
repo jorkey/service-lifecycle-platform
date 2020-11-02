@@ -6,10 +6,8 @@ import java.util.Date
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.AdminRepository
-import com.vyulabs.update.info.{BuildVersionInfo, DesiredVersions, ServicesVersions}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
+import com.vyulabs.update.distribution.{AdminRepository, DistributionDirectoryClient}
+import com.vyulabs.update.info.{BuildInfo, DesiredVersions, DeveloperVersionInfo, ServicesVersions}
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
@@ -25,8 +23,8 @@ class UpdateClient()(implicit log: Logger) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def installUpdates(adminRepository: ClientAdminRepository,
-                     clientDistribution: ClientDistributionDirectoryClient,
-                     developerDistribution: DeveloperDistributionDirectoryClient,
+                     clientDistribution: DistributionDirectoryClient,
+                     developerDistribution: DistributionDirectoryClient,
                      servicesOnly: Option[Set[ServiceName]],
                      localConfigOnly: Boolean,
                      assignDesiredVersions: Boolean): InstallResult = {
@@ -45,6 +43,7 @@ class UpdateClient()(implicit log: Logger) {
           return InstallResult.Failure
         }
         log.info("Get client config")
+        /* TODO graphql
         val clientConfig = developerDistribution.downloadClientConfig().getOrElse {
           log.error(s"Can't get client config")
           return InstallResult.Failure
@@ -115,6 +114,8 @@ class UpdateClient()(implicit log: Logger) {
           developerVersions, clientVersions, assignDesiredVersions)
         success = result != InstallResult.Failure
         result
+         */
+        null
       } catch {
         case ex: Exception =>
           log.error("Exception", ex)
@@ -134,12 +135,12 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  def getClientDesiredVersions(clientDistribution: ClientDistributionDirectoryClient): Option[Map[ServiceName, BuildVersion]] = {
-    clientDistribution.downloadDesiredVersions().map(_.toMap)
+  def getClientDesiredVersions(clientDistribution: DistributionDirectoryClient): Option[Map[ServiceName, BuildVersion]] = {
+    clientDistribution.downloadInstalledDesiredVersions().map(_.toMap)
   }
 
   def setDesiredVersions(adminRepository: ClientAdminRepository,
-                         clientDistribution: ClientDistributionDirectoryClient,
+                         clientDistribution: DistributionDirectoryClient,
                          versions: Map[ServiceName, Option[BuildVersion]]): Boolean = {
     var completed = false
     val gitLock = adminRepository.buildDesiredVersionsLock()
@@ -181,8 +182,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   def signVersionsAsTested(adminRepository: ClientAdminRepository,
-                           clientDistribution: ClientDistributionDirectoryClient,
-                           developerDistribution: DeveloperDistributionDirectoryClient): Boolean = {
+                           clientDistribution: DistributionDirectoryClient,
+                           developerDistribution: DistributionDirectoryClient): Boolean = {
     val gitLock = adminRepository.buildDesiredVersionsLock()
     if (gitLock.lock(AdminRepository.makeStartOfSettingTestedFlagMessage(), AdminRepository.makeContinueOfSettingTestedFlagMessage())) {
       try {
@@ -190,7 +191,7 @@ class UpdateClient()(implicit log: Logger) {
           log.error("Error of getting client desired versions")
           return false
         }.mapValues(version => BuildVersion(version.client, version.build))
-        val developerDesiredVersionsMap = developerDistribution.downloadDesiredVersions().getOrElse {
+        val developerDesiredVersionsMap = developerDistribution.downloadDeveloperDesiredVersionsForMe().getOrElse {
           log.error("Error of getting developer desired versions")
           return false
         }.toMap
@@ -243,8 +244,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersions(adminRepository: ClientAdminRepository,
-                              clientDistribution: ClientDistributionDirectoryClient,
-                              developerDistribution: DeveloperDistributionDirectoryClient,
+                              clientDistribution: DistributionDirectoryClient,
+                              developerDistribution: DistributionDirectoryClient,
                               developerVersions: Map[ServiceName, BuildVersion],
                               clientVersions: Map[ServiceName, BuildVersion],
                               assignDesiredVersions: Boolean): InstallResult = {
@@ -267,6 +268,7 @@ class UpdateClient()(implicit log: Logger) {
         log.error("Set desired versions error")
         return InstallResult.Failure
       }
+      /* TODO graphql
       developerVersions.get(Common.DistributionServiceName) match {
         case Some(newDistributionVersion) =>
           if (!clientDistribution.waitForServerUpdated(clientDistribution.getDistributionVersionPath, newDistributionVersion)) {
@@ -280,14 +282,14 @@ class UpdateClient()(implicit log: Logger) {
               return InstallResult.Failure
             }
           }
-      }
+      }*/
     }
     InstallResult.Complete
   }
 
   private def installVersions(adminRepository: ClientAdminRepository,
-                              clientDistribution: ClientDistributionDirectoryClient,
-                              developerDistribution: DeveloperDistributionDirectoryClient,
+                              clientDistribution: DistributionDirectoryClient,
+                              developerDistribution: DistributionDirectoryClient,
                               developerVersions: Map[ServiceName, BuildVersion],
                               clientVersions: Map[ServiceName, BuildVersion]): Boolean = {
     developerVersions.foreach {
@@ -302,15 +304,16 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersion(adminRepository: ClientAdminRepository,
-                             clientDistribution: ClientDistributionDirectoryClient,
-                             developerDirectory: DeveloperDistributionDirectoryClient,
+                             clientDistribution: DistributionDirectoryClient,
+                             developerDirectory: DistributionDirectoryClient,
                              serviceName: ServiceName, fromVersion: BuildVersion, toVersion: BuildVersion): Boolean = {
     try {
       log.info(s"Download version ${fromVersion} of service ${serviceName}")
+      /* TODO graphql
       val versionInfo = developerDirectory.downloadVersionInfo(serviceName, fromVersion).getOrElse {
         log.error(s"Can't download version ${fromVersion} of service ${serviceName} info")
         return false
-      }
+      }*/
       if (!IoUtils.deleteDirectoryContents(buildDir)) {
         log.error(s"Can't remove directory ${buildDir} contents")
         return false
@@ -347,10 +350,11 @@ class UpdateClient()(implicit log: Logger) {
       }
 
       log.info(s"Upload version ${toVersion} of service ${serviceName}")
-      val clientVersionInfo = BuildVersionInfo(versionInfo.author, versionInfo.branches, new Date(), versionInfo.comment)
+      /* TODO graphql
+      val clientVersionInfo = BuildInfo(versionInfo.author, versionInfo.branches, new Date(), versionInfo.comment)
       if (!clientDistribution.uploadVersion(serviceName, toVersion, clientVersionInfo, buildDir)) {
         return false
-      }
+      }*/
       true
     } catch {
       case ex: Exception =>
@@ -377,7 +381,7 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  private def mergeSettings(clientDistribution: ClientDistributionDirectoryClient,
+  private def mergeSettings(clientDistribution: DistributionDirectoryClient,
                             serviceName: ServiceName, buildDirectory: File, localDirectory: File,
                             version: BuildVersion, subPath: String = ""): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {

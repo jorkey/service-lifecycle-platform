@@ -4,17 +4,18 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
+import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.info.{DirectoryServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger
 
 class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
-                    clientDirectory: ClientDistributionDirectoryClient)(implicit log: Logger) extends Thread { self =>
+                    clientDirectory: DistributionDirectoryClient)(implicit log: Logger) extends Thread { self =>
   private val services = servicesNames.foldLeft(Map.empty[ProfiledServiceName, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(name, () => update()))
   }
 
+  /* TODO graphql
   for (servicesState <- clientDirectory.downloadServicesState(instanceId)) {
     servicesState.foreach { case state =>
         services.foreach { case (name, controller) =>
@@ -24,6 +25,7 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
         }
       }
     }
+  */
 
   def getServiceStateController(profiledServiceName: ProfiledServiceName): Option[ServiceStateController] = {
     services.get(profiledServiceName)

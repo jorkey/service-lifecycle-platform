@@ -6,13 +6,13 @@ import java.util.Date
 import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.info.{BuildVersionInfo}
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectory
+import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.info.BuildInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
-import com.vyulabs.update.info.BuildVersionInfo._
+import com.vyulabs.update.info.BuildInfo._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.05.19.
@@ -95,7 +95,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.info(s"Directory ${distributionDir} exists")
     }
     log.info(s"Init directory ${distributionDir}")
-    val developerDistribution = new DeveloperDistributionDirectory(new File(distributionDir, "directory"))
+    val developerDistribution = new DistributionDirectory(new File(distributionDir, "directory"))
     log.info("Copy scripts")
     if (!copyScripts(developerDistribution)) {
       log.error("Can't copy scripts")
@@ -113,7 +113,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def copyUpdateServices(developerDistribution: DeveloperDistributionDirectory): Boolean = {
+  private def copyUpdateServices(developerDistribution: DistributionDirectory): Boolean = {
     Seq(Common.DistributionServiceName, Common.BuilderServiceName, Common.InstallerServiceName, Common.UpdaterServiceName).foreach {
       serviceName =>
         if (!copyUpdateService(serviceName, developerDistribution)) {
@@ -124,7 +124,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def copyScripts(developerDistribution: DeveloperDistributionDirectory): Boolean = {
+  private def copyScripts(developerDistribution: DistributionDirectory): Boolean = {
     /* TODO graphql
     val nextVersion = developerDistribution.getDesiredVersion(Common.ScriptsServiceName) match {
       case Some(version) => version.next()
@@ -150,7 +150,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def copyUpdateService(serviceName: ServiceName, developerDistribution: DeveloperDistributionDirectory): Boolean = {
+  private def copyUpdateService(serviceName: ServiceName, developerDistribution: DistributionDirectory): Boolean = {
     /* TODO graphql
     val sourceJar = new File(s"${serviceName.toString}.jar")
     if (sourceJar.exists()) {

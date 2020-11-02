@@ -1,4 +1,4 @@
-package distribution.client
+package distribution
 
 import java.io.File
 
@@ -11,25 +11,24 @@ import akka.http.scaladsl.server.Route.seal
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.client.{ClientDistributionDirectory, ClientDistributionWebPaths}
+import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.info.DeveloperVersionsInfoJson._
 import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logs.ServiceLogs
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
 import com.vyulabs.update.version.BuildVersion
-import distribution.client.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
-import com.vyulabs.update.info.VersionsInfoJson._
-import distribution.Distribution
-import distribution.client.config.ClientDistributionConfig
-import distribution.config.VersionHistoryConfig
+import distribution.config.DistributionConfig
 import distribution.graphql.Graphql
+import distribution.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
 import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
 
 import scala.concurrent.ExecutionContext
 
-class ClientDistribution(protected val dir: ClientDistributionDirectory,
-                         protected val collections: ClientDatabaseCollections,
-                         protected val config: ClientDistributionConfig,
+/* TODO graphql - remove
+class ClientDistribution(protected val dir: DistributionDirectory,
+                         protected val collections: DatabaseCollections,
+                         protected val config: DistributionConfig,
                          protected val usersCredentials: UsersCredentials,
                          protected val graphql: Graphql,
                          protected val stateUploader: ClientStateUploader,
@@ -40,7 +39,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                          protected val executionContext: ExecutionContext,
                          protected val filesLocker: SmartFilesLocker)
     extends Distribution(usersCredentials, graphql) with GetUtils with PutUtils with VersionUtils with CommonUtils
-      with ClientDistributionWebPaths with SprayJsonSupport {
+      with DistributionWebPaths with SprayJsonSupport {
 
   implicit val directory = dir
 
@@ -79,7 +78,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                         } ~
                         path(versionsInfoPath / ".*".r) { (service) =>
-                          complete(getVersionsInfo(service))
+                          complete(getDeveloperVersionsInfo(service))
                         } ~
                         //path(desiredVersionsPath) {
                         //  getFromFileWithLock(dir.getDesiredVersionsFile())
@@ -105,7 +104,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                           } ~
                             path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                               val buildVersion = BuildVersion.parse(version)
-                              complete(addVersionInfo(service, buildVersion, null))
+                              complete(addDeveloperVersionInfo(service, buildVersion, null))
                             } //~
                             //path(desiredVersionsPath) {
                             //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
@@ -172,7 +171,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
                       } ~
                       path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                        complete(getVersionsInfo(service))
+                        complete(getDeveloperVersionsInfo(service))
                       } ~
                       //path(prefix / downloadDesiredVersionsPath) {
                       //  getFromFileWithLock(dir.getDesiredVersionsFile())
@@ -200,7 +199,7 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
                         } ~
                           path(prefix / uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
-                            complete(addVersionInfo(service, buildVersion, null))
+                            complete(addDeveloperVersionInfo(service, buildVersion, null))
                           } //~
                           //path(prefix / uploadDesiredVersionsPath) {
                           //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
@@ -230,3 +229,4 @@ class ClientDistribution(protected val dir: ClientDistributionDirectory,
       }
     }
 }
+*/

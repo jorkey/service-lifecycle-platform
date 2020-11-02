@@ -6,14 +6,12 @@ import java.net.{URI, URL}
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectory
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryClient
+import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirectoryClient}
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
-
 import com.vyulabs.update.installer.config.InstallerConfig._
 
 /**
@@ -27,8 +25,8 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   def initClient(cloudProvider: String, distributionName: String,
                  adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
                  distributionServicePort: Int): Boolean = {
-    val developerDistribution = new DeveloperDistributionDirectoryClient(developerDistributionUrl)
-    val clientDistribution = new ClientDistributionDirectory(new File(distributionDir, "directory"))
+    val developerDistribution = new DistributionDirectoryClient(developerDistributionUrl)
+    val clientDistribution = new DistributionDirectory(new File(distributionDir, "directory"))
     log.info("Init admin repository")
     if (!initAdminRepository()) {
       log.error("Can't init admin repository")
@@ -104,8 +102,8 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   }
 
   private def initDistribDirectory(cloudProvider: String, name: String,
-                                   clientDistribution: ClientDistributionDirectory,
-                                   developerDistribution: DeveloperDistributionDirectoryClient,
+                                   clientDistribution: DistributionDirectory,
+                                   developerDistribution: DistributionDirectoryClient,
                                    distributionServicePort: Int): Boolean = {
     if (!distributionDir.exists()) {
       log.info(s"Create directory ${distributionDir}")
@@ -117,7 +115,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       log.info(s"Directory ${distributionDir} exists")
     }
     log.info("Download desired versions")
-    val desiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
+    val desiredVersions = developerDistribution.downloadDeveloperDesiredVersionsForMe().getOrElse {
       log.error("Can't download desired versions")
       return false
     }
@@ -141,35 +139,27 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def downloadUpdateServices(clientDistribution: ClientDistributionDirectory,
-                                     developerDistribution: DeveloperDistributionDirectoryClient,
+  private def downloadUpdateServices(clientDistribution: DistributionDirectory,
+                                     developerDistribution: DistributionDirectoryClient,
                                      desiredVersions: Map[ServiceName, BuildVersion]): Boolean = {
     Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.InstallerServiceName, Common.UpdaterServiceName).foreach {
       serviceName =>
+        /* TODO graphql
         if (!downloadVersion(clientDistribution, developerDistribution, serviceName, desiredVersions.get(serviceName).getOrElse {
           log.error(s"Desired version of service ${serviceName} is not defined")
           return false
         })) {
           log.error(s"Can't copy version image of service ${serviceName}")
           return false
-        }
+        }*/
+        null
     }
     true
   }
 
-  private def downloadVersion(clientDistribution: ClientDistributionDirectory,
-                              developerDistribution: DeveloperDistributionDirectoryClient,
-                              serviceName: ServiceName, buildVersion: BuildVersion): Boolean = {
-    log.info(s"Download version ${buildVersion} of service ${serviceName}")
-    developerDistribution.downloadVersionImage(serviceName, buildVersion,
-      clientDistribution.getVersionImageFile(serviceName, buildVersion)) &&
-    developerDistribution.downloadVersionInfoFile(serviceName, buildVersion,
-      clientDistribution.getVersionInfoFile(serviceName, buildVersion))
-  }
-
   private def setupDistributionServer(cloudProvider: String, name: String,
-                                      clientDistribution: ClientDistributionDirectory,
-                                      developerDistribution: DeveloperDistributionDirectoryClient,
+                                      clientDistribution: DistributionDirectory,
+                                      developerDistribution: DistributionDirectoryClient,
                                       desiredVersions: Map[ServiceName, BuildVersion],
                                       distributionServicePort: Int): Boolean = {
     ZipUtils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),

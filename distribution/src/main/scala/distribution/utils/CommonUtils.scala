@@ -1,10 +1,10 @@
 package distribution.utils
 
-import java.io.{File}
+import java.io.File
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives.{getFromBrowseableDirectory, getFromFile, _}
-import akka.http.scaladsl.server.{Route}
+import akka.http.scaladsl.server.Route
 import com.vyulabs.update.distribution.DistributionDirectory
 import org.slf4j.LoggerFactory
 

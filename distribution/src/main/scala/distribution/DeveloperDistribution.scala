@@ -1,43 +1,42 @@
-package distribution.developer
+package distribution
 
 import java.io.{File, IOException}
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.common.EntityStreamingSupport
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{ContentType, StatusCodes}
-import akka.http.scaladsl.model.MediaTypes._
 import akka.http.scaladsl.model.HttpCharsets._
+import akka.http.scaladsl.model.MediaTypes._
 import akka.http.scaladsl.model.StatusCodes.BadRequest
-import akka.http.scaladsl.server.Directives.{path, _}
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
-import akka.http.scaladsl.server.Route._
 import akka.http.scaladsl.model.headers.HttpChallenge
+import akka.http.scaladsl.model.{ContentType, StatusCodes}
+import akka.http.scaladsl.server.Directives.{path, _}
+import akka.http.scaladsl.server.Route._
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, Route}
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.developer.{DeveloperDistributionDirectory, DeveloperDistributionWebPaths}
-import com.vyulabs.update.info.{DistributionInfo}
+import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.info.DeveloperVersionsInfoJson._
+import com.vyulabs.update.info.DistributionInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole, UsersCredentials}
-import com.vyulabs.update.version.BuildVersion
-import distribution.developer.uploaders.{DeveloperFaultUploader}
-import distribution.developer.config.DeveloperDistributionConfig
-import com.vyulabs.update.info.VersionsInfoJson._
 import com.vyulabs.update.utils.Utils
-import distribution.Distribution
-import distribution.developer.graphql.{DeveloperGraphqlContext, DeveloperGraphqlSchema}
-import distribution.developer.utils.{ClientsUtils, StateUtils, VersionUtils}
-import distribution.graphql.Graphql
-import distribution.utils.{CommonUtils, GetUtils, PutUtils}
+import com.vyulabs.update.version.BuildVersion
+import distribution.config.DistributionConfig
+import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
+import distribution.uploaders.DeveloperFaultUploader
+import distribution.utils._
 import sangria.parser.QueryParser
 import spray.json._
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
-                            protected val collections: DeveloperDatabaseCollections,
-                            protected val config: DeveloperDistributionConfig,
+import com.vyulabs.update.distribution.DistributionWebPaths._
+
+class DeveloperDistribution(protected val dir: DistributionDirectory,
+                            protected val collections: DatabaseCollections,
+                            protected val config: DistributionConfig,
                             protected val usersCredentials: UsersCredentials,
                             protected val graphql: Graphql,
                             protected val faultUploader: DeveloperFaultUploader)
@@ -45,8 +44,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             protected val materializer: Materializer,
                             protected val executionContext: ExecutionContext,
                             protected val filesLocker: SmartFilesLocker)
-       extends Distribution(usersCredentials, graphql) with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils
-          with DeveloperDistributionWebPaths with SprayJsonSupport {
+       extends Distribution(usersCredentials, graphql) with ClientsUtils with StateUtils with GetUtils with PutUtils with VersionUtils with CommonUtils with SprayJsonSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
 
   protected val versionHistoryConfig = config.versionHistory
@@ -76,8 +74,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = new DeveloperGraphqlContext(config.versionHistory, dir, collections, userInfo)
-                        complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
+                        val context = new GraphqlContext(config.versionHistory, dir, collections, userInfo)
+                        complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, variables))
                       case Failure(error) =>
                         complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
@@ -91,8 +89,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           case Some(obj: JsObject) => obj
                           case _ => JsObject.empty
                         }
-                        val context = new DeveloperGraphqlContext(config.versionHistory, dir, collections, userInfo)
-                        complete(graphql.executeQuery(DeveloperGraphqlSchema.SchemaDefinition(userInfo.role),
+                        val context = new GraphqlContext(config.versionHistory, dir, collections, userInfo)
+                        complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                           context, queryAst, operation, vars))
                       case Failure(error) =>
                         complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
@@ -103,7 +101,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
             } ~
             pathPrefix(interactiveGraphqlPathPrefix) {
               getFromResource("graphiql.html")
-            } ~
+            } /* TODO graphql ~
             pathPrefix(apiPathPrefix) {
               seal {
                 mapRejections { rejections => // Prevent browser to invoke basic auth popup.
@@ -143,13 +141,13 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           } ~
                           authorize(userRole == UserRole.Administrator) {
                             path(versionsInfoPath / ".*".r) { service => // deprecated
-                              complete(getVersionsInfo(service))
+                              complete(getDeveloperVersionsInfo(service))
                             } ~
                               path(versionsInfoPath / ".*".r / ".*".r) { (service, clientName) => // deprecated
-                                complete(getVersionsInfo(service, clientName = Some(clientName)))
+                                complete(getDeveloperVersionsInfo(service, clientName = Some(clientName)))
                               } ~
                               path(desiredVersionsPath) { // TODO сделать обработку независимой от роли // deprecated
-                                complete(getDesiredVersions())
+                                complete(getDeveloperDesiredVersions())
                               } ~
                               path(desiredVersionsPath / ".*".r) { clientName => // deprecated
                                 complete(getClientDesiredVersions(clientName))
@@ -187,7 +185,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                             } ~
                               path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
                                 val buildVersion = BuildVersion.parse(version)
-                                complete(addVersionInfo(service, buildVersion, null))
+                                complete(addDeveloperVersionInfo(service, buildVersion, null))
                               } //~
                               //path(desiredVersionsPath) {
                               //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile(None))
@@ -246,7 +244,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                       authorize(userRole == UserRole.Administrator) {
                         path(downloadVersionsInfoPath / ".*".r) { service =>
                           parameter("client".?) { clientName =>
-                            complete(getVersionsInfo(service, clientName = clientName))
+                            complete(getDeveloperVersionsInfo(service, clientName = clientName))
                           }
                         } ~
                           path(downloadDesiredVersionsPath) {
@@ -254,7 +252,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                                 case Some(clientName) =>
                                   complete(getClientDesiredVersions(clientName))
                                 case None =>
-                                  complete(getDesiredVersions())
+                                  complete(getDeveloperDesiredVersions())
                               }
                             }
                           } ~
@@ -279,7 +277,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                           //} ~
                           path(downloadDesiredVersionsPath / ".*".r) { client => // TODO deprecated
                             if (client.isEmpty) {
-                              complete(getDesiredVersions())
+                              complete(getDeveloperDesiredVersions())
                             } else if (client == userName) {
                               complete(getClientDesiredVersions(userName))
                             } else {
@@ -299,7 +297,7 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                         } ~
                           path(uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
                             val buildVersion = BuildVersion.parse(version)
-                            complete(addVersionInfo(service, buildVersion, null))
+                            complete(addDeveloperVersionInfo(service, buildVersion, null))
                           } //~
                           //path(uploadDesiredVersionsPath) {
                           //  parameter("client".?) { clientName =>
@@ -323,8 +321,8 @@ class DeveloperDistribution(protected val dir: DeveloperDistributionDirectory,
                     }
                 }
               }
-            }
-          } ~
+            } ~ */
+          }
           get {
             path(browsePath) {
               seal {
