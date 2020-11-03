@@ -10,7 +10,7 @@ import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.info.{ClientFaultReport, ServiceState}
+import com.vyulabs.update.info.{ClientFaultReport, FaultInfo, ServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.DatabaseCollections
@@ -39,7 +39,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 100)
 
-  val collection = result(collections.ClientFaultReport)
+  val collection = result(collections.ClientsFaultReports)
 
   val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user", UserRole.Administrator))
   val graphql = new Graphql()
@@ -54,14 +54,14 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override def beforeAll() = {
     result(collection.insert(
-      ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))
+      ClientFaultReport(Some(client1), "fault1", Seq("fault.info", "core"),
+        FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty))))
     result(collection.insert(
-      ClientFaultReport(client2, "fault1", Seq("fault.info", "core1"),
-        new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))
+      ClientFaultReport(Some(client2), "fault1", Seq("fault.info", "core1"),
+        FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty))))
     result(collection.insert(
-      ClientFaultReport(client1, "fault2", Seq("fault.info", "core"),
-        new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))
+      ClientFaultReport(Some(client1), "fault2", Seq("fault.info", "core"),
+        FaultInfo(new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty))))
   }
 
   override protected def afterAll(): Unit = {

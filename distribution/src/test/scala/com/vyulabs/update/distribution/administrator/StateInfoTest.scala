@@ -46,18 +46,18 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
   
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.ClientInfo)
-    val installedVersionsCollection = result(collections.ClientDesiredVersions)
-    val clientServiceStatesCollection = result(collections.ClientServiceStates)
+    val clientInfoCollection = result(collections.ClientsInfo)
+    val installedVersionsCollection = result(collections.ClientsDesiredVersions)
+    val clientServiceStatesCollection = result(collections.ClientsServiceStates)
 
     result(clientInfoCollection.insert(
       ClientInfo("client1", ClientConfig("common", Some("test")))))
 
     result(installedVersionsCollection.insert(
-      ClientDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
+      ClientDesiredVersions(Some("client1"), Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
 
     result(clientServiceStatesCollection.insert(
-      ClientServiceState("client1", "instance1", "service1", "directory1",
+      ClientServiceState(Some("client1"), "instance1", "service1", "directory1",
         ServiceState(date = new Date(), None, None, version = Some(BuildVersion(1, 1, 0)), None, None, None, None))))
   }
 

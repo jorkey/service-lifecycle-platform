@@ -36,6 +36,7 @@ object GraphqlSchema {
   val ServiceArg = Argument("service", StringType)
   val VersionArg = Argument("version", BuildVersionType)
   val BuildInfoArg = Argument("buildInfo", BuildVersionInfoInputType)
+  val InstallInfoArg = Argument("installInfo", InstallVersionInfoInputType)
   val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionInfoInputType))
   val InstancesStateArg = Argument("state", ListInputType(InstanceServiceStateInputType))
 
@@ -56,24 +57,24 @@ object GraphqlSchema {
   )
 
   def AdministratorQueries[T <: GraphqlContext] = CommonQueries[T] ++ fields[T, Unit](
-    Field("ownServiceVersion", BuildVersionType,
-      arguments = ServiceArg :: DirectoryArg :: Nil,
-      resolve = c => { c.ctx.getServiceVersion(c.arg(ServiceArg), new File(c.arg(DirectoryArg))) }),
-    Field("versionsInfo", ListType(VersionInfoType),
+    Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
       arguments = ServiceArg :: OptionClientArg :: OptionVersionArg :: Nil,
       resolve = c => { c.ctx.getDeveloperVersionsInfo(c.arg(ServiceArg), clientName = c.arg(OptionClientArg), version = c.arg(OptionVersionArg)) }),
-    Field("desiredVersions", ListType(DesiredVersionType),
-      arguments = OptionServicesArg :: Nil,
-      resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+    Field("developerDesiredVersions", ListType(DesiredVersionType),
+      arguments = OptionClientArg :: OptionServicesArg :: OptionMergedArg :: Nil,
+      resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionClientArg),
+        c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, c.arg(OptionMergedArg).getOrElse(false)) }),
+
+    Field("clientVersionsInfo", ListType(ClientVersionInfoType),
+      arguments = ServiceArg :: OptionVersionArg :: Nil,
+      resolve = c => { c.ctx.getClientVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionVersionArg)) }),
+    Field("clientDesiredVersions", ListType(DesiredVersionType),
+      arguments = OptionClientArg :: OptionServicesArg :: OptionMergedArg :: Nil,
+      resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionClientArg),
+        c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, c.arg(OptionMergedArg).getOrElse(false)) }),
+
     Field("clientsInfo", ListType(ClientInfoType),
       resolve = c => c.ctx.getClientsInfo()),
-    Field("clientDesiredVersions", ListType(DesiredVersionType),
-      arguments = ClientArg :: OptionServicesArg :: OptionMergedArg :: Nil,
-      resolve = c => { c.ctx.getClientDesiredVersions(c.arg(ClientArg),
-        c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, c.arg(OptionMergedArg).getOrElse(false)) }),
-    Field("installedVersions", ListType(DesiredVersionType),
-      arguments = ClientArg :: Nil,
-      resolve = c => { c.ctx.getInstalledVersions(c.arg(ClientArg)) }),
     Field("servicesState", ListType(ClientServiceStateType),
       arguments = OptionClientArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
       resolve = c => { c.ctx.getServicesState(c.arg(OptionClientArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
@@ -89,7 +90,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.getClientConfig(c.ctx.userInfo.name) }),
       Field("desiredVersions", ListType(DesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getClientDesiredVersions(c.ctx.userInfo.name,
+        resolve = c => { c.ctx.getDeveloperDesiredVersions(Some(c.ctx.userInfo.name),
           c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, true) }),
     )
   )
@@ -97,36 +98,51 @@ object GraphqlSchema {
   // Mutations
 
   def AdministratorMutations[T <: GraphqlContext] = fields[T, Unit](
-    Field("addVersionInfo", VersionInfoType,
+    Field("addDeveloperVersionInfo", DeveloperVersionInfoType,
       arguments = ServiceArg :: VersionArg :: BuildInfoArg :: Nil,
       resolve = c => { c.ctx.addDeveloperVersionInfo(c.arg(ServiceArg), c.arg(VersionArg), c.arg(BuildInfoArg)) }),
-    Field("removeVersion", BooleanType,
+    Field("removeDeveloperVersion", BooleanType,
       arguments = ServiceArg :: VersionArg :: Nil,
       resolve = c => { c.ctx.removeDeveloperVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
-    Field("desiredVersions", BooleanType,
-      arguments = DesiredVersionsArg :: Nil,
-      resolve = c => { c.ctx.setDeveloperDesiredVersions(c.arg(DesiredVersionsArg)) }),
+    Field("addClientVersionInfo", ClientVersionInfoType,
+      arguments = ServiceArg :: VersionArg :: BuildInfoArg :: Nil,
+      resolve = c => { c.ctx.addClientVersionInfo(c.arg(ServiceArg), c.arg(VersionArg), c.arg(BuildInfoArg), c.arg(InstallInfoArg)) }),
+    Field("removeClientVersion", BooleanType,
+      arguments = ServiceArg :: VersionArg :: Nil,
+      resolve = c => { c.ctx.removeClientVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
+    Field("setDeveloperDesiredVersions", BooleanType,
+      arguments = OptionClientArg :: DesiredVersionsArg :: Nil,
+      resolve = c => { c.ctx.setDeveloperDesiredVersions(c.arg(OptionClientArg), c.arg(DesiredVersionsArg)) }),
     Field("clientDesiredVersions", BooleanType,
-      arguments = ClientArg :: DesiredVersionsArg :: Nil,
-      resolve = c => { c.ctx.setClientDesiredVersions(c.arg(ClientArg), c.arg(DesiredVersionsArg)) })
+      arguments = OptionClientArg :: DesiredVersionsArg :: Nil,
+      resolve = c => { c.ctx.setClientDesiredVersions(c.arg(OptionClientArg), c.arg(DesiredVersionsArg)) })
   )
 
   val ClientMutations = ObjectType(
     "Mutation",
     AdministratorMutations[GraphqlContext] ++ fields[GraphqlContext, Unit](
-      Field("testedVersions", BooleanType,
+      Field("setTestedVersions", BooleanType,
         arguments = DesiredVersionsArg :: Nil,
         resolve = c => { c.ctx.setTestedVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
-      Field("installedVersions", BooleanType,
+      Field("setInstalledDesiredVersions", BooleanType,
         arguments = DesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setInstalledVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
-      Field("servicesState", BooleanType,
+        resolve = c => { c.ctx.setClientDesiredVersions(Some(c.ctx.userInfo.name), c.arg(DesiredVersionsArg)) }),
+      Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
         resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }))
+      // TODO serviceFault
+  )
+
+  val ServiceMutations = ObjectType(
+    "Mutation",
+    AdministratorMutations[GraphqlContext] ++ fields[GraphqlContext, Unit](
+      // setServicesState
+      // addServiceLogs
+      //
+    )
   )
 
   val ClientSchemaDefinition = Schema(query = ClientQueries, mutation = Some(ClientMutations))
-
 
   val AdministratorSchemaDefinition = Schema(query = ObjectType("Query", AdministratorQueries[GraphqlContext]),
     mutation = Some(ObjectType("Mutation", AdministratorMutations[GraphqlContext])))

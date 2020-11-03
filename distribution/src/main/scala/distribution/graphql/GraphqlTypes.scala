@@ -3,7 +3,7 @@ package distribution.graphql
 import java.util.Date
 
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildInfo, ClientFaultReport, ClientServiceState, DesiredVersion, DirectoryServiceState, InstanceServiceState, ServiceState, UpdateError, DeveloperVersionInfo, DeveloperVersionsInfo}
+import com.vyulabs.update.info.{BuildInfo, ClientFaultReport, ClientServiceState, ClientVersionInfo, DesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstanceServiceState, ServiceState, UpdateError}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -49,7 +49,9 @@ object GraphqlTypes {
     })
 
   implicit val BuildVersionInfoType = deriveObjectType[Unit, BuildInfo]()
-  implicit val VersionInfoType = deriveObjectType[Unit, DeveloperVersionInfo]()
+  implicit val DeveloperVersionInfoType = deriveObjectType[Unit, DeveloperVersionInfo]()
+  implicit val InstallInfoType = deriveObjectType[Unit, InstallInfo]()
+  implicit val ClientVersionInfoType = deriveObjectType[Unit, ClientVersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
   implicit val ServiceVersionType = deriveObjectType[Unit, DesiredVersion]()
   implicit val DesiredVersionType = deriveObjectType[Unit, DesiredVersion]()
@@ -62,9 +64,11 @@ object GraphqlTypes {
   implicit val DirectoryServiceStateType = deriveObjectType[Unit, DirectoryServiceState]()
   implicit val InstanceServiceStateType = deriveObjectType[Unit, InstanceServiceState]()
   implicit val ClientServiceStateType = deriveObjectType[Unit, ClientServiceState]()
+  implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 
   implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildVersionInfoInput"))
+  implicit val InstallVersionInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallVersionInfoInput"))
   implicit val DesiredVersionInfoInputType = deriveInputObjectType[DesiredVersion](InputObjectTypeName("DesiredVersionInput"))
   implicit val UpdateErrorInputType = deriveInputObjectType[UpdateError](InputObjectTypeName("UpdateErrorInput"))
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))

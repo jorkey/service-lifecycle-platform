@@ -3,7 +3,7 @@ package distribution.mongo
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.mongodb.client.model.{Filters, IndexOptions, ReplaceOptions}
+import com.mongodb.client.model.{IndexOptions, ReplaceOptions}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
@@ -31,26 +31,25 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
       .runWith(Sink.fold[Seq[String], String](Seq.empty[String])((seq, obj) => {seq :+ obj}))
   }
 
-  def collectionExists[T](suffix: Option[String] = None): Future[Boolean] = {
-    getCollectionNames().map(_.contains(getCollectionName(suffix)))
+  def collectionExists[T](name: String): Future[Boolean] = {
+    getCollectionNames().map(_.contains(name))
   }
 
-  def getCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): MongoDbCollection[T] = {
-    new MongoDbCollection[T](db.getCollection(getCollectionName(suffix), classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry))
+  def getCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): MongoDbCollection[T] = {
+    new MongoDbCollection[T](db.getCollection(name, classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry))
   }
 
-  def createCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
-    val name = getCollectionName(suffix)
+  def createCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
     Source.fromPublisher(db.createCollection(name))
       .log(s"Create Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
-      .map(_ => getCollection[T](suffix))
+      .map(_ => getCollection[T](name))
   }
 
-  def getOrCreateCollection[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
+  def getOrCreateCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
     for {
-      exists <- collectionExists[T](suffix)
-      collection <- if (!exists) createCollection[T](suffix) else Future(getCollection[T](suffix))
+      exists <- collectionExists[T](name)
+      collection <- if (!exists) createCollection[T](name) else Future(getCollection[T](name))
     } yield collection
   }
 
@@ -58,15 +57,6 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
     Source.fromPublisher(db.drop())
       .log(s"Drop Mongo DB database ${db.getName}")
       .runWith(Sink.head[Success])
-  }
-
-  private def getCollectionName[T](suffix: Option[String] = None)(implicit classTag: ClassTag[T]): String = {
-    suffix match {
-      case Some(suffix) =>
-        classTag.runtimeClass.getSimpleName + "-" + suffix
-      case None =>
-        classTag.runtimeClass.getSimpleName
-    }
   }
 }
 

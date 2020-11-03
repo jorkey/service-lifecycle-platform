@@ -62,7 +62,11 @@ class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFile
     serviceName + "-" + version + ".zip"
   }
 
-  def removeVersion(serviceName: ServiceName, version: BuildVersion): Unit = {
+  def removeDeveloperVersion(serviceName: ServiceName, version: BuildVersion): Unit = {
     getVersionImageFile(serviceName, version).delete()
+  }
+
+  def removeClientVersion(serviceName: ServiceName, version: BuildVersion): Unit = {
+    // TODO graphql
   }
 }

@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ProfileName}
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.distribution.DistributionDirectory
 import distribution.DatabaseCollections
 import distribution.graphql.NotFoundException
@@ -30,7 +30,7 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- collections.ClientInfo
+      collection <- collections.ClientsInfo
       info <- collection.find(filters)
     } yield info
   }
@@ -39,17 +39,17 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
     getClientsInfo(Some(clientName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${clientName} config")))
   }
 
-  def getClientInstallProfile(clientName: ClientName): Future[InstallProfile] = {
+  def getClientInstallProfile(clientName: ClientName): Future[ClientProfile] = {
     for {
       clientConfig <- getClientConfig(clientName)
       installProfile <- getInstallProfile(clientConfig.installProfile)
     } yield installProfile
   }
 
-  def getInstallProfile(profileName: ProfileName): Future[InstallProfile] = {
+  def getInstallProfile(profileName: ProfileName): Future[ClientProfile] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
-      collection <- collections.InstallProfile
+      collection <- collections.ClientsProfiles
       profile <- collection.find(profileArg).map(_.headOption
         .getOrElse(throw NotFoundException(s"No install profile ${profileName}")))
     } yield profile

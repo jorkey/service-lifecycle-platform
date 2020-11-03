@@ -183,6 +183,6 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   def removeVersions(): Unit = {
-    result(collections.DeveloperVersionInfo.map(_.dropItems()))
+    result(collections.DeveloperVersionsInfo.map(_.dropItems()))
   }
 }

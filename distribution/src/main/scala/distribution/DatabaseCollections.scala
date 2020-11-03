@@ -8,7 +8,7 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.{IndexOptions, Indexes}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.distribution.DistributionMain
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.BuildVersion
@@ -45,7 +45,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory:
     classOf[DeveloperVersionInfo],
     classOf[DesiredVersion],
     classOf[DesiredVersions],
-    classOf[InstallProfile],
+    classOf[ClientProfile],
     classOf[ClientConfig],
     classOf[ClientInfo],
     classOf[ServiceState],
@@ -56,61 +56,53 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory:
     classOf[TestSignature],
     fromCodecs(new BuildVersionCodec())))
 
-  val DeveloperVersionInfo = db.getOrCreateCollection[DeveloperVersionInfo]()
-  val DeveloperDesiredVersions = db.getOrCreateCollection[DesiredVersions]()
-  val InstalledVersionInfo = db.getOrCreateCollection[InstallVersionInfo]()
-  val InstalledDesiredVersions = db.getOrCreateCollection[DesiredVersions]()
+  val DeveloperVersionsInfo = db.getOrCreateCollection[DeveloperVersionInfo]("developer.versionsInfo")
+  val DeveloperDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("developer.desiredVersions")
 
-  val InstallProfile = db.getOrCreateCollection[InstallProfile]()
-  val ClientInfo = db.getOrCreateCollection[ClientInfo]()
-  val ClientDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]()
-  val ClientInstalledDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions](Some("Installed"))
-  val ClientTestedVersions = db.getOrCreateCollection[TestedVersions]()
-  val ClientFaultReport = db.getOrCreateCollection[ClientFaultReport]()
-  val ClientServiceStates = db.getOrCreateCollection[ClientServiceState]()
+  val ClientsInfo = db.getOrCreateCollection[ClientInfo]("clients.info")
+  val ClientsProfiles = db.getOrCreateCollection[ClientProfile]("clients.profiles")
+  val ClientsVersionsInfo = db.getOrCreateCollection[ClientVersionInfo]("clients.versionsInfo")
+  val ClientsDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("clients.desiredVersions")
+  val ClientsTestedVersions = db.getOrCreateCollection[TestedVersions]("clients.testedVersions")
+  val ClientsServiceStates = db.getOrCreateCollection[ClientServiceState]("clients.serviceStates")
+  val ClientsFaultReports = db.getOrCreateCollection[ClientFaultReport]("clients.faultReports")
 
   val result = for {
-    developerVersionInfo <- DeveloperVersionInfo.map(
-      _.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true)))
-    installedVersionInfo <- InstalledVersionInfo.map(
-      _.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true)))
-    clientInfo <- ClientInfo
-    clientInfoIndexes <- clientInfo.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true))
-    testedVersions <- ClientTestedVersions
-    testedVersionsIndexes <- testedVersions.createIndex(Indexes.ascending("profileName"))
-    clientDesiredVersions <- ClientDesiredVersions
-    clientDesiredVersionsIndexes <- clientDesiredVersions.createIndex(Indexes.ascending("clientName"))
-    clientInstalledVersions <- ClientInstalledDesiredVersions
-    clientInstalledVersionsIndexes <- clientInstalledVersions.createIndex(Indexes.ascending("clientName"))
-    clientFaultReport <- ClientFaultReport
-    clientFaultReportIndexes <- clientFaultReport.createIndex(Indexes.ascending("clientName"))
-    clientServiceStates <- ClientServiceStates
-    clientServiceStatesIndexes <- {
+    _ <- DeveloperDesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
+    _ <- DeveloperVersionsInfo.map(_.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true)))
+    _ <- ClientsInfo.map(_.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true)))
+    _ <- ClientsProfiles.map(_.createIndex(Indexes.ascending("profileName"), new IndexOptions().unique(true)))
+    _ <- ClientsVersionsInfo.map(_.createIndex(Indexes.ascending("clientName", "serviceName")))
+    _ <- ClientsDesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
+    _ <- ClientsTestedVersions.map(_.createIndex(Indexes.ascending("profileName")))
+    clientServiceStates <- ClientsServiceStates
+    _ <- {
       Future.sequence(Seq(
         clientServiceStates.createIndex(Indexes.ascending("clientName")),
         clientServiceStates.createIndex(Indexes.ascending("instanceId")),
         clientServiceStates.createIndex(Indexes.ascending("state.date"),
           new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))))
     }
-    stateInserts <- {
+    _ <- ClientsFaultReports.map(_.createIndex(Indexes.ascending("clientName")))
+
+    _ <- {
       Future.sequence(Seq(
           clientServiceStates.insert(
-            ClientServiceState("distribution", instanceId,
+            ClientServiceState(None, instanceId,
               DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart)))),
           clientServiceStates.insert(
-            ClientServiceState("distribution", instanceId,
+            ClientServiceState(None, instanceId,
               DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))),
         ) ++ builderDirectory.map(builderDirectory => Seq(
           clientServiceStates.insert(
-            ClientServiceState("distribution", instanceId,
+            ClientServiceState(None, instanceId,
               DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(builderDirectory)))),
           clientServiceStates.insert(
-            ClientServiceState("distribution", instanceId,
+            ClientServiceState(None, instanceId,
               DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(builderDirectory)))))).getOrElse(Seq.empty)
       )
     }
-  } yield (clientInfoIndexes, testedVersionsIndexes, clientDesiredVersionsIndexes, clientInstalledVersionsIndexes, clientFaultReportIndexes, clientServiceStatesIndexes,
-           stateInserts)
+  } yield ()
 
   result.foreach(_ => log.info("Developer collections are ready"))
 }

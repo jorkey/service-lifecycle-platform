@@ -24,7 +24,7 @@ object DesiredVersions extends DefaultJsonProtocol {
   }
 }
 
-case class ClientDesiredVersions(clientName: ClientName, versions: Seq[DesiredVersion])
+case class ClientDesiredVersions(clientName: Option[ClientName], versions: Seq[DesiredVersion])
 
 object ClientDesiredVersions extends DefaultJsonProtocol {
   implicit val clientDesiredVersionsJson = jsonFormat2(ClientDesiredVersions.apply)

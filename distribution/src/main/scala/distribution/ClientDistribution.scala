@@ -58,43 +58,10 @@ class ClientDistribution(protected val dir: DistributionDirectory,
         handleExceptions(exceptionHandler) {
           extractRequestContext { ctx =>
             pathPrefix(prefix / apiPathPrefix) {
-              seal {
-                mapRejections { rejections => // Prevent browser to invoke basic auth popup.
-                  rejections.map(_ match {
-                    case AuthenticationFailedRejection(cause, challenge) =>
-                      val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
-                      AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
-                    case rejection =>
-                      rejection
-
-                  })
-                } {
-                  authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, role) =>
                     get {
                       path(versionImagePath / ".*".r / ".*".r) { (service, version) =>
                         getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                       } ~
-                        path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                          getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
-                        } ~
-                        path(versionsInfoPath / ".*".r) { (service) =>
-                          complete(getDeveloperVersionsInfo(service))
-                        } ~
-                        //path(desiredVersionsPath) {
-                        //  getFromFileWithLock(dir.getDesiredVersionsFile())
-                        //} ~
-                        //path(desiredVersionPath / ".*".r) { service =>
-                        //  complete(getDesiredVersion(service, getDesiredVersions()))
-                        //} ~
-                        path(servicesStatePath / ".*".r) { (instanceId) =>
-                          stateUploader.getInstanceState(instanceId)
-                        } ~
-                        path(distributionVersionPath) {
-                          complete(getVersion())
-                        } ~
-                        path(scriptsVersionPath) {
-                          complete(getServiceVersion(Common.ScriptsServiceName, new File(".")))
-                        }
                     } ~
                       post {
                         authorize(role == UserRole.Administrator) {
@@ -102,29 +69,8 @@ class ClientDistribution(protected val dir: DistributionDirectory,
                             val buildVersion = BuildVersion.parse(version)
                             versionImageUpload(service, buildVersion)
                           } ~
-                            path(versionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                              val buildVersion = BuildVersion.parse(version)
-                              complete(addDeveloperVersionInfo(service, buildVersion, null))
-                            } //~
-                            //path(desiredVersionsPath) {
-                            //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
-                            //}
                         } ~
                           authorize(role == UserRole.Service) {
-                            path(servicesStatePath / ".*".r) { instanceId =>
-                              uploadFileToJson(servicesStateName, (json) => {
-                                // TODO graphql
-                                //val servicesState = json.convertTo[ServicesState]
-                                //stateUploader.receiveState(instanceId, servicesState)
-                                complete(StatusCodes.OK)
-                              })
-                            } ~
-                              path(serviceLogsPath / ".*".r / ".*".r) { (instanceId, profiledServiceName) =>
-                                uploadFileToJson(serviceLogsName, (json) => {
-                                  val serviceLogs = json.convertTo[ServiceLogs]
-                                  onSuccess(logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs))(complete(StatusCodes.OK))
-                                })
-                              } ~
                               path(serviceFaultPath / ".*".r) { (serviceName) =>
                                 uploadFileToSource(serviceFaultName, (fileInfo, source) => {
                                   faultUploader.receiveFault(serviceName, fileInfo.getFileName, source)
@@ -137,94 +83,10 @@ class ClientDistribution(protected val dir: DistributionDirectory,
               }
             } ~
               get {
-                path(prefix / browsePath) {
-                  authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
-                    authorize(userRole == UserRole.Administrator) {
-                      browse(None)
-                    }
-                  }
-                } ~
-                  pathPrefix(prefix / browsePath / ".*".r) { path =>
-                    authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
-                      authorize(userRole == UserRole.Administrator) {
-                        browse(Some(path))
-                      }
-                    }
-                  }
-              } ~
-              mapRejections { rejections => // TODO Old API. Remove later.
-                // To prevent browser to invoke basic auth popup.
-                rejections.map(_ match {
-                  case AuthenticationFailedRejection(cause, challenge) =>
-                    val scheme = if (challenge.scheme == "Basic") "x-Basic" else challenge.scheme
-                    AuthenticationFailedRejection(cause, HttpChallenge(scheme, challenge.realm, challenge.params))
-                  case rejection => rejection
-                })
-              } {
-                authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
-                  log.debug(s"Old API request ${ctx.request.toString()} from ${userName}")
                   get {
                     path(prefix / downloadVersionPath / ".*".r / ".*".r) { (service, version) =>
                       getFromFile(dir.getVersionImageFile(service, BuildVersion.parse(version)))
                     } ~
-                      path(prefix / downloadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                        getFromFile(dir.getVersionInfoFile(service, BuildVersion.parse(version)))
-                      } ~
-                      path(prefix / downloadVersionsInfoPath / ".*".r) { (service) =>
-                        complete(getDeveloperVersionsInfo(service))
-                      } ~
-                      //path(prefix / downloadDesiredVersionsPath) {
-                      //  getFromFileWithLock(dir.getDesiredVersionsFile())
-                      //} ~
-                      //path(prefix / downloadDesiredVersionPath / ".*".r) { service =>
-                      //  complete(getDesiredVersion(service, getDesiredVersions()))
-                      //} ~
-                      path(prefix / downloadInstanceStatePath / ".*".r) { (instanceId) =>
-                        stateUploader.getInstanceState(instanceId)
-                      } ~
-                      authorize(userRole == UserRole.Administrator) {
-                        path(prefix / getDistributionVersionPath) {
-                          complete(getVersion())
-                        } ~
-                          path(prefix / getScriptsVersionPath) {
-                            complete(getServiceVersion(Common.ScriptsServiceName, new File(".")))
-                          }
-                      }
-                  } ~
-                    post {
-                      authorize(userRole == UserRole.Administrator) {
-                        path(prefix / uploadVersionPath / ".*".r / ".*".r) { (service, version) =>
-                          val buildVersion = BuildVersion.parse(version)
-                          versionImageUpload(service, buildVersion)
-                        } ~
-                          path(prefix / uploadVersionInfoPath / ".*".r / ".*".r) { (service, version) =>
-                            val buildVersion = BuildVersion.parse(version)
-                            complete(addDeveloperVersionInfo(service, buildVersion, null))
-                          } //~
-                          //path(prefix / uploadDesiredVersionsPath) {
-                          //  fileUploadWithLock(desiredVersionsName, dir.getDesiredVersionsFile())
-                          //}
-                      } ~
-                        authorize(userRole == UserRole.Service) {
-                          path(prefix / uploadInstanceStatePath / ".*".r / ".*".r) { (instanceId, updaterProcessId) =>
-                            complete(StatusCodes.BadRequest) // New format
-                          } ~
-                            path(prefix / uploadServiceLogsPath / ".*".r / ".*".r) { (instanceId, profiledServiceName) =>
-                              uploadFileToJson(serviceLogsName, (json) => {
-                                val serviceLogs = json.convertTo[ServiceLogs]
-                                onSuccess(logUploader.receiveLogs(instanceId, ProfiledServiceName.parse(profiledServiceName), serviceLogs))(complete(StatusCodes.OK))
-                              })
-                            } ~
-                            path(prefix / uploadServiceFaultPath / ".*".r) { (serviceName) =>
-                              uploadFileToSource(serviceFaultName, (fileInfo, source) => {
-                                faultUploader.receiveFault(serviceName, fileInfo.getFileName, source)
-                              })
-                            }
-                        }
-                    }
-                }
-              }
-          }
         }
       }
     }

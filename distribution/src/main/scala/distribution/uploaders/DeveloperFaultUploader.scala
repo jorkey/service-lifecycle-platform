@@ -83,8 +83,8 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
             faultInfo match {
               case Some(faultInfo) =>
                 for {
-                  collection <- collections.ClientFaultReport
-                  result <- collection.insert(ClientFaultReport(clientName, dirName,
+                  collection <- collections.ClientsFaultReports
+                  result <- collection.insert(ClientFaultReport(Some(clientName), dirName,
                     IoUtils.listFiles(faultDir), faultInfo))
                 } yield result
               case None =>
@@ -97,12 +97,12 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
       }
     }
     (for {
-      collection <- collections.ClientFaultReport
+      collection <- collections.ClientsFaultReports
       reports <- collection.find(Filters.eq("client", clientName))
     } yield (collection, reports)).foreach { case (collection, reports) => {
       val remainReports = reports
-        .sortBy(_.date)
-        .filter(_.date.getTime + expirationPeriod >= System.currentTimeMillis())
+        .sortBy(_.faultInfo.date)
+        .filter(_.faultInfo.date.getTime + expirationPeriod >= System.currentTimeMillis())
         .take(maxClientServiceReportsCount)
       (reports.toSet -- remainReports.toSet).foreach { report =>
         collection.delete(Filters.and(

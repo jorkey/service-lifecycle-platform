@@ -43,7 +43,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.ClientInfo)
+    val clientInfoCollection = result(collections.ClientsInfo)
 
     result(clientInfoCollection.insert(
       ClientInfo("client1", ClientConfig("common", Some("test")))))

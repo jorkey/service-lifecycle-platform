@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, InstallProfile}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, TestSignature, TestedVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -46,10 +46,10 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
-    val installProfileCollection = result(collections.InstallProfile)
-    val clientInfoCollection = result(collections.ClientInfo)
+    val installProfileCollection = result(collections.ClientsProfiles)
+    val clientInfoCollection = result(collections.ClientsInfo)
 
-    result(installProfileCollection.insert(InstallProfile("common", Set("service1", "service2"))))
+    result(installProfileCollection.insert(ClientProfile("common", Set("service1", "service2"))))
 
     result(clientInfoCollection.insert(ClientInfo("test-client", ClientConfig("common", None))))
     result(clientInfoCollection.insert(ClientInfo("client1", ClientConfig("common", Some("test-client")))))
@@ -89,7 +89,7 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    result(collections.ClientTestedVersions.map(_.dropItems()))
+    result(collections.ClientsTestedVersions.map(_.dropItems()))
   }
 
   it should "return error if no tested versions for the client's profile" in {
@@ -108,8 +108,8 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   it should "return error if client required preliminary testing has personal desired versions" in {
     val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
-    result(collections.ClientTestedVersions.map(_.insert(TestedVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
-    result(collections.ClientDesiredVersions.map(_.insert(ClientDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
+    result(collections.ClientsTestedVersions.map(_.insert(TestedVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
+    result(collections.ClientsDesiredVersions.map(_.insert(ClientDesiredVersions(Some("client1"), Seq(DesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Client required preliminary testing shouldn't have personal desired versions","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
@@ -121,6 +121,6 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
           }
         }
       """)))
-    result(collections.ClientDesiredVersions.map(_.dropItems()))
+    result(collections.ClientsDesiredVersions.map(_.dropItems()))
   }
 }
