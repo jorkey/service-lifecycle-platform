@@ -19,7 +19,7 @@ import distribution.graphql.Graphql
 import distribution.mongo.MongoDb
 import java.security.{KeyStore, SecureRandom}
 
-import distribution.{DatabaseCollections, DeveloperDistribution}
+import distribution.{DatabaseCollections, Distribution}
 import distribution.config.{DistributionConfig, SslConfig}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
@@ -91,7 +91,7 @@ object DistributionMain extends App {
           // config.selfDistributionClient
           //.map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val distribution = new DeveloperDistribution(dir, collections, config, usersCredentials, graphql, faultUploader)
+        val distribution = new Distribution(dir, collections, config, usersCredentials, graphql, faultUploader)
 
         selfUpdater.start()
 

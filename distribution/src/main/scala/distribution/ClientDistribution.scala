@@ -21,7 +21,7 @@ import com.vyulabs.update.version.BuildVersion
 import distribution.config.DistributionConfig
 import distribution.graphql.Graphql
 import distribution.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader}
-import distribution.utils.{CommonUtils, GetUtils, PutUtils, VersionUtils}
+import distribution.utils.{GetUtils, PutUtils, VersionUtils}
 
 import scala.concurrent.ExecutionContext
 
