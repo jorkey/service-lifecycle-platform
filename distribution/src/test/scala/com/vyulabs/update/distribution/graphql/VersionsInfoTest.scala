@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution
+package com.vyulabs.update.distribution.graphql
 
 import java.nio.file.Files
 import java.util.Date
@@ -9,13 +9,14 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.utils.Utils.DateJson._
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
-import distribution.config.{DistributionConfig, VersionHistoryConfig}
+import distribution.config.VersionHistoryConfig
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -183,6 +184,6 @@ class VersionsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   def removeVersions(): Unit = {
-    result(collections.DeveloperVersionsInfo.map(_.dropItems()))
+    result(collections.Developer_VersionsInfo.map(_.dropItems()))
   }
 }

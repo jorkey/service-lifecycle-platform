@@ -30,7 +30,7 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- collections.ClientsInfo
+      collection <- collections.Developer_ClientsInfo
       info <- collection.find(filters)
     } yield info
   }
@@ -49,7 +49,7 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
   def getInstallProfile(profileName: ProfileName): Future[ClientProfile] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
-      collection <- collections.ClientsProfiles
+      collection <- collections.Developer_ClientsProfiles
       profile <- collection.find(profileArg).map(_.headOption
         .getOrElse(throw NotFoundException(s"No install profile ${profileName}")))
     } yield profile

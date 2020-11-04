@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.administrator
+package com.vyulabs.update.distribution.graphql.administrator
 
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -43,7 +43,7 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.ClientsInfo)
+    val clientInfoCollection = result(collections.Developer_ClientsInfo)
 
     result(clientInfoCollection.insert(
       ClientInfo("client1", ClientConfig("common", Some("test")))))

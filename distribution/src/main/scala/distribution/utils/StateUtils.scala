@@ -28,7 +28,7 @@ trait StateUtils extends GetUtils with SprayJsonSupport {
 
   def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
     for {
-      collection <- collections.ClientsServiceStates
+      collection <- collections.State_ServiceStates
       result <- Future.sequence(instancesState.map(state =>
         collection.insert(ClientServiceState(Some(clientName), state.instanceId, state.serviceName, state.directory, state.state)))).map(_ => true)
     } yield result
@@ -43,7 +43,7 @@ trait StateUtils extends GetUtils with SprayJsonSupport {
     val args = clientArg ++ serviceArg ++ instanceIdArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- collections.ClientsServiceStates
+      collection <- collections.State_ServiceStates
       profile <- collection.find(filters)
     } yield profile
   }
@@ -56,7 +56,7 @@ trait StateUtils extends GetUtils with SprayJsonSupport {
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
     val sort = last.map { last => Sorts.descending("_id") }
     for {
-      collection <- collections.ClientsFaultReports
+      collection <- collections.State_FaultReports
       faults <- collection.find(filters, sort, last)
     } yield faults
   }

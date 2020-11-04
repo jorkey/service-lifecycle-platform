@@ -34,14 +34,14 @@ object InstallInfo extends DefaultJsonProtocol {
   implicit val installInfoJson = jsonFormat2(InstallInfo.apply)
 }
 
-case class ClientVersionInfo(clientName: Option[ClientName], serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo, installInfo: InstallInfo)
+case class InstalledVersionInfo(serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo, installInfo: InstallInfo)
 
-object ClientVersionInfo extends DefaultJsonProtocol {
-  implicit val installVersionInfoJson = jsonFormat5(ClientVersionInfo.apply)
+object InstalledVersionInfo extends DefaultJsonProtocol {
+  implicit val installVersionInfoJson = jsonFormat4(InstalledVersionInfo.apply)
 }
 
-case class ClientVersionsInfo(versions: Seq[ClientVersionInfo])
+case class InstalledVersionsInfo(versions: Seq[InstalledVersionInfo])
 
-object InstallVersionsInfoJson extends DefaultJsonProtocol {
-  implicit val installVersionsInfoJson = jsonFormat1(ClientVersionsInfo.apply)
+object InstalledVersionsInfoJson extends DefaultJsonProtocol {
+  implicit val installVersionsInfoJson = jsonFormat1(InstalledVersionsInfo.apply)
 }

@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.administrator
+package com.vyulabs.update.distribution.graphql.administrator
 
 import java.nio.file.Files
 import java.util.Date
@@ -39,7 +39,7 @@ class FaultReportsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 100)
 
-  val collection = result(collections.ClientsFaultReports)
+  val collection = result(collections.State_FaultReports)
 
   val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("user", UserRole.Administrator))
   val graphql = new Graphql()

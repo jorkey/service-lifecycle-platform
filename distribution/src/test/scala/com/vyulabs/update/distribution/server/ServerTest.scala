@@ -1,15 +1,13 @@
-package com.vyulabs.update.distribution
+package com.vyulabs.update.distribution.server
 
 import java.io.File
 import java.nio.file.{Files, Paths}
 
-import org.scalatest.FlatSpecLike
-import org.scalatest.Matchers
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives.pathPrefix
+import akka.http.scaladsl.server.{Directives, Route}
+import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.scaladsl.FileIO
+import org.scalatest.{FlatSpecLike, Matchers}
 
 import scala.util.{Failure, Success}
 

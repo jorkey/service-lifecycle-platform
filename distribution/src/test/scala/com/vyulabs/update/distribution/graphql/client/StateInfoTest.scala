@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.client
+package com.vyulabs.update.distribution.graphql.client
 
 import java.nio.file.Files
 import java.util.Date
@@ -47,7 +47,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override protected def beforeAll(): Unit = {
-    result(collections.ClientsInfo.map(_.insert(ClientInfo("client1", ClientConfig("common", Some("test"))))))
+    result(collections.Developer_ClientsInfo.map(_.insert(ClientInfo("client1", ClientConfig("common", Some("test"))))))
   }
 
   override protected def afterAll(): Unit = {
@@ -72,10 +72,10 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       """)))
 
     val date = new Date()
-    result(collections.ClientsTestedVersions.map(v => result(v.find().map(_.map(v => TestedVersions(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
+    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedVersions(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
       .map(assertResult(_)(Seq(TestedVersions("common",
         Seq(DesiredVersion("service1", BuildVersion(1, 1, 2)), DesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date)))))))))
-    result(collections.ClientsTestedVersions.map(_.dropItems()))
+    result(collections.State_TestedVersions.map(_.dropItems()))
   }
 
   it should "set installed versions" in {
@@ -94,9 +94,9 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    result(collections.ClientsDesiredVersions.map(v => result(v.find().map(assertResult(_)(Seq(ClientDesiredVersions(Some("client1"),
+    result(collections.Client_DesiredVersions.map(v => result(v.find().map(assertResult(_)(Seq(ClientDesiredVersions(Some("client1"),
       Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))))
-    result(collections.ClientsDesiredVersions.map(_.dropItems()))
+    result(collections.Client_DesiredVersions.map(_.dropItems()))
   }
 
   it should "set services state" in {
@@ -130,6 +130,6 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       """))
     )
 
-    result(collections.ClientsServiceStates.map(_.dropItems()))
+    result(collections.State_ServiceStates.map(_.dropItems()))
   }
 }

@@ -56,53 +56,57 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory:
     classOf[TestSignature],
     fromCodecs(new BuildVersionCodec())))
 
-  val DeveloperVersionsInfo = db.getOrCreateCollection[DeveloperVersionInfo]("developer.versionsInfo")
-  val DeveloperDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("developer.desiredVersions")
+  val Developer_VersionsInfo = db.getOrCreateCollection[DeveloperVersionInfo]("developer.versionsInfo")
+  val Developer_DesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("developer.desiredVersions")
+  val Developer_ClientsInfo = db.getOrCreateCollection[ClientInfo]("developer.clientsInfo")
+  val Developer_ClientsProfiles = db.getOrCreateCollection[ClientProfile]("developer.clientsProfiles")
 
-  val ClientsInfo = db.getOrCreateCollection[ClientInfo]("clients.info")
-  val ClientsProfiles = db.getOrCreateCollection[ClientProfile]("clients.profiles")
-  val ClientsVersionsInfo = db.getOrCreateCollection[ClientVersionInfo]("clients.versionsInfo")
-  val ClientsDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("clients.desiredVersions")
-  val ClientsTestedVersions = db.getOrCreateCollection[TestedVersions]("clients.testedVersions")
-  val ClientsServiceStates = db.getOrCreateCollection[ClientServiceState]("clients.serviceStates")
-  val ClientsFaultReports = db.getOrCreateCollection[ClientFaultReport]("clients.faultReports")
+  val Client_VersionsInfo = db.getOrCreateCollection[InstalledVersionInfo]("client.versionsInfo")
+  val Client_DesiredVersions = db.getOrCreateCollection[DesiredVersions]("client.desiredVersions")
+
+  val State_ClientsDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("state.clientsDesiredVersions")
+  val State_TestedVersions = db.getOrCreateCollection[TestedVersions]("state.testedVersions")
+  val State_ServiceStates = db.getOrCreateCollection[ClientServiceState]("state.serviceStates")
+  val State_FaultReports = db.getOrCreateCollection[ClientFaultReport]("state.faultReports")
 
   val result = for {
-    _ <- DeveloperDesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
-    _ <- DeveloperVersionsInfo.map(_.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true)))
-    _ <- ClientsInfo.map(_.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true)))
-    _ <- ClientsProfiles.map(_.createIndex(Indexes.ascending("profileName"), new IndexOptions().unique(true)))
-    _ <- ClientsVersionsInfo.map(_.createIndex(Indexes.ascending("clientName", "serviceName")))
-    _ <- ClientsDesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
-    _ <- ClientsTestedVersions.map(_.createIndex(Indexes.ascending("profileName")))
-    clientServiceStates <- ClientsServiceStates
+    _ <- Developer_VersionsInfo.map(_.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true)))
+    _ <- Developer_DesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
+    _ <- Developer_ClientsInfo.map(_.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true)))
+    _ <- Developer_ClientsProfiles.map(_.createIndex(Indexes.ascending("profileName"), new IndexOptions().unique(true)))
+
+    _ <- Client_VersionsInfo.map(_.createIndex(Indexes.ascending("serviceName")))
+    _ <- Client_DesiredVersions
+
+    _ <- State_TestedVersions.map(_.createIndex(Indexes.ascending("profileName")))
+    serviceStates <- State_ServiceStates
     _ <- {
       Future.sequence(Seq(
-        clientServiceStates.createIndex(Indexes.ascending("clientName")),
-        clientServiceStates.createIndex(Indexes.ascending("instanceId")),
-        clientServiceStates.createIndex(Indexes.ascending("state.date"),
+        serviceStates.createIndex(Indexes.ascending("clientName")),
+        serviceStates.createIndex(Indexes.ascending("instanceId")),
+        serviceStates.createIndex(Indexes.ascending("state.date"),
           new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))))
     }
-    _ <- ClientsFaultReports.map(_.createIndex(Indexes.ascending("clientName")))
+    _ <- State_FaultReports.map(_.createIndex(Indexes.ascending("clientName")))
 
     _ <- {
       Future.sequence(Seq(
-          clientServiceStates.insert(
+          serviceStates.insert(
             ClientServiceState(None, instanceId,
               DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart)))),
-          clientServiceStates.insert(
+          serviceStates.insert(
             ClientServiceState(None, instanceId,
               DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))),
         ) ++ builderDirectory.map(builderDirectory => Seq(
-          clientServiceStates.insert(
+          serviceStates.insert(
             ClientServiceState(None, instanceId,
               DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(builderDirectory)))),
-          clientServiceStates.insert(
+          serviceStates.insert(
             ClientServiceState(None, instanceId,
               DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(builderDirectory)))))).getOrElse(Seq.empty)
       )
     }
   } yield ()
 
-  result.foreach(_ => log.info("Developer collections are ready"))
+  result.foreach(_ => log.info("Collections are ready"))
 }

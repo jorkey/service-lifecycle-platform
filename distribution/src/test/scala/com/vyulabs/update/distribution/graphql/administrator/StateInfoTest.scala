@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.administrator
+package com.vyulabs.update.distribution.graphql.administrator
 
 import java.nio.file.Files
 import java.util.Date
@@ -46,9 +46,9 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
   
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.ClientsInfo)
-    val installedVersionsCollection = result(collections.ClientsDesiredVersions)
-    val clientServiceStatesCollection = result(collections.ClientsServiceStates)
+    val clientInfoCollection = result(collections.Developer_ClientsInfo)
+    val installedVersionsCollection = result(collections.Client_DesiredVersions)
+    val clientServiceStatesCollection = result(collections.State_ServiceStates)
 
     result(clientInfoCollection.insert(
       ClientInfo("client1", ClientConfig("common", Some("test")))))

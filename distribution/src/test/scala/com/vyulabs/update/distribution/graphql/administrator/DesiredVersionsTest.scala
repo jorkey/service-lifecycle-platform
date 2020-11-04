@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.administrator
+package com.vyulabs.update.distribution.graphql.administrator
 
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -43,8 +43,8 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override def beforeAll() = {
-    val installProfileCollection = result(collections.ClientsProfiles)
-    val clientInfoCollection = result(collections.ClientsInfo)
+    val installProfileCollection = result(collections.Developer_ClientsProfiles)
+    val clientInfoCollection = result(collections.Developer_ClientsInfo)
 
     result(installProfileCollection.insert(ClientProfile("common", Set("service1", "service2"))))
     result(clientInfoCollection.insert(ClientInfo("client2", ClientConfig("common", None))))
@@ -147,7 +147,7 @@ class DesiredVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll 
       """))
     )
 
-    result(collections.DeveloperDesiredVersions.map(_.dropItems()))
-    result(collections.ClientsDesiredVersions.map(_.dropItems()))
+    result(collections.Developer_DesiredVersions.map(_.dropItems()))
+    result(collections.Client_DesiredVersions.map(_.dropItems()))
   }
 }

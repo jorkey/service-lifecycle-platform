@@ -1,7 +1,5 @@
 package distribution.graphql
 
-import java.io.File
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.distribution.DistributionDirectory
@@ -95,6 +93,15 @@ object GraphqlSchema {
     )
   )
 
+  val ServiceQueries = ObjectType(
+    "Query",
+    CommonQueries[GraphqlContext] ++ fields[GraphqlContext, Unit](
+      Field("desiredVersions", ListType(DesiredVersionType),
+        arguments = OptionServicesArg :: Nil,
+        resolve = c => { c.ctx.getClientDesiredVersions(None, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+    )
+  )
+
   // Mutations
 
   def AdministratorMutations[T <: GraphqlContext] = fields[T, Unit](
@@ -142,10 +149,12 @@ object GraphqlSchema {
     )
   )
 
-  val ClientSchemaDefinition = Schema(query = ClientQueries, mutation = Some(ClientMutations))
-
   val AdministratorSchemaDefinition = Schema(query = ObjectType("Query", AdministratorQueries[GraphqlContext]),
     mutation = Some(ObjectType("Mutation", AdministratorMutations[GraphqlContext])))
+
+  val ClientSchemaDefinition = Schema(query = ClientQueries, mutation = Some(ClientMutations))
+
+  val ServiceSchemaDefinition = Schema(query = ServiceQueries, mutation = Some(ServiceMutations))
 
   def SchemaDefinition(userRole: UserRole): Schema[GraphqlContext, Unit] = {
     userRole match {
@@ -153,6 +162,8 @@ object GraphqlSchema {
         AdministratorSchemaDefinition
       case UserRole.Client =>
         ClientSchemaDefinition
+      case UserRole.Service =>
+        ServiceSchemaDefinition
       case _ =>
         throw new RuntimeException(s"Invalid user role ${userRole} to make graphql schema")
     }

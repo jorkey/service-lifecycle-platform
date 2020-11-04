@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution
+package com.vyulabs.update.distribution.graphql
 
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
+import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.DatabaseCollections

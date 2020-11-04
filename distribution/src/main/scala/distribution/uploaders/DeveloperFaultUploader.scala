@@ -83,7 +83,7 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
             faultInfo match {
               case Some(faultInfo) =>
                 for {
-                  collection <- collections.ClientsFaultReports
+                  collection <- collections.State_FaultReports
                   result <- collection.insert(ClientFaultReport(Some(clientName), dirName,
                     IoUtils.listFiles(faultDir), faultInfo))
                 } yield result
@@ -97,7 +97,7 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
       }
     }
     (for {
-      collection <- collections.ClientsFaultReports
+      collection <- collections.State_FaultReports
       reports <- collection.find(Filters.eq("client", clientName))
     } yield (collection, reports)).foreach { case (collection, reports) => {
       val remainReports = reports

@@ -4,28 +4,28 @@ import java.io.{File, IOException}
 import java.util.Date
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.server.Directives.{failWith, _}
+import akka.http.scaladsl.server.Directives.failWith
 import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
-import com.vyulabs.update.distribution.{DistributionDirectory, DistributionWebPaths}
-import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersions, InstalledVersionInfo, DesiredVersion, DesiredVersions, DeveloperVersionInfo, InstallInfo, TestSignature, TestedVersions}
+import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.info._
+import com.vyulabs.update.users.UsersCredentials._
 import com.vyulabs.update.utils.JsUtils.MergedJsObject
-import com.vyulabs.update.utils.{IoUtils, Utils}
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.BuildVersion
 import distribution.DatabaseCollections
-import distribution.config.{NetworkConfig, VersionHistoryConfig}
+import distribution.config.VersionHistoryConfig
 import distribution.graphql.{InvalidConfigException, NotFoundException}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
-import com.vyulabs.update.users.UsersCredentials._
 import spray.json._
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-trait VersionUtils extends ClientsUtils with GetUtils with PutUtils with SprayJsonSupport {
+trait DeveloperVersionUtils extends ClientsUtils with GetUtils with PutUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val versionHistoryConfig: VersionHistoryConfig
@@ -44,18 +44,8 @@ trait VersionUtils extends ClientsUtils with GetUtils with PutUtils with SprayJs
     }
   }
 
-  def clientVersionImageUpload(serviceName: ServiceName, buildVersion: BuildVersion): Route = {
-    val imageFile = dir.getClientVersionImageFile(serviceName, buildVersion)
-    val directory = new File(imageFile.getParent)
-    if (directory.exists() || directory.mkdir()) {
-      fileUploadWithLock("version", imageFile)
-    } else {
-      failWith(new IOException(s"Can't make directory ${directory}"))
-    }
-  }
-
   def addDeveloperVersionInfo(serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo): Future[DeveloperVersionInfo] = {
-    log.info(s"Add service ${serviceName} version ${version} info ${buildInfo} ")
+    log.info(s"Add developer service ${serviceName} version ${version} info ${buildInfo} ")
     for {
       collection <- collections.Developer_VersionsInfo
       versionInfo <- {
@@ -89,23 +79,9 @@ trait VersionUtils extends ClientsUtils with GetUtils with PutUtils with SprayJs
     val filters = Filters.and(
       Filters.eq("serviceName", serviceName),
       Filters.eq("version", version.toString))
-    dir.removeDeveloperVersion(serviceName, version)
+    dir.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
       collection <- collections.Developer_VersionsInfo
-      profile <- {
-        collection.delete(filters).map(_.getDeletedCount > 0)
-      }
-    } yield profile
-  }
-
-  def removeClientVersion(serviceName: ServiceName, version: BuildVersion): Future[Boolean] = {
-    log.info(s"Remove client version ${version} of service ${serviceName}")
-    val filters = Filters.and(
-      Filters.eq("serviceName", serviceName),
-      Filters.eq("version", version.toString))
-    dir.removeClientVersion(serviceName, version)
-    for {
-      collection <- collections.ClientsVersionsInfo
       profile <- {
         collection.delete(filters).map(_.getDeletedCount > 0)
       }

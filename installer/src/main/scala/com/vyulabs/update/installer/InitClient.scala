@@ -162,7 +162,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                       developerDistribution: DistributionDirectoryClient,
                                       desiredVersions: Map[ServiceName, BuildVersion],
                                       distributionServicePort: Int): Boolean = {
-    ZipUtils.unzip(clientDistribution.getVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
+    ZipUtils.unzip(clientDistribution.getDeveloperVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
       distributionDir, (name: String) => {
         if (name == "distribution/distribution_setup.sh") {
           Some("distribution_setup.sh")
