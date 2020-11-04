@@ -26,7 +26,7 @@ class ClientLogUploader(dir: DistributionDirectory) extends Thread { self =>
 
   private var stopping = false
 
-  private val directory = dir.getLogsDir()
+  private val directory: File = null // TODO graphql dir.getLogsDir()
 
   if (!directory.exists() && !directory.mkdir()) {
     log.error(s"Can't make directory ${directory}")

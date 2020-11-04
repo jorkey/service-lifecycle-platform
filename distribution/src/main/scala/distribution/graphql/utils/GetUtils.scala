@@ -1,4 +1,4 @@
-package distribution.utils
+package distribution.graphql.utils
 
 import java.io.File
 import java.util.concurrent.TimeUnit

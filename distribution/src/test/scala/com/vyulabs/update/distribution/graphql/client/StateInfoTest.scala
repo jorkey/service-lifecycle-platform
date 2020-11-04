@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersion, ServiceState, TestSignature, TestedVersions}
+import com.vyulabs.update.info.{InstalledDesiredVersions, ClientServiceState, DesiredVersion, ServiceState, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -72,8 +72,8 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       """)))
 
     val date = new Date()
-    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedVersions(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
-      .map(assertResult(_)(Seq(TestedVersions("common",
+    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersions(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
+      .map(assertResult(_)(Seq(TestedDesiredVersions("common",
         Seq(DesiredVersion("service1", BuildVersion(1, 1, 2)), DesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date)))))))))
     result(collections.State_TestedVersions.map(_.dropItems()))
   }
@@ -94,7 +94,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    result(collections.Client_DesiredVersions.map(v => result(v.find().map(assertResult(_)(Seq(ClientDesiredVersions(Some("client1"),
+    result(collections.Client_DesiredVersions.map(v => result(v.find().map(assertResult(_)(Seq(InstalledDesiredVersions("client1",
       Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))))
     result(collections.Client_DesiredVersions.map(_.dropItems()))
   }

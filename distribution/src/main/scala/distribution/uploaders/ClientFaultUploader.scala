@@ -32,7 +32,7 @@ class ClientFaultUploader(dir: DistributionDirectory, developerDirectoryUrl: URL
   private val maxFilesCount = 50
   private val maxServiceDirectoryCapacity = 1000 * 1024 * 1024
 
-  private val faultsDirectory = dir.getFaultsDir()
+  private val faultsDirectory: File = null // TODO graphql dir.getFaultsDir()
 
   if (!faultsDirectory.exists() && !faultsDirectory.mkdir()) {
     log.error(s"Can't make directory ${faultsDirectory}")

@@ -50,23 +50,24 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory:
     classOf[ClientInfo],
     classOf[ServiceState],
     classOf[ClientServiceState],
-    classOf[ClientDesiredVersions],
+    classOf[InstalledDesiredVersions],
     classOf[ClientFaultReport],
-    classOf[TestedVersions],
+    classOf[TestedDesiredVersions],
     classOf[TestSignature],
     fromCodecs(new BuildVersionCodec())))
 
   val Developer_VersionsInfo = db.getOrCreateCollection[DeveloperVersionInfo]("developer.versionsInfo")
-  val Developer_DesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("developer.desiredVersions")
+  val Developer_DesiredVersions = db.getOrCreateCollection[DeveloperDesiredVersions]("developer.desiredVersions")
   val Developer_ClientsInfo = db.getOrCreateCollection[ClientInfo]("developer.clientsInfo")
   val Developer_ClientsProfiles = db.getOrCreateCollection[ClientProfile]("developer.clientsProfiles")
 
   val Client_VersionsInfo = db.getOrCreateCollection[InstalledVersionInfo]("client.versionsInfo")
   val Client_DesiredVersions = db.getOrCreateCollection[DesiredVersions]("client.desiredVersions")
 
-  val State_ClientsDesiredVersions = db.getOrCreateCollection[ClientDesiredVersions]("state.clientsDesiredVersions")
-  val State_TestedVersions = db.getOrCreateCollection[TestedVersions]("state.testedVersions")
+  val State_InstalledDesiredVersions = db.getOrCreateCollection[InstalledDesiredVersions]("state.installedDesiredVersions")
+  val State_TestedVersions = db.getOrCreateCollection[TestedDesiredVersions]("state.testedDesiredVersions")
   val State_ServiceStates = db.getOrCreateCollection[ClientServiceState]("state.serviceStates")
+  val State_ServiceLogs = db.getOrCreateCollection[ClientServiceLogLine]("state.serviceLogs")
   val State_FaultReports = db.getOrCreateCollection[ClientFaultReport]("state.faultReports")
 
   val result = for {

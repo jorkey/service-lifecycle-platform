@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientServiceState, DesiredVersion, ServiceState}
+import com.vyulabs.update.info.{InstalledDesiredVersions, ClientServiceState, DesiredVersion, ServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -47,14 +47,14 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   
   override def beforeAll() = {
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
-    val installedVersionsCollection = result(collections.Client_DesiredVersions)
+    val installedVersionsCollection = result(collections.State_InstalledDesiredVersions)
     val clientServiceStatesCollection = result(collections.State_ServiceStates)
 
     result(clientInfoCollection.insert(
       ClientInfo("client1", ClientConfig("common", Some("test")))))
 
     result(installedVersionsCollection.insert(
-      ClientDesiredVersions(Some("client1"), Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
+      InstalledDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
 
     result(clientServiceStatesCollection.insert(
       ClientServiceState(Some("client1"), "instance1", "service1", "directory1",

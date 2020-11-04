@@ -1,4 +1,4 @@
-package distribution.utils
+package distribution.graphql.utils
 
 import java.io.{File, IOException}
 import java.nio.file.StandardOpenOption

@@ -1,4 +1,4 @@
-package distribution.utils
+package distribution.graphql.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport

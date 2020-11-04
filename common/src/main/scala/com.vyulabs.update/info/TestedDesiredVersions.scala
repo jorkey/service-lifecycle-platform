@@ -7,11 +7,11 @@ import spray.json.DefaultJsonProtocol
 
 case class TestSignature(clientName: ClientName, date: Date)
 
-case class TestedVersions(profileName: ProfileName, versions: Seq[DesiredVersion], signatures: Seq[TestSignature])
+case class TestedDesiredVersions(profileName: ProfileName, versions: Seq[DesiredVersion], signatures: Seq[TestSignature])
 
-object TestedVersions extends DefaultJsonProtocol {
+object TestedDesiredVersions extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
 
   implicit val testSignatureJson = jsonFormat2(TestSignature.apply)
-  implicit val testedVersionsJson = jsonFormat3(TestedVersions.apply)
+  implicit val testedVersionsJson = jsonFormat3(TestedDesiredVersions.apply)
 }

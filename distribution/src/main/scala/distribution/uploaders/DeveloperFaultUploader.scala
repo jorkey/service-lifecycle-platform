@@ -18,7 +18,7 @@ import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
 import distribution.DatabaseCollections
-import distribution.utils.GetUtils
+import distribution.graphql.utils.GetUtils
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,7 +36,7 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
                              protected val filesLocker: SmartFilesLocker) extends GetUtils { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val directory = dir.getFaultsDir()
+  private val directory: File = null // TODO graphql dir.getFaultsDir()
 
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)
   private val maxClientServiceReportsCount = 100

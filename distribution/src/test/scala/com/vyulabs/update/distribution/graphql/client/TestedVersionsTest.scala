@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientDesiredVersions, DesiredVersion, TestSignature, TestedVersions}
+import com.vyulabs.update.info.{InstalledDesiredVersions, DesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -108,8 +108,8 @@ class TestedVersionsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   it should "return error if client required preliminary testing has personal desired versions" in {
     val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
-    result(collections.State_TestedVersions.map(_.insert(TestedVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
-    result(collections.Client_DesiredVersions.map(_.insert(ClientDesiredVersions(Some("client1"), Seq(DesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
+    result(collections.State_TestedVersions.map(_.insert(TestedDesiredVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
+    result(collections.State_InstalledDesiredVersions.map(_.insert(InstalledDesiredVersions("client1", Seq(DesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Client required preliminary testing shouldn't have personal desired versions","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
