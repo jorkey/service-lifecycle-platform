@@ -62,6 +62,7 @@ EOF
   echo "Service distribution is created"
 
   sudo systemctl daemon-reload
+  sudo systemctl reenable update-distribution.service
   sudo systemctl restart update-distribution.service
 }
 
