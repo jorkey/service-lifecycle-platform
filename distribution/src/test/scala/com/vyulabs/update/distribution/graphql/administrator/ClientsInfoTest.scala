@@ -7,9 +7,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
+import com.vyulabs.update.utils.IoUtils
 import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
@@ -22,25 +23,10 @@ import spray.json._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ClientsInfoTest extends GraphqlTestEnvironment {
   behavior of "Client Info Requests"
 
-  implicit val system = ActorSystem("Distribution")
-  implicit val materializer = ActorMaterializer()
-
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
-  implicit val filesLocker = new SmartFilesLocker()
-
-  val versionHistoryConfig = VersionHistoryConfig(5)
-
-  val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 100)
-  val graphql = new Graphql()
-
-  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
+  val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
   override def beforeAll() = {
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
@@ -49,13 +35,21 @@ class ClientsInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       ClientInfo("client1", ClientConfig("common", Some("test")))))
   }
 
-  override protected def afterAll(): Unit = {
-    dir.drop()
-    result(mongo.dropDatabase())
+  it should "return user info" in {
+    assertResult((OK,
+      ("""{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          userInfo {
+            name
+            role
+          }
+        }
+      """))
+    )
   }
 
   it should "return clients info" in {
-    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("admin", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"clientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,

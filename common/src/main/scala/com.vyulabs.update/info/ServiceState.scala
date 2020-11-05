@@ -32,13 +32,6 @@ case class DirectoryServiceState(serviceName: ServiceName, directory: ServiceDir
 object DirectoryServiceState extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat3(DirectoryServiceState.apply)
 
-  def getOwnInstanceState(serviceName: ServiceName, startDate: Date)(implicit log: Logger): DirectoryServiceState = {
-    val ownState = ServiceState(date = new Date(), installDate = IoUtils.getServiceInstallTime(serviceName, new File(".")),
-      startDate = Some(startDate), version = Utils.getManifestBuildVersion(serviceName),
-      updateToVersion = None, updateError = None, failuresCount = None, lastExitCode = None)
-    DirectoryServiceState(serviceName, new File(".").getCanonicalPath(), ownState)
-  }
-
   def getServiceInstanceState(serviceName: ServiceName, directory: File)(implicit log: Logger): DirectoryServiceState = {
     val ownState = ServiceState(date = new Date(), installDate = IoUtils.getServiceInstallTime(serviceName, directory),
       startDate = None, version = IoUtils.readServiceVersion(serviceName, directory),
@@ -53,12 +46,12 @@ object InstanceServiceState extends DefaultJsonProtocol {
   implicit val instanceServiceStateJson = jsonFormat4(InstanceServiceState.apply)
 }
 
-case class ClientServiceState(clientName: Option[ClientName], instanceId: InstanceId, serviceName: ServiceName, directory: ServiceDirectory, state: ServiceState)
+case class ClientServiceState(clientName: ClientName, instanceId: InstanceId, serviceName: ServiceName, directory: ServiceDirectory, state: ServiceState)
 
 object ClientServiceState extends DefaultJsonProtocol {
   implicit val clientServiceStateJson = jsonFormat5(ClientServiceState.apply)
 
-  def apply(clientName: Option[ClientName], instanceId: InstanceId, state: DirectoryServiceState): ClientServiceState = {
+  def apply(clientName: ClientName, instanceId: InstanceId, state: DirectoryServiceState): ClientServiceState = {
     ClientServiceState(clientName, instanceId, state.serviceName, state.directory, state.state)
   }
 }

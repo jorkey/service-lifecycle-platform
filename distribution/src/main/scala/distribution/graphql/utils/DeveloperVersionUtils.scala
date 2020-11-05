@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory
 import spray.json._
 
 import scala.collection.JavaConverters.asJavaIterableConverter
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils with PutUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -98,10 +98,11 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
   }
 
   def setDeveloperDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
-    log.info(s"Set desired versions ${desiredVersions}")
+    log.info(s"Set developer desired versions ${desiredVersions}, client ${clientName}")
+    val clientArg = clientName.map(Filters.eq("clientName", _)).getOrElse(new BsonDocument())
     for {
       collection <- collections.Developer_DesiredVersions
-      result <- collection.replace(new BsonDocument(), DeveloperDesiredVersions(clientName, desiredVersions)).map(_ => true)
+      result <- collection.replace(clientArg, DeveloperDesiredVersions(clientName, desiredVersions)).map(_ => true)
     } yield result
   }
 

@@ -69,7 +69,7 @@ object DistributionMain extends App {
         val mongoDb = new MongoDb("distribution", config.mongoDb)
 
         val dir = new DistributionDirectory(new File(config.distributionDirectory))
-        val collections = new DatabaseCollections(mongoDb, config.instanceId,
+        val collections = new DatabaseCollections(mongoDb, config.instanceId, new File("."),
           config.developer.map(_.builderDirectory), config.instanceState.expireSec)
 
         val faultUploader = new DeveloperFaultUploader(collections, dir)

@@ -3,7 +3,7 @@ package distribution.graphql
 import java.util.Date
 
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildInfo, ClientFaultReport, ClientServiceLogLine, ClientServiceState, DesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstalledVersionInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
+import com.vyulabs.update.info.{BuildInfo, ClientFaultReport, ClientServiceState, DesiredVersion, DeveloperDesiredVersions, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstalledDesiredVersions, InstalledVersionInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -12,7 +12,6 @@ import com.vyulabs.update.version.BuildVersion
 import sangria.ast.StringValue
 import sangria.schema._
 import sangria.macros.derive._
-import sangria.marshalling.{InputUnmarshaller, ToInput}
 import sangria.validation.Violation
 import spray.json.{JsNull, JsValue, enrichAny}
 
@@ -53,8 +52,9 @@ object GraphqlTypes {
   implicit val InstallInfoType = deriveObjectType[Unit, InstallInfo]()
   implicit val ClientVersionInfoType = deriveObjectType[Unit, InstalledVersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
-  implicit val ServiceVersionType = deriveObjectType[Unit, DesiredVersion]()
   implicit val DesiredVersionType = deriveObjectType[Unit, DesiredVersion]()
+  implicit val DeveloperDesiredVersionsType = deriveObjectType[Unit, DeveloperDesiredVersions]()
+  implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersions]()
   implicit val ClientConfigInfoType = deriveObjectType[Unit, ClientConfig]()
   implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()

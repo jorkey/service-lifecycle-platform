@@ -8,8 +8,8 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{InstalledDesiredVersions, ClientServiceState, DesiredVersion, ServiceState, TestSignature, TestedDesiredVersions}
+import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
+import com.vyulabs.update.info.{ClientServiceState, DesiredVersion, InstalledDesiredVersions, ServiceState, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -26,43 +26,21 @@ import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.DatabaseCollections
 
-class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class StateInfoTest extends GraphqlTestEnvironment {
   behavior of "Tested Versions Info Requests"
-
-  implicit val system = ActorSystem("Distribution")
-  implicit val materializer = ActorMaterializer()
-
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
-  implicit val filesLocker = new SmartFilesLocker()
-
-  val versionHistoryConfig = VersionHistoryConfig(5)
-
-  val dir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
-  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo, "self-instance", Some("builder"), 1)
-  val graphql = new Graphql()
-
-  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
   override protected def beforeAll(): Unit = {
     result(collections.Developer_ClientsInfo.map(_.insert(ClientInfo("client1", ClientConfig("common", Some("test"))))))
   }
 
-  override protected def afterAll(): Unit = {
-    dir.drop()
-    result(mongo.dropDatabase())
-  }
-
   it should "set tested versions" in {
-    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
 
     assertResult((OK,
-      ("""{"data":{"testedVersions":true}}""").parseJson))(
+      ("""{"data":{"setTestedVersions":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
-          testedVersions (
+          setTestedVersions (
             versions: [
               { serviceName: "service1", buildVersion: "1.1.2" },
               { serviceName: "service2", buildVersion: "2.1.2" }
@@ -78,14 +56,14 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     result(collections.State_TestedVersions.map(_.dropItems()))
   }
 
-  it should "set installed versions" in {
-    val graphqlContext = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+  it should "set installed desired versions" in {
+    val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
 
     assertResult((OK,
-      ("""{"data":{"installedVersions":true}}""").parseJson))(
+      ("""{"data":{"setInstalledDesiredVersions":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
-          installedVersions (
+          setInstalledDesiredVersions (
             versions: [
                { serviceName: "service1", buildVersion: "1.1.1" },
                { serviceName: "service2", buildVersion: "2.1.1" }
@@ -94,18 +72,18 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """)))
 
-    result(collections.Client_DesiredVersions.map(v => result(v.find().map(assertResult(_)(Seq(InstalledDesiredVersions("client1",
-      Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))))))
-    result(collections.Client_DesiredVersions.map(_.dropItems()))
+    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersions("client1",
+      Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))(_)))))
+    result(collections.State_InstalledDesiredVersions.map(_.dropItems()))
   }
 
   it should "set services state" in {
-    val graphqlContext1 = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext1 = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
     assertResult((OK,
-      ("""{"data":{"servicesState":true}}""").parseJson))(
+      ("""{"data":{"setServicesState":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
         mutation ServicesState($$date: Date!) {
-          servicesState (
+          setServicesState (
             state: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
                   state: { date: $$date, version: "1.2.3" }
@@ -115,7 +93,7 @@ class StateInfoTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         }
       """, variables = JsObject("date" -> new Date().toJson))))
 
-    val graphqlContext2 = new GraphqlContext(versionHistoryConfig, dir, collections, UserInfo("client1", UserRole.Administrator))
+    val graphqlContext2 = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instanceId":"instance1","state":{"version":"1.2.3"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""

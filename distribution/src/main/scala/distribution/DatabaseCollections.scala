@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory: Option[String],
+class DatabaseCollections(db: MongoDb, instanceId: InstanceId, homeDirectory: File, builderDirectory: Option[String],
                           instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -40,20 +40,23 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory:
 
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
-    classOf[ClientInfo],
     classOf[BuildInfo],
     classOf[DeveloperVersionInfo],
+    classOf[InstalledVersionInfo],
     classOf[DesiredVersion],
     classOf[DesiredVersions],
+    classOf[DeveloperDesiredVersions],
+    classOf[InstalledDesiredVersions],
+    classOf[InstallInfo],
     classOf[ClientProfile],
     classOf[ClientConfig],
     classOf[ClientInfo],
     classOf[ServiceState],
     classOf[ClientServiceState],
-    classOf[InstalledDesiredVersions],
     classOf[ClientFaultReport],
     classOf[TestedDesiredVersions],
     classOf[TestSignature],
+    classOf[FaultInfo],
     fromCodecs(new BuildVersionCodec())))
 
   val Developer_VersionsInfo = db.getOrCreateCollection[DeveloperVersionInfo]("developer.versionsInfo")
@@ -79,6 +82,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory:
     _ <- Client_VersionsInfo.map(_.createIndex(Indexes.ascending("serviceName")))
     _ <- Client_DesiredVersions
 
+    _ <- State_InstalledDesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
     _ <- State_TestedVersions.map(_.createIndex(Indexes.ascending("profileName")))
     serviceStates <- State_ServiceStates
     _ <- {
@@ -88,23 +92,23 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, builderDirectory:
         serviceStates.createIndex(Indexes.ascending("state.date"),
           new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))))
     }
-    _ <- State_FaultReports.map(_.createIndex(Indexes.ascending("clientName")))
+    _ <- State_FaultReports.map(_.createIndex(Indexes.ascending("clientName", "faultInfo.serviceName")))
 
     _ <- {
       Future.sequence(Seq(
           serviceStates.insert(
-            ClientServiceState(None, instanceId,
-              DirectoryServiceState.getOwnInstanceState(Common.DistributionServiceName, new Date(DistributionMain.executionStart)))),
+            ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, homeDirectory))),
           serviceStates.insert(
-            ClientServiceState(None, instanceId,
-              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")))),
+            ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, homeDirectory))),
         ) ++ builderDirectory.map(builderDirectory => Seq(
           serviceStates.insert(
-            ClientServiceState(None, instanceId,
-              DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(builderDirectory)))),
+            ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory)))),
           serviceStates.insert(
-            ClientServiceState(None, instanceId,
-              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(builderDirectory)))))).getOrElse(Seq.empty)
+            ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory)))))).getOrElse(Seq.empty)
       )
     }
   } yield ()

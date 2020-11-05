@@ -2,6 +2,7 @@ package distribution.graphql
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -123,7 +124,7 @@ object GraphqlSchema {
         arguments = ServiceArg :: VersionArg :: Nil,
         resolve = c => { c.ctx.removeDeveloperVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
       Field("addClientVersionInfo", ClientVersionInfoType,
-        arguments = ServiceArg :: VersionArg :: BuildInfoArg :: Nil,
+        arguments = ServiceArg :: VersionArg :: BuildInfoArg :: InstallInfoArg :: Nil,
         resolve = c => { c.ctx.addClientVersionInfo(c.arg(ServiceArg), c.arg(VersionArg), c.arg(BuildInfoArg), c.arg(InstallInfoArg)) }),
       Field("removeClientVersion", BooleanType,
         arguments = ServiceArg :: VersionArg :: Nil,
@@ -144,10 +145,10 @@ object GraphqlSchema {
         resolve = c => { c.ctx.setTestedVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = DesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.addInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
+        resolve = c => { c.ctx.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
       Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
-        resolve = c => { c.ctx.setServicesState(Some(c.ctx.userInfo.name), c.arg(InstancesStateArg)) }))
+        resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }))
   )
 
   val ServiceMutations = ObjectType(
@@ -155,10 +156,10 @@ object GraphqlSchema {
     fields[GraphqlContext, Unit](
       Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
-        resolve = c => { c.ctx.setServicesState(None, c.arg(InstancesStateArg)) }),
+        resolve = c => { c.ctx.setServicesState(Common.OwnClient, c.arg(InstancesStateArg)) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: LogLinesArg :: Nil,
-        resolve = c => { c.ctx.addServiceLogs(None, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }))
+        resolve = c => { c.ctx.addServiceLogs(Common.OwnClient, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }))
   )
 
   val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations))

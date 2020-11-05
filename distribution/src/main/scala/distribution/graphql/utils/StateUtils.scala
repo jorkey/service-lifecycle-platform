@@ -28,15 +28,16 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addInstalledDesiredVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+  def setInstalledDesiredVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+    val clientArg = Filters.eq("clientName", clientName)
     for {
       collection <- collections.State_InstalledDesiredVersions
-      result <- collection.replace(new BsonDocument(), InstalledDesiredVersions(clientName, desiredVersions)).map(_ => true)
+      result <- collection.replace(clientArg, InstalledDesiredVersions(clientName, desiredVersions)).map(_ => true)
     } yield result
   }
 
   def getInstalledDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName] = Set.empty): Future[Seq[DesiredVersion]] = {
-    val clientArg = Filters.eq("client", clientName)
+    val clientArg = Filters.eq("clientName", clientName)
     for {
       collection <- collections.State_InstalledDesiredVersions
       profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion]))
@@ -61,9 +62,10 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
             Seq(testRecord)
         }
         val newTestedVersions = TestedDesiredVersions(clientConfig.installProfile, desiredVersions, testSignatures)
+        val profileArg = Filters.eq("profileName", clientConfig.installProfile)
         for {
           collection <- collections.State_TestedVersions
-          result <- collection.replace(new BsonDocument(), newTestedVersions).map(_ => true)
+          result <- collection.replace(profileArg, newTestedVersions).map(_ => true)
         } yield result
       }
     } yield result
@@ -77,7 +79,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     } yield profile
   }
 
-  def setServicesState(clientName: Option[ClientName], instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
+  def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceStates
       result <- Future.sequence(instancesState.map(state =>
@@ -104,7 +106,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     } yield profile
   }
 
-  def addServiceLogs(clientName: Option[ClientName], serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory,
+  def addServiceLogs(clientName: ClientName, serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory,
                      logLines: Seq[LogLine]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceLogs
@@ -115,7 +117,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
 
   def getClientFaultReports(clientName: Option[ClientName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[ClientFaultReport]] = {
     val clientArg = clientName.map { client => Filters.eq("clientName", client) }
-    val serviceArg = serviceName.map { service => Filters.eq("serviceName", service) }
+    val serviceArg = serviceName.map { service => Filters.eq("faultInfo.serviceName", service) }
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
