@@ -38,7 +38,7 @@ class ClientVersionsInfoTest extends GraphqlTestEnvironment {
       """
     )))
 
-    removeClientVersions()
+    removeClientVersion("service1", BuildVersion(1, 1, 1))
   }
 
   it should "remove obsolete client versions" in {
@@ -60,7 +60,9 @@ class ClientVersionsInfoTest extends GraphqlTestEnvironment {
         }
       """)))
 
-    removeClientVersions()
+    removeClientVersion("service1", BuildVersion(3))
+    removeClientVersion("service1", BuildVersion(4))
+    removeClientVersion("service1", BuildVersion(5))
   }
 
   def addClientVersionInfo(serviceName: ServiceName, version: BuildVersion): Unit = {
@@ -88,7 +90,15 @@ class ClientVersionsInfoTest extends GraphqlTestEnvironment {
         variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson, "buildDate" -> new Date().toJson, "installDate" -> new Date().toJson))))
   }
 
-  def removeClientVersions(): Unit = {
-    result(collections.Client_VersionsInfo.map(_.dropItems()))
+  def removeClientVersion(serviceName: ServiceName, version: BuildVersion): Unit = {
+    assertResult((OK,
+      (s"""{"data":{"removeClientVersion":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+                  mutation RemoveClientVersion($$service: String!, $$version: BuildVersion!) {
+                    removeClientVersion (service: $$service, version: $$version)
+                  }
+                """,
+        variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson))))
   }
 }

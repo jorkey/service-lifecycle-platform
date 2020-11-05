@@ -17,7 +17,7 @@ class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
 
   val graphqlContext = GraphqlContext(VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
-  it should "add/get developer version info" in {
+  it should "add/get/remove developer version info" in {
     addDeveloperVersionInfo("service1", BuildVersion(1, 1, 1))
 
     assertResult((OK,
@@ -34,7 +34,7 @@ class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
       """
     )))
 
-    removeDeveloperVersions()
+    removeDeveloperVersion("service1", BuildVersion(1, 1, 1))
   }
 
   it should "get developer versions info" in {
@@ -55,7 +55,8 @@ class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
       """))
     )
 
-    removeDeveloperVersions()
+    removeDeveloperVersion("service1", BuildVersion(1, 1, 1))
+    removeDeveloperVersion("service1", BuildVersion(1, 1, 2))
   }
 
   it should "add/get developer for client version info" in {
@@ -74,7 +75,7 @@ class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
         }
       """)))
 
-    removeDeveloperVersions()
+    removeDeveloperVersion("service1", BuildVersion("client1", 1, 1, 2))
   }
 
   it should "remove obsolete developer versions" in {
@@ -94,7 +95,9 @@ class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
         }
       """)))
 
-    removeDeveloperVersions()
+    removeDeveloperVersion("service1", BuildVersion(3))
+    removeDeveloperVersion("service1", BuildVersion(4))
+    removeDeveloperVersion("service1", BuildVersion(5))
   }
 
   def addDeveloperVersionInfo(serviceName: ServiceName, version: BuildVersion): Unit = {
@@ -118,7 +121,15 @@ class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
         variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson, "date" -> new Date().toJson))))
   }
 
-  def removeDeveloperVersions(): Unit = {
-    result(collections.Developer_VersionsInfo.map(_.dropItems()))
+  def removeDeveloperVersion(serviceName: ServiceName, version: BuildVersion): Unit = {
+    assertResult((OK,
+      (s"""{"data":{"removeDeveloperVersion":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+                  mutation RemoveDeveloperVersion($$service: String!, $$version: BuildVersion!) {
+                    removeDeveloperVersion (service: $$service, version: $$version)
+                  }
+                """,
+        variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson))))
   }
 }
