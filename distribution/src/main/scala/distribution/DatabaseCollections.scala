@@ -53,9 +53,11 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, homeDirectory: Fi
     classOf[ClientInfo],
     classOf[ServiceState],
     classOf[ClientServiceState],
+    classOf[ClientServiceLogLine],
     classOf[ClientFaultReport],
     classOf[TestedDesiredVersions],
     classOf[TestSignature],
+    classOf[LogLine],
     classOf[FaultInfo],
     fromCodecs(new BuildVersionCodec())))
 

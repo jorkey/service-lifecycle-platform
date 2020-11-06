@@ -12,6 +12,7 @@ import org.bson.{BsonDocument, Document}
 import org.bson.conversions.Bson
 import org.slf4j.LoggerFactory
 
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
@@ -68,6 +69,12 @@ class MongoDbCollection[T](collection: MongoCollection[T])
 
   def insert(obj: T): Future[Success] = {
     Source.fromPublisher(collection.insertOne(obj))
+      .log(s"Insert to Mongo DB collection ${name}")
+      .runWith(Sink.head[Success])
+  }
+
+  def insert(objs: Seq[T]): Future[Success] = {
+    Source.fromPublisher(collection.insertMany(objs.toList.asJava))
       .log(s"Insert to Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }

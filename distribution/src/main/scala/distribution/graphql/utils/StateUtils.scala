@@ -105,8 +105,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
                      logLines: Seq[LogLine]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceLogs
-      result <- Future.sequence(logLines.map(line =>
-        collection.insert(ClientServiceLogLine(clientName, serviceName, instanceId, directory, line)))).map(_ => true)
+      result <- collection.insert(logLines.map(line => ClientServiceLogLine(clientName, serviceName, instanceId, directory, line))).map(_ => true)
     } yield result
   }
 
