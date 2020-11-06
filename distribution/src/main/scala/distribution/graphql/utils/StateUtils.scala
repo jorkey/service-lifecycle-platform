@@ -87,11 +87,6 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     } yield result
   }
 
-  def getServiceState(serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory): Future[Option[InstanceServiceState]] = {
-    getServicesState(None, Some(serviceName), Some(instanceId), Some(directory))
-      .map(_.map(state => InstanceServiceState(state.instanceId, state.serviceName, state.directory, state.state)).headOption)
-  }
-
   def getServicesState(clientName: Option[ClientName], serviceName: Option[ServiceName],
                        instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[ClientServiceState]] = {
     val clientArg = clientName.map { client => Filters.eq("clientName", client) }

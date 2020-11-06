@@ -5,6 +5,7 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
+import com.vyulabs.update.info.InstanceServiceState
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UserRole.UserRole
 import com.vyulabs.update.users.{UserInfo, UserRole}
@@ -96,7 +97,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.getClientConfig(c.ctx.userInfo.name) }),
       Field("desiredVersions", ListType(DesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperDesiredVersions(Some(c.ctx.userInfo.name), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, true) })
+        resolve = c => { c.ctx.getDeveloperPersonalDesiredVersions(c.ctx.userInfo.name, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, true) })
     )
   )
 
@@ -106,9 +107,10 @@ object GraphqlSchema {
       Field("desiredVersions", ListType(DesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
-      Field("serviceState", OptionType(InstanceServiceStateType),
-        arguments = ServiceArg :: InstanceArg :: DirectoryArg :: Nil,
-        resolve = c => { c.ctx.getServiceState(c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg)) })
+      Field("serviceState", ListType(InstanceServiceStateType),
+        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
+        resolve = c => { c.ctx.getServicesState(Some(Common.OwnClient), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
+          .map(_.map(s => InstanceServiceState(s.instanceId, s.serviceName, s.directory, s.state))) })
     )
   )
 

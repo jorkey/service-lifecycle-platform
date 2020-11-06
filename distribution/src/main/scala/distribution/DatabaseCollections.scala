@@ -45,7 +45,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, homeDirectory: Fi
     classOf[InstalledVersionInfo],
     classOf[DesiredVersion],
     classOf[DesiredVersions],
-    classOf[DeveloperDesiredVersions],
+    classOf[PersonalDesiredVersions],
     classOf[InstalledDesiredVersions],
     classOf[InstallInfo],
     classOf[ClientProfile],
@@ -60,7 +60,8 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, homeDirectory: Fi
     fromCodecs(new BuildVersionCodec())))
 
   val Developer_VersionsInfo = db.getOrCreateCollection[DeveloperVersionInfo]("developer.versionsInfo")
-  val Developer_DesiredVersions = db.getOrCreateCollection[DeveloperDesiredVersions]("developer.desiredVersions")
+  val Developer_DesiredVersions = db.getOrCreateCollection[DesiredVersions]("developer.desiredVersions")
+  val Developer_PersonalDesiredVersions = db.getOrCreateCollection[PersonalDesiredVersions]("developer.personalDesiredVersions")
   val Developer_ClientsInfo = db.getOrCreateCollection[ClientInfo]("developer.clientsInfo")
   val Developer_ClientsProfiles = db.getOrCreateCollection[ClientProfile]("developer.clientsProfiles")
 
@@ -75,7 +76,8 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, homeDirectory: Fi
 
   val result = for {
     _ <- Developer_VersionsInfo.map(_.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true)))
-    _ <- Developer_DesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
+    _ <- Developer_DesiredVersions
+    _ <- Developer_PersonalDesiredVersions.map(_.createIndex(Indexes.ascending("clientName")))
     _ <- Developer_ClientsInfo.map(_.createIndex(Indexes.ascending("clientName"), new IndexOptions().unique(true)))
     _ <- Developer_ClientsProfiles.map(_.createIndex(Indexes.ascending("profileName"), new IndexOptions().unique(true)))
 

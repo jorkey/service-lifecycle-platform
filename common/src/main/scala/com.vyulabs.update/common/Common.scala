@@ -42,6 +42,7 @@ object Common {
   val CommonServiceProfile = "common"
 
   val ClientAdmin = "admin"
+  val AllClients = "all"
   val OwnClient = "own"
 
   def isUpdateService(serviceName: ServiceName): Boolean = {

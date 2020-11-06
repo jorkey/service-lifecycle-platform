@@ -12,7 +12,7 @@ import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class StateInfoTest extends GraphqlTestEnvironment {
+class GetStateInfoTest extends GraphqlTestEnvironment {
   behavior of "State Info Requests"
 
   override def beforeAll() = {
@@ -36,7 +36,7 @@ class StateInfoTest extends GraphqlTestEnvironment {
     assertResult((OK,
       ("""{"data":{"servicesState":[{"state":{"version":"1.2.3"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query DistributionVersionQuery($$directory: String!) {
+        query ServicesStateQuery($$directory: String!) {
           servicesState (client: "own", service: "distribution", directory: $$directory) {
             state  {
               version

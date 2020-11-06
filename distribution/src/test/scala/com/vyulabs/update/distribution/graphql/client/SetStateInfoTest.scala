@@ -26,7 +26,7 @@ import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.DatabaseCollections
 
-class StateInfoTest extends GraphqlTestEnvironment {
+class SetStateInfoTest extends GraphqlTestEnvironment {
   behavior of "Tested Versions Info Requests"
 
   override protected def beforeAll(): Unit = {

@@ -31,8 +31,7 @@ class ClientsInfoTest extends GraphqlTestEnvironment {
   override def beforeAll() = {
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
 
-    result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", Some("test")))))
+    result(clientInfoCollection.insert(ClientInfo("client1", ClientConfig("common", Some("test")))))
   }
 
   it should "return user info" in {

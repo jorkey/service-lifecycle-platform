@@ -2,10 +2,10 @@ package com.vyulabs.update.distribution.graphql.administrator
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
-import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
+import com.vyulabs.update.distribution.{GraphqlTestEnvironment}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
-import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
+import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -20,7 +20,7 @@ class DeveloperDesiredVersionsTest extends GraphqlTestEnvironment {
     result(clientInfoCollection.insert(ClientInfo("client2", ClientConfig("common", None))))
   }
 
-  it should "set/get common developer desired versions" in {
+  it should "set/get common developer desired versions and personal desired versions for client" in {
     val graphqlContext = new GraphqlContext(VersionHistoryConfig(5), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
@@ -31,6 +31,20 @@ class DeveloperDesiredVersionsTest extends GraphqlTestEnvironment {
             versions: [
                { serviceName: "service1", buildVersion: "1.1.2"},
                { serviceName: "service2", buildVersion: "2.1.4"}
+            ]
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          setDeveloperDesiredVersions (
+            client: "client1",
+            versions: [
+               { serviceName: "service1", buildVersion: "client1-2.1.4"},
+               { serviceName: "service3", buildVersion: "client1-3.1.2"}
             ]
           )
         }
@@ -48,10 +62,10 @@ class DeveloperDesiredVersionsTest extends GraphqlTestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"}]}}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"2.1.4"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          developerDesiredVersions (services: ["service1"]) {
+          developerDesiredVersions {
              serviceName
              buildVersion
           }
@@ -59,7 +73,7 @@ class DeveloperDesiredVersionsTest extends GraphqlTestEnvironment {
       """)))
   }
 
-  it should "set/get developer for client own desired versions" in {
+  it should "set/get developer personal client desired versions" in {
     val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
