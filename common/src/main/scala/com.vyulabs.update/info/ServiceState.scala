@@ -45,13 +45,3 @@ case class InstanceServiceState(instanceId: InstanceId, serviceName: ServiceName
 object InstanceServiceState extends DefaultJsonProtocol {
   implicit val instanceServiceStateJson = jsonFormat4(InstanceServiceState.apply)
 }
-
-case class ClientServiceState(clientName: ClientName, instanceId: InstanceId, serviceName: ServiceName, directory: ServiceDirectory, state: ServiceState)
-
-object ClientServiceState extends DefaultJsonProtocol {
-  implicit val clientServiceStateJson = jsonFormat5(ClientServiceState.apply)
-
-  def apply(clientName: ClientName, instanceId: InstanceId, state: DirectoryServiceState): ClientServiceState = {
-    ClientServiceState(clientName, instanceId, state.serviceName, state.directory, state.state)
-  }
-}

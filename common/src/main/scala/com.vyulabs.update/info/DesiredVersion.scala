@@ -1,6 +1,6 @@
 package com.vyulabs.update.info
 
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.version.BuildVersion
 import spray.json.DefaultJsonProtocol
 
@@ -24,14 +24,3 @@ object DesiredVersions extends DefaultJsonProtocol {
   }
 }
 
-case class PersonalDesiredVersions(clientName: ClientName, versions: Seq[DesiredVersion])
-
-object PersonalDesiredVersions extends DefaultJsonProtocol {
-  implicit val developerDesiredVersionsJson = jsonFormat2(PersonalDesiredVersions.apply)
-}
-
-case class InstalledDesiredVersions(clientName: ClientName, versions: Seq[DesiredVersion])
-
-object InstalledDesiredVersions extends DefaultJsonProtocol {
-  implicit val clientDesiredVersionsJson = jsonFormat2(InstalledDesiredVersions.apply)
-}

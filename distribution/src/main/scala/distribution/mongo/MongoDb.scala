@@ -94,6 +94,12 @@ class MongoDbCollection[T](collection: MongoCollection[T])
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
+  def findOneAndUpdate(filters: Bson, update: Bson): Future[Seq[T]] = {
+    Source.fromPublisher(collection.findOneAndUpdate(filters, update))
+      .log(s"Find and update Mongo DB collection ${name} with filters ${filters}, update ${update}")
+      .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
+  }
+
   def updateOne(filters: Bson, update: Bson): Future[UpdateResult] = {
     Source.fromPublisher(collection.updateOne(filters, update))
       .log(s"Update Mongo DB collection ${name} with filters ${filters}")

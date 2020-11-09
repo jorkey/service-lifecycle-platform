@@ -10,16 +10,16 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import distribution.uploaders.{ClientFaultUploader, ClientLogUploader, ClientStateUploader, DeveloperFaultUploader}
+import distribution.uploaders.{ClientFaultUploader, DeveloperFaultUploader, StateUploader}
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
 import com.vyulabs.update.users.UsersCredentials._
 import distribution.graphql.Graphql
-import distribution.mongo.MongoDb
+import distribution.mongo.{DatabaseCollections, MongoDb}
 import java.security.{KeyStore, SecureRandom}
 
-import distribution.{DatabaseCollections, Distribution}
+import distribution.Distribution
 import distribution.config.{DistributionConfig, SslConfig}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
@@ -75,13 +75,11 @@ object DistributionMain extends App {
         val faultUploader = new DeveloperFaultUploader(collections, dir)
         for (client <- config.client) {
           // TODO graphql
-          val stateUploader = new ClientStateUploader(null, client.developerDistributionUrl, config.instanceId, client.installerDirectory)
+          val stateUploader = new StateUploader(null, null, client.developerDistributionUrl, 1000)
           val clientFaultUploader = new ClientFaultUploader(null, client.developerDistributionUrl)
-          stateUploader.start()
           clientFaultUploader.start()
           Runtime.getRuntime.addShutdownHook(new Thread() {
             override def run(): Unit = {
-              stateUploader.close()
               clientFaultUploader.close()
             }
           })

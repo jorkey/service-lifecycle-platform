@@ -3,17 +3,17 @@ package distribution.graphql
 import java.util.Date
 
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildInfo, ClientFaultReport, ClientServiceState, DesiredVersion, PersonalDesiredVersions, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstalledDesiredVersions, InstalledVersionInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
+import com.vyulabs.update.info.{BuildInfo, ClientFaultReport, ClientServiceState, DesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstalledVersionInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.version.BuildVersion
+import distribution.mongo.{InstalledDesiredVersionsDocument, PersonalDesiredVersionsDocument}
 import sangria.ast.StringValue
 import sangria.schema._
 import sangria.macros.derive._
 import sangria.validation.Violation
-import spray.json.{JsNull, JsValue, enrichAny}
 
 object GraphqlTypes {
   private case object DateCoerceViolation extends Violation {
@@ -53,8 +53,8 @@ object GraphqlTypes {
   implicit val ClientVersionInfoType = deriveObjectType[Unit, InstalledVersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
   implicit val DesiredVersionType = deriveObjectType[Unit, DesiredVersion]()
-  implicit val DeveloperDesiredVersionsType = deriveObjectType[Unit, PersonalDesiredVersions]()
-  implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersions]()
+  implicit val DeveloperDesiredVersionsType = deriveObjectType[Unit, PersonalDesiredVersionsDocument]()
+  implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersionsDocument]()
   implicit val ClientConfigInfoType = deriveObjectType[Unit, ClientConfig]()
   implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
@@ -67,8 +67,11 @@ object GraphqlTypes {
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 
+  implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
+  implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))
+  implicit val DeveloperVersionInfoInputType = deriveInputObjectType[DeveloperVersionInfo](InputObjectTypeName("DeveloperVersionInfoInput"))
+  implicit val InstalledVersionInfoInputType = deriveInputObjectType[InstalledVersionInfo](InputObjectTypeName("InstalledVersionInfoInput"))
   implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildVersionInfoInput"))
-  implicit val InstallVersionInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallVersionInfoInput"))
   implicit val DesiredVersionInfoInputType = deriveInputObjectType[DesiredVersion](InputObjectTypeName("DesiredVersionInput"))
   implicit val UpdateErrorInputType = deriveInputObjectType[UpdateError](InputObjectTypeName("UpdateErrorInput"))
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))

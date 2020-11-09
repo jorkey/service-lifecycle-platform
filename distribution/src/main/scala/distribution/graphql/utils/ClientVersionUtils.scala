@@ -8,10 +8,10 @@ import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{BuildInfo, DesiredVersion, DesiredVersions, InstallInfo, InstalledVersionInfo}
+import com.vyulabs.update.info.{BuildInfo, DesiredVersion, InstallInfo, InstalledVersionInfo}
 import com.vyulabs.update.version.BuildVersion
-import distribution.DatabaseCollections
-import distribution.config.{VersionHistoryConfig}
+import distribution.config.VersionHistoryConfig
+import distribution.mongo.{DatabaseCollections, DesiredVersionsDocument, InstalledVersionInfoDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
@@ -37,15 +37,15 @@ trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with S
     }
   }
 
-  def addClientVersionInfo(serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo, installInfo: InstallInfo): Future[InstalledVersionInfo] = {
-    log.info(s"Add client service ${serviceName} version ${version} build info ${buildInfo} install info ${installInfo}")
+  def addClientVersionInfo(versionInfo: InstalledVersionInfo): Future[InstalledVersionInfo] = {
+    log.info(s"Add client version info ${versionInfo}")
     for {
       collection <- collections.Client_VersionsInfo
       versionInfo <- {
-        val versionInfo = InstalledVersionInfo(serviceName, version, buildInfo, installInfo)
-        collection.insert(versionInfo).map(_ => versionInfo)
-      }
-      _ <- removeObsoleteVersions(serviceName)
+        val document = InstalledVersionInfoDocument(versionInfo)
+        collection.insert(document).map(_ => document)
+      }.map(_.versionInfo)
+      _ <- removeObsoleteVersions(versionInfo.serviceName)
     } yield versionInfo
   }
 
@@ -55,7 +55,7 @@ trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with S
     val filters = Filters.and((Seq(serviceArg) ++ versionArg).asJava)
     for {
       collection <- collections.Client_VersionsInfo
-      info <- collection.find(filters)
+      info <- collection.find(filters).map(_.map(_.versionInfo))
     } yield info
   }
 
@@ -103,7 +103,7 @@ trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with S
   def setClientDesiredVersions(desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
     for {
       collection <- collections.Client_DesiredVersions
-      result <- collection.replace(new BsonDocument(), DesiredVersions(desiredVersions)).map(_ => true)
+      result <- collection.replace(new BsonDocument(), DesiredVersionsDocument(desiredVersions)).map(_ => true)
     } yield result
   }
 

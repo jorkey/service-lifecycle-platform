@@ -5,7 +5,7 @@ import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.GraphqlTestEnvironment
-import com.vyulabs.update.info.{ClientServiceState, DesiredVersion, InstalledDesiredVersions, ServiceState}
+import com.vyulabs.update.info.{ClientServiceState, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.graphql.{GraphqlContext, GraphqlSchema}

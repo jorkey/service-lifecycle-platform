@@ -9,10 +9,10 @@ import com.vyulabs.update.info.InstanceServiceState
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UserRole.UserRole
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.GraphqlTypes._
 import distribution.graphql.utils.{ClientVersionUtils, ClientsUtils, DeveloperVersionUtils, GetUtils, PutUtils, StateUtils}
+import distribution.mongo.DatabaseCollections
 
 import scala.concurrent.ExecutionContext
 import sangria.marshalling.sprayJson._
@@ -37,8 +37,8 @@ object GraphqlSchema {
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
   val VersionArg = Argument("version", BuildVersionType)
-  val BuildInfoArg = Argument("buildInfo", BuildVersionInfoInputType)
-  val InstallInfoArg = Argument("installInfo", InstallVersionInfoInputType)
+  val DeveloperVersionInfoArg = Argument("buildInfo", DeveloperVersionInfoInputType)
+  val InstalledVersionInfoArg = Argument("buildInfo", InstalledVersionInfoInputType)
   val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionInfoInputType))
   val InstancesStateArg = Argument("state", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
@@ -110,7 +110,7 @@ object GraphqlSchema {
       Field("serviceState", ListType(InstanceServiceStateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.getServicesState(Some(Common.OwnClient), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
-          .map(_.map(s => InstanceServiceState(s.instanceId, s.serviceName, s.directory, s.state))) })
+          .map(_.map(_.instanceState)) })
     )
   )
 
@@ -119,15 +119,15 @@ object GraphqlSchema {
   def AdministratorMutations = ObjectType(
     "Mutation",
     fields[GraphqlContext, Unit](
-      Field("addDeveloperVersionInfo", DeveloperVersionInfoType,
-        arguments = ServiceArg :: VersionArg :: BuildInfoArg :: Nil,
-        resolve = c => { c.ctx.addDeveloperVersionInfo(c.arg(ServiceArg), c.arg(VersionArg), c.arg(BuildInfoArg)) }),
+      Field("addDeveloperVersionInfo", BooleanType,
+        arguments = DeveloperVersionInfoArg :: Nil,
+        resolve = c => { c.ctx.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: VersionArg :: Nil,
         resolve = c => { c.ctx.removeDeveloperVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
       Field("addClientVersionInfo", ClientVersionInfoType,
-        arguments = ServiceArg :: VersionArg :: BuildInfoArg :: InstallInfoArg :: Nil,
-        resolve = c => { c.ctx.addClientVersionInfo(c.arg(ServiceArg), c.arg(VersionArg), c.arg(BuildInfoArg), c.arg(InstallInfoArg)) }),
+        arguments = InstalledVersionInfoArg :: Nil,
+        resolve = c => { c.ctx.addClientVersionInfo(c.arg(InstalledVersionInfoArg)) }),
       Field("removeClientVersion", BooleanType,
         arguments = ServiceArg :: VersionArg :: Nil,
         resolve = c => { c.ctx.removeClientVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),

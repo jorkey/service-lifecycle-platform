@@ -9,13 +9,13 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
-import com.vyulabs.update.info.{ClientServiceState, DesiredVersion, InstalledDesiredVersions, ServiceState, TestSignature, TestedDesiredVersions}
+import com.vyulabs.update.info.{ClientServiceState, ServiceState}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
-import distribution.mongo.MongoDb
+import distribution.mongo.{DatabaseCollections, MongoDb}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext
@@ -24,7 +24,7 @@ import spray.json._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import com.vyulabs.update.utils.Utils.DateJson._
-import distribution.DatabaseCollections
+import distribution.mongo.documents.{DesiredVersion, InstalledDesiredVersionsDocument, TestSignature, TestedDesiredVersionsDocument}
 
 class SetStateInfoTest extends GraphqlTestEnvironment {
   behavior of "Tested Versions Info Requests"
@@ -50,8 +50,8 @@ class SetStateInfoTest extends GraphqlTestEnvironment {
       """)))
 
     val date = new Date()
-    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersions(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
-      .map(assertResult(_)(Seq(TestedDesiredVersions("common",
+    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
+      .map(assertResult(_)(Seq(TestedDesiredVersionsDocument("common",
         Seq(DesiredVersion("service1", BuildVersion(1, 1, 2)), DesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date)))))))))
     result(collections.State_TestedVersions.map(_.dropItems()))
   }
@@ -72,7 +72,7 @@ class SetStateInfoTest extends GraphqlTestEnvironment {
         }
       """)))
 
-    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersions("client1",
+    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("client1",
       Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))(_)))))
     result(collections.State_InstalledDesiredVersions.map(_.dropItems()))
   }

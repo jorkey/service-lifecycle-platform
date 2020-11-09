@@ -14,10 +14,10 @@ object BuildInfo extends DefaultJsonProtocol {
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)
 }
 
-case class DeveloperVersionInfo(serviceName: ServiceName, clientName: Option[ClientName], version: BuildVersion, buildInfo: BuildInfo)
+case class DeveloperVersionInfo(serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo)
 
 object DeveloperVersionInfo extends DefaultJsonProtocol {
-  implicit val serviceVersionInfoJson = jsonFormat4(DeveloperVersionInfo.apply)
+  implicit val serviceVersionInfoJson = jsonFormat3(DeveloperVersionInfo.apply)
 }
 
 case class DeveloperVersionsInfo(versions: Seq[DeveloperVersionInfo])
@@ -32,16 +32,4 @@ object InstallInfo extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.DateJson._
 
   implicit val installInfoJson = jsonFormat2(InstallInfo.apply)
-}
-
-case class InstalledVersionInfo(serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo, installInfo: InstallInfo)
-
-object InstalledVersionInfo extends DefaultJsonProtocol {
-  implicit val installVersionInfoJson = jsonFormat4(InstalledVersionInfo.apply)
-}
-
-case class InstalledVersionsInfo(versions: Seq[InstalledVersionInfo])
-
-object InstalledVersionsInfoJson extends DefaultJsonProtocol {
-  implicit val installVersionsInfoJson = jsonFormat1(InstalledVersionsInfo.apply)
 }

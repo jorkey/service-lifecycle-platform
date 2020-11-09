@@ -8,9 +8,9 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{ClientName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientFaultReport, ClientServiceLogLine, ClientServiceState, DesiredVersion, InstalledDesiredVersions, InstanceServiceState, LogLine, TestSignature, TestedDesiredVersions}
+import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, DesiredVersion, InstanceServiceState, LogLine}
 import com.vyulabs.update.lock.SmartFilesLocker
-import distribution.DatabaseCollections
+import distribution.mongo.{DatabaseCollections, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestSignature, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
@@ -32,7 +32,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     val clientArg = Filters.eq("clientName", clientName)
     for {
       collection <- collections.State_InstalledDesiredVersions
-      result <- collection.replace(clientArg, InstalledDesiredVersions(clientName, desiredVersions)).map(_ => true)
+      result <- collection.replace(clientArg, InstalledDesiredVersionsDocument(clientName, desiredVersions)).map(_ => true)
     } yield result
   }
 
@@ -61,7 +61,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
           case _ =>
             Seq(testRecord)
         }
-        val newTestedVersions = TestedDesiredVersions(clientConfig.installProfile, desiredVersions, testSignatures)
+        val newTestedVersions = TestedDesiredVersionsDocument(clientConfig.installProfile, desiredVersions, testSignatures)
         val profileArg = Filters.eq("profileName", clientConfig.installProfile)
         for {
           collection <- collections.State_TestedVersions
@@ -71,7 +71,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     } yield result
   }
 
-  def getTestedVersions(profileName: ProfileName): Future[Option[TestedDesiredVersions]] = {
+  def getTestedVersions(profileName: ProfileName): Future[Option[TestedDesiredVersionsDocument]] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
       collection <- collections.State_TestedVersions
@@ -82,8 +82,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
   def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceStates
-      result <- Future.sequence(instancesState.map(state =>
-        collection.insert(ClientServiceState(clientName, state.instanceId, state.serviceName, state.directory, state.state)))).map(_ => true)
+      result <- collection.insert(instancesState.map(state => ServiceStateDocument(ClientServiceState(clientName, state)))).map(_ => true)
     } yield result
   }
 
@@ -97,7 +96,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
       collection <- collections.State_ServiceStates
-      profile <- collection.find(filters)
+      profile <- collection.find(filters).map(_.map(_.state))
     } yield profile
   }
 
@@ -105,7 +104,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
                      logLines: Seq[LogLine]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceLogs
-      result <- collection.insert(logLines.map(line => ClientServiceLogLine(clientName, serviceName, instanceId, directory, line))).map(_ => true)
+      result <- collection.insert(logLines.map(line => ServiceLogLineDocument(clientName, serviceName, instanceId, directory, line))).map(_ => true)
     } yield result
   }
 
@@ -118,7 +117,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     val sort = last.map { last => Sorts.descending("_id") }
     for {
       collection <- collections.State_FaultReports
-      faults <- collection.find(filters, sort, last)
+      faults <- collection.find(filters, sort, last).map(_.map(_.report))
     } yield faults
   }
 }

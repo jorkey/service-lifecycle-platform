@@ -11,10 +11,9 @@ import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnviro
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.IoUtils
-import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
-import distribution.mongo.MongoDb
+import distribution.mongo.{DatabaseCollections, MongoDb}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import sangria.macros.LiteralGraphQLStringContext

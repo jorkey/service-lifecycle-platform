@@ -12,9 +12,9 @@ import com.vyulabs.update.info._
 import com.vyulabs.update.users.UsersCredentials._
 import com.vyulabs.update.utils.JsUtils.MergedJsObject
 import com.vyulabs.update.version.BuildVersion
-import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{InvalidConfigException, NotFoundException}
+import distribution.mongo.{DatabaseCollections, DesiredVersionsDocument, DeveloperVersionInfoDocument, PersonalDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 import spray.json._
@@ -41,16 +41,16 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
     }
   }
 
-  def addDeveloperVersionInfo(serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo): Future[DeveloperVersionInfo] = {
-    log.info(s"Add developer service ${serviceName} version ${version} info ${buildInfo} ")
-    for {
+  def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo): Future[Boolean] = {
+    log.info(s"Add developer version info ${versionInfo}")
+    (for {
       collection <- collections.Developer_VersionsInfo
-      versionInfo <- {
-        val versionInfo = DeveloperVersionInfo(serviceName, version.client, version, buildInfo)
-        collection.insert(versionInfo).map(_ => versionInfo)
-      }
-      _ <- removeObsoleteVersions(serviceName, version.client)
-    } yield versionInfo
+      info <- {
+        val document = DeveloperVersionInfoDocument(versionInfo)
+        collection.insert(document).map(_ => document)
+      }.map(_.versionInfo)
+      _ <- removeObsoleteVersions(info.serviceName, info.version.client)
+    } yield info).map(_ => true)
   }
 
   private def removeObsoleteVersions(serviceName: ServiceName, client: Option[ClientName]): Future[Unit] = {
@@ -93,7 +93,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
     val filters = Filters.and((Seq(serviceArg) ++ clientArg ++ versionArg).asJava)
     for {
       collection <- collections.Developer_VersionsInfo
-      info <- collection.find(filters)
+      info <- collection.find(filters).map(_.map(_.versionInfo))
     } yield info
   }
 
@@ -110,7 +110,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
     log.info(s"Set developer desired versions ${desiredVersions}")
     for {
       collection <- collections.Developer_DesiredVersions
-      result <- collection.replace(new BsonDocument(), DesiredVersions(desiredVersions)).map(_ => true)
+      result <- collection.replace(new BsonDocument(), DesiredVersionsDocument(desiredVersions)).map(_ => true)
     } yield result
   }
 
@@ -144,7 +144,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
     val clientArg = Filters.eq("clientName", clientName)
     for {
       collection <- collections.Developer_PersonalDesiredVersions
-      result <- collection.replace(clientArg, PersonalDesiredVersions(clientName, desiredVersions)).map(_ => true)
+      result <- collection.replace(clientArg, PersonalDesiredVersionsDocument(clientName, desiredVersions)).map(_ => true)
     } yield result
   }
 

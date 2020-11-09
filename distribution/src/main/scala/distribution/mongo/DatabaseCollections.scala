@@ -1,18 +1,15 @@
-package distribution
+package distribution.mongo
 
 import java.io.File
-import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import com.mongodb.MongoClientSettings
-import com.mongodb.client.model.{IndexOptions, Indexes}
+import com.mongodb.client.model.{Filters, IndexOptions, Indexes, Updates}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
-import com.vyulabs.update.distribution.DistributionMain
+import com.vyulabs.update.config.ClientConfig
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.BuildVersion
-import distribution.mongo.MongoDb
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.bson.codecs.{Codec, DecoderContext, EncoderContext}
 import org.bson.{BsonReader, BsonWriter}
@@ -38,43 +35,50 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, homeDirectory: Fi
     override def getEncoderClass: Class[BuildVersion] = classOf[BuildVersion]
   }
 
+  case class Sequence(name: String, sequence: Long)
+
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
+    classOf[Sequence],
     classOf[BuildInfo],
-    classOf[DeveloperVersionInfo],
-    classOf[InstalledVersionInfo],
+    classOf[DeveloperVersionInfoDocument],
+    classOf[InstalledVersionInfoDocument],
     classOf[DesiredVersion],
-    classOf[DesiredVersions],
-    classOf[PersonalDesiredVersions],
-    classOf[InstalledDesiredVersions],
+    classOf[DesiredVersionsDocument],
+    classOf[PersonalDesiredVersionsDocument],
+    classOf[InstalledDesiredVersionsDocument],
     classOf[InstallInfo],
-    classOf[ClientProfile],
+    classOf[ClientProfileDocument],
     classOf[ClientConfig],
-    classOf[ClientInfo],
+    classOf[ClientInfoDocument],
     classOf[ServiceState],
-    classOf[ClientServiceState],
-    classOf[ClientServiceLogLine],
-    classOf[ClientFaultReport],
-    classOf[TestedDesiredVersions],
+    classOf[ServiceStateDocument],
+    classOf[ServiceLogLineDocument],
+    classOf[FaultReportDocument],
+    classOf[TestedDesiredVersionsDocument],
     classOf[TestSignature],
     classOf[LogLine],
     classOf[FaultInfo],
+    classOf[UploadStatusDocument],
     fromCodecs(new BuildVersionCodec())))
 
-  val Developer_VersionsInfo = db.getOrCreateCollection[DeveloperVersionInfo]("developer.versionsInfo")
-  val Developer_DesiredVersions = db.getOrCreateCollection[DesiredVersions]("developer.desiredVersions")
-  val Developer_PersonalDesiredVersions = db.getOrCreateCollection[PersonalDesiredVersions]("developer.personalDesiredVersions")
-  val Developer_ClientsInfo = db.getOrCreateCollection[ClientInfo]("developer.clientsInfo")
-  val Developer_ClientsProfiles = db.getOrCreateCollection[ClientProfile]("developer.clientsProfiles")
+  val Developer_VersionsInfo = db.getOrCreateCollection[DeveloperVersionInfoDocument]("developer.versionsInfo")
+  val Developer_DesiredVersions = db.getOrCreateCollection[DesiredVersionsDocument]("developer.desiredVersions")
+  val Developer_PersonalDesiredVersions = db.getOrCreateCollection[PersonalDesiredVersionsDocument]("developer.personalDesiredVersions")
+  val Developer_ClientsInfo = db.getOrCreateCollection[ClientInfoDocument]("developer.clientsInfo")
+  val Developer_ClientsProfiles = db.getOrCreateCollection[ClientProfileDocument]("developer.clientsProfiles")
 
-  val Client_VersionsInfo = db.getOrCreateCollection[InstalledVersionInfo]("client.versionsInfo")
-  val Client_DesiredVersions = db.getOrCreateCollection[DesiredVersions]("client.desiredVersions")
+  val Client_VersionsInfo = db.getOrCreateCollection[InstalledVersionInfoDocument]("client.installedVersionsInfo")
+  val Client_DesiredVersions = db.getOrCreateCollection[DesiredVersionsDocument]("client.desiredVersions")
 
-  val State_InstalledDesiredVersions = db.getOrCreateCollection[InstalledDesiredVersions]("state.installedDesiredVersions")
-  val State_TestedVersions = db.getOrCreateCollection[TestedDesiredVersions]("state.testedDesiredVersions")
-  val State_ServiceStates = db.getOrCreateCollection[ClientServiceState]("state.serviceStates")
-  val State_ServiceLogs = db.getOrCreateCollection[ClientServiceLogLine]("state.serviceLogs")
-  val State_FaultReports = db.getOrCreateCollection[ClientFaultReport]("state.faultReports")
+  val State_InstalledDesiredVersions = db.getOrCreateCollection[InstalledDesiredVersionsDocument]("state.installedDesiredVersions")
+  val State_TestedVersions = db.getOrCreateCollection[TestedDesiredVersionsDocument]("state.testedDesiredVersions")
+  val State_ServiceStates = db.getOrCreateCollection[ServiceStateDocument]("state.serviceStates")
+  val State_ServiceLogs = db.getOrCreateCollection[ServiceLogLineDocument]("state.serviceLogs")
+  val State_FaultReports = db.getOrCreateCollection[FaultReportDocument]("state.faultReports")
+  val State_UploadStatus = db.getOrCreateCollection[UploadStatusDocument]("state.uploadStatus")
+
+  val Sequences = db.getOrCreateCollection[Sequence]("sequences")
 
   val result = for {
     _ <- Developer_VersionsInfo.map(_.createIndex(Indexes.ascending("serviceName", "clientName", "version"), new IndexOptions().unique(true)))
@@ -101,21 +105,29 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId, homeDirectory: Fi
     _ <- {
       Future.sequence(Seq(
           serviceStates.insert(
-            ClientServiceState(Common.OwnClient, instanceId,
-              DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, homeDirectory))),
+            ServiceStateDocument(ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, homeDirectory)))),
           serviceStates.insert(
-            ClientServiceState(Common.OwnClient, instanceId,
-              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, homeDirectory))),
+            ServiceStateDocument(ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, homeDirectory)))),
         ) ++ builderDirectory.map(builderDirectory => Seq(
           serviceStates.insert(
-            ClientServiceState(Common.OwnClient, instanceId,
-              DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory)))),
+            ServiceStateDocument(ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory))))),
           serviceStates.insert(
-            ClientServiceState(Common.OwnClient, instanceId,
-              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory)))))).getOrElse(Seq.empty)
+            ServiceStateDocument(ClientServiceState(Common.OwnClient, instanceId,
+              DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory))))))).getOrElse(Seq.empty)
       )
     }
   } yield ()
 
   result.foreach(_ => log.info("Collections are ready"))
+
+  def getNextSequence(sequenceName: String, increment: Int = 1): Future[Long] = {
+    (for {
+      sequences <- Sequences
+      sequence <- sequences.findOneAndUpdate(
+        Filters.eq("name", sequenceName), Updates.inc("sequence", increment))
+    } yield sequence).map(_.map(_.sequence).headOption.getOrElse(0))
+  }
 }

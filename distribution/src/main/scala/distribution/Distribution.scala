@@ -27,6 +27,7 @@ import spray.json._
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 import com.vyulabs.update.distribution.DistributionWebPaths._
+import distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 
 class Distribution(protected val dir: DistributionDirectory,
@@ -48,8 +49,6 @@ class Distribution(protected val dir: DistributionDirectory,
       log.error("Exception", ex)
       complete(StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}")
   }
-
-  protected val versionHistoryConfig = config.versionHistory
 
   val route: Route = {
     get {

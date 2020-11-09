@@ -2,11 +2,12 @@ package com.vyulabs.update.distribution.graphql.service
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.distribution.GraphqlTestEnvironment
-import com.vyulabs.update.info.{DesiredVersion, DesiredVersions}
+import com.vyulabs.update.info.DesiredVersion
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
+import distribution.mongo.documents.{DesiredVersion, DesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -16,7 +17,7 @@ class GetDesiredVersionsTest extends GraphqlTestEnvironment {
   override def beforeAll() = {
     val desiredVersionsCollection = result(collections.Client_DesiredVersions)
 
-    desiredVersionsCollection.insert(DesiredVersions(Seq(DesiredVersion("service1", BuildVersion(1)), DesiredVersion("service2", BuildVersion(2)))))
+    desiredVersionsCollection.insert(DesiredVersionsDocument(Seq(DesiredVersion("service1", BuildVersion(1)), DesiredVersion("service2", BuildVersion(2)))))
   }
 
   it should "get desired versions for service" in {

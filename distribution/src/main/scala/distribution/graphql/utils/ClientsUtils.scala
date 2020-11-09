@@ -7,8 +7,8 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ProfileName}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.distribution.DistributionDirectory
-import distribution.DatabaseCollections
 import distribution.graphql.NotFoundException
+import distribution.mongo.{ClientProfileDocument, DatabaseCollections}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
@@ -31,7 +31,7 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
       collection <- collections.Developer_ClientsInfo
-      info <- collection.find(filters)
+      info <- collection.find(filters).map(_.map(_.info))
     } yield info
   }
 
@@ -39,14 +39,14 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
     getClientsInfo(Some(clientName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${clientName} config")))
   }
 
-  def getClientInstallProfile(clientName: ClientName): Future[ClientProfile] = {
+  def getClientInstallProfile(clientName: ClientName): Future[ClientProfileDocument] = {
     for {
       clientConfig <- getClientConfig(clientName)
       installProfile <- getInstallProfile(clientConfig.installProfile)
     } yield installProfile
   }
 
-  def getInstallProfile(profileName: ProfileName): Future[ClientProfile] = {
+  def getInstallProfile(profileName: ProfileName): Future[ClientProfileDocument] = {
     val profileArg = Filters.eq("profileName", profileName)
     for {
       collection <- collections.Developer_ClientsProfiles

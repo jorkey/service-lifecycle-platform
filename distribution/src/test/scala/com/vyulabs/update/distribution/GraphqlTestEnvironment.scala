@@ -9,10 +9,9 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.BuildVersion
-import distribution.DatabaseCollections
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.Graphql
-import distribution.mongo.MongoDb
+import distribution.mongo.{DatabaseCollections, MongoDb}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 

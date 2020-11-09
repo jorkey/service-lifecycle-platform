@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole.UserRole
-import distribution.DatabaseCollections
+import distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, ExceptionHandler, Executor, HandledException, QueryAnalysisError}

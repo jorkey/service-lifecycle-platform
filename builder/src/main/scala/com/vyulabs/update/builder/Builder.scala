@@ -12,7 +12,7 @@ import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
-import com.vyulabs.update.info.{BuildInfo, DesiredVersion, DesiredVersions}
+import com.vyulabs.update.info.BuildInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
 import com.vyulabs.update.version.BuildVersion

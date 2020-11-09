@@ -17,8 +17,8 @@ import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
-import distribution.DatabaseCollections
 import distribution.graphql.utils.GetUtils
+import distribution.mongo.{DatabaseCollections, FaultReportDocument}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -84,8 +84,8 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
               case Some(faultInfo) =>
                 for {
                   collection <- collections.State_FaultReports
-                  result <- collection.insert(ClientFaultReport(clientName, dirName,
-                    IoUtils.listFiles(faultDir), faultInfo))
+                  result <- collection.insert(FaultReportDocument(ClientFaultReport(clientName, dirName,
+                    IoUtils.listFiles(faultDir), faultInfo)))
                 } yield result
               case None =>
                 log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${faultDir}")
@@ -101,14 +101,14 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
       reports <- collection.find(Filters.eq("client", clientName))
     } yield (collection, reports)).foreach { case (collection, reports) => {
       val remainReports = reports
-        .sortBy(_.faultInfo.date)
-        .filter(_.faultInfo.date.getTime + expirationPeriod >= System.currentTimeMillis())
+        .sortBy(_.report.faultInfo.date)
+        .filter(_.report.faultInfo.date.getTime + expirationPeriod >= System.currentTimeMillis())
         .take(maxClientServiceReportsCount)
       (reports.toSet -- remainReports.toSet).foreach { report =>
         collection.delete(Filters.and(
-          Filters.eq("clientName", report.clientName),
-          Filters.eq("directoryName", report.reportDirectory)))
-        val faultDir = new File(clientDir, report.reportDirectory)
+          Filters.eq("clientName", report.report.clientName),
+          Filters.eq("directoryName", report.report.reportDirectory)))
+        val faultDir = new File(clientDir, report.report.reportDirectory)
         IoUtils.deleteFileRecursively(faultDir)
       }
     }}
