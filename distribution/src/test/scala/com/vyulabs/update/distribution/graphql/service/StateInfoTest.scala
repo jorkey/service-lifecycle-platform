@@ -25,19 +25,26 @@ class StateInfoTest extends GraphqlTestEnvironment {
         mutation ServicesState($$date: Date!) {
           setServicesState (
             state: [
-              { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  state: { date: $$date, version: "1.2.3" } }
+              {
+                instanceId: "instance1",
+                serviceName: "service1",
+                directory: "dir",
+                service: {
+                  date: $$date,
+                  version: "1.2.3"
+                }
+              }
             ]
           )
         }
       """, variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"serviceState":[{"state":{"version":"1.2.3"}}]}}""").parseJson))(
+      ("""{"data":{"serviceState":[{"service":{"version":"1.2.3"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         query {
           serviceState (instance: "instance1", service: "service1", directory: "dir") {
-            state  {
+            service  {
               version
             }
           }

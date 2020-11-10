@@ -84,7 +84,8 @@ class DeveloperFaultUploader(collections: DatabaseCollections,
               case Some(faultInfo) =>
                 for {
                   collection <- collections.State_FaultReports
-                  result <- collection.insert(FaultReportDocument(ClientFaultReport(clientName, dirName,
+                  id <- collections.getNextSequence(collection.getName())
+                  result <- collection.insert(FaultReportDocument(id, ClientFaultReport(clientName, dirName,
                     IoUtils.listFiles(faultDir), faultInfo)))
                 } yield result
               case None =>

@@ -3,12 +3,12 @@ package com.vyulabs.update.distribution.graphql.service
 import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.GraphqlTestEnvironment
-import com.vyulabs.update.info.{ClientServiceLogLine, LogLine}
+import com.vyulabs.update.info.{ClientServiceLogLine, LogLine, ServiceLogLine}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
+import distribution.mongo.ServiceLogLineDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -40,9 +40,9 @@ class AddServiceLogsTest extends GraphqlTestEnvironment {
       """, variables = JsObject("date" -> date.toJson))))
 
     assertResult(Seq(
-      ClientServiceLogLine("own", "service1", "instance1", "dir", LogLine(date, "line1")),
-      ClientServiceLogLine("own", "service1", "instance1", "dir", LogLine(date, "line2")),
-      ClientServiceLogLine("own", "service1", "instance1", "dir", LogLine(date, "line3")))
+      ServiceLogLineDocument(1, new ClientServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line1")))),
+      ServiceLogLineDocument(2, new ClientServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line2")))),
+      ServiceLogLineDocument(3, new ClientServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line3")))))
     )(result(logsCollection.find()))
   }
 }

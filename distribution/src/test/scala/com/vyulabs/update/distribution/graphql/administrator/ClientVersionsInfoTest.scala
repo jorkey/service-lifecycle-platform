@@ -72,16 +72,18 @@ class ClientVersionsInfoTest extends GraphqlTestEnvironment {
         graphql"""
                   mutation AddClientVersionInfo($$service: String!, $$version: BuildVersion!, $$buildDate: Date!, $$installDate: Date!) {
                     addClientVersionInfo (
-                      service: $$service,
-                      version: $$version,
-                      buildInfo: {
-                        author: "author1",
-                        branches: [ "master" ],
-                        date: $$buildDate
-                      },
-                      installInfo: {
-                        user: "admin",
-                        date: $$installDate
+                      info: {
+                        serviceName: $$service,
+                        version: $$version,
+                        buildInfo: {
+                          author: "author1",
+                          branches: [ "master" ],
+                          date: $$buildDate
+                        },
+                        installInfo: {
+                          user: "admin",
+                          date: $$installDate
+                        }
                       }) {
                       version
                     }

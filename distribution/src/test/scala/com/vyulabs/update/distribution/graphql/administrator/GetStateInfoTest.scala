@@ -5,11 +5,11 @@ import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
-import com.vyulabs.update.info.{ClientServiceState, ServiceState}
+import com.vyulabs.update.info.{ClientServiceState, DesiredVersion, DirectoryServiceState, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
-import distribution.mongo.documents.{DesiredVersion, InstalledDesiredVersionsDocument}
+import distribution.mongo.{ClientInfoDocument, InstalledDesiredVersionsDocument, ServiceStateDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -21,32 +21,32 @@ class GetStateInfoTest extends GraphqlTestEnvironment {
     val installedVersionsCollection = result(collections.State_InstalledDesiredVersions)
     val clientServiceStatesCollection = result(collections.State_ServiceStates)
 
-    result(clientInfoCollection.insert(
-      ClientInfo("client1", ClientConfig("common", Some("test")))))
+    result(clientInfoCollection.insert(ClientInfoDocument(
+      ClientInfo("client1", ClientConfig("common", Some("test"))))))
 
     result(installedVersionsCollection.insert(
       InstalledDesiredVersionsDocument("client1", Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
 
-    result(clientServiceStatesCollection.insert(
-      ClientServiceState(System.currentTimeMillis(), "client1", "instance1", "service1", "directory1",
-        ServiceState(date = new Date(), None, None, version = Some(BuildVersion(1, 1, 0)), None, None, None, None))))
+    result(clientServiceStatesCollection.insert(ServiceStateDocument(0,
+      ClientServiceState("client1", "instance1", DirectoryServiceState("service1", "directory1",
+        ServiceState(date = new Date(), None, None, version = Some(BuildVersion(1, 1, 0)), None, None, None, None))))))
   }
 
   it should "return own service version" in {
     val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Client))
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"state":{"version":"1.2.3"}}]}}""").parseJson))(
+      ("""{"data":{"servicesState":[{"instance":{"service":{"version":"1.2.3"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query ServicesStateQuery($$directory: String!) {
           servicesState (client: "own", service: "distribution", directory: $$directory) {
-            state  {
-              version
+            instance  {
+              service {
+                version
+              }
             }
           }
         }
-      """
-        ,
-        None, variables = JsObject("directory" -> JsString(ownServicesDir.getCanonicalPath)))))
+      """, None, variables = JsObject("directory" -> JsString(ownServicesDir.getCanonicalPath)))))
   }
 
   it should "return installed versions" in {
@@ -66,13 +66,15 @@ class GetStateInfoTest extends GraphqlTestEnvironment {
   it should "return service state" in {
     val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Client))
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instanceId":"instance1","state":{"version":"1.1.0"}}]}}""").parseJson))(
+      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"1.1.0"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           servicesState (client: "client1", service: "service1") {
-            instanceId
-            state {
-              version
+            instance  {
+              instanceId
+              service {
+                version
+              }
             }
           }
         }

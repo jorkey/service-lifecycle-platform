@@ -37,25 +37,26 @@ trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with S
     }
   }
 
-  def addClientVersionInfo(versionInfo: InstalledVersionInfo): Future[InstalledVersionInfo] = {
+  def addClientVersionInfo(versionInfo: InstalledVersionInfo): Future[Boolean] = {
     log.info(s"Add client version info ${versionInfo}")
     for {
       collection <- collections.Client_VersionsInfo
-      versionInfo <- {
-        val document = InstalledVersionInfoDocument(versionInfo)
-        collection.insert(document).map(_ => document)
-      }.map(_.versionInfo)
+      id <- collections.getNextSequence(collection.getName())
+      result <- {
+        val document = InstalledVersionInfoDocument(id, versionInfo)
+        collection.insert(document).map(_ => true)
+      }
       _ <- removeObsoleteVersions(versionInfo.serviceName)
-    } yield versionInfo
+    } yield result
   }
 
   def getClientVersionsInfo(serviceName: ServiceName, version: Option[BuildVersion] = None): Future[Seq[InstalledVersionInfo]] = {
-    val serviceArg = Filters.eq("serviceName", serviceName)
-    val versionArg = version.map { version => Filters.eq("version", version.toString) }
+    val serviceArg = Filters.eq("info.serviceName", serviceName)
+    val versionArg = version.map { version => Filters.eq("info.version", version.toString) }
     val filters = Filters.and((Seq(serviceArg) ++ versionArg).asJava)
     for {
       collection <- collections.Client_VersionsInfo
-      info <- collection.find(filters).map(_.map(_.versionInfo))
+      info <- collection.find(filters).map(_.map(_.info))
     } yield info
   }
 
@@ -80,8 +81,8 @@ trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with S
   def removeClientVersion(serviceName: ServiceName, version: BuildVersion): Future[Boolean] = {
     log.info(s"Remove client version ${version} of service ${serviceName}")
     val filters = Filters.and(
-      Filters.eq("serviceName", serviceName),
-      Filters.eq("version", version.toString))
+      Filters.eq("info.serviceName", serviceName),
+      Filters.eq("info.version", version.toString))
     dir.getClientVersionImageFile(serviceName, version).delete()
     for {
       collection <- collections.Client_VersionsInfo
@@ -112,7 +113,7 @@ trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with S
   }
 
   def getClientDesiredVersions(clientName: ClientName): Future[Seq[DesiredVersion]] = {
-    val clientArg = Filters.eq("clientName", clientName)
+    val clientArg = Filters.eq("versions.clientName", clientName)
     for {
       collection <- collections.Client_DesiredVersions
       profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion]))

@@ -6,6 +6,7 @@ import com.vyulabs.update.distribution.GraphqlTestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
+import distribution.mongo.ClientInfoDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -15,7 +16,7 @@ class GetConfigTest extends GraphqlTestEnvironment {
   override def beforeAll() = {
     val clientsInfoCollection = result(collections.Developer_ClientsInfo)
 
-    result(clientsInfoCollection.insert(ClientInfo("client1", ClientConfig("common", Some("test")))))
+    result(clientsInfoCollection.insert(ClientInfoDocument(ClientInfo("client1", ClientConfig("common", Some("test"))))))
   }
 
   it should "get config for client" in {

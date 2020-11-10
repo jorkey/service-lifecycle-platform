@@ -31,7 +31,7 @@ class GraphqlTestEnvironment extends FlatSpec with Matchers with BeforeAndAfterA
   val ownServicesDir = Files.createTempDirectory("test").toFile
   IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, BuildVersion(1, 2, 3))
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo, "self-instance", ownServicesDir, Some("builder"), 100)
+  val collections = new DatabaseCollections(mongo, "self-instance", ownServicesDir, Some("build"), Some("install"), 100)
   val graphql = new Graphql()
   val versionHistoryConfig = VersionHistoryConfig(5)
 

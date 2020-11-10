@@ -3,7 +3,7 @@ package distribution.mongo
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.mongodb.client.model.{IndexOptions, ReplaceOptions}
+import com.mongodb.client.model.{FindOneAndUpdateOptions, IndexOptions, ReplaceOptions, ReturnDocument}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
@@ -37,7 +37,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 
   def getCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): MongoDbCollection[T] = {
-    new MongoDbCollection[T](db.getCollection(name, classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry))
+    new MongoDbCollection[T](name, db.getCollection(name, classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry))
   }
 
   def createCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
@@ -61,11 +61,11 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 }
 
-class MongoDbCollection[T](collection: MongoCollection[T])
+class MongoDbCollection[T](name: String, collection: MongoCollection[T])
                           (implicit materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
   implicit val log = LoggerFactory.getLogger(getClass)
 
-  private val name = classTag.runtimeClass.getSimpleName
+  def getName() = name
 
   def insert(obj: T): Future[Success] = {
     Source.fromPublisher(collection.insertOne(obj))
@@ -94,8 +94,8 @@ class MongoDbCollection[T](collection: MongoCollection[T])
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
-  def findOneAndUpdate(filters: Bson, update: Bson): Future[Seq[T]] = {
-    Source.fromPublisher(collection.findOneAndUpdate(filters, update))
+  def findOneAndUpdate(filters: Bson, update: Bson, options: FindOneAndUpdateOptions = new FindOneAndUpdateOptions().upsert(true)): Future[Seq[T]] = {
+    Source.fromPublisher(collection.findOneAndUpdate(filters, update, options))
       .log(s"Find and update Mongo DB collection ${name} with filters ${filters}, update ${update}")
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }

@@ -5,11 +5,11 @@ import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.distribution.GraphqlTestEnvironment
-import com.vyulabs.update.info.TestSignature
+import com.vyulabs.update.info.{DesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.documents.{DesiredVersion, PersonalDesiredVersionsDocument, TestSignature, TestedDesiredVersionsDocument}
+import distribution.mongo.{ClientInfoDocument, ClientProfileDocument, PersonalDesiredVersionsDocument, TestedDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -20,10 +20,10 @@ class TestedVersionsTest extends GraphqlTestEnvironment {
     val installProfileCollection = result(collections.Developer_ClientsProfiles)
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
 
-    result(installProfileCollection.insert(ClientProfile("common", Set("service1", "service2"))))
+    result(installProfileCollection.insert(ClientProfileDocument(ClientProfile("common", Set("service1", "service2")))))
 
-    result(clientInfoCollection.insert(ClientInfo("test-client", ClientConfig("common", None))))
-    result(clientInfoCollection.insert(ClientInfo("client1", ClientConfig("common", Some("test-client")))))
+    result(clientInfoCollection.insert(ClientInfoDocument(ClientInfo("test-client", ClientConfig("common", None)))))
+    result(clientInfoCollection.insert(ClientInfoDocument(ClientInfo("client1", ClientConfig("common", Some("test-client"))))))
   }
 
   it should "set/get tested versions" in {
@@ -75,7 +75,7 @@ class TestedVersionsTest extends GraphqlTestEnvironment {
   it should "return error if client required preliminary testing has personal desired versions" in {
     val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
     result(collections.State_TestedVersions.map(_.insert(
-      TestedDesiredVersionsDocument("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date()))))))
+      TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(DesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date())))))))
     result(collections.Developer_PersonalDesiredVersions.map(_.insert(
       PersonalDesiredVersionsDocument("client1", Seq(DesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
     assertResult((OK,

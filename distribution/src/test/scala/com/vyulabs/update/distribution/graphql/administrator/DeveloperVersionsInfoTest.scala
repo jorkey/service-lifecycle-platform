@@ -102,23 +102,28 @@ class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
 
   def addDeveloperVersionInfo(serviceName: ServiceName, version: BuildVersion): Unit = {
     assertResult((OK,
-      (s"""{"data":{"addDeveloperVersionInfo":{"version":"${version.toString}"}}}""").parseJson))(
+      (s"""{"data":{"addDeveloperVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
         graphql"""
-                  mutation AddDeveloperVersionInfo($$service: String!, $$version: BuildVersion!, $$date: Date!) {
+                  mutation AddDeveloperVersionInfo($$service: String!, $$clientName: String, $$version: BuildVersion!, $$date: Date!) {
                     addDeveloperVersionInfo (
-                      service: $$service,
-                      version: $$version,
-                      buildInfo: {
-                        author: "author1",
-                        branches: [ "master" ]
-                        date: $$date
-                      }) {
-                      version
-                    }
+                      info: {
+                        serviceName: $$service,
+                        clientName: $$clientName,
+                        version: $$version,
+                        buildInfo: {
+                          author: "author1",
+                          branches: [ "master" ]
+                          date: $$date
+                        }
+                      })
                   }
                 """,
-        variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson, "date" -> new Date().toJson))))
+        variables = JsObject(
+          "service" -> JsString(serviceName),
+          "clientName" -> version.client.map(JsString(_)).getOrElse(JsNull),
+          "version" -> version.toJson,
+          "date" -> new Date().toJson))))
   }
 
   def removeDeveloperVersion(serviceName: ServiceName, version: BuildVersion): Unit = {

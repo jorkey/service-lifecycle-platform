@@ -14,10 +14,10 @@ object BuildInfo extends DefaultJsonProtocol {
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)
 }
 
-case class DeveloperVersionInfo(serviceName: ServiceName, version: BuildVersion, buildInfo: BuildInfo)
+case class DeveloperVersionInfo(serviceName: ServiceName, clientName: Option[ClientName], version: BuildVersion, buildInfo: BuildInfo)
 
 object DeveloperVersionInfo extends DefaultJsonProtocol {
-  implicit val serviceVersionInfoJson = jsonFormat3(DeveloperVersionInfo.apply)
+  implicit val serviceVersionInfoJson = jsonFormat4(DeveloperVersionInfo.apply)
 }
 
 case class DeveloperVersionsInfo(versions: Seq[DeveloperVersionInfo])

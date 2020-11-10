@@ -1,36 +1,24 @@
 package com.vyulabs.update.distribution.graphql.client
 
-import java.nio.file.Files
 import java.util.Date
-import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
-import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
-import com.vyulabs.update.info.{ClientServiceState, ServiceState}
-import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.distribution.GraphqlTestEnvironment
+import com.vyulabs.update.info.{DesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
-import distribution.config.VersionHistoryConfig
-import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
-import distribution.mongo.{DatabaseCollections, MongoDb}
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import org.slf4j.LoggerFactory
+import distribution.graphql.{GraphqlContext, GraphqlSchema}
+import distribution.mongo.{ClientInfoDocument, InstalledDesiredVersionsDocument, TestedDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
-
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, Awaitable, ExecutionContext}
 import com.vyulabs.update.utils.Utils.DateJson._
-import distribution.mongo.documents.{DesiredVersion, InstalledDesiredVersionsDocument, TestSignature, TestedDesiredVersionsDocument}
 
 class SetStateInfoTest extends GraphqlTestEnvironment {
   behavior of "Tested Versions Info Requests"
 
   override protected def beforeAll(): Unit = {
-    result(collections.Developer_ClientsInfo.map(_.insert(ClientInfo("client1", ClientConfig("common", Some("test"))))))
+    result(collections.Developer_ClientsInfo.map(_.insert(ClientInfoDocument(ClientInfo("client1", ClientConfig("common", Some("test")))))))
   }
 
   it should "set tested versions" in {
@@ -50,9 +38,10 @@ class SetStateInfoTest extends GraphqlTestEnvironment {
       """)))
 
     val date = new Date()
-    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(v.profileName, v.versions, v.signatures.map(s => TestSignature(s.clientName, date)))))
-      .map(assertResult(_)(Seq(TestedDesiredVersionsDocument("common",
-        Seq(DesiredVersion("service1", BuildVersion(1, 1, 2)), DesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date)))))))))
+    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(TestedDesiredVersions(
+      v.versions.profileName, v.versions.versions, v.versions.signatures.map(s => TestSignature(s.clientName, date))))))
+      .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common",
+        Seq(DesiredVersion("service1", BuildVersion(1, 1, 2)), DesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date))))))))))
     result(collections.State_TestedVersions.map(_.dropItems()))
   }
 
@@ -86,7 +75,7 @@ class SetStateInfoTest extends GraphqlTestEnvironment {
           setServicesState (
             state: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  state: { date: $$date, version: "1.2.3" }
+                  service: { date: $$date, version: "1.2.3" }
               }
             ]
           )
@@ -95,13 +84,15 @@ class SetStateInfoTest extends GraphqlTestEnvironment {
 
     val graphqlContext2 = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instanceId":"instance1","state":{"version":"1.2.3"}}]}}""").parseJson))(
+      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"1.2.3"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""
         query {
           servicesState (client: "client1", service: "service1") {
-            instanceId
-            state {
-              version
+            instance {
+              instanceId
+              service {
+                version
+              }
             }
           }
         }

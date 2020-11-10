@@ -37,8 +37,8 @@ object GraphqlSchema {
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
   val VersionArg = Argument("version", BuildVersionType)
-  val DeveloperVersionInfoArg = Argument("buildInfo", DeveloperVersionInfoInputType)
-  val InstalledVersionInfoArg = Argument("buildInfo", InstalledVersionInfoInputType)
+  val DeveloperVersionInfoArg = Argument("info", DeveloperVersionInfoInputType)
+  val InstalledVersionInfoArg = Argument("info", InstalledVersionInfoInputType)
   val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionInfoInputType))
   val InstancesStateArg = Argument("state", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
@@ -110,7 +110,7 @@ object GraphqlSchema {
       Field("serviceState", ListType(InstanceServiceStateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.getServicesState(Some(Common.OwnClient), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
-          .map(_.map(_.instanceState)) })
+          .map(_.map(_.instance)) })
     )
   )
 
@@ -125,7 +125,7 @@ object GraphqlSchema {
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: VersionArg :: Nil,
         resolve = c => { c.ctx.removeDeveloperVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
-      Field("addClientVersionInfo", ClientVersionInfoType,
+      Field("addClientVersionInfo", BooleanType,
         arguments = InstalledVersionInfoArg :: Nil,
         resolve = c => { c.ctx.addClientVersionInfo(c.arg(InstalledVersionInfoArg)) }),
       Field("removeClientVersion", BooleanType,

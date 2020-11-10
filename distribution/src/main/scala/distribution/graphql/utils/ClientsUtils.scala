@@ -26,7 +26,7 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def getClientsInfo(clientName: Option[ClientName] = None): Future[Seq[ClientInfo]] = {
-    val clientArg = clientName.map(Filters.eq("clientName", _))
+    val clientArg = clientName.map(Filters.eq("info.clientName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
@@ -47,7 +47,7 @@ trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
   }
 
   def getInstallProfile(profileName: ProfileName): Future[ClientProfileDocument] = {
-    val profileArg = Filters.eq("profileName", profileName)
+    val profileArg = Filters.eq("profile.profileName", profileName)
     for {
       collection <- collections.Developer_ClientsProfiles
       profile <- collection.find(profileArg).map(_.headOption

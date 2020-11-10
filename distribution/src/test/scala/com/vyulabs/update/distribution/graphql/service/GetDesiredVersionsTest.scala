@@ -7,7 +7,7 @@ import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.documents.{DesiredVersion, DesiredVersionsDocument}
+import distribution.mongo.DesiredVersionsDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 

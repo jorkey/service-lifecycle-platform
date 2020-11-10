@@ -2,10 +2,11 @@ package com.vyulabs.update.distribution.graphql.administrator
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
-import com.vyulabs.update.distribution.{GraphqlTestEnvironment}
+import com.vyulabs.update.distribution.GraphqlTestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
+import distribution.mongo.{ClientInfoDocument, ClientProfileDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -16,8 +17,8 @@ class DeveloperDesiredVersionsTest extends GraphqlTestEnvironment {
     val installProfileCollection = result(collections.Developer_ClientsProfiles)
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
 
-    result(installProfileCollection.insert(ClientProfile("common", Set("service1", "service2"))))
-    result(clientInfoCollection.insert(ClientInfo("client2", ClientConfig("common", None))))
+    result(installProfileCollection.insert(ClientProfileDocument(ClientProfile("common", Set("service1", "service2")))))
+    result(clientInfoCollection.insert(ClientInfoDocument(ClientInfo("client2", ClientConfig("common", None)))))
   }
 
   it should "set/get common developer desired versions and personal desired versions for client" in {

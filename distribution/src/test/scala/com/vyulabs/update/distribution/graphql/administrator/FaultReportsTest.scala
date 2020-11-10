@@ -4,10 +4,11 @@ import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.common.Common._
-import com.vyulabs.update.distribution.{GraphqlTestEnvironment}
+import com.vyulabs.update.distribution.GraphqlTestEnvironment
 import com.vyulabs.update.info.{ClientFaultReport, FaultInfo, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
+import distribution.mongo.FaultReportDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -26,14 +27,14 @@ class FaultReportsTest extends GraphqlTestEnvironment {
 
   override def beforeAll() = {
     result(collection.insert(
-      ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
-        FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty))))
+      FaultReportDocument(0, ClientFaultReport(client1, "fault1", Seq("fault.info", "core"),
+        FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))))
     result(collection.insert(
-      ClientFaultReport(client2, "fault1", Seq("fault.info", "core1"),
-        FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty))))
+      FaultReportDocument(1, ClientFaultReport(client2, "fault1", Seq("fault.info", "core1"),
+        FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))))
     result(collection.insert(
-      ClientFaultReport(client1, "fault2", Seq("fault.info", "core"),
-        FaultInfo(new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty))))
+      FaultReportDocument(2, ClientFaultReport(client1, "fault2", Seq("fault.info", "core"),
+        FaultInfo(new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty)))))
   }
 
   it should "get last fault reports for specified client" in {

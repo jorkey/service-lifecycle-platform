@@ -1,26 +1,23 @@
 package distribution.mongo
 
-import java.util.Date
-
-import com.vyulabs.update.common.Common.{ClientName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
-import com.vyulabs.update.config.ClientInfo
-import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, DesiredVersion, DeveloperVersionInfo, InstalledVersionInfo, LogLine}
+import com.vyulabs.update.common.Common.{ClientName}
+import com.vyulabs.update.config.{ClientInfo, ClientProfile}
+import com.vyulabs.update.info.{ClientFaultReport, ClientServiceLogLine, ClientServiceState, DesiredVersion, DeveloperVersionInfo, InstalledVersionInfo, TestedDesiredVersions}
 
 case class ClientInfoDocument(info: ClientInfo)
-case class ClientProfileDocument(profileName: ProfileName, services: Set[ServiceName])
+case class ClientProfileDocument(profile: ClientProfile)
 
-case class DesiredVersionsDocument(versions: Seq[DesiredVersion])
+case class DeveloperVersionInfoDocument(_id: Long, info: DeveloperVersionInfo)
+case class InstalledVersionInfoDocument(_id: Long, info: InstalledVersionInfo)
+
+case class DesiredVersionsDocument(versions: Seq[DesiredVersion], _id: Long = 0)
 case class PersonalDesiredVersionsDocument(clientName: ClientName, versions: Seq[DesiredVersion])
 case class InstalledDesiredVersionsDocument(clientName: ClientName, versions: Seq[DesiredVersion])
+case class TestedDesiredVersionsDocument(versions: TestedDesiredVersions)
 
-case class DeveloperVersionInfoDocument(versionInfo: DeveloperVersionInfo)
-case class FaultReportDocument(report: ClientFaultReport)
-case class InstalledVersionInfoDocument(versionInfo: InstalledVersionInfo)
-case class ServiceLogLineDocument(clientName: ClientName, serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory, logLine: LogLine)
-case class ServiceStateDocument(state: ClientServiceState)
-
-case class TestSignature(clientName: ClientName, date: Date)
-case class TestedDesiredVersionsDocument(profileName: ProfileName, versions: Seq[DesiredVersion], signatures: Seq[TestSignature])
+case class ServiceStateDocument(_id: Long, state: ClientServiceState)
+case class ServiceLogLineDocument(_id: Long, log: ClientServiceLogLine)
+case class FaultReportDocument(_id: Long, report: ClientFaultReport)
 
 case class UploadStatus(lastUploadSequence: Long, lastError: Option[String])
 case class UploadStatusDocument(component: String, uploadStatus: UploadStatus)

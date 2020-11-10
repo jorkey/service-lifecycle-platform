@@ -8,9 +8,9 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{ClientName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, DesiredVersion, InstanceServiceState, LogLine}
+import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, DesiredVersion, InstanceServiceState, LogLine, TestSignature, TestedDesiredVersions, ClientServiceLogLine, ServiceLogLine}
 import com.vyulabs.update.lock.SmartFilesLocker
-import distribution.mongo.{DatabaseCollections, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestSignature, TestedDesiredVersionsDocument}
+import distribution.mongo.{DatabaseCollections, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
@@ -61,8 +61,8 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
           case _ =>
             Seq(testRecord)
         }
-        val newTestedVersions = TestedDesiredVersionsDocument(clientConfig.installProfile, desiredVersions, testSignatures)
-        val profileArg = Filters.eq("profileName", clientConfig.installProfile)
+        val newTestedVersions = TestedDesiredVersionsDocument(TestedDesiredVersions(clientConfig.installProfile, desiredVersions, testSignatures))
+        val profileArg = Filters.eq("versions.profileName", clientConfig.installProfile)
         for {
           collection <- collections.State_TestedVersions
           result <- collection.replace(profileArg, newTestedVersions).map(_ => true)
@@ -71,27 +71,28 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     } yield result
   }
 
-  def getTestedVersions(profileName: ProfileName): Future[Option[TestedDesiredVersionsDocument]] = {
-    val profileArg = Filters.eq("profileName", profileName)
+  def getTestedVersions(profileName: ProfileName): Future[Option[TestedDesiredVersions]] = {
+    val profileArg = Filters.eq("versions.profileName", profileName)
     for {
       collection <- collections.State_TestedVersions
-      profile <- collection.find(profileArg).map(_.headOption)
+      profile <- collection.find(profileArg).map(_.headOption.map(_.versions))
     } yield profile
   }
 
   def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceStates
-      result <- collection.insert(instancesState.map(state => ServiceStateDocument(ClientServiceState(clientName, state)))).map(_ => true)
+      id <- collections.getNextSequence(collection.getName())
+      result <- collection.insert(instancesState.map(state => ServiceStateDocument(id, ClientServiceState(clientName, state)))).map(_ => true)
     } yield result
   }
 
   def getServicesState(clientName: Option[ClientName], serviceName: Option[ServiceName],
                        instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[ClientServiceState]] = {
-    val clientArg = clientName.map { client => Filters.eq("clientName", client) }
-    val serviceArg = serviceName.map { service => Filters.eq("serviceName", service) }
-    val instanceIdArg = instanceId.map { instanceId => Filters.eq("instanceId", instanceId) }
-    val directoryArg = directory.map { directory => Filters.eq("directory", directory) }
+    val clientArg = clientName.map { client => Filters.eq("state.clientName", client) }
+    val serviceArg = serviceName.map { service => Filters.eq("state.instance.serviceName", service) }
+    val instanceIdArg = instanceId.map { instanceId => Filters.eq("state.instance.instanceId", instanceId) }
+    val directoryArg = directory.map { directory => Filters.eq("state.instance.directory", directory) }
     val args = clientArg ++ serviceArg ++ instanceIdArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
@@ -104,13 +105,17 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
                      logLines: Seq[LogLine]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceLogs
-      result <- collection.insert(logLines.map(line => ServiceLogLineDocument(clientName, serviceName, instanceId, directory, line))).map(_ => true)
+      id <- collections.getNextSequence(collection.getName(), logLines.size)
+      result <- collection.insert(
+        logLines.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
+          ServiceLogLineDocument(id - (logLines.size-seq.size) + 1,
+            new ClientServiceLogLine(clientName, new ServiceLogLine(serviceName, instanceId, directory, line))) })).map(_ => true)
     } yield result
   }
 
   def getClientFaultReports(clientName: Option[ClientName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[ClientFaultReport]] = {
-    val clientArg = clientName.map { client => Filters.eq("clientName", client) }
-    val serviceArg = serviceName.map { service => Filters.eq("faultInfo.serviceName", service) }
+    val clientArg = clientName.map { client => Filters.eq("report.clientName", client) }
+    val serviceArg = serviceName.map { service => Filters.eq("report.faultInfo.serviceName", service) }
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb

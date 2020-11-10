@@ -45,10 +45,11 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
     log.info(s"Add developer version info ${versionInfo}")
     (for {
       collection <- collections.Developer_VersionsInfo
+      id <- collections.getNextSequence(collection.getName())
       info <- {
-        val document = DeveloperVersionInfoDocument(versionInfo)
+        val document = DeveloperVersionInfoDocument(id, versionInfo)
         collection.insert(document).map(_ => document)
-      }.map(_.versionInfo)
+      }.map(_.info)
       _ <- removeObsoleteVersions(info.serviceName, info.version.client)
     } yield info).map(_ => true)
   }
@@ -74,8 +75,8 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
   def removeDeveloperVersion(serviceName: ServiceName, version: BuildVersion): Future[Boolean] = {
     log.info(s"Remove developer version ${version} of service ${serviceName}")
     val filters = Filters.and(
-      Filters.eq("serviceName", serviceName),
-      Filters.eq("version", version.toString))
+      Filters.eq("info.serviceName", serviceName),
+      Filters.eq("info.version", version.toString))
     dir.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
       collection <- collections.Developer_VersionsInfo
@@ -87,13 +88,13 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
 
   def getDeveloperVersionsInfo(serviceName: ServiceName, clientName: Option[ClientName] = None,
                                version: Option[BuildVersion] = None): Future[Seq[DeveloperVersionInfo]] = {
-    val serviceArg = Filters.eq("serviceName", serviceName)
-    val clientArg = clientName.map { clientName => Filters.eq("clientName", clientName) }
-    val versionArg = version.map { version => Filters.eq("version", version.toString) }
+    val serviceArg = Filters.eq("info.serviceName", serviceName)
+    val clientArg = clientName.map { clientName => Filters.eq("info.clientName", clientName) }
+    val versionArg = version.map { version => Filters.eq("info.version", version.toString) }
     val filters = Filters.and((Seq(serviceArg) ++ clientArg ++ versionArg).asJava)
     for {
       collection <- collections.Developer_VersionsInfo
-      info <- collection.find(filters).map(_.map(_.versionInfo))
+      info <- collection.find(filters).map(_.map(_.info))
     } yield info
   }
 
@@ -165,7 +166,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
     for {
       desiredVersions <- future
       installProfile <- getClientInstallProfile(clientName)
-      versions <- Future(desiredVersions.filter(version => installProfile.services.contains(version.serviceName)))
+      versions <- Future(desiredVersions.filter(version => installProfile.profile.services.contains(version.serviceName)))
     } yield versions
   }
 

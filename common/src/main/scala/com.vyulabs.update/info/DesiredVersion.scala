@@ -1,6 +1,8 @@
 package com.vyulabs.update.info
 
-import com.vyulabs.update.common.Common.ServiceName
+import java.util.Date
+
+import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.version.BuildVersion
 import spray.json.DefaultJsonProtocol
 
@@ -24,3 +26,5 @@ object DesiredVersions extends DefaultJsonProtocol {
   }
 }
 
+case class TestSignature(clientName: ClientName, date: Date)
+case class TestedDesiredVersions(profileName: ProfileName, versions: Seq[DesiredVersion], signatures: Seq[TestSignature])
