@@ -36,11 +36,9 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     override def getEncoderClass: Class[BuildVersion] = classOf[BuildVersion]
   }
 
-  case class Sequence(name: String, sequence: Long)
-
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
-    classOf[Sequence],
+    classOf[SequenceDocument],
     classOf[BuildInfo],
     classOf[DeveloperVersionInfoDocument],
     classOf[InstalledVersionInfo],
@@ -74,7 +72,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     fromCodecs(new BuildVersionCodec())))
 
   val Sequences = for {
-    collection <- db.getOrCreateCollection[Sequence]("_.sequences")
+    collection <- db.getOrCreateCollection[SequenceDocument]("_.sequences")
     _ <- collection.createIndex(Indexes.ascending("name"), new IndexOptions().unique(true))
   } yield collection
 

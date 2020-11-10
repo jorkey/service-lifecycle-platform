@@ -82,9 +82,23 @@ class SetStateInfoTest extends GraphqlTestEnvironment {
         }
       """, variables = JsObject("date" -> new Date().toJson))))
 
+    assertResult((OK,
+      ("""{"data":{"setServicesState":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
+        mutation ServicesState($$date: Date!) {
+          setServicesState (
+            state: [
+              { instanceId: "instance1", serviceName: "service1", directory: "dir",
+                  service: { date: $$date, version: "1.2.4" }
+              }
+            ]
+          )
+        }
+      """, variables = JsObject("date" -> new Date().toJson))))
+
     val graphqlContext2 = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"1.2.3"}}}]}}""").parseJson))(
+      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"1.2.4"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""
         query {
           servicesState (client: "client1", service: "service1") {

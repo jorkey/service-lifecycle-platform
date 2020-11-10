@@ -79,11 +79,22 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     } yield profile
   }
 
-  def setServicesState(clientName: ClientName, instancesState: Seq[InstanceServiceState]): Future[Boolean] = {
+  def setServicesState(clientName: ClientName, instanceStates: Seq[InstanceServiceState]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceStates
-      id <- collections.getNextSequence(collection.getName())
-      result <- collection.insert(instancesState.map(state => ServiceStateDocument(id, ClientServiceState(clientName, state)))).map(_ => true)
+      id <- collections.getNextSequence(collection.getName(), instanceStates.size)
+      result <- {
+        val documents = instanceStates.foldLeft(Seq.empty[ServiceStateDocument])((seq, state) => seq :+ ServiceStateDocument(
+          id - (instanceStates.size - seq.size) + 1, ClientServiceState(clientName, state)))
+        Future.sequence(documents.map(doc => {
+          val filters = Filters.and(
+            Filters.eq("state.clientName", clientName),
+            Filters.eq("state.instance.serviceName", doc.state.instance.serviceName),
+            Filters.eq("state.instance.instanceId", doc.state.instance.instanceId),
+            Filters.eq("state.instance.directory", doc.state.instance.directory))
+          collection.replace(filters, doc)
+        })).map(_ => true)
+      }
     } yield result
   }
 
