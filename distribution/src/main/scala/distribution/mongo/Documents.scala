@@ -11,13 +11,12 @@ case class ClientProfileDocument(profile: ClientProfile)
 
 case class DeveloperVersionInfoDocument(_id: Long, info: DeveloperVersionInfo)
 case class InstalledVersionInfoDocument(_id: Long, info: InstalledVersionInfo)
-
 case class DesiredVersionsDocument(versions: Seq[DesiredVersion], _id: Long = 0)
 case class PersonalDesiredVersionsDocument(clientName: ClientName, versions: Seq[DesiredVersion])
 case class InstalledDesiredVersionsDocument(clientName: ClientName, versions: Seq[DesiredVersion])
 case class TestedDesiredVersionsDocument(versions: TestedDesiredVersions)
 
-case class ServiceStateDocument(_sequence: Long, state: ClientServiceState)
+case class ServiceStateDocument(sequence: Long, state: ClientServiceState)
 case class ServiceLogLineDocument(_id: Long, log: ClientServiceLogLine)
 case class FaultReportDocument(_id: Long, report: ClientFaultReport)
 

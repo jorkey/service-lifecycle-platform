@@ -24,7 +24,7 @@ import distribution.config.{DistributionConfig, SslConfig}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
 
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.04.19.
@@ -75,7 +75,8 @@ object DistributionMain extends App {
         val faultUploader = new DeveloperFaultUploader(collections, dir)
         for (client <- config.client) {
           // TODO graphql
-          val stateUploader = new StateUploader(null, null, client.developerDistributionUrl, 1000)
+          val stateUploader = new StateUploader(null, null, 1000,
+            (p1, p2) => Future(), (p1, p2) => Future())
           val clientFaultUploader = new ClientFaultUploader(null, client.developerDistributionUrl)
           clientFaultUploader.start()
           Runtime.getRuntime.addShutdownHook(new Thread() {

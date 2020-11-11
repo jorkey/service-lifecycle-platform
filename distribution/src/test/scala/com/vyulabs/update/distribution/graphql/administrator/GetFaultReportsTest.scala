@@ -12,7 +12,7 @@ import distribution.mongo.FaultReportDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class FaultReportsTest extends GraphqlTestEnvironment {
+class GetFaultReportsTest extends GraphqlTestEnvironment {
   behavior of "AdaptationMeasure"
 
   val collection = result(collections.State_FaultReports)

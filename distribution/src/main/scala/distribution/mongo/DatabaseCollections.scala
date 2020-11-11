@@ -117,6 +117,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
 
   val State_ServiceStates = for {
     collection <- db.getOrCreateCollection[ServiceStateDocument]("state.serviceStates")
+    _ <- collection.createIndex(Indexes.ascending("sequence"), new IndexOptions().unique(true))
     _ <- collection.createIndex(Indexes.ascending("state.clientName"))
     _ <- collection.createIndex(Indexes.ascending("state.instance.instanceId"))
     _ <- collection.createIndex(Indexes.ascending("state.instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))

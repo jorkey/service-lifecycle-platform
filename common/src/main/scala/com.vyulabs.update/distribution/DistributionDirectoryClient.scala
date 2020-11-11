@@ -30,7 +30,9 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
   }
 
   def downloadVersionImage(serviceName: ServiceName, buildVersion: BuildVersion, file: File): Boolean = {
-    downloadToFile(makeUrl(downloadVersionPath(serviceName, buildVersion)), file)
+    //downloadToFile(makeUrl(downloadVersionPath(serviceName, buildVersion)), file)
+    // TODO graphql
+    false
   }
 
   def downloadVersion(serviceName: ServiceName, buildVersion: BuildVersion, directory: File): Boolean = {
@@ -56,8 +58,8 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
         log.error("Can't zip build directory")
         return false
       }
-      uploadFromFile(makeUrl(uploadVersionPath(serviceName, buildVersion)), "developerVersion", imageTmpFile)
       // TODO graphql
+      // uploadFromFile(makeUrl(uploadVersionPath(serviceName, buildVersion)), "developerVersion", imageTmpFile)
       // set version info
       false
     } finally {

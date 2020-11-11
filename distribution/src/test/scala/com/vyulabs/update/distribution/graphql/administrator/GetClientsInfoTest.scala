@@ -9,7 +9,7 @@ import distribution.mongo.{ClientInfoDocument, DatabaseCollections, MongoDb}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class ClientsInfoTest extends GraphqlTestEnvironment {
+class GetClientsInfoTest extends GraphqlTestEnvironment {
   behavior of "Client Info Requests"
 
   val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
@@ -20,7 +20,7 @@ class ClientsInfoTest extends GraphqlTestEnvironment {
     result(clientInfoCollection.insert(ClientInfoDocument(ClientInfo("client1", ClientConfig("common", Some("test"))))))
   }
 
-  it should "return user info" in {
+  it should "get user info" in {
     assertResult((OK,
       ("""{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -34,7 +34,7 @@ class ClientsInfoTest extends GraphqlTestEnvironment {
     )
   }
 
-  it should "return clients info" in {
+  it should "get clients info" in {
     assertResult((OK,
       ("""{"data":{"clientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
