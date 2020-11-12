@@ -13,6 +13,7 @@ object Common {
   type ProcessId = String
   type ServiceDirectory = String
   type ProfileName = String
+  type FaultId = String
 
   val Pm2DescFileName = "pm2_desc.json"
 

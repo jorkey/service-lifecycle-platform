@@ -156,7 +156,9 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
 
   val State_FaultReports = for {
     collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReports")
-    _ <- collection.createIndex(Indexes.ascending("report.clientName"))
+    _ <- collection.createIndex(Indexes.ascending("fault.faultId"))
+    _ <- collection.createIndex(Indexes.ascending("fault.clientName"))
+    _ <- collection.createIndex(Indexes.ascending("fault.info.serviceName"))
   } yield collection
 
   val State_UploadStatus = for {

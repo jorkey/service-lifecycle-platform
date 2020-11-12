@@ -17,12 +17,13 @@ import akka.http.scaladsl.server.{AuthenticationFailedRejection, ExceptionHandle
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.{PasswordHash, UserInfo, UserRole, UsersCredentials}
 import distribution.config.DistributionConfig
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
-import distribution.uploaders.DeveloperFaultUploader
+import distribution.loaders.FaultDownloader
 import sangria.parser.QueryParser
 import spray.json._
 
@@ -38,7 +39,7 @@ class Distribution(protected val dir: DistributionDirectory,
                    protected val config: DistributionConfig,
                    protected val usersCredentials: UsersCredentials,
                    protected val graphql: Graphql,
-                   protected val faultUploader: DeveloperFaultUploader)
+                   protected val faultDownloader: FaultDownloader)
                   (implicit protected val system: ActorSystem,
                             protected val materializer: Materializer,
                             protected val executionContext: ExecutionContext,
@@ -112,57 +113,58 @@ class Distribution(protected val dir: DistributionDirectory,
                         }
                       }
                    }
-                } ~
-                pathPrefix(interactiveGraphqlPathPrefix) {
+                } ~ pathPrefix(interactiveGraphqlPathPrefix) {
                   getFromResource("graphiql.html")
                 } ~
                 path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                  get {
-                    authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Client) {
-                      getFromFile(dir.getDeveloperVersionImageFile(service, BuildVersion.parse(version)))
-                    }
-                  } ~
-                  post {
-                    authorize(userInfo.role == UserRole.Administrator) {
-                      path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                        fileUpload("version-image") {
-                          case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, BuildVersion.parse(version)).toPath)
-                            val future = byteSource.runWith(sink)
-                            onSuccess(future) { _ => complete("Complete") }
+                  seal {
+                    get {
+                      authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Client) {
+                        getFromFile(dir.getDeveloperVersionImageFile(service, BuildVersion.parse(version)))
+                      }
+                    } ~ post {
+                      authorize(userInfo.role == UserRole.Administrator) {
+                        path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                          fileUpload("version-image") {
+                            case (fileInfo, byteSource) =>
+                              val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, BuildVersion.parse(version)).toPath)
+                              val future = byteSource.runWith(sink)
+                              onSuccess(future) { _ => complete("Complete") }
+                          }
                         }
                       }
                     }
                   }
-                } ~
-                path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                  get {
-                    authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Service) {
-                      getFromFile(dir.getClientVersionImageFile(service, BuildVersion.parse(version)))
-                    }
-                  } ~
-                  post {
-                    authorize(userInfo.role == UserRole.Administrator) {
-                      path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                        fileUpload("version-image") {
-                          case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(dir.getClientVersionImageFile(service, BuildVersion.parse(version)).toPath)
-                            val future = byteSource.runWith(sink)
-                            onSuccess(future) { _ => complete("Complete") }
+                } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                  seal {
+                    get {
+                      authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Service) {
+                        getFromFile(dir.getClientVersionImageFile(service, BuildVersion.parse(version)))
+                      }
+                    } ~ post {
+                      authorize(userInfo.role == UserRole.Administrator) {
+                        path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                          fileUpload("version-image") {
+                            case (fileInfo, byteSource) =>
+                              val sink = FileIO.toPath(dir.getClientVersionImageFile(service, BuildVersion.parse(version)).toPath)
+                              val future = byteSource.runWith(sink)
+                              onSuccess(future) { _ => complete("Complete") }
+                          }
                         }
                       }
                     }
                   }
-                } /* ~
-                authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Client) {
-                  path(faultReportPath / ".*".r) { (serviceName) =>
-                    fileUpload("fault-report") {
-                      case (fileInfo, byteSource) =>
-                        val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, BuildVersion.parse(version)).toPath)
-                        onSuccess(byteSource.runWith(sink)) { r => complete("Complete") }
+                } ~ path(faultReportPath / ".*".r) { faultId =>
+                  seal {
+                    authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Client) {
+                      val client = if (userInfo.role == UserRole.Client) userInfo.name else Common.OwnClient
+                      fileUpload("fault-report") {
+                        case (fileInfo, byteSource) =>
+                          faultDownloader.receiveFault(faultId, client, byteSource)
+                      }
                     }
                   }
-                }*/
+                }
               }
             }
           } ~

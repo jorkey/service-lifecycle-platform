@@ -10,7 +10,7 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UsersCredentials.credentialsFile
 import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import distribution.uploaders.{ClientFaultUploader, DeveloperFaultUploader, StateUploader}
+import distribution.loaders.{FaultDownloader, StateUploader}
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
@@ -59,7 +59,6 @@ object DistributionMain extends App {
 
     command match {
       case "run" =>
-
         val graphql = new Graphql()
 
         val config = DistributionConfig.readFromFile().getOrElse {
@@ -72,25 +71,15 @@ object DistributionMain extends App {
         val collections = new DatabaseCollections(mongoDb, config.instanceId, new File("."),
           config.developer.map(_.builderDirectory), config.client.map(_.installerDirectory), config.instanceState.expireSec)
 
-        val faultUploader = new DeveloperFaultUploader(collections, dir)
-        for (client <- config.client) {
-          // TODO graphql
-          val stateUploader = new StateUploader(null, null, 1000,
-            (p1, p2) => Future(), (p1, p2) => Future())
-          val clientFaultUploader = new ClientFaultUploader(null, client.developerDistributionUrl)
-          clientFaultUploader.start()
-          Runtime.getRuntime.addShutdownHook(new Thread() {
-            override def run(): Unit = {
-              clientFaultUploader.close()
-            }
-          })
-        }
+        val faultDownloader = new FaultDownloader(collections, dir)
+        val stateUploader = new StateUploader(null, null, 1000,
+          (p1, p2) => Future(), (p1, p2) => Future())
 
         val selfDistributionDir: DistributionDirectory = null // TODO graphql
           // config.selfDistributionClient
           //.map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
         val selfUpdater = new SelfUpdater(selfDistributionDir)
-        val distribution = new Distribution(dir, collections, config, usersCredentials, graphql, faultUploader)
+        val distribution = new Distribution(dir, collections, config, usersCredentials, graphql, faultDownloader)
 
         selfUpdater.start()
 

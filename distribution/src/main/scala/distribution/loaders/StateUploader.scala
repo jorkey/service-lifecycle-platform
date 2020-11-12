@@ -1,4 +1,4 @@
-package distribution.uploaders
+package distribution.loaders
 
 import java.util.concurrent.TimeUnit
 
@@ -63,7 +63,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
       faultReports <- collections.State_FaultReports
       fromSequence <- getLastUploadSequence(faultReports.getName())
       newReportsDocuments <- faultReports.find(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
-      newReports <- Future(newReportsDocuments.map(_.report))
+      newReports <- Future(newReportsDocuments.map(_.fault))
       if !newReports.isEmpty
       result <- uploadRequest("upload_fault_report", null). // TODO graphql
         andThen {

@@ -133,7 +133,7 @@ trait StateUtils extends GetUtils with ClientsUtils with SprayJsonSupport {
     val sort = last.map { last => Sorts.descending("_id") }
     for {
       collection <- collections.State_FaultReports
-      faults <- collection.find(filters, sort, last).map(_.map(_.report))
+      faults <- collection.find(filters, sort, last).map(_.map(_.fault))
     } yield faults
   }
 }
