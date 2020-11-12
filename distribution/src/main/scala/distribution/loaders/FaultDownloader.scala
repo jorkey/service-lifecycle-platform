@@ -1,6 +1,6 @@
 package distribution.loaders
 
-import java.io.{File}
+import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
@@ -19,7 +19,7 @@ import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
 import distribution.graphql.utils.GetUtils
-import distribution.mongo.{DatabaseCollections, FaultReportDocument}
+import distribution.mongo.{DatabaseCollections, FaultReportDocument, MongoDbCollection}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,67 +32,75 @@ import scala.util.{Failure, Success}
 class FaultDownloader(collections: DatabaseCollections,
                       protected val dir: DistributionDirectory)
                      (implicit protected val system: ActorSystem,
-                             protected val materializer: Materializer,
-                             protected val executionContext: ExecutionContext,
-                             protected val filesLocker: SmartFilesLocker) extends GetUtils { self =>
+                      protected val materializer: Materializer,
+                      protected val executionContext: ExecutionContext,
+                      protected val filesLocker: SmartFilesLocker) extends GetUtils { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)
-  private val maxClientServiceReportsCount = 100
+  private val maxFaultReportsCount = 100
 
   def receiveFault(faultId: FaultId, clientName: ClientName, source: Source[ByteString, Any]): Route = {
-    log.info(s"Receive fault file from client ${clientName}")
+    log.info(s"Receive fault report file from client ${clientName}")
     val file = dir.getFaultReportFile(faultId)
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
     onSuccess(result) { result =>
       result.status match {
         case Success(_) =>
-          complete(Future.apply(processFaultReportTask(faultId, clientName, file)).map(_ => OK))
+          val res = for {
+            _ <- Future(processFaultReport(faultId, clientName, file))
+            _ <- clearOldReports()
+          } yield result
+          complete(res.map(_ => OK))
         case Failure(ex) =>
           failWith(ex)
       }
     }
   }
 
-  private def processFaultReportTask(faultId: FaultId, clientName: ClientName, file: File): Unit = {
+  private def processFaultReport(faultId: FaultId, clientName: ClientName, file: File): Unit = {
     implicit val log = LoggerFactory.getLogger(getClass)
 
-    if (file.getName.endsWith(".zip")) {
-      val faultDir = Files.createTempDirectory("fault").toFile
-      if (ZipUtils.unzip(file, faultDir)) {
-        file.delete()
-        val faultInfoFile = new File(faultDir, Common.FaultInfoFileName)
-        parseJsonFileWithLock[FaultInfo](faultInfoFile).foreach { faultInfo =>
-          faultInfo match {
-            case Some(faultInfo) =>
-              for {
-                collection <- collections.State_FaultReports
-                id <- collections.getNextSequence(collection.getName())
-                result <- collection.insert(FaultReportDocument(id, ClientFaultReport(faultId, clientName, faultInfo, IoUtils.listFiles(faultDir))))
-              } yield result
-            case None =>
-              log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${faultDir}")
-          }
+    val tmpDir = Files.createTempDirectory("fault").toFile
+    if (ZipUtils.unzip(file, tmpDir)) {
+      val faultInfoFile = new File(tmpDir, Common.FaultInfoFileName)
+      parseJsonFileWithLock[FaultInfo](faultInfoFile).foreach { faultInfo =>
+        faultInfo match {
+          case Some(faultInfo) =>
+            for {
+              collection <- collections.State_FaultReports
+              id <- collections.getNextSequence(collection.getName())
+              result <- collection.insert(FaultReportDocument(id, ClientFaultReport(faultId, clientName, faultInfo, IoUtils.listFiles(tmpDir))))
+            } yield result
+          case None =>
+            log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${tmpDir}")
         }
-      } else {
-        log.error(s"Can't make directory ${file}")
       }
+    } else {
+      log.error(s"Can't unzip ${file}")
     }
-    (for   {
+  }
+
+  private def clearOldReports(): Future[Unit] = {
+    for {
       collection <- collections.State_FaultReports
-      reports <- collection.find(Filters.eq("client", clientName))
-    } yield (collection, reports)).foreach { case (collection, reports) => {
-      val remainReports = reports
-        .sortBy(_.fault.info.date)
-        .filter(_.fault.info.date.getTime + expirationPeriod >= System.currentTimeMillis())
-        .take(maxClientServiceReportsCount)
-      (reports.toSet -- remainReports.toSet).foreach { report =>
-        collection.delete(Filters.and(
-          Filters.eq("report.reportId", report.fault.faultId)))
-        val faultFile = dir.getFaultReportFile(report.fault.faultId)
-        faultFile.delete()
+      reports <- collection.find()
+      result <- {
+        val remainReports = reports
+          .sortBy(_.fault.info.date)
+          .filter(_.fault.info.date.getTime + expirationPeriod >= System.currentTimeMillis())
+          .take(maxFaultReportsCount)
+        Future(deleteReports(collection, reports.toSet -- remainReports.toSet))
       }
-    }}
+    } yield result
+  }
+
+  private def deleteReports(collection: MongoDbCollection[FaultReportDocument], reports: Set[FaultReportDocument]): Unit = {
+    reports.foreach { report =>
+      collection.delete(Filters.and(Filters.eq("report.reportId", report.fault.faultId)))
+      val faultFile = dir.getFaultReportFile(report.fault.faultId)
+      faultFile.delete()
+    }
   }
 }

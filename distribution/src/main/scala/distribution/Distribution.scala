@@ -115,8 +115,7 @@ class Distribution(protected val dir: DistributionDirectory,
                    }
                 } ~ pathPrefix(interactiveGraphqlPathPrefix) {
                   getFromResource("graphiql.html")
-                } ~
-                path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                } ~ path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                   seal {
                     get {
                       authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Client) {
@@ -167,8 +166,7 @@ class Distribution(protected val dir: DistributionDirectory,
                 }
               }
             }
-          } ~
-          get {
+          } ~ get {
             path(browsePath) {
               seal {
                 authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
@@ -177,8 +175,7 @@ class Distribution(protected val dir: DistributionDirectory,
                   }
                 }
               }
-            } ~
-            pathPrefix(browsePath / ".*".r) { path =>
+            } ~ pathPrefix(browsePath / ".*".r) { path =>
               seal {
                 authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
                   authorize(userRole == UserRole.Administrator) {
@@ -186,8 +183,7 @@ class Distribution(protected val dir: DistributionDirectory,
                   }
                 }
               }
-            } ~
-            getFromResourceDirectory(uiStaticPathPrefix) ~
+            } ~ getFromResourceDirectory(uiStaticPathPrefix) ~
             pathPrefix("") {
               getFromResource(uiStaticPathPrefix + "/index.html", ContentType(`text/html`, `UTF-8`))
             }
