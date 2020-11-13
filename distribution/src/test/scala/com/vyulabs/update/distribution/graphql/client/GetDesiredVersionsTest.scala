@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql.client
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.GraphqlTestEnvironment
+import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.DesiredVersion
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -12,7 +12,7 @@ import distribution.mongo.{ClientInfoDocument, DesiredVersionsDocument, Personal
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class GetDesiredVersionsTest extends GraphqlTestEnvironment {
+class GetDesiredVersionsTest extends TestEnvironment {
   behavior of "Developer Desired Versions Client Requests"
 
   override def beforeAll() = {

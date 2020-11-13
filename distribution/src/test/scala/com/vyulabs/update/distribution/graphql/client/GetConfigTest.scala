@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql.client
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.GraphqlTestEnvironment
+import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -10,7 +10,7 @@ import distribution.mongo.ClientInfoDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class GetConfigTest extends GraphqlTestEnvironment {
+class GetConfigTest extends TestEnvironment {
   behavior of "Config Client Request"
 
   override def beforeAll() = {

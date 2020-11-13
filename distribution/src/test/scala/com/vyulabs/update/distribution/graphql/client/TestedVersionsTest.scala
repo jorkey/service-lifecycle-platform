@@ -4,7 +4,7 @@ import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
-import com.vyulabs.update.distribution.GraphqlTestEnvironment
+import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -13,7 +13,7 @@ import distribution.mongo.{ClientInfoDocument, ClientProfileDocument, PersonalDe
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class TestedVersionsTest extends GraphqlTestEnvironment {
+class TestedVersionsTest extends TestEnvironment {
   behavior of "Tested Versions Info Requests"
 
   override def beforeAll() = {

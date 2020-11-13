@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class DistributionDirectory(val directory: File)(implicit filesLocker: SmartFilesLocker) {
+class DistributionDirectory(val directory: File) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val developerDir = new File(directory, "developer")

@@ -28,7 +28,9 @@ class SelfUpdater(collections: DatabaseCollections)
   private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
   private val distributionVersion = IoUtils.readServiceVersion(Common.DistributionServiceName, new File("."))
 
-  system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(() => maybeUpdate())
+  def start(): Unit = {
+    system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(() => maybeUpdate())
+  }
 
   def maybeUpdate(): Unit = {
     for {

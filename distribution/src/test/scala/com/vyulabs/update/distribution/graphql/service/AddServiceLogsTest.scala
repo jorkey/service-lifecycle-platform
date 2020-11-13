@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.service
 import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
-import com.vyulabs.update.distribution.GraphqlTestEnvironment
+import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientServiceLogLine, LogLine, ServiceLogLine}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
@@ -12,7 +12,7 @@ import distribution.mongo.ServiceLogLineDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class AddServiceLogsTest extends GraphqlTestEnvironment {
+class AddServiceLogsTest extends TestEnvironment {
   behavior of "State Info Requests"
 
   val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Client))

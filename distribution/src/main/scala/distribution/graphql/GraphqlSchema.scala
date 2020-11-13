@@ -21,8 +21,7 @@ case class GraphqlContext(versionHistoryConfig: VersionHistoryConfig,
                           dir: DistributionDirectory, collections: DatabaseCollections, userInfo: UserInfo)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
-                         protected val executionContext: ExecutionContext,
-                         protected val filesLocker: SmartFilesLocker)
+                         protected val executionContext: ExecutionContext)
     extends ClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
 
 

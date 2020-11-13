@@ -18,14 +18,13 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-class GraphqlTestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
+class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val system = ActorSystem("Distribution")
   implicit val materializer = ActorMaterializer()
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
-  implicit val filesLocker = new SmartFilesLocker()
 
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val ownServicesDir = Files.createTempDirectory("test").toFile

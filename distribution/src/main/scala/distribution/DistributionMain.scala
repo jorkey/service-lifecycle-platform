@@ -73,10 +73,13 @@ object DistributionMain extends App {
 
         val faultDownloader = new FaultDownloader(collections, dir)
         config.client.foreach { client =>
-          StateUploader.start(collections, dir, client.uploadStateIntervalSec, client.developerDistributionUrl)
+          val uploader = StateUploader(collections, dir, client.uploadStateIntervalSec, client.developerDistributionUrl)
+          uploader.start()
         }
 
-        new SelfUpdater(collections)
+        val selfUpdater = new SelfUpdater(collections)
+        selfUpdater.start()
+
         val distribution = new Distribution(dir, collections, config, usersCredentials, graphql, faultDownloader)
 
         var server = Http().newServerAt("0.0.0.0", config.network.port)

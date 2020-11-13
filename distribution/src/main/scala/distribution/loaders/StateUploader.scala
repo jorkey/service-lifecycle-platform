@@ -4,14 +4,14 @@ import java.io.IOException
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.Post
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.{IOResult, Materializer}
 import org.slf4j.LoggerFactory
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpMethods, HttpRequest, Multipart}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.mongodb.client.model.{Filters, Sorts, Updates}
@@ -22,7 +22,7 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success}
 
 /**
@@ -39,18 +39,29 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  system.getScheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(() => uploadState())
+  var task = Option.empty[Cancellable]
 
-  private def uploadState(): Unit = {
-    for {
-      _ <- uploadServicesStates()
-      _ <- uploadFaultReports()
-    } yield {
-      system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(() => uploadState())
+  def start(): Unit = {
+    task = Some(system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(uploadState()))
+  }
+
+  def stop(): Unit = {
+    for (task <- task) {
+      task.cancel()
+      this.task = None
     }
   }
 
-  private def uploadServicesStates(): Future[Unit] = {
+  private def uploadState(): Unit = {
+    for {
+      _ <- uploadServiceStates()
+      _ <- uploadFaultReports()
+    } yield {
+      system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState())
+    }
+  }
+
+  private def uploadServiceStates(): Future[Unit] = {
     for {
       serviceStates <- collections.State_ServiceStates
       fromSequence <- getLastUploadSequence(serviceStates.getName())
@@ -116,7 +127,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
 }
 
 object StateUploader {
-  def start(collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, developerDistributionUrl: URL)
+  def apply(collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, developerDistributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
 
     new StateUploader(collections, distributionDirectory, uploadIntervalSec, new UploadRequests() {

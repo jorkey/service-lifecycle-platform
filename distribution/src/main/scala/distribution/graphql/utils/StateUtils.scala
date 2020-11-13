@@ -9,7 +9,6 @@ import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{ClientName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, DesiredVersion, InstanceServiceState, LogLine, TestSignature, TestedDesiredVersions, ClientServiceLogLine, ServiceLogLine}
-import com.vyulabs.update.lock.SmartFilesLocker
 import distribution.mongo.{DatabaseCollections, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -23,7 +22,6 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
-  protected implicit val filesLocker: SmartFilesLocker
 
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections

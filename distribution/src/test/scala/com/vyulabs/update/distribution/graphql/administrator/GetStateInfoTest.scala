@@ -4,7 +4,7 @@ import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
+import com.vyulabs.update.distribution.{DistributionDirectory, TestEnvironment}
 import com.vyulabs.update.info.{ClientServiceState, DesiredVersion, DirectoryServiceState, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.BuildVersion
@@ -13,13 +13,13 @@ import distribution.mongo.{ClientInfoDocument, InstalledDesiredVersionsDocument,
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class GetStateInfoTest extends GraphqlTestEnvironment {
+class GetStateInfoTest extends TestEnvironment {
   behavior of "State Info Requests"
 
   override def beforeAll() = {
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
     val installedVersionsCollection = result(collections.State_InstalledDesiredVersions)
-    val clientServiceStatesCollection = result(collections.State_ServiceStates)
+    val serviceStatesCollection = result(collections.State_ServiceStates)
 
     result(clientInfoCollection.insert(ClientInfoDocument(
       ClientInfo("client1", ClientConfig("common", Some("test"))))))
@@ -27,7 +27,7 @@ class GetStateInfoTest extends GraphqlTestEnvironment {
     result(installedVersionsCollection.insert(
       InstalledDesiredVersionsDocument("client1", Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
 
-    result(clientServiceStatesCollection.insert(ServiceStateDocument(0,
+    result(serviceStatesCollection.insert(ServiceStateDocument(0,
       ClientServiceState("client1", "instance1", DirectoryServiceState("service1", "directory1",
         ServiceState(date = new Date(), None, None, version = Some(BuildVersion(1, 1, 0)), None, None, None, None))))))
   }

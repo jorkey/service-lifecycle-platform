@@ -4,7 +4,7 @@ import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.common.Common._
-import com.vyulabs.update.distribution.GraphqlTestEnvironment
+import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientFaultReport, FaultInfo, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -12,7 +12,7 @@ import distribution.mongo.FaultReportDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class GetFaultReportsTest extends GraphqlTestEnvironment {
+class GetFaultReportsTest extends TestEnvironment {
   behavior of "AdaptationMeasure"
 
   val collection = result(collections.State_FaultReports)

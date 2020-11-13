@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.administrator
 import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.{GraphqlTestEnvironment}
+import com.vyulabs.update.distribution.{TestEnvironment}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
 import com.vyulabs.update.version.BuildVersion
@@ -12,7 +12,7 @@ import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class DeveloperVersionsInfoTest extends GraphqlTestEnvironment {
+class DeveloperVersionsInfoTest extends TestEnvironment {
   behavior of "Developer Versions Requests"
 
   val graphqlContext = GraphqlContext(VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))

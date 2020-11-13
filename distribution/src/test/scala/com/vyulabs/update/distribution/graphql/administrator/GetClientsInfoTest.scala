@@ -2,14 +2,14 @@ package com.vyulabs.update.distribution.graphql.administrator
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.distribution.{DistributionDirectory, GraphqlTestEnvironment}
+import com.vyulabs.update.distribution.{DistributionDirectory, TestEnvironment}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.{ClientInfoDocument, DatabaseCollections, MongoDb}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class GetClientsInfoTest extends GraphqlTestEnvironment {
+class GetClientsInfoTest extends TestEnvironment {
   behavior of "Client Info Requests"
 
   val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
