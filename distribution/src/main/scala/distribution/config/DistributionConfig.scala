@@ -32,12 +32,12 @@ object DeveloperConfig extends DefaultJsonProtocol {
   implicit val developerConfigJson = jsonFormat1(DeveloperConfig.apply)
 }
 
-case class ClientConfig(developerDistributionUrl: URL, installerDirectory: String)
+case class ClientConfig(developerDistributionUrl: URL, installerDirectory: String, uploadStateIntervalSec: Int)
 
 object ClientConfig extends DefaultJsonProtocol {
   import com.vyulabs.update.utils.Utils.URLJson._
 
-  implicit val developerConfigJson = jsonFormat2(ClientConfig.apply)
+  implicit val developerConfigJson = jsonFormat3(ClientConfig.apply)
 }
 
 case class DistributionConfig(title: String,

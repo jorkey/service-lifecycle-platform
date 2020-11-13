@@ -5,13 +5,12 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.info.InstanceServiceState
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UserRole.UserRole
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.GraphqlTypes._
-import distribution.graphql.utils.{ClientVersionUtils, ClientsUtils, DeveloperVersionUtils, GetUtils, PutUtils, StateUtils}
+import distribution.graphql.utils.{ClientVersionUtils, ClientsUtils, DeveloperVersionUtils, StateUtils}
 import distribution.mongo.DatabaseCollections
 
 import scala.concurrent.ExecutionContext
@@ -24,7 +23,7 @@ case class GraphqlContext(versionHistoryConfig: VersionHistoryConfig,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext,
                          protected val filesLocker: SmartFilesLocker)
-    extends ClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils with GetUtils with PutUtils
+    extends ClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
 
 
 object GraphqlSchema {

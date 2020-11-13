@@ -72,22 +72,12 @@ object DistributionMain extends App {
           config.developer.map(_.builderDirectory), config.client.map(_.installerDirectory), config.instanceState.expireSec)
 
         val faultDownloader = new FaultDownloader(collections, dir)
-        val stateUploader = new StateUploader(null, null, 1000,
-          (p1, p2) => Future(), (p1, p2) => Future())
+        config.client.foreach { client =>
+          StateUploader.start(collections, dir, client.uploadStateIntervalSec, client.developerDistributionUrl)
+        }
 
-        val selfDistributionDir: DistributionDirectory = null // TODO graphql
-          // config.selfDistributionClient
-          //.map(client => new DistributionDirectory(dir.getClientDir(client))).getOrElse(dir)
-        val selfUpdater = new SelfUpdater(selfDistributionDir)
+        new SelfUpdater(collections)
         val distribution = new Distribution(dir, collections, config, usersCredentials, graphql, faultDownloader)
-
-        selfUpdater.start()
-
-        Runtime.getRuntime.addShutdownHook(new Thread() {
-          override def run(): Unit = {
-            selfUpdater.close()
-          }
-        })
 
         var server = Http().newServerAt("0.0.0.0", config.network.port)
         config.network.ssl.foreach {
@@ -95,6 +85,7 @@ object DistributionMain extends App {
           ssl => server = server.enableHttps(makeHttpsContext(ssl))
         }
         server.bind(distribution.route)
+
       case "addUser" =>
         val userName = arguments.getValue("userName")
         val role = UserRole.withName(arguments.getValue("role"))

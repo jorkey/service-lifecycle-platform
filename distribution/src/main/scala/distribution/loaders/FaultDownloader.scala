@@ -17,8 +17,7 @@ import com.vyulabs.update.common.Common.{ClientName, FaultId}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IoUtils, ZipUtils}
-import distribution.graphql.utils.GetUtils
+import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}
 import distribution.mongo.{DatabaseCollections, FaultReportDocument, MongoDbCollection}
 import org.slf4j.LoggerFactory
 
@@ -34,7 +33,7 @@ class FaultDownloader(collections: DatabaseCollections,
                      (implicit protected val system: ActorSystem,
                       protected val materializer: Materializer,
                       protected val executionContext: ExecutionContext,
-                      protected val filesLocker: SmartFilesLocker) extends GetUtils { self =>
+                      protected val filesLocker: SmartFilesLocker) { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)
@@ -65,17 +64,15 @@ class FaultDownloader(collections: DatabaseCollections,
     val tmpDir = Files.createTempDirectory("fault").toFile
     if (ZipUtils.unzip(file, tmpDir)) {
       val faultInfoFile = new File(tmpDir, Common.FaultInfoFileName)
-      parseJsonFileWithLock[FaultInfo](faultInfoFile).foreach { faultInfo =>
-        faultInfo match {
-          case Some(faultInfo) =>
-            for {
-              collection <- collections.State_FaultReports
-              id <- collections.getNextSequence(collection.getName())
-              result <- collection.insert(FaultReportDocument(id, ClientFaultReport(faultId, clientName, faultInfo, IoUtils.listFiles(tmpDir))))
-            } yield result
-          case None =>
-            log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${tmpDir}")
-        }
+      IoUtils.readFileToJson[FaultInfo](faultInfoFile) match {
+        case Some(faultInfo) =>
+          for {
+            collection <- collections.State_FaultReports
+            id <- collections.getNextSequence(collection.getName())
+            result <- collection.insert(FaultReportDocument(id, ClientFaultReport(faultId, clientName, faultInfo, IoUtils.listFiles(tmpDir))))
+          } yield result
+        case None =>
+          log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${tmpDir}")
       }
     } else {
       log.error(s"Can't unzip ${file}")

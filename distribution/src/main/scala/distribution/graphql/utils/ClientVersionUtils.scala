@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with SprayJsonSupport {
+trait ClientVersionUtils extends ClientsUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val versionHistoryConfig: VersionHistoryConfig
@@ -26,16 +26,6 @@ trait ClientVersionUtils extends ClientsUtils with GetUtils with PutUtils with S
   protected val collections: DatabaseCollections
 
   protected implicit val executionContext: ExecutionContext
-
-  def clientVersionImageUpload(serviceName: ServiceName, buildVersion: BuildVersion): Route = {
-    val imageFile = dir.getClientVersionImageFile(serviceName, buildVersion)
-    val directory = new File(imageFile.getParent)
-    if (directory.exists() || directory.mkdir()) {
-      fileUploadWithLock("version", imageFile)
-    } else {
-      failWith(new IOException(s"Can't make directory ${directory}"))
-    }
-  }
 
   def addClientVersionInfo(versionInfo: InstalledVersionInfo): Future[Boolean] = {
     log.info(s"Add client version info ${versionInfo}")

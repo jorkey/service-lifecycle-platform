@@ -1,10 +1,6 @@
 package distribution.graphql.utils
 
-import java.io.{File, IOException}
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.server.Directives.failWith
-import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
@@ -22,7 +18,7 @@ import spray.json._
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils with PutUtils with SprayJsonSupport {
+trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val versionHistoryConfig: VersionHistoryConfig
@@ -30,16 +26,6 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with GetUtils w
   protected val collections: DatabaseCollections
 
   protected implicit val executionContext: ExecutionContext
-
-  def developerVersionImageUpload(serviceName: ServiceName, buildVersion: BuildVersion): Route = {
-    val imageFile = dir.getDeveloperVersionImageFile(serviceName, buildVersion)
-    val directory = new File(imageFile.getParent)
-    if (directory.exists() || directory.mkdir()) {
-      fileUploadWithLock("version", imageFile)
-    } else {
-      failWith(new IOException(s"Can't make directory ${directory}"))
-    }
-  }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo): Future[Boolean] = {
     log.info(s"Add developer version info ${versionInfo}")

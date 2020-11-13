@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientsUtils extends GetUtils with PutUtils with SprayJsonSupport {
+trait ClientsUtils extends SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected implicit val system: ActorSystem
