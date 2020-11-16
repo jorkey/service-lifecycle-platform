@@ -6,7 +6,7 @@ import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils}
 import com.vyulabs.update.info.{ProfiledServiceName, UpdateError}
 import com.vyulabs.update.updater.uploaders.FaultUploader
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 
 /**
@@ -34,7 +34,7 @@ class ServiceUpdater(instanceId: InstanceId,
 
   def getUpdateError(): Option[UpdateError] = state.getUpdateError()
 
-  def needUpdate(desiredVersion: Option[BuildVersion]): Option[BuildVersion] = {
+  def needUpdate(desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
     desiredVersion match {
       case Some(newVersion) if (state.getVersion.isEmpty) =>
         state.info(s"Service is not installed")
@@ -51,7 +51,7 @@ class ServiceUpdater(instanceId: InstanceId,
     }
   }
 
-  def beginInstall(newVersion: BuildVersion): Boolean = {
+  def beginInstall(newVersion: ClientDistributionVersion): Boolean = {
     try {
       state.info("Begin install")
 
@@ -71,7 +71,7 @@ class ServiceUpdater(instanceId: InstanceId,
         state.updateError(true, s"Can't make directory ${state.newServiceDirectory}")
         return false
       }
-      if (!clientDirectory.downloadVersion(profiledServiceName.name, newVersion, state.newServiceDirectory)) {
+      if (!clientDirectory.downloadClientVersion(profiledServiceName.name, newVersion, state.newServiceDirectory)) {
         state.updateError(false, s"Can't download ${profiledServiceName.name} version ${newVersion}")
         return false
       }
@@ -102,7 +102,7 @@ class ServiceUpdater(instanceId: InstanceId,
     }
   }
 
-  def finishInstall(newVersion: BuildVersion): Boolean = {
+  def finishInstall(newVersion: ClientDistributionVersion): Boolean = {
     try {
       state.info("Finish install")
 

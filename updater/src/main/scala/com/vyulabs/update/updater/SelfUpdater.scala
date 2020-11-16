@@ -6,7 +6,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 
 /**
@@ -19,7 +19,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: DistributionDi
 
   state.serviceStarted()
 
-  def needUpdate(serviceName: ServiceName, desiredVersion: Option[BuildVersion]): Option[BuildVersion] = {
+  def needUpdate(serviceName: ServiceName, desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
     Utils.isServiceNeedUpdate(serviceName, getVersion(serviceName), desiredVersion)
   }
 
@@ -27,11 +27,11 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: DistributionDi
     state.serviceStopped()
   }
 
-  def beginServiceUpdate(serviceName: ServiceName, toVersion: BuildVersion): Boolean = {
+  def beginServiceUpdate(serviceName: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
     state.info(s"Service ${serviceName} is obsolete. Own version ${getVersion(serviceName)} desired version ${toVersion}")
     state.beginUpdateToVersion(toVersion)
     log.info(s"Downloading ${serviceName} of version ${toVersion}")
-    if (!clientDirectory.downloadVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
+    if (!clientDirectory.downloadClientVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
       state.updateError(false, s"Downloading ${serviceName} error")
       return false
     }
@@ -42,7 +42,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: DistributionDi
     true
   }
 
-  private def getVersion(serviceName: ServiceName): Option[BuildVersion] = {
+  private def getVersion(serviceName: ServiceName): Option[ClientDistributionVersion] = {
     if (serviceName == Common.UpdaterServiceName) {
       state.getVersion()
     } else if (serviceName == Common.ScriptsServiceName) {

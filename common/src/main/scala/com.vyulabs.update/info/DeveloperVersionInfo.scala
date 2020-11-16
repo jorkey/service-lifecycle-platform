@@ -3,7 +3,7 @@ package com.vyulabs.update.info
 import java.util.Date
 
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import spray.json.DefaultJsonProtocol
 
 case class BuildInfo(author: String, branches: Seq[String], date: Date, comment: Option[String])
@@ -14,10 +14,10 @@ object BuildInfo extends DefaultJsonProtocol {
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)
 }
 
-case class DeveloperVersionInfo(serviceName: ServiceName, clientName: Option[ClientName], version: BuildVersion, buildInfo: BuildInfo)
+case class DeveloperVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion, buildInfo: BuildInfo)
 
 object DeveloperVersionInfo extends DefaultJsonProtocol {
-  implicit val serviceVersionInfoJson = jsonFormat4(DeveloperVersionInfo.apply)
+  implicit val serviceVersionInfoJson = jsonFormat3(DeveloperVersionInfo.apply)
 }
 
 case class DeveloperVersionsInfo(versions: Seq[DeveloperVersionInfo])

@@ -1,34 +1,24 @@
 package com.vyulabs.update.installer
 
 import java.io.File
-import java.util.Date
 
-import com.vyulabs.update.distribution.distribution.DeveloperAdminRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.BuildInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
-import com.vyulabs.update.version.BuildVersion
 import org.slf4j.Logger
-import com.vyulabs.update.info.BuildInfo._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.05.19.
   * Copyright FanDate, Inc.
   */
 class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
-  private val adminRepositoryDir = new File("..", "admin")
   private val buildDir = new File("..", "build")
   private val distributionDir = new File("..", "distrib")
 
   def initDeveloper(distributionServicePort: Int): Boolean = {
     log.info("Init admin repository")
-    if (!initAdminRepository()) {
-      log.error("Can't init admin repository")
-      return false
-    }
     log.info("Init build directory")
     if (!initBuildDirectory()) {
       log.error("Can't init build repository")
@@ -40,23 +30,6 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     log.info("Developer is initialized successfully.")
-    true
-  }
-
-  private def initAdminRepository(): Boolean = {
-    if (!adminRepositoryDir.exists()) {
-      log.info(s"Create admin repository in directory ${adminRepositoryDir}")
-      if (!adminRepositoryDir.mkdir()) {
-        log.error(s"Can't make directory ${adminRepositoryDir}")
-        return false
-      }
-      if (!DeveloperAdminRepository.create(adminRepositoryDir)) {
-        log.error("Can't create admin repository")
-        return false
-      }
-    } else {
-      log.info(s"Directory ${adminRepositoryDir} exists")
-    }
     true
   }
 

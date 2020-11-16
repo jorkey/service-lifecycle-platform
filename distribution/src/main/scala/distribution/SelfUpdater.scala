@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.info.DesiredVersions
+import com.vyulabs.update.info.{ClientDesiredVersions, DeveloperDesiredVersions}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
@@ -37,9 +37,9 @@ class SelfUpdater(collections: DatabaseCollections)
       collection <- collections.Client_DesiredVersions
       desiredVersions <- collection.find().map(_.headOption.getOrElse(throw new IOException("Can't find desired versions")))
       distributionNeedUpdate <- Future(Utils.isServiceNeedUpdate(Common.DistributionServiceName,
-        distributionVersion, DesiredVersions.toMap(desiredVersions.versions).get(Common.DistributionServiceName)).isDefined)
+        distributionVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.DistributionServiceName)).isDefined)
       scriptsNeedUpdate <- Future(Utils.isServiceNeedUpdate(Common.ScriptsServiceName,
-        scriptsVersion, DesiredVersions.toMap(desiredVersions.versions).get(Common.ScriptsServiceName)).isDefined)
+        scriptsVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.ScriptsServiceName)).isDefined)
     } yield {
       if (distributionNeedUpdate || scriptsNeedUpdate) {
         log.info("Shutdown HTTP server to update")

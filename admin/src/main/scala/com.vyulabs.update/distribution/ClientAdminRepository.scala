@@ -9,7 +9,7 @@ import java.net.URI
 import com.vyulabs.update.distribution.{AdminRepository, GitRepositoryUtils}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.03.19.
@@ -22,14 +22,6 @@ class ClientAdminRepository(repository: GitRepository)(implicit log: Logger) ext
 
   private val serviceSettingsDirName = "settings"
   private val servicePrivateDirName = "private"
-
-  def buildUpdateLock(): GitLock = {
-    new GitLock(repository, s"lock-update")
-  }
-
-  def buildDesiredVersionsLock(): GitLock = {
-    new GitLock(repository, s"lock-desired-versions")
-  }
 
   def getInstallLogFile(): File = {
     installLogFile
@@ -76,38 +68,5 @@ object ClientAdminRepository {
       return None
     }
     Some(new ClientAdminRepository(rep))
-  }
-
-  def makeStartOfUpdatesMessage(servicesOnly: Option[Set[ServiceName]],
-                                localConfigOnly: Boolean, assignDesiredVersions: Boolean): String = {
-    var startMessage = s"Update"
-    for (servicesOnly <- servicesOnly) {
-      startMessage += """, services """"
-      startMessage += servicesOnly.foldLeft("")((msg, service) => msg + (if (msg.isEmpty) service else ", " + service))
-      startMessage += """""""
-    }
-    if (localConfigOnly) {
-      startMessage += ", with local config only"
-    }
-    if (!assignDesiredVersions) {
-      startMessage += ", not assign desired versions"
-    }
-    startMessage
-  }
-
-  def makeEndOfUpdatesMessage(completed: Boolean, clientVersions: Map[ServiceName, BuildVersion]): String = {
-    if (completed) {
-      val versions = clientVersions.foldLeft("")((versions, rec) => {
-        val str = rec._1 + "->" + rec._2
-        versions + (if (versions.isEmpty) str else ", " + str)
-      })
-      if (clientVersions.size == 1) {
-        "Version " + versions + " is successfully installed"
-      } else {
-        "Versions " + versions + " are successfully installed"
-      }
-    } else {
-      "Update is failed"
-    }
   }
 }

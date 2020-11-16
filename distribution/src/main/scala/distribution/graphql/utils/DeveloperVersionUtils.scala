@@ -7,10 +7,10 @@ import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info._
 import com.vyulabs.update.users.UsersCredentials._
 import com.vyulabs.update.utils.JsUtils.MergedJsObject
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{InvalidConfigException, NotFoundException}
-import distribution.mongo.{DatabaseCollections, DesiredVersionsDocument, DeveloperVersionInfoDocument, PersonalDesiredVersionsDocument}
+import distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 import spray.json._
@@ -36,13 +36,13 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
         val document = DeveloperVersionInfoDocument(id, versionInfo)
         collection.insert(document).map(_ => document)
       }.map(_.info)
-      _ <- removeObsoleteVersions(info.serviceName, info.version.client)
+      _ <- removeObsoleteVersions(info.serviceName)
     } yield info).map(_ => true)
   }
 
-  private def removeObsoleteVersions(serviceName: ServiceName, client: Option[ClientName]): Future[Unit] = {
+  private def removeObsoleteVersions(serviceName: ServiceName): Future[Unit] = {
     for {
-      versions <- getDeveloperVersionsInfo(serviceName, client)
+      versions <- getDeveloperVersionsInfo(serviceName)
       busyVersions <- getBusyVersions(serviceName)
       complete <- {
         val notUsedVersions = versions.filterNot(version => busyVersions.contains(version.version))
@@ -58,7 +58,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
     } yield complete
   }
 
-  def removeDeveloperVersion(serviceName: ServiceName, version: BuildVersion): Future[Boolean] = {
+  def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Future[Boolean] = {
     log.info(s"Remove developer version ${version} of service ${serviceName}")
     val filters = Filters.and(
       Filters.eq("info.serviceName", serviceName),
@@ -72,83 +72,37 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
     } yield profile
   }
 
-  def getDeveloperVersionsInfo(serviceName: ServiceName, clientName: Option[ClientName] = None,
-                               version: Option[BuildVersion] = None): Future[Seq[DeveloperVersionInfo]] = {
+  def getDeveloperVersionsInfo(serviceName: ServiceName, version: Option[DeveloperDistributionVersion] = None): Future[Seq[DeveloperVersionInfo]] = {
     val serviceArg = Filters.eq("info.serviceName", serviceName)
-    val clientArg = clientName.map { clientName => Filters.eq("info.clientName", clientName) }
     val versionArg = version.map { version => Filters.eq("info.version", version.toString) }
-    val filters = Filters.and((Seq(serviceArg) ++ clientArg ++ versionArg).asJava)
+    val filters = Filters.and((Seq(serviceArg) ++ versionArg).asJava)
     for {
       collection <- collections.Developer_VersionsInfo
       info <- collection.find(filters).map(_.map(_.info))
     } yield info
   }
 
-  def setDeveloperDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
-    clientName match {
-      case Some(clientName) =>
-        setDeveloperPersonalDesiredVersions(clientName, desiredVersions)
-      case None =>
-        setDeveloperDesiredVersions(desiredVersions)
-    }
-  }
-
-  def setDeveloperDesiredVersions(desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+  def setDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion]): Future[Boolean] = {
     log.info(s"Set developer desired versions ${desiredVersions}")
     for {
       collection <- collections.Developer_DesiredVersions
-      result <- collection.replace(new BsonDocument(), DesiredVersionsDocument(desiredVersions)).map(_ => true)
+      result <- collection.replace(new BsonDocument(), DeveloperDesiredVersionsDocument(desiredVersions)).map(_ => true)
     } yield result
   }
 
-  def getDeveloperDesiredVersions(clientName: Option[ClientName], serviceNames: Set[ServiceName], merged: Boolean): Future[Seq[DesiredVersion]] = {
-    clientName match {
-      case Some(clientName) =>
-        getDeveloperPersonalDesiredVersions(clientName, serviceNames, merged)
-      case None =>
-        getDeveloperDesiredVersions(serviceNames)
-    }
-  }
-
-  def getDeveloperDesiredVersions(serviceNames: Set[ServiceName]): Future[Seq[DesiredVersion]] = {
+  def getDeveloperDesiredVersions(serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       collection <- collections.Developer_DesiredVersions
-      profile <- collection.find(new BsonDocument()).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion])
+      profile <- collection.find(new BsonDocument()).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DeveloperDesiredVersion])
         .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)))
     } yield profile
   }
 
-  def getDeveloperPersonalDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName], merged: Boolean): Future[Seq[DesiredVersion]] = {
-    if (merged) {
-      getMergedDeveloperDesiredVersions(clientName, serviceNames)
-    } else {
-      getDeveloperPersonalDesiredVersions(clientName)
-    }
-  }
-
-  def setDeveloperPersonalDesiredVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
-    log.info(s"Set developer personal desired versions ${desiredVersions} for client ${clientName}")
-    val clientArg = Filters.eq("clientName", clientName)
-    for {
-      collection <- collections.Developer_PersonalDesiredVersions
-      result <- collection.replace(clientArg, PersonalDesiredVersionsDocument(clientName, desiredVersions)).map(_ => true)
-    } yield result
-  }
-
-  def getDeveloperPersonalDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName] = Set.empty): Future[Seq[DesiredVersion]] = {
-    val clientArg = Filters.eq("clientName", clientName)
-    for {
-      collection <- collections.Developer_PersonalDesiredVersions
-      profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion])
-        .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)))
-    } yield profile
-  }
-
-  def getDeveloperDesiredVersion(serviceName: ServiceName): Future[Option[BuildVersion]] = {
+  def getDeveloperDesiredVersion(serviceName: ServiceName): Future[Option[DeveloperDistributionVersion]] = {
     getDeveloperDesiredVersions(Set(serviceName)).map(_.headOption.map(_.buildVersion))
   }
 
-  def filterDesiredVersionsByProfile(clientName: ClientName, future: Future[Seq[DesiredVersion]]): Future[Seq[DesiredVersion]] = {
+  def filterDesiredVersionsByProfile(clientName: ClientName, future: Future[Seq[DeveloperDesiredVersion]]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
       installProfile <- getClientInstallProfile(clientName)
@@ -156,7 +110,8 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
     } yield versions
   }
 
-  def getMergedDeveloperDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName]): Future[Seq[DesiredVersion]] = {
+  /* TODO graphql
+  def getMergedDeveloperDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       clientConfig <- getClientConfig(clientName)
       developerVersions <- { clientConfig.testClientMatch match {
@@ -185,8 +140,8 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
           } yield testedVersions
         case None =>
           getDeveloperDesiredVersions(serviceNames)
-      }}.map(DesiredVersions.toMap(_))
-      clientDesiredVersions <- getDeveloperPersonalDesiredVersions(clientName, serviceNames).map(DesiredVersions.toMap(_))
+      }}.map(DeveloperDesiredVersions.toMap(_))
+      clientDesiredVersions <- getDeveloperPersonalDesiredVersions(clientName, serviceNames).map(DeveloperDesiredVersions.toMap(_))
       versions <- Future {
         if (clientConfig.testClientMatch.isDefined && !clientDesiredVersions.isEmpty) {
           throw InvalidConfigException("Client required preliminary testing shouldn't have personal desired versions")
@@ -194,18 +149,18 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
         val developerJson = developerVersions.toJson
         val clientJson = clientDesiredVersions.toJson
         val mergedJson = developerJson.merge(clientJson)
-        val mergedVersions = mergedJson.convertTo[Map[ServiceName, BuildVersion]]
-        DesiredVersions.fromMap(mergedVersions)
+        val mergedVersions = mergedJson.convertTo[Map[ServiceName, DeveloperDistributionVersion]]
+        DeveloperDesiredVersions.fromMap(mergedVersions)
       }
     } yield versions
-  }
+  }*/
 
-  private def getBusyVersions(serviceName: ServiceName): Future[Set[BuildVersion]] = {
+  private def getBusyVersions(serviceName: ServiceName): Future[Set[DeveloperDistributionVersion]] = {
     for {
       desiredVersion <- getDeveloperDesiredVersion(serviceName)
       clientsInfo <- getClientsInfo()
       installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.clientName, serviceName))).map(
-        _.flatten.map(_.buildVersion))
+        _.flatten.map(_.buildVersion.original()))
       testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.clientConfig.installProfile))).map(
         _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.buildVersion)).flatten)
       busyVersions <- Future(desiredVersion.toSet ++ installedVersions ++ testedVersions)

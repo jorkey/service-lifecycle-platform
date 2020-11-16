@@ -9,7 +9,7 @@ import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName, ServiceState}
 import com.vyulabs.update.info.FaultInfo._
 import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{DeveloperVersion, DeveloperDistributionVersion}
 
 import scala.collection.immutable.Queue
 import org.slf4j.Logger
@@ -73,7 +73,7 @@ class FaultUploader(archiveDir: File, clientDirectory: DistributionDirectoryClie
         return false
       }
       val profiledServiceName = ProfiledServiceName(fault.info.serviceName, fault.info.serviceProfile)
-      val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(BuildVersion.empty)}_${fault.info.instanceId}_${Utils.serializeISO8601Date(fault.info.date)}_fault.zip"
+      val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(DeveloperDistributionVersion("???", DeveloperVersion.empty))}_${fault.info.instanceId}_${Utils.serializeISO8601Date(fault.info.date)}_fault.zip"
       val archiveFile = new File(serviceDir, archivedFileName)
       val tmpDirectory = Files.createTempDirectory(s"fault-${profiledServiceName}").toFile
       val faultInfoFile = new File(tmpDirectory, Common.FaultInfoFileName)

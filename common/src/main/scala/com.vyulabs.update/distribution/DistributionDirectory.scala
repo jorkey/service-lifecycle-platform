@@ -5,7 +5,7 @@ import java.io._
 import com.vyulabs.update.common.Common.{ClientName, ServiceName}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
 
 /**
@@ -28,7 +28,11 @@ class DistributionDirectory(val directory: File) {
   if (!clientServicesDir.exists()) clientServicesDir.mkdir()
   if (!faultsDir.exists()) faultsDir.mkdir()
 
-  def getVersionImageFileName(serviceName: ServiceName, version: BuildVersion): String = {
+  def getDeveloperVersionImageFileName(serviceName: ServiceName, version: DeveloperDistributionVersion): String = {
+    serviceName + "-" + version + ".zip"
+  }
+
+  def getClientVersionImageFileName(serviceName: ServiceName, version: ClientDistributionVersion): String = {
     serviceName + "-" + version + ".zip"
   }
 
@@ -52,12 +56,12 @@ class DistributionDirectory(val directory: File) {
     dir
   }
 
-  def getDeveloperVersionImageFile(serviceName: ServiceName, version: BuildVersion): File = {
-    new File(getDeveloperServiceDir(serviceName), getVersionImageFileName(serviceName, version))
+  def getDeveloperVersionImageFile(serviceName: ServiceName, version: DeveloperDistributionVersion): File = {
+    new File(getDeveloperServiceDir(serviceName), getDeveloperVersionImageFileName(serviceName, version))
   }
 
-  def getClientVersionImageFile(serviceName: ServiceName, version: BuildVersion): File = {
-    new File(getClientServiceDir(serviceName), getVersionImageFileName(serviceName, version))
+  def getClientVersionImageFile(serviceName: ServiceName, version: ClientDistributionVersion): File = {
+    new File(getClientServiceDir(serviceName), getClientVersionImageFileName(serviceName, version))
   }
 
   def getFaultReportFile(faultId: String): File = {

@@ -10,7 +10,7 @@ import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirec
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.slf4j.Logger
 import com.vyulabs.update.installer.config.InstallerConfig._
 
@@ -141,7 +141,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
 
   private def downloadUpdateServices(clientDistribution: DistributionDirectory,
                                      developerDistribution: DistributionDirectoryClient,
-                                     desiredVersions: Map[ServiceName, BuildVersion]): Boolean = {
+                                     desiredVersions: Map[ServiceName, DeveloperDistributionVersion]): Boolean = {
     Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.InstallerServiceName, Common.UpdaterServiceName).foreach {
       serviceName =>
         /* TODO graphql
@@ -160,7 +160,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private def setupDistributionServer(cloudProvider: String, name: String,
                                       clientDistribution: DistributionDirectory,
                                       developerDistribution: DistributionDirectoryClient,
-                                      desiredVersions: Map[ServiceName, BuildVersion],
+                                      desiredVersions: Map[ServiceName, DeveloperDistributionVersion],
                                       distributionServicePort: Int): Boolean = {
     ZipUtils.unzip(clientDistribution.getDeveloperVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
       distributionDir, (name: String) => {

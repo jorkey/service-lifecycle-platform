@@ -6,7 +6,7 @@ import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.{TestEnvironment}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -100,7 +100,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     removeDeveloperVersion("service1", BuildVersion(5))
   }
 
-  def addDeveloperVersionInfo(serviceName: ServiceName, version: BuildVersion): Unit = {
+  def addDeveloperVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addDeveloperVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
@@ -126,7 +126,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
           "date" -> new Date().toJson))))
   }
 
-  def removeDeveloperVersion(serviceName: ServiceName, version: BuildVersion): Unit = {
+  def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeDeveloperVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,

@@ -5,6 +5,7 @@ package com.vyulabs.update.common
   * Copyright FanDate, Inc.
   */
 object Common {
+  type DistributionName = String
   type ServiceName = String
   type ServiceProfile = String
   type ClientName = String

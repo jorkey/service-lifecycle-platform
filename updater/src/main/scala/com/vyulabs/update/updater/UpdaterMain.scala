@@ -7,7 +7,7 @@ import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
 
 /**
@@ -28,7 +28,7 @@ object UpdaterMain extends App { self =>
   val command = args(0)
   val arguments = Arguments.parse(args.drop(1))
 
-  var blacklist = Map.empty[ProfiledServiceName, BuildVersion]
+  var blacklist = Map.empty[ProfiledServiceName, ClientDistributionVersion]
 
   val config = UpdaterConfig().getOrElse {
     Utils.error("No config")
@@ -127,7 +127,7 @@ object UpdaterMain extends App { self =>
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
             clientDirectory.downloadInstalledDesiredVersions() match {
               case Some(desiredVersions) =>
-                var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, BuildVersion])((map, updater) => {
+                var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, ClientDistributionVersion])((map, updater) => {
                   updater._2.needUpdate(desiredVersions.get(updater._1.name)) match {
                     case Some(version) =>
                       map + (updater._1 -> version)
@@ -169,7 +169,7 @@ object UpdaterMain extends App { self =>
           false
         }
 
-        def update(toUpdate: Map[ProfiledServiceName, BuildVersion]): Boolean = {
+        def update(toUpdate: Map[ProfiledServiceName, ClientDistributionVersion]): Boolean = {
           var errorUpdates = toUpdate.filterNot { case (service, version) =>
             if (Common.isUpdateService(service.name)) {
               selfUpdater.beginServiceUpdate(service.name, version)

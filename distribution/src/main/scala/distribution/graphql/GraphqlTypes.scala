@@ -3,13 +3,13 @@ package distribution.graphql
 import java.util.Date
 
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
-import com.vyulabs.update.info.{BuildInfo, ClientFaultReport, ClientServiceState, DesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstalledVersionInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
+import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, ClientFaultReport, ClientServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
 import com.vyulabs.update.users.UserInfo
 import com.vyulabs.update.users.UserRole
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.utils.Utils.serializeISO8601Date
-import com.vyulabs.update.version.BuildVersion
-import distribution.mongo.{InstalledDesiredVersionsDocument, PersonalDesiredVersionsDocument}
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import distribution.mongo.InstalledDesiredVersionsDocument
 import sangria.ast.StringValue
 import sangria.schema._
 import sangria.macros.derive._
@@ -32,28 +32,41 @@ object GraphqlTypes {
       case _ => Left(DateCoerceViolation)
     })
 
-  case object BuildVersionViolation extends Violation {
-    override def errorMessage: String = "Error during parsing BuildVersion"
+  case object VersionViolation extends Violation {
+    override def errorMessage: String = "Error during parsing version"
   }
 
-  implicit val BuildVersionType = ScalarType[BuildVersion]("BuildVersion",
+  implicit val DeveloperVersionType = ScalarType[DeveloperVersion]("DeveloperVersion",
     coerceOutput = (version, _) => version.toString,
     coerceInput = {
-      case StringValue(version, _, _ , _ , _) => Right(BuildVersion.parse(version))
-      case _ => Left(BuildVersionViolation)
+      case StringValue(version, _, _ , _ , _) => Right(DeveloperVersion.parse(version))
+      case _ => Left(VersionViolation)
     },
     coerceUserInput = {
-      case version: String => Right(BuildVersion.parse(version))
-      case _ => Left(BuildVersionViolation)
+      case version: String => Right(DeveloperVersion.parse(version))
+      case _ => Left(VersionViolation)
     })
 
+  implicit val ClientVersionType = ScalarType[ClientVersion]("ClientVersion",
+    coerceOutput = (version, _) => version.toString,
+    coerceInput = {
+      case StringValue(version, _, _ , _ , _) => Right(ClientVersion.parse(version))
+      case _ => Left(VersionViolation)
+    },
+    coerceUserInput = {
+      case version: String => Right(ClientVersion.parse(version))
+      case _ => Left(VersionViolation)
+    })
+
+  implicit val DeveloperDistributionVersionType = deriveObjectType[Unit, DeveloperDistributionVersion]()
+  implicit val ClientDistributionVersionType = deriveObjectType[Unit, ClientDistributionVersion]()
+  implicit val DeveloperDesiredVersionType = deriveObjectType[Unit, DeveloperDesiredVersion]()
+  implicit val ClientDesiredVersionType = deriveObjectType[Unit, ClientDesiredVersion]()
   implicit val BuildVersionInfoType = deriveObjectType[Unit, BuildInfo]()
   implicit val DeveloperVersionInfoType = deriveObjectType[Unit, DeveloperVersionInfo]()
   implicit val InstallInfoType = deriveObjectType[Unit, InstallInfo]()
-  implicit val ClientVersionInfoType = deriveObjectType[Unit, InstalledVersionInfo]()
+  implicit val ClientVersionInfoType = deriveObjectType[Unit, ClientVersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
-  implicit val DesiredVersionType = deriveObjectType[Unit, DesiredVersion]()
-  implicit val DeveloperDesiredVersionsType = deriveObjectType[Unit, PersonalDesiredVersionsDocument]()
   implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersionsDocument]()
   implicit val ClientConfigInfoType = deriveObjectType[Unit, ClientConfig]()
   implicit val ClientInfoType = deriveObjectType[Unit, ClientInfo]()
@@ -67,12 +80,15 @@ object GraphqlTypes {
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 
+  implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersion"))
+  implicit val ClientDistributionVersionInputType = deriveInputObjectType[ClientDistributionVersion](InputObjectTypeName("ClientDistributionVersion"))
   implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
   implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))
   implicit val DeveloperVersionInfoInputType = deriveInputObjectType[DeveloperVersionInfo](InputObjectTypeName("DeveloperVersionInfoInput"))
-  implicit val InstalledVersionInfoInputType = deriveInputObjectType[InstalledVersionInfo](InputObjectTypeName("InstalledVersionInfoInput"))
+  implicit val InstalledVersionInfoInputType = deriveInputObjectType[ClientVersionInfo](InputObjectTypeName("InstalledVersionInfoInput"))
   implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildVersionInfoInput"))
-  implicit val DesiredVersionInfoInputType = deriveInputObjectType[DesiredVersion](InputObjectTypeName("DesiredVersionInput"))
+  implicit val DeveloperDesiredVersionInfoInputType = deriveInputObjectType[DeveloperDesiredVersion](InputObjectTypeName("DeveloperDesiredVersionInput"))
+  implicit val ClientDesiredVersionInfoInputType = deriveInputObjectType[ClientDesiredVersion](InputObjectTypeName("ClientDesiredVersionInput"))
   implicit val UpdateErrorInputType = deriveInputObjectType[UpdateError](InputObjectTypeName("UpdateErrorInput"))
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))
   implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))

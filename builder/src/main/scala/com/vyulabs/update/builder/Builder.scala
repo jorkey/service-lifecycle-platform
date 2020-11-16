@@ -15,7 +15,7 @@ import com.vyulabs.update.config.UpdateConfig
 import com.vyulabs.update.info.BuildInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 import com.vyulabs.update.config.InstallConfig._
@@ -25,14 +25,14 @@ class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(i
 
   def makeVersion(author: String, serviceName: ServiceName,
                   clientName: Option[ClientName], comment: Option[String],
-                  newVersion: Option[BuildVersion], sourceBranches: Seq[String])
-                 (implicit log: Logger): Option[BuildVersion] = {
+                  newVersion: Option[DeveloperDistributionVersion], sourceBranches: Seq[String])
+                 (implicit log: Logger): Option[DeveloperDistributionVersion] = {
     val servicesDir = new File("services")
     val serviceDir = new File(servicesDir, serviceName)
     if (!serviceDir.exists() && !serviceDir.mkdirs()) {
       log.error(s"Can't create directory ${serviceDir}")
     }
-    IoUtils.synchronize[Option[BuildVersion]](new File(serviceDir, builderLockFile), false,
+    IoUtils.synchronize[Option[DeveloperDistributionVersion]](new File(serviceDir, builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
           log.info(s"Another builder creates version for ${serviceName} - wait ...")
@@ -54,7 +54,7 @@ class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(i
         val gitLock = adminRepository.buildVersionLock(serviceName)
         if (gitLock.lock(DeveloperAdminRepository.makeStartOfBuildMessage(author, serviceName, clientName, comment, newVersion),
           s"Continue build version")) {
-          var generatedVersion = Option.empty[BuildVersion]
+          var generatedVersion = Option.empty[DeveloperDistributionVersion]
           try {
             val sourceDir = new File(serviceDir, "source")
             val buildDir = new File(serviceDir, "build")
@@ -205,13 +205,13 @@ class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(i
       }).flatten
   }
 
-  def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, BuildVersion]] = {
+  def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, DeveloperDistributionVersion]] = {
     // TODO graphql
     //directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_))
     null
   }
 
-  def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[BuildVersion]])
+  def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
                         (implicit log: Logger): Boolean = {
     log.info(s"Upload desired versions ${servicesVersions}" + (if (clientName.isDefined) s" for client ${clientName.get}" else ""))
     IoUtils.synchronize[Boolean](new File(".", builderLockFile), false,

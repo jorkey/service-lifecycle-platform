@@ -4,7 +4,7 @@ import java.io.File
 
 import com.vyulabs.libs.git.{GitRepository}
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
@@ -41,7 +41,7 @@ class AdminRepository(repository: GitRepository)(implicit log: Logger) {
 }
 
 object AdminRepository {
-  def makeStartOfSettingDesiredVersionsMessage(versions: Map[ServiceName, Option[BuildVersion]]): String = {
+  def makeStartOfSettingDesiredVersionsMessage(versions: Map[ServiceName, Option[DeveloperDistributionVersion]]): String = {
     if (versions.size == 1) {
       s"Set desired version " + makeDesiredVersionsStr(versions)
     } else {
@@ -81,7 +81,7 @@ object AdminRepository {
     "Stop marking of desired versions as tested"
   }
 
-  private def makeDesiredVersionsStr(versions: Map[ServiceName, Option[BuildVersion]]): String = {
+  private def makeDesiredVersionsStr(versions: Map[ServiceName, Option[DeveloperDistributionVersion]]): String = {
     versions.foldLeft("") {
       case (versions, record) =>
         val str = record match {

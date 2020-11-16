@@ -5,9 +5,9 @@ import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.{DistributionDirectory, TestEnvironment}
-import com.vyulabs.update.info.{ClientServiceState, DesiredVersion, DirectoryServiceState, ServiceState}
+import com.vyulabs.update.info.{ClientServiceState, DeveloperDesiredVersion, DirectoryServiceState, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.{ClientInfoDocument, InstalledDesiredVersionsDocument, ServiceStateDocument}
 import sangria.macros.LiteralGraphQLStringContext
@@ -25,7 +25,7 @@ class GetStateInfoTest extends TestEnvironment {
       ClientInfo("client1", ClientConfig("common", Some("test"))))))
 
     result(installedVersionsCollection.insert(
-      InstalledDesiredVersionsDocument("client1", Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 3))))))
+      InstalledDesiredVersionsDocument("client1", Seq(DeveloperDesiredVersion("service1", BuildVersion(1, 1, 1)), DeveloperDesiredVersion("service2", BuildVersion(2, 1, 3))))))
 
     result(serviceStatesCollection.insert(ServiceStateDocument(0,
       ClientServiceState("client1", "instance1", DirectoryServiceState("service1", "directory1",

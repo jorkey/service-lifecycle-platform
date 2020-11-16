@@ -8,13 +8,13 @@ import java.util.Base64
 import com.typesafe.config.ConfigParseOptions
 import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceName}
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json.JsValue
 
 import scala.annotation.tailrec
 import spray.json._
-import com.vyulabs.update.info.{DesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, InstanceServiceState, ProfiledServiceName, ServicesVersions}
+import com.vyulabs.update.info.{ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, InstanceServiceState, ProfiledServiceName, ServicesVersions}
 import DistributionWebPaths._
 import com.vyulabs.update.logs.ServiceLogs
 
@@ -24,21 +24,21 @@ import com.vyulabs.update.logs.ServiceLogs
   */
 class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
 
-  def isVersionExists(serviceName: ServiceName, buildVersion: BuildVersion): Boolean = {
+  def isVersionExists(serviceName: ServiceName, buildVersion: ClientDistributionVersion): Boolean = {
     // TODO graphql
     false
   }
 
-  def downloadVersionImage(serviceName: ServiceName, buildVersion: BuildVersion, file: File): Boolean = {
+  def downloadDeveloperVersionImage(serviceName: ServiceName, buildVersion: DeveloperDistributionVersion, file: File): Boolean = {
     //downloadToFile(makeUrl(downloadVersionPath(serviceName, buildVersion)), file)
     // TODO graphql
     false
   }
 
-  def downloadVersion(serviceName: ServiceName, buildVersion: BuildVersion, directory: File): Boolean = {
+  def downloadDeveloperVersion(serviceName: ServiceName, buildVersion: DeveloperDistributionVersion, directory: File): Boolean = {
     val tmpFile = File.createTempFile(s"build", ".zip")
     try {
-      if (!downloadVersionImage(serviceName, buildVersion, tmpFile)) {
+      if (!downloadDeveloperVersionImage(serviceName, buildVersion, tmpFile)) {
         return false
       }
       if (!ZipUtils.unzip(tmpFile, directory)) {
@@ -51,7 +51,45 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
     }
   }
 
-  def uploadDeveloperVersion(serviceName: ServiceName, buildVersion: BuildVersion, buildVersionInfo: DeveloperVersionInfo, buildDir: File): Boolean = {
+  def uploadDeveloperVersion(serviceName: ServiceName, buildVersion: DeveloperDistributionVersion, buildVersionInfo: DeveloperVersionInfo, buildDir: File): Boolean = {
+    val imageTmpFile = File.createTempFile("build", ".zip")
+    try {
+      if (!ZipUtils.zip(imageTmpFile, buildDir)) {
+        log.error("Can't zip build directory")
+        return false
+      }
+      // TODO graphql
+      // uploadFromFile(makeUrl(uploadVersionPath(serviceName, buildVersion)), "developerVersion", imageTmpFile)
+      // set version info
+      false
+    } finally {
+      imageTmpFile.delete()
+    }
+  }
+
+  def downloadClientVersionImage(serviceName: ServiceName, buildVersion: ClientDistributionVersion, file: File): Boolean = {
+    //downloadToFile(makeUrl(downloadVersionPath(serviceName, buildVersion)), file)
+    // TODO graphql
+    false
+  }
+
+  def downloadClientVersion(serviceName: ServiceName, buildVersion: ClientDistributionVersion, directory: File): Boolean = {
+    val tmpFile = File.createTempFile(s"build", ".zip")
+    try {
+      if (!downloadClientVersionImage(serviceName, buildVersion, tmpFile)) {
+        return false
+      }
+      if (!ZipUtils.unzip(tmpFile, directory)) {
+        log.error(s"Can't unzip version ${buildVersion} of service ${serviceName}")
+        return false
+      }
+      true
+    } finally {
+      tmpFile.delete()
+    }
+  }
+
+  def uploadClientVersion(serviceName: ServiceName, buildVersion: ClientDistributionVersion, buildVersionInfo: ClientVersionInfo, buildDir: File): Boolean = {
     val imageTmpFile = File.createTempFile("build", ".zip")
     try {
       if (!ZipUtils.zip(imageTmpFile, buildDir)) {
@@ -72,13 +110,13 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
     false
   }
 
-  def getServerVersion(versionPath: String): Option[BuildVersion] = {
+  def getServerVersion(versionPath: String): Option[DeveloperDistributionVersion] = {
     // TODO graphql
     // set version info
     null
   }
 
-  def waitForServerUpdated(versionPath: String, desiredVersion: BuildVersion): Boolean = {
+  def waitForServerUpdated(versionPath: String, desiredVersion: DeveloperDistributionVersion): Boolean = {
     log.info(s"Wait for distribution server updated")
     Thread.sleep(5000)
     for (_ <- 0 until 25) {
@@ -104,16 +142,16 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
     None
   }
 
-  def downloadInstalledDesiredVersions(): Option[Map[ServiceName, BuildVersion]] = {
+  def downloadInstalledDesiredVersions(): Option[Map[ServiceName, ClientDistributionVersion]] = {
     // TODO graphql
     None
   }
 
-  def downloadDeveloperDesiredVersionsForMe(): Option[Map[ServiceName, BuildVersion]] = {
+  def downloadDeveloperDesiredVersionsForMe(): Option[Map[ServiceName, DeveloperDistributionVersion]] = {
     null
   }
 
-  def downloadDeveloperDesiredVersions(clientName: Option[ClientName]): Option[Seq[DesiredVersion]] = {
+  def downloadDeveloperDesiredVersions(clientName: Option[ClientName]): Option[Seq[DeveloperDesiredVersion]] = {
     clientName match {
       case Some(clientName) =>
         log.info(s"Download desired versions for client ${clientName}")
@@ -124,7 +162,7 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
     null
   }
 
-  def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[DesiredVersion]): Boolean = {
+  def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[DeveloperDesiredVersion]): Boolean = {
     clientName match {
       case Some(clientName) =>
         log.info(s"Upload desired versions for client ${clientName}")
@@ -135,7 +173,7 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
     false
   }
 
-  def uploadDesiredVersions(desiredVersions: Seq[DesiredVersion]): Boolean = {
+  def uploadDesiredVersions(desiredVersions: Seq[ClientDesiredVersion]): Boolean = {
     // TODO graphql
     //uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
     false

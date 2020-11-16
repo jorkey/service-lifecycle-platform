@@ -10,7 +10,7 @@ import com.vyulabs.update.distribution.DistributionDirectoryClient
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
 
 /**
@@ -126,14 +126,14 @@ object InstallerMain extends App {
 
           val clientDistribution = new DistributionDirectoryClient(config.clientDistributionUrl)
 
-          var servicesVersions = Map.empty[ServiceName, Option[BuildVersion]]
+          var servicesVersions = Map.empty[ServiceName, Option[ClientDistributionVersion]]
           for (services <- arguments.getOptionValue("services")) {
             for (record <- services.split(',')) {
               val fields = record.split(":")
               if (fields.size == 1) {
                 servicesVersions += (fields(0) -> None)
               } else if (fields.size == 2) {
-                servicesVersions += (fields(0) -> Some(BuildVersion.parse(fields(1))))
+                servicesVersions += (fields(0) -> Some(ClientDistributionVersion.parse(fields(1))))
               } else {
                 Utils.error(s"Invalid service record ${record}")
               }
@@ -141,7 +141,7 @@ object InstallerMain extends App {
           }
 
           log.info(s"Set desired versions ${servicesVersions}")
-          if (!updateClient.setDesiredVersions(adminRepository, clientDistribution, servicesVersions)) {
+          if (!updateClient.setDesiredVersions(clientDistribution, servicesVersions)) {
             Utils.error("Desired versions assignment error")
           }
 
@@ -151,15 +151,11 @@ object InstallerMain extends App {
           }
           val updateClient = new UpdateClient()
           log.info(s"Initialize admin repository")
-          val adminRepository =
-            ClientAdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
-              Utils.error("Admin repository initialize error")
-            }
 
           val clientDistribution = new DistributionDirectoryClient(config.clientDistributionUrl)
           val developerDistribution = new DistributionDirectoryClient(config.developerDistributionUrl)
 
-          if (!updateClient.signVersionsAsTested(adminRepository, clientDistribution, developerDistribution)) {
+          if (!updateClient.signVersionsAsTested(clientDistribution, developerDistribution)) {
             Utils.error("Sign versions as tested error")
           }
 

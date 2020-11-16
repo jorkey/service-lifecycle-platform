@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{ClientName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, DesiredVersion, InstanceServiceState, LogLine, TestSignature, TestedDesiredVersions, ClientServiceLogLine, ServiceLogLine}
+import com.vyulabs.update.info.{ClientDesiredVersion, ClientFaultReport, ClientServiceLogLine, ClientServiceState, DeveloperDesiredVersion, InstanceServiceState, LogLine, ServiceLogLine, TestSignature, TestedDesiredVersions}
 import distribution.mongo.{DatabaseCollections, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -26,7 +26,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def setInstalledDesiredVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+  def setInstalledDesiredVersions(clientName: ClientName, desiredVersions: Seq[ClientDesiredVersion]): Future[Boolean] = {
     val clientArg = Filters.eq("clientName", clientName)
     for {
       collection <- collections.State_InstalledDesiredVersions
@@ -34,20 +34,20 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
     } yield result
   }
 
-  def getInstalledDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName] = Set.empty): Future[Seq[DesiredVersion]] = {
+  def getInstalledDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName] = Set.empty): Future[Seq[ClientDesiredVersion]] = {
     val clientArg = Filters.eq("clientName", clientName)
     for {
       collection <- collections.State_InstalledDesiredVersions
-      profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DesiredVersion]))
+      profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))
         .map(_.filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)).sortBy(_.serviceName))
     } yield profile
   }
 
-  def getInstalledDesiredVersion(clientName: ClientName, serviceName: ServiceName): Future[Option[DesiredVersion]] = {
+  def getInstalledDesiredVersion(clientName: ClientName, serviceName: ServiceName): Future[Option[ClientDesiredVersion]] = {
     getInstalledDesiredVersions(clientName, Set(serviceName)).map(_.headOption)
   }
 
-  def setTestedVersions(clientName: ClientName, desiredVersions: Seq[DesiredVersion]): Future[Boolean] = {
+  def setTestedVersions(clientName: ClientName, desiredVersions: Seq[DeveloperDesiredVersion]): Future[Boolean] = {
     for {
       clientConfig <- getClientConfig(clientName)
       testedVersions <- getTestedVersions(clientConfig.installProfile)

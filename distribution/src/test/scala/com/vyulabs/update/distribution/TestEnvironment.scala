@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.Graphql
 import distribution.mongo.{DatabaseCollections, MongoDb}

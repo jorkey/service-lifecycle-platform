@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientServiceState, DirectoryServiceState, ServiceState}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.loaders.{StateUploader, UploadRequests}
 import distribution.mongo.ServiceStateDocument
 import spray.json.JsValue

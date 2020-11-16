@@ -5,9 +5,9 @@ import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DesiredVersion, TestSignature, TestedDesiredVersions}
+import com.vyulabs.update.info.{DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.{ClientInfoDocument, InstalledDesiredVersionsDocument, TestedDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
@@ -41,7 +41,7 @@ class SetStateInfoTest extends TestEnvironment {
     result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(TestedDesiredVersions(
       v.versions.profileName, v.versions.versions, v.versions.signatures.map(s => TestSignature(s.clientName, date))))))
       .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common",
-        Seq(DesiredVersion("service1", BuildVersion(1, 1, 2)), DesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date))))))))))
+        Seq(DeveloperDesiredVersion("service1", BuildVersion(1, 1, 2)), DeveloperDesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date))))))))))
     result(collections.State_TestedVersions.map(_.dropItems()))
   }
 
@@ -62,7 +62,7 @@ class SetStateInfoTest extends TestEnvironment {
       """)))
 
     result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("client1",
-      Seq(DesiredVersion("service1", BuildVersion(1, 1, 1)), DesiredVersion("service2", BuildVersion(2, 1, 1))))))(_)))))
+      Seq(DeveloperDesiredVersion("service1", BuildVersion(1, 1, 1)), DeveloperDesiredVersion("service2", BuildVersion(2, 1, 1))))))(_)))))
     result(collections.State_InstalledDesiredVersions.map(_.dropItems()))
   }
 

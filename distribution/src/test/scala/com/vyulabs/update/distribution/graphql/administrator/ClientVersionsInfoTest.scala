@@ -7,7 +7,7 @@ import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -65,7 +65,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
     removeClientVersion("service1", BuildVersion(5))
   }
 
-  def addClientVersionInfo(serviceName: ServiceName, version: BuildVersion): Unit = {
+  def addClientVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addClientVersionInfo":{"version":"${version.toString}"}}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
@@ -92,7 +92,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
         variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson, "buildDate" -> new Date().toJson, "installDate" -> new Date().toJson))))
   }
 
-  def removeClientVersion(serviceName: ServiceName, version: BuildVersion): Unit = {
+  def removeClientVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeClientVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,

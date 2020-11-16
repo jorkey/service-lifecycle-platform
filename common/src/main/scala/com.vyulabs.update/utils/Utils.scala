@@ -7,7 +7,7 @@ import java.util.{Date, TimeZone}
 import java.util.jar.Attributes
 
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json.{JsString, JsValue, RootJsonFormat, deserializationError}
 
@@ -38,11 +38,12 @@ object Utils {
   }
 
   def isServiceNeedUpdate(serviceName: ServiceName,
-                          ownVersion: Option[BuildVersion], desiredVersion: Option[BuildVersion])(implicit log: Logger): Option[BuildVersion] = {
+                          ownVersion: Option[ClientDistributionVersion], desiredVersion: Option[ClientDistributionVersion])
+                         (implicit log: Logger) : Option[ClientDistributionVersion] = {
     ownVersion match {
-      case Some(version) if (!version.isEmpty()) =>
+      case Some(version) =>
         desiredVersion match {
-          case Some(desiredVersion) if !BuildVersion.ordering.equiv(version, desiredVersion) =>
+          case Some(desiredVersion) if version != desiredVersion =>
             log.info(s"Service ${serviceName} is obsolete. Own version ${version} desired version ${desiredVersion}")
             Some(desiredVersion)
           case Some(_) =>
@@ -57,7 +58,7 @@ object Utils {
     }
   }
 
-  def getManifestBuildVersion(product: String)(implicit log: Logger): Option[BuildVersion] = {
+  def getManifestBuildVersion(product: String)(implicit log: Logger): Option[DeveloperDistributionVersion] = {
     try {
       val resources = getClass().getClassLoader().getResources("META-INF/MANIFEST.MF")
       while (resources.hasMoreElements()) {
@@ -69,7 +70,7 @@ object Utils {
           if (title == product) {
             val versionKey = new Attributes.Name("Implementation-Version")
             val version = attrs.getValue(versionKey)
-            return Some(BuildVersion.parse(version))
+            return Some(DeveloperDistributionVersion.parse(version))
           }
         }
       }

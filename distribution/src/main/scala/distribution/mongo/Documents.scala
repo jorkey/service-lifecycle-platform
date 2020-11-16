@@ -1,8 +1,8 @@
 package distribution.mongo
 
-import com.vyulabs.update.common.Common.{ClientName}
+import com.vyulabs.update.common.Common.ClientName
 import com.vyulabs.update.config.{ClientInfo, ClientProfile}
-import com.vyulabs.update.info.{ClientFaultReport, ClientServiceLogLine, ClientServiceState, DesiredVersion, DeveloperVersionInfo, InstalledVersionInfo, TestedDesiredVersions}
+import com.vyulabs.update.info.{ClientDesiredVersion, ClientFaultReport, ClientServiceLogLine, ClientServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, TestedDesiredVersions}
 
 case class SequenceDocument(name: String, sequence: Long)
 
@@ -10,10 +10,12 @@ case class ClientInfoDocument(info: ClientInfo)
 case class ClientProfileDocument(profile: ClientProfile)
 
 case class DeveloperVersionInfoDocument(_id: Long, info: DeveloperVersionInfo)
-case class InstalledVersionInfoDocument(_id: Long, info: InstalledVersionInfo)
-case class DesiredVersionsDocument(versions: Seq[DesiredVersion], _id: Long = 0)
-case class PersonalDesiredVersionsDocument(clientName: ClientName, versions: Seq[DesiredVersion])
-case class InstalledDesiredVersionsDocument(clientName: ClientName, versions: Seq[DesiredVersion])
+case class ClientVersionInfoDocument(_id: Long, info: ClientVersionInfo)
+
+case class DeveloperDesiredVersionsDocument(versions: Seq[DeveloperDesiredVersion], _id: Long = 0)
+case class ClientDesiredVersionsDocument(versions: Seq[ClientDesiredVersion], _id: Long = 0)
+
+case class InstalledDesiredVersionsDocument(clientName: ClientName, versions: Seq[ClientDesiredVersion])
 case class TestedDesiredVersionsDocument(versions: TestedDesiredVersions)
 
 case class ServiceStateDocument(sequence: Long, state: ClientServiceState)

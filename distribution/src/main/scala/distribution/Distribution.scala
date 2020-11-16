@@ -30,7 +30,7 @@ import spray.json._
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 import com.vyulabs.update.distribution.DistributionWebPaths._
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 
@@ -119,14 +119,14 @@ class Distribution(protected val dir: DistributionDirectory,
                   seal {
                     get {
                       authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Client) {
-                        getFromFile(dir.getDeveloperVersionImageFile(service, BuildVersion.parse(version)))
+                        getFromFile(dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)))
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
                         path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                           fileUpload("version-image") {
                             case (fileInfo, byteSource) =>
-                              val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, BuildVersion.parse(version)).toPath)
+                              val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
                               val future = byteSource.runWith(sink)
                               onSuccess(future) { _ => complete("Complete") }
                           }
@@ -138,14 +138,14 @@ class Distribution(protected val dir: DistributionDirectory,
                   seal {
                     get {
                       authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Service) {
-                        getFromFile(dir.getClientVersionImageFile(service, BuildVersion.parse(version)))
+                        getFromFile(dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
                         path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                           fileUpload("version-image") {
                             case (fileInfo, byteSource) =>
-                              val sink = FileIO.toPath(dir.getClientVersionImageFile(service, BuildVersion.parse(version)).toPath)
+                              val sink = FileIO.toPath(dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
                               val future = byteSource.runWith(sink)
                               onSuccess(future) { _ => complete("Complete") }
                           }

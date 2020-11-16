@@ -7,7 +7,7 @@ import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirectoryClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.slf4j.LoggerFactory
 
 /**
@@ -47,7 +47,7 @@ object BuilderMain extends App {
       val clientName: Option[ClientName] = arguments.getOptionValue("client")
       val comment: Option[String] = arguments.getOptionValue("comment")
       val version = {
-        arguments.getOptionValue("version").map(BuildVersion.parse(_)) map { version =>
+        arguments.getOptionValue("version").map(DeveloperDistributionVersion.parse(_)) map { version =>
           clientName match {
             case Some(clientName) =>
               version.client match {
@@ -56,7 +56,7 @@ object BuilderMain extends App {
                 case Some(_) =>
                   version
                 case None =>
-                  BuildVersion.apply(clientName, version.build, None)
+                  DeveloperDistributionVersion.apply(clientName, version.build, None)
               }
             case None =>
               version
@@ -123,7 +123,7 @@ object BuilderMain extends App {
       }
     case "setDesiredVersions" =>
       val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
-      var servicesVersions = Map.empty[ServiceName, Option[BuildVersion]]
+      var servicesVersions = Map.empty[ServiceName, Option[DeveloperDistributionVersion]]
 
       for (services <- arguments.getOptionValue("services")) {
         val servicesRecords: Seq[String] = services.split(",")
@@ -131,7 +131,7 @@ object BuilderMain extends App {
           val fields = record.split(":")
           if (fields.size == 2) {
             val version = if (fields(1) != "-") {
-              Some(BuildVersion.parse(fields(1)))
+              Some(DeveloperDistributionVersion.parse(fields(1)))
             } else {
               None
             }

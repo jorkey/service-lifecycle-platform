@@ -34,10 +34,12 @@ object GraphqlSchema {
   val InstanceArg = Argument("instance", StringType)
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
-  val VersionArg = Argument("version", BuildVersionType)
+  val DeveloperVersionArg = Argument("version", DeveloperDistributionVersionInputType)
+  val ClientVersionArg = Argument("version", ClientDistributionVersionInputType)
   val DeveloperVersionInfoArg = Argument("info", DeveloperVersionInfoInputType)
   val InstalledVersionInfoArg = Argument("info", InstalledVersionInfoInputType)
-  val DesiredVersionsArg = Argument("versions", ListInputType(DesiredVersionInfoInputType))
+  val DeveloperDesiredVersionsArg = Argument("versions", ListInputType(DeveloperDesiredVersionInfoInputType))
+  val ClientDesiredVersionsArg = Argument("versions", ListInputType(ClientDesiredVersionInfoInputType))
   val InstancesStateArg = Argument("state", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
 
@@ -46,7 +48,8 @@ object GraphqlSchema {
   val OptionDirectoryArg = Argument("directory", OptionInputType(StringType))
   val OptionServiceArg = Argument("service", OptionInputType(StringType))
   val OptionServicesArg = Argument("services", OptionInputType(ListInputType(StringType)))
-  val OptionVersionArg = Argument("version", OptionInputType(BuildVersionType))
+  val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperDistributionVersionInputType))
+  val OptionClientVersionArg = Argument("version", OptionInputType(ClientDistributionVersionInputType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
 
@@ -61,23 +64,22 @@ object GraphqlSchema {
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
-        arguments = ServiceArg :: OptionClientArg :: OptionVersionArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperVersionsInfo(c.arg(ServiceArg), clientName = c.arg(OptionClientArg), version = c.arg(OptionVersionArg)) }),
-      Field("developerDesiredVersions", ListType(DesiredVersionType),
-        arguments = OptionClientArg :: OptionServicesArg :: OptionMergedArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionClientArg),
-          c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, c.arg(OptionMergedArg).getOrElse(false)) }),
+        arguments = ServiceArg :: OptionDeveloperVersionArg :: Nil,
+        resolve = c => { c.ctx.getDeveloperVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionDeveloperVersionArg)) }),
+      Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
+        arguments = OptionServicesArg :: Nil,
+        resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
-        arguments = ServiceArg :: OptionVersionArg :: Nil,
-        resolve = c => { c.ctx.getClientVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionVersionArg)) }),
-      Field("clientDesiredVersions", ListType(DesiredVersionType),
+        arguments = ServiceArg :: OptionDeveloperVersionArg :: Nil,
+        resolve = c => { c.ctx.getClientVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionDeveloperVersionArg)) }),
+      Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       Field("clientsInfo", ListType(ClientInfoType),
         resolve = c => c.ctx.getClientsInfo()),
-      Field("installedDesiredVersions", ListType(DesiredVersionType),
+      Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = ClientArg :: OptionServicesArg :: Nil,
         resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(ClientArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("servicesState", ListType(ClientServiceStateType),
@@ -93,16 +95,16 @@ object GraphqlSchema {
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("config", ClientConfigInfoType,
         resolve = c => { c.ctx.getClientConfig(c.ctx.userInfo.name) }),
-      Field("desiredVersions", ListType(DesiredVersionType),
+      Field("desiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperPersonalDesiredVersions(c.ctx.userInfo.name, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet, true) })
+        resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
     )
   )
 
   val ServiceQueries = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
-      Field("desiredVersions", ListType(DesiredVersionType),
+      Field("desiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceState", ListType(InstanceServiceStateType),
@@ -121,31 +123,31 @@ object GraphqlSchema {
         arguments = DeveloperVersionInfoArg :: Nil,
         resolve = c => { c.ctx.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),
       Field("removeDeveloperVersion", BooleanType,
-        arguments = ServiceArg :: VersionArg :: Nil,
-        resolve = c => { c.ctx.removeDeveloperVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
+        arguments = ServiceArg :: DeveloperVersionArg :: Nil,
+        resolve = c => { c.ctx.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg)) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = InstalledVersionInfoArg :: Nil,
         resolve = c => { c.ctx.addClientVersionInfo(c.arg(InstalledVersionInfoArg)) }),
       Field("removeClientVersion", BooleanType,
-        arguments = ServiceArg :: VersionArg :: Nil,
-        resolve = c => { c.ctx.removeClientVersion(c.arg(ServiceArg), c.arg(VersionArg)) }),
+        arguments = ServiceArg :: ClientVersionArg :: Nil,
+        resolve = c => { c.ctx.removeClientVersion(c.arg(ServiceArg), c.arg(ClientVersionArg)) }),
       Field("setDeveloperDesiredVersions", BooleanType,
-        arguments = OptionClientArg :: DesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setDeveloperDesiredVersions(c.arg(OptionClientArg), c.arg(DesiredVersionsArg)) }),
+        arguments = DeveloperDesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
       Field("setClientDesiredVersions", BooleanType,
-        arguments = DesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setClientDesiredVersions(c.arg(DesiredVersionsArg)) })
+        arguments = ClientDesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) })
   ))
 
   val ClientMutations = ObjectType(
     "Mutation",
     fields[GraphqlContext, Unit](
       Field("setTestedVersions", BooleanType,
-        arguments = DesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setTestedVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
+        arguments = DeveloperDesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.setTestedVersions(c.ctx.userInfo.name, c.arg(DeveloperDesiredVersionsArg)) }),
       Field("setInstalledDesiredVersions", BooleanType,
-        arguments = DesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(DesiredVersionsArg)) }),
+        arguments = ClientDesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(ClientDesiredVersionsArg)) }),
       Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
         resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }))

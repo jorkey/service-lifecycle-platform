@@ -9,7 +9,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.info._
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.bson.codecs.{Codec, DecoderContext, EncoderContext}
 import org.bson.{BsonReader, BsonWriter}
@@ -24,16 +24,16 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
                           instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  class BuildVersionCodec extends Codec[BuildVersion] {
-    override def encode(writer: BsonWriter, value: BuildVersion, encoderContext: EncoderContext): Unit = {
+  class BuildVersionCodec extends Codec[DeveloperDistributionVersion] {
+    override def encode(writer: BsonWriter, value: DeveloperDistributionVersion, encoderContext: EncoderContext): Unit = {
       writer.writeString(value.toString)
     }
 
-    override def decode(reader: BsonReader, decoderContext: DecoderContext): BuildVersion = {
-      BuildVersion.parse(reader.readString())
+    override def decode(reader: BsonReader, decoderContext: DecoderContext): DeveloperDistributionVersion = {
+      DeveloperDistributionVersion.parse(reader.readString())
     }
 
-    override def getEncoderClass: Class[BuildVersion] = classOf[BuildVersion]
+    override def getEncoderClass: Class[DeveloperDistributionVersion] = classOf[DeveloperDistributionVersion]
   }
 
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
@@ -41,12 +41,11 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     classOf[SequenceDocument],
     classOf[BuildInfo],
     classOf[DeveloperVersionInfoDocument],
-    classOf[InstalledVersionInfo],
-    classOf[InstalledVersionInfoDocument],
-    classOf[DesiredVersion],
+    classOf[ClientVersionInfo],
+    classOf[ClientVersionInfoDocument],
+    classOf[DeveloperDesiredVersion],
     classOf[DeveloperVersionInfo],
-    classOf[DesiredVersionsDocument],
-    classOf[PersonalDesiredVersionsDocument],
+    classOf[DeveloperDesiredVersionsDocument],
     classOf[InstalledDesiredVersionsDocument],
     classOf[InstallInfo],
     classOf[ClientProfile],
@@ -82,18 +81,12 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
   } yield collection
 
   val Client_VersionsInfo = for {
-    collection <- db.getOrCreateCollection[InstalledVersionInfoDocument]("client.installedVersionsInfo")
+    collection <- db.getOrCreateCollection[ClientVersionInfoDocument]("client.installedVersionsInfo")
     _ <- collection.createIndex(Indexes.ascending("info.serviceName", "info.version"), new IndexOptions().unique(true))
   } yield collection
 
-  val Developer_DesiredVersions = db.getOrCreateCollection[DesiredVersionsDocument]("developer.desiredVersions")
-
-  val Developer_PersonalDesiredVersions = db.getOrCreateCollection[PersonalDesiredVersionsDocument]("developer.personalDesiredVersions")
-
-  val Client_DesiredVersions = for {
-    collection <- db.getOrCreateCollection[DesiredVersionsDocument]("client.desiredVersions")
-    _ <- collection.createIndex(Indexes.ascending("versions.clientName"))
-  } yield collection
+  val Developer_DesiredVersions = db.getOrCreateCollection[DeveloperDesiredVersionsDocument]("developer.desiredVersions")
+  val Client_DesiredVersions = db.getOrCreateCollection[ClientDesiredVersionsDocument]("client.desiredVersions")
 
   val Developer_ClientsInfo = for {
     collection <- db.getOrCreateCollection[ClientInfoDocument]("developer.clientsInfo")

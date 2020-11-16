@@ -7,7 +7,7 @@ import com.typesafe.config._
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json._
 
@@ -185,7 +185,7 @@ object IoUtils {
     }
   }
 
-  def readServiceVersion(serviceName: ServiceName, directory: File)(implicit log: Logger): Option[BuildVersion] = {
+  def readServiceVersion(serviceName: ServiceName, directory: File)(implicit log: Logger): Option[ClientDistributionVersion] = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
     if (versionMarkFile.exists()) {
       val bytes = readFileToBytes(versionMarkFile).getOrElse {
@@ -193,7 +193,7 @@ object IoUtils {
       }
       val str = new String(bytes, "utf8").trim
       try {
-        val version = BuildVersion.parse(str)
+        val version = ClientDistributionVersion.parse(str)
         Some(version)
       } catch {
         case ex: Exception =>
@@ -214,7 +214,7 @@ object IoUtils {
     }
   }
 
-  def writeServiceVersion(directory: File, serviceName: ServiceName, version: BuildVersion)(implicit log: Logger): Boolean = {
+  def writeServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)(implicit log: Logger): Boolean = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
     writeBytesToFile(versionMarkFile, version.toString.getBytes("utf8"))
   }
