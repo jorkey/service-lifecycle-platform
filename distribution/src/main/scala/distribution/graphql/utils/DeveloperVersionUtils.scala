@@ -99,7 +99,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
   }
 
   def getDeveloperDesiredVersion(serviceName: ServiceName): Future[Option[DeveloperDistributionVersion]] = {
-    getDeveloperDesiredVersions(Set(serviceName)).map(_.headOption.map(_.buildVersion))
+    getDeveloperDesiredVersions(Set(serviceName)).map(_.headOption.map(_.version))
   }
 
   def filterDesiredVersionsByProfile(clientName: ClientName, future: Future[Seq[DeveloperDesiredVersion]]): Future[Seq[DeveloperDesiredVersion]] = {
@@ -160,9 +160,9 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
       desiredVersion <- getDeveloperDesiredVersion(serviceName)
       clientsInfo <- getClientsInfo()
       installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.clientName, serviceName))).map(
-        _.flatten.map(_.buildVersion.original()))
+        _.flatten.map(_.version.original()))
       testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.clientConfig.installProfile))).map(
-        _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.buildVersion)).flatten)
+        _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.version)).flatten)
       busyVersions <- Future(desiredVersion.toSet ++ installedVersions ++ testedVersions)
     } yield busyVersions
   }

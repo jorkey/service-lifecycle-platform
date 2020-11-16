@@ -46,23 +46,7 @@ object BuilderMain extends App {
       val serviceName: ServiceName = arguments.getValue("service")
       val clientName: Option[ClientName] = arguments.getOptionValue("client")
       val comment: Option[String] = arguments.getOptionValue("comment")
-      val version = {
-        arguments.getOptionValue("version").map(DeveloperDistributionVersion.parse(_)) map { version =>
-          clientName match {
-            case Some(clientName) =>
-              version.client match {
-                case Some(client) if (client != clientName) =>
-                  Utils.error(s"Client name in the version ${client} != client ${clientName}")
-                case Some(_) =>
-                  version
-                case None =>
-                  DeveloperDistributionVersion.apply(clientName, version.build, None)
-              }
-            case None =>
-              version
-          }
-        }
-      }
+      val version = arguments.getOptionValue("version").map(DeveloperDistributionVersion.parse(_))
       val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
       val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
 

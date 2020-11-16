@@ -7,9 +7,9 @@ import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{ClientInfoDocument, ClientProfileDocument, PersonalDesiredVersionsDocument, TestedDesiredVersionsDocument}
+import distribution.mongo.{ClientInfoDocument, ClientProfileDocument, TestedDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -75,20 +75,9 @@ class TestedVersionsTest extends TestEnvironment {
   it should "return error if client required preliminary testing has personal desired versions" in {
     val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
     result(collections.State_TestedVersions.map(_.insert(
-      TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(DeveloperDesiredVersion("service1", BuildVersion(1, 1, 0))), Seq(TestSignature("test-client", new Date())))))))
-    result(collections.Developer_PersonalDesiredVersions.map(_.insert(
-      PersonalDesiredVersionsDocument("client1", Seq(DeveloperDesiredVersion("service1", BuildVersion("client1", 1, 1)))))))
-    assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"Client required preliminary testing shouldn't have personal desired versions","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
-        graphql"""
-        query {
-          desiredVersions {
-            serviceName
-            buildVersion
-          }
-        }
-      """)))
+      TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
+        DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 0))))),
+        Seq(TestSignature("test-client", new Date())))))))
     result(collections.Client_DesiredVersions.map(_.dropItems()))
   }
 }

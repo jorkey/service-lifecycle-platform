@@ -30,31 +30,31 @@ class ClientDesiredVersionsTest extends TestEnvironment {
         mutation {
           setClientDesiredVersions (
             versions: [
-               { serviceName: "service1", buildVersion: "1.1.2"},
-               { serviceName: "service2", buildVersion: "2.1.4"}
+               { serviceName: "service1", version: "test-1.1.2" },
+               { serviceName: "service2", version: "test-2.1.4" }
             ]
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"2.1.4"}]}}""").parseJson))(
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"},{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName
-             buildVersion
+             version
           }
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"}]}}""").parseJson))(
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions (services: ["service1"]) {
              serviceName
-             buildVersion
+             version
           }
         }
       """)))

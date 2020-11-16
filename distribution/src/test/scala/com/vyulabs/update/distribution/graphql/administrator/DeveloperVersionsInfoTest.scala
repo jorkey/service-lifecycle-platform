@@ -1,12 +1,13 @@
 package com.vyulabs.update.distribution.graphql.administrator
 
 import java.util.Date
+
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.{TestEnvironment}
+import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -18,13 +19,13 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
   val graphqlContext = GraphqlContext(VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
   it should "add/get/remove developer version info" in {
-    addDeveloperVersionInfo("service1", BuildVersion(1, 1, 1))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":"1.1.1","buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          developerVersionsInfo (service: "service1", version: "1.1.1") {
+          developerVersionsInfo (service: "service1", version: "test-1.1.1") {
             version
             buildInfo {
               author
@@ -34,15 +35,15 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       """
     )))
 
-    removeDeveloperVersion("service1", BuildVersion(1, 1, 1))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
   }
 
   it should "get developer versions info" in {
-    addDeveloperVersionInfo("service1", BuildVersion(1, 1, 1))
-    addDeveloperVersionInfo("service1", BuildVersion(1, 1, 2))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2))))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":"1.1.1","buildInfo":{"author":"author1"}},{"version":"1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"}},{"version":"test-1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           developerVersionsInfo (service: "service1") {
@@ -55,38 +56,19 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       """))
     )
 
-    removeDeveloperVersion("service1", BuildVersion(1, 1, 1))
-    removeDeveloperVersion("service1", BuildVersion(1, 1, 2))
-  }
-
-  it should "add/get developer for client version info" in {
-    addDeveloperVersionInfo("service1", BuildVersion("client1", 1, 1, 2))
-
-    assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":"client1-1.1.2","buildInfo":{"author":"author1"}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          developerVersionsInfo (service: "service1", client: "client1") {
-            version
-            buildInfo {
-              author
-            }
-          }
-        }
-      """)))
-
-    removeDeveloperVersion("service1", BuildVersion("client1", 1, 1, 2))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2))))
   }
 
   it should "remove obsolete developer versions" in {
-    addDeveloperVersionInfo("service1", BuildVersion(1))
-    addDeveloperVersionInfo("service1", BuildVersion(2))
-    addDeveloperVersionInfo("service1", BuildVersion(3))
-    addDeveloperVersionInfo("service1", BuildVersion(4))
-    addDeveloperVersionInfo("service1", BuildVersion(5))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(3))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(4))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(5))))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":"3"},{"version":"4"},{"version":"5"}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":"test-3"},{"version":"test-4"},{"version":"test-5"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           developerVersionsInfo (service: "service1") {
@@ -95,9 +77,9 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
         }
       """)))
 
-    removeDeveloperVersion("service1", BuildVersion(3))
-    removeDeveloperVersion("service1", BuildVersion(4))
-    removeDeveloperVersion("service1", BuildVersion(5))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(3))))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(4))))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(5))))
   }
 
   def addDeveloperVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
@@ -105,11 +87,10 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       (s"""{"data":{"addDeveloperVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
         graphql"""
-                  mutation AddDeveloperVersionInfo($$service: String!, $$clientName: String, $$version: BuildVersion!, $$date: Date!) {
+                  mutation AddDeveloperVersionInfo($$service: String!, $$version: DeveloperDistributionVersion!, $$date: Date!) {
                     addDeveloperVersionInfo (
                       info: {
                         serviceName: $$service,
-                        clientName: $$clientName,
                         version: $$version,
                         buildInfo: {
                           author: "author1",
@@ -121,7 +102,6 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
                 """,
         variables = JsObject(
           "service" -> JsString(serviceName),
-          "clientName" -> version.client.map(JsString(_)).getOrElse(JsNull),
           "version" -> version.toJson,
           "date" -> new Date().toJson))))
   }
@@ -131,7 +111,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       (s"""{"data":{"removeDeveloperVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
         graphql"""
-                  mutation RemoveDeveloperVersion($$service: String!, $$version: BuildVersion!) {
+                  mutation RemoveDeveloperVersion($$service: String!, $$version: DeveloperDistributionVersion!) {
                     removeDeveloperVersion (service: $$service, version: $$version)
                   }
                 """,

@@ -47,6 +47,17 @@ object GraphqlTypes {
       case _ => Left(VersionViolation)
     })
 
+  implicit val DeveloperDistributionVersionType = ScalarType[DeveloperDistributionVersion]("DeveloperDistributionVersion",
+    coerceOutput = (version, _) => version.toString,
+    coerceInput = {
+      case StringValue(version, _, _ , _ , _) => Right(DeveloperDistributionVersion.parse(version))
+      case _ => Left(VersionViolation)
+    },
+    coerceUserInput = {
+      case version: String => Right(DeveloperDistributionVersion.parse(version))
+      case _ => Left(VersionViolation)
+    })
+
   implicit val ClientVersionType = ScalarType[ClientVersion]("ClientVersion",
     coerceOutput = (version, _) => version.toString,
     coerceInput = {
@@ -58,8 +69,17 @@ object GraphqlTypes {
       case _ => Left(VersionViolation)
     })
 
-  implicit val DeveloperDistributionVersionType = deriveObjectType[Unit, DeveloperDistributionVersion]()
-  implicit val ClientDistributionVersionType = deriveObjectType[Unit, ClientDistributionVersion]()
+  implicit val ClientDistributionVersionType = ScalarType[ClientDistributionVersion]("ClientDistributionVersion",
+    coerceOutput = (version, _) => version.toString,
+    coerceInput = {
+      case StringValue(version, _, _ , _ , _) => Right(ClientDistributionVersion.parse(version))
+      case _ => Left(VersionViolation)
+    },
+    coerceUserInput = {
+      case version: String => Right(ClientDistributionVersion.parse(version))
+      case _ => Left(VersionViolation)
+    })
+
   implicit val DeveloperDesiredVersionType = deriveObjectType[Unit, DeveloperDesiredVersion]()
   implicit val ClientDesiredVersionType = deriveObjectType[Unit, ClientDesiredVersion]()
   implicit val BuildVersionInfoType = deriveObjectType[Unit, BuildInfo]()
@@ -80,8 +100,6 @@ object GraphqlTypes {
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
   implicit val ClientFaultReportType = deriveObjectType[Unit, ClientFaultReport]()
 
-  implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersion"))
-  implicit val ClientDistributionVersionInputType = deriveInputObjectType[ClientDistributionVersion](InputObjectTypeName("ClientDistributionVersion"))
   implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
   implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))
   implicit val DeveloperVersionInfoInputType = deriveInputObjectType[DeveloperVersionInfo](InputObjectTypeName("DeveloperVersionInfoInput"))
@@ -92,5 +110,5 @@ object GraphqlTypes {
   implicit val UpdateErrorInputType = deriveInputObjectType[UpdateError](InputObjectTypeName("UpdateErrorInput"))
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))
   implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))
-  implicit val LogLineInputType = deriveInputObjectType[LogLine](InputObjectTypeName("LogLine"))
+  implicit val LogLineInputType = deriveInputObjectType[LogLine](InputObjectTypeName("LogLineInput"))
 }

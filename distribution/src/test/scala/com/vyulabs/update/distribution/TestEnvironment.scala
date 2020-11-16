@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.Graphql
 import distribution.mongo.{DatabaseCollections, MongoDb}
@@ -28,7 +28,7 @@ class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val ownServicesDir = Files.createTempDirectory("test").toFile
-  IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, BuildVersion(1, 2, 3))
+  IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, "self-instance", ownServicesDir, Some("build"), Some("install"), 100)
   val graphql = new Graphql()

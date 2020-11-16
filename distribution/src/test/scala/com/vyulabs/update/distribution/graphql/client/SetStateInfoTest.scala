@@ -5,9 +5,9 @@ import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
+import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.users.{UserInfo, UserRole}
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.{ClientInfoDocument, InstalledDesiredVersionsDocument, TestedDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
@@ -30,8 +30,8 @@ class SetStateInfoTest extends TestEnvironment {
         mutation {
           setTestedVersions (
             versions: [
-              { serviceName: "service1", buildVersion: "1.1.2" },
-              { serviceName: "service2", buildVersion: "2.1.2" }
+              { serviceName: "service1", version: "test-1.1.2" },
+              { serviceName: "service2", version: "test-2.1.2" }
             ]
           )
         }
@@ -40,8 +40,10 @@ class SetStateInfoTest extends TestEnvironment {
     val date = new Date()
     result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(TestedDesiredVersions(
       v.versions.profileName, v.versions.versions, v.versions.signatures.map(s => TestSignature(s.clientName, date))))))
-      .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common",
-        Seq(DeveloperDesiredVersion("service1", BuildVersion(1, 1, 2)), DeveloperDesiredVersion("service2", BuildVersion(2, 1, 2))), Seq(TestSignature("client1", date))))))))))
+      .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
+        DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2)))),
+        DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2, 1, 2))))),
+        Seq(TestSignature("client1", date))))))))))
     result(collections.State_TestedVersions.map(_.dropItems()))
   }
 
@@ -54,20 +56,21 @@ class SetStateInfoTest extends TestEnvironment {
         mutation {
           setInstalledDesiredVersions (
             versions: [
-               { serviceName: "service1", buildVersion: "1.1.1" },
-               { serviceName: "service2", buildVersion: "2.1.1" }
+               { serviceName: "service1", version: "test-1.1.1" },
+               { serviceName: "service2", version: "test-2.1.1" }
             ]
           )
         }
       """)))
 
-    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("client1",
-      Seq(DeveloperDesiredVersion("service1", BuildVersion(1, 1, 1)), DeveloperDesiredVersion("service2", BuildVersion(2, 1, 1))))))(_)))))
+    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("client1", Seq(
+      ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))),
+      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 1)))))))))(_)))))
     result(collections.State_InstalledDesiredVersions.map(_.dropItems()))
   }
 
   it should "set services state" in {
-    val graphqlContext1 = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext1 = GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
     assertResult((OK,
       ("""{"data":{"setServicesState":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
@@ -75,7 +78,7 @@ class SetStateInfoTest extends TestEnvironment {
           setServicesState (
             state: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  service: { date: $$date, version: "1.2.3" }
+                  service: { date: $$date, version: "test-1.2.3" }
               }
             ]
           )
@@ -89,7 +92,7 @@ class SetStateInfoTest extends TestEnvironment {
           setServicesState (
             state: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  service: { date: $$date, version: "1.2.4" }
+                  service: { date: $$date, version: "test-1.2.4" }
               }
             ]
           )
@@ -98,7 +101,7 @@ class SetStateInfoTest extends TestEnvironment {
 
     val graphqlContext2 = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"1.2.4"}}}]}}""").parseJson))(
+      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""
         query {
           servicesState (client: "client1", service: "service1") {

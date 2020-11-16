@@ -11,7 +11,7 @@ class DeveloperVersionTest extends FlatSpec with Matchers {
 
   it should "parse version" in {
     val version = DeveloperVersion.parse("1.2")
-    assertResult(DeveloperVersion(1, 2))(version)
+    assertResult(DeveloperVersion(Seq(1, 2)))(version)
   }
 
   it should "serialize version" in {

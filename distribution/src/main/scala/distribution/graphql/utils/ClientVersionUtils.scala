@@ -99,7 +99,7 @@ trait ClientVersionUtils extends ClientsUtils with SprayJsonSupport {
   }
 
   def getClientDesiredVersion(serviceName: ServiceName): Future[Option[ClientDistributionVersion]] = {
-    getClientDesiredVersions(Set(serviceName)).map(_.headOption.map(_.buildVersion))
+    getClientDesiredVersions(Set(serviceName)).map(_.headOption.map(_.version))
   }
 
   def getClientDesiredVersions(clientName: ClientName): Future[Seq[ClientDesiredVersion]] = {

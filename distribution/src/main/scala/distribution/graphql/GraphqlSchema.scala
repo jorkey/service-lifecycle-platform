@@ -5,7 +5,6 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.users.UserRole.UserRole
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
@@ -34,8 +33,8 @@ object GraphqlSchema {
   val InstanceArg = Argument("instance", StringType)
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
-  val DeveloperVersionArg = Argument("version", DeveloperDistributionVersionInputType)
-  val ClientVersionArg = Argument("version", ClientDistributionVersionInputType)
+  val DeveloperVersionArg = Argument("version", DeveloperDistributionVersionType)
+  val ClientVersionArg = Argument("version", ClientDistributionVersionType)
   val DeveloperVersionInfoArg = Argument("info", DeveloperVersionInfoInputType)
   val InstalledVersionInfoArg = Argument("info", InstalledVersionInfoInputType)
   val DeveloperDesiredVersionsArg = Argument("versions", ListInputType(DeveloperDesiredVersionInfoInputType))
@@ -48,8 +47,8 @@ object GraphqlSchema {
   val OptionDirectoryArg = Argument("directory", OptionInputType(StringType))
   val OptionServiceArg = Argument("service", OptionInputType(StringType))
   val OptionServicesArg = Argument("services", OptionInputType(ListInputType(StringType)))
-  val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperDistributionVersionInputType))
-  val OptionClientVersionArg = Argument("version", OptionInputType(ClientDistributionVersionInputType))
+  val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperDistributionVersionType))
+  val OptionClientVersionArg = Argument("version", OptionInputType(ClientDistributionVersionType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
 

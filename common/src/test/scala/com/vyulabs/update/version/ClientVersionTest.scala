@@ -11,9 +11,9 @@ class ClientVersionTest extends FlatSpec with Matchers {
 
   it should "parse version" in {
     val version = ClientVersion.parse("1.2")
-    assertResult(ClientVersion(DeveloperVersion(1, 2)))(version)
+    assertResult(ClientVersion(DeveloperVersion(Seq(1, 2))))(version)
     val localVersion = ClientVersion.parse("3.2_1")
-    assertResult(ClientVersion(DeveloperVersion(3, 2), Some(1)))(localVersion)
+    assertResult(ClientVersion(DeveloperVersion(Seq(3, 2)), Some(1)))(localVersion)
   }
 
   it should "serialize version" in {

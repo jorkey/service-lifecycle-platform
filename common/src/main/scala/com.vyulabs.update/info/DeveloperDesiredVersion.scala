@@ -6,7 +6,7 @@ import com.vyulabs.update.common.Common.{ClientName, ProfileName, ServiceName}
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import spray.json.DefaultJsonProtocol
 
-case class DeveloperDesiredVersion(serviceName: ServiceName, buildVersion: DeveloperDistributionVersion)
+case class DeveloperDesiredVersion(serviceName: ServiceName, version: DeveloperDistributionVersion)
 
 object DeveloperDesiredVersion extends DefaultJsonProtocol {
   implicit val desiredVersionJson = jsonFormat2(DeveloperDesiredVersion.apply)
@@ -18,7 +18,7 @@ object DeveloperDesiredVersions extends DefaultJsonProtocol {
   implicit val desiredVersionsJson = jsonFormat1(DeveloperDesiredVersions.apply)
 
   def toMap(versions: Seq[DeveloperDesiredVersion]): Map[ServiceName, DeveloperDistributionVersion] = {
-    versions.foldLeft(Map.empty[ServiceName, DeveloperDistributionVersion])((map, version) => map + (version.serviceName -> version.buildVersion))
+    versions.foldLeft(Map.empty[ServiceName, DeveloperDistributionVersion])((map, version) => map + (version.serviceName -> version.version))
   }
 
   def fromMap(versions: Map[ServiceName, DeveloperDistributionVersion]): Seq[DeveloperDesiredVersion] = {

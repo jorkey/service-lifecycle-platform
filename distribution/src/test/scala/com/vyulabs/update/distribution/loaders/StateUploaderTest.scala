@@ -7,12 +7,11 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientServiceState, DirectoryServiceState, ServiceState}
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.loaders.{StateUploader, UploadRequests}
 import distribution.mongo.ServiceStateDocument
 import spray.json.JsValue
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class StateUploaderTest extends TestEnvironment {
@@ -43,7 +42,7 @@ class StateUploaderTest extends TestEnvironment {
     uploader.start()
     result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0,
       ClientServiceState("client1", "instance1", DirectoryServiceState("service1", "directory1",
-        ServiceState(date = new Date(), None, None, version = Some(BuildVersion(1, 1, 0)), None, None, None, None)))))))
+        ServiceState(date = new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))))))
     result(hook.graphqlRequestPromise.future)
     uploader.stop()
   }

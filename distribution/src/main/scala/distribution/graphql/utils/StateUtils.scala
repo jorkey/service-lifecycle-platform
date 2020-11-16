@@ -123,8 +123,8 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
   }
 
   def getClientFaultReports(clientName: Option[ClientName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[ClientFaultReport]] = {
-    val clientArg = clientName.map { client => Filters.eq("report.clientName", client) }
-    val serviceArg = serviceName.map { service => Filters.eq("report.faultInfo.serviceName", service) }
+    val clientArg = clientName.map { client => Filters.eq("fault.clientName", client) }
+    val serviceArg = serviceName.map { service => Filters.eq("fault.info.serviceName", service) }
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb

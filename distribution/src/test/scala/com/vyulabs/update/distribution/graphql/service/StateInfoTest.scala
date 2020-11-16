@@ -31,7 +31,7 @@ class StateInfoTest extends TestEnvironment {
                 directory: "dir",
                 service: {
                   date: $$date,
-                  version: "1.2.3"
+                  version: "test-1.2.3"
                 }
               }
             ]
@@ -40,7 +40,7 @@ class StateInfoTest extends TestEnvironment {
       """, variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"serviceState":[{"service":{"version":"1.2.3"}}]}}""").parseJson))(
+      ("""{"data":{"serviceState":[{"service":{"version":"test-1.2.3"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         query {
           serviceState (instance: "instance1", service: "service1", directory: "dir") {

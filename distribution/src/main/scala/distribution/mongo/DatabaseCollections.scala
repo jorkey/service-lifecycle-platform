@@ -9,7 +9,7 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.info._
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.bson.codecs.{Codec, DecoderContext, EncoderContext}
 import org.bson.{BsonReader, BsonWriter}
@@ -24,7 +24,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
                           instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  class BuildVersionCodec extends Codec[DeveloperDistributionVersion] {
+  class DeveloperDistributionVersionCodec extends Codec[DeveloperDistributionVersion] {
     override def encode(writer: BsonWriter, value: DeveloperDistributionVersion, encoderContext: EncoderContext): Unit = {
       writer.writeString(value.toString)
     }
@@ -36,9 +36,23 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     override def getEncoderClass: Class[DeveloperDistributionVersion] = classOf[DeveloperDistributionVersion]
   }
 
+  class ClientDistributionVersionCodec extends Codec[ClientDistributionVersion] {
+    override def encode(writer: BsonWriter, value: ClientDistributionVersion, encoderContext: EncoderContext): Unit = {
+      writer.writeString(value.toString)
+    }
+
+    override def decode(reader: BsonReader, decoderContext: DecoderContext): ClientDistributionVersion = {
+      ClientDistributionVersion.parse(reader.readString())
+    }
+
+    override def getEncoderClass: Class[ClientDistributionVersion] = classOf[ClientDistributionVersion]
+  }
+
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
+    classOf[ClientVersion],
+    classOf[DeveloperVersion],
     classOf[BuildInfo],
     classOf[DeveloperVersionInfoDocument],
     classOf[ClientVersionInfo],
@@ -46,6 +60,8 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     classOf[DeveloperDesiredVersion],
     classOf[DeveloperVersionInfo],
     classOf[DeveloperDesiredVersionsDocument],
+    classOf[ClientDesiredVersion],
+    classOf[ClientDesiredVersionsDocument],
     classOf[InstalledDesiredVersionsDocument],
     classOf[InstallInfo],
     classOf[ClientProfile],
@@ -68,7 +84,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     classOf[LogLine],
     classOf[FaultInfo],
     classOf[UploadStatusDocument],
-    fromCodecs(new BuildVersionCodec())))
+    fromCodecs(new DeveloperDistributionVersionCodec(), new ClientDistributionVersionCodec())))
 
   val Sequences = for {
     collection <- db.getOrCreateCollection[SequenceDocument]("_.sequences")
@@ -81,7 +97,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
   } yield collection
 
   val Client_VersionsInfo = for {
-    collection <- db.getOrCreateCollection[ClientVersionInfoDocument]("client.installedVersionsInfo")
+    collection <- db.getOrCreateCollection[ClientVersionInfoDocument]("client.versionsInfo")
     _ <- collection.createIndex(Indexes.ascending("info.serviceName", "info.version"), new IndexOptions().unique(true))
   } yield collection
 

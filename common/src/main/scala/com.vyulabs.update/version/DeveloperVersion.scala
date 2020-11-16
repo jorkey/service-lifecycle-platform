@@ -7,19 +7,19 @@ import spray.json.{JsString, JsValue, RootJsonFormat}
   * Copyright FanDate, Inc.
   */
 
-case class DeveloperVersion(build: Int*) {
+case class DeveloperVersion(build: Seq[Int]) {
   def isEmpty(): Boolean = {
     build.foreach { v => if (v != 0) return false }
     true
   }
 
   def original(): DeveloperVersion = {
-    DeveloperVersion(build:_*)
+    DeveloperVersion(build)
   }
 
   def next() = {
     val v = build.last + 1
-    DeveloperVersion(build.dropRight(1) :+ v :_*)
+    DeveloperVersion(build.dropRight(1) :+ v)
   }
 
   override def toString: String = {
@@ -38,14 +38,10 @@ object DeveloperVersion {
     if (build.size == 0) {
       throw new IllegalArgumentException(s"Invalid version ${version}")
     }
-    new DeveloperVersion(build :_*)
+    new DeveloperVersion(build)
   }
 
-  def apply(build: Int*): DeveloperVersion = {
-    new DeveloperVersion(build :_*)
-  }
-
-  val empty = apply(0)
+  val empty = apply(Seq(0))
 
   val ordering: Ordering[DeveloperVersion] = Ordering.fromLessThan[DeveloperVersion]((version1, version2) => {
     isLessThan(version1.build, version2.build)

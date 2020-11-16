@@ -21,7 +21,7 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
     result(clientInfoCollection.insert(ClientInfoDocument(ClientInfo("client2", ClientConfig("common", None)))))
   }
 
-  it should "set/get common developer desired versions and personal desired versions for client" in {
+  it should "set/get developer desired versions" in {
     val graphqlContext = new GraphqlContext(VersionHistoryConfig(5), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
@@ -30,142 +30,22 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
         mutation {
           setDeveloperDesiredVersions (
             versions: [
-               { serviceName: "service1", buildVersion: "1.1.2"},
-               { serviceName: "service2", buildVersion: "2.1.4"}
+               { serviceName: "service1", version: "test-1.1.2"},
+               { serviceName: "service2", version: "test-2.1.4"}
             ]
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        mutation {
-          setDeveloperDesiredVersions (
-            client: "client1",
-            versions: [
-               { serviceName: "service1", buildVersion: "client1-2.1.4"},
-               { serviceName: "service3", buildVersion: "client1-3.1.2"}
-            ]
-          )
-        }
-      """)))
-
-    assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"2.1.4"}]}}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"},{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           developerDesiredVersions {
              serviceName
-             buildVersion
+             version
           }
         }
       """)))
-
-    assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"2.1.4"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          developerDesiredVersions {
-             serviceName
-             buildVersion
-          }
-        }
-      """)))
-  }
-
-  it should "set/get developer personal client desired versions" in {
-    val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
-
-    assertResult((OK,
-      ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        mutation {
-          setDeveloperDesiredVersions (
-            client: "client2",
-            versions: [
-               { serviceName: "service2", buildVersion: "client2-1.1.1" }
-            ]
-          )
-        }
-      """)))
-
-    assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service2","buildVersion":"client2-1.1.1"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          developerDesiredVersions (client: "client2") {
-             serviceName
-             buildVersion
-          }
-        }
-      """)))
-
-    assertResult((OK,
-      ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        mutation {
-          setDeveloperDesiredVersions (
-            client: "client2",
-            versions: []
-          )
-        }
-      """)))
-
-    assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          developerDesiredVersions (client: "client2") {
-             serviceName
-             buildVersion
-          }
-        }
-      """)))
-  }
-
-  it should "return client merged desired versions" in {
-    val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
-
-    assertResult((OK,
-      ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        mutation {
-          setDeveloperDesiredVersions (
-            versions: [
-               { serviceName: "service1", buildVersion: "1.1.2"},
-               { serviceName: "service2", buildVersion: "2.1.4"}
-            ]
-          )
-        }
-      """)))
-
-
-    assertResult((OK,
-      ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        mutation {
-          setDeveloperDesiredVersions (
-            client: "client2",
-            versions: [
-               { serviceName: "service2", buildVersion: "client2-1.1.1" }
-            ]
-          )
-        }
-      """)))
-
-    assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","buildVersion":"1.1.2"},{"serviceName":"service2","buildVersion":"client2-1.1.1"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          developerDesiredVersions (client: "client2", merged: true) {
-             serviceName
-             buildVersion
-          }
-        }
-      """))
-    )
-
-    result(collections.Developer_DesiredVersions.map(_.dropItems()))
   }
 }
