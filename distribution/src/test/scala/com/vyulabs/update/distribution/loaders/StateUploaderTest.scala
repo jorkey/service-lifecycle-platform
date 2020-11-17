@@ -53,7 +53,7 @@ class StateUploaderTest extends TestEnvironment {
     uploader.start()
 
     val state1 = ClientServiceState("client1", "instance1", DirectoryServiceState("service1", "directory",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
     result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))))
     hook.reset()
     val request1 = result(hook.graphqlRequestPromise.future)
@@ -62,11 +62,11 @@ class StateUploaderTest extends TestEnvironment {
 
     val state2 = ClientServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state1))))
+    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))))
     hook.reset()
     val request2 = result(hook.graphqlRequestPromise.future)
     assertResult("setServicesState")(request2.command)
-    assertResult(Map("state" -> Seq(state1).toJson))(request2.arguments)
+    assertResult(Map("state" -> Seq(state2).toJson))(request2.arguments)
 
     uploader.stop()
 
