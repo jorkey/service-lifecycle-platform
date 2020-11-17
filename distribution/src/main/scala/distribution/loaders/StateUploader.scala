@@ -35,7 +35,7 @@ import scala.util.{Failure, Success}
 
 class StateUploader(collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int,
                     graphqlMutationRequest: (String, Map[String, JsValue]) => Future[Unit],
-                    fileUploadRequest: (String, String, Long, Source[ByteString, Future[IOResult]]) => Future[Unit])
+                    fileUploadRequest: (String, File) => Future[Unit])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -117,7 +117,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
       if (!newReports.isEmpty) {
         Future.sequence(newReports.map(report => {
           val file = distributionDirectory.getFaultReportFile(report.faultId)
-          fileUploadRequest("upload_fault_report", file.getName, file.length(), FileIO.fromPath(file.toPath)).
+          fileUploadRequest("upload_fault_report", file).
             andThen {
               case Success(_) =>
                 setLastUploadSequence(faultReports.getName(), newReportsDocuments.last._id)
@@ -134,7 +134,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
   private def getLastUploadSequence(component: String): Future[Long] = {
     for {
       uploadStatus <- collections.State_UploadStatus
-      sequence <- uploadStatus.find(Filters.eq("component", component)).map(_.headOption.map(_.uploadStatus.lastUploadSequence).flatten.getOrElse(-1L))
+      sequence <- uploadStatus.find(Filters.eq("component", component)).map(_.headOption.map(_.status.lastUploadSequence).flatten.getOrElse(-1L))
     } yield sequence
   }
 
@@ -142,7 +142,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
     for {
       uploadStatus <- collections.State_UploadStatus
       result <- uploadStatus.updateOne(Filters.eq("component", component),
-        Updates.combine(Updates.set("uploadStatus.lastUploadSequence", sequence), Updates.unset("uploadStatus.lastError")))
+        Updates.combine(Updates.set("status.lastUploadSequence", sequence), Updates.unset("status.lastError")))
         .map(r => r.getModifiedCount > 0)
     } yield result
   }
@@ -151,7 +151,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
     for {
       uploadStatus <- collections.State_UploadStatus
       date <- uploadStatus.updateOne(Filters.eq("component", component),
-        Updates.set("uploadStatus.lastError", error))
+        Updates.set("status.lastError", error))
         .map(r => r.getModifiedCount > 0)
     } yield date
   }
@@ -175,12 +175,12 @@ object StateUploader {
       }
     }
 
-    def fileUploadRequest(path: String, fileName: String, length: Long, source: Source[ByteString, Future[IOResult]]): Future[Unit] = {
+    def fileUploadRequest(path: String, file: File): Future[Unit] = {
       val multipartForm =
         Multipart.FormData(Multipart.FormData.BodyPart(
           "instances-state",
-          HttpEntity(ContentTypes.`application/octet-stream`, length, source),
-          Map("filename" -> fileName)))
+          HttpEntity(ContentTypes.`application/octet-stream`, file.length, FileIO.fromPath(file.toPath)),
+          Map("filename" -> file.getName)))
       for {
         response <- Http(system).singleRequest(Post(developerDistributionUrl.toString + "/" + path, multipartForm))
         entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)

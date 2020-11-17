@@ -1,30 +1,29 @@
 package com.vyulabs.update.distribution.loaders
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.util.Date
 
 import akka.stream.IOResult
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{ClientFaultReport, ClientServiceState, DirectoryServiceState, FaultInfo, ServiceState}
+import com.vyulabs.update.info.{ClientFaultReport, FaultInfo, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.loaders.StateUploader
-import distribution.mongo.{FaultReportDocument, ServiceStateDocument}
-import spray.json.{JsValue, enrichAny}
+import distribution.mongo.FaultReportDocument
 
 import scala.concurrent.{Future, Promise}
 
 class FaultReportsUploadTest extends TestEnvironment {
   behavior of "Fault Reports Upload"
 
-  case class FileUploadRequest(path: String, fileName: String, length: Long, source: Source[ByteString, Future[IOResult]])
+  case class FileUploadRequest(path: String, file: File)
 
   var requestPromise = Promise[FileUploadRequest]
   var result = Future.successful()
 
-  def fileUploadRequest(path: String, fileName: String, length: Long, source: Source[ByteString, Future[IOResult]]): Future[Unit] = {
-    requestPromise.success(FileUploadRequest(path, fileName, length, source))
+  def fileUploadRequest(path: String, file: File): Future[Unit] = {
+    requestPromise.success(FileUploadRequest(path, file))
     result
   }
 
@@ -39,7 +38,7 @@ class FaultReportsUploadTest extends TestEnvironment {
       ServiceState(date, None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1"))
     result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report))))
     requestPromise = Promise[FileUploadRequest]
-    val request1 = result(requestPromise.future)
+    assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, "/faults/fault1-fault.zip")))(result(requestPromise.future))
 
     uploader.stop()
     result(collections.State_FaultReports.map(_.dropItems()))
