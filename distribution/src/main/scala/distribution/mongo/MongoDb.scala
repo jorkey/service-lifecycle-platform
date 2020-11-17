@@ -3,7 +3,7 @@ package distribution.mongo
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.mongodb.client.model.{FindOneAndUpdateOptions, IndexOptions, ReplaceOptions, ReturnDocument}
+import com.mongodb.client.model.{FindOneAndUpdateOptions, IndexOptions, ReplaceOptions, ReturnDocument, UpdateOptions}
 import com.mongodb.{ConnectionString, MongoClientSettings}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
@@ -100,8 +100,8 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T])
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
-  def updateOne(filters: Bson, update: Bson): Future[UpdateResult] = {
-    Source.fromPublisher(collection.updateOne(filters, update))
+  def updateOne(filters: Bson, update: Bson, options: UpdateOptions = new UpdateOptions().upsert(true)): Future[UpdateResult] = {
+    Source.fromPublisher(collection.updateOne(filters, update, options))
       .log(s"Update Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.head[UpdateResult])
   }

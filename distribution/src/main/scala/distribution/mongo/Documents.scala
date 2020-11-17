@@ -22,5 +22,5 @@ case class ServiceStateDocument(sequence: Long, state: ClientServiceState)
 case class ServiceLogLineDocument(_id: Long, log: ClientServiceLogLine)
 case class FaultReportDocument(_id: Long, fault: ClientFaultReport)
 
-case class UploadStatus(lastUploadSequence: Long, lastError: Option[String])
+case class UploadStatus(lastUploadSequence: Option[Long], lastError: Option[String])
 case class UploadStatusDocument(component: String, uploadStatus: UploadStatus)

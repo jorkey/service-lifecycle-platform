@@ -24,7 +24,7 @@ class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val ownServicesDir = Files.createTempDirectory("test").toFile

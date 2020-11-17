@@ -1,6 +1,6 @@
 package distribution.loaders
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
@@ -15,14 +15,17 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
 import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.mongodb.client.model.{Filters, Sorts, Updates}
+import com.vyulabs.update.common.Common
+import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionWebPaths.graphqlPathPrefix
-import distribution.mongo.DatabaseCollections
+import com.vyulabs.update.info.{ClientServiceState, DirectoryServiceState}
+import distribution.mongo.{DatabaseCollections, ServiceStateDocument}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 /**
@@ -41,6 +44,32 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
 
   var task = Option.empty[Cancellable]
 
+  def setSelfStates(instanceId: InstanceId, homeDirectory: File, builderDirectory: Option[String], installerDirectory: Option[String]): Unit = {
+    def addState(state: ClientServiceState): Future[com.mongodb.reactivestreams.client.Success] = {
+      for {
+        collection <- collections.State_ServiceStates
+        id <- collections.getNextSequence(collection.getName())
+        result <- collection.insert(ServiceStateDocument(id, state))
+      } yield result
+    }
+    Future.sequence(Seq(
+      addState(ClientServiceState(Common.OwnClient, instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, homeDirectory))),
+      addState(ClientServiceState(Common.OwnClient, instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, homeDirectory))),
+    ) ++ builderDirectory.map(builderDirectory => Seq(
+      addState(ClientServiceState(Common.OwnClient, instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory)))),
+      addState(ClientServiceState(Common.OwnClient, instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory)))))).getOrElse(Seq.empty)
+      ++ installerDirectory.map(installerDirectory => Seq(
+      addState(ClientServiceState(Common.OwnClient, instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.InstallerServiceName, new File(homeDirectory, installerDirectory)))),
+      addState(ClientServiceState(Common.OwnClient, instanceId,
+        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, installerDirectory)))))).getOrElse(Seq.empty)
+    )
+  }
+
   def start(): Unit = {
     task = Some(system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(uploadState()))
   }
@@ -53,12 +82,11 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
   }
 
   private def uploadState(): Unit = {
-    for {
+    val result = for {
       _ <- uploadServiceStates()
       _ <- uploadFaultReports()
-    } yield {
-      system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState())
-    }
+    } yield {}
+    result.andThen { case _ => system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState()) }
   }
 
   private def uploadServiceStates(): Future[Unit] = {
@@ -67,15 +95,19 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
       fromSequence <- getLastUploadSequence(serviceStates.getName())
       newStatesDocuments <- serviceStates.find(Filters.gt("sequence", fromSequence), sort = Some(Sorts.ascending("sequence")))
       newStates <- Future(newStatesDocuments.map(_.state))
-      if !newStates.isEmpty
-        result <- uploadRequests.graphqlMutationRequest("setServicesState", Map("state" -> newStates.toJson)).
-          andThen {
+    } yield {
+      if (!newStates.isEmpty) {
+        uploadRequests.graphqlMutationRequest("setServicesState", Map("state" -> newStates.toJson)).
+          onComplete {
             case Success(_) =>
               setLastUploadSequence(serviceStates.getName(), newStatesDocuments.last.sequence)
             case Failure(ex) =>
               setLastUploadError(serviceStates.getName(), ex.getMessage)
           }
-    } yield result
+      } else {
+        Promise[Unit].success(Unit).future
+      }
+    }
   }
 
   private def uploadFaultReports(): Future[Unit] = {
@@ -84,26 +116,28 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
       fromSequence <- getLastUploadSequence(faultReports.getName())
       newReportsDocuments <- faultReports.find(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
       newReports <- Future(newReportsDocuments.map(_.fault))
-      if !newReports.isEmpty
-        result <- {
-          Future.sequence(newReports.map(report => {
-            val file = distributionDirectory.getFaultReportFile(report.faultId)
-            uploadRequests.fileUploadRequest("upload_fault_report", file.getName, file.length(), FileIO.fromPath(file.toPath)).
-              andThen {
-                case Success(_) =>
-                  setLastUploadSequence(faultReports.getName(), newReportsDocuments.last._id)
-                case Failure(ex) =>
-                  setLastUploadError(faultReports.getName(), ex.getMessage)
-              }
-          })).map(_ => Unit)
-        }
-    } yield result
+    } yield {
+      if (!newReports.isEmpty) {
+        Future.sequence(newReports.map(report => {
+          val file = distributionDirectory.getFaultReportFile(report.faultId)
+          uploadRequests.fileUploadRequest("upload_fault_report", file.getName, file.length(), FileIO.fromPath(file.toPath)).
+            andThen {
+              case Success(_) =>
+                setLastUploadSequence(faultReports.getName(), newReportsDocuments.last._id)
+              case Failure(ex) =>
+                setLastUploadError(faultReports.getName(), ex.getMessage)
+            }
+        })).map(_ => Unit)
+      } else {
+        Promise[Unit].success(Unit).future
+      }
+    }
   }
 
   private def getLastUploadSequence(component: String): Future[Long] = {
     for {
       uploadStatus <- collections.State_UploadStatus
-      sequence <- uploadStatus.find(Filters.eq("component", component)).map(_.headOption.map(_.uploadStatus.lastUploadSequence).getOrElse(0L))
+      sequence <- uploadStatus.find(Filters.eq("component", component)).map(_.headOption.map(_.uploadStatus.lastUploadSequence).flatten.getOrElse(-1L))
     } yield sequence
   }
 
@@ -111,7 +145,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
     for {
       uploadStatus <- collections.State_UploadStatus
       result <- uploadStatus.updateOne(Filters.eq("component", component),
-        Updates.combine(Updates.set("uploadStatus.lastUploadSequence", sequence), Updates.set("uploadStatus.lastError", JsNull)))
+        Updates.combine(Updates.set("uploadStatus.lastUploadSequence", sequence), Updates.unset("uploadStatus.lastError")))
         .map(r => r.getModifiedCount > 0)
     } yield result
   }

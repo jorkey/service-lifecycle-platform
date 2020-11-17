@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, IndexOptions, Indexes, ReturnDocument, Updates}
-import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
 import com.vyulabs.update.info._
@@ -83,6 +82,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     classOf[TestSignature],
     classOf[LogLine],
     classOf[FaultInfo],
+    classOf[UploadStatus],
     classOf[UploadStatusDocument],
     fromCodecs(new DeveloperDistributionVersionCodec(), new ClientDistributionVersionCodec())))
 
@@ -131,31 +131,6 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     _ <- collection.createIndex(Indexes.ascending("state.instance.instanceId"))
     _ <- collection.createIndex(Indexes.ascending("state.instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
     _ <- collection.dropItems()
-    _ <- getNextSequence(collection.getName())
-    _ <- {
-      def addState(state: ClientServiceState): Future[com.mongodb.reactivestreams.client.Success] = {
-        for {
-          id <- getNextSequence(collection.getName())
-          result <- collection.insert(ServiceStateDocument(id, state))
-        } yield result
-      }
-      Future.sequence(Seq(
-        addState(ClientServiceState(Common.OwnClient, instanceId,
-          DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, homeDirectory))),
-        addState(ClientServiceState(Common.OwnClient, instanceId,
-          DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, homeDirectory))),
-      ) ++ builderDirectory.map(builderDirectory => Seq(
-        addState(ClientServiceState(Common.OwnClient, instanceId,
-          DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory)))),
-        addState(ClientServiceState(Common.OwnClient, instanceId,
-          DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory)))))).getOrElse(Seq.empty)
-        ++ installerDirectory.map(installerDirectory => Seq(
-        addState(ClientServiceState(Common.OwnClient, instanceId,
-          DirectoryServiceState.getServiceInstanceState(Common.InstallerServiceName, new File(homeDirectory, installerDirectory)))),
-        addState(ClientServiceState(Common.OwnClient, instanceId,
-          DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, installerDirectory)))))).getOrElse(Seq.empty)
-      )
-    }
   } yield collection
 
   val State_ServiceLogs = for {
