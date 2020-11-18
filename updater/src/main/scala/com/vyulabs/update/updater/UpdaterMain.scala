@@ -2,7 +2,7 @@ package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.DistributionDirectoryClient
+import com.vyulabs.update.distribution.DistributionClientInterface
 import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
@@ -44,7 +44,7 @@ object UpdaterMain extends App { self =>
 
       val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
 
-      val clientDirectory = new DistributionDirectoryClient(config.clientDistributionUrl)
+      val clientDirectory = new DistributionClientInterface(config.clientDistributionUrl)
 
       val instanceState = new StateUploader(config.instanceId, servicesInstanceNames + updaterServiceName, clientDirectory)
 

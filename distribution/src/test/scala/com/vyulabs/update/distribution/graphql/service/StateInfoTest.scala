@@ -3,9 +3,9 @@ package com.vyulabs.update.distribution.graphql.service
 import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{ClientServiceState, ServiceState}
+import com.vyulabs.update.info.{DistributionServiceState, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -16,7 +16,7 @@ import com.vyulabs.update.utils.Utils.DateJson._
 class StateInfoTest extends TestEnvironment {
   behavior of "State Info Requests"
 
-  val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Client))
+  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Distribution))
 
   it should "set/get own service state" in {
     assertResult((OK,

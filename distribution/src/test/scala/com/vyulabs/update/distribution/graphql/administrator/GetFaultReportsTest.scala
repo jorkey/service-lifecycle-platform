@@ -5,7 +5,7 @@ import java.util.Date
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{ClientFaultReport, FaultInfo, ServiceState}
+import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.FaultReportDocument
@@ -17,7 +17,7 @@ class GetFaultReportsTest extends TestEnvironment {
 
   val collection = result(collections.State_FaultReports)
 
-  val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("user", UserRole.Administrator))
+  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user", UserRole.Administrator))
 
   val client1 = "client1"
   val client2 = "client2"
@@ -27,15 +27,15 @@ class GetFaultReportsTest extends TestEnvironment {
 
   override def beforeAll() = {
     result(collection.insert(
-      FaultReportDocument(0, ClientFaultReport("fault1", client1,
+      FaultReportDocument(0, DistributionFaultReport("fault1", client1,
         FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
         Seq("fault.info", "core")))))
     result(collection.insert(
-      FaultReportDocument(1, ClientFaultReport("fault2", client2,
+      FaultReportDocument(1, DistributionFaultReport("fault2", client2,
         FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
         Seq("fault.info", "core1")))))
     result(collection.insert(
-      FaultReportDocument(2, ClientFaultReport("fault3", client1,
+      FaultReportDocument(2, DistributionFaultReport("fault3", client1,
         FaultInfo(new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
         Seq("fault.info", "core")))))
   }

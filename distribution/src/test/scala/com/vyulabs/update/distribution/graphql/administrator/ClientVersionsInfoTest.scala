@@ -16,7 +16,7 @@ import spray.json._
 class ClientVersionsInfoTest extends TestEnvironment {
   behavior of "Client Versions Requests"
 
-  val graphqlContext = GraphqlContext(VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
+  val graphqlContext = GraphqlContext("distribution", VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
   it should "add/get client version info" in {
     addClientVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))

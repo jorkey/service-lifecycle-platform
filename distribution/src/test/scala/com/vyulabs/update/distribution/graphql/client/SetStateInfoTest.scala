@@ -3,13 +3,13 @@ package com.vyulabs.update.distribution.graphql.client
 import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{ClientInfoDocument, InstalledDesiredVersionsDocument, TestedDesiredVersionsDocument}
+import distribution.mongo.{DistributionClientInfoDocument, InstalledDesiredVersionsDocument, TestedDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 import com.vyulabs.update.utils.Utils.DateJson._
@@ -18,15 +18,15 @@ class SetStateInfoTest extends TestEnvironment {
   behavior of "Tested Versions Info Requests"
 
   override protected def beforeAll(): Unit = {
-    result(collections.Developer_ClientsInfo.map(_.insert(ClientInfoDocument(ClientInfo("client1", ClientConfig("common", Some("test")))))))
+    result(collections.Developer_ClientsInfo.map(_.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", Some("test")))))))
   }
 
   it should "set tested versions" in {
-    val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation {
           setTestedVersions (
             versions: [
@@ -48,11 +48,11 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set installed desired versions" in {
-    val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"setInstalledDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation {
           setInstalledDesiredVersions (
             versions: [
@@ -70,10 +70,10 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set services state" in {
-    val graphqlContext1 = GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext1 = GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Distribution))
     assertResult((OK,
       ("""{"data":{"setServicesState":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext1, graphql"""
         mutation ServicesState($$date: Date!) {
           setServicesState (
             state: [
@@ -87,7 +87,7 @@ class SetStateInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"setServicesState":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext1, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext1, graphql"""
         mutation ServicesState($$date: Date!) {
           setServicesState (
             state: [
@@ -99,7 +99,7 @@ class SetStateInfoTest extends TestEnvironment {
         }
       """, variables = JsObject("date" -> new Date().toJson))))
 
-    val graphqlContext2 = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
+    val graphqlContext2 = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""

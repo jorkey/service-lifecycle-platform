@@ -1,12 +1,12 @@
 package com.vyulabs.update.distribution.graphql.administrator
 
 import akka.http.scaladsl.model.StatusCodes.OK
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
+import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{ClientInfoDocument, ClientProfileDocument}
+import distribution.mongo.{DistributionClientInfoDocument, DistributionClientProfileDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -17,12 +17,12 @@ class ClientDesiredVersionsTest extends TestEnvironment {
     val installProfileCollection = result(collections.Developer_ClientsProfiles)
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
 
-    result(installProfileCollection.insert(ClientProfileDocument(ClientProfile("common", Set("service1", "service2")))))
-    result(clientInfoCollection.insert(ClientInfoDocument(ClientInfo("client2", ClientConfig("common", None)))))
+    result(installProfileCollection.insert(DistributionClientProfileDocument(DistributionClientProfile("common", Set("service1", "service2")))))
+    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("client2", DistributionClientConfig("common", None)))))
   }
 
   it should "set/get client desired versions" in {
-    val graphqlContext = new GraphqlContext(VersionHistoryConfig(5), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
       ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(

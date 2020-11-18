@@ -1,23 +1,23 @@
 package com.vyulabs.update.distribution.graphql.administrator
 
 import akka.http.scaladsl.model.StatusCodes.OK
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.{DistributionDirectory, TestEnvironment}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
-import distribution.mongo.{ClientInfoDocument, DatabaseCollections, MongoDb}
+import distribution.mongo.{DistributionClientInfoDocument, DatabaseCollections, MongoDb}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
 class GetClientsInfoTest extends TestEnvironment {
   behavior of "Client Info Requests"
 
-  val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
+  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
   override def beforeAll() = {
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
 
-    result(clientInfoCollection.insert(ClientInfoDocument(ClientInfo("client1", ClientConfig("common", Some("test"))))))
+    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", Some("test"))))))
   }
 
   it should "get user info" in {

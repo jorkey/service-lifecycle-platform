@@ -73,7 +73,7 @@ object DistributionMain extends App {
 
         val faultDownloader = new FaultDownloader(collections, dir)
         config.client.foreach { client =>
-          val uploader = StateUploader(collections, dir, client.uploadStateIntervalSec, client.developerDistributionUrl)
+          val uploader = StateUploader(config.distributionName, collections, dir, client.uploadStateIntervalSec, client.developerDistributionUrl)
           uploader.setSelfStates(config.instanceId, new File("."), config.developer.map(_.builderDirectory), config.client.map(_.installerDirectory))
           uploader.start()
         }

@@ -5,7 +5,7 @@ import java.net.URI
 import java.util.Date
 
 import com.vyulabs.libs.git.GitRepository
-import com.vyulabs.update.distribution.{AdminRepository, DeveloperAdminRepository, DistributionDirectoryClient, GitRepositoryUtils}
+import com.vyulabs.update.distribution.{AdminRepository, DistributionClientInterface, GitRepositoryUtils}
 import com.vyulabs.update.builder.config.SourcesConfig
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
@@ -19,7 +19,7 @@ import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 import com.vyulabs.update.config.InstallConfig._
 
-class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
+class Builder(distribution: DistributionClientInterface, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
 
   def makeVersion(author: String, serviceName: ServiceName, comment: Option[String],
@@ -39,7 +39,7 @@ class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(i
         true
       },
       () => {
-        val adminRepository = DeveloperAdminRepository(adminRepositoryUrl, new File(serviceDir, "admin")).getOrElse {
+        val adminRepository = AdminRepository(adminRepositoryUrl, new File(serviceDir, "admin")).getOrElse {
           Utils.error("Init admin repository error")
         }
         val sourcesConfig = SourcesConfig.fromFile(adminRepository.getDirectory()).getOrElse {

@@ -5,10 +5,10 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{DistributionName, ProfileName}
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.DistributionDirectory
 import distribution.graphql.NotFoundException
-import distribution.mongo.{ClientProfileDocument, DatabaseCollections}
+import distribution.mongo.{DistributionClientProfileDocument, DatabaseCollections}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
@@ -25,7 +25,7 @@ trait ClientsUtils extends SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def getClientsInfo(clientName: Option[DistributionName] = None): Future[Seq[ClientInfo]] = {
+  def getClientsInfo(clientName: Option[DistributionName] = None): Future[Seq[DistributionClientInfo]] = {
     val clientArg = clientName.map(Filters.eq("info.clientName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
@@ -35,18 +35,18 @@ trait ClientsUtils extends SprayJsonSupport {
     } yield info
   }
 
-  def getClientConfig(distributionName: DistributionName): Future[ClientConfig] = {
+  def getClientConfig(distributionName: DistributionName): Future[DistributionClientConfig] = {
     getClientsInfo(Some(distributionName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${distributionName} config")))
   }
 
-  def getClientInstallProfile(distributionName: DistributionName): Future[ClientProfileDocument] = {
+  def getClientInstallProfile(distributionName: DistributionName): Future[DistributionClientProfileDocument] = {
     for {
       clientConfig <- getClientConfig(distributionName)
       installProfile <- getInstallProfile(clientConfig.installProfile)
     } yield installProfile
   }
 
-  def getInstallProfile(profileName: ProfileName): Future[ClientProfileDocument] = {
+  def getInstallProfile(profileName: ProfileName): Future[DistributionClientProfileDocument] = {
     val profileArg = Filters.eq("profile.profileName", profileName)
     for {
       collection <- collections.Developer_ClientsProfiles

@@ -16,10 +16,10 @@ import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.InstanceId
+import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionWebPaths.graphqlPathPrefix
-import com.vyulabs.update.info.{ClientServiceState, DirectoryServiceState}
+import com.vyulabs.update.info.{DistributionServiceState, DirectoryServiceState}
 import distribution.mongo.{DatabaseCollections, ServiceStateDocument}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -33,7 +33,8 @@ import scala.util.{Failure, Success}
   * Copyright FanDate, Inc.
   */
 
-class StateUploader(collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int,
+class StateUploader(distributionName: DistributionName,
+                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int,
                     graphqlMutationRequest: (String, Map[String, JsValue]) => Future[Unit],
                     fileUploadRequest: (String, File) => Future[Unit])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
@@ -42,7 +43,7 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
   var task = Option.empty[Cancellable]
 
   def setSelfStates(instanceId: InstanceId, homeDirectory: File, builderDirectory: Option[String], installerDirectory: Option[String]): Unit = {
-    def addState(state: ClientServiceState): Future[com.mongodb.reactivestreams.client.Success] = {
+    def addState(state: DistributionServiceState): Future[com.mongodb.reactivestreams.client.Success] = {
       for {
         collection <- collections.State_ServiceStates
         id <- collections.getNextSequence(collection.getName())
@@ -50,19 +51,19 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
       } yield result
     }
     Future.sequence(Seq(
-      addState(ClientServiceState(Common.OwnClient, instanceId,
+      addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, homeDirectory))),
-      addState(ClientServiceState(Common.OwnClient, instanceId,
+      addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, homeDirectory))),
     ) ++ builderDirectory.map(builderDirectory => Seq(
-      addState(ClientServiceState(Common.OwnClient, instanceId,
+      addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory)))),
-      addState(ClientServiceState(Common.OwnClient, instanceId,
+      addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory)))))).getOrElse(Seq.empty)
       ++ installerDirectory.map(installerDirectory => Seq(
-      addState(ClientServiceState(Common.OwnClient, instanceId,
+      addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.InstallerServiceName, new File(homeDirectory, installerDirectory)))),
-      addState(ClientServiceState(Common.OwnClient, instanceId,
+      addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, installerDirectory)))))).getOrElse(Seq.empty)
     )
   }
@@ -158,7 +159,8 @@ class StateUploader(collections: DatabaseCollections, distributionDirectory: Dis
 }
 
 object StateUploader {
-  def apply(collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, developerDistributionUrl: URL)
+  def apply(distributionName: DistributionName,
+            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, developerDistributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
 
     def graphqlMutationRequest(command: String, arguments: Map[String, JsValue]): Future[Unit] = {
@@ -192,6 +194,6 @@ object StateUploader {
       }
     }
 
-    new StateUploader(collections, distributionDirectory, uploadIntervalSec, graphqlMutationRequest, fileUploadRequest)
+    new StateUploader(distributionName, collections, distributionDirectory, uploadIntervalSec, graphqlMutationRequest, fileUploadRequest)
   }
 }

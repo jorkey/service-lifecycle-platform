@@ -15,7 +15,7 @@ import spray.json._
 
 object UserRole extends Enumeration with DefaultJsonProtocol {
   type UserRole = Value
-  val None, Administrator, Client, Service = Value
+  val None, Administrator, Distribution, Service = Value
 
   implicit object UserRoleJsonFormat extends RootJsonFormat[UserRole] {
     def write(value: UserRole) = JsString(value.toString)

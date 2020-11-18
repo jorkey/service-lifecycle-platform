@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientDesiredVersion, ClientFaultReport, ClientServiceLogLine, ClientServiceState, DeveloperDesiredVersion, InstanceServiceState, LogLine, ServiceLogLine, TestSignature, TestedDesiredVersions}
+import com.vyulabs.update.info.{ClientDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, DeveloperDesiredVersion, InstanceServiceState, LogLine, ServiceLogLine, TestSignature, TestedDesiredVersions}
 import distribution.mongo.{DatabaseCollections, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -83,7 +83,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
       id <- collections.getNextSequence(collection.getName(), instanceStates.size)
       result <- {
         val documents = instanceStates.foldLeft(Seq.empty[ServiceStateDocument])((seq, state) => seq :+ ServiceStateDocument(
-          id - (instanceStates.size - seq.size) + 1, ClientServiceState(distributionName, state)))
+          id - (instanceStates.size - seq.size) + 1, DistributionServiceState(distributionName, state)))
         Future.sequence(documents.map(doc => {
           val filters = Filters.and(
             Filters.eq("state.clientName", distributionName),
@@ -97,7 +97,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
   }
 
   def getServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
-                       instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[ClientServiceState]] = {
+                       instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[DistributionServiceState]] = {
     val clientArg = distributionName.map { client => Filters.eq("state.clientName", client) }
     val serviceArg = serviceName.map { service => Filters.eq("state.instance.serviceName", service) }
     val instanceIdArg = instanceId.map { instanceId => Filters.eq("state.instance.instanceId", instanceId) }
@@ -118,11 +118,11 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
       result <- collection.insert(
         logLines.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
           ServiceLogLineDocument(id - (logLines.size-seq.size) + 1,
-            new ClientServiceLogLine(distributionName, new ServiceLogLine(serviceName, instanceId, directory, line))) })).map(_ => true)
+            new DistributionServiceLogLine(distributionName, new ServiceLogLine(serviceName, instanceId, directory, line))) })).map(_ => true)
     } yield result
   }
 
-  def getClientFaultReports(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[ClientFaultReport]] = {
+  def getClientFaultReports(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[DistributionFaultReport]] = {
     val clientArg = distributionName.map { client => Filters.eq("fault.clientName", client) }
     val serviceArg = serviceName.map { service => Filters.eq("fault.info.serviceName", service) }
     val args = clientArg ++ serviceArg

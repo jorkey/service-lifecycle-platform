@@ -4,7 +4,7 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.DistributionDirectoryClient
+import com.vyulabs.update.distribution.DistributionClientInterface
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
@@ -13,7 +13,7 @@ import org.slf4j.Logger
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class SelfUpdater(state: ServiceStateController, clientDirectory: DistributionDirectoryClient)
+class SelfUpdater(state: ServiceStateController, clientDirectory: DistributionClientInterface)
                  (implicit log: Logger) {
   private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
 
@@ -54,7 +54,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: DistributionDi
 }
 
 object SelfUpdater {
-  def apply(state: ServiceStateController, clientDirectory: DistributionDirectoryClient)
+  def apply(state: ServiceStateController, clientDirectory: DistributionClientInterface)
            (implicit log: Logger): SelfUpdater = {
     new SelfUpdater(state, clientDirectory)
   }

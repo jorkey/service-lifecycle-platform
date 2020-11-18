@@ -33,7 +33,6 @@ object Common {
 
   val UpdateConfigFileName = "update.json"
   val InstallConfigFileName = "install.json"
-  val ClientConfigFileName = "client.json"
 
   val FaultInfoFileName = "fault.json"
 
@@ -41,10 +40,6 @@ object Common {
   val ProfileFileNameMatch = "profile-x.json"
 
   val CommonServiceProfile = "common"
-
-  val ClientAdmin = "admin"
-  val AllClients = "all"
-  val OwnClient = "own"
 
   def isUpdateService(serviceName: ServiceName): Boolean = {
     serviceName == ScriptsServiceName ||

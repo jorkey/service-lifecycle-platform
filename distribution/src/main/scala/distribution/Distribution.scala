@@ -89,7 +89,7 @@ class Distribution(protected val dir: DistributionDirectory,
                                 case Some(obj: JsObject) => obj
                                 case _ => JsObject.empty
                               }
-                              val context = new GraphqlContext(config.versionHistory, dir, collections, userInfo)
+                              val context = new GraphqlContext(config.distributionName, config.versionHistory, dir, collections, userInfo)
                               complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                                 context, queryAst, operation, variables))
                             case Failure(error) =>
@@ -104,7 +104,7 @@ class Distribution(protected val dir: DistributionDirectory,
                                 case Some(obj: JsObject) => obj
                                 case _ => JsObject.empty
                               }
-                              val context = new GraphqlContext(config.versionHistory, dir, collections, userInfo)
+                              val context = new GraphqlContext(config.distributionName, config.versionHistory, dir, collections, userInfo)
                               complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                                 context, queryAst, operation, vars))
                             case Failure(error) =>
@@ -118,7 +118,7 @@ class Distribution(protected val dir: DistributionDirectory,
                 } ~ path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                   seal {
                     get {
-                      authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Client) {
+                      authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Distribution) {
                         getFromFile(dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)))
                       }
                     } ~ post {
@@ -155,8 +155,8 @@ class Distribution(protected val dir: DistributionDirectory,
                   }
                 } ~ path(faultReportPath / ".*".r) { faultId =>
                   seal {
-                    authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Client) {
-                      val client = if (userInfo.role == UserRole.Client) userInfo.name else Common.OwnClient
+                    authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Distribution) {
+                      val client = if (userInfo.role == UserRole.Distribution) userInfo.name else config.distributionName
                       fileUpload("fault-report") {
                         case (fileInfo, byteSource) =>
                           faultDownloader.receiveFault(faultId, client, byteSource)

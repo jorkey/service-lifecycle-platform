@@ -1,14 +1,14 @@
 package com.vyulabs.update.distribution.graphql.client
 
 import akka.http.scaladsl.model.StatusCodes.OK
-import com.vyulabs.update.config.{ClientConfig, ClientInfo}
+import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.DeveloperDesiredVersion
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{ClientInfoDocument, DeveloperDesiredVersionsDocument}
+import distribution.mongo.{DistributionClientInfoDocument, DeveloperDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -19,7 +19,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
     val clientsInfoCollection = result(collections.Developer_ClientsInfo)
     val desiredVersionsCollection = result(collections.Developer_DesiredVersions)
 
-    result(clientsInfoCollection.insert(ClientInfoDocument(ClientInfo("client1", ClientConfig("common", None)))))
+    result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", None)))))
 
     desiredVersionsCollection.insert(DeveloperDesiredVersionsDocument(Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1)))),
@@ -27,11 +27,11 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired versions for client" in {
-    val graphqlContext = new GraphqlContext(VersionHistoryConfig(5), distributionDir, collections, UserInfo("client1", UserRole.Client))
+    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), distributionDir, collections, UserInfo("client1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         query {
           desiredVersions {
              serviceName

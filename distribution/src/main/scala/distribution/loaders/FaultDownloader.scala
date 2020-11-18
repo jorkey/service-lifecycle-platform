@@ -15,7 +15,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, FaultId}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
+import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}
 import distribution.mongo.{DatabaseCollections, FaultReportDocument, MongoDbCollection}
@@ -69,7 +69,7 @@ class FaultDownloader(collections: DatabaseCollections,
           for {
             collection <- collections.State_FaultReports
             id <- collections.getNextSequence(collection.getName())
-            result <- collection.insert(FaultReportDocument(id, ClientFaultReport(faultId, distributionName, faultInfo, IoUtils.listFiles(tmpDir))))
+            result <- collection.insert(FaultReportDocument(id, DistributionFaultReport(faultId, distributionName, faultInfo, IoUtils.listFiles(tmpDir))))
           } yield result
         case None =>
           log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${tmpDir}")

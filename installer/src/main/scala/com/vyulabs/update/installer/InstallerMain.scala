@@ -3,10 +3,9 @@ package com.vyulabs.update.installer
 import java.io.File
 import java.net.{URI, URL}
 
-import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.DistributionDirectoryClient
+import com.vyulabs.update.distribution.{AdminRepository, DistributionClientInterface}
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils}
@@ -75,12 +74,12 @@ object InstallerMain extends App {
 
           log.info(s"Initialize admin repository")
           val adminRepository =
-            ClientAdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
+            AdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
               Utils.error("Admin repository initialize error")
             }
 
-          val clientDistribution = new DistributionDirectoryClient(config.clientDistributionUrl)
-          val developerDistribution = new DistributionDirectoryClient(config.developerDistributionUrl)
+          val clientDistribution = new DistributionClientInterface(config.clientDistributionUrl)
+          val developerDistribution = new DistributionClientInterface(config.developerDistributionUrl)
 
           val servicesOnly = arguments.getOptionValue("servicesOnly").map(_.split(",").toSet)
           val localConfigOnly = arguments.getOptionBooleanValue("localConfigOnly").getOrElse(false)
@@ -105,7 +104,7 @@ object InstallerMain extends App {
           val updateClient = new UpdateClient()
 
           val clientDistributionUrl = config.clientDistributionUrl
-          val clientDistribution = new DistributionDirectoryClient(clientDistributionUrl)
+          val clientDistribution = new DistributionClientInterface(clientDistributionUrl)
 
           val versions = updateClient.getClientDesiredVersions(clientDistribution).getOrElse {
             Utils.error("Can't get desired versions")
@@ -120,11 +119,11 @@ object InstallerMain extends App {
           val updateClient = new UpdateClient()
           log.info(s"Initialize admin repository")
           val adminRepository =
-            ClientAdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
+            AdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
               Utils.error("Admin repository initialize error")
             }
 
-          val clientDistribution = new DistributionDirectoryClient(config.clientDistributionUrl)
+          val clientDistribution = new DistributionClientInterface(config.clientDistributionUrl)
 
           var servicesVersions = Map.empty[ServiceName, Option[ClientDistributionVersion]]
           for (services <- arguments.getOptionValue("services")) {
@@ -152,8 +151,8 @@ object InstallerMain extends App {
           val updateClient = new UpdateClient()
           log.info(s"Initialize admin repository")
 
-          val clientDistribution = new DistributionDirectoryClient(config.clientDistributionUrl)
-          val developerDistribution = new DistributionDirectoryClient(config.developerDistributionUrl)
+          val clientDistribution = new DistributionClientInterface(config.clientDistributionUrl)
+          val developerDistribution = new DistributionClientInterface(config.developerDistributionUrl)
 
           if (!updateClient.signVersionsAsTested(clientDistribution, developerDistribution)) {
             Utils.error("Sign versions as tested error")

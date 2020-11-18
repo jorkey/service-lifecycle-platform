@@ -22,7 +22,7 @@ import com.vyulabs.update.logs.ServiceLogs
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
+class DistributionClientInterface(val url: URL)(implicit log: Logger) {
 
   def isVersionExists(serviceName: ServiceName, buildVersion: ClientDistributionVersion): Boolean = {
     // TODO graphql

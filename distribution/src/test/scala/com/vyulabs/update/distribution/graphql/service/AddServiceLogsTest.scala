@@ -4,7 +4,7 @@ import java.util.Date
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{ClientServiceLogLine, LogLine, ServiceLogLine}
+import com.vyulabs.update.info.{DistributionServiceLogLine, LogLine, ServiceLogLine}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -15,7 +15,7 @@ import spray.json._
 class AddServiceLogsTest extends TestEnvironment {
   behavior of "State Info Requests"
 
-  val graphqlContext = new GraphqlContext(versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Client))
+  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Distribution))
 
   val logsCollection = result(collections.State_ServiceLogs)
 
@@ -40,9 +40,9 @@ class AddServiceLogsTest extends TestEnvironment {
       """, variables = JsObject("date" -> date.toJson))))
 
     assertResult(Seq(
-      ServiceLogLineDocument(1, new ClientServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line1")))),
-      ServiceLogLineDocument(2, new ClientServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line2")))),
-      ServiceLogLineDocument(3, new ClientServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line3")))))
+      ServiceLogLineDocument(1, new DistributionServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line1")))),
+      ServiceLogLineDocument(2, new DistributionServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line2")))),
+      ServiceLogLineDocument(3, new DistributionServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line3")))))
     )(result(logsCollection.find()))
   }
 }

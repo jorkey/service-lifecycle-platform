@@ -8,7 +8,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{ClientServiceState, DirectoryServiceState, ServiceState}
+import com.vyulabs.update.info.{DistributionServiceState, DirectoryServiceState, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.loaders.StateUploader
 import distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
@@ -30,11 +30,11 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   it should "upload service states" in {
-    val uploader = new StateUploader(collections, distributionDir, 1, graphqlMutationRequest,
+    val uploader = new StateUploader("distribution", collections, distributionDir, 1, graphqlMutationRequest,
       (_, _) => Future.failed(new IOException("Not expected")))
     uploader.start()
 
-    val state1 = ClientServiceState("client1", "instance1", DirectoryServiceState("service1", "directory",
+    val state1 = DistributionServiceState("client1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
     result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))))
     requestPromise = Promise[GraphqlMutationRequest]
@@ -46,7 +46,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(0), None)))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
-    val state2 = ClientServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
+    val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
     result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))))
     requestPromise = Promise[GraphqlMutationRequest]
@@ -64,12 +64,12 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   it should "try to upload service states again after failure" in {
-    val uploader = new StateUploader(collections, distributionDir, 2, graphqlMutationRequest,
+    val uploader = new StateUploader("distribution", collections, distributionDir, 2, graphqlMutationRequest,
       (_, _) => Future.failed(new IOException("Not expected")))
     uploader.start()
 
     requestPromise = Promise[GraphqlMutationRequest]
-    val state1 = ClientServiceState("client1", "instance1", DirectoryServiceState("service1", "directory",
+    val state1 = DistributionServiceState("client1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
     result = Future.failed(new IOException("upload error"))
     result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))))
@@ -82,7 +82,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(None, Some("upload error"))))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
-    val state2 = ClientServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
+    val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
     result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))))
 
@@ -97,7 +97,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     assertResult("setServicesState")(request3.command)
     assertResult(Map("state" -> Seq(state1, state2).toJson))(request3.arguments)
 
-    val state3 = ClientServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
+    val state3 = DistributionServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
     result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(2, state3))))
     requestPromise = Promise[GraphqlMutationRequest]

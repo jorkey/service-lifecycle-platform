@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, IndexOptions, Indexes, ReturnDocument, Updates}
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
+import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
@@ -63,19 +63,19 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
     classOf[ClientDesiredVersionsDocument],
     classOf[InstalledDesiredVersionsDocument],
     classOf[InstallInfo],
-    classOf[ClientProfile],
-    classOf[ClientProfileDocument],
-    classOf[ClientConfig],
-    classOf[ClientInfo],
-    classOf[ClientInfoDocument],
-    classOf[ClientServiceState],
+    classOf[DistributionClientProfile],
+    classOf[DistributionClientProfileDocument],
+    classOf[DistributionClientConfig],
+    classOf[DistributionClientInfo],
+    classOf[DistributionClientInfoDocument],
+    classOf[DistributionServiceState],
     classOf[InstanceServiceState],
     classOf[ServiceState],
     classOf[ServiceStateDocument],
     classOf[ServiceLogLine],
-    classOf[ClientServiceLogLine],
+    classOf[DistributionServiceLogLine],
     classOf[ServiceLogLineDocument],
-    classOf[ClientFaultReport],
+    classOf[DistributionFaultReport],
     classOf[FaultReportDocument],
     classOf[TestedDesiredVersions],
     classOf[TestedDesiredVersionsDocument],
@@ -105,12 +105,12 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
   val Client_DesiredVersions = db.getOrCreateCollection[ClientDesiredVersionsDocument]("client.desiredVersions")
 
   val Developer_ClientsInfo = for {
-    collection <- db.getOrCreateCollection[ClientInfoDocument]("developer.clientsInfo")
+    collection <- db.getOrCreateCollection[DistributionClientInfoDocument]("developer.clientsInfo")
     _ <- collection.createIndex(Indexes.ascending("info.clientName"), new IndexOptions().unique(true))
   } yield collection
 
   val Developer_ClientsProfiles = for {
-    collection <- db.getOrCreateCollection[ClientProfileDocument]("developer.clientsProfiles")
+    collection <- db.getOrCreateCollection[DistributionClientProfileDocument]("developer.clientsProfiles")
     _ <- collection.createIndex(Indexes.ascending("profile.profileName"), new IndexOptions().unique(true))
   } yield collection
 

@@ -3,6 +3,7 @@ package distribution.graphql
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common
+import com.vyulabs.update.common.Common.DistributionName
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.users.UserRole.UserRole
@@ -16,7 +17,8 @@ import scala.concurrent.ExecutionContext
 import sangria.marshalling.sprayJson._
 import sangria.schema.{Field, _}
 
-case class GraphqlContext(versionHistoryConfig: VersionHistoryConfig,
+case class GraphqlContext(distributionName: DistributionName,
+                          versionHistoryConfig: VersionHistoryConfig,
                           dir: DistributionDirectory, collections: DatabaseCollections, userInfo: UserInfo)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
@@ -89,7 +91,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.getClientFaultReports(c.arg(OptionClientArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
   ))
 
-  val ClientQueries = ObjectType(
+  val DistributionQueries = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("config", ClientConfigInfoType,
@@ -108,7 +110,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceState", ListType(InstanceServiceStateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        resolve = c => { c.ctx.getServicesState(Some(Common.OwnClient), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
+        resolve = c => { c.ctx.getServicesState(Some(c.ctx.distributionName), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
           .map(_.map(_.instance)) })
     )
   )
@@ -138,7 +140,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) })
   ))
 
-  val ClientMutations = ObjectType(
+  val DistributionMutations = ObjectType(
     "Mutation",
     fields[GraphqlContext, Unit](
       Field("setTestedVersions", BooleanType,
@@ -157,15 +159,15 @@ object GraphqlSchema {
     fields[GraphqlContext, Unit](
       Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
-        resolve = c => { c.ctx.setServicesState(Common.OwnClient, c.arg(InstancesStateArg)) }),
+        resolve = c => { c.ctx.setServicesState(c.ctx.distributionName, c.arg(InstancesStateArg)) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: LogLinesArg :: Nil,
-        resolve = c => { c.ctx.addServiceLogs(Common.OwnClient, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }))
+        resolve = c => { c.ctx.addServiceLogs(c.ctx.distributionName, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }))
   )
 
   val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations))
 
-  val ClientSchemaDefinition = Schema(query = ClientQueries, mutation = Some(ClientMutations))
+  val DistributionSchemaDefinition = Schema(query = DistributionQueries, mutation = Some(DistributionMutations))
 
   val ServiceSchemaDefinition = Schema(query = ServiceQueries, mutation = Some(ServiceMutations))
 
@@ -173,8 +175,8 @@ object GraphqlSchema {
     userRole match {
       case UserRole.Administrator =>
         AdministratorSchemaDefinition
-      case UserRole.Client =>
-        ClientSchemaDefinition
+      case UserRole.Distribution =>
+        DistributionSchemaDefinition
       case UserRole.Service =>
         ServiceSchemaDefinition
       case _ =>

@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.{DistributionDirectoryClient}
+import com.vyulabs.update.distribution.{DistributionClientInterface}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{Utils}
 import com.vyulabs.update.version.DeveloperDistributionVersion
@@ -20,8 +20,8 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: buildVersion <author=value> <service=value> [client=value]\n" +
     "                 [version=value] [comment=value] [sourceBranches=value1,value2,...] [setDesiredVersion=true]\n" +
-    "   getDesiredVersions [clientName=value]\n" +
-    "   setDesiredVersions [clientName=value] [services=<service[:version]>,[service1[:version1]],...]"
+    "   getDesiredVersions\n" +
+    "   setDesiredVersions[services=<service[:version]>,[service1[:version1]],...]"
 
   if (args.size < 1) {
     Utils.error(usage())
@@ -37,7 +37,7 @@ object BuilderMain extends App {
     Utils.error("No config")
   }
 
-  val developerDistribution = new DistributionDirectoryClient(config.developerDistributionUrl)
+  val developerDistribution = new DistributionClientInterface(config.developerDistributionUrl)
 
   command match {
     case "buildVersion" =>

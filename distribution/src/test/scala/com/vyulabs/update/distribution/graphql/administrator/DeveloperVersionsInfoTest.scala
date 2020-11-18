@@ -16,7 +16,7 @@ import spray.json._
 class DeveloperVersionsInfoTest extends TestEnvironment {
   behavior of "Developer Versions Requests"
 
-  val graphqlContext = GraphqlContext(VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
+  val graphqlContext = GraphqlContext("distribution", VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
   it should "add/get/remove developer version info" in {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))

@@ -3,7 +3,7 @@ package distribution.config
 import java.io.File
 import java.net.URL
 
-import com.vyulabs.update.common.Common.{InstanceId}
+import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
 import com.vyulabs.update.utils.IoUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
@@ -40,7 +40,8 @@ object ClientConfig extends DefaultJsonProtocol {
   implicit val developerConfigJson = jsonFormat3(ClientConfig.apply)
 }
 
-case class DistributionConfig(title: String,
+case class DistributionConfig(distributionName: DistributionName,
+                              title: String,
                               instanceId: InstanceId,
                               mongoDb: String,
                               distributionDirectory: String,
@@ -51,7 +52,7 @@ case class DistributionConfig(title: String,
                               client: Option[ClientConfig])
 
 object DistributionConfig extends DefaultJsonProtocol {
-  implicit val distributionConfigJson = jsonFormat9(DistributionConfig.apply)
+  implicit val distributionConfigJson = jsonFormat10(DistributionConfig.apply)
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {
     val configFile = new File("distribution.json")
