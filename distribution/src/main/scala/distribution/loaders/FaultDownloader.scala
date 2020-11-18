@@ -13,7 +13,7 @@ import akka.stream.scaladsl.{FileIO, Source}
 import akka.util.ByteString
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, FaultId}
+import com.vyulabs.update.common.Common.{DistributionName, FaultId}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientFaultReport, FaultInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -39,8 +39,8 @@ class FaultDownloader(collections: DatabaseCollections,
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)
   private val maxFaultReportsCount = 100
 
-  def receiveFault(faultId: FaultId, clientName: ClientName, source: Source[ByteString, Any]): Route = {
-    log.info(s"Receive fault report file from client ${clientName}")
+  def receiveFault(faultId: FaultId, distributionName: DistributionName, source: Source[ByteString, Any]): Route = {
+    log.info(s"Receive fault report file from client ${distributionName}")
     val file = dir.getFaultReportFile(faultId)
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
@@ -48,7 +48,7 @@ class FaultDownloader(collections: DatabaseCollections,
       result.status match {
         case Success(_) =>
           val res = for {
-            _ <- Future(processFaultReport(faultId, clientName, file))
+            _ <- Future(processFaultReport(faultId, distributionName, file))
             _ <- clearOldReports()
           } yield result
           complete(res.map(_ => OK))
@@ -58,7 +58,7 @@ class FaultDownloader(collections: DatabaseCollections,
     }
   }
 
-  private def processFaultReport(faultId: FaultId, clientName: ClientName, file: File): Unit = {
+  private def processFaultReport(faultId: FaultId, distributionName: DistributionName, file: File): Unit = {
     implicit val log = LoggerFactory.getLogger(getClass)
 
     val tmpDir = Files.createTempDirectory("fault").toFile
@@ -69,7 +69,7 @@ class FaultDownloader(collections: DatabaseCollections,
           for {
             collection <- collections.State_FaultReports
             id <- collections.getNextSequence(collection.getName())
-            result <- collection.insert(FaultReportDocument(id, ClientFaultReport(faultId, clientName, faultInfo, IoUtils.listFiles(tmpDir))))
+            result <- collection.insert(FaultReportDocument(id, ClientFaultReport(faultId, distributionName, faultInfo, IoUtils.listFiles(tmpDir))))
           } yield result
         case None =>
           log.warn(s"No file ${Common.FaultInfoFileName} in the fault report ${tmpDir}")

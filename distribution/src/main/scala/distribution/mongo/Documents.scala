@@ -1,6 +1,6 @@
 package distribution.mongo
 
-import com.vyulabs.update.common.Common.ClientName
+import com.vyulabs.update.common.Common.DistributionName
 import com.vyulabs.update.config.{ClientInfo, ClientProfile}
 import com.vyulabs.update.info.{ClientDesiredVersion, ClientFaultReport, ClientServiceLogLine, ClientServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, TestedDesiredVersions}
 
@@ -15,7 +15,7 @@ case class ClientVersionInfoDocument(_id: Long, info: ClientVersionInfo)
 case class DeveloperDesiredVersionsDocument(versions: Seq[DeveloperDesiredVersion], _id: Long = 0)
 case class ClientDesiredVersionsDocument(versions: Seq[ClientDesiredVersion], _id: Long = 0)
 
-case class InstalledDesiredVersionsDocument(clientName: ClientName, versions: Seq[ClientDesiredVersion])
+case class InstalledDesiredVersionsDocument(distributionName: DistributionName, versions: Seq[ClientDesiredVersion])
 case class TestedDesiredVersionsDocument(versions: TestedDesiredVersions)
 
 case class ServiceStateDocument(sequence: Long, state: ClientServiceState)

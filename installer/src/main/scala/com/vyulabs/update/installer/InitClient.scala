@@ -5,7 +5,7 @@ import java.net.{URI, URL}
 
 import com.vyulabs.update.distribution.distribution.ClientAdminRepository
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirectoryClient}
 import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker

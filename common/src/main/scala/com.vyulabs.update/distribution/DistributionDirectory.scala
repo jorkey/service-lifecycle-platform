@@ -2,8 +2,7 @@ package com.vyulabs.update.distribution
 
 import java.io._
 
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory

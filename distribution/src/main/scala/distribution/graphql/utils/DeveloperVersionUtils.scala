@@ -2,14 +2,11 @@ package distribution.graphql.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info._
-import com.vyulabs.update.users.UsersCredentials._
-import com.vyulabs.update.utils.JsUtils.MergedJsObject
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.config.VersionHistoryConfig
-import distribution.graphql.{InvalidConfigException, NotFoundException}
 import distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -102,10 +99,10 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
     getDeveloperDesiredVersions(Set(serviceName)).map(_.headOption.map(_.version))
   }
 
-  def filterDesiredVersionsByProfile(clientName: ClientName, future: Future[Seq[DeveloperDesiredVersion]]): Future[Seq[DeveloperDesiredVersion]] = {
+  def filterDesiredVersionsByProfile(distributionName: DistributionName, future: Future[Seq[DeveloperDesiredVersion]]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      installProfile <- getClientInstallProfile(clientName)
+      installProfile <- getClientInstallProfile(distributionName)
       versions <- Future(desiredVersions.filter(version => installProfile.profile.services.contains(version.serviceName)))
     } yield versions
   }
@@ -159,7 +156,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
     for {
       desiredVersion <- getDeveloperDesiredVersion(serviceName)
       clientsInfo <- getClientsInfo()
-      installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.clientName, serviceName))).map(
+      installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distributionName, serviceName))).map(
         _.flatten.map(_.version.original()))
       testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.clientConfig.installProfile))).map(
         _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.version)).flatten)

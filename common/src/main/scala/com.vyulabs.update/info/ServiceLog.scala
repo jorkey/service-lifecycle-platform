@@ -15,4 +15,4 @@ object LogLine extends DefaultJsonProtocol {
 
 case class ServiceLogLine(serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory, logLine: LogLine)
 
-case class ClientServiceLogLine(clientName: ClientName, logLine: ServiceLogLine)
+case class ClientServiceLogLine(distributionName: DistributionName, logLine: ServiceLogLine)

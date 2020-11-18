@@ -1,12 +1,8 @@
 package distribution.graphql.utils
 
-import java.io.{File, IOException}
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.server.Directives.{failWith, _}
-import akka.http.scaladsl.server.Route
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, InstallInfo}
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -102,8 +98,8 @@ trait ClientVersionUtils extends ClientsUtils with SprayJsonSupport {
     getClientDesiredVersions(Set(serviceName)).map(_.headOption.map(_.version))
   }
 
-  def getClientDesiredVersions(clientName: ClientName): Future[Seq[ClientDesiredVersion]] = {
-    val clientArg = Filters.eq("versions.clientName", clientName)
+  def getClientDesiredVersions(distributionName: DistributionName): Future[Seq[ClientDesiredVersion]] = {
+    val clientArg = Filters.eq("versions.clientName", distributionName)
     for {
       collection <- collections.Client_DesiredVersions
       profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))

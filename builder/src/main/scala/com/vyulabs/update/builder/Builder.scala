@@ -8,7 +8,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.distribution.{AdminRepository, DeveloperAdminRepository, DistributionDirectoryClient, GitRepositoryUtils}
 import com.vyulabs.update.builder.config.SourcesConfig
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
 import com.vyulabs.update.info.BuildInfo
@@ -22,8 +22,7 @@ import com.vyulabs.update.config.InstallConfig._
 class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
 
-  def makeVersion(author: String, serviceName: ServiceName,
-                  clientName: Option[ClientName], comment: Option[String],
+  def makeVersion(author: String, serviceName: ServiceName, comment: Option[String],
                   newVersion: Option[DeveloperDistributionVersion], sourceBranches: Seq[String])
                  (implicit log: Logger): Option[DeveloperDistributionVersion] = {
     val servicesDir = new File("services")
@@ -199,15 +198,15 @@ class Builder(directory: DistributionDirectoryClient, adminRepositoryUrl: URI)(i
       }).flatten
   }
 
-  def getDesiredVersions(clientName: Option[ClientName])(implicit log: Logger): Option[Map[ServiceName, DeveloperDistributionVersion]] = {
+  def getDesiredVersions()(implicit log: Logger): Option[Map[ServiceName, DeveloperDistributionVersion]] = {
     // TODO graphql
     //directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_))
     null
   }
 
-  def setDesiredVersions(clientName: Option[ClientName], servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
+  def setDesiredVersions(servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
                         (implicit log: Logger): Boolean = {
-    log.info(s"Upload desired versions ${servicesVersions}" + (if (clientName.isDefined) s" for client ${clientName.get}" else ""))
+    log.info(s"Upload desired versions ${servicesVersions}")
     IoUtils.synchronize[Boolean](new File(".", builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {

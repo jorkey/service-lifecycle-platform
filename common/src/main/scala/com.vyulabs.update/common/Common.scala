@@ -8,7 +8,6 @@ object Common {
   type DistributionName = String
   type ServiceName = String
   type ServiceProfile = String
-  type ClientName = String
   type UserName = String
   type InstanceId = String
   type ProcessId = String

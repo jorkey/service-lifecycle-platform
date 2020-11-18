@@ -2,7 +2,7 @@ package com.vyulabs.update.info
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceDirectory, ServiceName, ServiceProfile}
+import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory, ServiceName, ServiceProfile}
 import com.vyulabs.update.utils.Utils.DateJson._
 import spray.json.DefaultJsonProtocol
 

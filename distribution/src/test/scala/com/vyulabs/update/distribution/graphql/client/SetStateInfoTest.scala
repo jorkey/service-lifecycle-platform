@@ -39,7 +39,7 @@ class SetStateInfoTest extends TestEnvironment {
 
     val date = new Date()
     result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(TestedDesiredVersions(
-      v.versions.profileName, v.versions.versions, v.versions.signatures.map(s => TestSignature(s.clientName, date))))))
+      v.versions.profileName, v.versions.versions, v.versions.signatures.map(s => TestSignature(s.distributionName, date))))))
       .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2)))),
         DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2, 1, 2))))),

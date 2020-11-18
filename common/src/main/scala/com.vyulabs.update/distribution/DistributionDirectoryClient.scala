@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 import com.typesafe.config.ConfigParseOptions
-import com.vyulabs.update.common.Common.{ClientName, InstanceId, ServiceName}
+import com.vyulabs.update.common.Common.{InstanceId, ServiceName}
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
@@ -137,7 +137,7 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
     false
   }
 
-  def downloadVersionsInfo(clientName: Option[ClientName], serviceName: ServiceName): Option[DeveloperVersionsInfo] = {
+  def downloadVersionsInfo(serviceName: ServiceName): Option[DeveloperVersionsInfo] = {
     // TODO graphql
     None
   }
@@ -151,31 +151,21 @@ class DistributionDirectoryClient(val url: URL)(implicit log: Logger) {
     null
   }
 
-  def downloadDeveloperDesiredVersions(clientName: Option[ClientName]): Option[Seq[DeveloperDesiredVersion]] = {
-    clientName match {
-      case Some(clientName) =>
-        log.info(s"Download desired versions for client ${clientName}")
-      case None =>
-        log.info(s"Download desired versions")
-    }
+  def downloadDeveloperDesiredVersions(): Option[Seq[DeveloperDesiredVersion]] = {
+    log.info(s"Download desired versions")
     // TODO graphql
     null
   }
 
-  def uploadDesiredVersions(clientName: Option[ClientName], desiredVersions: Seq[DeveloperDesiredVersion]): Boolean = {
-    clientName match {
-      case Some(clientName) =>
-        log.info(s"Upload desired versions for client ${clientName}")
-      case None =>
-        log.info(s"Upload desired versions")
-    }
+  def uploadDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion]): Boolean = {
+    log.info(s"Upload developer desired versions")
     // TODO graphql
     false
   }
 
-  def uploadDesiredVersions(desiredVersions: Seq[ClientDesiredVersion]): Boolean = {
+  def uploadClientDesiredVersions(desiredVersions: Seq[ClientDesiredVersion]): Boolean = {
+    log.info(s"Upload client desired versions")
     // TODO graphql
-    //uploadFromJson(makeUrl(uploadDesiredVersionsPath), desiredVersionsName, uploadDesiredVersionsPath, desiredVersions.toJson)
     false
   }
 

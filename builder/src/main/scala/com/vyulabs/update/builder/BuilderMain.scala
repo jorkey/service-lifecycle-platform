@@ -1,12 +1,11 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.{DistributionDirectory, DistributionDirectoryClient}
+import com.vyulabs.update.distribution.{DistributionDirectoryClient}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IoUtils, Utils}
+import com.vyulabs.update.utils.{Utils}
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.slf4j.LoggerFactory
 
@@ -44,7 +43,6 @@ object BuilderMain extends App {
     case "buildVersion" =>
       val author: String = arguments.getValue("author")
       val serviceName: ServiceName = arguments.getValue("service")
-      val clientName: Option[ClientName] = arguments.getOptionValue("client")
       val comment: Option[String] = arguments.getOptionValue("comment")
       val version = arguments.getOptionValue("version").map(DeveloperDistributionVersion.parse(_))
       val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
@@ -52,7 +50,7 @@ object BuilderMain extends App {
 
       log.info(s"Make new version of service ${serviceName}")
       val builder = new Builder(developerDistribution, config.adminRepositoryUrl)
-      builder.makeVersion(author, serviceName, clientName, comment, version, sourceBranches) match {
+      builder.makeVersion(author, serviceName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
             /* TODO graphql
@@ -78,35 +76,14 @@ object BuilderMain extends App {
           System.exit(1)
       }
     case "getDesiredVersions" =>
-      val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
-      clientName match {
-        case Some(clientName) =>
-          val commonVersions = new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(None).getOrElse {
-            Utils.error("Get desired versions error")
-          }
-          val clientVersions = new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(Some(clientName))
-            .getOrElse(Map.empty)
-          log.info("Common desired versions:")
-          commonVersions.foreach { case (serviceName, version) => {
-            if (!clientVersions.contains(serviceName)) log.info(s"  ${serviceName} ${version}")
-          }
-          }
-          if (!clientVersions.isEmpty) {
-            log.info("Client desired versions:")
-            clientVersions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
-          }
-
+      new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions() match {
+        case Some(versions) =>
+          log.info("Desired versions:")
+          versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
         case None =>
-          new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(None) match {
-            case Some(versions) =>
-              log.info("Desired versions:")
-              versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
-            case None =>
-              Utils.error("Get desired versions error")
-          }
+          Utils.error("Get desired versions error")
       }
     case "setDesiredVersions" =>
-      val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
       var servicesVersions = Map.empty[ServiceName, Option[DeveloperDistributionVersion]]
 
       for (services <- arguments.getOptionValue("services")) {
@@ -126,7 +103,7 @@ object BuilderMain extends App {
         }
       }
 
-      if (!new Builder(developerDistribution, config.adminRepositoryUrl).setDesiredVersions(clientName, servicesVersions)) {
+      if (!new Builder(developerDistribution, config.adminRepositoryUrl).setDesiredVersions(servicesVersions)) {
         Utils.error("Set desired versions error")
       }
 

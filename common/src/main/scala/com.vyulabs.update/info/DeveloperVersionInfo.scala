@@ -2,7 +2,7 @@ package com.vyulabs.update.info
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import spray.json.DefaultJsonProtocol
 

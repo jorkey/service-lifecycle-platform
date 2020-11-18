@@ -4,8 +4,8 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.Common.{ClientName, ProfileName}
-import com.vyulabs.update.config.{ClientConfig, ClientInfo, ClientProfile}
+import com.vyulabs.update.common.Common.{DistributionName, ProfileName}
+import com.vyulabs.update.config.{ClientConfig, ClientInfo}
 import com.vyulabs.update.distribution.DistributionDirectory
 import distribution.graphql.NotFoundException
 import distribution.mongo.{ClientProfileDocument, DatabaseCollections}
@@ -25,7 +25,7 @@ trait ClientsUtils extends SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def getClientsInfo(clientName: Option[ClientName] = None): Future[Seq[ClientInfo]] = {
+  def getClientsInfo(clientName: Option[DistributionName] = None): Future[Seq[ClientInfo]] = {
     val clientArg = clientName.map(Filters.eq("info.clientName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
@@ -35,13 +35,13 @@ trait ClientsUtils extends SprayJsonSupport {
     } yield info
   }
 
-  def getClientConfig(clientName: ClientName): Future[ClientConfig] = {
-    getClientsInfo(Some(clientName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${clientName} config")))
+  def getClientConfig(distributionName: DistributionName): Future[ClientConfig] = {
+    getClientsInfo(Some(distributionName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${distributionName} config")))
   }
 
-  def getClientInstallProfile(clientName: ClientName): Future[ClientProfileDocument] = {
+  def getClientInstallProfile(distributionName: DistributionName): Future[ClientProfileDocument] = {
     for {
-      clientConfig <- getClientConfig(clientName)
+      clientConfig <- getClientConfig(distributionName)
       installProfile <- getInstallProfile(clientConfig.installProfile)
     } yield installProfile
   }
