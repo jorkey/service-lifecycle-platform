@@ -69,25 +69,47 @@ class StateUploader(distributionName: DistributionName,
   }
 
   def start(): Unit = {
-    task = Some(system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(uploadState()))
+    task = Some(system.scheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState()))
+    log.info("Upload task is scheduled")
   }
 
   def stop(): Unit = {
     for (task <- task) {
-      task.cancel()
+      if (task.cancel() || !task.isCancelled) {
+        log.info("Upload task is cancelled")
+      } else {
+        log.info("Upload task failed to cancel")
+      }
       this.task = None
     }
   }
 
   private def uploadState(): Unit = {
+    log.info("Upload state")
     val result = for {
-      _ <- uploadServiceStates()
-      _ <- uploadFaultReports()
+      _ <- uploadServiceStates().andThen {
+        case Failure(ex) =>
+          log.error("Upload service states error", ex)
+      }
+      _ <- uploadFaultReports().andThen {
+        case Failure(ex) =>
+          log.error("Upload fault reports error", ex)
+      }
     } yield {}
-    result.andThen { case _ => system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState()) }
+    result.andThen {
+      case result =>
+        if (result.isSuccess) {
+          log.info(s"State is uploaded successfully")
+        } else {
+          log.info(s"State is failed to upload")
+        }
+        system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState())
+        log.info("Upload task is scheduled")
+    }
   }
 
   private def uploadServiceStates(): Future[Unit] = {
+    log.info("Upload service states")
     for {
       serviceStates <- collections.State_ServiceStates
       fromSequence <- getLastUploadSequence(serviceStates.getName())
@@ -109,6 +131,7 @@ class StateUploader(distributionName: DistributionName,
   }
 
   private def uploadFaultReports(): Future[Unit] = {
+    log.info("Upload fault reports")
     for {
       faultReports <- collections.State_FaultReports
       fromSequence <- getLastUploadSequence(faultReports.getName())

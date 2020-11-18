@@ -29,6 +29,7 @@ class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val ownServicesDir = Files.createTempDirectory("test").toFile
   IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
+  println(getClass.getSimpleName)
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, "self-instance", ownServicesDir, Some("build"), Some("install"), 100)
   val graphql = new Graphql()
@@ -36,12 +37,9 @@ class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 
-  override protected def beforeAll(): Unit = {
-  }
-
   override protected def afterAll(): Unit = {
     distributionDir.drop()
     IoUtils.deleteFileRecursively(ownServicesDir)
-    result(mongo.dropDatabase())
+    //result(mongo.dropDatabase())
   }
 }

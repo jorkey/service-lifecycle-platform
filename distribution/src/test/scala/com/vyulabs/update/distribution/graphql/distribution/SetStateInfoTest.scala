@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.client
+package com.vyulabs.update.distribution.graphql.distribution
 
 import java.util.Date
 

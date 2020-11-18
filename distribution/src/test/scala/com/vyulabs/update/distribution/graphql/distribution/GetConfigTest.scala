@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.client
+package com.vyulabs.update.distribution.graphql.distribution
 
 import akka.http.scaladsl.model.StatusCodes.OK
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}

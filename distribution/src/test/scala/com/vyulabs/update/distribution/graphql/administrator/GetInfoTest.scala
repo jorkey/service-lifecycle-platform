@@ -9,8 +9,8 @@ import distribution.mongo.{DistributionClientInfoDocument, DatabaseCollections, 
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class GetClientsInfoTest extends TestEnvironment {
-  behavior of "Client Info Requests"
+class GetInfoTest extends TestEnvironment {
+  behavior of "Misc Info Requests"
 
   val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("admin", UserRole.Administrator))
 
@@ -36,7 +36,7 @@ class GetClientsInfoTest extends TestEnvironment {
 
   it should "get clients info" in {
     assertResult((OK,
-      ("""{"data":{"clientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(
+      ("""{"data":{"distributionClientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
         graphql"""
         query {

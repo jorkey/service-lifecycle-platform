@@ -78,7 +78,7 @@ object GraphqlSchema {
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
-      Field("clientsInfo", ListType(ClientInfoType),
+      Field("distributionClientsInfo", ListType(ClientInfoType),
         resolve = c => c.ctx.getClientsInfo()),
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = ClientArg :: OptionServicesArg :: Nil,
