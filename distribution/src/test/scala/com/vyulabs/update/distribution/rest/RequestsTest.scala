@@ -37,4 +37,23 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       responseAs[String] shouldEqual """{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}"""
     }
   }
+
+  it should "process bad graphql post request" in {
+    Post("/graphql", """{ "query": "{ badRequest }" }""".parseJson) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
+  it should "process bad graphql get request" in {
+    Get(s"/graphql?query=" + URLEncoder.encode("""{ badRequest }""", "utf8")) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+      status shouldEqual StatusCodes.BadRequest
+    }
+  }
+
+  it should "return html on other requests" in {
+    Get("/qwerty") ~> addCredentials(adminClientCredentials) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      assert (responseAs[String] startsWith "<!doctype html>")
+    }
+  }
 }
