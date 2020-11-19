@@ -7,14 +7,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.users.UsersCredentials.credentialsFile
-import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
+import distribution.users.UsersCredentials.credentialsFile
+import distribution.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import distribution.loaders.{FaultDownloader, StateUploader}
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
-import com.vyulabs.update.users.UsersCredentials._
+import distribution.users.UsersCredentials._
 import distribution.graphql.Graphql
 import distribution.mongo.{DatabaseCollections, MongoDb}
 import java.security.{KeyStore, SecureRandom}

@@ -1,4 +1,4 @@
-package com.vyulabs.update.users
+package distribution.users
 
 import java.io.File
 import java.security.SecureRandom
@@ -6,7 +6,7 @@ import java.util.Base64
 
 import com.typesafe.config.Config
 import com.vyulabs.update.common.Common.UserName
-import com.vyulabs.update.users.UserRole.UserRole
+import distribution.users.UserRole.UserRole
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec

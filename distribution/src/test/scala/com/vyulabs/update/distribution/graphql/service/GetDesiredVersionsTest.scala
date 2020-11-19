@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion}
-import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}

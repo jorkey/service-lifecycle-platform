@@ -6,8 +6,8 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.DistributionName
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.users.UserRole.UserRole
-import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.users.UserRole.UserRole
+import distribution.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.GraphqlTypes._
 import distribution.graphql.utils.{ClientVersionUtils, ClientsUtils, DeveloperVersionUtils, StateUtils}

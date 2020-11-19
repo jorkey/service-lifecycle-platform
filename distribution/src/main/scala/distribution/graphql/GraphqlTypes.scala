@@ -4,8 +4,8 @@ import java.util.Date
 
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, DistributionFaultReport, DistributionServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
-import com.vyulabs.update.users.UserInfo
-import com.vyulabs.update.users.UserRole
+import distribution.users.UserInfo
+import distribution.users.UserRole
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}

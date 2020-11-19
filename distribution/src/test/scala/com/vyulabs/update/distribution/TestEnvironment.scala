@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
+import distribution.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.Distribution
@@ -28,11 +28,18 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
+  val adminClientCredentials = BasicHttpCredentials("admin", "admin")
+  val distributionClientCredentials = BasicHttpCredentials("clientDistribution", "clientDistribution")
+  val serviceClientCredentials = BasicHttpCredentials("service", "service")
+
+  val adminCredentials = UserCredentials(UserRole.Administrator, PasswordHash(adminClientCredentials.password))
+  val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
+  val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
+
   val usersCredentials = new UsersCredentials(Map(
-    "admin" -> UserCredentials(UserRole.Administrator, PasswordHash("admin")),
-    "clientDistribution" -> UserCredentials(UserRole.Distribution, PasswordHash("clientDistribution")),
-    "service" -> UserCredentials(UserRole.Service, PasswordHash("service")))
-  )
+    adminClientCredentials.username -> adminCredentials,
+    distributionClientCredentials.username -> distributionCredentials,
+    serviceClientCredentials.username -> serviceCredentials))
 
   val distributionName = "distribution"
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())

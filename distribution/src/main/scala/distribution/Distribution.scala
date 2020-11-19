@@ -18,7 +18,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.Common.DistributionName
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.users.{PasswordHash, UserInfo, UserRole, UsersCredentials}
+import distribution.users.{PasswordHash, UserInfo, UserRole, UsersCredentials}
 import distribution.config.{VersionHistoryConfig}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.loaders.{FaultDownloader}
@@ -57,7 +57,6 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
       logResult(resultLogger _) {
         handleExceptions(exceptionHandler) {
           extractRequestContext { ctx =>
-            println(ctx)
               mapRejections { rejections => // Prevent browser to invoke basic auth popup.
                 rejections.map(_ match {
                   case AuthenticationFailedRejection(cause, challenge) =>
@@ -68,7 +67,7 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                 })
               } {
                 authenticateBasic(realm = "Distribution", authenticate) { case userInfo =>
-                  path(graphqlPathPrefix) {
+                  pathPrefix(graphqlPathPrefix) {
                     seal {
                       post {
                         entity(as[JsValue]) { requestJson =>

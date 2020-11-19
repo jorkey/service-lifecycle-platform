@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import distribution.config.VersionHistoryConfig

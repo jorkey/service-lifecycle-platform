@@ -8,7 +8,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceState}
-import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.users.{UserInfo, UserRole}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.FaultReportDocument
 import sangria.macros.LiteralGraphQLStringContext

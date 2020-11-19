@@ -1,7 +1,8 @@
 package com.vyulabs.update.distribution.rest
 
+import java.net.URLEncoder
+
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.distribution.TestEnvironment
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
@@ -23,10 +24,15 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     }
   }
 
-  val adminCred = BasicHttpCredentials("admin", "admin")
-
   it should "process graphql post request" in {
-    Post("/graphql", """{ "query": "{ userInfo { name, role } }" }""".parseJson) ~> addCredentials(adminCred) ~> route ~> check {
+    Post("/graphql", """{ "query": "{ userInfo { name, role } }" }""".parseJson) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldEqual """{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}"""
+    }
+  }
+
+  it should "process graphql get request" in {
+    Get(s"/graphql?query=" + URLEncoder.encode("""{ userInfo { name, role } }""", "utf8")) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual """{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}"""
     }

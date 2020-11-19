@@ -8,7 +8,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionServiceState, ServiceState}
-import com.vyulabs.update.users.{UserInfo, UserRole}
+import distribution.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
