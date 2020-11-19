@@ -17,9 +17,8 @@ import scala.concurrent.ExecutionContext
 import sangria.marshalling.sprayJson._
 import sangria.schema.{Field, _}
 
-case class GraphqlContext(distributionName: DistributionName,
-                          versionHistoryConfig: VersionHistoryConfig,
-                          dir: DistributionDirectory, collections: DatabaseCollections, userInfo: UserInfo)
+case class GraphqlContext(distributionName: DistributionName, versionHistoryConfig: VersionHistoryConfig,
+                          collections: DatabaseCollections, dir: DistributionDirectory, userInfo: UserInfo)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)

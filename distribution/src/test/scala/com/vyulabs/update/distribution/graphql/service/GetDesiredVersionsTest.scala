@@ -1,6 +1,8 @@
 package com.vyulabs.update.distribution.graphql.service
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion}
 import com.vyulabs.update.users.{UserInfo, UserRole}
@@ -11,8 +13,14 @@ import distribution.mongo.{ClientDesiredVersionsDocument, DeveloperDesiredVersio
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import scala.concurrent.ExecutionContext
+
 class GetDesiredVersionsTest extends TestEnvironment {
   behavior of "Desired Versions Service Requests"
+
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
     val desiredVersionsCollection = result(collections.Client_DesiredVersions)
@@ -23,7 +31,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired versions for service" in {
-    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), distributionDir, collections, UserInfo("service1", UserRole.Service))
+    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("service1", UserRole.Service))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(

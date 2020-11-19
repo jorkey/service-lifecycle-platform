@@ -40,16 +40,10 @@ object ClientConfig extends DefaultJsonProtocol {
   implicit val developerConfigJson = jsonFormat3(ClientConfig.apply)
 }
 
-case class DistributionConfig(distributionName: DistributionName,
-                              title: String,
-                              instanceId: InstanceId,
-                              mongoDb: String,
-                              distributionDirectory: String,
-                              network: NetworkConfig,
-                              versionHistory: VersionHistoryConfig,
-                              instanceState: InstanceStateConfig,
-                              developer: Option[DeveloperConfig],
-                              client: Option[ClientConfig])
+case class DistributionConfig(distributionName: DistributionName, title: String, instanceId: InstanceId,
+                              mongoDb: String, distributionDirectory: String, network: NetworkConfig,
+                              developer: Option[DeveloperConfig], client: Option[ClientConfig],
+                              versionHistory: VersionHistoryConfig, instanceState: InstanceStateConfig)
 
 object DistributionConfig extends DefaultJsonProtocol {
   implicit val distributionConfigJson = jsonFormat10(DistributionConfig.apply)

@@ -16,7 +16,6 @@ import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, FaultId}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo}
-import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}
 import distribution.mongo.{DatabaseCollections, FaultReportDocument, MongoDbCollection}
 import org.slf4j.LoggerFactory
@@ -28,12 +27,8 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 18.12.19.
   * Copyright FanDate, Inc.
   */
-class FaultDownloader(collections: DatabaseCollections,
-                      protected val dir: DistributionDirectory)
-                     (implicit protected val system: ActorSystem,
-                      protected val materializer: Materializer,
-                      protected val executionContext: ExecutionContext,
-                      protected val filesLocker: SmartFilesLocker) { self =>
+class FaultDownloader(collections: DatabaseCollections, dir: DistributionDirectory)
+                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)

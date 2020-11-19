@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.server
+package com.vyulabs.update.distribution.rest
 
 import java.io.File
 import java.nio.file.{Files, Paths}

@@ -81,7 +81,7 @@ object DistributionMain extends App {
         val selfUpdater = new SelfUpdater(collections)
         selfUpdater.start()
 
-        val distribution = new Distribution(dir, collections, config, usersCredentials, graphql, faultDownloader)
+        val distribution = new Distribution(config.distributionName, config.versionHistory, collections, dir, usersCredentials, graphql, faultDownloader)
 
         var server = Http().newServerAt("0.0.0.0", config.network.port)
         config.network.ssl.foreach {

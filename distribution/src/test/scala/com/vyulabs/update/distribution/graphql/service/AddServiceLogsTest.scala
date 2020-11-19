@@ -2,7 +2,9 @@ package com.vyulabs.update.distribution.graphql.service
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionServiceLogLine, LogLine, ServiceLogLine}
 import com.vyulabs.update.users.{UserInfo, UserRole}
@@ -12,10 +14,16 @@ import distribution.mongo.ServiceLogLineDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import scala.concurrent.ExecutionContext
+
 class AddServiceLogsTest extends TestEnvironment {
   behavior of "State Info Requests"
 
-  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Distribution))
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+
+  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
 
   val logsCollection = result(collections.State_ServiceLogs)
 

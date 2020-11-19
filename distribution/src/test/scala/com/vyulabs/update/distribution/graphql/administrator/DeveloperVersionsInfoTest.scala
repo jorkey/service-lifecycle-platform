@@ -2,7 +2,9 @@ package com.vyulabs.update.distribution.graphql.administrator
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
@@ -13,10 +15,16 @@ import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import scala.concurrent.ExecutionContext
+
 class DeveloperVersionsInfoTest extends TestEnvironment {
   behavior of "Developer Versions Requests"
 
-  val graphqlContext = GraphqlContext("distribution", VersionHistoryConfig(3), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+
+  val graphqlContext = GraphqlContext("distribution", VersionHistoryConfig(3), collections, distributionDir, UserInfo("admin", UserRole.Administrator))
 
   it should "add/get/remove developer version info" in {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))

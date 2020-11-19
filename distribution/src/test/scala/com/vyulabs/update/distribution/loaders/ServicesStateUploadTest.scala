@@ -3,21 +3,24 @@ package com.vyulabs.update.distribution.loaders
 import java.io.IOException
 import java.util.Date
 
-import akka.stream.IOResult
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DistributionServiceState, DirectoryServiceState, ServiceState}
+import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.loaders.StateUploader
 import distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
 import spray.json.{JsValue, enrichAny}
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class ServicesStateUploadTest extends TestEnvironment {
   behavior of "Services State Upload"
+
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   case class GraphqlMutationRequest(command: String, arguments: Map[String, JsValue])
 

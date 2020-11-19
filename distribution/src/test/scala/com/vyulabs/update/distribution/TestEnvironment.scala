@@ -4,13 +4,16 @@ import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import distribution.config.VersionHistoryConfig
+import distribution.Distribution
+import distribution.config.{DistributionConfig, VersionHistoryConfig}
 import distribution.graphql.Graphql
+import distribution.loaders.FaultDownloader
 import distribution.mongo.{DatabaseCollections, MongoDb}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -18,22 +21,32 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
-  implicit val system = ActorSystem("Distribution")
-  implicit val materializer = ActorMaterializer()
+abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
+  private implicit val system = ActorSystem("Distribution")
+  private implicit val materializer: Materializer = ActorMaterializer()
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  val usersCredentials = new UsersCredentials(Map(
+    "admin" -> UserCredentials(UserRole.Administrator, PasswordHash("admin")),
+    "clientDistribution" -> UserCredentials(UserRole.Distribution, PasswordHash("clientDistribution")),
+    "service" -> UserCredentials(UserRole.Service, PasswordHash("service")))
+  )
 
-  val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
-  val ownServicesDir = Files.createTempDirectory("test").toFile
-  IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
-  println(getClass.getSimpleName)
+  val distributionName = "distribution"
   val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, "self-instance", ownServicesDir, Some("build"), Some("install"), 100)
+  val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val graphql = new Graphql()
   val versionHistoryConfig = VersionHistoryConfig(5)
+
+  val ownServicesDir = Files.createTempDirectory("test").toFile
+
+  val faultDownloader = new FaultDownloader(collections, distributionDir)
+  val distribution = new Distribution(distributionName, versionHistoryConfig, collections, distributionDir, usersCredentials, graphql, faultDownloader)
+
+  IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
 

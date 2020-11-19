@@ -2,7 +2,9 @@ package com.vyulabs.update.distribution.graphql.distribution
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
@@ -14,15 +16,21 @@ import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 import com.vyulabs.update.utils.Utils.DateJson._
 
+import scala.concurrent.ExecutionContext
+
 class SetStateInfoTest extends TestEnvironment {
   behavior of "Tested Versions Info Requests"
+
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override protected def beforeAll(): Unit = {
     result(collections.Developer_ClientsInfo.map(_.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", Some("test")))))))
   }
 
   it should "set tested versions" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -48,7 +56,7 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set installed desired versions" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"setInstalledDesiredVersions":true}}""").parseJson))(
@@ -70,7 +78,7 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set services state" in {
-    val graphqlContext1 = GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Distribution))
+    val graphqlContext1 = GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Distribution))
     assertResult((OK,
       ("""{"data":{"setServicesState":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext1, graphql"""
@@ -99,7 +107,7 @@ class SetStateInfoTest extends TestEnvironment {
         }
       """, variables = JsObject("date" -> new Date().toJson))))
 
-    val graphqlContext2 = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("client1", UserRole.Administrator))
+    val graphqlContext2 = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""

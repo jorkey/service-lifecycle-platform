@@ -2,7 +2,9 @@ package com.vyulabs.update.distribution.graphql.administrator
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceState}
@@ -12,12 +14,18 @@ import distribution.mongo.FaultReportDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import scala.concurrent.ExecutionContext
+
 class GetFaultReportsTest extends TestEnvironment {
   behavior of "AdaptationMeasure"
 
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+
   val collection = result(collections.State_FaultReports)
 
-  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user", UserRole.Administrator))
+  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user", UserRole.Administrator))
 
   val client1 = "client1"
   val client2 = "client2"

@@ -10,7 +10,6 @@ import distribution.config.VersionHistoryConfig
 import distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
-import spray.json._
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,9 +17,9 @@ import scala.concurrent.{ExecutionContext, Future}
 trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  protected val versionHistoryConfig: VersionHistoryConfig
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
+  protected val versionHistoryConfig: VersionHistoryConfig
 
   protected implicit val executionContext: ExecutionContext
 

@@ -2,7 +2,9 @@ package com.vyulabs.update.distribution.graphql.service
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionServiceState, ServiceState}
@@ -13,10 +15,16 @@ import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 import com.vyulabs.update.utils.Utils.DateJson._
 
+import scala.concurrent.ExecutionContext
+
 class StateInfoTest extends TestEnvironment {
   behavior of "State Info Requests"
 
-  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Distribution))
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+
+  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
 
   it should "set/get own service state" in {
     assertResult((OK,

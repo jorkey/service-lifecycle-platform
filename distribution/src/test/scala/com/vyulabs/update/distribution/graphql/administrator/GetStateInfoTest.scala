@@ -2,10 +2,12 @@ package com.vyulabs.update.distribution.graphql.administrator
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.{DistributionDirectory, TestEnvironment}
-import com.vyulabs.update.info.{ClientDesiredVersion, DistributionServiceState, DeveloperDesiredVersion, DirectoryServiceState, ServiceState}
+import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DirectoryServiceState, DistributionServiceState, ServiceState}
 import com.vyulabs.update.users.{UserInfo, UserRole}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
@@ -13,8 +15,14 @@ import distribution.mongo.{DistributionClientInfoDocument, InstalledDesiredVersi
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import scala.concurrent.ExecutionContext
+
 class GetStateInfoTest extends TestEnvironment {
   behavior of "State Info Requests"
+
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
     val clientInfoCollection = result(collections.Developer_ClientsInfo)
@@ -36,7 +44,7 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return own service version" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instance":{"service":{"version":"test-1.2.3"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -53,7 +61,7 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return installed versions" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
     assertResult((OK,
       ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.3"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -67,7 +75,7 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return service state" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, distributionDir, collections, UserInfo("user1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.1.0"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""

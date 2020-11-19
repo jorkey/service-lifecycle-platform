@@ -1,6 +1,8 @@
 package com.vyulabs.update.distribution.graphql.administrator
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.users.{UserInfo, UserRole}
@@ -10,8 +12,14 @@ import distribution.mongo.{DistributionClientInfoDocument, DistributionClientPro
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import scala.concurrent.ExecutionContext
+
 class DeveloperDesiredVersionsTest extends TestEnvironment {
   behavior of "Developer Desired Versions Requests"
+
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
     val installProfileCollection = result(collections.Developer_ClientsProfiles)
@@ -22,7 +30,7 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "set/get developer desired versions" in {
-    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), distributionDir, collections, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("admin", UserRole.Administrator))
 
     assertResult((OK,
       ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(

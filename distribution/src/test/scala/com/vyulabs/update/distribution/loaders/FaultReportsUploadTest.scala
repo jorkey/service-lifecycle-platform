@@ -3,6 +3,8 @@ package com.vyulabs.update.distribution.loaders
 import java.io.{File, IOException}
 import java.util.Date
 
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceState}
@@ -10,10 +12,14 @@ import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, Dev
 import distribution.loaders.StateUploader
 import distribution.mongo.{FaultReportDocument, UploadStatus, UploadStatusDocument}
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class FaultReportsUploadTest extends TestEnvironment {
   behavior of "Fault Reports Upload"
+
+  implicit val system = ActorSystem("Distribution")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   case class FileUploadRequest(path: String, file: File)
 
