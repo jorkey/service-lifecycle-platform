@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonSupport {
+trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val dir: DistributionDirectory
@@ -101,7 +101,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
   def filterDesiredVersionsByProfile(distributionName: DistributionName, future: Future[Seq[DeveloperDesiredVersion]]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      installProfile <- getClientInstallProfile(distributionName)
+      installProfile <- getDistributionClientInstallProfile(distributionName)
       versions <- Future(desiredVersions.filter(version => installProfile.profile.services.contains(version.serviceName)))
     } yield versions
   }
@@ -110,13 +110,13 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
   def getMergedDeveloperDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       clientConfig <- getClientConfig(clientName)
-      developerVersions <- { clientConfig.testClientMatch match {
-        case Some(testClientMatch) =>
+      developerVersions <- { clientConfig.testDistributionMatch match {
+        case Some(testDistributionMatch) =>
           for {
             testedVersions <- getTestedVersions(clientConfig.installProfile).map(testedVersions => {
               testedVersions match {
                 case Some(testedVersions) =>
-                  val regexp = testClientMatch.r
+                  val regexp = testDistributionMatch.r
                   val testCondition = testedVersions.signatures.exists(signature =>
                     signature.clientName match {
                       case regexp() =>
@@ -127,7 +127,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
                   if (testCondition) {
                     testedVersions.versions
                   } else {
-                    throw NotFoundException(s"Desired versions for profile ${clientConfig.installProfile} are not tested by clients ${testClientMatch}")
+                    throw NotFoundException(s"Desired versions for profile ${clientConfig.installProfile} are not tested by clients ${testDistributionMatch}")
                   }
                 case None =>
                   throw NotFoundException(s"Desired versions for profile ${clientConfig.installProfile} are not tested by anyone")
@@ -139,7 +139,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
       }}.map(DeveloperDesiredVersions.toMap(_))
       clientDesiredVersions <- getDeveloperPersonalDesiredVersions(clientName, serviceNames).map(DeveloperDesiredVersions.toMap(_))
       versions <- Future {
-        if (clientConfig.testClientMatch.isDefined && !clientDesiredVersions.isEmpty) {
+        if (clientConfig.testDistributionMatch.isDefined && !clientDesiredVersions.isEmpty) {
           throw InvalidConfigException("Client required preliminary testing shouldn't have personal desired versions")
         }
         val developerJson = developerVersions.toJson
@@ -154,7 +154,7 @@ trait DeveloperVersionUtils extends ClientsUtils with StateUtils with SprayJsonS
   private def getBusyVersions(serviceName: ServiceName): Future[Set[DeveloperDistributionVersion]] = {
     for {
       desiredVersion <- getDeveloperDesiredVersion(serviceName)
-      clientsInfo <- getClientsInfo()
+      clientsInfo <- getDistributionClientsInfo()
       installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distributionName, serviceName))).map(
         _.flatten.map(_.version.original()))
       testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.clientConfig.installProfile))).map(

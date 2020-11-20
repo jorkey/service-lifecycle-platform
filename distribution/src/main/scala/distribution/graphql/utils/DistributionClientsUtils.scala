@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientsUtils extends SprayJsonSupport {
+trait DistributionClientsUtils extends SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected implicit val system: ActorSystem
@@ -25,23 +25,23 @@ trait ClientsUtils extends SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def getClientsInfo(clientName: Option[DistributionName] = None): Future[Seq[DistributionClientInfo]] = {
-    val clientArg = clientName.map(Filters.eq("info.clientName", _))
+  def getDistributionClientsInfo(distributionName: Option[DistributionName] = None): Future[Seq[DistributionClientInfo]] = {
+    val clientArg = distributionName.map(Filters.eq("info.distributionName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
-      collection <- collections.Developer_ClientsInfo
+      collection <- collections.Developer_DistributionClientsInfo
       info <- collection.find(filters).map(_.map(_.info))
     } yield info
   }
 
-  def getClientConfig(distributionName: DistributionName): Future[DistributionClientConfig] = {
-    getClientsInfo(Some(distributionName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${distributionName} config")))
+  def getDistributionClientConfig(distributionName: DistributionName): Future[DistributionClientConfig] = {
+    getDistributionClientsInfo(Some(distributionName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${distributionName} config")))
   }
 
-  def getClientInstallProfile(distributionName: DistributionName): Future[DistributionClientProfileDocument] = {
+  def getDistributionClientInstallProfile(distributionName: DistributionName): Future[DistributionClientProfileDocument] = {
     for {
-      clientConfig <- getClientConfig(distributionName)
+      clientConfig <- getDistributionClientConfig(distributionName)
       installProfile <- getInstallProfile(clientConfig.installProfile)
     } yield installProfile
   }
@@ -49,7 +49,7 @@ trait ClientsUtils extends SprayJsonSupport {
   def getInstallProfile(profileName: ProfileName): Future[DistributionClientProfileDocument] = {
     val profileArg = Filters.eq("profile.profileName", profileName)
     for {
-      collection <- collections.Developer_ClientsProfiles
+      collection <- collections.Developer_DistributionClientsProfiles
       profile <- collection.find(profileArg).map(_.headOption
         .getOrElse(throw NotFoundException(s"No install profile ${profileName}")))
     } yield profile

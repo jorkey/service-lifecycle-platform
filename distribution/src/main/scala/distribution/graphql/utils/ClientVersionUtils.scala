@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends ClientsUtils with SprayJsonSupport {
+trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val versionHistoryConfig: VersionHistoryConfig
@@ -98,8 +98,8 @@ trait ClientVersionUtils extends ClientsUtils with SprayJsonSupport {
     getClientDesiredVersions(Set(serviceName)).map(_.headOption.map(_.version))
   }
 
-  def getClientDesiredVersions(distributionName: DistributionName): Future[Seq[ClientDesiredVersion]] = {
-    val clientArg = Filters.eq("versions.clientName", distributionName)
+  def getDistributionClientDesiredVersions(distributionName: DistributionName): Future[Seq[ClientDesiredVersion]] = {
+    val clientArg = Filters.eq("versions.distributionName", distributionName)
     for {
       collection <- collections.Client_DesiredVersions
       profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))

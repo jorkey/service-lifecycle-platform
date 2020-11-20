@@ -21,7 +21,7 @@ object InstallerMain extends App {
 
   def usage() =
     "Arguments: initDeveloper <distributionServicePort=value>\n" +
-    "           initClient <clientName=value> [testClientMatch=regularValue] <adminRepositoryUrl=value> <clientDistributionUrl=value> <developerDistributionUrl=value> <distributionServicePort=value>\n" +
+    "           initClient <clientName=value> [testDistributionMatch=regularValue] <adminRepositoryUrl=value> <clientDistributionUrl=value> <developerDistributionUrl=value> <distributionServicePort=value>\n" +
     "           installUpdates [servicesOnly=<service1>:[-<profile>][,...]] [localConfigOnly=true] [setDesiredVersions=true]\n" +
     "           getDesiredVersions\n" +
     "           setDesiredVersions [services=<service[:version]>,[service1[:version1]],...]\n" +

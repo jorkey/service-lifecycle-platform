@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait StateUtils extends ClientsUtils with SprayJsonSupport {
+trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected implicit val system: ActorSystem
@@ -27,7 +27,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def setInstalledDesiredVersions(distributionName: DistributionName, desiredVersions: Seq[ClientDesiredVersion]): Future[Boolean] = {
-    val clientArg = Filters.eq("clientName", distributionName)
+    val clientArg = Filters.eq("distributionName", distributionName)
     for {
       collection <- collections.State_InstalledDesiredVersions
       result <- collection.replace(clientArg, InstalledDesiredVersionsDocument(distributionName, desiredVersions)).map(_ => true)
@@ -49,7 +49,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
 
   def setTestedVersions(distributionName: DistributionName, desiredVersions: Seq[DeveloperDesiredVersion]): Future[Boolean] = {
     for {
-      clientConfig <- getClientConfig(distributionName)
+      clientConfig <- getDistributionClientConfig(distributionName)
       testedVersions <- getTestedVersions(clientConfig.installProfile)
       result <- {
         val testRecord = TestSignature(distributionName, new Date())
@@ -86,7 +86,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
           id - (instanceStates.size - seq.size) + 1, DistributionServiceState(distributionName, state)))
         Future.sequence(documents.map(doc => {
           val filters = Filters.and(
-            Filters.eq("state.clientName", distributionName),
+            Filters.eq("state.distributionName", distributionName),
             Filters.eq("state.instance.serviceName", doc.state.instance.serviceName),
             Filters.eq("state.instance.instanceId", doc.state.instance.instanceId),
             Filters.eq("state.instance.directory", doc.state.instance.directory))
@@ -98,7 +98,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
 
   def getServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
                        instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[DistributionServiceState]] = {
-    val clientArg = distributionName.map { client => Filters.eq("state.clientName", client) }
+    val clientArg = distributionName.map { client => Filters.eq("state.distributionName", client) }
     val serviceArg = serviceName.map { service => Filters.eq("state.instance.serviceName", service) }
     val instanceIdArg = instanceId.map { instanceId => Filters.eq("state.instance.instanceId", instanceId) }
     val directoryArg = directory.map { directory => Filters.eq("state.instance.directory", directory) }
@@ -123,7 +123,7 @@ trait StateUtils extends ClientsUtils with SprayJsonSupport {
   }
 
   def getClientFaultReports(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[DistributionFaultReport]] = {
-    val clientArg = distributionName.map { client => Filters.eq("fault.clientName", client) }
+    val clientArg = distributionName.map { client => Filters.eq("fault.distributionName", client) }
     val serviceArg = serviceName.map { service => Filters.eq("fault.info.serviceName", service) }
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()

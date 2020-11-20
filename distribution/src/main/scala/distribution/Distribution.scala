@@ -98,7 +98,6 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                                 case _ => JsObject.empty
                               }
                               val context = new GraphqlContext(distributionName, versionHistoryConfig, collections, dir, userInfo)
-                              println("complete")
                               complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                                 context, queryAst, operation, vars))
                             case Failure(error) =>

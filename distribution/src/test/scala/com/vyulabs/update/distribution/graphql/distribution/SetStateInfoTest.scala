@@ -26,11 +26,11 @@ class SetStateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override protected def beforeAll(): Unit = {
-    result(collections.Developer_ClientsInfo.map(_.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", Some("test")))))))
+    result(collections.Developer_DistributionClientsInfo.map(_.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test")))))))
   }
 
   it should "set tested versions" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -51,12 +51,12 @@ class SetStateInfoTest extends TestEnvironment {
       .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2)))),
         DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2, 1, 2))))),
-        Seq(TestSignature("client1", date))))))))))
+        Seq(TestSignature("distribution1", date))))))))))
     result(collections.State_TestedVersions.map(_.dropItems()))
   }
 
   it should "set installed desired versions" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"setInstalledDesiredVersions":true}}""").parseJson))(
@@ -71,14 +71,14 @@ class SetStateInfoTest extends TestEnvironment {
         }
       """)))
 
-    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("client1", Seq(
+    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("distribution1", Seq(
       ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))),
       ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 1)))))))))(_)))))
     result(collections.State_InstalledDesiredVersions.map(_.dropItems()))
   }
 
   it should "set services state" in {
-    val graphqlContext1 = GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Distribution))
+    val graphqlContext1 = GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
     assertResult((OK,
       ("""{"data":{"setServicesState":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext1, graphql"""
@@ -107,12 +107,12 @@ class SetStateInfoTest extends TestEnvironment {
         }
       """, variables = JsObject("date" -> new Date().toJson))))
 
-    val graphqlContext2 = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("client1", UserRole.Administrator))
+    val graphqlContext2 = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Administrator))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext2, graphql"""
         query {
-          servicesState (client: "client1", service: "service1") {
+          servicesState (distribution: "distribution1", service: "service1") {
             instance {
               instanceId
               service {

@@ -43,7 +43,7 @@ class UpdateClient()(implicit log: Logger) {
         log.error(s"Can't get client config")
         return InstallResult.Failure
       }
-      if (clientConfig.testClientMatch.isDefined && servicesOnly.isDefined && !localConfigOnly) {
+      if (clientConfig.testDistributionMatch.isDefined && servicesOnly.isDefined && !localConfigOnly) {
         log.error("You may use option servicesOnly only with localConfigOnly for client that requires preliminary testing")
         return InstallResult.Failure
       }
@@ -56,7 +56,7 @@ class UpdateClient()(implicit log: Logger) {
         log.info("Get developer desired versions")
         val developerDesiredVersions = developerDistribution.downloadDesiredVersions().getOrElse {
           log.error(s"Can't get developer desired versions.")
-          if (clientConfig.testClientMatch.isDefined) {
+          if (clientConfig.testDistributionMatch.isDefined) {
             log.error("May be developer desired versions are not tested")
           }
           return InstallResult.Failure

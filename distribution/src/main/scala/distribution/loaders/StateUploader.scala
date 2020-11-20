@@ -70,22 +70,22 @@ class StateUploader(distributionName: DistributionName,
 
   def start(): Unit = {
     task = Some(system.scheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState()))
-    log.info("Upload task is scheduled")
+    log.debug("Upload task is scheduled")
   }
 
   def stop(): Unit = {
     for (task <- task) {
       if (task.cancel() || !task.isCancelled) {
-        log.info("Upload task is cancelled")
+        log.debug("Upload task is cancelled")
       } else {
-        log.info("Upload task failed to cancel")
+        log.debug("Upload task failed to cancel")
       }
       this.task = None
     }
   }
 
   private def uploadState(): Unit = {
-    log.info("Upload state")
+    log.debug("Upload state")
     val result = for {
       _ <- uploadServiceStates().andThen {
         case Failure(ex) =>
@@ -99,17 +99,17 @@ class StateUploader(distributionName: DistributionName,
     result.andThen {
       case result =>
         if (result.isSuccess) {
-          log.info(s"State is uploaded successfully")
+          log.debug(s"State is uploaded successfully")
         } else {
-          log.info(s"State is failed to upload")
+          log.debug(s"State is failed to upload")
         }
         system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState())
-        log.info("Upload task is scheduled")
+        log.debug("Upload task is scheduled")
     }
   }
 
   private def uploadServiceStates(): Future[Unit] = {
-    log.info("Upload service states")
+    log.debug("Upload service states")
     for {
       serviceStates <- collections.State_ServiceStates
       fromSequence <- getLastUploadSequence(serviceStates.getName())
@@ -131,7 +131,7 @@ class StateUploader(distributionName: DistributionName,
   }
 
   private def uploadFaultReports(): Future[Unit] = {
-    log.info("Upload fault reports")
+    log.debug("Upload fault reports")
     for {
       faultReports <- collections.State_FaultReports
       fromSequence <- getLastUploadSequence(faultReports.getName())

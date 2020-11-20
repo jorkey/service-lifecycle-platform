@@ -2,7 +2,6 @@ package distribution.graphql
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.DistributionName
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
@@ -10,7 +9,7 @@ import distribution.users.UserRole.UserRole
 import distribution.users.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.GraphqlTypes._
-import distribution.graphql.utils.{ClientVersionUtils, ClientsUtils, DeveloperVersionUtils, StateUtils}
+import distribution.graphql.utils.{ClientVersionUtils, DistributionClientsUtils, DeveloperVersionUtils, StateUtils}
 import distribution.mongo.DatabaseCollections
 
 import scala.concurrent.ExecutionContext
@@ -22,7 +21,7 @@ case class GraphqlContext(distributionName: DistributionName, versionHistoryConf
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends ClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
+    extends DistributionClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
 
 
 object GraphqlSchema {
@@ -30,7 +29,7 @@ object GraphqlSchema {
 
   // Arguments
 
-  val ClientArg = Argument("client", StringType)
+  val DistributionArg = Argument("distribution", StringType)
   val InstanceArg = Argument("instance", StringType)
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
@@ -43,7 +42,7 @@ object GraphqlSchema {
   val InstancesStateArg = Argument("state", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
 
-  val OptionClientArg = Argument("client", OptionInputType(StringType))
+  val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
   val OptionDirectoryArg = Argument("directory", OptionInputType(StringType))
   val OptionServiceArg = Argument("service", OptionInputType(StringType))
@@ -78,23 +77,23 @@ object GraphqlSchema {
         resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       Field("distributionClientsInfo", ListType(ClientInfoType),
-        resolve = c => c.ctx.getClientsInfo()),
+        resolve = c => c.ctx.getDistributionClientsInfo()),
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
-        arguments = ClientArg :: OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(ClientArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+        arguments = DistributionArg :: OptionServicesArg :: Nil,
+        resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("servicesState", ListType(ClientServiceStateType),
-        arguments = OptionClientArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        resolve = c => { c.ctx.getServicesState(c.arg(OptionClientArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
+        arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
+        resolve = c => { c.ctx.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("faultReports", ListType(ClientFaultReportType),
-        arguments = OptionClientArg :: OptionServiceArg :: OptionLastArg :: Nil,
-        resolve = c => { c.ctx.getClientFaultReports(c.arg(OptionClientArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
+        arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
+        resolve = c => { c.ctx.getClientFaultReports(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
   ))
 
   val DistributionQueries = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("config", ClientConfigInfoType,
-        resolve = c => { c.ctx.getClientConfig(c.ctx.userInfo.name) }),
+        resolve = c => { c.ctx.getDistributionClientConfig(c.ctx.userInfo.name) }),
       Field("desiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })

@@ -23,19 +23,21 @@ class GetDesiredVersionsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
+  override val dbName = super.dbName + "-distribution"
+
   override def beforeAll() = {
-    val clientsInfoCollection = result(collections.Developer_ClientsInfo)
+    val clientsInfoCollection = result(collections.Developer_DistributionClientsInfo)
     val desiredVersionsCollection = result(collections.Developer_DesiredVersions)
 
-    result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", None)))))
+    result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
 
     desiredVersionsCollection.insert(DeveloperDesiredVersionsDocument(Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1)))),
       DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2)))))))
   }
 
-  it should "get desired versions for client" in {
-    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("client1", UserRole.Distribution))
+  it should "get desired versions for client distribution" in {
+    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(

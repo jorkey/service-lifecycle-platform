@@ -25,20 +25,20 @@ class GetStateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.Developer_ClientsInfo)
+    val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)
     val installedVersionsCollection = result(collections.State_InstalledDesiredVersions)
     val serviceStatesCollection = result(collections.State_ServiceStates)
 
     result(clientInfoCollection.insert(DistributionClientInfoDocument(
-      DistributionClientInfo("client1", DistributionClientConfig("common", Some("test"))))))
+      DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test"))))))
 
     result(installedVersionsCollection.insert(
-      InstalledDesiredVersionsDocument("client1", Seq(
+      InstalledDesiredVersionsDocument("distribution1", Seq(
         ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))),
         ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 3)))))))))
 
     result(serviceStatesCollection.insert(ServiceStateDocument(0,
-      DistributionServiceState("client1", "instance1", DirectoryServiceState("service1", "directory1",
+      DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory1",
         ServiceState(date = new Date(), None, None, version =
           Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None))))))
   }
@@ -49,7 +49,7 @@ class GetStateInfoTest extends TestEnvironment {
       ("""{"data":{"servicesState":[{"instance":{"service":{"version":"test-1.2.3"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query ServicesStateQuery($$directory: String!) {
-          servicesState (client: "own", service: "distribution", directory: $$directory) {
+          servicesState (distribution: "own", service: "distribution", directory: $$directory) {
             instance  {
               service {
                 version
@@ -66,7 +66,7 @@ class GetStateInfoTest extends TestEnvironment {
       ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.3"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          installedDesiredVersions (client: "client1") {
+          installedDesiredVersions (distribution: "distribution1") {
              serviceName
              version
           }
@@ -80,7 +80,7 @@ class GetStateInfoTest extends TestEnvironment {
       ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.1.0"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          servicesState (client: "client1", service: "service1") {
+          servicesState (distribution: "distribution1", service: "service1") {
             instance  {
               instanceId
               service {

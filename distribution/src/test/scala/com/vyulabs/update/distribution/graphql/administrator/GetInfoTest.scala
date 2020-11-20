@@ -23,9 +23,9 @@ class GetInfoTest extends TestEnvironment {
   val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("admin", UserRole.Administrator))
 
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.Developer_ClientsInfo)
+    val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)
 
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", Some("test"))))))
+    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test"))))))
   }
 
   it should "get user info" in {
@@ -42,17 +42,17 @@ class GetInfoTest extends TestEnvironment {
     )
   }
 
-  it should "get clients info" in {
+  it should "get distribution clients info" in {
     assertResult((OK,
-      ("""{"data":{"distributionClientsInfo":[{"clientName":"client1","clientConfig":{"installProfile":"common","testClientMatch":"test"}}]}}""").parseJson))(
+      ("""{"data":{"distributionClientsInfo":[{"distributionName":"distribution1","clientConfig":{"installProfile":"common","testDistributionMatch":"test"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
         graphql"""
         query {
-          clientsInfo {
-            clientName
+          distributionClientsInfo {
+            distributionName
             clientConfig {
               installProfile
-              testClientMatch
+              testDistributionMatch
             }
           }
         }

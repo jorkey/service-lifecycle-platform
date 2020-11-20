@@ -21,8 +21,8 @@ class ClientDesiredVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val installProfileCollection = result(collections.Developer_ClientsProfiles)
-    val clientInfoCollection = result(collections.Developer_ClientsInfo)
+    val installProfileCollection = result(collections.Developer_DistributionClientsProfiles)
+    val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)
 
     result(installProfileCollection.insert(DistributionClientProfileDocument(DistributionClientProfile("common", Set("service1", "service2")))))
     result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("client2", DistributionClientConfig("common", None)))))

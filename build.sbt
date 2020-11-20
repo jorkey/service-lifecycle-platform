@@ -74,8 +74,8 @@ lazy val distribution = project
     assemblySettings
   )
   .dependsOn(
-    updateCommon,
-    dashboard
+    updateCommon//,
+    //dashboard
   )
 
 lazy val dashboard = project

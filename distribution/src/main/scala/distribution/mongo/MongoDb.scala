@@ -18,11 +18,10 @@ import scala.reflect.ClassTag
 
 class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27017")
              (implicit executionContext: ExecutionContext) {
+  import distribution.mongo.MongoDb.client
+
   implicit val system = ActorSystem(s"MongoDB_${dbName}")
   implicit val materializer = ActorMaterializer()
-
-  private val client = MongoClients.create(MongoClientSettings.builder
-    .applyConnectionString(new ConnectionString(connectionString)).build)
 
   private val db = client.getDatabase(dbName)
 
@@ -134,4 +133,11 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T])
       .log(s"Drop Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }
+}
+
+object MongoDb {
+  val client = MongoClients.create(MongoClientSettings.builder
+    .applyConnectionString(new ConnectionString( "mongodb://localhost:27017"))
+    //.applyToConnectionPoolSettings(builder => builder.maxSize(10).minSize(10))
+    .build)
 }

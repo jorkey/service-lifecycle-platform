@@ -22,21 +22,21 @@ class GetConfigTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val clientsInfoCollection = result(collections.Developer_ClientsInfo)
+    val clientsInfoCollection = result(collections.Developer_DistributionClientsInfo)
 
-    result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("client1", DistributionClientConfig("common", Some("test"))))))
+    result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test"))))))
   }
 
   it should "get config for client" in {
-    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("client1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
 
     assertResult((OK,
-      ("""{"data":{"config":{"installProfile":"common","testClientMatch":"test"}}}""").parseJson))(
+      ("""{"data":{"config":{"installProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         query {
           config {
             installProfile,
-            testClientMatch
+            testDistributionMatch
           }
         }
       """)))

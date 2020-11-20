@@ -17,7 +17,7 @@ import spray.json._
 import scala.concurrent.ExecutionContext
 
 class GetFaultReportsTest extends TestEnvironment {
-  behavior of "AdaptationMeasure"
+  behavior of "Fault Report Requests"
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
@@ -27,7 +27,7 @@ class GetFaultReportsTest extends TestEnvironment {
 
   val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user", UserRole.Administrator))
 
-  val client1 = "client1"
+  val distribution1 = "distribution1"
   val client2 = "client2"
 
   val instance1 = "instance1"
@@ -35,7 +35,7 @@ class GetFaultReportsTest extends TestEnvironment {
 
   override def beforeAll() = {
     result(collection.insert(
-      FaultReportDocument(0, DistributionFaultReport("fault1", client1,
+      FaultReportDocument(0, DistributionFaultReport("fault1", distribution1,
         FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
         Seq("fault.info", "core")))))
     result(collection.insert(
@@ -43,19 +43,19 @@ class GetFaultReportsTest extends TestEnvironment {
         FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
         Seq("fault.info", "core1")))))
     result(collection.insert(
-      FaultReportDocument(2, DistributionFaultReport("fault3", client1,
+      FaultReportDocument(2, DistributionFaultReport("fault3", distribution1,
         FaultInfo(new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
         Seq("fault.info", "core")))))
   }
 
   it should "get last fault reports for specified client" in {
     assertResult((OK,
-      ("""{"data":{"faultReports":[{"faultId":"fault3","clientName":"client1","info":{"serviceName":"serviceB","instanceId":"instance2"},"files":["fault.info","core"]}]}}""").parseJson))(
+      ("""{"data":{"faultReports":[{"faultId":"fault3","distributionName":"distribution1","info":{"serviceName":"serviceB","instanceId":"instance2"},"files":["fault.info","core"]}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          faultReports (client: "client1", last: 1) {
+          faultReports (distribution: "distribution1", last: 1) {
             faultId
-            clientName
+            distributionName
             info {
               serviceName
               instanceId
@@ -69,12 +69,12 @@ class GetFaultReportsTest extends TestEnvironment {
 
   it should "get last fault reports for specified service" in {
     assertResult((OK,
-      ("""{"data":{"faultReports":[{"faultId":"fault2","clientName":"client2","info":{"serviceName":"serviceA","instanceId":"instance1"},"files":["fault.info","core1"]}]}}""").parseJson))(
+      ("""{"data":{"faultReports":[{"faultId":"fault2","distributionName":"client2","info":{"serviceName":"serviceA","instanceId":"instance1"},"files":["fault.info","core1"]}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           faultReports (service: "serviceA", last: 1) {
             faultId
-            clientName
+            distributionName
             info {
               serviceName
               instanceId
@@ -88,13 +88,13 @@ class GetFaultReportsTest extends TestEnvironment {
 
   it should "get fault reports for specified service in parameters" in {
     assertResult((OK,
-      ("""{"data":{"faultReports":[{"faultId":"fault3","clientName":"client1","info":{"serviceName":"serviceB","instanceId":"instance2"},"files":["fault.info","core"]}]}}""").parseJson))(
+      ("""{"data":{"faultReports":[{"faultId":"fault3","distributionName":"distribution1","info":{"serviceName":"serviceB","instanceId":"instance2"},"files":["fault.info","core"]}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition,
         graphqlContext, graphql"""
           query FaultsQuery($$service: String!) {
             faultReports (service: $$service) {
             faultId
-            clientName
+            distributionName
             info {
               serviceName
               instanceId

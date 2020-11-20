@@ -28,6 +28,9 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
+  def dbName = getClass.getSimpleName
+
+  val distributionName = "test"
   val adminClientCredentials = BasicHttpCredentials("admin", "admin")
   val distributionClientCredentials = BasicHttpCredentials("clientDistribution", "clientDistribution")
   val serviceClientCredentials = BasicHttpCredentials("service", "service")
@@ -41,9 +44,8 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
     distributionClientCredentials.username -> distributionCredentials,
     serviceClientCredentials.username -> serviceCredentials))
 
-  val distributionName = "distribution"
-  val mongo = new MongoDb(getClass.getSimpleName); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo, "self-instance", ownServicesDir, Some("build"), Some("install"), 100)
+  val mongo = new MongoDb(dbName); result(mongo.dropDatabase())
+  val collections = new DatabaseCollections(mongo, 100)
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val graphql = new Graphql()
   val versionHistoryConfig = VersionHistoryConfig(5)
@@ -55,11 +57,11 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
 
   IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
 
-  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(3, TimeUnit.SECONDS))
+  def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
     distributionDir.drop()
     IoUtils.deleteFileRecursively(ownServicesDir)
-    //result(mongo.dropDatabase())
+    result(mongo.dropDatabase())
   }
 }

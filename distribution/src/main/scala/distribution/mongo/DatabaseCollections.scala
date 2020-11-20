@@ -1,11 +1,9 @@
 package distribution.mongo
 
-import java.io.File
 import java.util.concurrent.TimeUnit
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, IndexOptions, Indexes, ReturnDocument, Updates}
-import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -18,9 +16,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
-                          homeDirectory: File, builderDirectory: Option[String], installerDirectory: Option[String],
-                          instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
+class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   class DeveloperDistributionVersionCodec extends Codec[DeveloperDistributionVersion] {
@@ -93,7 +89,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
 
   val Developer_VersionsInfo = for {
     collection <- db.getOrCreateCollection[DeveloperVersionInfoDocument]("developer.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("info.serviceName", "info.clientName", "info.version"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("info.serviceName", "info.version"), new IndexOptions().unique(true))
   } yield collection
 
   val Client_VersionsInfo = for {
@@ -104,19 +100,19 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
   val Developer_DesiredVersions = db.getOrCreateCollection[DeveloperDesiredVersionsDocument]("developer.desiredVersions")
   val Client_DesiredVersions = db.getOrCreateCollection[ClientDesiredVersionsDocument]("client.desiredVersions")
 
-  val Developer_ClientsInfo = for {
-    collection <- db.getOrCreateCollection[DistributionClientInfoDocument]("developer.clientsInfo")
-    _ <- collection.createIndex(Indexes.ascending("info.clientName"), new IndexOptions().unique(true))
+  val Developer_DistributionClientsInfo = for {
+    collection <- db.getOrCreateCollection[DistributionClientInfoDocument]("developer.distributionClientsInfo")
+    _ <- collection.createIndex(Indexes.ascending("info.distributionName"), new IndexOptions().unique(true))
   } yield collection
 
-  val Developer_ClientsProfiles = for {
-    collection <- db.getOrCreateCollection[DistributionClientProfileDocument]("developer.clientsProfiles")
+  val Developer_DistributionClientsProfiles = for {
+    collection <- db.getOrCreateCollection[DistributionClientProfileDocument]("developer.distributionClientsProfiles")
     _ <- collection.createIndex(Indexes.ascending("profile.profileName"), new IndexOptions().unique(true))
   } yield collection
 
   val State_InstalledDesiredVersions = for {
     collection <- db.getOrCreateCollection[InstalledDesiredVersionsDocument]("state.installedDesiredVersions")
-    _ <- collection.createIndex(Indexes.ascending("clientName"))
+    _ <- collection.createIndex(Indexes.ascending("distributionName"))
   } yield collection
 
   val State_TestedVersions = for {
@@ -127,7 +123,7 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
   val State_ServiceStates = for {
     collection <- db.getOrCreateCollection[ServiceStateDocument]("state.serviceStates")
     _ <- collection.createIndex(Indexes.ascending("sequence"), new IndexOptions().unique(true))
-    _ <- collection.createIndex(Indexes.ascending("state.clientName"))
+    _ <- collection.createIndex(Indexes.ascending("state.distributionName"))
     _ <- collection.createIndex(Indexes.ascending("state.instance.instanceId"))
     _ <- collection.createIndex(Indexes.ascending("state.instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
     _ <- collection.dropItems()
@@ -135,13 +131,13 @@ class DatabaseCollections(db: MongoDb, instanceId: InstanceId,
 
   val State_ServiceLogs = for {
     collection <- db.getOrCreateCollection[ServiceLogLineDocument]("state.serviceLogs")
-    _ <- collection.createIndex(Indexes.ascending("log.clientName"))
+    _ <- collection.createIndex(Indexes.ascending("log.distributionName"))
   } yield collection
 
   val State_FaultReports = for {
     collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReports")
     _ <- collection.createIndex(Indexes.ascending("fault.faultId"))
-    _ <- collection.createIndex(Indexes.ascending("fault.clientName"))
+    _ <- collection.createIndex(Indexes.ascending("fault.distributionName"))
     _ <- collection.createIndex(Indexes.ascending("fault.info.serviceName"))
   } yield collection
 

@@ -59,7 +59,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
     addClientVersionInfo("service3", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2))))
 
     assertResult((OK,
-      ("""{"data":{"clientVersionsInfo":[{"version":"3"},{"version":"4"},{"version":"5"}]}}""").parseJson))(
+      ("""{"data":{"clientVersionsInfo":[{"version":"test-3"},{"version":"test-4"},{"version":"test-5"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           clientVersionsInfo (service: "service1") {

@@ -68,8 +68,7 @@ object DistributionMain extends App {
         val mongoDb = new MongoDb("distribution", config.mongoDb)
 
         val dir = new DistributionDirectory(new File(config.distributionDirectory))
-        val collections = new DatabaseCollections(mongoDb, config.instanceId, new File("."),
-          config.developer.map(_.builderDirectory), config.client.map(_.installerDirectory), config.instanceState.expireSec)
+        val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
 
         val faultDownloader = new FaultDownloader(collections, dir)
         config.client.foreach { client =>
