@@ -55,7 +55,7 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
   val faultDownloader = new FaultDownloader(collections, distributionDir)
   val distribution = new Distribution(distributionName, versionHistoryConfig, collections, distributionDir, usersCredentials, graphql, faultDownloader)
 
-  IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
+  IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 

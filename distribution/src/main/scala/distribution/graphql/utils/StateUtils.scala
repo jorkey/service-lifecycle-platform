@@ -35,7 +35,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   }
 
   def getInstalledDesiredVersions(distributionName: DistributionName, serviceNames: Set[ServiceName] = Set.empty): Future[Seq[ClientDesiredVersion]] = {
-    val clientArg = Filters.eq("clientName", distributionName)
+    val clientArg = Filters.eq("distributionName", distributionName)
     for {
       collection <- collections.State_InstalledDesiredVersions
       profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))

@@ -23,7 +23,7 @@ class AddServiceLogsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
+  val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
 
   val logsCollection = result(collections.State_ServiceLogs)
 
@@ -48,9 +48,9 @@ class AddServiceLogsTest extends TestEnvironment {
       """, variables = JsObject("date" -> date.toJson))))
 
     assertResult(Seq(
-      ServiceLogLineDocument(1, new DistributionServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line1")))),
-      ServiceLogLineDocument(2, new DistributionServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line2")))),
-      ServiceLogLineDocument(3, new DistributionServiceLogLine("own", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line3")))))
+      ServiceLogLineDocument(1, new DistributionServiceLogLine("test", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line1")))),
+      ServiceLogLineDocument(2, new DistributionServiceLogLine("test", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line2")))),
+      ServiceLogLineDocument(3, new DistributionServiceLogLine("test", new ServiceLogLine("service1", "instance1", "dir", LogLine(date, "line3")))))
     )(result(logsCollection.find()))
   }
 }

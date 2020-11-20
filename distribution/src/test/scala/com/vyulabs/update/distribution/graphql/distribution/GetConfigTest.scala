@@ -28,7 +28,7 @@ class GetConfigTest extends TestEnvironment {
   }
 
   it should "get config for client" in {
-    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext(distributionName, VersionHistoryConfig(5), collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
 
     assertResult((OK,
       ("""{"data":{"config":{"installProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(

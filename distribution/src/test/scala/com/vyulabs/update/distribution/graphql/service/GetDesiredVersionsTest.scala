@@ -22,7 +22,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  override val dbName = super.dbName + "-service"
+  override def dbName = super.dbName + "-service"
 
   override def beforeAll() = {
     val desiredVersionsCollection = result(collections.Client_DesiredVersions)
@@ -33,7 +33,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired versions for service" in {
-    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("service1", UserRole.Service))
+    val graphqlContext = new GraphqlContext(distributionName, VersionHistoryConfig(5), collections, distributionDir, UserInfo("service1", UserRole.Service))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(
@@ -48,7 +48,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired version for specified service" in {
-    val graphqlContext = new GraphqlContext("distribution", VersionHistoryConfig(5), collections, distributionDir, UserInfo("service1", UserRole.Service))
+    val graphqlContext = new GraphqlContext(distributionName, VersionHistoryConfig(5), collections, distributionDir, UserInfo("service1", UserRole.Service))
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"version":"test-1"}]}}""").parseJson))(

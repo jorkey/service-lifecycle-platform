@@ -25,7 +25,7 @@ class GetFaultReportsTest extends TestEnvironment {
 
   val collection = result(collections.State_FaultReports)
 
-  val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user", UserRole.Administrator))
+  val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("user", UserRole.Administrator))
 
   val distribution1 = "distribution1"
   val client2 = "client2"

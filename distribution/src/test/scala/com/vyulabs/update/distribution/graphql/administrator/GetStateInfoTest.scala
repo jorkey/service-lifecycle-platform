@@ -6,10 +6,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.distribution.{DistributionDirectory, TestEnvironment}
-import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DirectoryServiceState, DistributionServiceState, ServiceState}
+import com.vyulabs.update.distribution.{TestEnvironment}
+import com.vyulabs.update.info.{ClientDesiredVersion, DirectoryServiceState, DistributionServiceState, ServiceState}
 import distribution.users.{UserInfo, UserRole}
-import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.{DistributionClientInfoDocument, InstalledDesiredVersionsDocument, ServiceStateDocument}
 import sangria.macros.LiteralGraphQLStringContext
@@ -38,18 +38,23 @@ class GetStateInfoTest extends TestEnvironment {
         ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 3)))))))))
 
     result(serviceStatesCollection.insert(ServiceStateDocument(0,
-      DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory1",
+      DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
         ServiceState(date = new Date(), None, None, version =
-          Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None))))))
+          Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3))))), None, None, None, None))))))
+
+    result(serviceStatesCollection.insert(ServiceStateDocument(1,
+      DistributionServiceState("distribution1", "instance2", DirectoryServiceState("service1", "directory2",
+        ServiceState(date = new Date(), None, None, version =
+          Some(ClientDistributionVersion("distribution1", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None))))))
   }
 
   it should "return own service version" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
     assertResult((OK,
       ("""{"data":{"servicesState":[{"instance":{"service":{"version":"test-1.2.3"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query ServicesStateQuery($$directory: String!) {
-          servicesState (distribution: "own", service: "distribution", directory: $$directory) {
+          servicesState (distribution: "test", service: "distribution", directory: $$directory) {
             instance  {
               service {
                 version
@@ -57,27 +62,13 @@ class GetStateInfoTest extends TestEnvironment {
             }
           }
         }
-      """, None, variables = JsObject("directory" -> JsString(ownServicesDir.getCanonicalPath)))))
-  }
-
-  it should "return installed versions" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
-    assertResult((OK,
-      ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.3"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          installedDesiredVersions (distribution: "distribution1") {
-             serviceName
-             version
-          }
-        }
-      """)))
+      """, None, variables = JsObject("directory" -> JsString("directory1")))))
   }
 
   it should "return service state" in {
-    val graphqlContext = new GraphqlContext("distribution", versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.1.0"}}}]}}""").parseJson))(
+      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance2","service":{"version":"distribution1-1.1.0"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
           servicesState (distribution: "distribution1", service: "service1") {
@@ -91,5 +82,19 @@ class GetStateInfoTest extends TestEnvironment {
         }
       """))
     )
+  }
+
+  it should "return installed versions" in {
+    val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
+    assertResult((OK,
+      ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.3"}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          installedDesiredVersions (distribution: "distribution1") {
+             serviceName
+             version
+          }
+        }
+      """)))
   }
 }
