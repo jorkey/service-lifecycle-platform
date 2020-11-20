@@ -53,7 +53,7 @@ class TestedVersionsTest extends TestEnvironment {
     val graphqlContext2 = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
 
     assertResult((OK,
-      ("""{"data":{"desiredVersions":[{"serviceName":"service1","buildVersion":"1.1.1"},{"serviceName":"service2","buildVersion":"2.1.1"}]}}""").parseJson))(
+      ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.1"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext2, graphql"""
         query {
           desiredVersions {

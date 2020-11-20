@@ -49,11 +49,4 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       status shouldEqual StatusCodes.BadRequest
     }
   }
-
-  it should "return html on other requests" in {
-    Get("/qwerty") ~> addCredentials(adminClientCredentials) ~> route ~> check {
-      status shouldEqual StatusCodes.OK
-      assert (responseAs[String] startsWith "<!doctype html>")
-    }
-  }
 }

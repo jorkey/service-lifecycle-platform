@@ -7,6 +7,7 @@ import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import distribution.config.VersionHistoryConfig
+import distribution.graphql.NotFoundException
 import distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -106,19 +107,18 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield versions
   }
 
-  /* TODO graphql
-  def getMergedDeveloperDesiredVersions(clientName: ClientName, serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
+  def getDeveloperDesiredVersions(distributionName: DistributionName, serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      clientConfig <- getClientConfig(clientName)
-      developerVersions <- { clientConfig.testDistributionMatch match {
+      distributionClientConfig <- getDistributionClientConfig(distributionName)
+      developerVersions <- distributionClientConfig.testDistributionMatch match {
         case Some(testDistributionMatch) =>
           for {
-            testedVersions <- getTestedVersions(clientConfig.installProfile).map(testedVersions => {
+            testedVersions <- getTestedVersions(distributionClientConfig.installProfile).map(testedVersions => {
               testedVersions match {
                 case Some(testedVersions) =>
                   val regexp = testDistributionMatch.r
                   val testCondition = testedVersions.signatures.exists(signature =>
-                    signature.clientName match {
+                    signature.distributionName match {
                       case regexp() =>
                         true
                       case _ =>
@@ -127,29 +127,18 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
                   if (testCondition) {
                     testedVersions.versions
                   } else {
-                    throw NotFoundException(s"Desired versions for profile ${clientConfig.installProfile} are not tested by clients ${testDistributionMatch}")
+                    throw NotFoundException(s"Desired versions for profile ${distributionClientConfig.installProfile} are not tested by clients ${testDistributionMatch}")
                   }
                 case None =>
-                  throw NotFoundException(s"Desired versions for profile ${clientConfig.installProfile} are not tested by anyone")
+                  throw NotFoundException(s"Desired versions for profile ${distributionClientConfig.installProfile} are not tested by anyone")
               }
             })
           } yield testedVersions
         case None =>
           getDeveloperDesiredVersions(serviceNames)
-      }}.map(DeveloperDesiredVersions.toMap(_))
-      clientDesiredVersions <- getDeveloperPersonalDesiredVersions(clientName, serviceNames).map(DeveloperDesiredVersions.toMap(_))
-      versions <- Future {
-        if (clientConfig.testDistributionMatch.isDefined && !clientDesiredVersions.isEmpty) {
-          throw InvalidConfigException("Client required preliminary testing shouldn't have personal desired versions")
-        }
-        val developerJson = developerVersions.toJson
-        val clientJson = clientDesiredVersions.toJson
-        val mergedJson = developerJson.merge(clientJson)
-        val mergedVersions = mergedJson.convertTo[Map[ServiceName, DeveloperDistributionVersion]]
-        DeveloperDesiredVersions.fromMap(mergedVersions)
       }
-    } yield versions
-  }*/
+    } yield developerVersions
+  }
 
   private def getBusyVersions(serviceName: ServiceName): Future[Set[DeveloperDistributionVersion]] = {
     for {

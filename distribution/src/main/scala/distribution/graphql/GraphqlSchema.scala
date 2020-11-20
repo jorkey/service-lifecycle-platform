@@ -96,7 +96,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.getDistributionClientConfig(c.ctx.userInfo.name) }),
       Field("desiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
+        resolve = c => { c.ctx.getDeveloperDesiredVersions(c.ctx.userInfo.name, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
     )
   )
 
