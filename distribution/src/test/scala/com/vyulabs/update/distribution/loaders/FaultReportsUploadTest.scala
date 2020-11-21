@@ -45,14 +45,14 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report = DistributionFaultReport("fault1", "distribution1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1"))
-    result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report))))
+    result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report))).flatten)
     assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, "/faults/fault1-fault.zip")))(result(promise.future))
 
     Thread.sleep(100)
     uploader.stop()
 
-    result(collections.State_FaultReports.map(_.dropItems()))
-    result(collections.State_UploadStatus.map(_.dropItems()))
+    result(collections.State_FaultReports.map(_.dropItems()).flatten)
+    result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 
   it should "try to upload service states again after failure" in {
@@ -63,7 +63,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report1 = DistributionFaultReport("fault1", "distribution1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1"))
-    result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report1))))
+    result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report1))).flatten)
     assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, "/faults/fault1-fault.zip")))(result(promise.future))
 
     Thread.sleep(100)
@@ -82,7 +82,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     uploader.stop()
 
-    result(collections.State_ServiceStates.map(_.dropItems()))
-    result(collections.State_UploadStatus.map(_.dropItems()))
+    result(collections.State_ServiceStates.map(_.dropItems()).flatten)
+    result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 }

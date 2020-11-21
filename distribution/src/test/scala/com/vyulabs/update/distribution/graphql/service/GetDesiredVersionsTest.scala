@@ -25,11 +25,9 @@ class GetDesiredVersionsTest extends TestEnvironment {
   override def dbName = super.dbName + "-service"
 
   override def beforeAll() = {
-    val desiredVersionsCollection = result(collections.Client_DesiredVersions)
-
-    desiredVersionsCollection.insert(ClientDesiredVersionsDocument(Seq(
+    result(collections.Client_DesiredVersions.map(_.insert(ClientDesiredVersionsDocument(Seq(
       ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))),
-      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))))))
+      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))))))).flatten)
   }
 
   it should "get desired versions for service" in {

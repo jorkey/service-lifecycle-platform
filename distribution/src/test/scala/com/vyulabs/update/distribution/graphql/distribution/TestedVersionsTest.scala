@@ -63,7 +63,7 @@ class TestedVersionsTest extends TestEnvironment {
         }
       """)))
 
-    result(collections.State_TestedVersions.map(_.dropItems()))
+    result(collections.State_TestedVersions.map(_.dropItems()).flatten)
   }
 
   it should "return error if no tested versions for the client's profile" in {
@@ -85,7 +85,7 @@ class TestedVersionsTest extends TestEnvironment {
     result(collections.State_TestedVersions.map(_.insert(
       TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 0))))),
-        Seq(TestSignature("test-client", new Date())))))))
-    result(collections.Client_DesiredVersions.map(_.dropItems()))
+        Seq(TestSignature("test-client", new Date())))))).flatten)
+    result(collections.Client_DesiredVersions.map(_.dropItems()).flatten)
   }
 }

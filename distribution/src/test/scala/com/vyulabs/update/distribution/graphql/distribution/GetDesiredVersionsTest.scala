@@ -31,9 +31,9 @@ class GetDesiredVersionsTest extends TestEnvironment {
 
     result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
 
-    desiredVersionsCollection.insert(DeveloperDesiredVersionsDocument(Seq(
+    result(desiredVersionsCollection.insert(DeveloperDesiredVersionsDocument(Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1)))),
-      DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2)))))))
+      DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2))))))))
   }
 
   it should "get desired versions" in {

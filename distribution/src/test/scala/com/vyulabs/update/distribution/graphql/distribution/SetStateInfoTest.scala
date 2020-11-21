@@ -26,7 +26,7 @@ class SetStateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override protected def beforeAll(): Unit = {
-    result(collections.Developer_DistributionClientsInfo.map(_.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test")))))))
+    result(collections.Developer_DistributionClientsInfo.map(_.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test")))))).flatten)
   }
 
   it should "set tested versions" in {
@@ -46,13 +46,14 @@ class SetStateInfoTest extends TestEnvironment {
       """)))
 
     val date = new Date()
+
     result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(TestedDesiredVersions(
       v.versions.profileName, v.versions.versions, v.versions.signatures.map(s => TestSignature(s.distributionName, date))))))
       .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2)))),
         DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2, 1, 2))))),
         Seq(TestSignature("distribution1", date))))))))))
-    result(collections.State_TestedVersions.map(_.dropItems()))
+    result(collections.State_TestedVersions.map(_.dropItems()).flatten)
   }
 
   it should "set installed desired versions" in {
@@ -74,7 +75,7 @@ class SetStateInfoTest extends TestEnvironment {
     result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("distribution1", Seq(
       ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))),
       ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 1)))))))))(_)))))
-    result(collections.State_InstalledDesiredVersions.map(_.dropItems()))
+    result(collections.State_InstalledDesiredVersions.map(_.dropItems()).flatten)
   }
 
   it should "set services state" in {
@@ -124,6 +125,6 @@ class SetStateInfoTest extends TestEnvironment {
       """))
     )
 
-    result(collections.State_ServiceStates.map(_.dropItems()))
+    result(collections.State_ServiceStates.map(_.dropItems()).flatten)
   }
 }

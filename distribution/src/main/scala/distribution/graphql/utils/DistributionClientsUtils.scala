@@ -36,7 +36,7 @@ trait DistributionClientsUtils extends SprayJsonSupport {
   }
 
   def getDistributionClientConfig(distributionName: DistributionName): Future[DistributionClientConfig] = {
-    getDistributionClientsInfo(Some(distributionName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No client ${distributionName} config")))
+    getDistributionClientsInfo(Some(distributionName)).map(_.headOption.map(_.clientConfig).getOrElse(throw NotFoundException(s"No distribution client ${distributionName} config")))
   }
 
   def getDistributionClientInstallProfile(distributionName: DistributionName): Future[DistributionClientProfileDocument] = {

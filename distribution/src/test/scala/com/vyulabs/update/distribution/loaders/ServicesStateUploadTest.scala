@@ -42,7 +42,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))))
+    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten)
     val request1 = result(promise.future)
     assertResult("setServicesState")(request1.command)
     assertResult(Map("state" -> Seq(state1).toJson))(request1.arguments)
@@ -63,8 +63,8 @@ class ServicesStateUploadTest extends TestEnvironment {
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()
-    result(collections.State_ServiceStates.map(_.dropItems()))
-    result(collections.State_UploadStatus.map(_.dropItems()))
+    result(collections.State_ServiceStates.map(_.dropItems()).flatten)
+    result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 
   it should "try to upload service states again after failure" in {
@@ -76,7 +76,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))))
+    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten)
 
     val request1 = result(promise.future)
     assertResult("setServicesState")(request1.command)
@@ -88,7 +88,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))))
+    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))).flatten)
     val request2 = result(promise.future)
     assertResult("setServicesState")(request2.command)
     assertResult(Map("state" -> Seq(state1, state2).toJson))(request2.arguments)
@@ -102,7 +102,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state3 = DistributionServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(2, state3))))
+    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(2, state3))).flatten)
     val request4 = result(promise.future)
     assertResult("setServicesState")(request4.command)
     assertResult(Map("state" -> Seq(state3).toJson))(request4.arguments)
@@ -113,7 +113,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     uploader.stop()
 
-    result(collections.State_ServiceStates.map(_.dropItems()))
-    result(collections.State_UploadStatus.map(_.dropItems()))
+    result(collections.State_ServiceStates.map(_.dropItems()).flatten)
+    result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 }
