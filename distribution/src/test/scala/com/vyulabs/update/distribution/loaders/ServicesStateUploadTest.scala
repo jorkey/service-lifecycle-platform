@@ -42,10 +42,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten)
-    val request1 = result(promise.future)
-    assertResult("setServicesState")(request1.command)
-    assertResult(Map("state" -> Seq(state1).toJson))(request1.arguments)
+    testAction(() => result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten),  Seq(state1))
 
     Thread.sleep(100)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(0), None)))(
@@ -53,10 +50,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))))
-    val request2 = result(promise.future)
-    assertResult("setServicesState")(request2.command)
-    assertResult(Map("state" -> Seq(state2).toJson))(request2.arguments)
+    testAction(() => result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2)))), Seq(state2))
 
     Thread.sleep(100)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(1), None)))(
@@ -76,11 +70,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten)
-
-    val request1 = result(promise.future)
-    assertResult("setServicesState")(request1.command)
-    assertResult(Map("state" -> Seq(state1).toJson))(request1.arguments)
+    testAction(() => result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten), Seq(state1))
 
     Thread.sleep(100)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(None, Some("upload error"))))(
@@ -88,24 +78,13 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))).flatten)
-    val request2 = result(promise.future)
-    assertResult("setServicesState")(request2.command)
-    assertResult(Map("state" -> Seq(state1, state2).toJson))(request2.arguments)
+    testAction(() => result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))).flatten), Seq(state1, state2))
 
-    synchronized {
-      result = Future.successful()
-    }
-    val request3 = result(promise.future)
-    assertResult("setServicesState")(request3.command)
-    assertResult(Map("state" -> Seq(state1, state2).toJson))(request3.arguments)
+    testAction(() => synchronized { result = Future.successful() }, Seq(state1, state2))
 
     val state3 = DistributionServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(2, state3))).flatten)
-    val request4 = result(promise.future)
-    assertResult("setServicesState")(request4.command)
-    assertResult(Map("state" -> Seq(state3).toJson))(request4.arguments)
+    testAction(() => result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(2, state3))).flatten), Seq(state3))
 
     Thread.sleep(100)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(2), None)))(
@@ -115,5 +94,13 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     result(collections.State_ServiceStates.map(_.dropItems()).flatten)
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
+  }
+
+  def testAction(action: () => Unit, states: Seq[DistributionServiceState]): Unit = {
+    val promise = this.promise
+    action()
+    val request = result(promise.future)
+    assertResult("setServicesState")(request.command)
+    assertResult(Map("state" -> states.toJson))(request.arguments)
   }
 }

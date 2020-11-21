@@ -45,8 +45,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report = DistributionFaultReport("fault1", "distribution1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1"))
-    result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report))).flatten)
-    assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, "/faults/fault1-fault.zip")))(result(promise.future))
+    testAction(() => result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report))).flatten),"/faults/fault1-fault.zip")
 
     Thread.sleep(100)
     uploader.stop()
@@ -63,26 +62,27 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report1 = DistributionFaultReport("fault1", "distribution1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1"))
-    result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report1))).flatten)
-    assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, "/faults/fault1-fault.zip")))(result(promise.future))
+    testAction(() => result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report1))).flatten),"/faults/fault1-fault.zip")
 
     Thread.sleep(100)
     assertResult(UploadStatusDocument("state.faultReports", UploadStatus(None, Some("upload error"))))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.faultReports")).map(_.head)))))
 
-    synchronized {
-      result = Future.successful()
-    }
-    assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, "/faults/fault1-fault.zip")))(result(promise.future))
+    testAction(() => synchronized { result = Future.successful() },"/faults/fault1-fault.zip")
 
     val report2 = DistributionFaultReport("fault2", "client2", FaultInfo(new Date(), "instance2", "directory", "service2", "profile2",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))), None, None, None, None), Seq()), Seq("file2"))
-    result(collections.State_FaultReports.map(_.insert(FaultReportDocument(1, report2))))
-    assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, "/faults/fault2-fault.zip")))(result(promise.future))
+    testAction(() => result(collections.State_FaultReports.map(_.insert(FaultReportDocument(1, report2)))),"/faults/fault2-fault.zip")
 
     uploader.stop()
 
     result(collections.State_ServiceStates.map(_.dropItems()).flatten)
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
+  }
+
+  def testAction(action: () => Unit, file: String): Unit = {
+    val promise = this.promise
+    action()
+    assertResult(FileUploadRequest("upload_fault_report", new File(distributionDir.directory, file)))(result(promise.future))
   }
 }
