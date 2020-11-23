@@ -29,7 +29,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "set/get client desired versions" in {
-    val graphqlContext = new GraphqlContext(distributionName, VersionHistoryConfig(5), collections, distributionDir, UserInfo("admin", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
     assertResult((OK,
       ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(

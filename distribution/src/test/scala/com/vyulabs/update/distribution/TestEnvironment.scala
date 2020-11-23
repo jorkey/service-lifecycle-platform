@@ -11,9 +11,8 @@ import distribution.users.{PasswordHash, UserCredentials, UserRole, UsersCredent
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.Distribution
-import distribution.config.{DistributionConfig, VersionHistoryConfig}
-import distribution.graphql.Graphql
-import distribution.loaders.FaultDownloader
+import distribution.config.{DistributionConfig, FaultReportsConfig, VersionHistoryConfig}
+import distribution.graphql.{Graphql, GraphqlWorkspace}
 import distribution.mongo.{DatabaseCollections, MongoDb}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -47,13 +46,15 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
   val mongo = new MongoDb(dbName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, 100)
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
-  val graphql = new Graphql()
-  val versionHistoryConfig = VersionHistoryConfig(5)
+  val versionHistoryConfig = VersionHistoryConfig(3)
+  val faultReportsConfig = FaultReportsConfig(1000, 3)
 
   val ownServicesDir = Files.createTempDirectory("test").toFile
 
-  val faultDownloader = new FaultDownloader(collections, distributionDir)
-  val distribution = new Distribution(distributionName, versionHistoryConfig, collections, distributionDir, usersCredentials, graphql, faultDownloader)
+  val graphql = new Graphql()
+
+  val workspace = new GraphqlWorkspace(distributionName, versionHistoryConfig, faultReportsConfig, collections, distributionDir)
+  val distribution = new Distribution(workspace, usersCredentials, graphql)
 
   IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
 

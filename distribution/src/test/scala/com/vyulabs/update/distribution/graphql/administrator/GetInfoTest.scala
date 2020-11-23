@@ -20,7 +20,7 @@ class GetInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("admin", UserRole.Administrator))
+  val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
   override def beforeAll() = {
     val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)

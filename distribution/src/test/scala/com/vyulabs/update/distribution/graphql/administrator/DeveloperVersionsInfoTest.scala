@@ -24,7 +24,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = GraphqlContext("distribution", VersionHistoryConfig(3), collections, distributionDir, UserInfo("admin", UserRole.Administrator))
+  val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
   it should "add/get/remove developer version info" in {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))

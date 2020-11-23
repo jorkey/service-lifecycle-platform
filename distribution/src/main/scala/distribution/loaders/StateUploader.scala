@@ -12,14 +12,14 @@ import akka.stream.{IOResult, Materializer}
 import org.slf4j.LoggerFactory
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
-import akka.stream.scaladsl.{FileIO, Source}
+import akka.stream.scaladsl.{FileIO}
 import akka.util.ByteString
 import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionWebPaths.graphqlPathPrefix
-import com.vyulabs.update.info.{DistributionServiceState, DirectoryServiceState}
+import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState}
 import distribution.mongo.{DatabaseCollections, ServiceStateDocument}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -139,16 +139,20 @@ class StateUploader(distributionName: DistributionName,
       newReports <- Future(newReportsDocuments.map(_.fault))
     } yield {
       if (!newReports.isEmpty) {
-        Future.sequence(newReports.map(report => {
+        Future.sequence(newReports.filter(_.distributionName == distributionName).map(report => {
           val file = distributionDirectory.getFaultReportFile(report.report.faultId)
-          fileUploadRequest("upload_fault_report", file).
+          val infoUpload = for {
+            _ <- fileUploadRequest("uploadFaultReport", file)
+            _ <- graphqlMutationRequest("addServiceFaultReportInfo", Map("fault" -> report.report.toJson))
+          } yield {}
+          infoUpload.
             andThen {
               case Success(_) =>
                 setLastUploadSequence(faultReports.getName(), newReportsDocuments.last._id)
               case Failure(ex) =>
                 setLastUploadError(faultReports.getName(), ex.getMessage)
             }
-        })).map(_ => Unit)
+        }))
       } else {
         Promise[Unit].success(Unit).future
       }

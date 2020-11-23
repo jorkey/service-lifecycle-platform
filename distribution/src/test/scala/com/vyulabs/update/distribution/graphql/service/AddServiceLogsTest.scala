@@ -23,7 +23,7 @@ class AddServiceLogsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("user1", UserRole.Distribution))
+  val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
 
   val logsCollection = result(collections.State_ServiceLogs)
 

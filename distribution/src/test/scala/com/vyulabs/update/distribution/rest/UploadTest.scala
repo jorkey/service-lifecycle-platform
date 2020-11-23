@@ -20,7 +20,6 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   it should "upload developer version image" in {
     Post("/developer-version-image/service1/test-1.1.1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual "Complete"
     }
 
     checkVersionFileContent(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")))
@@ -29,7 +28,6 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   it should "upload client version image" in {
     Post("/client-version-image/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual "Complete"
     }
 
     checkVersionFileContent(distributionDir.getClientVersionImageFile("service1", ClientDistributionVersion.parse("test-1.1.1_1")))
@@ -42,7 +40,9 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "upload fault report" in {
-
+    Post("/fault-report/fault1", makeFaultReportMultipart()) ~> addCredentials(distributionClientCredentials) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+    }
   }
 
   def makeVersionMultipart(): Multipart.FormData.Strict = {
@@ -56,9 +56,8 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   def makeFaultReportMultipart(): Multipart.FormData.Strict = {
-
     Multipart.FormData(Multipart.FormData.BodyPart.Strict("fault-report",
-      HttpEntity(ContentTypes.`application/octet-stream`, "version image content".getBytes),
-      Map("filename" -> "version.zip")))
+      HttpEntity(ContentTypes.`application/octet-stream`, "fault report content".getBytes),
+      Map("filename" -> "fault-report.zip")))
   }
 }

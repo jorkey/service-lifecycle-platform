@@ -136,7 +136,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
   } yield collection
 
   val State_FaultReportsInfo = for {
-    collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReports")
+    collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReportsInfo")
     _ <- collection.createIndex(Indexes.ascending("fault.distributionName"))
     _ <- collection.createIndex(Indexes.ascending("fault.report.faultId"))
     _ <- collection.createIndex(Indexes.ascending("fault.report.info.serviceName"))

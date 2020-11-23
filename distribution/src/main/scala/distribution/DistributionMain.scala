@@ -10,12 +10,12 @@ import com.vyulabs.update.lock.SmartFilesLocker
 import distribution.users.UsersCredentials.credentialsFile
 import distribution.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
 import com.vyulabs.update.utils.{IoUtils, Utils}
-import distribution.loaders.{FaultDownloader, StateUploader}
+import distribution.loaders.StateUploader
 import org.slf4j.LoggerFactory
 
 import scala.io.StdIn
 import distribution.users.UsersCredentials._
-import distribution.graphql.Graphql
+import distribution.graphql.{Graphql, GraphqlWorkspace}
 import distribution.mongo.{DatabaseCollections, MongoDb}
 import java.security.{KeyStore, SecureRandom}
 
@@ -70,7 +70,6 @@ object DistributionMain extends App {
         val dir = new DistributionDirectory(new File(config.distributionDirectory))
         val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
 
-        val faultDownloader = new FaultDownloader(collections, dir)
         config.client.foreach { client =>
           val uploader = StateUploader(config.distributionName, collections, dir, client.uploadStateIntervalSec, client.developerDistributionUrl)
           uploader.setSelfStates(config.instanceId, new File("."), config.developer.map(_.builderDirectory), config.client.map(_.installerDirectory))
@@ -80,7 +79,8 @@ object DistributionMain extends App {
         val selfUpdater = new SelfUpdater(collections)
         selfUpdater.start()
 
-        val distribution = new Distribution(config.distributionName, config.versionHistory, collections, dir, usersCredentials, graphql, faultDownloader)
+        val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, collections, dir)
+        val distribution = new Distribution(workspace, usersCredentials, graphql)
 
         var server = Http().newServerAt("0.0.0.0", config.network.port)
         config.network.ssl.foreach {

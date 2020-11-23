@@ -30,12 +30,12 @@ class TestedVersionsTest extends TestEnvironment {
 
     result(installProfileCollection.insert(DistributionClientProfileDocument(DistributionClientProfile("common", Set("service1", "service2")))))
 
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("test-client", DistributionClientConfig("common", None)))))
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test-client"))))))
+    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
+    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution2", DistributionClientConfig("common", Some("distribution1"))))))
   }
 
   it should "set/get tested versions" in {
-    val graphqlContext1 = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("test-client", UserRole.Distribution))
+    val graphqlContext1 = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -50,7 +50,7 @@ class TestedVersionsTest extends TestEnvironment {
         }
       """)))
 
-    val graphqlContext2 = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
+    val graphqlContext2 = new GraphqlContext(UserInfo("distribution2", UserRole.Distribution), workspace)
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.1"}]}}""").parseJson))(
@@ -67,7 +67,7 @@ class TestedVersionsTest extends TestEnvironment {
   }
 
   it should "return error if no tested versions for the client's profile" in {
-    val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext(UserInfo("distribution2", UserRole.Distribution), workspace)
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested by anyone","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
@@ -81,7 +81,7 @@ class TestedVersionsTest extends TestEnvironment {
   }
 
   it should "return error if client required preliminary testing has personal desired versions" in {
-    val graphqlContext = new GraphqlContext(distributionName, versionHistoryConfig, collections, distributionDir, UserInfo("distribution1", UserRole.Administrator))
+    val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
     result(collections.State_TestedVersions.map(_.insert(
       TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 0))))),

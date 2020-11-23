@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.service
+package com.vyulabs.update.distribution.graphql.distribution
 
 import java.util.Date
 
@@ -6,10 +6,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DistributionFaultReport, DistributionServiceLogLine, FaultInfo, LogLine, ServiceFaultReport, ServiceLogLine, ServiceState}
+import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{FaultReportDocument, ServiceLogLineDocument}
+import distribution.mongo.FaultReportDocument
 import distribution.users.{UserInfo, UserRole}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
@@ -23,7 +23,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
+  val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
   val faultsInfoCollection = result(collections.State_FaultReportsInfo)
 

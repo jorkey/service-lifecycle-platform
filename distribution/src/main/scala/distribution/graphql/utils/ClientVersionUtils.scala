@@ -50,7 +50,7 @@ trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport 
     for {
       versions <- getClientVersionsInfo(serviceName)
       busyVersions <- getBusyVersions(serviceName)
-      complete <- {
+      _ <- {
         val notUsedVersions = versions.filterNot(version => busyVersions.contains(version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > versionHistoryConfig.maxSize) {
@@ -61,7 +61,7 @@ trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport 
           Future()
         }
       }
-    } yield complete
+    } yield {}
   }
 
   def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion): Future[Boolean] = {

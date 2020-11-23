@@ -37,7 +37,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired versions" in {
-    val graphqlContext = new GraphqlContext(distributionName, VersionHistoryConfig(5), collections, distributionDir, UserInfo("distribution1", UserRole.Distribution))
+    val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
     assertResult((OK,
       ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(

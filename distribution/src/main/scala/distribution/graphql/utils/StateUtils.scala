@@ -9,7 +9,8 @@ import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, TestSignature, TestedDesiredVersions}
-import distribution.mongo.{DatabaseCollections, FaultReportDocument, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
+import distribution.config.FaultReportsConfig
+import distribution.mongo.{DatabaseCollections, FaultReportDocument, InstalledDesiredVersionsDocument, MongoDbCollection, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
@@ -25,6 +26,8 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
 
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
+
+  protected val faultReportsConfig: FaultReportsConfig
 
   def setInstalledDesiredVersions(distributionName: DistributionName, desiredVersions: Seq[ClientDesiredVersion]): Future[Boolean] = {
     val clientArg = Filters.eq("distributionName", distributionName)
@@ -127,6 +130,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       collection <- collections.State_FaultReportsInfo
       id <- collections.getNextSequence(collection.getName())
       result <- collection.insert(FaultReportDocument(id, DistributionFaultReport(distributionName, report))).map(_ => true)
+      _ <- clearOldReports()
     } yield result
   }
 
@@ -141,5 +145,27 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       collection <- collections.State_FaultReportsInfo
       faults <- collection.find(filters, sort, last).map(_.map(_.fault))
     } yield faults
+  }
+
+  private def clearOldReports(): Future[Unit] = {
+    for {
+      collection <- collections.State_FaultReportsInfo
+      reports <- collection.find()
+      result <- {
+        val remainReports = reports
+          .sortBy(_.fault.report.info.date)
+          .filter(_.fault.report.info.date.getTime + faultReportsConfig.expirationPeriodMs >= System.currentTimeMillis())
+          .take(faultReportsConfig.maxFaultReportsCount)
+        Future(deleteReports(collection, reports.toSet -- remainReports.toSet))
+      }
+    } yield result
+  }
+
+  private def deleteReports(collection: MongoDbCollection[FaultReportDocument], reports: Set[FaultReportDocument]): Unit = {
+    reports.foreach { report =>
+      collection.delete(Filters.and(Filters.eq("fault.report.reportId", report.fault.report.faultId)))
+      val faultFile = dir.getFaultReportFile(report.fault.report.faultId)
+      faultFile.delete()
+    }
   }
 }

@@ -7,22 +7,24 @@ import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
 import distribution.users.UserRole.UserRole
 import distribution.users.{UserInfo, UserRole}
-import distribution.config.VersionHistoryConfig
+import distribution.config.{FaultReportsConfig, VersionHistoryConfig}
 import distribution.graphql.GraphqlTypes._
-import distribution.graphql.utils.{ClientVersionUtils, DistributionClientsUtils, DeveloperVersionUtils, StateUtils}
+import distribution.graphql.utils.{ClientVersionUtils, DeveloperVersionUtils, DistributionClientsUtils, StateUtils}
 import distribution.mongo.DatabaseCollections
 
 import scala.concurrent.ExecutionContext
 import sangria.marshalling.sprayJson._
 import sangria.schema.{Field, _}
 
-case class GraphqlContext(distributionName: DistributionName, versionHistoryConfig: VersionHistoryConfig,
-                          collections: DatabaseCollections, dir: DistributionDirectory, userInfo: UserInfo)
+case class GraphqlWorkspace(distributionName: DistributionName,
+                           versionHistoryConfig: VersionHistoryConfig, faultReportsConfig: FaultReportsConfig,
+                           collections: DatabaseCollections, dir: DistributionDirectory)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
     extends DistributionClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
 
+case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
 
 object GraphqlSchema {
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
@@ -65,39 +67,39 @@ object GraphqlSchema {
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDeveloperVersionArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionDeveloperVersionArg)) }),
+        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+        resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
         arguments = ServiceArg :: OptionDeveloperVersionArg :: Nil,
-        resolve = c => { c.ctx.getClientVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionDeveloperVersionArg)) }),
+        resolve = c => { c.ctx.workspace.getClientVersionsInfo(c.arg(ServiceArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+        resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       Field("distributionClientsInfo", ListType(ClientInfoType),
-        resolve = c => c.ctx.getDistributionClientsInfo()),
+        resolve = c => c.ctx.workspace.getDistributionClientsInfo()),
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = DistributionArg :: OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+        resolve = c => { c.ctx.workspace.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("servicesState", ListType(ClientServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        resolve = c => { c.ctx.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
+        resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("faultReportsInfo", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
-        resolve = c => { c.ctx.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
+        resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
   ))
 
   val DistributionQueries = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("config", ClientConfigInfoType,
-        resolve = c => { c.ctx.getDistributionClientConfig(c.ctx.userInfo.name) }),
+        resolve = c => { c.ctx.workspace.getDistributionClientConfig(c.ctx.userInfo.name) }),
       Field("desiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getDeveloperDesiredVersions(c.ctx.userInfo.name, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
+        resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.userInfo.name, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
     )
   )
 
@@ -106,10 +108,10 @@ object GraphqlSchema {
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("desiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+        resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceState", ListType(InstanceServiceStateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        resolve = c => { c.ctx.getServicesState(Some(c.ctx.distributionName), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
+        resolve = c => { c.ctx.workspace.getServicesState(Some(c.ctx.workspace.distributionName), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
           .map(_.map(_.instance)) })
     )
   )
@@ -121,22 +123,22 @@ object GraphqlSchema {
     fields[GraphqlContext, Unit](
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
-        resolve = c => { c.ctx.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),
+        resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: DeveloperVersionArg :: Nil,
-        resolve = c => { c.ctx.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg)) }),
+        resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg)) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = InstalledVersionInfoArg :: Nil,
-        resolve = c => { c.ctx.addClientVersionInfo(c.arg(InstalledVersionInfoArg)) }),
+        resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(InstalledVersionInfoArg)) }),
       Field("removeClientVersion", BooleanType,
         arguments = ServiceArg :: ClientVersionArg :: Nil,
-        resolve = c => { c.ctx.removeClientVersion(c.arg(ServiceArg), c.arg(ClientVersionArg)) }),
+        resolve = c => { c.ctx.workspace.removeClientVersion(c.arg(ServiceArg), c.arg(ClientVersionArg)) }),
       Field("setDeveloperDesiredVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
+        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }))
+        resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }))
   )
 
   val DistributionMutations = ObjectType(
@@ -144,19 +146,19 @@ object GraphqlSchema {
     fields[GraphqlContext, Unit](
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setTestedVersions(c.ctx.userInfo.name, c.arg(DeveloperDesiredVersionsArg)) }),
+        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.userInfo.name, c.arg(DeveloperDesiredVersionsArg)) }),
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(ClientDesiredVersionsArg)) }),
+        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(ClientDesiredVersionsArg)) }),
       Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
-        resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }),
+        resolve = c => { c.ctx.workspace.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = InstancesStateArg :: Nil,
-        resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }),
+        resolve = c => { c.ctx.workspace.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }),
       Field("addServiceFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        resolve = c => { c.ctx.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)) }))
+        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)) }))
   )
 
   val ServiceMutations = ObjectType(
@@ -164,13 +166,13 @@ object GraphqlSchema {
     fields[GraphqlContext, Unit](
       Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
-        resolve = c => { c.ctx.setServicesState(c.ctx.distributionName, c.arg(InstancesStateArg)) }),
+        resolve = c => { c.ctx.workspace.setServicesState(c.ctx.workspace.distributionName, c.arg(InstancesStateArg)) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: LogLinesArg :: Nil,
-        resolve = c => { c.ctx.addServiceLogs(c.ctx.distributionName, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+        resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.distributionName, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
       Field("addServiceFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        resolve = c => { c.ctx.addServiceFaultReportInfo(c.ctx.distributionName, c.arg(ServiceFaultReportInfoArg)) })
+        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.distributionName, c.arg(ServiceFaultReportInfoArg)) })
     )
   )
 

@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.common.EntityStreamingSupport
 import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.model.MediaTypes._
-import akka.http.scaladsl.model.StatusCodes.BadRequest
+import akka.http.scaladsl.model.StatusCodes.{BadRequest, OK}
 import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.model.{ContentType, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, pathPrefix, _}
@@ -19,9 +19,8 @@ import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.Common.DistributionName
 import com.vyulabs.update.distribution.DistributionDirectory
 import distribution.users.{PasswordHash, UserInfo, UserRole, UsersCredentials}
-import distribution.config.{VersionHistoryConfig}
-import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
-import distribution.loaders.{FaultDownloader}
+import distribution.config.{FaultReportsConfig, VersionHistoryConfig}
+import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
 import sangria.parser.QueryParser
 import spray.json._
 
@@ -32,9 +31,7 @@ import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistribut
 import distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 
-class Distribution(distributionName: DistributionName, versionHistoryConfig: VersionHistoryConfig,
-                   collections: DatabaseCollections, dir: DistributionDirectory,
-                   usersCredentials: UsersCredentials, graphql: Graphql, faultDownloader: FaultDownloader)
+class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentials, graphql: Graphql)
                   (implicit protected val system: ActorSystem,
                             protected val materializer: Materializer,
                             protected val executionContext: ExecutionContext) {
@@ -82,7 +79,7 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                                 case Some(obj: JsObject) => obj
                                 case _ => JsObject.empty
                               }
-                              val context = new GraphqlContext(distributionName, versionHistoryConfig, collections, dir, userInfo)
+                              val context = new GraphqlContext(userInfo, workspace)
                               complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                                 context, queryAst, operation, variables))
                             case Failure(error) =>
@@ -97,7 +94,7 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                                 case Some(obj: JsObject) => obj
                                 case _ => JsObject.empty
                               }
-                              val context = new GraphqlContext(distributionName, versionHistoryConfig, collections, dir, userInfo)
+                              val context = new GraphqlContext(userInfo, workspace)
                               complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                                 context, queryAst, operation, vars))
                             case Failure(error) =>
@@ -112,15 +109,15 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                   seal {
                     get {
                       authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Distribution) {
-                        getFromFile(dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)))
+                        getFromFile(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)))
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
                         fileUpload("version-image") {
                           case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
+                            val sink = FileIO.toPath(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
                             val future = byteSource.runWith(sink)
-                            onSuccess(future) { _ => complete("Complete") }
+                            onSuccess(future) { _ => complete(OK) }
                         }
                       }
                     }
@@ -129,15 +126,15 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                   seal {
                     get {
                       authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Service) {
-                        getFromFile(dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
+                        getFromFile(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
                         fileUpload("version-image") {
                           case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
+                            val sink = FileIO.toPath(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
                             val future = byteSource.runWith(sink)
-                            onSuccess(future) { _ => complete("Complete") }
+                            onSuccess(future) { _ => complete(OK) }
                         }
                       }
                     }
@@ -146,14 +143,18 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                   seal {
                     get {
                       authorize(userInfo.role == UserRole.Administrator) {
-                        getFromFile(dir.getFaultReportFile(faultId))
+                        getFromFile(workspace.dir.getFaultReportFile(faultId))
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Distribution) {
-                        val reportDistributionName = if (userInfo.role == UserRole.Distribution) userInfo.name else distributionName
+                        val reportDistributionName = if (userInfo.role == UserRole.Distribution) userInfo.name else workspace.distributionName
                         fileUpload("fault-report") {
                           case (fileInfo, byteSource) =>
-                            faultDownloader.receiveFault(faultId, reportDistributionName, byteSource)
+                            log.info(s"Receive fault report file from client ${workspace.distributionName}")
+                            val file = workspace.dir.getFaultReportFile(faultId)
+                            val sink = FileIO.toPath(file.toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete(OK) }
                         }
                       }
                     }
@@ -205,9 +206,9 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
   private def browse(path: Option[String]): Route = {
     val file = path match {
       case Some(path) =>
-        new File(dir.directory, path)
+        new File(workspace.dir.directory, path)
       case None =>
-        dir.directory
+        workspace.dir.directory
     }
     if (file.isDirectory) {
       getFromBrowseableDirectory(file.getPath)
