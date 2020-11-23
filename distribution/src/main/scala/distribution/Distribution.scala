@@ -116,13 +116,11 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
-                        path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                          fileUpload("version-image") {
-                            case (fileInfo, byteSource) =>
-                              val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
-                              val future = byteSource.runWith(sink)
-                              onSuccess(future) { _ => complete("Complete") }
-                          }
+                        fileUpload("version-image") {
+                          case (fileInfo, byteSource) =>
+                            val sink = FileIO.toPath(dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete("Complete") }
                         }
                       }
                     }
@@ -135,24 +133,28 @@ class Distribution(distributionName: DistributionName, versionHistoryConfig: Ver
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
-                        path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                          fileUpload("version-image") {
-                            case (fileInfo, byteSource) =>
-                              val sink = FileIO.toPath(dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
-                              val future = byteSource.runWith(sink)
-                              onSuccess(future) { _ => complete("Complete") }
-                          }
+                        fileUpload("version-image") {
+                          case (fileInfo, byteSource) =>
+                            val sink = FileIO.toPath(dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete("Complete") }
                         }
                       }
                     }
                   }
                 } ~ path(faultReportPath / ".*".r) { faultId =>
                   seal {
-                    authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Distribution) {
-                      val reportDistributionName = if (userInfo.role == UserRole.Distribution) userInfo.name else distributionName
-                      fileUpload("fault-report") {
-                        case (fileInfo, byteSource) =>
-                          faultDownloader.receiveFault(faultId, reportDistributionName, byteSource)
+                    get {
+                      authorize(userInfo.role == UserRole.Administrator) {
+                        getFromFile(dir.getFaultReportFile(faultId))
+                      }
+                    } ~ post {
+                      authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Distribution) {
+                        val reportDistributionName = if (userInfo.role == UserRole.Distribution) userInfo.name else distributionName
+                        fileUpload("fault-report") {
+                          case (fileInfo, byteSource) =>
+                            faultDownloader.receiveFault(faultId, reportDistributionName, byteSource)
+                        }
                       }
                     }
                   }

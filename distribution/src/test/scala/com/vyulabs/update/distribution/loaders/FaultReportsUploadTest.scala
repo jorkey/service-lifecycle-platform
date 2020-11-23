@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceState}
+import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.loaders.StateUploader
 import distribution.mongo.{FaultReportDocument, UploadStatus, UploadStatusDocument}
@@ -43,14 +43,14 @@ class FaultReportsUploadTest extends TestEnvironment {
       (_, _) => Future.failed(new IOException("Not expected")), fileUploadRequest)
     uploader.start()
 
-    val report = DistributionFaultReport("fault1", "distribution1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1"))
-    testAction(() => result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report))).flatten),"/faults/fault1-fault.zip")
+    val report = DistributionFaultReport("distribution1", ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1")))
+    testAction(() => result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(0, report))).flatten),"/faults/fault1-fault.zip")
 
     Thread.sleep(100)
     uploader.stop()
 
-    result(collections.State_FaultReports.map(_.dropItems()).flatten)
+    result(collections.State_FaultReportsInfo.map(_.dropItems()).flatten)
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 
@@ -60,9 +60,9 @@ class FaultReportsUploadTest extends TestEnvironment {
     result = Future.failed(new IOException("upload error"))
     uploader.start()
 
-    val report1 = DistributionFaultReport("fault1", "distribution1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1"))
-    testAction(() => result(collections.State_FaultReports.map(_.insert(FaultReportDocument(0, report1))).flatten),"/faults/fault1-fault.zip")
+    val report1 = DistributionFaultReport("distribution1", ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1")))
+    testAction(() => result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(0, report1))).flatten),"/faults/fault1-fault.zip")
 
     Thread.sleep(100)
     assertResult(UploadStatusDocument("state.faultReports", UploadStatus(None, Some("upload error"))))(
@@ -70,9 +70,9 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     testAction(() => synchronized { result = Future.successful() },"/faults/fault1-fault.zip")
 
-    val report2 = DistributionFaultReport("fault2", "client2", FaultInfo(new Date(), "instance2", "directory", "service2", "profile2",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))), None, None, None, None), Seq()), Seq("file2"))
-    testAction(() => result(collections.State_FaultReports.map(_.insert(FaultReportDocument(1, report2)))),"/faults/fault2-fault.zip")
+    val report2 = DistributionFaultReport("distribution2", ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "directory", "service2", "profile2",
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))), None, None, None, None), Seq()), Seq("file2")))
+    testAction(() => result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(1, report2)))),"/faults/fault2-fault.zip")
 
     uploader.stop()
 

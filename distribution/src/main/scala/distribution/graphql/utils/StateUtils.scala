@@ -8,8 +8,8 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.DistributionDirectory
-import com.vyulabs.update.info.{ClientDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, DeveloperDesiredVersion, InstanceServiceState, LogLine, ServiceLogLine, TestSignature, TestedDesiredVersions}
-import distribution.mongo.{DatabaseCollections, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
+import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, TestSignature, TestedDesiredVersions}
+import distribution.mongo.{DatabaseCollections, FaultReportDocument, InstalledDesiredVersionsDocument, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 
@@ -122,15 +122,23 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
     } yield result
   }
 
-  def getClientFaultReports(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[DistributionFaultReport]] = {
+  def addServiceFaultReportInfo(distributionName: DistributionName, report: ServiceFaultReport): Future[Boolean] = {
+    for {
+      collection <- collections.State_FaultReportsInfo
+      id <- collections.getNextSequence(collection.getName())
+      result <- collection.insert(FaultReportDocument(id, DistributionFaultReport(distributionName, report))).map(_ => true)
+    } yield result
+  }
+
+  def getDistributionFaultReportsInfo(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[DistributionFaultReport]] = {
     val clientArg = distributionName.map { client => Filters.eq("fault.distributionName", client) }
-    val serviceArg = serviceName.map { service => Filters.eq("fault.info.serviceName", service) }
+    val serviceArg = serviceName.map { service => Filters.eq("fault.report.info.serviceName", service) }
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
     val sort = last.map { last => Sorts.descending("_id") }
     for {
-      collection <- collections.State_FaultReports
+      collection <- collections.State_FaultReportsInfo
       faults <- collection.find(filters, sort, last).map(_.map(_.fault))
     } yield faults
   }

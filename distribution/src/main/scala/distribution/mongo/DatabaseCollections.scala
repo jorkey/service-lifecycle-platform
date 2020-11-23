@@ -80,6 +80,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     classOf[FaultInfo],
     classOf[UploadStatus],
     classOf[UploadStatusDocument],
+    classOf[ServiceFaultReport],
     fromCodecs(new DeveloperDistributionVersionCodec(), new ClientDistributionVersionCodec())))
 
   val Sequences = for {
@@ -134,11 +135,11 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     _ <- collection.createIndex(Indexes.ascending("log.distributionName"))
   } yield collection
 
-  val State_FaultReports = for {
+  val State_FaultReportsInfo = for {
     collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReports")
-    _ <- collection.createIndex(Indexes.ascending("fault.faultId"))
     _ <- collection.createIndex(Indexes.ascending("fault.distributionName"))
-    _ <- collection.createIndex(Indexes.ascending("fault.info.serviceName"))
+    _ <- collection.createIndex(Indexes.ascending("fault.report.faultId"))
+    _ <- collection.createIndex(Indexes.ascending("fault.report.info.serviceName"))
   } yield collection
 
   val State_UploadStatus = for {

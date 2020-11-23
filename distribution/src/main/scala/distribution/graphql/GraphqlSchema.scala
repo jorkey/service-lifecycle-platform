@@ -41,6 +41,7 @@ object GraphqlSchema {
   val ClientDesiredVersionsArg = Argument("versions", ListInputType(ClientDesiredVersionInfoInputType))
   val InstancesStateArg = Argument("state", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
+  val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
 
   val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
@@ -84,9 +85,9 @@ object GraphqlSchema {
       Field("servicesState", ListType(ClientServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
-      Field("faultReports", ListType(ClientFaultReportType),
+      Field("faultReportsInfo", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
-        resolve = c => { c.ctx.getClientFaultReports(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
+        resolve = c => { c.ctx.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
   ))
 
   val DistributionQueries = ObjectType(
@@ -135,8 +136,8 @@ object GraphqlSchema {
         resolve = c => { c.ctx.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) })
-  ))
+        resolve = c => { c.ctx.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }))
+  )
 
   val DistributionMutations = ObjectType(
     "Mutation",
@@ -149,7 +150,13 @@ object GraphqlSchema {
         resolve = c => { c.ctx.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(ClientDesiredVersionsArg)) }),
       Field("setServicesState", BooleanType,
         arguments = InstancesStateArg :: Nil,
-        resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }))
+        resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }),
+      Field("addFaultReportInfo", BooleanType,
+        arguments = InstancesStateArg :: Nil,
+        resolve = c => { c.ctx.setServicesState(c.ctx.userInfo.name, c.arg(InstancesStateArg)) }),
+      Field("addServiceFaultReportInfo", BooleanType,
+        arguments = ServiceFaultReportInfoArg :: Nil,
+        resolve = c => { c.ctx.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)) }))
   )
 
   val ServiceMutations = ObjectType(
@@ -160,7 +167,11 @@ object GraphqlSchema {
         resolve = c => { c.ctx.setServicesState(c.ctx.distributionName, c.arg(InstancesStateArg)) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: LogLinesArg :: Nil,
-        resolve = c => { c.ctx.addServiceLogs(c.ctx.distributionName, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }))
+        resolve = c => { c.ctx.addServiceLogs(c.ctx.distributionName, c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+      Field("addServiceFaultReportInfo", BooleanType,
+        arguments = ServiceFaultReportInfoArg :: Nil,
+        resolve = c => { c.ctx.addServiceFaultReportInfo(c.ctx.distributionName, c.arg(ServiceFaultReportInfoArg)) })
+    )
   )
 
   val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations))

@@ -40,4 +40,12 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
       status shouldEqual StatusCodes.Forbidden
     }
   }
+
+  it should "download fault report" in {
+    IoUtils.writeBytesToFile(distributionDir.getFaultReportFile("fault1"), "fault123".getBytes("utf8"))
+    Get("/fault-report/fault1") ~> addCredentials(adminClientCredentials) ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldEqual "fault123"
+    }
+  }
 }

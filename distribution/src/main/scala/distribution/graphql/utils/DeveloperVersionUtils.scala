@@ -52,7 +52,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
           Future()
         }
       }
-    } yield complete
+    } yield {}
   }
 
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Future[Boolean] = {

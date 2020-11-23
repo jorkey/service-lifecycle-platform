@@ -133,14 +133,14 @@ class StateUploader(distributionName: DistributionName,
   private def uploadFaultReports(): Future[Unit] = {
     log.debug("Upload fault reports")
     for {
-      faultReports <- collections.State_FaultReports
+      faultReports <- collections.State_FaultReportsInfo
       fromSequence <- getLastUploadSequence(faultReports.getName())
       newReportsDocuments <- faultReports.find(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
       newReports <- Future(newReportsDocuments.map(_.fault))
     } yield {
       if (!newReports.isEmpty) {
         Future.sequence(newReports.map(report => {
-          val file = distributionDirectory.getFaultReportFile(report.faultId)
+          val file = distributionDirectory.getFaultReportFile(report.report.faultId)
           fileUploadRequest("upload_fault_report", file).
             andThen {
               case Success(_) =>
@@ -174,10 +174,10 @@ class StateUploader(distributionName: DistributionName,
   private def setLastUploadError(component: String, error: String): Future[Unit] = {
     for {
       uploadStatus <- collections.State_UploadStatus
-      date <- uploadStatus.updateOne(Filters.eq("component", component),
+      _ <- uploadStatus.updateOne(Filters.eq("component", component),
         Updates.set("status.lastError", error))
         .map(r => r.getModifiedCount > 0)
-    } yield date
+    } yield {}
   }
 }
 

@@ -3,7 +3,7 @@ package distribution.graphql
 import java.util.Date
 
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, DistributionFaultReport, DistributionServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceState, UpdateError}
+import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, DistributionFaultReport, DistributionServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceFaultReport, ServiceState, UpdateError}
 import distribution.users.UserInfo
 import distribution.users.UserRole
 import com.vyulabs.update.utils.Utils
@@ -98,7 +98,8 @@ object GraphqlTypes {
   implicit val InstanceServiceStateType = deriveObjectType[Unit, InstanceServiceState]()
   implicit val ClientServiceStateType = deriveObjectType[Unit, DistributionServiceState]()
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
-  implicit val ClientFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
+  implicit val ServiceFaultReportType = deriveObjectType[Unit, ServiceFaultReport]()
+  implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
 
   implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
   implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))
@@ -111,4 +112,6 @@ object GraphqlTypes {
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))
   implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))
   implicit val LogLineInputType = deriveInputObjectType[LogLine](InputObjectTypeName("LogLineInput"))
+  implicit val FaultInfoInputType = deriveInputObjectType[FaultInfo]((InputObjectTypeName("FaultInfo")))
+  implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport]((InputObjectTypeName("ServiceFaultReport")))
 }
