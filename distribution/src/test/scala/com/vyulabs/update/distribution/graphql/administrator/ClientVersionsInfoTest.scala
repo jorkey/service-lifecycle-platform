@@ -9,8 +9,7 @@ import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.TestEnvironment
 import distribution.users.{UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
-import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
-import distribution.config.VersionHistoryConfig
+import com.vyulabs.update.version.{ClientDistributionVersion}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
@@ -27,7 +26,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
   val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
   it should "add/get client version info" in {
-    addClientVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.1.1"))
 
     assertResult((OK,
       ("""{"data":{"clientVersionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
@@ -46,17 +45,17 @@ class ClientVersionsInfoTest extends TestEnvironment {
       """
     )))
 
-    removeClientVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
+    removeClientVersion("service1", ClientDistributionVersion.parse("test-1.1.1"))
   }
 
   it should "remove obsolete client versions" in {
-    addClientVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1))))
-    addClientVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2))))
-    addClientVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(3))))
-    addClientVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(4))))
-    addClientVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(5))))
-    addClientVersionInfo("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1))))
-    addClientVersionInfo("service3", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2))))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-1"))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-2"))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-3"))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-4"))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-5"))
+    addClientVersionInfo("service2", ClientDistributionVersion.parse("test-1"))
+    addClientVersionInfo("service3", ClientDistributionVersion.parse("test-2"))
 
     assertResult((OK,
       ("""{"data":{"clientVersionsInfo":[{"version":"test-3"},{"version":"test-4"},{"version":"test-5"}]}}""").parseJson))(
@@ -68,12 +67,12 @@ class ClientVersionsInfoTest extends TestEnvironment {
         }
       """)))
 
-    removeClientVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(3))))
-    removeClientVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(4))))
-    removeClientVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(5))))
+    removeClientVersion("service1", ClientDistributionVersion.parse("test-3"))
+    removeClientVersion("service1", ClientDistributionVersion.parse("test-4"))
+    removeClientVersion("service1", ClientDistributionVersion.parse("test-5"))
   }
 
-  def addClientVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
+  def addClientVersionInfo(serviceName: ServiceName, version: ClientDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addClientVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
@@ -96,9 +95,10 @@ class ClientVersionsInfoTest extends TestEnvironment {
                   }
                 """,
         variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson, "buildDate" -> new Date().toJson, "installDate" -> new Date().toJson))))
+    assert(distributionDir.getClientVersionImageFile(serviceName, version).createNewFile())
   }
 
-  def removeClientVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
+  def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeClientVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
@@ -108,5 +108,6 @@ class ClientVersionsInfoTest extends TestEnvironment {
                   }
                 """,
         variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson))))
+    assert(!distributionDir.getClientVersionImageFile(serviceName, version).exists())
   }
 }

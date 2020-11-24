@@ -63,6 +63,10 @@ class DistributionDirectory(val directory: File) {
     new File(getClientServiceDir(serviceName), getClientVersionImageFileName(serviceName, version))
   }
 
+  def getFaultsDir(): File = {
+    faultsDir
+  }
+
   def getFaultReportFile(faultId: String): File = {
     new File(faultsDir, getFaultReportFileName(faultId))
   }

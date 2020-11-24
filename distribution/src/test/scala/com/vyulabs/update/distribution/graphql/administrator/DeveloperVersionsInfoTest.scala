@@ -112,6 +112,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
           "service" -> JsString(serviceName),
           "version" -> version.toJson,
           "date" -> new Date().toJson))))
+    assert(distributionDir.getDeveloperVersionImageFile(serviceName, version).createNewFile())
   }
 
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
@@ -124,5 +125,6 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
                   }
                 """,
         variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson))))
+    assert(!distributionDir.getDeveloperVersionImageFile(serviceName, version).exists())
   }
 }

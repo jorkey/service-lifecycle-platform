@@ -47,7 +47,7 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
   val collections = new DatabaseCollections(mongo, 100)
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
   val versionHistoryConfig = VersionHistoryConfig(3)
-  val faultReportsConfig = FaultReportsConfig(1000, 3)
+  val faultReportsConfig = FaultReportsConfig(3000, 3)
 
   val ownServicesDir = Files.createTempDirectory("test").toFile
 

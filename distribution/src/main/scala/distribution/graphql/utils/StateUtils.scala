@@ -155,17 +155,18 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
         val remainReports = reports
           .sortBy(_.fault.report.info.date)
           .filter(_.fault.report.info.date.getTime + faultReportsConfig.expirationPeriodMs >= System.currentTimeMillis())
-          .take(faultReportsConfig.maxFaultReportsCount)
-        Future(deleteReports(collection, reports.toSet -- remainReports.toSet))
+          .takeRight(faultReportsConfig.maxFaultReportsCount)
+        deleteReports(collection, reports.toSet -- remainReports.toSet)
       }
     } yield result
   }
 
-  private def deleteReports(collection: MongoDbCollection[FaultReportDocument], reports: Set[FaultReportDocument]): Unit = {
-    reports.foreach { report =>
-      collection.delete(Filters.and(Filters.eq("fault.report.reportId", report.fault.report.faultId)))
+  private def deleteReports(collection: MongoDbCollection[FaultReportDocument], reports: Set[FaultReportDocument]): Future[Unit] = {
+    Future.sequence(reports.map { report =>
+      log.debug(s"Delete fault report ${report._id}")
       val faultFile = dir.getFaultReportFile(report.fault.report.faultId)
       faultFile.delete()
-    }
+      collection.delete(Filters.and(Filters.eq("_id", report._id)))
+    }).map(_ => Unit)
   }
 }
