@@ -5,11 +5,8 @@ import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DistributionServiceState, ServiceState}
-import distribution.users.{UserInfo, UserRole}
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.info.{UserInfo, UserRole}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
@@ -28,10 +25,10 @@ class StateInfoTest extends TestEnvironment {
 
   it should "set/get own service state" in {
     assertResult((OK,
-      ("""{"data":{"setServicesState":true}}""").parseJson))(
+      ("""{"data":{"setServiceStates":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
-          setServicesState (
+          setServiceStates (
             state: [
               {
                 instanceId: "instance1",
@@ -48,10 +45,10 @@ class StateInfoTest extends TestEnvironment {
       """, variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"serviceState":[{"service":{"version":"test-1.2.3"}}]}}""").parseJson))(
+      ("""{"data":{"serviceStates":[{"service":{"version":"test-1.2.3"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         query {
-          serviceState (instance: "instance1", service: "service1", directory: "dir") {
+          serviceStates (instance: "instance1", service: "service1", directory: "dir") {
             service  {
               version
             }

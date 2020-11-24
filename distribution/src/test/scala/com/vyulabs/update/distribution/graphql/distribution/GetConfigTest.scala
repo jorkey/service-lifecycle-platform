@@ -5,8 +5,8 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import distribution.users.{UserInfo, UserRole}
-import distribution.config.VersionHistoryConfig
+import com.vyulabs.update.info.{UserInfo, UserRole}
+import com.vyulabs.update.info.{UserInfo, UserRole}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.DistributionClientInfoDocument
 import sangria.macros.LiteralGraphQLStringContext
@@ -31,10 +31,10 @@ class GetConfigTest extends TestEnvironment {
     val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
     assertResult((OK,
-      ("""{"data":{"config":{"installProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(
+      ("""{"data":{"distributionClientConfig":{"installProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         query {
-          config {
+          distributionClientConfig {
             installProfile,
             testDistributionMatch
           }

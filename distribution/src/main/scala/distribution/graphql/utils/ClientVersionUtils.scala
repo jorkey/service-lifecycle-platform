@@ -36,7 +36,7 @@ trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport 
     } yield result
   }
 
-  def getClientVersionsInfo(serviceName: ServiceName, version: Option[DeveloperDistributionVersion] = None): Future[Seq[ClientVersionInfo]] = {
+  def getClientVersionsInfo(serviceName: ServiceName, version: Option[ClientDistributionVersion] = None): Future[Seq[ClientVersionInfo]] = {
     val serviceArg = Filters.eq("info.serviceName", serviceName)
     val versionArg = version.map { version => Filters.eq("info.version", version.toString) }
     val filters = Filters.and((Seq(serviceArg) ++ versionArg).asJava)

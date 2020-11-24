@@ -6,22 +6,12 @@ import java.util.Base64
 
 import com.typesafe.config.Config
 import com.vyulabs.update.common.Common.UserName
-import distribution.users.UserRole.UserRole
+import com.vyulabs.update.info.UserRole.UserRole
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json._
-
-object UserRole extends Enumeration with DefaultJsonProtocol {
-  type UserRole = Value
-  val None, Administrator, Distribution, Service = Value
-
-  implicit object UserRoleJsonFormat extends RootJsonFormat[UserRole] {
-    def write(value: UserRole) = JsString(value.toString)
-    def read(value: JsValue) = withName(value.asInstanceOf[JsString].value)
-  }
-}
 
 case class PasswordHash(salt: String, hash: String)
 
@@ -57,7 +47,7 @@ object PasswordHash extends DefaultJsonProtocol {
 case class UserCredentials(role: UserRole, var password: PasswordHash)
 
 object UserCredentials extends DefaultJsonProtocol {
-  import UserRole._
+  import com.vyulabs.update.info.UserRole._
   import PasswordHash._
 
   implicit val userCredentialsJson = jsonFormat2(UserCredentials.apply)
@@ -97,12 +87,4 @@ object UsersCredentials extends DefaultJsonProtocol {
       new UsersCredentials(Map.empty)
     }
   }
-}
-
-case class UserInfo(name: UserName, role: UserRole)
-
-object UserInfo extends DefaultJsonProtocol {
-  import UserRole._
-
-  implicit val userInfoJson = jsonFormat2(UserInfo.apply)
 }

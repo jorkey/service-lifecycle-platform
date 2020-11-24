@@ -7,9 +7,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common
-import distribution.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
+import com.vyulabs.update.info.UserRole
+import distribution.users.{PasswordHash, UserCredentials, UsersCredentials}
 import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.Distribution
 import distribution.config.{DistributionConfig, FaultReportsConfig, VersionHistoryConfig}
 import distribution.graphql.{Graphql, GraphqlWorkspace}

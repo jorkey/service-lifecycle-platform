@@ -16,10 +16,7 @@ import akka.http.scaladsl.server.{AuthenticationFailedRejection, ExceptionHandle
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
-import com.vyulabs.update.common.Common.DistributionName
-import com.vyulabs.update.distribution.DistributionDirectory
-import distribution.users.{PasswordHash, UserInfo, UserRole, UsersCredentials}
-import distribution.config.{FaultReportsConfig, VersionHistoryConfig}
+import distribution.users.{PasswordHash, UsersCredentials}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
 import sangria.parser.QueryParser
 import spray.json._
@@ -27,8 +24,8 @@ import spray.json._
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 import com.vyulabs.update.distribution.DistributionWebPaths._
+import com.vyulabs.update.info.{UserInfo, UserRole}
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 
 class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentials, graphql: Graphql)

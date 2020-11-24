@@ -3,9 +3,8 @@ package distribution.graphql
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK}
-import distribution.users.UserInfo
-import distribution.users.UserRole.UserRole
-import distribution.mongo.DatabaseCollections
+import com.vyulabs.update.info.UserInfo
+import com.vyulabs.update.info.UserRole.UserRole
 import org.slf4j.LoggerFactory
 import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, ExceptionHandler, Executor, HandledException, QueryAnalysisError}

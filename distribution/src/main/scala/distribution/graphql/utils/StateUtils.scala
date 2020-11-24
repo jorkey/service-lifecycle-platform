@@ -80,7 +80,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
     } yield profile
   }
 
-  def setServicesState(distributionName: DistributionName, instanceStates: Seq[InstanceServiceState]): Future[Boolean] = {
+  def setServiceStates(distributionName: DistributionName, instanceStates: Seq[InstanceServiceState]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceStates
       id <- collections.getNextSequence(collection.getName(), instanceStates.size)

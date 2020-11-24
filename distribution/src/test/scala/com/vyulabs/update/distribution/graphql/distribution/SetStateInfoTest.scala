@@ -8,7 +8,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
-import distribution.users.{UserInfo, UserRole}
+import com.vyulabs.update.info.{UserInfo, UserRole}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.{DistributionClientInfoDocument, InstalledDesiredVersionsDocument, TestedDesiredVersionsDocument}
@@ -82,10 +82,10 @@ class SetStateInfoTest extends TestEnvironment {
     val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
     assertResult((OK,
-      ("""{"data":{"setServicesState":true}}""").parseJson))(
+      ("""{"data":{"setServiceStates":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
-          setServicesState (
+          setServiceStates (
             state: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
                   service: { date: $$date, version: "test-1.2.3" }
@@ -96,10 +96,10 @@ class SetStateInfoTest extends TestEnvironment {
       """, variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"setServicesState":true}}""").parseJson))(
+      ("""{"data":{"setServiceStates":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
-          setServicesState (
+          setServiceStates (
             state: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
                   service: { date: $$date, version: "test-1.2.4" }

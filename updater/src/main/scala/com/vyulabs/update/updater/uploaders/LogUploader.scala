@@ -2,7 +2,7 @@ package com.vyulabs.update.updater.uploaders
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.LogUploaderConfig
-import com.vyulabs.update.distribution.DistributionClientInterface
+import com.vyulabs.update.distribution.DistributionInterface
 import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.logs.ServiceLogs
 import org.slf4j.Logger
@@ -14,7 +14,7 @@ import scala.collection.immutable.Queue
   * Copyright FanDate, Inc.
   */
 class LogUploader(instanceId: InstanceId, profiledServiceName: ProfiledServiceName, logUploaderConfig: LogUploaderConfig,
-                  clientDirectory: DistributionClientInterface)(implicit log: Logger) extends Thread { self =>
+                  clientDirectory: DistributionInterface)(implicit log: Logger) extends Thread { self =>
 
   private val notifyThreshold = 50
   private var queue = Queue.empty[String]

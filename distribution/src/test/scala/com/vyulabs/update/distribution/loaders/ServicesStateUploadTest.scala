@@ -100,7 +100,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     val promise = this.promise
     action()
     val request = result(promise.future)
-    assertResult("setServicesState")(request.command)
+    assertResult("setServiceStates")(request.command)
     assertResult(Map("state" -> states.toJson))(request.arguments)
   }
 }

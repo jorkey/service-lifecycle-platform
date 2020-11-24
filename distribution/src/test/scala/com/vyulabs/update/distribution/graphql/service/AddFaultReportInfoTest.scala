@@ -9,8 +9,8 @@ import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionFaultReport, DistributionServiceLogLine, FaultInfo, LogLine, ServiceFaultReport, ServiceLogLine, ServiceState}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{FaultReportDocument, ServiceLogLineDocument}
-import distribution.users.{UserInfo, UserRole}
+import distribution.mongo.{FaultReportDocument}
+import com.vyulabs.update.info.{UserInfo, UserRole}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -31,10 +31,10 @@ class AddFaultReportInfoTest extends TestEnvironment {
     val date = new Date()
 
     assertResult((OK,
-      ("""{"data":{"addServiceFaultReportInfo":true}}""").parseJson))(
+      ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         mutation FaultReportInfo($$date: Date!) {
-          addServiceFaultReportInfo (
+          addFaultReportInfo (
             fault: {
               faultId: "fault1",
               info: {

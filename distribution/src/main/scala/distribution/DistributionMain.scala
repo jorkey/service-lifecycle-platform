@@ -8,7 +8,7 @@ import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.lock.SmartFilesLocker
 import distribution.users.UsersCredentials.credentialsFile
-import distribution.users.{PasswordHash, UserCredentials, UserRole, UsersCredentials}
+import distribution.users.{PasswordHash, UserCredentials, UsersCredentials}
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import distribution.loaders.StateUploader
 import org.slf4j.LoggerFactory
@@ -19,6 +19,7 @@ import distribution.graphql.{Graphql, GraphqlWorkspace}
 import distribution.mongo.{DatabaseCollections, MongoDb}
 import java.security.{KeyStore, SecureRandom}
 
+import com.vyulabs.update.info.UserRole
 import distribution.Distribution
 import distribution.config.{DistributionConfig, SslConfig}
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}

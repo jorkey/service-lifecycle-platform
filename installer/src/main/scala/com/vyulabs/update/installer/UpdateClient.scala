@@ -4,7 +4,7 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.{AdminRepository, DistributionClientInterface}
+import com.vyulabs.update.distribution.{AdminRepository, DistributionInterface}
 import com.vyulabs.update.info.{ClientDesiredVersions, ServicesVersions}
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.IoUtils
@@ -21,8 +21,8 @@ class UpdateClient()(implicit log: Logger) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def installUpdates(adminRepository: AdminRepository,
-                     clientDistribution: DistributionClientInterface,
-                     developerDistribution: DistributionClientInterface,
+                     clientDistribution: DistributionInterface,
+                     developerDistribution: DistributionInterface,
                      servicesOnly: Option[Set[ServiceName]],
                      localConfigOnly: Boolean,
                      assignDesiredVersions: Boolean): InstallResult = {
@@ -128,11 +128,11 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  def getClientDesiredVersions(clientDistribution: DistributionClientInterface): Option[Map[ServiceName, ClientDistributionVersion]] = {
+  def getClientDesiredVersions(clientDistribution: DistributionInterface): Option[Map[ServiceName, ClientDistributionVersion]] = {
     clientDistribution.downloadInstalledDesiredVersions().map(_.toMap)
   }
 
-  def setDesiredVersions(clientDistribution: DistributionClientInterface,
+  def setDesiredVersions(clientDistribution: DistributionInterface,
                          versions: Map[ServiceName, Option[ClientDistributionVersion]]): Boolean = {
     var completed = false
     try {
@@ -169,8 +169,8 @@ class UpdateClient()(implicit log: Logger) {
     completed
   }
 
-  def signVersionsAsTested(clientDistribution: DistributionClientInterface,
-                           developerDistribution: DistributionClientInterface): Boolean = {
+  def signVersionsAsTested(clientDistribution: DistributionInterface,
+                           developerDistribution: DistributionInterface): Boolean = {
     try {
       val clientDesiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
         log.error("Error of getting client desired versions")
@@ -227,8 +227,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersions(adminRepository: AdminRepository,
-                              clientDistribution: DistributionClientInterface,
-                              developerDistribution: DistributionClientInterface,
+                              clientDistribution: DistributionInterface,
+                              developerDistribution: DistributionInterface,
                               developerVersions: Map[ServiceName, DeveloperDistributionVersion],
                               clientVersions: Map[ServiceName, ClientDistributionVersion],
                               assignDesiredVersions: Boolean): InstallResult = {
@@ -271,8 +271,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersions(adminRepository: AdminRepository,
-                              clientDistribution: DistributionClientInterface,
-                              developerDistribution: DistributionClientInterface,
+                              clientDistribution: DistributionInterface,
+                              developerDistribution: DistributionInterface,
                               developerVersions: Map[ServiceName, DeveloperDistributionVersion],
                               clientVersions: Map[ServiceName, ClientDistributionVersion]): Boolean = {
     developerVersions.foreach {
@@ -287,8 +287,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersion(adminRepository: AdminRepository,
-                             clientDistribution: DistributionClientInterface,
-                             developerDirectory: DistributionClientInterface,
+                             clientDistribution: DistributionInterface,
+                             developerDirectory: DistributionInterface,
                              serviceName: ServiceName, fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion): Boolean = {
     try {
       log.info(s"Download version ${fromVersion} of service ${serviceName}")
@@ -364,7 +364,7 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  private def mergeSettings(clientDistribution: DistributionClientInterface,
+  private def mergeSettings(clientDistribution: DistributionInterface,
                             serviceName: ServiceName, buildDirectory: File, localDirectory: File,
                             version: ClientDistributionVersion, subPath: String = ""): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {

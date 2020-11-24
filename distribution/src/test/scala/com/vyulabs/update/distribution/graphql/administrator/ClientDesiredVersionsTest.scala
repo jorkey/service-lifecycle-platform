@@ -5,10 +5,11 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.distribution.TestEnvironment
-import distribution.users.{UserInfo, UserRole}
+import com.vyulabs.update.info.{UserInfo, UserRole}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.{DistributionClientInfoDocument, DistributionClientProfileDocument}
+
 import scala.concurrent.ExecutionContext
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._

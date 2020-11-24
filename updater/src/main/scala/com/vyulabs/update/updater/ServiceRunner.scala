@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
-import com.vyulabs.update.distribution.DistributionClientInterface
+import com.vyulabs.update.distribution.DistributionInterface
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName}
 import com.vyulabs.update.log.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
@@ -24,7 +24,7 @@ import scala.collection.immutable.Queue
   * Copyright FanDate, Inc.
   */
 class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledServiceName,
-                    state: ServiceStateController, clientDirectory: DistributionClientInterface,
+                    state: ServiceStateController, clientDirectory: DistributionInterface,
                     faultUploader: FaultUploader)(implicit log: Logger) {
     private case class ProcessParameters(config: RunServiceConfig, args: Map[String, String], directory: File)
 

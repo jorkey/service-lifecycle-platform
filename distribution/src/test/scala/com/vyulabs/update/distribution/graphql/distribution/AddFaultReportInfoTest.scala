@@ -8,11 +8,10 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.FaultId
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
+import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState, UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.FaultReportDocument
-import distribution.users.{UserInfo, UserRole}
 import org.mongodb.scala.bson.BsonDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
@@ -69,10 +68,10 @@ class AddFaultReportInfoTest extends TestEnvironment {
   def addFaultReportInfo(faultId: FaultId, sequence: Long, date: Date): Unit = {
     val date = new Date()
     assertResult((OK,
-      ("""{"data":{"addServiceFaultReportInfo":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation FaultReportInfo($$date: Date!, $$faultId: String!) {
-          addServiceFaultReportInfo (
+          addFaultReportInfo (
             fault: {
               faultId: $$faultId,
               info: {
@@ -104,7 +103,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
 
   def checkReportExists(faultId: FaultId, sequence: Long, date: Date): Unit = {
     assertResult(Seq(
-      FaultReportDocument(sequence, DistributionFaultReport(distributionName,
+      FaultReportDocument(sequence, DistributionFaultReport("distribution1",
         ServiceFaultReport(faultId, FaultInfo(date, "instance1", "directory1", "service1", "Common", ServiceState(date, None, None, None, None, None, None, None),
           Seq("line1", "line2")), Seq("core", "log/service.log")))))
     )(result(faultsInfoCollection.find(Filters.eq("fault.report.faultId", faultId))))
