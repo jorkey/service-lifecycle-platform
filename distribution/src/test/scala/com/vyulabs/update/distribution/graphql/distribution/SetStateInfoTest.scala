@@ -110,10 +110,10 @@ class SetStateInfoTest extends TestEnvironment {
       """, variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
+      ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          servicesState (distribution: "distribution1", service: "service1") {
+          serviceStates (distribution: "distribution1", service: "service1") {
             instance {
               instanceId
               service {

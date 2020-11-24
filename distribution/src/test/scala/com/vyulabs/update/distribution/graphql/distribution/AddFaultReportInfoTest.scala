@@ -30,6 +30,8 @@ class AddFaultReportInfoTest extends TestEnvironment {
   val faultsInfoCollection = result(collections.State_FaultReportsInfo)
   val sequencesCollection = result(collections.Sequences)
 
+  override def dbName = super.dbName + "-distribution"
+
   it should "add fault report info" in {
     addFaultReportInfo("fault1", 1, new Date())
 

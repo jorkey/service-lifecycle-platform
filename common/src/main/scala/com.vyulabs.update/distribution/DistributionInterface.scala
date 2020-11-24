@@ -168,7 +168,7 @@ class DistributionInterface(val url: URL)(implicit log: Logger) {
     false
   }
 
-  def uploadServicesStates(servicesState: Seq[DirectoryServiceState]): Boolean = {
+  def uploadServicesStates(serviceStates: Seq[DirectoryServiceState]): Boolean = {
     // TODO graphql
     false
   }
@@ -183,10 +183,10 @@ class DistributionInterface(val url: URL)(implicit log: Logger) {
     false
   }
 
-  def uploadServicesState(servicesState: Seq[InstanceServiceState]): Boolean = {
+  def uploadServicesState(serviceStates: Seq[InstanceServiceState]): Boolean = {
     // TODO graphql
     //uploadFromJson(makeUrl(apiPathPrefix + "/" + getInstancesStatePath()),
-    //  instancesStateName, instancesStatePath, servicesState.toJson)
+    //  instancesStateName, instancesStatePath, serviceStates.toJson)
     false
   }
 

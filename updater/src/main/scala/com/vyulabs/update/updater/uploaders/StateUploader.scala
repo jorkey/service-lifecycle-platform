@@ -16,8 +16,8 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
   }
 
   /* TODO graphql
-  for (servicesState <- clientDirectory.downloadServicesState(instanceId)) {
-    servicesState.foreach { case state =>
+  for (serviceStates <- clientDirectory.downloadServicesState(instanceId)) {
+    serviceStates.foreach { case state =>
         services.foreach { case (name, controller) =>
           if (name.name == state.serviceName && controller.serviceDirectory.getCanonicalPath == state.directory) {
             controller.initFromState(state.state)
@@ -59,8 +59,8 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
   private def updateRepository(): Boolean = synchronized {
     log.info("Update instance state")
     val scriptsState = DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
-    val servicesState = services.foldLeft(Seq(scriptsState))((state, service) =>
+    val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
       state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
-    clientDirectory.uploadServicesStates(servicesState)
+    clientDirectory.uploadServicesStates(serviceStates)
   }
 }

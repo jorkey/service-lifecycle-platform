@@ -85,7 +85,7 @@ object GraphqlSchema {
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = DistributionArg :: OptionServicesArg :: Nil,
         resolve = c => { c.ctx.workspace.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
-      Field("servicesState", ListType(ClientServiceStateType),
+      Field("serviceStates", ListType(ClientServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("faultReportsInfo", ListType(DistributionFaultReportType),

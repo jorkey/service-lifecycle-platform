@@ -27,6 +27,8 @@ class AddFaultReportInfoTest extends TestEnvironment {
 
   val faultsInfoCollection = result(collections.State_FaultReportsInfo)
 
+  override def dbName = super.dbName + "-service"
+
   it should "add fault report info" in {
     val date = new Date()
 

@@ -51,10 +51,10 @@ class GetStateInfoTest extends TestEnvironment {
   it should "return own service version" in {
     val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instance":{"service":{"version":"test-1.2.3"}}}]}}""").parseJson))(
+      ("""{"data":{"serviceStates":[{"instance":{"service":{"version":"test-1.2.3"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query ServicesStateQuery($$directory: String!) {
-          servicesState (distribution: "test", service: "distribution", directory: $$directory) {
+          serviceStates (distribution: "test", service: "distribution", directory: $$directory) {
             instance  {
               service {
                 version
@@ -68,10 +68,10 @@ class GetStateInfoTest extends TestEnvironment {
   it should "return service state" in {
     val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
     assertResult((OK,
-      ("""{"data":{"servicesState":[{"instance":{"instanceId":"instance2","service":{"version":"distribution1-1.1.0"}}}]}}""").parseJson))(
+      ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance2","service":{"version":"distribution1-1.1.0"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          servicesState (distribution: "distribution1", service: "service1") {
+          serviceStates (distribution: "distribution1", service: "service1") {
             instance  {
               instanceId
               service {
