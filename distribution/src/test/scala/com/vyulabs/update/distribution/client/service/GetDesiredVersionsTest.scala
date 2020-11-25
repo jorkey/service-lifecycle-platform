@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.service
+package com.vyulabs.update.distribution.client.service
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK

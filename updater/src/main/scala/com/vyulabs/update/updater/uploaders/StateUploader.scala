@@ -4,7 +4,7 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.distribution.DistributionInterface
+import com.vyulabs.update.distribution.client.DistributionInterface
 import com.vyulabs.update.info.{DirectoryServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger

@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.load
+package com.vyulabs.update.distribution.http
 
 import java.net.URLEncoder
 

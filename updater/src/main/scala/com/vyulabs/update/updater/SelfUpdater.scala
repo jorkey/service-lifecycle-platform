@@ -4,7 +4,7 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.DistributionInterface
+import com.vyulabs.update.distribution.client.DistributionInterface
 import com.vyulabs.update.utils.{IoUtils, Utils}
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger

@@ -4,7 +4,8 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.{AdminRepository, DistributionInterface}
+import com.vyulabs.update.distribution.AdminRepository
+import com.vyulabs.update.distribution.client.DistributionInterface
 import com.vyulabs.update.info.{ClientDesiredVersions, ServicesVersions}
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.IoUtils

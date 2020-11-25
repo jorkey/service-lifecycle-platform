@@ -2,7 +2,7 @@ package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.InstallConfig
-import com.vyulabs.update.distribution.DistributionInterface
+import com.vyulabs.update.distribution.client.DistributionInterface
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils}
 import com.vyulabs.update.info.{ProfiledServiceName, UpdateError}
 import com.vyulabs.update.updater.uploaders.FaultUploader

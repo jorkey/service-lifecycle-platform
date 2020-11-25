@@ -1,11 +1,11 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
-import com.vyulabs.update.common.Common.{ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.{DistributionInterface}
+import com.vyulabs.update.distribution.client.DistributionInterface
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{Utils}
+import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.slf4j.LoggerFactory
 

@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution
+package com.vyulabs.update.distribution.client
 
 import java.io._
 import java.net.{HttpURLConnection, URL}
@@ -7,16 +7,14 @@ import java.util.Base64
 
 import com.typesafe.config.ConfigParseOptions
 import com.vyulabs.update.common.Common.{InstanceId, ServiceName}
-import com.vyulabs.update.utils.{IoUtils, ZipUtils}
+import com.vyulabs.update.info._
+import com.vyulabs.update.logs.ServiceLogs
+import com.vyulabs.update.utils.ZipUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
-import spray.json.JsValue
+import spray.json.{JsValue, _}
 
 import scala.annotation.tailrec
-import spray.json._
-import com.vyulabs.update.info.{ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, InstanceServiceState, ProfiledServiceName, ServicesVersions}
-import DistributionWebPaths._
-import com.vyulabs.update.logs.ServiceLogs
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
