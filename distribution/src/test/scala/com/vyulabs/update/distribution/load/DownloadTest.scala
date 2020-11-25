@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.rest
+package com.vyulabs.update.distribution.load
 
 import com.vyulabs.update.distribution.TestEnvironment
 import akka.http.scaladsl.model._

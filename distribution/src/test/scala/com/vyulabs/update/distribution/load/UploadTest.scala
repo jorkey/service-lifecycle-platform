@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.rest
+package com.vyulabs.update.distribution.load
 
 import java.io.File
 

@@ -1,4 +1,4 @@
-package com.vyulabs.update.log
+package com.vyulabs.update.logs
 
 import java.io._
 

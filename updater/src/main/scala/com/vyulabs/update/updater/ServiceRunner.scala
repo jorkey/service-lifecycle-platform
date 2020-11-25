@@ -10,10 +10,10 @@ import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.distribution.DistributionInterface
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName}
-import com.vyulabs.update.log.LogWriter
+import com.vyulabs.update.logs.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
-import com.vyulabs.update.version.{DeveloperVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters._

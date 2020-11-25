@@ -68,7 +68,6 @@ class AddFaultReportInfoTest extends TestEnvironment {
   }
 
   def addFaultReportInfo(faultId: FaultId, sequence: Long, date: Date): Unit = {
-    val date = new Date()
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
