@@ -4,6 +4,7 @@ import java.io.File
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.vyulabs.update.distribution.DistributionWebPaths.versionImageField
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -18,7 +19,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   val route = distribution.route
 
   it should "upload developer version image" in {
-    Post("/developer-version-image/service1/test-1.1.1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/developer-versionImage/service1/test-1.1.1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
 
@@ -26,7 +27,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "upload client version image" in {
-    Post("/client-version-image/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/client-versionImage/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
 
@@ -34,7 +35,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "return error when illegal access" in {
-    Post("/client-version-image/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(distributionClientCredentials) ~> route ~> check {
+    Post("/client-versionImage/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(distributionClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.Forbidden
     }
   }
@@ -46,7 +47,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   def makeVersionMultipart(): Multipart.FormData.Strict = {
-    Multipart.FormData(Multipart.FormData.BodyPart.Strict("version-image",
+    Multipart.FormData(Multipart.FormData.BodyPart.Strict(versionImageField,
       HttpEntity(ContentTypes.`application/octet-stream`, "version image content".getBytes),
       Map("filename" -> "version.zip")))
   }

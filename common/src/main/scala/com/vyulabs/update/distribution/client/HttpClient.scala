@@ -5,9 +5,8 @@ import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-import org.slf4j.Logger
+import org.slf4j.{Logger, LoggerFactory}
 import spray.json.{JsValue, JsonReader}
-
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
@@ -15,12 +14,21 @@ import spray.json._
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int)(implicit log: Logger) {
+class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
+  implicit val log = LoggerFactory.getLogger(this.getClass)
+
+  def makeUrl(path: String*): URL = new URL(path.foldLeft(url.toString)((url, path) => url + "/" + path))
+
   def graphqlRequest[T](request: String, command: String, arguments: Map[String, JsValue] = Map.empty)
                        (implicit reader: JsonReader[T]): Option[T]= {
     executeRequest(makeUrl("graphql"), (connection) => {
-      connection.setRequestMethod("POST")
+      if (url.getUserInfo != null) {
+        val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))
+        connection.setRequestProperty("Authorization", "Basic " + encoded)
+      }
       connection.setRequestProperty("Content-Type", "application/json")
+      connection.setRequestMethod("POST")
+      connection.setDoOutput(true)
       val output = connection.getOutputStream
       output.write(s"${request} { ${command} ( ${arguments.toJson} ) }".getBytes("utf8"))
       output.flush()
@@ -45,12 +53,28 @@ class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int)(implic
     })
   }
 
+  def upload(url: URL, name: String, file: File): Boolean = {
+    val input =
+      try {
+        new FileInputStream(file)
+      } catch {
+        case e: IOException =>
+          log.error(s"Can't open ${file}", e)
+          return false
+      }
+    try {
+      upload(url, name, file.getName, input)
+    } finally {
+      input.close()
+    }
+  }
+
   def upload(url: URL, name: String, destinationFile: String, input: InputStream): Boolean = {
     if (log.isDebugEnabled) log.debug(s"Upload by url ${url}")
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
     executeRequest(url, (connection: HttpURLConnection) => {
-      if (!url.getUserInfo.isEmpty) {
+      if (url.getUserInfo != null) {
         val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))
         connection.setRequestProperty("Authorization", "Basic " + encoded)
       }
@@ -75,6 +99,27 @@ class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int)(implic
     }).isDefined
   }
 
+  def download(url: URL, file: File): Boolean = {
+    val output =
+      try {
+        new FileOutputStream(file)
+      } catch {
+        case e: IOException =>
+          log.error(s"Can't open ${file}", e)
+          return false
+      }
+    var stat = false
+    try {
+      stat = download(url, output)
+      stat
+    } finally {
+      output.close()
+      if (!stat) {
+        file.delete()
+      }
+    }
+  }
+
   def download(url: URL, output: OutputStream): Boolean = {
     if (log.isDebugEnabled) log.debug(s"Download by url ${url}")
     executeRequest(url, (connection: HttpURLConnection) => {
@@ -90,7 +135,20 @@ class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int)(implic
     }).isDefined
   }
 
-  def copy(in: InputStream, out: OutputStream): Unit = {
+  def exists(url: URL): Boolean = {
+    executeRequest(url, (connection: HttpURLConnection) => {
+      connection.setRequestMethod("HEAD")
+      if (url.getUserInfo != null) {
+        val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
+        connection.setRequestProperty("Authorization", "Basic " + encoded)
+      }
+      connection.setConnectTimeout(connectTimeoutMs)
+      connection.setReadTimeout(readTimeoutMs)
+      Some()
+    }).isDefined
+  }
+
+  private def copy(in: InputStream, out: OutputStream): Unit = {
     val buffer = new Array[Byte](1024)
     var len = in.read(buffer)
     while (len > 0) {
@@ -98,10 +156,6 @@ class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int)(implic
       out.flush
       len = in.read(buffer)
     }
-  }
-
-  def makeUrl(path: String): URL = {
-    new URL(url.toString + "/" + path)
   }
 
   private final def executeRequest[T](url: URL, request: (HttpURLConnection) => Option[T]): Option[T] = {

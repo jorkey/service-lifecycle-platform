@@ -7,7 +7,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
-import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, TestSignature, TestedDesiredVersions}
 import distribution.config.FaultReportsConfig
 import distribution.mongo.{DatabaseCollections, FaultReportDocument, InstalledDesiredVersionsDocument, MongoDbCollection, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}

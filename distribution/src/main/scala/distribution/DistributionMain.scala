@@ -19,6 +19,7 @@ import distribution.graphql.{Graphql, GraphqlWorkspace}
 import distribution.mongo.{DatabaseCollections, MongoDb}
 import java.security.{KeyStore, SecureRandom}
 
+import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.UserRole
 import distribution.Distribution
 import distribution.config.{DistributionConfig, SslConfig}

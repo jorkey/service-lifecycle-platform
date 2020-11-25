@@ -1,8 +1,8 @@
-package com.vyulabs.update.distribution
+package com.vyulabs.update.distribution.server
 
 import java.io._
 
-import com.vyulabs.update.common.Common.{ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory

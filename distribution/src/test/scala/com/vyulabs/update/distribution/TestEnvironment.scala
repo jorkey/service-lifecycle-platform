@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.Common
+import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.UserRole
 import distribution.users.{PasswordHash, UserCredentials, UsersCredentials}
 import com.vyulabs.update.utils.IoUtils

@@ -6,9 +6,9 @@ import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{DistributionName, ProfileName}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.distribution.server.DistributionDirectory
 import distribution.graphql.NotFoundException
-import distribution.mongo.{DistributionClientProfileDocument, DatabaseCollections}
+import distribution.mongo.{DatabaseCollections, DistributionClientProfileDocument}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 

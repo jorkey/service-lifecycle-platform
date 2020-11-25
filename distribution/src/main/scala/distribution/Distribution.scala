@@ -51,6 +51,7 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
       logResult(resultLogger _) {
         handleExceptions(exceptionHandler) {
           extractRequestContext { ctx =>
+            println(ctx)
               mapRejections { rejections => // Prevent browser to invoke basic auth popup.
                 rejections.map(_ match {
                   case AuthenticationFailedRejection(cause, challenge) =>
@@ -110,7 +111,7 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
-                        fileUpload("version-image") {
+                        fileUpload(versionImageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
                             val future = byteSource.runWith(sink)
@@ -127,7 +128,7 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                       }
                     } ~ post {
                       authorize(userInfo.role == UserRole.Administrator) {
-                        fileUpload("version-image") {
+                        fileUpload(versionImageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
                             val future = byteSource.runWith(sink)

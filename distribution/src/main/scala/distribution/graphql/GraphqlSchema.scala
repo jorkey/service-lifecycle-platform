@@ -3,8 +3,8 @@ package distribution.graphql
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common.DistributionName
-import com.vyulabs.update.distribution.DistributionDirectory
 import com.vyulabs.update.distribution.DistributionMain.log
+import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.UserRole.UserRole
 import com.vyulabs.update.info.{UserInfo, UserRole}
 import distribution.config.{FaultReportsConfig, VersionHistoryConfig}

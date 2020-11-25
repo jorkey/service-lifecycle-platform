@@ -3,7 +3,7 @@ package distribution.graphql.utils
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, InstallInfo}
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import distribution.config.VersionHistoryConfig

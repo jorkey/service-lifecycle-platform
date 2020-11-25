@@ -8,145 +8,161 @@ import com.vyulabs.update.version.{ClientVersion, DeveloperVersion}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
-trait GraphqlQueries {
-  val httpClient: HttpClient
+trait GraphqlQueriesClient {
+  protected val client: HttpClient
 
   def query[T](command: String, arguments: Map[String, JsValue] = Map.empty)(implicit reader: JsonReader[T]): Option[T] = {
-    httpClient.graphqlRequest[T]("query", command, arguments)
+    client.graphqlRequest[T]("query", command, arguments)
   }
 }
 
-trait CommonQueries extends GraphqlQueries {
+trait CommonQueriesClient {
+  protected val client: GraphqlQueriesClient
+
   def getUserInfo(): Option[UserInfo] = {
-    query[UserInfo]("getUserInfo")
+    client.query[UserInfo]("getUserInfo")
   }
 }
 
-trait AdministratorQueries extends CommonQueries {
+trait GraphqlClient extends GraphqlQueriesClient with GraphqlMutationsClient
+
+trait AdministratorQueriesClient {
+  protected val client: GraphqlQueriesClient
+
   def getDeveloperVersionsInfo(serviceName: ServiceName, version: Option[DeveloperVersion]) : Option[Seq[DeveloperVersionInfo]] = {
-    query[Seq[DeveloperVersionInfo]]("getDeveloperVersionsInfo",
+    client.query[Seq[DeveloperVersionInfo]]("getDeveloperVersionsInfo",
       Map("service" -> JsString(serviceName), "version" -> version.toJson).filter(_._2 != JsNull))
   }
 
   def getDeveloperDesiredVersions(serviceName: Option[ServiceName]): Option[Seq[DeveloperDesiredVersion]] = {
-    query[Seq[DeveloperDesiredVersion]]("getDeveloperDesiredVersions",
+    client.query[Seq[DeveloperDesiredVersion]]("getDeveloperDesiredVersions",
       Map("service" -> serviceName.toJson).filter(_._2 != JsNull))
   }
 
   def getClientVersionsInfo(serviceName: ServiceName, version: Option[ClientVersion]) : Option[Seq[ClientVersionInfo]] = {
-    query[Seq[ClientVersionInfo]]("getClientVersionsInfo",
+    client.query[Seq[ClientVersionInfo]]("getClientVersionsInfo",
       Map("service" -> JsString(serviceName), "version" -> version.toJson).filter(_._2 != JsNull))
   }
 
   def getClientDesiredVersions(serviceNames: Seq[ServiceName]): Option[Seq[ClientDesiredVersion]] = {
-    query[Seq[ClientDesiredVersion]]("getClientDesiredVersions",
+    client.query[Seq[ClientDesiredVersion]]("getClientDesiredVersions",
       Map("services" -> serviceNames).filter(!_._2.isEmpty).mapValues(_.toJson))
   }
 
   def getDistributionClientsInfo(): Option[Seq[DistributionClientInfo]] = {
-    query[Seq[DistributionClientInfo]]("getDistributionClientsInfo")
+    client.query[Seq[DistributionClientInfo]]("getDistributionClientsInfo")
   }
 
   def getInstalledDesiredVersions(distributionName: DistributionName, serviceNames: Seq[ServiceName]): Option[Seq[ClientDesiredVersion]] = {
-    query[Seq[ClientDesiredVersion]]("getInstalledDesiredVersions",
+    client.query[Seq[ClientDesiredVersion]]("getInstalledDesiredVersions",
      Map("distribution" -> JsString(distributionName)) ++ Map("services" -> serviceNames).filter(!_._2.isEmpty).mapValues(_.toJson))
   }
 
   def getServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName], instanceId: Option[InstanceId],
                        directory: Option[ServiceDirectory]): Option[Seq[DistributionServiceState]] = {
-    query[Seq[DistributionServiceState]]("getServicesState",
+    client.query[Seq[DistributionServiceState]]("getServicesState",
       Map("distribution" -> distributionName.toJson, "service" -> serviceName.toJson,
         "instance" -> instanceId.toJson, "directory" -> directory.toJson).filter(_._2 != JsNull))
   }
 
   def getFaultReportsInfo(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]): Option[Seq[DistributionFaultReport]] = {
-    query[Seq[DistributionFaultReport]]("getFaultReportsInfo",
+    client.query[Seq[DistributionFaultReport]]("getFaultReportsInfo",
       Map("distribution" -> distributionName.toJson, "service" -> serviceName.toJson, "last" -> last.toJson).filter(_._2 != JsNull))
   }
 }
 
-trait DistributionQueries extends CommonQueries {
+trait DistributionQueriesClient {
+  protected val client: GraphqlQueriesClient
+
   def getDistributionClientConfig(): Option[Seq[DistributionClientConfig]] = {
-    query[Seq[DistributionClientConfig]]("getDistributionClientConfig")
+    client.query[Seq[DistributionClientConfig]]("getDistributionClientConfig")
   }
 
   def getDesiredVersions(serviceNames: Seq[ServiceName]): Option[Seq[DeveloperDesiredVersion]] = {
-    query[Seq[DeveloperDesiredVersion]]("getDesiredVersions",
+    client.query[Seq[DeveloperDesiredVersion]]("getDesiredVersions",
       Map("services" -> serviceNames).filter(!_._2.isEmpty).mapValues(_.toJson))
   }
 }
 
-trait ServiceQueries extends CommonQueries {
+trait ServiceQueriesClient {
+  protected val client: GraphqlQueriesClient
+
   def getDesiredVersions(serviceNames: Seq[ServiceName]): Option[Seq[ClientDesiredVersion]] = {
-    query[Seq[ClientDesiredVersion]]("getDesiredVersions",
+    client.query[Seq[ClientDesiredVersion]]("getDesiredVersions",
       Map("services" -> serviceNames).filter(!_._2.isEmpty).mapValues(_.toJson))
   }
 }
 
-trait GraphqlMutations {
-  val httpClient: HttpClient
+trait GraphqlMutationsClient {
+  protected val client: HttpClient
 
   def mutation(command: String, arguments: Map[String, JsValue] = Map.empty): Boolean = {
-    httpClient.graphqlRequest[Boolean]("mutation", command, arguments).getOrElse(false)
+    client.graphqlRequest[Boolean]("mutation", command, arguments).getOrElse(false)
   }
 }
 
-trait AdministratorMutations extends GraphqlMutations {
+trait AdministratorMutationsClient {
+  protected val client: GraphqlMutationsClient
+
   def addDeveloperVersionInfo(info: DeveloperVersionInfo): Boolean = {
-    mutation("addDeveloperVersionInfo", Map("info" -> info.toJson))
+    client.mutation("addDeveloperVersionInfo", Map("info" -> info.toJson))
   }
 
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion): Boolean = {
-    mutation("removeDeveloperVersion", Map("version" -> version.toJson))
+    client.mutation("removeDeveloperVersion", Map("version" -> version.toJson))
   }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo): Boolean = {
-    mutation("addClientVersionInfo", Map("info" -> versionInfo.toJson))
+    client.mutation("addClientVersionInfo", Map("info" -> versionInfo.toJson))
   }
 
   def removeClientVersion(serviceName: ServiceName, version: ClientVersion): Boolean = {
-    mutation("removeClientVersion",
+    client.mutation("removeClientVersion",
       Map("service" -> serviceName.toJson, "version" -> version.toJson))
   }
 
   def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersion]): Boolean = {
-    mutation("setDeveloperDesiredVersions", Map("versions" -> versions.toJson))
+    client.mutation("setDeveloperDesiredVersions", Map("versions" -> versions.toJson))
   }
 
   def setClientDesiredVersions(versions: Seq[ClientDesiredVersion]): Boolean = {
-    mutation("setClientDesiredVersions", Map("versions" -> versions.toJson))
+    client.mutation("setClientDesiredVersions", Map("versions" -> versions.toJson))
   }
 }
 
-trait DistributionMutations extends GraphqlMutations {
+trait DistributionMutationsClient {
+  protected val client: GraphqlMutationsClient
+
   def setTestedVersions(versions: Seq[DeveloperDesiredVersion]): Boolean = {
-    mutation("setTestedVersions", Map("versions" -> versions.toJson))
+    client.mutation("setTestedVersions", Map("versions" -> versions.toJson))
   }
 
   def setInstalledDesiredVersions(versions: Seq[ClientDesiredVersion]): Boolean = {
-    mutation("setInstalledDesiredVersions", Map("versions" -> versions.toJson))
+    client.mutation("setInstalledDesiredVersions", Map("versions" -> versions.toJson))
   }
 
   def setServiceStates(states: Seq[ServiceState]): Boolean = {
-    mutation("setServiceStates", Map("states" -> states.toJson))
+    client.mutation("setServiceStates", Map("states" -> states.toJson))
   }
 
   def addFaultReportInfo(fault: ServiceFaultReport): Boolean = {
-    mutation("addFaultReportInfo", Map("fault" -> fault.toJson))
+    client.mutation("addFaultReportInfo", Map("fault" -> fault.toJson))
   }
 }
 
-trait ServiceMutations extends GraphqlMutations {
+trait ServiceMutationsClient {
+  protected val client: GraphqlMutationsClient
+
   def setServiceStates(states: Seq[ServiceState]): Boolean = {
-    mutation("setServiceStates", Map("states" -> states.toJson))
+    client.mutation("setServiceStates", Map("states" -> states.toJson))
   }
 
   def addServiceLogs(serviceName: ServiceName, instanceId: InstanceId, serviceDirectory: ServiceDirectory, logLines: Seq[LogLine]): Boolean = {
-    mutation("addServiceLogs",
+    client.mutation("addServiceLogs",
       Map("service" -> serviceName.toJson, "instance" -> instanceId.toJson, "directory" -> serviceDirectory.toJson, "logLines" -> logLines.toJson))
   }
 
   def addFaultReportInfo(fault: ServiceFaultReport): Boolean = {
-    mutation("addFaultReportInfo", Map("fault" -> fault.toJson))
+    client.mutation("addFaultReportInfo", Map("fault" -> fault.toJson))
   }
 }

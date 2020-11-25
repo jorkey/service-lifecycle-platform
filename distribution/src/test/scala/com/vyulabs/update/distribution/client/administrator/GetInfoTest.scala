@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.distribution.{DistributionDirectory, TestEnvironment}
+import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{UserInfo, UserRole}
 import distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema}
 import distribution.mongo.{DatabaseCollections, DistributionClientInfoDocument, MongoDb}

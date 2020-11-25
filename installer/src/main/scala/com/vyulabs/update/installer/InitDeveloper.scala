@@ -4,7 +4,7 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.DistributionDirectory
+import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
 import org.slf4j.Logger
