@@ -9,26 +9,34 @@ import com.vyulabs.update.distribution.DistributionWebPaths._
 import com.vyulabs.update.utils.ZipUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
+import AdministratorGraphqlCoder._
+import spray.json.JsonReader
+import spray.json.DefaultJsonProtocol._
 
-class AdministratorClient(distributionName: DistributionName, httpClient: HttpClient) extends AdministratorQueriesClient with AdministratorMutationsClient {
+class DistributionClient(distributionName: DistributionName, client: HttpSyncClient)  {
+
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  protected override val client: GraphqlClient = new GraphqlClient {
-    override protected val client: HttpClient = httpClient
+  def graphqlQuery[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
+    client.graphqlRequest(request)
+  }
+
+  def graphqlMutation(request: GraphqlRequest[Boolean]): Boolean = {
+    client.graphqlRequest(request).getOrElse(false)
   }
 
   def getDistributionVersion(): Option[ClientDistributionVersion] = {
-    val state = getServicesState(Some(distributionName), Some(Common.DistributionServiceName), None, None)
+    val state = client.graphqlRequest(administratorQueries.getServiceStates(Some(distributionName), Some(Common.DistributionServiceName), None, None))
       .getOrElse { return None }
       .headOption.getOrElse { return None }
     state.instance.service.version
   }
 
-  def waitForServerUpdated(desiredVersion: DeveloperDistributionVersion): Boolean = {
+  def waitForServerUpdated(desiredVersion: ClientDistributionVersion): Boolean = {
     log.info(s"Wait for distribution server updated")
     Thread.sleep(5000)
     for (_ <- 0 until 25) {
-      if (httpClient.exists(httpClient.makeUrl())) {
+      if (client.exists(client.makeUrl())) {
         getDistributionVersion() match {
           case Some(version) =>
             if (version == desiredVersion) {
@@ -46,19 +54,23 @@ class AdministratorClient(distributionName: DistributionName, httpClient: HttpCl
   }
 
   def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
-    httpClient.download(httpClient.makeUrl(developerVersionImagePath, serviceName, version.toString), file)
+    client.download(client.makeUrl(loadPathPrefix, developerVersionImagePath, serviceName, version.toString), file)
   }
 
   def downloadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Boolean = {
-    httpClient.download(httpClient.makeUrl(clientVersionImagePath, serviceName, version.toString), file)
+    client.download(client.makeUrl(loadPathPrefix, clientVersionImagePath, serviceName, version.toString), file)
   }
 
   def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, buildDir: File): Boolean = {
-    uploadVersionImageFromDirectory(httpClient.makeUrl(developerVersionImagePath, serviceName, version.toString), buildDir)
+    uploadVersionImageFromDirectory(client.makeUrl(loadPathPrefix, developerVersionImagePath, serviceName, version.toString), buildDir)
   }
 
   def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, buildDir: File): Boolean = {
-    uploadVersionImageFromDirectory(httpClient.makeUrl(clientVersionImagePath, serviceName, version.toString), buildDir)
+    uploadVersionImageFromDirectory(client.makeUrl(loadPathPrefix, clientVersionImagePath, serviceName, version.toString), buildDir)
+  }
+
+  def uploadFaultReport(faultId: FaultId, faultReportFile: File): Boolean = {
+    client.upload(client.makeUrl(loadPathPrefix, faultReportPath, faultId), versionImageField, faultReportFile)
   }
 
   private def uploadVersionImageFromDirectory(url: URL, buildDir: File): Boolean = {
@@ -68,37 +80,9 @@ class AdministratorClient(distributionName: DistributionName, httpClient: HttpCl
         log.error("Can't zip build directory")
         return false
       }
-      httpClient.upload(url, versionImageField, imageTmpFile)
+      client.upload(url, versionImageField, imageTmpFile)
     } finally {
       imageTmpFile.delete()
     }
-  }
-}
-
-class DistributionClient(httpClient: HttpClient) extends DistributionQueriesClient with DistributionMutationsClient {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  protected override val client: GraphqlClient = new GraphqlClient {
-    override protected val client: HttpClient = httpClient
-  }
-
-  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
-    httpClient.download(httpClient.makeUrl(developerVersionImagePath, serviceName, version.toString), file)
-  }
-}
-
-class ServiceClient(httpClient: HttpClient) extends ServiceQueriesClient with ServiceMutationsClient {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  protected override val client: GraphqlClient = new GraphqlClient {
-    override protected val client: HttpClient = httpClient
-  }
-
-  def downloadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Boolean = {
-    httpClient.download(httpClient.makeUrl(clientVersionImagePath, serviceName, version.toString), file)
-  }
-
-  def uploadFaultReport(faultId: FaultId, faultReportFile: File): Boolean = {
-    httpClient.upload(httpClient.makeUrl(faultReportPath, faultId), versionImageField, faultReportFile)
   }
 }

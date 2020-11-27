@@ -36,7 +36,7 @@ class Graphql() extends SprayJsonSupport {
     onException = {
       case (m, e: Exception) ⇒ {
         log.error("Exception", e)
-        HandledException(e.getMessage)
+        HandledException(e.toString)
       }
     }
   )

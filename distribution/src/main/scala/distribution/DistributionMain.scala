@@ -132,7 +132,7 @@ object DistributionMain extends App {
   } catch {
     case ex: Throwable =>
       log.error("Exception", ex)
-      Utils.error(ex.getMessage)
+      Utils.error(ex.toString)
   }
 
   def makeHttpsContext(config: SslConfig): HttpsConnectionContext = {

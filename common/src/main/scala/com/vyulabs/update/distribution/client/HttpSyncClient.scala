@@ -5,49 +5,44 @@ import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-import org.slf4j.{Logger, LoggerFactory}
-import spray.json.{JsValue, JsonReader}
-import spray.json.DefaultJsonProtocol._
+import org.slf4j.{LoggerFactory}
+import spray.json.{JsonReader}
 import spray.json._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
+class HttpSyncClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def makeUrl(path: String*): URL = new URL(path.foldLeft(url.toString)((url, path) => url + "/" + path))
 
-  def graphqlRequest[T](request: String, command: String, arguments: Map[String, JsValue] = Map.empty)
-                       (implicit reader: JsonReader[T]): Option[T]= {
+  def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
     executeRequest(makeUrl("graphql"), (connection) => {
       if (url.getUserInfo != null) {
         val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))
         connection.setRequestProperty("Authorization", "Basic " + encoded)
       }
       connection.setRequestProperty("Content-Type", "application/json")
+      connection.setRequestProperty("Accept", "application/json")
       connection.setRequestMethod("POST")
       connection.setDoOutput(true)
       val output = connection.getOutputStream
-      output.write(s"${request} { ${command} ( ${arguments.toJson} ) }".getBytes("utf8"))
+      val queryJson = request.encodeRequest()
+      log.debug(s"Send graphql query: ${queryJson}")
+      output.write(queryJson.compactPrint.getBytes("utf8"))
       output.flush()
       connection.setConnectTimeout(connectTimeoutMs)
       connection.setReadTimeout(readTimeoutMs)
       val input = connection.getInputStream
-      val response = new String(input.readAllBytes(), "utf8").parseJson
-      val fields = response.asJsObject.fields
-      fields.get("data") match {
-        case Some(data) if (data != JsNull) =>
-          val response = data.asJsObject.fields.get(request).getOrElse(throw new IOException())
-          Some(response.convertTo[T])
-        case _ =>
-          fields.get("errors") match {
-            case Some(errors) =>
-              log.error(s"Graphql request error: ${errors}")
-            case None =>
-              log.error(s"Graphql invalid response: ${response}")
-          }
+      val responseJson = new String(input.readAllBytes(), "utf8").parseJson
+      log.debug(s"Receive graphql response: ${responseJson}")
+      request.decodeResponse(responseJson.asJsObject) match {
+        case Left(response) =>
+          Some(response)
+        case Right(error) =>
+          log.error(s"Decode graphql response error: ${error}")
           None
       }
     })
@@ -165,14 +160,14 @@ class HttpClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
         url.openConnection().asInstanceOf[HttpURLConnection]
       } catch {
         case e: IOException =>
-          log.error(s"Can't open connection to URL ${url}, error ${e.getMessage}")
+          log.error(s"Can't open connection to url ${url}, error ${e.toString}")
           return None
       }
     try {
       request(connection)
     } catch {
       case e: IOException =>
-        log.error(s"Error: ${e.getMessage}")
+        log.error(s"Error: ${e.toString}")
         None
     } finally {
       try {

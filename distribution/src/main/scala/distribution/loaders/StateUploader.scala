@@ -122,7 +122,7 @@ class StateUploader(distributionName: DistributionName,
             case Success(_) =>
               setLastUploadSequence(serviceStates.getName(), newStatesDocuments.last.sequence)
             case Failure(ex) =>
-              setLastUploadError(serviceStates.getName(), ex.getMessage)
+              setLastUploadError(serviceStates.getName(), ex.toString)
           }
       } else {
         Promise[Unit].success(Unit).future
@@ -150,7 +150,7 @@ class StateUploader(distributionName: DistributionName,
               case Success(_) =>
                 setLastUploadSequence(faultReports.getName(), newReportsDocuments.last._id)
               case Failure(ex) =>
-                setLastUploadError(faultReports.getName(), ex.getMessage)
+                setLastUploadError(faultReports.getName(), ex.toString)
             }
         }))
       } else {

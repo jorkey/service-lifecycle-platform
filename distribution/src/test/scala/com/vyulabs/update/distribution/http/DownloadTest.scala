@@ -18,7 +18,7 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   it should "download developer version image" in {
     IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
       "qwerty123".getBytes("utf8"))
-    Get("/developer-versionImage/service1/test-1.1.1") ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "qwerty123"
     }
@@ -27,7 +27,7 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   it should "download client version image" in {
     IoUtils.writeBytesToFile(distributionDir.getClientVersionImageFile("service1", ClientDistributionVersion.parse("test-1.1.1")),
       "qwerty456".getBytes("utf8"))
-    Get("/client-versionImage/service1/test-1.1.1") ~> addCredentials(serviceClientCredentials) ~> route ~> check {
+    Get("/load/client-version-image/service1/test-1.1.1") ~> addCredentials(serviceClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "qwerty456"
     }
@@ -36,14 +36,14 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   it should "return error when illegal access" in {
     IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
       "qwerty123".getBytes("utf8"))
-    Get("/developer-versionImage/service1/test-1.1.1") ~> addCredentials(serviceClientCredentials) ~> route ~> check {
+    Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(serviceClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.Forbidden
     }
   }
 
   it should "download fault report" in {
     IoUtils.writeBytesToFile(distributionDir.getFaultReportFile("fault1"), "fault123".getBytes("utf8"))
-    Get("/fault-report/fault1") ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Get("/load/fault-report/fault1") ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "fault123"
     }

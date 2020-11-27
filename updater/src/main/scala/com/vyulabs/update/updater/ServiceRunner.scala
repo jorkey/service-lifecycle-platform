@@ -250,7 +250,7 @@ class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledService
           },
           exception => {
             if (process.isAlive) {
-              state.error(s"Read service output error ${exception.getMessage}")
+              state.error(s"Read service output error ${exception.toString}")
             }
           })
         for (restartConditions <- params.config.restartConditions) {

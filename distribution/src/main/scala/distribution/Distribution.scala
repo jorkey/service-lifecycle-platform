@@ -38,7 +38,7 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
   protected val exceptionHandler = ExceptionHandler {
     case ex =>
       log.error("Exception", ex)
-      complete(StatusCodes.InternalServerError, s"Server error: ${ex.getMessage}")
+      complete(StatusCodes.InternalServerError, s"Server error: ${ex.toString}")
   }
 
   val route: Route = {
@@ -51,7 +51,6 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
       logResult(resultLogger _) {
         handleExceptions(exceptionHandler) {
           extractRequestContext { ctx =>
-            println(ctx)
               mapRejections { rejections => // Prevent browser to invoke basic auth popup.
                 rejections.map(_ match {
                   case AuthenticationFailedRejection(cause, challenge) =>
@@ -61,9 +60,9 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                     rejection
                 })
               } {
-                authenticateBasic(realm = "Distribution", authenticate) { case userInfo =>
-                  pathPrefix(graphqlPathPrefix) {
-                    seal {
+                pathPrefix(graphqlPathPrefix) {
+                  seal {
+                    authenticateBasic(realm = "Distribution", authenticate) { case userInfo =>
                       post {
                         entity(as[JsValue]) { requestJson =>
                           val JsObject(fields) = requestJson
@@ -81,7 +80,7 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                               complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                                 context, queryAst, operation, variables))
                             case Failure(error) =>
-                              complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
+                              complete(BadRequest, JsObject("error" -> JsString(error.toString)))
                           }
                         }
                       } ~ get {
@@ -96,96 +95,80 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                               complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
                                 context, queryAst, operation, vars))
                             case Failure(error) =>
-                              complete(BadRequest, JsObject("error" -> JsString(error.getMessage)))
+                              complete(BadRequest, JsObject("error" -> JsString(error.toString)))
                           }
                         }
                       }
-                   }
+                    }
+                  }
                 } ~ pathPrefix(interactiveGraphqlPathPrefix) {
                   getFromResource("graphiql.html")
-                } ~ path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                } ~ pathPrefix(loadPathPrefix) {
                   seal {
-                    get {
-                      authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Distribution) {
-                        getFromFile(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)))
-                      }
-                    } ~ post {
-                      authorize(userInfo.role == UserRole.Administrator) {
-                        fileUpload(versionImageField) {
-                          case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
-                            val future = byteSource.runWith(sink)
-                            onSuccess(future) { _ => complete(OK) }
+                    authenticateBasic(realm = "Distribution", authenticate) { case userInfo =>
+                      path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                        get {
+                          authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Distribution) {
+                            getFromFile(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)))
+                          }
+                        } ~ post {
+                          authorize(userInfo.role == UserRole.Administrator) {
+                            fileUpload(versionImageField) {
+                              case (fileInfo, byteSource) =>
+                                val sink = FileIO.toPath(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
+                                val future = byteSource.runWith(sink)
+                                onSuccess(future) { _ => complete(OK) }
+                            }
+                          }
+                        }
+                      } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                        get {
+                          authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Service) {
+                            getFromFile(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
+                          }
+                        } ~ post {
+                          authorize(userInfo.role == UserRole.Administrator) {
+                            fileUpload(versionImageField) {
+                              case (fileInfo, byteSource) =>
+                                val sink = FileIO.toPath(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
+                                val future = byteSource.runWith(sink)
+                                onSuccess(future) { _ => complete(OK) }
+                            }
+                          }
+                        }
+                      } ~ path(faultReportPath / ".*".r) { faultId =>
+                        get {
+                          authorize(userInfo.role == UserRole.Administrator) {
+                            getFromFile(workspace.dir.getFaultReportFile(faultId))
+                          }
+                        } ~ post {
+                          authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Distribution) {
+                            val reportDistributionName = if (userInfo.role == UserRole.Distribution) userInfo.name else workspace.distributionName
+                            fileUpload("fault-report") {
+                              case (fileInfo, byteSource) =>
+                                log.info(s"Receive fault report file from client ${workspace.distributionName}")
+                                val file = workspace.dir.getFaultReportFile(faultId)
+                                val sink = FileIO.toPath(file.toPath)
+                                val future = byteSource.runWith(sink)
+                                onSuccess(future) { _ => complete(OK) }
+                            }
+                          }
                         }
                       }
                     }
                   }
-                } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                  seal {
-                    get {
-                      authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Service) {
-                        getFromFile(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
-                      }
-                    } ~ post {
-                      authorize(userInfo.role == UserRole.Administrator) {
-                        fileUpload(versionImageField) {
-                          case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
-                            val future = byteSource.runWith(sink)
-                            onSuccess(future) { _ => complete(OK) }
-                        }
-                      }
+                } ~ get {
+                  getFromResourceDirectory(uiStaticPathPrefix) ~
+                    pathPrefix("") {
+                      getFromResource(uiStaticPathPrefix + "/index.html", ContentType(`text/html`, `UTF-8`))
                     }
-                  }
-                } ~ path(faultReportPath / ".*".r) { faultId =>
-                  seal {
-                    get {
-                      authorize(userInfo.role == UserRole.Administrator) {
-                        getFromFile(workspace.dir.getFaultReportFile(faultId))
-                      }
-                    } ~ post {
-                      authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Distribution) {
-                        val reportDistributionName = if (userInfo.role == UserRole.Distribution) userInfo.name else workspace.distributionName
-                        fileUpload("fault-report") {
-                          case (fileInfo, byteSource) =>
-                            log.info(s"Receive fault report file from client ${workspace.distributionName}")
-                            val file = workspace.dir.getFaultReportFile(faultId)
-                            val sink = FileIO.toPath(file.toPath)
-                            val future = byteSource.runWith(sink)
-                            onSuccess(future) { _ => complete(OK) }
-                        }
-                      }
-                    }
-                  }
                 }
               }
-            }
-          } ~ get {
-            path(browsePath) {
-              seal {
-                authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
-                  authorize(userRole == UserRole.Administrator) {
-                    browse(None)
-                  }
-                }
-              }
-            } ~ pathPrefix(browsePath / ".*".r) { path =>
-              seal {
-                authenticateBasic(realm = "Distribution", authenticate) { case UserInfo(userName, userRole) =>
-                  authorize(userRole == UserRole.Administrator) {
-                    browse(Some(path))
-                  }
-                }
-              }
-            } ~ getFromResourceDirectory(uiStaticPathPrefix) ~
-            pathPrefix("") {
-              getFromResource(uiStaticPathPrefix + "/index.html", ContentType(`text/html`, `UTF-8`))
             }
           }
         }
       }
     }
-  }
 
   private def authenticate(credentials: Credentials): Option[UserInfo] = {
     credentials match {
@@ -198,20 +181,6 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
             None
         }
       case _ => None
-    }
-  }
-
-  private def browse(path: Option[String]): Route = {
-    val file = path match {
-      case Some(path) =>
-        new File(workspace.dir.directory, path)
-      case None =>
-        workspace.dir.directory
-    }
-    if (file.isDirectory) {
-      getFromBrowseableDirectory(file.getPath)
-    } else {
-      getFromFile(file.getPath)
     }
   }
 

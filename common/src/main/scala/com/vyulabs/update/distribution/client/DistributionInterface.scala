@@ -321,7 +321,7 @@ class DistributionInterface(val url: URL)(implicit log: Logger) {
         url.openConnection().asInstanceOf[HttpURLConnection]
       } catch {
         case e: IOException =>
-          log.error(s"Can't open connection to URL ${url}, error ${e.getMessage}")
+          log.error(s"Can't open connection to URL ${url}, error ${e.toString}")
           return false
       }
     val responseCode = try {
@@ -329,7 +329,7 @@ class DistributionInterface(val url: URL)(implicit log: Logger) {
       connection.getResponseCode
     } catch {
       case e: IOException =>
-        log.error(s"Error: ${e.getMessage}")
+        log.error(s"Error: ${e.toString}")
         try {
           connection.getResponseCode
         } catch {

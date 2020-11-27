@@ -130,7 +130,7 @@ object ProcessUtils {
       true
     } catch {
       case ex: Exception =>
-        log.error(s"Start process ${command} error: ${ex.getMessage}", ex)
+        log.error(s"Start process ${command} error: ${ex.toString}", ex)
         false
     }
   }
