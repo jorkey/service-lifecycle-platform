@@ -33,28 +33,22 @@ object FaultReportsConfig {
   implicit val faultReportsConfigJson = jsonFormat2(FaultReportsConfig.apply)
 }
 
-case class DeveloperConfig(builderDirectory: String)
+case class UploadStateConfig(distributionUrl: URL, uploadStateIntervalSec: Int)
 
-object DeveloperConfig {
-  implicit val developerConfigJson = jsonFormat1(DeveloperConfig.apply)
-}
-
-case class ClientConfig(developerDistributionUrl: URL, installerDirectory: String, uploadStateIntervalSec: Int)
-
-object ClientConfig {
+object UploadStateConfig {
   import com.vyulabs.update.utils.Utils.URLJson._
 
-  implicit val developerConfigJson = jsonFormat3(ClientConfig.apply)
+  implicit val developerConfigJson = jsonFormat2(UploadStateConfig.apply)
 }
 
 case class DistributionConfig(distributionName: DistributionName, title: String, instanceId: InstanceId,
                               mongoDb: String, distributionDirectory: String, network: NetworkConfig,
-                              developer: Option[DeveloperConfig], client: Option[ClientConfig],
+                              builderDirectory: Option[String], installerDirectory: String,
                               versionHistory: VersionHistoryConfig, instanceState: InstanceStateConfig,
-                              faultReportsConfig: FaultReportsConfig)
+                              faultReportsConfig: FaultReportsConfig, uploadStateConfigs: Option[Seq[UploadStateConfig]])
 
 object DistributionConfig {
-  implicit val distributionConfigJson = jsonFormat11(DistributionConfig.apply)
+  implicit val distributionConfigJson = jsonFormat12(DistributionConfig.apply)
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {
     val configFile = new File("distribution.json")

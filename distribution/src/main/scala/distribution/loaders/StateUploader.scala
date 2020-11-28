@@ -42,7 +42,7 @@ class StateUploader(distributionName: DistributionName,
 
   var task = Option.empty[Cancellable]
 
-  def setSelfStates(instanceId: InstanceId, homeDirectory: File, builderDirectory: Option[String], installerDirectory: Option[String]): Unit = {
+  def setSelfStates(instanceId: InstanceId, homeDirectory: File, builderDirectory: Option[String], installerDirectory: String): Unit = {
     def addState(state: DistributionServiceState): Future[com.mongodb.reactivestreams.client.Success] = {
       for {
         collection <- collections.State_ServiceStates
@@ -60,11 +60,11 @@ class StateUploader(distributionName: DistributionName,
         DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory)))),
       addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory)))))).getOrElse(Seq.empty)
-      ++ installerDirectory.map(installerDirectory => Seq(
+      ++ Seq(
       addState(DistributionServiceState(distributionName, instanceId,
         DirectoryServiceState.getServiceInstanceState(Common.InstallerServiceName, new File(homeDirectory, installerDirectory)))),
       addState(DistributionServiceState(distributionName, instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, installerDirectory)))))).getOrElse(Seq.empty)
+        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, installerDirectory)))))
     )
   }
 
@@ -122,7 +122,7 @@ class StateUploader(distributionName: DistributionName,
             case Success(_) =>
               setLastUploadSequence(serviceStates.getName(), newStatesDocuments.last.sequence)
             case Failure(ex) =>
-              setLastUploadError(serviceStates.getName(), ex.toString)
+              setLastUploadError(serviceStates.getName(), ex.getMessage)
           }
       } else {
         Promise[Unit].success(Unit).future
@@ -150,7 +150,7 @@ class StateUploader(distributionName: DistributionName,
               case Success(_) =>
                 setLastUploadSequence(faultReports.getName(), newReportsDocuments.last._id)
               case Failure(ex) =>
-                setLastUploadError(faultReports.getName(), ex.toString)
+                setLastUploadError(faultReports.getName(), ex.getMessage)
             }
         }))
       } else {
@@ -187,13 +187,13 @@ class StateUploader(distributionName: DistributionName,
 
 object StateUploader {
   def apply(distributionName: DistributionName,
-            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, developerDistributionUrl: URL)
+            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, distributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
 
     def graphqlMutationRequest(command: String, arguments: Map[String, JsValue]): Future[Unit] = {
       for {
         response <- Http(system).singleRequest(
-          Post(developerDistributionUrl.toString + "/" + graphqlPathPrefix,
+          Post(distributionUrl.toString + "/" + graphqlPathPrefix,
             HttpEntity(ContentTypes.`application/json`, s"mutation { ${command} ( ${arguments.toJson} ) }".getBytes())))
         entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
       } yield {
@@ -211,7 +211,7 @@ object StateUploader {
           HttpEntity(ContentTypes.`application/octet-stream`, file.length, FileIO.fromPath(file.toPath)),
           Map("filename" -> file.getName)))
       for {
-        response <- Http(system).singleRequest(Post(developerDistributionUrl.toString + "/" + path, multipartForm))
+        response <- Http(system).singleRequest(Post(distributionUrl.toString + "/" + path, multipartForm))
         entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
       } yield {
         val response = entity.decodeString("utf8")

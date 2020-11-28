@@ -5,26 +5,6 @@ import spray.json.DefaultJsonProtocol._
 
 import scala.reflect.ClassTag
 
-import Utils._
-
-private object Utils {
-  def getSubSelection(cl: Class[_]): String = {
-    var output = ""
-    if (!cl.isArray && !cl.isPrimitive && cl != classOf[String]) {
-      output += "{"
-      cl.getDeclaredFields.foreach(f => {
-        if (output.size > 1) {
-          output += ","
-        }
-        output += (f.getName)
-        output += (getSubSelection(f.getType))
-      })
-      output += "}"
-    }
-    output
-  }
-}
-
 case class GraphqlArgument(name: String, value: JsValue, inputType: String)
 
 object GraphqlArgument {
@@ -47,12 +27,15 @@ object GraphqlArgument {
   }
 }
 
-case class GraphqlRequest[Response, ResponseItem](request: String, command: String, arguments: Seq[GraphqlArgument] = Seq.empty)
+case class GraphqlRequest[Response, ResponseItem](request: String, command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
                                                  (implicit itemClassTag: ClassTag[ResponseItem], reader: JsonReader[Response]) {
   def encodeRequest(): JsObject = {
-    val types = arguments.foldLeft("")((args, arg) => { args + (if (!args.isEmpty) ", " else "") + s"$$${arg.name}: ${arg.inputType}!" })
-    val args = arguments.foldLeft("")((args, arg) => { args + (if (!args.isEmpty) ", " else "") + s"${arg.name}: $$${arg.name}" })
-    val subSelection = getSubSelection(itemClassTag.runtimeClass)
+    val types = arguments.foldLeft("")((args, arg) => {
+      args + (if (!args.isEmpty) ", " else "") + s"$$${arg.name}: ${arg.inputType}!"
+    })
+    val args = arguments.foldLeft("")((args, arg) => {
+      args + (if (!args.isEmpty) ", " else "") + s"${arg.name}: $$${arg.name}"
+    })
     val query = s"${request} ${command}(${types}) { ${command} (${args}) ${subSelection} }"
     val variables = arguments.foldLeft(Map.empty[String, JsValue])((map, arg) => map + (arg.name -> arg.value))
     JsObject("query" -> JsString(query), "variables" -> variables.toJson)
@@ -84,9 +67,9 @@ object GraphqlQuery {
 }
 
 object GraphqlQueryList {
-  def apply[ResponseItem](command: String, arguments: Seq[GraphqlArgument] = Seq.empty)
+  def apply[ResponseItem](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
                          (implicit itemClassTag: ClassTag[ResponseItem], reader: JsonReader[Seq[ResponseItem]]) = {
-    GraphqlRequest[Seq[ResponseItem], ResponseItem]("query", command, arguments)
+    GraphqlRequest[Seq[ResponseItem], ResponseItem]("query", command, arguments, subSelection)
   }
 }
 

@@ -72,9 +72,9 @@ object DistributionMain extends App {
         val dir = new DistributionDirectory(new File(config.distributionDirectory))
         val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
 
-        config.client.foreach { client =>
-          val uploader = StateUploader(config.distributionName, collections, dir, client.uploadStateIntervalSec, client.developerDistributionUrl)
-          uploader.setSelfStates(config.instanceId, new File("."), config.developer.map(_.builderDirectory), config.client.map(_.installerDirectory))
+        config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
+          val uploader = StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl)
+          uploader.setSelfStates(config.instanceId, new File("."), config.builderDirectory, config.installerDirectory)
           uploader.start()
         }
 
