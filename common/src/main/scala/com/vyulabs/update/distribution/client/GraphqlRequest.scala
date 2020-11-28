@@ -8,17 +8,20 @@ import scala.reflect.ClassTag
 import Utils._
 
 private object Utils {
-  def getSubselection(cl: Class[_]): String = ""
-
-  def printFields(cl: Class[_], tabs: Int = 0): Unit = {
+  def getSubSelection(cl: Class[_]): String = {
+    var output = ""
     if (!cl.isArray && !cl.isPrimitive && cl != classOf[String]) {
+      output += "{"
       cl.getDeclaredFields.foreach(f => {
-        println(" ".repeat(tabs) + f.getName)
-        if (f.getName != "version") {
-          printFields(f.getType, tabs + 2)
+        if (output.size > 1) {
+          output += ","
         }
+        output += (f.getName)
+        output += (getSubSelection(f.getType))
       })
+      output += "}"
     }
+    output
   }
 }
 
@@ -29,26 +32,27 @@ object GraphqlArgument {
               (implicit classTag: ClassTag[T], writer: JsonWriter[T]): GraphqlArgument = {
     GraphqlArgument(arg._1, arg._2.toJson,
       if (inputType.isEmpty) {
-        if (arg._2.isInstanceOf[Option[_]]) {
-          arg._2.asInstanceOf[Option[_]] match {
-            case Some(obj) =>
-              obj.getClass.getSimpleName
-            case None =>
-              "String"
-          }
-        } else {
-          arg._2.getClass.getSimpleName
+        arg._2 match {
+          case value: Option[_] =>
+            value match {
+              case Some(obj) =>
+                obj.getClass.getSimpleName
+              case None =>
+                "String"
+            }
+          case _ =>
+            arg._2.getClass.getSimpleName
         }
       } else inputType)
   }
 }
 
-case class GraphqlRequest[Response](request: String, command: String, arguments: Seq[GraphqlArgument] = Seq.empty)
-                                   (implicit responseClassTag: ClassTag[Response], reader: JsonReader[Response]) {
+case class GraphqlRequest[Response, ResponseItem](request: String, command: String, arguments: Seq[GraphqlArgument] = Seq.empty)
+                                                 (implicit itemClassTag: ClassTag[ResponseItem], reader: JsonReader[Response]) {
   def encodeRequest(): JsObject = {
-    val types = arguments.foldLeft("")((args, arg) => { args + (if (!args.isEmpty) " ," else "") + s"$$${arg.name}: ${arg.inputType}!" })
+    val types = arguments.foldLeft("")((args, arg) => { args + (if (!args.isEmpty) ", " else "") + s"$$${arg.name}: ${arg.inputType}!" })
     val args = arguments.foldLeft("")((args, arg) => { args + (if (!args.isEmpty) ", " else "") + s"${arg.name}: $$${arg.name}" })
-    val subSelection = getSubselection(responseClassTag.runtimeClass)
+    val subSelection = getSubSelection(itemClassTag.runtimeClass)
     val query = s"${request} ${command}(${types}) { ${command} (${args}) ${subSelection} }"
     val variables = arguments.foldLeft(Map.empty[String, JsValue])((map, arg) => map + (arg.name -> arg.value))
     JsObject("query" -> JsString(query), "variables" -> variables.toJson)
@@ -74,13 +78,20 @@ case class GraphqlRequest[Response](request: String, command: String, arguments:
 
 object GraphqlQuery {
   def apply[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty)
-                     (implicit responseClassTag: ClassTag[Response], reader: JsonReader[Response]) = {
-    GraphqlRequest[Response]("query", command, arguments)
+                     (implicit itemClassTag: ClassTag[Response], reader: JsonReader[Response]) = {
+    GraphqlRequest[Response, Response]("query", command, arguments)
+  }
+}
+
+object GraphqlQueryList {
+  def apply[ResponseItem](command: String, arguments: Seq[GraphqlArgument] = Seq.empty)
+                         (implicit itemClassTag: ClassTag[ResponseItem], reader: JsonReader[Seq[ResponseItem]]) = {
+    GraphqlRequest[Seq[ResponseItem], ResponseItem]("query", command, arguments)
   }
 }
 
 object GraphqlMutation {
   def apply(command: String, arguments: Seq[GraphqlArgument] = Seq.empty) = {
-    GraphqlRequest[Boolean]("mutation", command, arguments)
+    GraphqlRequest[Boolean, Boolean]("mutation", command, arguments)
   }
 }

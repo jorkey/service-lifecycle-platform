@@ -18,7 +18,8 @@ class HttpSyncClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
 
   def makeUrl(path: String*): URL = new URL(path.foldLeft(url.toString)((url, path) => url + "/" + path))
 
-  def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
+  def graphqlRequest[Response, Item](request: GraphqlRequest[Response, Item])
+                                    (implicit reader: JsonReader[Response]): Option[Response]= {
     executeRequest(makeUrl("graphql"), (connection) => {
       if (url.getUserInfo != null) {
         val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))

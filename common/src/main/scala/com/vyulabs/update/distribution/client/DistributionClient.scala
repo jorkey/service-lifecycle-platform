@@ -17,11 +17,11 @@ class DistributionClient(distributionName: DistributionName, client: HttpSyncCli
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def graphqlQuery[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
+  def graphqlQuery[Response, Item](request: GraphqlRequest[Response, Item])(implicit reader: JsonReader[Response]): Option[Response]= {
     client.graphqlRequest(request)
   }
 
-  def graphqlMutation(request: GraphqlRequest[Boolean]): Boolean = {
+  def graphqlMutation(request: GraphqlRequest[Boolean, Boolean]): Boolean = {
     client.graphqlRequest(request).getOrElse(false)
   }
 
