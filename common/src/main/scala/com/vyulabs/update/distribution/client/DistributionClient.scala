@@ -13,15 +13,14 @@ import AdministratorGraphqlCoder._
 import spray.json.JsonReader
 import spray.json.DefaultJsonProtocol._
 
-class DistributionClient(distributionName: DistributionName, client: HttpSyncClient)  {
-
+class DistributionClient(distributionName: DistributionName, client: HttpJavaClient)  {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def graphqlQuery[Response, Item](request: GraphqlRequest[Response, Item])(implicit reader: JsonReader[Response]): Option[Response]= {
+  def graphqlQuery[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
     client.graphqlRequest(request)
   }
 
-  def graphqlMutation(request: GraphqlRequest[Boolean, Boolean]): Boolean = {
+  def graphqlMutation(request: GraphqlRequest[Boolean]): Boolean = {
     client.graphqlRequest(request).getOrElse(false)
   }
 
@@ -32,11 +31,10 @@ class DistributionClient(distributionName: DistributionName, client: HttpSyncCli
     state.instance.service.version
   }
 
-  def waitForServerUpdated(desiredVersion: ClientDistributionVersion): Boolean = {
+  def waitForServerUpdated(desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int): Boolean = {
     log.info(s"Wait for distribution server updated")
-    Thread.sleep(5000)
-    for (_ <- 0 until 25) {
-      if (client.exists(client.makeUrl())) {
+    for (_ <- 0 until waitingTimeoutSec) {
+      if (client.exists(client.makeUrl(pingPath))) {
         getDistributionVersion() match {
           case Some(version) =>
             if (version == desiredVersion) {

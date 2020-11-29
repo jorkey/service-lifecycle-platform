@@ -27,8 +27,8 @@ object GraphqlArgument {
   }
 }
 
-case class GraphqlRequest[Response, ResponseItem](request: String, command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
-                                                 (implicit itemClassTag: ClassTag[ResponseItem], reader: JsonReader[Response]) {
+case class GraphqlRequest[Response](request: String, command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
+                                   (implicit reader: JsonReader[Response]) {
   def encodeRequest(): JsObject = {
     val types = arguments.foldLeft("")((args, arg) => {
       args + (if (!args.isEmpty) ", " else "") + s"$$${arg.name}: ${arg.inputType}!"
@@ -60,21 +60,14 @@ case class GraphqlRequest[Response, ResponseItem](request: String, command: Stri
 }
 
 object GraphqlQuery {
-  def apply[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty)
+  def apply[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
                      (implicit itemClassTag: ClassTag[Response], reader: JsonReader[Response]) = {
-    GraphqlRequest[Response, Response]("query", command, arguments)
-  }
-}
-
-object GraphqlQueryList {
-  def apply[ResponseItem](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
-                         (implicit itemClassTag: ClassTag[ResponseItem], reader: JsonReader[Seq[ResponseItem]]) = {
-    GraphqlRequest[Seq[ResponseItem], ResponseItem]("query", command, arguments, subSelection)
+    GraphqlRequest[Response]("query", command, arguments, subSelection)
   }
 }
 
 object GraphqlMutation {
   def apply(command: String, arguments: Seq[GraphqlArgument] = Seq.empty) = {
-    GraphqlRequest[Boolean, Boolean]("mutation", command, arguments)
+    GraphqlRequest[Boolean]("mutation", command, arguments)
   }
 }

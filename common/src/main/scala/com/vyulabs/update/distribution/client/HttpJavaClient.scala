@@ -13,13 +13,13 @@ import spray.json._
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class HttpSyncClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
+class HttpJavaClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def makeUrl(path: String*): URL = new URL(path.foldLeft(url.toString)((url, path) => url + "/" + path))
 
-  def graphqlRequest[Response, Item](request: GraphqlRequest[Response, Item])
-                                    (implicit reader: JsonReader[Response]): Option[Response]= {
+  def graphqlRequest[Response](request: GraphqlRequest[Response])
+                              (implicit reader: JsonReader[Response]): Option[Response]= {
     executeRequest(makeUrl("graphql"), (connection) => {
       if (url.getUserInfo != null) {
         val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))
@@ -164,8 +164,9 @@ class HttpSyncClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
           log.error(s"Can't open connection to url ${url}, error ${e.toString}")
           return None
       }
+    var result = Option.empty[T]
     try {
-      request(connection)
+      result = request(connection)
     } catch {
       case e: IOException =>
         log.error(s"Error: ${e.toString}")
@@ -174,6 +175,7 @@ class HttpSyncClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
       try {
         val responseCode = connection.getResponseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
+          result = None
           log.error(s"Request: ${connection.getRequestMethod} ${url}")
           try {
             log.error(s"Response message: ${connection.getResponseMessage}")
@@ -192,5 +194,7 @@ class HttpSyncClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
       }
       connection.disconnect()
     }
+
+    result
   }
 }
