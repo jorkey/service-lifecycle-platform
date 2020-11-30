@@ -114,13 +114,13 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   }
 
   def addServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory,
-                     logLines: Seq[LogLine]): Future[Boolean] = {
+                     logs: Seq[LogLine]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceLogs
-      id <- collections.getNextSequence(collection.getName(), logLines.size)
+      id <- collections.getNextSequence(collection.getName(), logs.size)
       result <- collection.insert(
-        logLines.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
-          ServiceLogLineDocument(id - (logLines.size-seq.size) + 1,
+        logs.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
+          ServiceLogLineDocument(id - (logs.size-seq.size) + 1,
             new DistributionServiceLogLine(distributionName, new ServiceLogLine(serviceName, instanceId, directory, line))) })).map(_ => true)
     } yield result
   }

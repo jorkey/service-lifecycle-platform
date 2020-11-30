@@ -41,8 +41,8 @@ object GraphqlSchema {
   val ClientVersionInfoArg = Argument("info", ClientVersionInfoInputType)
   val DeveloperDesiredVersionsArg = Argument("versions", ListInputType(DeveloperDesiredVersionInputType))
   val ClientDesiredVersionsArg = Argument("versions", ListInputType(ClientDesiredVersionInputType))
-  val ServiceStatesArg = Argument("state", ListInputType(ServiceStateInputType))
-  val InstanceServiceStatesArg = Argument("state", ListInputType(InstanceServiceStateInputType))
+  val ServiceStatesArg = Argument("states", ListInputType(ServiceStateInputType))
+  val InstanceServiceStatesArg = Argument("states", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
 

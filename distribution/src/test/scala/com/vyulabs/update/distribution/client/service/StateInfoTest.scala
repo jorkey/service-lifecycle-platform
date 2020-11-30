@@ -29,7 +29,7 @@ class StateInfoTest extends TestEnvironment {
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
           setServiceStates (
-            state: [
+            states: [
               {
                 instanceId: "instance1",
                 serviceName: "service1",

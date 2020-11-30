@@ -13,13 +13,13 @@ import spray.json._
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class HttpJavaClient(val url: URL, connectTimeoutMs: Int, readTimeoutMs: Int) {
+class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def makeUrl(path: String*): URL = new URL(path.foldLeft(url.toString)((url, path) => url + "/" + path))
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])
-                              (implicit reader: JsonReader[Response]): Option[Response]= {
+                              (implicit reader: JsonReader[Response]): Option[Response] = {
     executeRequest(makeUrl("graphql"), (connection) => {
       if (url.getUserInfo != null) {
         val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))

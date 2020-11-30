@@ -13,15 +13,11 @@ import AdministratorGraphqlCoder._
 import spray.json.JsonReader
 import spray.json.DefaultJsonProtocol._
 
-class DistributionClient(distributionName: DistributionName, client: HttpJavaClient)  {
+class JavaDistributionClient(distributionName: DistributionName, client: HttpJavaClient)  {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def graphqlQuery[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
+  def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
     client.graphqlRequest(request)
-  }
-
-  def graphqlMutation(request: GraphqlRequest[Boolean]): Boolean = {
-    client.graphqlRequest(request).getOrElse(false)
   }
 
   def getDistributionVersion(): Option[ClientDistributionVersion] = {

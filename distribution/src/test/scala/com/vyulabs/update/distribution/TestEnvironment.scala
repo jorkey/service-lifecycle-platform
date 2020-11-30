@@ -13,7 +13,7 @@ import distribution.users.{PasswordHash, UserCredentials, UsersCredentials}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.Distribution
-import distribution.config.{DistributionConfig, FaultReportsConfig, VersionHistoryConfig}
+import distribution.config.{FaultReportsConfig, VersionHistoryConfig}
 import distribution.graphql.{Graphql, GraphqlWorkspace}
 import distribution.mongo.{DatabaseCollections, MongoDb}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -22,7 +22,8 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfterAll {
+abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  = VersionHistoryConfig(3),
+                               val faultReportsConfig: FaultReportsConfig = FaultReportsConfig(30000, 3)) extends FlatSpec with Matchers with BeforeAndAfterAll {
   private implicit val system = ActorSystem("Distribution")
   private implicit val materializer: Materializer = ActorMaterializer()
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
@@ -33,8 +34,8 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
 
   val distributionName = "test"
   val adminClientCredentials = BasicHttpCredentials("admin", "admin")
-  val distributionClientCredentials = BasicHttpCredentials("clientDistribution", "clientDistribution")
-  val serviceClientCredentials = BasicHttpCredentials("service", "service")
+  val distributionClientCredentials = BasicHttpCredentials("distribution1", "distribution1")
+  val serviceClientCredentials = BasicHttpCredentials("service1", "service1")
 
   val adminCredentials = UserCredentials(UserRole.Administrator, PasswordHash(adminClientCredentials.password))
   val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
@@ -48,8 +49,6 @@ abstract class TestEnvironment extends FlatSpec with Matchers with BeforeAndAfte
   val mongo = new MongoDb(dbName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, 100)
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
-  val versionHistoryConfig = VersionHistoryConfig(3)
-  val faultReportsConfig = FaultReportsConfig(3000, 3)
 
   val ownServicesDir = Files.createTempDirectory("test").toFile
 

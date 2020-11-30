@@ -86,7 +86,7 @@ class SetStateInfoTest extends TestEnvironment {
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
           setServiceStates (
-            state: [
+            states: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
                   service: { date: $$date, version: "test-1.2.3" }
               }
@@ -100,7 +100,7 @@ class SetStateInfoTest extends TestEnvironment {
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
           setServiceStates (
-            state: [
+            states: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
                   service: { date: $$date, version: "test-1.2.4" }
               }

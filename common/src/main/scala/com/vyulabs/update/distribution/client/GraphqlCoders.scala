@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.client
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.info.{ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DistributionFaultReport, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceState, UserInfo}
-import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
@@ -13,24 +13,24 @@ trait CommonQueriesCoder {
 }
 
 object AdministratorQueriesCoder extends CommonQueriesCoder {
-  def getDeveloperVersionsInfo(serviceName: ServiceName, version: Option[DeveloperVersion]) =
+  def getDeveloperVersionsInfo(serviceName: ServiceName, version: Option[DeveloperDistributionVersion]) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
       "{ serviceName, version, buildInfo { author, branches, date, comment } }")
 
-  def getDeveloperDesiredVersions(serviceName: Option[ServiceName]) =
+  def getDeveloperDesiredVersions(serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("developerDesiredVersions",
-      Seq(GraphqlArgument("service" -> serviceName)).filter(_.value != JsNull),
+      Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 
-  def getClientVersionsInfo(serviceName: ServiceName, version: Option[ClientVersion]) =
+  def getClientVersionsInfo(serviceName: ServiceName, version: Option[ClientDistributionVersion]) =
     GraphqlQuery[Seq[ClientVersionInfo]]("clientVersionsInfo",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
       "{ serviceName, version, buildInfo { author, branches, date, comment }, installInfo { user,  date} }")
 
   def getClientDesiredVersions(serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("clientDesiredVersions",
-      Seq(GraphqlArgument("services" -> serviceNames)).filter(_.value != JsArray.empty),
+      Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 
   def getDistributionClientsInfo() =
@@ -39,7 +39,7 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
 
   def getInstalledDesiredVersions(distributionName: DistributionName, serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",
-      Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("services" -> serviceNames)).filter(_.value != JsArray.empty),
+      Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 
   def getServiceStates(distributionName: Option[DistributionName], serviceName: Option[ServiceName], instanceId: Option[InstanceId], directory: Option[ServiceDirectory]) =
@@ -51,25 +51,25 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
 
   def getFaultReportsInfo(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faultReportsInfo",
-      Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("last" -> last)).filter(_.value != JsNull),
-      "{ distributionName, report { faultId, info { date, instanceId, serviceDirectory, serviceName, serviceProfile, state { date, installDate, startDate, version, updateToVersion, updateError { critical, error }, failuresCount, lastExitCode }, logTail } }}")
+      Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
+      "{ distributionName, report { faultId, info { date, instanceId, serviceDirectory, serviceName, serviceProfile, state { date, installDate, startDate, version, updateToVersion, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 }
 
 object DistributionQueriesCoder extends CommonQueriesCoder {
   def getDistributionClientConfig() =
-    GraphqlQuery[Seq[DistributionClientConfig]]("distributionClientConfig",
+    GraphqlQuery[DistributionClientConfig]("distributionClientConfig",
       subSelection =  "{ installProfile, testDistributionMatch }")
 
   def getDesiredVersions(serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("desiredVersions",
-      Seq(GraphqlArgument("services" -> serviceNames)).filter(_.value != JsArray.empty),
+      Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 }
 
 object ServiceQueriesCoder extends CommonQueriesCoder {
   def getDesiredVersions(serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("desiredVersions",
-      Seq(GraphqlArgument("services" -> serviceNames)).filter(_.value != JsArray.empty),
+      Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
      "{ serviceName, version }")
 }
 
@@ -99,26 +99,26 @@ object DistributionMutationsCoder {
     GraphqlMutation("setTestedVersions", Seq(GraphqlArgument("versions" -> versions)))
 
   def setInstalledDesiredVersions(versions: Seq[ClientDesiredVersion]) =
-    GraphqlMutation("setInstalledDesiredVersions", Seq(GraphqlArgument("versions" -> versions)))
+    GraphqlMutation("setInstalledDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
 
-  def setServiceStates(states: Seq[ServiceState]) =
-    GraphqlMutation("setServiceStates", Seq(GraphqlArgument("states" -> states)))
+  def setServiceStates(states: Seq[InstanceServiceState]) =
+    GraphqlMutation("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
 
   def addFaultReportInfo(fault: ServiceFaultReport) =
-    GraphqlMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault)))
+    GraphqlMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
 }
 
 object ServiceMutationsCoder {
-  def setServiceStates(states: Seq[ServiceState]) =
-    GraphqlMutation("setServiceStates", Seq(GraphqlArgument("states" -> states)))
+  def setServiceStates(states: Seq[InstanceServiceState]) =
+    GraphqlMutation("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
 
-  def addServiceLogs(serviceName: ServiceName, instanceId: InstanceId, serviceDirectory: ServiceDirectory, logLines: Seq[LogLine]) =
+  def addServiceLogs(serviceName: ServiceName, instanceId: InstanceId, serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
     GraphqlMutation("addServiceLogs",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("instance" -> instanceId),
-          GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logLines" -> logLines)))
+          GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")))
 
   def addFaultReportInfo(fault: ServiceFaultReport) =
-    GraphqlMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault)))
+    GraphqlMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
 }
 
 object AdministratorGraphqlCoder {

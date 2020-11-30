@@ -36,7 +36,7 @@ case class GraphqlRequest[Response](request: String, command: String, arguments:
     val args = arguments.foldLeft("")((args, arg) => {
       args + (if (!args.isEmpty) ", " else "") + s"${arg.name}: $$${arg.name}"
     })
-    val query = s"${request} ${command}(${types}) { ${command} (${args}) ${subSelection} }"
+    val query = s"${request} ${command}${group(types)} { ${command} ${group(args)} ${subSelection} }"
     val variables = arguments.foldLeft(Map.empty[String, JsValue])((map, arg) => map + (arg.name -> arg.value))
     JsObject("query" -> JsString(query), "variables" -> variables.toJson)
   }
@@ -56,6 +56,11 @@ case class GraphqlRequest[Response](request: String, command: String, arguments:
             Right(s"Graphql invalid response: ${responseJson}")
         }
     }
+  }
+
+  private def group(arg: String): String = {
+    if (!arg.isEmpty) s"(${arg})"
+    else arg
   }
 }
 
