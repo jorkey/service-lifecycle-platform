@@ -4,9 +4,10 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.vyulabs.update.common.Common.{DistributionName, FaultId}
+import com.vyulabs.update.common.Common.{DistributionName, FaultId, ServiceName}
 import com.vyulabs.update.distribution.DistributionWebPaths._
 import com.vyulabs.update.distribution.client.GraphqlRequest
+import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.slf4j.LoggerFactory
 import spray.json.JsonReader
 
@@ -20,7 +21,11 @@ class AkkaDistributionClient(distributionName: DistributionName, client: HttpAkk
     client.graphqlRequest(request)
   }
 
-  def uploadFaultReport(faultId: FaultId, faultReportFile: File): Future[Unit] = {
-    client.upload(client.makeUrl(loadPathPrefix, faultReportPath, faultId), faultReportFile)
+  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Future[Unit] = {
+    client.download(client.makeUrl(loadPathPrefix, developerVersionImagePath, serviceName, version.toString), file)
+  }
+
+  def uploadFaultReport(faultId: FaultId, file: File): Future[Unit] = {
+    client.upload(client.makeUrl(loadPathPrefix, faultReportPath, faultId), faultReportField, file)
   }
 }

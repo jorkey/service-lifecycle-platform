@@ -2,14 +2,12 @@ package distribution.client
 
 import java.io.{File, IOException}
 import java.net.URL
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.client.RequestBuilding.{Post, addCredentials}
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
+import akka.http.scaladsl.client.RequestBuilding.{Get, Post, addCredentials}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, ContentDispositionTypes, HttpCredentials, `Content-Disposition`}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import akka.util.ByteString
@@ -50,10 +48,10 @@ class HttpAkkaClient(val distributionUrl: URL)
     }
   }
 
-  def upload(url: URL, file: File): Future[Unit] = {
+  def upload(url: URL, fieldName: String, file: File): Future[Unit] = {
     val multipartForm =
       Multipart.FormData(Multipart.FormData.BodyPart(
-        "instances-state",
+        fieldName,
         HttpEntity(ContentTypes.`application/octet-stream`, file.length, FileIO.fromPath(file.toPath)),
         Map("filename" -> file.getName)))
     var post = Post(url.toString, multipartForm)
@@ -62,11 +60,19 @@ class HttpAkkaClient(val distributionUrl: URL)
       response <- Http(system).singleRequest(post)
       entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
     } yield {
-      val response = entity.decodeString("utf8")
-      if (response != "Success") {
-        throw new IOException(s"Unexpected response from server: ${response}")
+      if (response.status != StatusCodes.OK) {
+        throw new IOException(s"Unexpected response from server: ${entity.decodeString("utf8")}")
       }
     }
+  }
+
+  def download(url: URL, file: File): Future[Unit] = {
+    var get = Get(url.toString)
+    getHttpCredentials().foreach(credentials => get = get.addCredentials(credentials))
+    for {
+      response <- Http(system).singleRequest(get)
+      result <- response.entity.dataBytes.runWith(FileIO.toPath(file.toPath)).map(_ => ())
+    } yield result
   }
 
   private def getHttpCredentials(): Option[HttpCredentials] = {

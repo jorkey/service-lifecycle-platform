@@ -22,6 +22,7 @@ object DistributionWebPaths {
   val faultReportPath = "fault-report"
 
   val versionImageField = "version-image"
+  val faultReportField = "fault-report"
 
   def encode(pathSegment: String): String = URLEncoder.encode(pathSegment, "utf8")
 }

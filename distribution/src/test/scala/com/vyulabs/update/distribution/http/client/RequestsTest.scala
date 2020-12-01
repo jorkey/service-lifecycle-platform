@@ -2,6 +2,7 @@ package com.vyulabs.update.distribution.http.client
 
 import java.net.URL
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -17,12 +18,15 @@ import distribution.client.{AkkaDistributionClient, HttpAkkaClient}
 import distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.11.20.
   * Copyright FanDate, Inc.
   */
-class GraphqlRequestsTest extends TestEnvironment with ScalatestRouteTest {
-  behavior of "Own distribution client"
+class RequestsTest extends TestEnvironment with ScalatestRouteTest {
+  behavior of "Own distribution client graphql requests"
 
   val route = distribution.route
 
@@ -39,12 +43,12 @@ class GraphqlRequestsTest extends TestEnvironment with ScalatestRouteTest {
     val serviceStatesCollection = result(collections.State_ServiceStates)
     val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)
 
+    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
+
     result(serviceStatesCollection.insert(ServiceStateDocument(0,
       DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
         ServiceState(date = stateDate, None, None, version =
           Some(ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3))))), None, None, None, None))))))
-
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
   }
 
   it should "execute some requests" in {
@@ -59,8 +63,14 @@ class GraphqlRequestsTest extends TestEnvironment with ScalatestRouteTest {
       result(distribClient.graphqlRequest(distributionQueries.getDistributionClientConfig())))
   }
 
-  it should "return none when request is failed" in {
+  it should "process request errors" in {
     assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
+    assert(try {
+      Await.result(distribClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()), FiniteDuration(15, TimeUnit.SECONDS))
+      false
+    } catch {
+      case _: Exception => true
+    })
   }
 
   it should "execute developer version requests" in {

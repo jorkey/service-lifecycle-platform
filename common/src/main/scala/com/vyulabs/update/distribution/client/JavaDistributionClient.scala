@@ -55,28 +55,15 @@ class JavaDistributionClient(distributionName: DistributionName, client: HttpJav
     client.download(client.makeUrl(loadPathPrefix, clientVersionImagePath, serviceName, version.toString), file)
   }
 
-  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, buildDir: File): Boolean = {
-    uploadVersionImageFromDirectory(client.makeUrl(loadPathPrefix, developerVersionImagePath, serviceName, version.toString), buildDir)
+  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
+    client.upload(client.makeUrl(loadPathPrefix, developerVersionImagePath, serviceName, version.toString), versionImageField, file)
   }
 
-  def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, buildDir: File): Boolean = {
-    uploadVersionImageFromDirectory(client.makeUrl(loadPathPrefix, clientVersionImagePath, serviceName, version.toString), buildDir)
+  def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Boolean = {
+    client.upload(client.makeUrl(loadPathPrefix, clientVersionImagePath, serviceName, version.toString), versionImageField, file)
   }
 
   def uploadFaultReport(faultId: FaultId, faultReportFile: File): Boolean = {
-    client.upload(client.makeUrl(loadPathPrefix, faultReportPath, faultId), versionImageField, faultReportFile)
-  }
-
-  private def uploadVersionImageFromDirectory(url: URL, buildDir: File): Boolean = {
-    val imageTmpFile = File.createTempFile("build", ".zip")
-    try {
-      if (!ZipUtils.zip(imageTmpFile, buildDir)) {
-        log.error("Can't zip build directory")
-        return false
-      }
-      client.upload(url, versionImageField, imageTmpFile)
-    } finally {
-      imageTmpFile.delete()
-    }
+    client.upload(client.makeUrl(loadPathPrefix, faultReportPath, faultId), faultReportField, faultReportFile)
   }
 }

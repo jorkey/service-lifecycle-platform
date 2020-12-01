@@ -143,7 +143,6 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                           }
                         } ~ post {
                           authorize(userInfo.role == UserRole.Service || userInfo.role == UserRole.Distribution) {
-                            val reportDistributionName = if (userInfo.role == UserRole.Distribution) userInfo.name else workspace.distributionName
                             fileUpload("fault-report") {
                               case (fileInfo, byteSource) =>
                                 log.info(s"Receive fault report file from client ${workspace.distributionName}")

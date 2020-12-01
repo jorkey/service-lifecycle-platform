@@ -49,7 +49,7 @@ class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: 
     })
   }
 
-  def upload(url: URL, name: String, file: File): Boolean = {
+  def upload(url: URL, fieldName: String, file: File): Boolean = {
     val input =
       try {
         new FileInputStream(file)
@@ -59,13 +59,13 @@ class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: 
           return false
       }
     try {
-      upload(url, name, file.getName, input)
+      upload(url, fieldName, file.getName, input)
     } finally {
       input.close()
     }
   }
 
-  def upload(url: URL, name: String, destinationFile: String, input: InputStream): Boolean = {
+  def upload(url: URL, fieldName: String, destinationFile: String, input: InputStream): Boolean = {
     if (log.isDebugEnabled) log.debug(s"Upload by url ${url}")
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
@@ -84,7 +84,7 @@ class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: 
 
       writer.append("--" + boundary).append(CRLF)
       writer.append(s"Content-Type: application/octet-stream").append(CRLF)
-      writer.append(f"""Content-Disposition: form-data; name="${name}"; filename="${destinationFile}"""").append(CRLF)
+      writer.append(f"""Content-Disposition: form-data; name="${fieldName}"; filename="${destinationFile}"""").append(CRLF)
       writer.append(CRLF).flush
 
       copy(input, output)
