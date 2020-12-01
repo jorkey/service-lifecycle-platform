@@ -4,14 +4,12 @@ import java.io.File
 import java.net.URL
 
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.vyulabs.update.distribution.DistributionWebPaths.versionImageField
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{HttpJavaClient, JavaDistributionClient}
+import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, SyncDistributionClient}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import distribution.client.{AsyncDistributionClient, AkkaHttpClient}
+import distribution.client.{AkkaHttpClient, AsyncDistributionClient}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 20.11.20.
@@ -25,9 +23,11 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   var server = Http().newServerAt("0.0.0.0", 8083).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
 
-  val adminClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://admin:admin@localhost:8083")))
-  val serviceClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://service1:service1@localhost:8083")))
+  val adminClient = new SyncDistributionClient(distributionName, new JavaHttpClient(new URL("http://admin:admin@localhost:8083")))
+  val serviceClient = new SyncDistributionClient(distributionName, new JavaHttpClient(new URL("http://service1:service1@localhost:8083")))
   val distribClient = new AsyncDistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083")))
+
+  override def dbName = super.dbName + "-client"
 
   it should "upload developer version image" in {
     val file = File.createTempFile("load-test", "zip")

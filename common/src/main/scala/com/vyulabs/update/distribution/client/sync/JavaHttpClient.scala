@@ -1,28 +1,27 @@
-package com.vyulabs.update.distribution.client
+package com.vyulabs.update.distribution.client.sync
 
 import java.io._
 import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-import org.slf4j.{LoggerFactory}
-import spray.json.{JsonReader}
-import spray.json._
+import com.vyulabs.update.distribution.DistributionWebPaths._
+import com.vyulabs.update.distribution.client.graphql.GraphqlRequest
+import org.slf4j.LoggerFactory
+import spray.json.{JsonReader, _}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000) {
+class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000) extends SyncHttpClient {
   implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  def makeUrl(path: String*): URL = new URL(path.foldLeft(url.toString)((url, path) => url + "/" + path))
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])
                               (implicit reader: JsonReader[Response]): Option[Response] = {
-    executeRequest(makeUrl("graphql"), (connection) => {
-      if (url.getUserInfo != null) {
-        val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))
+    executeRequest(new URL(distributionUrl.toString + "/" + graphqlPathPrefix), (connection) => {
+      if (distributionUrl.getUserInfo != null) {
+        val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
         connection.setRequestProperty("Authorization", "Basic " + encoded)
       }
       connection.setRequestProperty("Content-Type", "application/json")
@@ -49,7 +48,7 @@ class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: 
     })
   }
 
-  def upload(url: URL, fieldName: String, file: File): Boolean = {
+  def upload(path: String, fieldName: String, file: File): Boolean = {
     val input =
       try {
         new FileInputStream(file)
@@ -59,19 +58,53 @@ class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: 
           return false
       }
     try {
-      upload(url, fieldName, file.getName, input)
+      upload(path, fieldName, file.getName, input)
     } finally {
       input.close()
     }
   }
 
-  def upload(url: URL, fieldName: String, destinationFile: String, input: InputStream): Boolean = {
-    if (log.isDebugEnabled) log.debug(s"Upload by url ${url}")
+  def download(path: String, file: File): Boolean = {
+    val output =
+      try {
+        new FileOutputStream(file)
+      } catch {
+        case e: IOException =>
+          log.error(s"Can't open ${file}", e)
+          return false
+      }
+    var stat = false
+    try {
+      stat = download(path, output)
+      stat
+    } finally {
+      output.close()
+      if (!stat) {
+        file.delete()
+      }
+    }
+  }
+
+  def exists(path: String): Boolean = {
+    executeRequest(new URL(distributionUrl.toString + "/" + path), (connection: HttpURLConnection) => {
+      connection.setRequestMethod("HEAD")
+      if (distributionUrl.getUserInfo != null) {
+        val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
+        connection.setRequestProperty("Authorization", "Basic " + encoded)
+      }
+      connection.setConnectTimeout(connectTimeoutMs)
+      connection.setReadTimeout(readTimeoutMs)
+      Some()
+    }).isDefined
+  }
+
+  private def upload(path: String, fieldName: String, destinationFile: String, input: InputStream): Boolean = {
+    if (log.isDebugEnabled) log.debug(s"Upload by url ${path}")
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
-    executeRequest(url, (connection: HttpURLConnection) => {
-      if (url.getUserInfo != null) {
-        val encoded = Base64.getEncoder.encodeToString(url.getUserInfo.getBytes(StandardCharsets.UTF_8))
+    executeRequest(new URL(distributionUrl.toString + "/" + loadPathPrefix + "/" + path), (connection: HttpURLConnection) => {
+      if (distributionUrl.getUserInfo != null) {
+        val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
         connection.setRequestProperty("Authorization", "Basic " + encoded)
       }
       connection.setChunkedStreamingMode(0)
@@ -95,51 +128,17 @@ class HttpJavaClient(val url: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: 
     }).isDefined
   }
 
-  def download(url: URL, file: File): Boolean = {
-    val output =
-      try {
-        new FileOutputStream(file)
-      } catch {
-        case e: IOException =>
-          log.error(s"Can't open ${file}", e)
-          return false
-      }
-    var stat = false
-    try {
-      stat = download(url, output)
-      stat
-    } finally {
-      output.close()
-      if (!stat) {
-        file.delete()
-      }
-    }
-  }
-
-  def download(url: URL, output: OutputStream): Boolean = {
-    if (log.isDebugEnabled) log.debug(s"Download by url ${url}")
-    executeRequest(url, (connection: HttpURLConnection) => {
-      if (!url.getUserInfo.isEmpty) {
-        val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
+  private def download(path: String, output: OutputStream): Boolean = {
+    if (log.isDebugEnabled) log.debug(s"Download by url ${path}")
+    executeRequest(new URL(distributionUrl.toString + "/" + loadPathPrefix + "/" + path), (connection: HttpURLConnection) => {
+      if (!distributionUrl.getUserInfo.isEmpty) {
+        val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
         connection.setRequestProperty("Authorization", "Basic " + encoded)
       }
       connection.setConnectTimeout(connectTimeoutMs)
       connection.setReadTimeout(readTimeoutMs)
       val input = connection.getInputStream
       copy(input, output)
-      Some()
-    }).isDefined
-  }
-
-  def exists(url: URL): Boolean = {
-    executeRequest(url, (connection: HttpURLConnection) => {
-      connection.setRequestMethod("HEAD")
-      if (url.getUserInfo != null) {
-        val encoded = Base64.getEncoder.encodeToString((url.getUserInfo).getBytes(StandardCharsets.UTF_8))
-        connection.setRequestProperty("Authorization", "Basic " + encoded)
-      }
-      connection.setConnectTimeout(connectTimeoutMs)
-      connection.setReadTimeout(readTimeoutMs)
       Some()
     }).isDefined
   }

@@ -1,11 +1,11 @@
-package com.vyulabs.update.distribution.client
+package com.vyulabs.update.distribution.client.graphql
 
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ServiceDirectory, ServiceName}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.info.{ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DistributionFaultReport, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceState, UserInfo}
+import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import spray.json._
 import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 trait CommonQueriesCoder {
   def getUserInfo() =

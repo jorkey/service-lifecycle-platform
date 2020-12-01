@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.Common.{FaultId, ServiceName}
 import com.vyulabs.update.distribution.DistributionWebPaths._
-import com.vyulabs.update.distribution.client.GraphqlRequest
+import com.vyulabs.update.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.slf4j.LoggerFactory
 import spray.json.JsonReader
@@ -22,10 +22,10 @@ class AsyncDistributionClient(client: AsyncHttpClient)
   }
 
   def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Future[Unit] = {
-    client.download(loadPathPrefix + "/" + developerVersionImagePath + "/" + serviceName + "/" + version.toString, file)
+    client.download(developerVersionImagePath + "/" + serviceName + "/" + version.toString, file)
   }
 
   def uploadFaultReport(faultId: FaultId, file: File): Future[Unit] = {
-    client.upload(loadPathPrefix + "/" + faultReportPath + "/" + faultId, faultReportField, file)
+    client.upload(faultReportPath + "/" + faultId, faultReportField, file)
   }
 }

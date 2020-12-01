@@ -5,23 +5,17 @@ import java.net.URL
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.client.RequestBuilding.Post
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.{IOResult, Materializer}
 import org.slf4j.LoggerFactory
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart}
-import akka.stream.scaladsl.FileIO
-import akka.util.ByteString
 import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
-import com.vyulabs.update.distribution.DistributionWebPaths.graphqlPathPrefix
-import com.vyulabs.update.distribution.client.{GraphqlArgument, GraphqlMutation}
+import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState}
-import distribution.client.{AsyncDistributionClient, AkkaHttpClient}
+import distribution.client.{AkkaHttpClient, AsyncDistributionClient}
 import distribution.mongo.{DatabaseCollections, ServiceStateDocument}
 import spray.json._
 import spray.json.DefaultJsonProtocol._

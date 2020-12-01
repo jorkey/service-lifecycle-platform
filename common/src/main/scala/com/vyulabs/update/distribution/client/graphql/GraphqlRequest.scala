@@ -1,7 +1,7 @@
-package com.vyulabs.update.distribution.client
+package com.vyulabs.update.distribution.client.graphql
 
-import spray.json._
 import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import scala.reflect.ClassTag
 

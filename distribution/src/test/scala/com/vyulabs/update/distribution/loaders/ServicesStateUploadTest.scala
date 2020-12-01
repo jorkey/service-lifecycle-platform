@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
+import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
 import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.client.{AsyncDistributionClient, AsyncHttpClient}

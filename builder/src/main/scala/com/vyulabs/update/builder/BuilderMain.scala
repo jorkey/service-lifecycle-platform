@@ -4,9 +4,10 @@ import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.client.DistributionInterface
+import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, SyncDistributionClient, SyncHttpClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
 /**
@@ -37,19 +38,19 @@ object BuilderMain extends App {
     Utils.error("No config")
   }
 
-  val distribution = new DistributionInterface(config.distributionUrl)
+  val distributionClient = new SyncDistributionClient(config.distributionName, new JavaHttpClient(config.distributionUrl))
 
   command match {
     case "buildVersion" =>
       val author: String = arguments.getValue("author")
       val serviceName: ServiceName = arguments.getValue("service")
       val comment: Option[String] = arguments.getOptionValue("comment")
-      val version = arguments.getOptionValue("version").map(DeveloperDistributionVersion.parse(_))
+      val version = arguments.getOptionValue("version").map(DeveloperVersion.parse(_))
       val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
       val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
 
       log.info(s"Make new version of service ${serviceName}")
-      val builder = new Builder(distribution, config.adminRepositoryUrl)
+      val builder = new Builder(distributionClient, config.adminRepositoryUrl)
       builder.makeVersion(author, serviceName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
@@ -76,7 +77,7 @@ object BuilderMain extends App {
           System.exit(1)
       }
     case "getDesiredVersions" =>
-      new Builder(distribution, config.adminRepositoryUrl).getDesiredVersions() match {
+      new Builder(distributionClient, config.adminRepositoryUrl).getDesiredVersions() match {
         case Some(versions) =>
           log.info("Desired versions:")
           versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
@@ -103,7 +104,7 @@ object BuilderMain extends App {
         }
       }
 
-      if (!new Builder(distribution, config.adminRepositoryUrl).setDesiredVersions(servicesVersions)) {
+      if (!new Builder(distributionClient, config.adminRepositoryUrl).setDesiredVersions(servicesVersions)) {
         Utils.error("Set desired versions error")
       }
 

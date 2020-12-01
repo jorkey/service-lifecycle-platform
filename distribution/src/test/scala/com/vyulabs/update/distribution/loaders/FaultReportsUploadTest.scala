@@ -8,13 +8,13 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.FaultId
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
 import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import distribution.client.{AsyncDistributionClient, AsyncHttpClient}
 import distribution.loaders.StateUploader
 import distribution.mongo.{FaultReportDocument, UploadStatus, UploadStatusDocument}
 import com.vyulabs.update.distribution.DistributionWebPaths._
+import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import spray.json._
@@ -106,7 +106,7 @@ class FaultReportsUploadTest extends TestEnvironment {
   def testUploadAction(action: () => Unit, faultId: FaultId, file: String): Unit = {
     val uploadPromise = this.uploadPromise
     action()
-    assertResult(FileUploadRequest(loadPathPrefix + "/" + faultReportPath + "/" + faultId, "fault-report",
+    assertResult(FileUploadRequest(faultReportPath + "/" + faultId, "fault-report",
       new File(distributionDir.directory, file)))(result(uploadPromise.future))
   }
 
@@ -114,7 +114,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     val uploadPromise = this.uploadPromise
     val graphqlPromise = this.graphqlPromise
     action()
-    assertResult(FileUploadRequest(loadPathPrefix + "/" + faultReportPath + "/" + faultId, "fault-report",
+    assertResult(FileUploadRequest(faultReportPath + "/" + faultId, "fault-report",
       new File(distributionDir.directory, file)))(result(uploadPromise.future))
     val graphqlRequest = result(graphqlPromise.future)
     assertResult(GraphqlMutation("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.report.toJson))))(graphqlRequest)

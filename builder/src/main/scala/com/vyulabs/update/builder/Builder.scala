@@ -8,30 +8,31 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.distribution.{AdminRepository, GitRepositoryUtils}
 import com.vyulabs.update.builder.config.SourcesConfig
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
-import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
 import com.vyulabs.update.info.BuildInfo
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 import com.vyulabs.update.config.InstallConfig._
-import com.vyulabs.update.distribution.client.DistributionInterface
+import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
+import com.vyulabs.update.distribution.client.sync.SyncDistributionClient
 
-class Builder(distribution: DistributionInterface, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
+class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
 
   def makeVersion(author: String, serviceName: ServiceName, comment: Option[String],
-                  newVersion: Option[DeveloperDistributionVersion], sourceBranches: Seq[String])
-                 (implicit log: Logger): Option[DeveloperDistributionVersion] = {
+                  newVersion: Option[DeveloperVersion], sourceBranches: Seq[String])
+                 (implicit log: Logger): Option[DeveloperVersion] = {
     val servicesDir = new File("services")
     val serviceDir = new File(servicesDir, serviceName)
     if (!serviceDir.exists() && !serviceDir.mkdirs()) {
       log.error(s"Can't create directory ${serviceDir}")
     }
-    IoUtils.synchronize[Option[DeveloperDistributionVersion]](new File(serviceDir, builderLockFile), false,
+    IoUtils.synchronize[Option[DeveloperVersion]](new File(serviceDir, builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
           log.info(s"Another builder creates version for ${serviceName} - wait ...")
@@ -50,7 +51,7 @@ class Builder(distribution: DistributionInterface, adminRepositoryUrl: URI)(impl
           Utils.error(s"Source repositories of service ${serviceName} is not specified.")
         }
 
-        var generatedVersion = Option.empty[DeveloperDistributionVersion]
+        var generatedVersion = Option.empty[DeveloperVersion]
         try {
           val sourceDir = new File(serviceDir, "source")
           val buildDir = new File(serviceDir, "build")
@@ -63,11 +64,11 @@ class Builder(distribution: DistributionInterface, adminRepositoryUrl: URI)(impl
           log.info("Get existing versions")
           val version = newVersion match {
             case Some(version) =>
-              /* TODO graphql
-              if (directory.isVersionExists(serviceName, version)) {
+              if (distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName,
+                  Some(DeveloperDistributionVersion(distributionClient.distributionName, version)))).getOrElse(Seq.empty).size != 0) {
                 log.error(s"Version ${version} already exists")
                 return None
-              }*/
+              }
               version
             case None =>
               /* TOFO graphql

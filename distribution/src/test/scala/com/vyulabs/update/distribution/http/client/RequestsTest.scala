@@ -8,13 +8,13 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.AdministratorGraphqlCoder._
-import com.vyulabs.update.distribution.client.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
-import com.vyulabs.update.distribution.client.ServiceGraphqlCoder._
-import com.vyulabs.update.distribution.client.{HttpJavaClient, JavaDistributionClient}
+import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
+import com.vyulabs.update.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
+import com.vyulabs.update.distribution.client.graphql.ServiceGraphqlCoder._
+import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, SyncDistributionClient}
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import distribution.client.{AsyncDistributionClient, AkkaHttpClient}
+import distribution.client.{AkkaHttpClient, AsyncDistributionClient}
 import distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
@@ -33,11 +33,13 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   var server = Http().newServerAt("0.0.0.0", 8081).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
 
-  val adminClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://admin:admin@localhost:8081")))
-  val serviceClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://service1:service1@localhost:8081")))
+  val adminClient = new SyncDistributionClient(distributionName, new JavaHttpClient(new URL("http://admin:admin@localhost:8081")))
+  val serviceClient = new SyncDistributionClient(distributionName, new JavaHttpClient(new URL("http://service1:service1@localhost:8081")))
   val distribClient = new AsyncDistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081")))
 
   val stateDate = new Date()
+
+  override def dbName = super.dbName + "-client"
 
   override def beforeAll() = {
     val serviceStatesCollection = result(collections.State_ServiceStates)
