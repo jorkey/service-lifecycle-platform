@@ -1,17 +1,20 @@
 package com.vyulabs.update.distribution.loaders
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.util.Date
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.client.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
 import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
+import distribution.client.{AsyncDistributionClient, AsyncHttpClient}
 import distribution.loaders.StateUploader
 import distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
-import spray.json.{JsValue, enrichAny}
+import spray.json.{JsonReader, enrichAny}
+import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
@@ -22,22 +25,31 @@ class ServicesStateUploadTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  case class GraphqlMutationRequest(command: String, arguments: Map[String, JsValue])
+  var promise = Promise[GraphqlRequest[Boolean]]
+  var result = Future.successful[Boolean](true)
 
-  var promise = Promise[GraphqlMutationRequest]
-  var result = Future.successful()
+  val httpClient = new AsyncHttpClient {
+    override def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Response] = {
+      synchronized {
+        promise.success(request.asInstanceOf[GraphqlRequest[Boolean]])
+        promise = Promise[GraphqlRequest[Boolean]]
+        result.asInstanceOf[Future[Response]]
+      }
+    }
 
-  def graphqlMutationRequest(command: String, arguments: Map[String, JsValue]): Future[Unit] = {
-    synchronized {
-      promise.success(GraphqlMutationRequest(command, arguments))
-      promise = Promise[GraphqlMutationRequest]
-      result
+    override def upload(path: String, fieldName: String, file: File): Future[Unit] = {
+      throw new NotImplementedError()
+    }
+
+    override def download(path: String, file: File): Future[Unit] = {
+      throw new NotImplementedError()
     }
   }
 
+  val distributionClient = new AsyncDistributionClient(httpClient)
+
   it should "upload service states" in {
-    val uploader = new StateUploader("distribution", collections, distributionDir, 1, graphqlMutationRequest,
-      (_, _) => Future.failed(new IOException("Not expected")))
+    val uploader = new StateUploader("distribution", collections, distributionDir, 1, distributionClient)
     uploader.start()
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
@@ -62,9 +74,8 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   it should "try to upload service states again after failure" in {
-    val uploader = new StateUploader("distribution", collections, distributionDir, 2, graphqlMutationRequest,
-      (_, _) => Future.failed(new IOException("Not expected")))
-    promise = Promise[GraphqlMutationRequest]
+    val uploader = new StateUploader("distribution", collections, distributionDir, 2, distributionClient)
+    promise = Promise[GraphqlRequest[Boolean]]
     result = Future.failed(new IOException("upload error"))
     uploader.start()
 
@@ -80,7 +91,7 @@ class ServicesStateUploadTest extends TestEnvironment {
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
     testAction(() => result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))).flatten), Seq(state1, state2))
 
-    testAction(() => synchronized { result = Future.successful() }, Seq(state1, state2))
+    testAction(() => synchronized { result = Future.successful[Boolean](true) }, Seq(state1, state2))
 
     val state3 = DistributionServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
@@ -100,7 +111,6 @@ class ServicesStateUploadTest extends TestEnvironment {
     val promise = this.promise
     action()
     val request = result(promise.future)
-    assertResult("setServiceStates")(request.command)
-    assertResult(Map("state" -> states.toJson))(request.arguments)
+    assertResult(GraphqlMutation("setServiceStates", Seq(GraphqlArgument("state" -> states.toJson))))(request)
   }
 }

@@ -6,7 +6,6 @@ import java.net.URL
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, FaultId, ServiceName}
 import com.vyulabs.update.distribution.DistributionWebPaths._
-import com.vyulabs.update.utils.ZipUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
 import AdministratorGraphqlCoder._

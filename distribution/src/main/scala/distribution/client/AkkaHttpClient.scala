@@ -5,8 +5,8 @@ import java.net.URL
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.client.RequestBuilding.{Get, Post, addCredentials}
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, ContentDispositionTypes, HttpCredentials, `Content-Disposition`}
+import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -18,11 +18,9 @@ import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class HttpAkkaClient(val distributionUrl: URL)
-                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  {
+class AkkaHttpClient(distributionUrl: URL)
+                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends AsyncHttpClient {
   implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  def makeUrl(path: String*): URL = new URL(path.foldLeft(distributionUrl.toString)((url, path) => url + "/" + path))
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])
                               (implicit reader: JsonReader[Response]): Future[Response] = {
@@ -48,13 +46,13 @@ class HttpAkkaClient(val distributionUrl: URL)
     }
   }
 
-  def upload(url: URL, fieldName: String, file: File): Future[Unit] = {
+  def upload(path: String, fieldName: String, file: File): Future[Unit] = {
     val multipartForm =
       Multipart.FormData(Multipart.FormData.BodyPart(
         fieldName,
         HttpEntity(ContentTypes.`application/octet-stream`, file.length, FileIO.fromPath(file.toPath)),
         Map("filename" -> file.getName)))
-    var post = Post(url.toString, multipartForm)
+    var post = Post(distributionUrl.toString + "/" + path, multipartForm)
     getHttpCredentials().foreach(credentials => post = post.addCredentials(credentials))
     for {
       response <- Http(system).singleRequest(post)
@@ -66,8 +64,8 @@ class HttpAkkaClient(val distributionUrl: URL)
     }
   }
 
-  def download(url: URL, file: File): Future[Unit] = {
-    var get = Get(url.toString)
+  def download(path: String, file: File): Future[Unit] = {
+    var get = Get(distributionUrl.toString + "/" + path)
     getHttpCredentials().foreach(credentials => get = get.addCredentials(credentials))
     for {
       response <- Http(system).singleRequest(get)

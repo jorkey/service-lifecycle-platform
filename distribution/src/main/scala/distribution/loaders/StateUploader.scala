@@ -18,8 +18,10 @@ import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
 import com.vyulabs.update.distribution.DistributionWebPaths.graphqlPathPrefix
+import com.vyulabs.update.distribution.client.{GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState}
+import distribution.client.{AsyncDistributionClient, AkkaHttpClient}
 import distribution.mongo.{DatabaseCollections, ServiceStateDocument}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -34,9 +36,7 @@ import scala.util.{Failure, Success}
   */
 
 class StateUploader(distributionName: DistributionName,
-                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int,
-                    graphqlMutationRequest: (String, Map[String, JsValue]) => Future[Unit],
-                    fileUploadRequest: (String, File) => Future[Unit])
+                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, client: AsyncDistributionClient)
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -117,7 +117,7 @@ class StateUploader(distributionName: DistributionName,
       newStates <- Future(newStatesDocuments.map(_.state))
     } yield {
       if (!newStates.isEmpty) {
-        graphqlMutationRequest("setServiceStates", Map("state" -> newStates.toJson)).
+        client.graphqlRequest(GraphqlMutation("setServiceStates", Seq(GraphqlArgument("state" -> newStates.toJson)))).
           onComplete {
             case Success(_) =>
               setLastUploadSequence(serviceStates.getName(), newStatesDocuments.last.sequence)
@@ -142,8 +142,8 @@ class StateUploader(distributionName: DistributionName,
         Future.sequence(newReports.filter(_.distributionName == distributionName).map(report => {
           val file = distributionDirectory.getFaultReportFile(report.report.faultId)
           val infoUpload = for {
-            _ <- fileUploadRequest("uploadFaultReport", file)
-            _ <- graphqlMutationRequest("addServiceFaultReportInfo", Map("fault" -> report.report.toJson))
+            _ <- client.uploadFaultReport(report.report.faultId, file)
+            _ <- client.graphqlRequest(GraphqlMutation("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.report.toJson))))
           } yield {}
           infoUpload.
             andThen {
@@ -189,38 +189,6 @@ object StateUploader {
   def apply(distributionName: DistributionName,
             collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, distributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
-
-    def graphqlMutationRequest(command: String, arguments: Map[String, JsValue]): Future[Unit] = {
-      for {
-        response <- Http(system).singleRequest(
-          Post(distributionUrl.toString + "/" + graphqlPathPrefix,
-            HttpEntity(ContentTypes.`application/json`, s"mutation { ${command} ( ${arguments.toJson} ) }".getBytes())))
-        entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
-      } yield {
-        val response = entity.decodeString("utf8")
-        if (response != s"""{"data":{"${command}":true}}""") {
-          throw new IOException(s"Unexpected response from server: ${response}")
-        }
-      }
-    }
-
-    def fileUploadRequest(path: String, file: File): Future[Unit] = {
-      val multipartForm =
-        Multipart.FormData(Multipart.FormData.BodyPart(
-          "instances-state",
-          HttpEntity(ContentTypes.`application/octet-stream`, file.length, FileIO.fromPath(file.toPath)),
-          Map("filename" -> file.getName)))
-      for {
-        response <- Http(system).singleRequest(Post(distributionUrl.toString + "/" + path, multipartForm))
-        entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
-      } yield {
-        val response = entity.decodeString("utf8")
-        if (response != "Success") {
-          throw new IOException(s"Unexpected response from server: ${response}")
-        }
-      }
-    }
-
-    new StateUploader(distributionName, collections, distributionDirectory, uploadIntervalSec, graphqlMutationRequest, fileUploadRequest)
+    new StateUploader(distributionName, collections, distributionDirectory, uploadIntervalSec, new AsyncDistributionClient(new AkkaHttpClient(distributionUrl)))
   }
 }

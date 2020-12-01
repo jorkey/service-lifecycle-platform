@@ -11,7 +11,7 @@ import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.{HttpJavaClient, JavaDistributionClient}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import distribution.client.{AkkaDistributionClient, HttpAkkaClient}
+import distribution.client.{AsyncDistributionClient, AkkaHttpClient}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 20.11.20.
@@ -27,7 +27,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
 
   val adminClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://admin:admin@localhost:8083")))
   val serviceClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://service1:service1@localhost:8083")))
-  val distribClient = new AkkaDistributionClient(distributionName, new HttpAkkaClient(new URL("http://distribution1:distribution1@localhost:8083")))
+  val distribClient = new AsyncDistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083")))
 
   it should "upload developer version image" in {
     val file = File.createTempFile("load-test", "zip")

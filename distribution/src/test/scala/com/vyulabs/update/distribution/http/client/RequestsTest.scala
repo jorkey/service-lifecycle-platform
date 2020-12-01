@@ -14,7 +14,7 @@ import com.vyulabs.update.distribution.client.ServiceGraphqlCoder._
 import com.vyulabs.update.distribution.client.{HttpJavaClient, JavaDistributionClient}
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import distribution.client.{AkkaDistributionClient, HttpAkkaClient}
+import distribution.client.{AsyncDistributionClient, AkkaHttpClient}
 import distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
@@ -35,7 +35,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   val adminClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://admin:admin@localhost:8081")))
   val serviceClient = new JavaDistributionClient(distributionName, new HttpJavaClient(new URL("http://service1:service1@localhost:8081")))
-  val distribClient = new AkkaDistributionClient(distributionName, new HttpAkkaClient(new URL("http://distribution1:distribution1@localhost:8081")))
+  val distribClient = new AsyncDistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081")))
 
   val stateDate = new Date()
 
