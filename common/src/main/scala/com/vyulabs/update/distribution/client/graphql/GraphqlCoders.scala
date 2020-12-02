@@ -18,7 +18,7 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
       "{ serviceName, version, buildInfo { author, branches, date, comment } }")
 
-  def getDeveloperDesiredVersions(serviceNames: Seq[ServiceName]) =
+  def getDeveloperDesiredVersions(serviceNames: Seq[ServiceName] = Seq.empty) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("developerDesiredVersions",
       Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")

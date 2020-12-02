@@ -11,7 +11,7 @@ import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.UpdateConfig
-import com.vyulabs.update.info.BuildInfo
+import com.vyulabs.update.info.{BuildInfo, DeveloperDesiredVersion, DeveloperVersionInfo}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.IoUtils.copyFile
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
@@ -72,7 +72,7 @@ class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: UR
               version
             case None =>
               distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName))) match {
-                case Some(versions) if (!versions.isEmpty) =>
+                case Some(versions) if !versions.isEmpty =>
                   val lastVersion = versions.map(_.version.version).sorted(DeveloperVersion.ordering).last
                   log.info(s"Last version is ${lastVersion}")
                   lastVersion.next()
@@ -166,10 +166,16 @@ class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: UR
 
           log.info(s"Upload version ${version} to distribution directory")
           val buildVersionInfo = BuildInfo(author, sourceBranches, new Date(), comment)
-          /* TODO graphql
-          if (!directory.uploadVersion(serviceName, version, buildVersionInfo, buildDir)) {
+          val developerDistributionVersion = DeveloperDistributionVersion(distributionClient.distributionName, version)
+          if (!distributionClient.uploadDeveloperVersionImage(serviceName, developerDistributionVersion, buildDir)) {
+            log.error("Uploading version image error")
             return None
-          }*/
+          }
+          if (!distributionClient.graphqlRequest(
+              administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo(serviceName, developerDistributionVersion, buildVersionInfo))).getOrElse(false)) {
+            log.error("Adding version info error")
+            return None
+          }
 
           log.info(s"Mark source repositories with version ${version}")
           for (repository <- sourceRepositories) {
@@ -198,13 +204,11 @@ class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: UR
   }
 
   def getDesiredVersions()(implicit log: Logger): Option[Map[ServiceName, DeveloperDistributionVersion]] = {
-    // TODO graphql
-    //directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_))
-    null
+    distributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions())
+      .map(_.foldLeft(Map.empty[ServiceName, DeveloperDistributionVersion])((map, version) => { map + (version.serviceName -> version.version) }))
   }
 
-  def setDesiredVersions(servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
-                        (implicit log: Logger): Boolean = {
+  def setDesiredVersions(servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])(implicit log: Logger): Boolean = {
     log.info(s"Upload desired versions ${servicesVersions}")
     IoUtils.synchronize[Boolean](new File(".", builderLockFile), false,
       (attempt, _) => {
@@ -217,22 +221,21 @@ class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: UR
       () => {
         var completed = false
         try {
-          // TODO graphql
-/*
-          var desiredVersionsMap = directory.downloadDesiredVersions(clientName).map(DesiredVersions.toMap(_)).getOrElse(Map.empty)
+          var desiredVersionsMap = getDesiredVersions().getOrElse(Map.empty)
           servicesVersions.foreach {
             case (serviceName, Some(version)) =>
               desiredVersionsMap += (serviceName -> version)
             case (serviceName, None) =>
               desiredVersionsMap -= serviceName
           }
-          if (!directory.uploadDesiredVersions(clientName, DesiredVersions.fromMap(desiredVersionsMap))) {
+          val desiredVersionsList = desiredVersionsMap.foldLeft(Seq.empty[DeveloperDesiredVersion])(
+            (list, entry) => list :+ DeveloperDesiredVersion(entry._1, entry._2)).sortBy(_.serviceName)
+          if (!distributionClient.graphqlRequest(administratorMutations.setDeveloperDesiredVersions(desiredVersionsList)).getOrElse(false)) {
             log.error("Can't update desired versions")
-            return false
           }
+          return false
           log.info(s"Desired versions are successfully uploaded")
           completed = true
-*/
         } finally {
           /* TODO graphql
           adminRepository.processLogFile(completed)

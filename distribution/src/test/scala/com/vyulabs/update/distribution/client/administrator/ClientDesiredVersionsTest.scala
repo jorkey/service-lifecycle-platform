@@ -6,7 +6,6 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{UserInfo, UserRole}
-import distribution.config.VersionHistoryConfig
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.{DistributionClientInfoDocument, DistributionClientProfileDocument}
 
