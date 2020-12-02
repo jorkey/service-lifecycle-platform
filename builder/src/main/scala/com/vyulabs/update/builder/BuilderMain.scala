@@ -1,10 +1,10 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.client.DistributionInterface
-import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, SyncDistributionClient, SyncHttpClient}
+import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
@@ -54,28 +54,13 @@ object BuilderMain extends App {
       builder.makeVersion(author, serviceName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
-            /* TODO graphql
-            val waitFor = (if (serviceName == Common.DistributionServiceName) {
-              Some(developerDistribution.getDistributionVersionPath)
-            } else if (serviceName == Common.ScriptsServiceName) {
-              Some(developerDistribution.getScriptsVersionPath)
-            } else {
-              None
-            }).map(path => (path, developerDistribution.getServerVersion(path)))
-              .filter { case (_, v) => v.isDefined && v.get.client == version.client }
-              .map(_._1)
-            builder.setDesiredVersions(version.client, Map(serviceName -> Some(version)))
-            waitFor.foreach(path => {
-              log.info("Update distribution server")
-              if (!developerDistribution.waitForServerUpdated(path, version)) {
-                log.error("Can't update distribution server")
-              }
-            })*/
+            builder.setDesiredVersions(Map(serviceName -> Some(DeveloperDistributionVersion(config.distributionName, version))))
           }
         case None =>
           log.error("Make version error")
           System.exit(1)
       }
+
     case "getDesiredVersions" =>
       new Builder(distributionClient, config.adminRepositoryUrl).getDesiredVersions() match {
         case Some(versions) =>
@@ -84,6 +69,7 @@ object BuilderMain extends App {
         case None =>
           Utils.error("Get desired versions error")
       }
+
     case "setDesiredVersions" =>
       var servicesVersions = Map.empty[ServiceName, Option[DeveloperDistributionVersion]]
 
@@ -108,31 +94,6 @@ object BuilderMain extends App {
         Utils.error("Set desired versions error")
       }
 
-      /* TODO graphql
-      servicesVersions.get(Common.DistributionServiceName) match {
-        case Some(Some(distributionVersion)) =>
-          log.info("Update distribution server")
-          for (version <- developerDistribution.getServerVersion(developerDistribution.getDistributionVersionPath)) {
-            if (version.client == distributionVersion.client) {
-              if (!developerDistribution.waitForServerUpdated(developerDistribution.getDistributionVersionPath, distributionVersion)) {
-                log.error("Can't update distribution server")
-              }
-            }
-          }
-        case _ =>
-          servicesVersions.get(Common.ScriptsServiceName) match {
-            case Some(Some(scriptsVersion)) =>
-              log.info("Update distribution server scripts")
-              for (version <- developerDistribution.getServerVersion(developerDistribution.getScriptsVersionPath)) {
-                if (version.client == scriptsVersion.client) {
-                  if (!developerDistribution.waitForServerUpdated(developerDistribution.getScriptsVersionPath, scriptsVersion)) {
-                    log.error("Can't update distribution server scripts")
-                  }
-                }
-              }
-            case _ =>
-          }
-      }*/
     case command =>
       Utils.error(s"Invalid command ${command}\n${usage()}")
   }

@@ -64,25 +64,22 @@ class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: UR
           log.info("Get existing versions")
           val version = newVersion match {
             case Some(version) =>
-              if (distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName,
+              if (distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, None,
                   Some(DeveloperDistributionVersion(distributionClient.distributionName, version)))).getOrElse(Seq.empty).size != 0) {
                 log.error(s"Version ${version} already exists")
                 return None
               }
               version
             case None =>
-              /* TOFO graphql
-              directory.downloadVersionsInfo(clientName, serviceName) match {
-                case Some(versions) if (!versions.versions.isEmpty) =>
-                  val lastVersion = versions.versions.sortBy(_.version)(BuildVersion.ordering).last
+              distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName))) match {
+                case Some(versions) if (!versions.isEmpty) =>
+                  val lastVersion = versions.map(_.version.version).sorted(DeveloperVersion.ordering).last
                   log.info(s"Last version is ${lastVersion}")
-                  lastVersion.version.next()
+                  lastVersion.next()
                 case _ =>
                   log.error("No existing versions")
-                  BuildVersion(clientName, Seq(1, 0, 0))
+                  DeveloperVersion(Seq(1, 0, 0))
               }
-               */
-              null
           }
 
           log.info(s"Generate version ${version}")

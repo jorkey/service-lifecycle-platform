@@ -7,9 +7,7 @@ import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, IndexOptions,
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
-import org.bson.codecs.{Codec, DecoderContext, EncoderContext}
-import org.bson.{BsonReader, BsonWriter}
+import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
 import org.slf4j.LoggerFactory
@@ -19,35 +17,13 @@ import scala.concurrent.{ExecutionContext, Future}
 class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  class DeveloperDistributionVersionCodec extends Codec[DeveloperDistributionVersion] {
-    override def encode(writer: BsonWriter, value: DeveloperDistributionVersion, encoderContext: EncoderContext): Unit = {
-      writer.writeString(value.toString)
-    }
-
-    override def decode(reader: BsonReader, decoderContext: DecoderContext): DeveloperDistributionVersion = {
-      DeveloperDistributionVersion.parse(reader.readString())
-    }
-
-    override def getEncoderClass: Class[DeveloperDistributionVersion] = classOf[DeveloperDistributionVersion]
-  }
-
-  class ClientDistributionVersionCodec extends Codec[ClientDistributionVersion] {
-    override def encode(writer: BsonWriter, value: ClientDistributionVersion, encoderContext: EncoderContext): Unit = {
-      writer.writeString(value.toString)
-    }
-
-    override def decode(reader: BsonReader, decoderContext: DecoderContext): ClientDistributionVersion = {
-      ClientDistributionVersion.parse(reader.readString())
-    }
-
-    override def getEncoderClass: Class[ClientDistributionVersion] = classOf[ClientDistributionVersion]
-  }
-
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
     classOf[ClientVersion],
+    classOf[ClientDistributionVersion],
     classOf[DeveloperVersion],
+    classOf[DeveloperDistributionVersion],
     classOf[BuildInfo],
     classOf[DeveloperVersionInfoDocument],
     classOf[ClientVersionInfo],
@@ -80,8 +56,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     classOf[FaultInfo],
     classOf[UploadStatus],
     classOf[UploadStatusDocument],
-    classOf[ServiceFaultReport],
-    fromCodecs(new DeveloperDistributionVersionCodec(), new ClientDistributionVersionCodec())))
+    classOf[ServiceFaultReport]))
 
   val Sequences = for {
     collection <- db.getOrCreateCollection[SequenceDocument]("_.sequences")

@@ -1,6 +1,6 @@
 package com.vyulabs.update.info
 
-import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.common.Common.{ServiceName}
 import com.vyulabs.update.version.{ClientDistributionVersion}
 import spray.json.DefaultJsonProtocol
 

@@ -5,7 +5,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, InstallInfo}
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import distribution.config.VersionHistoryConfig
 import distribution.mongo.{ClientDesiredVersionsDocument, ClientVersionInfoDocument, DatabaseCollections, DeveloperDesiredVersionsDocument}
 import org.bson.BsonDocument
@@ -32,26 +32,28 @@ trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport 
         val document = ClientVersionInfoDocument(id, versionInfo)
         collection.insert(document).map(_ => true)
       }
-      _ <- removeObsoleteVersions(versionInfo.serviceName)
+      _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
     } yield result
   }
 
-  def getClientVersionsInfo(serviceName: ServiceName, version: Option[ClientDistributionVersion] = None): Future[Seq[ClientVersionInfo]] = {
+  def getClientVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
+                            version: Option[ClientDistributionVersion] = None): Future[Seq[ClientVersionInfo]] = {
     val serviceArg = Filters.eq("info.serviceName", serviceName)
-    val versionArg = version.map { version => Filters.eq("info.version", version.toString) }
-    val filters = Filters.and((Seq(serviceArg) ++ versionArg).asJava)
+    val distributionArg = distributionName.map { distributionName => Filters.eq("info.version.distributionName", distributionName ) }
+    val versionArg = version.map { version => Filters.eq("info.version", version) }
+    val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     for {
       collection <- collections.Client_VersionsInfo
       info <- collection.find(filters).map(_.map(_.info))
     } yield info
   }
 
-  private def removeObsoleteVersions(serviceName: ServiceName): Future[Unit] = {
+  private def removeObsoleteVersions(distributionName: DistributionName, serviceName: ServiceName): Future[Unit] = {
     for {
-      versions <- getClientVersionsInfo(serviceName)
-      busyVersions <- getBusyVersions(serviceName)
+      versions <- getClientVersionsInfo(serviceName, distributionName = Some(distributionName))
+      busyVersions <- getBusyVersions(distributionName, serviceName)
       _ <- {
-        val notUsedVersions = versions.filterNot(version => busyVersions.contains(version.version))
+        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > versionHistoryConfig.maxSize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - versionHistoryConfig.maxSize).map { version =>
@@ -68,7 +70,7 @@ trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport 
     log.info(s"Remove client version ${version} of service ${serviceName}")
     val filters = Filters.and(
       Filters.eq("info.serviceName", serviceName),
-      Filters.eq("info.version", version.toString))
+      Filters.eq("info.version", version))
     dir.getClientVersionImageFile(serviceName, version).delete()
     for {
       collection <- collections.Client_VersionsInfo
@@ -106,7 +108,7 @@ trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport 
     } yield profile
   }
 
-  private def getBusyVersions(serviceName: ServiceName): Future[Set[ClientDistributionVersion]] = {
-    getClientDesiredVersion(serviceName).map(_.toSet)
+  private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName): Future[Set[ClientVersion]] = {
+    getClientDesiredVersion(serviceName).map(_.toSet.filter(_.distributionName == distributionName).map(_.version))
   }
 }

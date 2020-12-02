@@ -26,13 +26,14 @@ class ClientVersionsInfoTest extends TestEnvironment {
   val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
   it should "add/get client version info" in {
-    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.1.1"))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.1.1_1"))
+    addClientVersionInfo("service1", ClientDistributionVersion.parse("distribution1-2.1.3_1"))
 
     assertResult((OK,
-      ("""{"data":{"clientVersionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
+      ("""{"data":{"clientVersionsInfo":[{"version":"test-1.1.1_1","buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          clientVersionsInfo (service: "service1", version: "test-1.1.1") {
+          clientVersionsInfo (service: "service1", version: "test-1.1.1_1") {
             version
             buildInfo {
               author
@@ -45,7 +46,25 @@ class ClientVersionsInfoTest extends TestEnvironment {
       """
     )))
 
-    removeClientVersion("service1", ClientDistributionVersion.parse("test-1.1.1"))
+    assertResult((OK,
+      ("""{"data":{"clientVersionsInfo":[{"version":"distribution1-2.1.3_1","buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          clientVersionsInfo (service: "service1", distribution: "distribution1") {
+            version
+            buildInfo {
+              author
+            }
+            installInfo {
+              user
+            }
+          }
+        }
+      """
+      )))
+
+    removeClientVersion("service1", ClientDistributionVersion.parse("test-1.1.1_1"))
+    removeClientVersion("service1", ClientDistributionVersion.parse("distribution1-2.1.3_1"))
   }
 
   it should "remove obsolete client versions" in {

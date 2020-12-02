@@ -2,8 +2,8 @@ package com.vyulabs.update.info
 
 import java.util.Date
 
-import com.vyulabs.update.common.Common.{ServiceName}
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol
 
 case class BuildInfo(author: String, branches: Seq[String], date: Date, comment: Option[String])

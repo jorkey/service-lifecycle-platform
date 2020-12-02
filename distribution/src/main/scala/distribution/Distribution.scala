@@ -109,7 +109,8 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                       path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                         get {
                           authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Distribution) {
-                            getFromFile(workspace.dir.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)))
+                            getFromFile(workspace.dir.getDeveloperVersionImageFile(service,
+                              DeveloperDistributionVersion.parse(version)))
                           }
                         } ~ post {
                           authorize(userInfo.role == UserRole.Administrator) {

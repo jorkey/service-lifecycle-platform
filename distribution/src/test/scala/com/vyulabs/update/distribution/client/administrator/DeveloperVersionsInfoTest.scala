@@ -27,6 +27,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
 
   it should "add/get/remove developer version info" in {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("distribution1", DeveloperVersion(Seq(2, 1, 3))))
 
     assertResult((OK,
       ("""{"data":{"developerVersionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"}}]}}""").parseJson))(
@@ -42,7 +43,22 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       """
     )))
 
+    assertResult((OK,
+      ("""{"data":{"developerVersionsInfo":[{"version":"distribution1-2.1.3","buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          developerVersionsInfo (service: "service1", distribution: "distribution1") {
+            version
+            buildInfo {
+              author
+            }
+          }
+        }
+      """
+      )))
+
     removeDeveloperVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("distribution1", DeveloperVersion(Seq(2, 1, 3))))
   }
 
   it should "get developer versions info" in {

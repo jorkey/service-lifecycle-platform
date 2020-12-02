@@ -163,7 +163,9 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
                                       developerDistribution: DistributionInterface,
                                       desiredVersions: Map[ServiceName, DeveloperDistributionVersion],
                                       distributionServicePort: Int): Boolean = {
-    ZipUtils.unzip(clientDistribution.getDeveloperVersionImageFile(Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
+    /* TODO graphql
+    ZipUtils.unzip(clientDistribution.getDeveloperVersionImageFile(
+        Common.ScriptsServiceName, desiredVersions.get(Common.ScriptsServiceName).get),
       distributionDir, (name: String) => {
         if (name == "distribution/distribution_setup.sh") {
           Some("distribution_setup.sh")
@@ -177,6 +179,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
       return false
     }
     new File("distribution_setup.sh").delete()
-    true
+     */
+    false
   }
 }

@@ -5,7 +5,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info._
-import com.vyulabs.update.version.DeveloperDistributionVersion
+import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import distribution.config.VersionHistoryConfig
 import distribution.graphql.NotFoundException
 import distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
@@ -33,16 +33,16 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
         val document = DeveloperVersionInfoDocument(id, versionInfo)
         collection.insert(document).map(_ => document)
       }.map(_.info)
-      _ <- removeObsoleteVersions(info.serviceName)
+      _ <- removeObsoleteVersions(info.version.distributionName, info.serviceName)
     } yield info).map(_ => true)
   }
 
-  private def removeObsoleteVersions(serviceName: ServiceName): Future[Unit] = {
+  private def removeObsoleteVersions(distributionName: DistributionName, serviceName: ServiceName): Future[Unit] = {
     for {
-      versions <- getDeveloperVersionsInfo(serviceName)
-      busyVersions <- getBusyVersions(serviceName)
+      versions <- getDeveloperVersionsInfo(serviceName, distributionName = Some(distributionName))
+      busyVersions <- getBusyVersions(distributionName, serviceName)
       complete <- {
-        val notUsedVersions = versions.filterNot(version => busyVersions.contains(version.version))
+        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > versionHistoryConfig.maxSize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - versionHistoryConfig.maxSize).map { version =>
@@ -59,7 +59,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     log.info(s"Remove developer version ${version} of service ${serviceName}")
     val filters = Filters.and(
       Filters.eq("info.serviceName", serviceName),
-      Filters.eq("info.version", version.toString))
+      Filters.eq("info.version", version))
     dir.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
       collection <- collections.Developer_VersionsInfo
@@ -69,10 +69,12 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield profile
   }
 
-  def getDeveloperVersionsInfo(serviceName: ServiceName, version: Option[DeveloperDistributionVersion] = None): Future[Seq[DeveloperVersionInfo]] = {
+  def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
+                               version: Option[DeveloperDistributionVersion] = None): Future[Seq[DeveloperVersionInfo]] = {
     val serviceArg = Filters.eq("info.serviceName", serviceName)
-    val versionArg = version.map { version => Filters.eq("info.version", version.toString) }
-    val filters = Filters.and((Seq(serviceArg) ++ versionArg).asJava)
+    val distributionArg = distributionName.map { distributionName => Filters.eq("info.version.distributionName", distributionName ) }
+    val versionArg = version.map { version => Filters.eq("info.version", version) }
+    val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     for {
       collection <- collections.Developer_VersionsInfo
       info <- collection.find(filters).map(_.map(_.info))
@@ -140,7 +142,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield developerVersions
   }
 
-  private def getBusyVersions(serviceName: ServiceName): Future[Set[DeveloperDistributionVersion]] = {
+  private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName): Future[Set[DeveloperVersion]] = {
     for {
       desiredVersion <- getDeveloperDesiredVersion(serviceName)
       clientsInfo <- getDistributionClientsInfo()
@@ -148,7 +150,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
         _.flatten.map(_.version.original()))
       testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.clientConfig.installProfile))).map(
         _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.version)).flatten)
-      busyVersions <- Future(desiredVersion.toSet ++ installedVersions ++ testedVersions)
-    } yield busyVersions
+    } yield {
+      (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distributionName == distributionName).map(_.version)
+    }
   }
 }

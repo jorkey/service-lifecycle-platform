@@ -2,9 +2,9 @@ package com.vyulabs.update.distribution.server
 
 import java.io._
 
-import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
 /**
@@ -27,11 +27,11 @@ class DistributionDirectory(val directory: File) {
   if (!clientServicesDir.exists()) clientServicesDir.mkdir()
   if (!faultsDir.exists()) faultsDir.mkdir()
 
-  def getDeveloperVersionImageFileName(serviceName: ServiceName, version: DeveloperDistributionVersion): String = {
+  def getDeveloperVersionImageFileName(serviceName: ServiceName, version: DeveloperVersion): String = {
     serviceName + "-" + version + ".zip"
   }
 
-  def getClientVersionImageFileName(serviceName: ServiceName, version: ClientDistributionVersion): String = {
+  def getClientVersionImageFileName(serviceName: ServiceName, version: ClientVersion): String = {
     serviceName + "-" + version + ".zip"
   }
 
@@ -43,24 +43,28 @@ class DistributionDirectory(val directory: File) {
     IoUtils.deleteFileRecursively(directory)
   }
 
-  def getDeveloperServiceDir(serviceName: ServiceName): File = {
-    val dir = new File(developerServicesDir, serviceName)
-    if (!dir.exists()) dir.mkdir()
-    dir
+  def getDeveloperServiceDir(distributionName: DistributionName, serviceName: ServiceName): File = {
+    val dir1 = new File(developerServicesDir, distributionName)
+    if (!dir1.exists()) dir1.mkdir()
+    val dir2 = new File(dir1, serviceName)
+    if (!dir2.exists()) dir2.mkdir()
+    dir2
   }
 
-  def getClientServiceDir(serviceName: ServiceName): File = {
-    val dir = new File(clientServicesDir, serviceName)
-    if (!dir.exists()) dir.mkdir()
-    dir
+  def getClientServiceDir(distributionName: DistributionName, serviceName: ServiceName): File = {
+    val dir1 = new File(clientServicesDir, distributionName)
+    if (!dir1.exists()) dir1.mkdir()
+    val dir2 = new File(dir1, serviceName)
+    if (!dir2.exists()) dir2.mkdir()
+    dir2
   }
 
   def getDeveloperVersionImageFile(serviceName: ServiceName, version: DeveloperDistributionVersion): File = {
-    new File(getDeveloperServiceDir(serviceName), getDeveloperVersionImageFileName(serviceName, version))
+    new File(getDeveloperServiceDir(version.distributionName, serviceName), getDeveloperVersionImageFileName(serviceName, version.version))
   }
 
   def getClientVersionImageFile(serviceName: ServiceName, version: ClientDistributionVersion): File = {
-    new File(getClientServiceDir(serviceName), getClientVersionImageFileName(serviceName, version))
+    new File(getClientServiceDir(version.distributionName, serviceName), getClientVersionImageFileName(serviceName, version.version))
   }
 
   def getFaultsDir(): File = {

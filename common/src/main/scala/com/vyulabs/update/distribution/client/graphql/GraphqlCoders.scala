@@ -13,9 +13,9 @@ trait CommonQueriesCoder {
 }
 
 object AdministratorQueriesCoder extends CommonQueriesCoder {
-  def getDeveloperVersionsInfo(serviceName: ServiceName, version: Option[DeveloperDistributionVersion]) =
+  def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperDistributionVersion] = None) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
-      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
+      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
       "{ serviceName, version, buildInfo { author, branches, date, comment } }")
 
   def getDeveloperDesiredVersions(serviceNames: Seq[ServiceName]) =
@@ -23,9 +23,9 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 
-  def getClientVersionsInfo(serviceName: ServiceName, version: Option[ClientDistributionVersion]) =
+  def getClientVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[ClientDistributionVersion] = None) =
     GraphqlQuery[Seq[ClientVersionInfo]]("clientVersionsInfo",
-      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
+      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
       "{ serviceName, version, buildInfo { author, branches, date, comment }, installInfo { user,  date} }")
 
   def getClientDesiredVersions(serviceNames: Seq[ServiceName]) =
