@@ -10,7 +10,7 @@ import scala.concurrent.{Promise}
 class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Log trace appender"
 
-  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+  implicit val executionContext = scala.concurrent.ExecutionContext.global
 
   var messages = Seq.empty[String]
   var promise = Promise[Unit]
@@ -18,7 +18,7 @@ class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   val log: Logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
   log.setLevel(Level.INFO)
   val appender = new LogTraceAppender()
-  val buffer = new LogSenderBuffer(events => { messages = events.map(_.getMessage); promise.future }, 3, 6)
+  val buffer = new LogSenderBuffer(events => { messages = events.map(_.message); promise.future }, 3, 6)
   appender.addListener(buffer)
   appender.start()
   log.addAppender(appender)
@@ -67,13 +67,13 @@ class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll 
     log.info("log line 5")
     log.info("log line 6")
     log.info("log line 7")
+    log.info("log line 8")
     resetPromise()
     getMessages(Seq("log line 4", "log line 5", "log line 6"))
     resetPromise()
-    log.info("log line 8")
-    log.warn("log line 9")
-    log.error("log line 10")
-    getMessages(Seq("log line 8", "log line 9", "log line 10"))
+    log.info("log line 9")
+    log.warn("log line 10")
+    getMessages(Seq("------------------------------ Skipped 2 events ------------------------------", "log line 9", "log line 10"))
     resetPromise()
   }
 
@@ -91,6 +91,16 @@ class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll 
     resetPromise()
   }
 
+  it should "flush buffer when appender stopped" in {
+    messages = Seq.empty
+    promise = Promise[Unit]
+    log.info("log line 1")
+    log.warn("log line 2")
+    getMessages(Seq())
+    appender.stop()
+    getMessages(Seq("log line 1", "log line 2"))
+  }
+
   private def resetPromise(): Unit = {
     val p = promise
     promise = Promise[Unit]
@@ -106,5 +116,6 @@ class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll 
   private def getMessages(waitingMessages: Seq[String]): Unit = {
     Thread.sleep(100)
     assertResult(waitingMessages)(messages)
+    messages = Seq.empty
   }
 }

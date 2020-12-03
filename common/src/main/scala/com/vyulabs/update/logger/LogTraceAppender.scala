@@ -5,6 +5,7 @@ import ch.qos.logback.core.AppenderBase
 
 trait LogListener {
   def append(event: ILoggingEvent): Unit
+  def stop(): Unit
 }
 
 class LogTraceAppender extends AppenderBase[ILoggingEvent] {
@@ -16,5 +17,10 @@ class LogTraceAppender extends AppenderBase[ILoggingEvent] {
 
   override def append(event: ILoggingEvent): Unit = {
     listeners.foreach(_.append(event))
+  }
+
+  override def stop(): Unit = {
+    listeners.foreach(_.stop())
+    super.stop()
   }
 }

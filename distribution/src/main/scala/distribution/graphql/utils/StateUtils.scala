@@ -1,12 +1,11 @@
 package distribution.graphql.utils
 
 import java.util.Date
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
-import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ProfileName, ServiceDirectory, ServiceName}
+import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ProcessId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, TestSignature, TestedDesiredVersions}
 import distribution.config.FaultReportsConfig
@@ -113,15 +112,15 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
     } yield profile
   }
 
-  def addServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory,
-                     logs: Seq[LogLine]): Future[Boolean] = {
+  def addServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId,
+                     processId: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine]): Future[Boolean] = {
     for {
       collection <- collections.State_ServiceLogs
       id <- collections.getNextSequence(collection.getName(), logs.size)
       result <- collection.insert(
         logs.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
           ServiceLogLineDocument(id - (logs.size-seq.size) + 1,
-            new DistributionServiceLogLine(distributionName, new ServiceLogLine(serviceName, instanceId, directory, line))) })).map(_ => true)
+            new DistributionServiceLogLine(distributionName, new ServiceLogLine(serviceName, instanceId, processId, directory, line))) })).map(_ => true)
     } yield result
   }
 

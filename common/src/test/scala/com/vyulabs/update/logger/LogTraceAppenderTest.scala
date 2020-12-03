@@ -1,7 +1,7 @@
 package com.vyulabs.update.logger
 
+import ch.qos.logback.classic.spi.ILoggingEvent
 import org.slf4j.LoggerFactory
-
 import ch.qos.logback.classic.{Level, Logger}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
@@ -13,7 +13,11 @@ class LogTraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll
   val log: Logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
   log.setLevel(Level.INFO)
   val appender = new LogTraceAppender()
-  appender.addListener(event => messages :+= event.getMessage)
+  appender.addListener(new LogListener {
+    override def append(event: ILoggingEvent): Unit =
+      messages :+= event.getMessage
+    override def stop(): Unit = {}
+  })
   appender.start()
   log.addAppender(appender)
 

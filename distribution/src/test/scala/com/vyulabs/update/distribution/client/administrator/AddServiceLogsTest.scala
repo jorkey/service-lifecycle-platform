@@ -1,17 +1,17 @@
-package com.vyulabs.update.distribution.client.service
+package com.vyulabs.update.distribution.client.administrator
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info._
+import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.ServiceLogLineDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
 import java.util.Date
-import com.vyulabs.update.utils.Utils.DateJson._
 import scala.concurrent.ExecutionContext
 
 class AddServiceLogsTest extends TestEnvironment {
@@ -21,9 +21,9 @@ class AddServiceLogsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  override def dbName = super.dbName + "-service"
+  override def dbName = super.dbName + "-administrator"
 
-  val graphqlContext = new GraphqlContext(UserInfo("service1", UserRole.Service), workspace)
+  val graphqlContext = new GraphqlContext(UserInfo("administrator", UserRole.Administrator), workspace)
 
   val logsCollection = result(collections.State_ServiceLogs)
 

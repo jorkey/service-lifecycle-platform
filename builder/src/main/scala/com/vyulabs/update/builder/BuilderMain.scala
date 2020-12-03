@@ -2,13 +2,15 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.common.Common.{InstanceId, ServiceName}
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, SyncDistributionClient}
+import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, JavaLogSender, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory
 object BuilderMain extends App {
   implicit val log = LoggerFactory.getLogger(this.getClass)
   implicit val filesLocker = new SmartFilesLocker()
+  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   def usage(): String =
     "Use: buildVersion <author=value> <service=value>\n" +
@@ -39,6 +42,8 @@ object BuilderMain extends App {
   }
 
   val distributionClient = new SyncDistributionClient(config.distributionName, new JavaHttpClient(config.distributionUrl))
+
+  new JavaLogSender(Common.DistributionServiceName, config.instanceId, distributionClient)
 
   command match {
     case "buildVersion" =>

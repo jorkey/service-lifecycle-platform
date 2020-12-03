@@ -1,18 +1,17 @@
 package com.vyulabs.update.info
 
-import java.util.Date
-
 import com.vyulabs.update.common.Common._
 import com.vyulabs.update.utils.Utils.DateJson._
 import spray.json.DefaultJsonProtocol
 
-// TODO graphql add log level
-case class LogLine(date: Date, line: String)
+import java.util.Date
+
+case class  LogLine(date: Date, level: String, loggerName: Option[String], message: String)
 
 object LogLine extends DefaultJsonProtocol {
-  implicit val logLineJson = jsonFormat2(LogLine.apply)
+  implicit val logLineJson = jsonFormat4(LogLine.apply)
 }
 
-case class ServiceLogLine(serviceName: ServiceName, instanceId: InstanceId, directory: ServiceDirectory, logLine: LogLine)
+case class ServiceLogLine(serviceName: ServiceName, instanceId: InstanceId, processId: ProcessId, directory: ServiceDirectory, logLine: LogLine)
 
 case class DistributionServiceLogLine(distributionName: DistributionName, logLine: ServiceLogLine)

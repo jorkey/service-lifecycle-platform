@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.client.service
+package com.vyulabs.update.distribution.client.distribution
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
@@ -21,9 +21,9 @@ class AddServiceLogsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  override def dbName = super.dbName + "-service"
+  override def dbName = super.dbName + "-distribution"
 
-  val graphqlContext = new GraphqlContext(UserInfo("service1", UserRole.Service), workspace)
+  val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
   val logsCollection = result(collections.State_ServiceLogs)
 
