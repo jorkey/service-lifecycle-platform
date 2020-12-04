@@ -8,7 +8,7 @@ trait LogListener {
   def stop(): Unit
 }
 
-class LogTraceAppender extends AppenderBase[ILoggingEvent] {
+class TraceAppender extends AppenderBase[ILoggingEvent] {
   var listeners = Set.empty[LogListener]
 
   def addListener(listener: LogListener): Unit = {

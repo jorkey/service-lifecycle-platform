@@ -2,7 +2,6 @@ package distribution.client
 
 import java.io.{File, IOException}
 import java.net.URL
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
@@ -12,6 +11,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import akka.util.ByteString
 import com.vyulabs.update.distribution.DistributionWebPaths._
+import com.vyulabs.update.distribution.client.HttpClient
 import com.vyulabs.update.distribution.client.graphql.GraphqlRequest
 import org.slf4j.LoggerFactory
 import spray.json._
@@ -19,7 +19,7 @@ import spray.json._
 import scala.concurrent.{ExecutionContext, Future}
 
 class AkkaHttpClient(distributionUrl: URL)
-                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends AsyncHttpClient {
+                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])
@@ -71,6 +71,10 @@ class AkkaHttpClient(distributionUrl: URL)
       response <- Http(system).singleRequest(get)
       result <- response.entity.dataBytes.runWith(FileIO.toPath(file.toPath)).map(_ => ())
     } yield result
+  }
+
+  override def exists(path: String): Future[Unit] = {
+    throw new NotImplementedError()
   }
 
   private def getHttpCredentials(): Option[HttpCredentials] = {

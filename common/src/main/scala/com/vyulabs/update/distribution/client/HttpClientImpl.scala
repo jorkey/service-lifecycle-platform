@@ -1,24 +1,26 @@
-package com.vyulabs.update.distribution.client.sync
-
-import java.io._
-import java.net.{HttpURLConnection, URL}
-import java.nio.charset.StandardCharsets
-import java.util.Base64
+package com.vyulabs.update.distribution.client
 
 import com.vyulabs.update.distribution.DistributionWebPaths._
 import com.vyulabs.update.distribution.client.graphql.GraphqlRequest
 import org.slf4j.LoggerFactory
 import spray.json.{JsonReader, _}
 
+import java.io._
+import java.net.{HttpURLConnection, URL}
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+import scala.concurrent.{ExecutionContext, Future}
+
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
-class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000) extends SyncHttpClient {
+class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
+                    (implicit executionContext: ExecutionContext) extends HttpClient {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])
-                              (implicit reader: JsonReader[Response]): Option[Response] = {
+                              (implicit reader: JsonReader[Response]): Future[Response] = {
     executeRequest(new URL(distributionUrl.toString + "/" + graphqlPathPrefix), (connection) => {
       if (distributionUrl.getUserInfo != null) {
         val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
@@ -40,22 +42,20 @@ class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
       log.debug(s"Receive graphql response: ${responseJson}")
       request.decodeResponse(responseJson.asJsObject) match {
         case Left(response) =>
-          Some(response)
+          response
         case Right(error) =>
-          log.error(s"Decode graphql response error: ${error}")
-          None
+          throw new IOException(s"Decode graphql response error: ${error}")
       }
     })
   }
 
-  def upload(path: String, fieldName: String, file: File): Boolean = {
+  def upload(path: String, fieldName: String, file: File): Future[Unit] = {
     val input =
       try {
         new FileInputStream(file)
       } catch {
         case e: IOException =>
-          log.error(s"Can't open ${file}", e)
-          return false
+          throw new IOException(s"Can't open ${file}", e)
       }
     try {
       upload(path, fieldName, file.getName, input)
@@ -64,28 +64,26 @@ class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
     }
   }
 
-  def download(path: String, file: File): Boolean = {
+  def download(path: String, file: File): Future[Unit] = {
     val output =
       try {
         new FileOutputStream(file)
       } catch {
         case e: IOException =>
-          log.error(s"Can't open ${file}", e)
-          return false
+          throw new IOException(s"Can't open ${file}", e)
       }
-    var stat = false
     try {
-      stat = download(path, output)
-      stat
+      download(path, output)
+    } catch {
+      case ex: Exception =>
+        file.delete()
+        throw ex
     } finally {
       output.close()
-      if (!stat) {
-        file.delete()
-      }
     }
   }
 
-  def exists(path: String): Boolean = {
+  def exists(path: String): Future[Unit] = {
     executeRequest(new URL(distributionUrl.toString + "/" + path), (connection: HttpURLConnection) => {
       connection.setRequestMethod("HEAD")
       if (distributionUrl.getUserInfo != null) {
@@ -94,11 +92,10 @@ class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
       }
       connection.setConnectTimeout(connectTimeoutMs)
       connection.setReadTimeout(readTimeoutMs)
-      Some()
-    }).isDefined
+    })
   }
 
-  private def upload(path: String, fieldName: String, destinationFile: String, input: InputStream): Boolean = {
+  private def upload(path: String, fieldName: String, destinationFile: String, input: InputStream): Future[Unit] = {
     if (log.isDebugEnabled) log.debug(s"Upload by url ${path}")
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
@@ -125,10 +122,10 @@ class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
       writer.append(CRLF).flush
       writer.append("--" + boundary + "--").append(CRLF).flush()
       Some()
-    }).isDefined
+    })
   }
 
-  private def download(path: String, output: OutputStream): Boolean = {
+  private def download(path: String, output: OutputStream): Future[Unit] = {
     if (log.isDebugEnabled) log.debug(s"Download by url ${path}")
     executeRequest(new URL(distributionUrl.toString + "/" + loadPathPrefix + "/" + path), (connection: HttpURLConnection) => {
       if (!distributionUrl.getUserInfo.isEmpty) {
@@ -140,7 +137,7 @@ class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
       val input = connection.getInputStream
       copy(input, output)
       Some()
-    }).isDefined
+    })
   }
 
   private def copy(in: InputStream, out: OutputStream): Unit = {
@@ -153,47 +150,36 @@ class JavaHttpClient(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
     }
   }
 
-  private final def executeRequest[T](url: URL, request: (HttpURLConnection) => Option[T]): Option[T] = {
-    if (log.isDebugEnabled) log.debug(s"Make request to ${url}")
-    val connection =
-      try {
-        url.openConnection().asInstanceOf[HttpURLConnection]
-      } catch {
-        case e: IOException =>
-          log.error(s"Can't open connection to url ${url}, error ${e.toString}")
-          return None
-      }
-    var result = Option.empty[T]
-    try {
-      result = request(connection)
-    } catch {
-      case e: IOException =>
-        log.error(s"Error: ${e.toString}")
-        None
-    } finally {
-      try {
-        val responseCode = connection.getResponseCode
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-          result = None
-          log.error(s"Request: ${connection.getRequestMethod} ${url}")
-          try {
-            log.error(s"Response message: ${connection.getResponseMessage}")
-          } catch {
-            case _: IOException =>
-          }
-          try {
-            val errorStream = connection.getErrorStream()
-            if (errorStream != null) log.error("Response error: " + new String(errorStream.readAllBytes(), "utf8"))
-          } catch {
-            case _: IOException =>
-          }
+  private final def executeRequest[T](url: URL, request: (HttpURLConnection) => T): Future[T] = {
+    Future {
+      if (log.isDebugEnabled) log.debug(s"Make request to ${url}")
+      val connection =
+        try {
+          url.openConnection().asInstanceOf[HttpURLConnection]
+        } catch {
+          case ex: IOException =>
+            throw new IOException(s"Can't open connection to url ${url}, error ${ex.toString}", ex)
         }
-      } catch {
-        case _: IOException =>
+      try {
+        request(connection)
+      } finally {
+        try {
+          val responseCode = connection.getResponseCode
+          if (responseCode != HttpURLConnection.HTTP_OK) {
+            val errorStream = connection.getErrorStream()
+            throw new IOException(
+              s"Request: ${connection.getRequestMethod} ${url}\n" +
+              s"Response message: " +
+                s"${ try { connection.getResponseMessage } catch { case _: Exception => "" } }\n" +
+              s"Response error: " +
+                new String(if (errorStream != null )
+                  try { errorStream.readAllBytes() } catch { case _: Exception => Array.empty[Byte] } else Array.empty[Byte], "utf8"))
+          }
+        } catch {
+          case _: IOException =>
+        }
+        connection.disconnect()
       }
-      connection.disconnect()
     }
-
-    result
   }
 }

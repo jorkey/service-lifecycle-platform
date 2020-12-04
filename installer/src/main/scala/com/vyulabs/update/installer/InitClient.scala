@@ -5,7 +5,7 @@ import java.net.{URI, URL}
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.client.DistributionInterface
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.installer.config.InstallerConfig
@@ -26,7 +26,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   def initClient(cloudProvider: String, distributionName: String,
                  adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
                  distributionServicePort: Int): Boolean = {
-    val developerDistribution = new DistributionInterface(developerDistributionUrl)
+    val developerDistribution = new OldDistributionInterface(developerDistributionUrl)
     val clientDistribution = new DistributionDirectory(new File(distributionDir, "directory"))
     log.info("Init admin repository")
     if (!initAdminRepository()) {
@@ -104,7 +104,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
 
   private def initDistribDirectory(cloudProvider: String, name: String,
                                    clientDistribution: DistributionDirectory,
-                                   developerDistribution: DistributionInterface,
+                                   developerDistribution: OldDistributionInterface,
                                    distributionServicePort: Int): Boolean = {
     if (!distributionDir.exists()) {
       log.info(s"Create directory ${distributionDir}")
@@ -141,7 +141,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   }
 
   private def downloadUpdateServices(clientDistribution: DistributionDirectory,
-                                     developerDistribution: DistributionInterface,
+                                     developerDistribution: OldDistributionInterface,
                                      desiredVersions: Map[ServiceName, DeveloperDistributionVersion]): Boolean = {
     Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.InstallerServiceName, Common.UpdaterServiceName).foreach {
       serviceName =>
@@ -160,7 +160,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
 
   private def setupDistributionServer(cloudProvider: String, name: String,
                                       clientDistribution: DistributionDirectory,
-                                      developerDistribution: DistributionInterface,
+                                      developerDistribution: OldDistributionInterface,
                                       desiredVersions: Map[ServiceName, DeveloperDistributionVersion],
                                       distributionServicePort: Int): Boolean = {
     /* TODO graphql

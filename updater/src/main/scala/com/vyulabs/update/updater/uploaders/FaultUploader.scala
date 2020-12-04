@@ -5,7 +5,7 @@ import java.nio.file.Files
 import java.util.Date
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.client.DistributionInterface
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName, ServiceState}
 import com.vyulabs.update.info.FaultInfo._
 import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}
@@ -19,7 +19,7 @@ import spray.json.enrichAny
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
   * Copyright FanDate, Inc.
   */
-class FaultUploader(archiveDir: File, clientDirectory: DistributionInterface)
+class FaultUploader(archiveDir: File, clientDirectory: OldDistributionInterface)
                    (implicit log: Logger) extends Thread { self =>
   private case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 

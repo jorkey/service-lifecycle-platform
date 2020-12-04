@@ -1,17 +1,19 @@
 package com.vyulabs.update.installer
 
 import java.io.File
-
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.AdminRepository
-import com.vyulabs.update.distribution.client.DistributionInterface
+import com.vyulabs.update.distribution.DistributionWebPaths.pingPath
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.info.{ClientDesiredVersions, ServicesVersions}
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import com.vyulabs.update.installer.InstallResult.InstallResult
+
+import scala.concurrent.Future
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -22,8 +24,8 @@ class UpdateClient()(implicit log: Logger) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def installUpdates(adminRepository: AdminRepository,
-                     clientDistribution: DistributionInterface,
-                     developerDistribution: DistributionInterface,
+                     clientDistribution: OldDistributionInterface,
+                     developerDistribution: OldDistributionInterface,
                      servicesOnly: Option[Set[ServiceName]],
                      localConfigOnly: Boolean,
                      assignDesiredVersions: Boolean): InstallResult = {
@@ -129,11 +131,32 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  def getClientDesiredVersions(clientDistribution: DistributionInterface): Option[Map[ServiceName, ClientDistributionVersion]] = {
+  /* TODO graphql
+  def waitForServerUpdated(desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int): Future[Boolean] = {
+    log.info(s"Wait for distribution server updated")
+    for (_ <- 0 until waitingTimeoutSec) {
+      if (client.exists(pingPath)) {
+        getDistributionVersion() match {
+          case Some(version) =>
+            if (version == desiredVersion) {
+              log.info(s"Distribution server is updated")
+              return true
+            }
+          case None =>
+            return false
+        }
+      }
+      Thread.sleep(1000)
+    }
+    log.error(s"Timeout of waiting for distribution server become available")
+    false
+  }*/
+
+  def getClientDesiredVersions(clientDistribution: OldDistributionInterface): Option[Map[ServiceName, ClientDistributionVersion]] = {
     clientDistribution.downloadInstalledDesiredVersions().map(_.toMap)
   }
 
-  def setDesiredVersions(clientDistribution: DistributionInterface,
+  def setDesiredVersions(clientDistribution: OldDistributionInterface,
                          versions: Map[ServiceName, Option[ClientDistributionVersion]]): Boolean = {
     var completed = false
     try {
@@ -170,8 +193,8 @@ class UpdateClient()(implicit log: Logger) {
     completed
   }
 
-  def signVersionsAsTested(clientDistribution: DistributionInterface,
-                           developerDistribution: DistributionInterface): Boolean = {
+  def signVersionsAsTested(clientDistribution: OldDistributionInterface,
+                           developerDistribution: OldDistributionInterface): Boolean = {
     try {
       val clientDesiredVersionsMap = getClientDesiredVersions(clientDistribution).getOrElse {
         log.error("Error of getting client desired versions")
@@ -228,8 +251,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersions(adminRepository: AdminRepository,
-                              clientDistribution: DistributionInterface,
-                              developerDistribution: DistributionInterface,
+                              clientDistribution: OldDistributionInterface,
+                              developerDistribution: OldDistributionInterface,
                               developerVersions: Map[ServiceName, DeveloperDistributionVersion],
                               clientVersions: Map[ServiceName, ClientDistributionVersion],
                               assignDesiredVersions: Boolean): InstallResult = {
@@ -255,7 +278,7 @@ class UpdateClient()(implicit log: Logger) {
       /* TODO graphql
       developerVersions.get(Common.DistributionServiceName) match {
         case Some(newDistributionVersion) =>
-          if (!clientDistribution.waitForServerUpdated(clientDistribution.getDistributionVersionPath, newDistributionVersion)) {
+          if (!clientDistribution.waitForServerUpdated(clientDistribution.getDistributionVersionPath, newDistributionVersion)) { // see release of waitForServerUpdated below
             log.error("Update distribution server error")
             return InstallResult.Failure
           }
@@ -272,8 +295,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersions(adminRepository: AdminRepository,
-                              clientDistribution: DistributionInterface,
-                              developerDistribution: DistributionInterface,
+                              clientDistribution: OldDistributionInterface,
+                              developerDistribution: OldDistributionInterface,
                               developerVersions: Map[ServiceName, DeveloperDistributionVersion],
                               clientVersions: Map[ServiceName, ClientDistributionVersion]): Boolean = {
     developerVersions.foreach {
@@ -288,8 +311,8 @@ class UpdateClient()(implicit log: Logger) {
   }
 
   private def installVersion(adminRepository: AdminRepository,
-                             clientDistribution: DistributionInterface,
-                             developerDirectory: DistributionInterface,
+                             clientDistribution: OldDistributionInterface,
+                             developerDirectory: OldDistributionInterface,
                              serviceName: ServiceName, fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion): Boolean = {
     try {
       log.info(s"Download version ${fromVersion} of service ${serviceName}")
@@ -365,7 +388,7 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  private def mergeSettings(clientDistribution: DistributionInterface,
+  private def mergeSettings(clientDistribution: OldDistributionInterface,
                             serviceName: ServiceName, buildDirectory: File, localDirectory: File,
                             version: ClientDistributionVersion, subPath: String = ""): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {

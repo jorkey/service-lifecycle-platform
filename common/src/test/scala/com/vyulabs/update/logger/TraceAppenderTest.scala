@@ -5,14 +5,14 @@ import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.{Level, Logger}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
-class LogTraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class TraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Log trace appender"
 
   var messages = Seq.empty[String]
 
   val log: Logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
   log.setLevel(Level.INFO)
-  val appender = new LogTraceAppender()
+  val appender = new TraceAppender()
   appender.addListener(new LogListener {
     override def append(event: ILoggingEvent): Unit =
       messages :+= event.getMessage

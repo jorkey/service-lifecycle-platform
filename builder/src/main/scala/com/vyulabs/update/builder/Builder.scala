@@ -17,8 +17,8 @@ import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersio
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 import com.vyulabs.update.config.InstallConfig._
+import com.vyulabs.update.distribution.client.{DistributionClient, SyncDistributionClient}
 import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
-import com.vyulabs.update.distribution.client.sync.{JavaLogSender, SyncDistributionClient}
 
 class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"
@@ -64,7 +64,7 @@ class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: UR
           val version = newVersion match {
             case Some(version) =>
               if (distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, None,
-                  Some(DeveloperDistributionVersion(distributionClient.distributionName, version)))).getOrElse(Seq.empty).size != 0) {
+                    Some(DeveloperDistributionVersion(distributionClient.distributionName, version)))).size != 0) {
                 log.error(s"Version ${version} already exists")
                 return None
               }
@@ -191,13 +191,7 @@ class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: UR
           generatedVersion = Some(version)
           generatedVersion
         } finally {
-          /* TODO graphql
-          adminRepository.processLogFile(!generatedVersion.isEmpty)
-          if (!gitLock.unlock(DeveloperAdminRepository.makeEndOfBuildMessage(serviceName, generatedVersion))) {
-            log.error("Can't unlock version generation")
-          }
           adminRepository.tagServices(Seq(serviceName))
-           */
         }
       }).flatten
   }

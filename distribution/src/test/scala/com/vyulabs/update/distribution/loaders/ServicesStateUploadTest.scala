@@ -2,15 +2,14 @@ package com.vyulabs.update.distribution.loaders
 
 import java.io.{File, IOException}
 import java.util.Date
-
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.client.{DistributionClient, HttpClient}
 import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
 import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
-import distribution.client.{AsyncDistributionClient, AsyncHttpClient}
 import distribution.loaders.StateUploader
 import distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
 import spray.json.{JsonReader, enrichAny}
@@ -28,7 +27,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   var promise = Promise[GraphqlRequest[Boolean]]
   var result = Future.successful[Boolean](true)
 
-  val httpClient = new AsyncHttpClient {
+  val httpClient = new HttpClient {
     override def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Response] = {
       synchronized {
         promise.success(request.asInstanceOf[GraphqlRequest[Boolean]])
@@ -44,9 +43,13 @@ class ServicesStateUploadTest extends TestEnvironment {
     override def download(path: String, file: File): Future[Unit] = {
       throw new NotImplementedError()
     }
+
+    override def exists(path: String): Future[Unit] = {
+      throw new NotImplementedError()
+    }
   }
 
-  val distributionClient = new AsyncDistributionClient(httpClient)
+  val distributionClient = new DistributionClient(distributionName, httpClient)
 
   it should "upload service states" in {
     val uploader = new StateUploader("distribution", collections, distributionDir, 1, distributionClient)

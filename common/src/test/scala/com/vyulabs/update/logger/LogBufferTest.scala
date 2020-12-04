@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import scala.concurrent.{Promise}
 
-class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Log trace appender"
 
   implicit val executionContext = scala.concurrent.ExecutionContext.global
@@ -17,8 +17,8 @@ class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll 
 
   val log: Logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
   log.setLevel(Level.INFO)
-  val appender = new LogTraceAppender()
-  val buffer = new LogSenderBuffer(events => { messages = events.map(_.message); promise.future }, 3, 6)
+  val appender = new TraceAppender()
+  val buffer = new LogBuffer(events => { messages = events.map(_.message); promise.future }, 3, 6)
   appender.addListener(buffer)
   appender.start()
   log.addAppender(appender)
@@ -89,6 +89,16 @@ class LogSenderBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll 
     resetPromiseWithError()
     getMessages(Seq("log line 1", "log line 2", "log line 3", "log line 4", "log line 5"))
     resetPromise()
+  }
+
+  it should "flush buffer by request" in {
+    messages = Seq.empty
+    promise = Promise[Unit]
+    log.info("log line 1")
+    log.warn("log line 2")
+    getMessages(Seq())
+    buffer.flush()
+    getMessages(Seq("log line 1", "log line 2"))
   }
 
   it should "flush buffer when appender stopped" in {

@@ -6,7 +6,6 @@ import java.net.URI
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
@@ -74,56 +73,5 @@ object AdminRepository {
       return None
     }
     Some(new AdminRepository(rep))
-  }
-
-  def makeStartOfSettingDesiredVersionsMessage(versions: Map[ServiceName, Option[DeveloperDistributionVersion]]): String = {
-    if (versions.size == 1) {
-      s"Set desired version " + makeDesiredVersionsStr(versions)
-    } else {
-      s"Set desired versions " + makeDesiredVersionsStr(versions)
-    }
-  }
-
-  def makeEndOfSettingDesiredVersionsMessage(completed: Boolean): String = {
-    if (completed) {
-      "Desired versions are successfully assigned"
-    } else {
-      "Desired versions assign is failed"
-    }
-  }
-
-  def makeStartOfSettingTestedFlagMessage(): String = {
-    "Start marking of desired versions as tested"
-  }
-
-  def makeContinueOfSettingTestedFlagMessage(): String = {
-    "Continue marking of desired versions as tested"
-  }
-
-  def makeStopOfSettingTestedFlagMessage(): String = {
-    "Stop marking of desired versions as tested"
-  }
-
-  def makeStartOfRemovingTestedFlagMessage(): String = {
-    "Start marking of desired versions as tested"
-  }
-
-  def makeContinueOfRemovingTestedFlagMessage(): String = {
-    "Continue marking of desired versions as tested"
-  }
-
-  def makeStopOfRemovingTestedFlagMessage(): String = {
-    "Stop marking of desired versions as tested"
-  }
-
-  private def makeDesiredVersionsStr(versions: Map[ServiceName, Option[DeveloperDistributionVersion]]): String = {
-    versions.foldLeft("") {
-      case (versions, record) =>
-        val str = record match {
-          case (service, version) =>
-            service + "->" + version.getOrElse("-")
-        }
-        versions + (if (versions.isEmpty) str else ", " + str)
-    }
   }
 }

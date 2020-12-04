@@ -8,12 +8,12 @@ import java.util.Date
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-trait LogSender {
-  def sendLogLines(lines: Seq[LogLine]): Future[Unit]
+trait LogReceiver {
+  def receiveLogLines(lines: Seq[LogLine]): Future[Unit]
 }
 
-class LogSenderBuffer(logSender: LogSender, lowWater: Int, highWater: Int)
-                     (implicit executionContext: ExecutionContext) extends LogListener {
+class LogBuffer(logConsumer: LogReceiver, lowWater: Int, highWater: Int)
+               (implicit executionContext: ExecutionContext) extends LogListener {
   var eventsBuffer = Seq.empty[LogLine]
   var sendingEvents = Seq.empty[LogLine]
   var skipped = 0
@@ -35,6 +35,10 @@ class LogSenderBuffer(logSender: LogSender, lowWater: Int, highWater: Int)
   }
 
   override def stop(): Unit = {
+    flush()
+  }
+
+  def flush(): Unit = {
     synchronized {
       if (!eventsBuffer.isEmpty) {
         send()
@@ -51,7 +55,7 @@ class LogSenderBuffer(logSender: LogSender, lowWater: Int, highWater: Int)
   private def send(): Unit = {
     sendingEvents = eventsBuffer
     eventsBuffer = Seq.empty
-    logSender.sendLogLines(sendingEvents).onComplete {
+    logConsumer.receiveLogLines(sendingEvents).onComplete {
       case Success(_) =>
         synchronized {
           sendingEvents = Seq.empty

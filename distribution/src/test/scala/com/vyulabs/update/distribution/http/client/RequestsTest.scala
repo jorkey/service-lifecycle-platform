@@ -3,18 +3,17 @@ package com.vyulabs.update.distribution.http.client
 import java.net.URL
 import java.util.Date
 import java.util.concurrent.TimeUnit
-
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.distribution.client.graphql.ServiceGraphqlCoder._
-import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, SyncDistributionClient}
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import distribution.client.{AkkaHttpClient, AsyncDistributionClient}
+import distribution.client.{AkkaHttpClient}
 import distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
@@ -33,9 +32,12 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   var server = Http().newServerAt("0.0.0.0", 8081).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
 
-  val adminClient = new SyncDistributionClient(distributionName, new JavaHttpClient(new URL("http://admin:admin@localhost:8081")))
-  val serviceClient = new SyncDistributionClient(distributionName, new JavaHttpClient(new URL("http://service1:service1@localhost:8081")))
-  val distribClient = new AsyncDistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081")))
+  val adminClient = new SyncDistributionClient(
+    new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+  val serviceClient = new SyncDistributionClient(
+    new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+  val distribClient = new SyncDistributionClient(
+    new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
   val stateDate = new Date()
 
@@ -56,23 +58,16 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   it should "execute some requests" in {
     assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getDistributionVersion())
 
-    assert(adminClient.waitForServerUpdated(ClientDistributionVersion.parse("test-1.2.3"), 3))
-
     assertResult(Some(Seq(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))(
       adminClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
 
-    assertResult(DistributionClientConfig("common", None))(
-      result(distribClient.graphqlRequest(distributionQueries.getDistributionClientConfig())))
+    assertResult(Some(DistributionClientConfig("common", None)))(
+      distribClient.graphqlRequest(distributionQueries.getDistributionClientConfig()))
   }
 
   it should "process request errors" in {
     assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
-    assert(try {
-      Await.result(distribClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()), FiniteDuration(15, TimeUnit.SECONDS))
-      false
-    } catch {
-      case _: Exception => true
-    })
+    assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
   }
 
   it should "execute developer version requests" in {
@@ -97,8 +92,8 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(adminClient.graphqlRequest(
       administratorQueries.getDeveloperDesiredVersions(Seq("service1"))))
 
-    assertResult(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3"))))(
-      result(distribClient.graphqlRequest(distributionQueries.getDesiredVersions(Seq("service1")))))
+    assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(
+      distribClient.graphqlRequest(distributionQueries.getDesiredVersions(Seq("service1"))))
   }
 
   it should "execute client version requests" in {
@@ -127,8 +122,8 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "execute installed versions requests" in {
-    assert(result(distribClient.graphqlRequest(distributionMutations.setInstalledDesiredVersions(
-      Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.1.1")))))))
+    assert(distribClient.graphqlRequest(
+      distributionMutations.setInstalledDesiredVersions(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.1.1"))))).getOrElse(false))
 
     assertResult(Some(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.1.1")))))(adminClient.graphqlRequest(
       administratorQueries.getInstalledDesiredVersions("distribution1", Seq("service1"))))
@@ -142,8 +137,8 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     assert(serviceClient.graphqlRequest(serviceMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
       ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distributionName}-1.2.1")), None, None, None, None))))).getOrElse(false))
 
-    assert(result(distribClient.graphqlRequest(distributionMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
-      ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution1-3.2.1")), None, None, None, None)))))))
+    assert(distribClient.graphqlRequest(distributionMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
+      ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution1-3.2.1")), None, None, None, None))))).getOrElse(false))
 
     assertResult(Some(Seq(DistributionServiceState(distributionName, InstanceServiceState("instance1", "service1", "directory1",
       ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distributionName}-1.2.1")), None, None, None, None))))))(
@@ -163,8 +158,8 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     assert(serviceClient.graphqlRequest(serviceMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
       ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault1.info", "core")))).getOrElse(false))
 
-    assert(result(distribClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
-      ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core"))))))
+    assert(distribClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
+      ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core")))).getOrElse(false))
 
     assertResult(Some(Seq(DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
       ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault1.info", "core"))))))(

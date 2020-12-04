@@ -3,7 +3,6 @@ package distribution.loaders
 import java.io.{File, IOException}
 import java.net.URL
 import java.util.concurrent.TimeUnit
-
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.{IOResult, Materializer}
@@ -12,10 +11,11 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
+import com.vyulabs.update.distribution.client.DistributionClient
 import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState}
-import distribution.client.{AkkaHttpClient, AsyncDistributionClient}
+import distribution.client.AkkaHttpClient
 import distribution.mongo.{DatabaseCollections, ServiceStateDocument}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
@@ -30,7 +30,7 @@ import scala.util.{Failure, Success}
   */
 
 class StateUploader(distributionName: DistributionName,
-                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, client: AsyncDistributionClient)
+                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, client: DistributionClient)
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -183,6 +183,7 @@ object StateUploader {
   def apply(distributionName: DistributionName,
             collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, distributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
-    new StateUploader(distributionName, collections, distributionDirectory, uploadIntervalSec, new AsyncDistributionClient(new AkkaHttpClient(distributionUrl)))
+    new StateUploader(distributionName, collections, distributionDirectory, uploadIntervalSec, new DistributionClient(
+      distributionName, new AkkaHttpClient(distributionUrl)))
   }
 }

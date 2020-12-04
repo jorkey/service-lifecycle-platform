@@ -2,15 +2,18 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{InstanceId, ServiceName}
+import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.client.sync.{JavaHttpClient, JavaLogSender, SyncDistributionClient}
+import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, LogSender, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.TimeUnit
+import java.util.{Timer, TimerTask}
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
@@ -41,9 +44,13 @@ object BuilderMain extends App {
     Utils.error("No config")
   }
 
-  val distributionClient = new SyncDistributionClient(config.distributionName, new JavaHttpClient(config.distributionUrl))
+  val distributionClient = new DistributionClient(config.distributionName, new HttpClientImpl(config.distributionUrl))
+  val syncDistributionClient = new SyncDistributionClient(distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
 
-  new JavaLogSender(Common.DistributionServiceName, config.instanceId, distributionClient)
+  val logSender = new LogSender(Common.DistributionServiceName, config.instanceId, distributionClient)
+  new Timer().schedule(new TimerTask() {
+    override def run(): Unit = logSender.getBuffer().flush()
+  }, 1000)
 
   command match {
     case "buildVersion" =>
@@ -55,7 +62,7 @@ object BuilderMain extends App {
       val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
 
       log.info(s"Make new version of service ${serviceName}")
-      val builder = new Builder(distributionClient, config.adminRepositoryUrl)
+      val builder = new Builder(syncDistributionClient, config.adminRepositoryUrl)
       builder.makeVersion(author, serviceName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
@@ -67,7 +74,7 @@ object BuilderMain extends App {
       }
 
     case "getDesiredVersions" =>
-      new Builder(distributionClient, config.adminRepositoryUrl).getDesiredVersions() match {
+      new Builder(syncDistributionClient, config.adminRepositoryUrl).getDesiredVersions() match {
         case Some(versions) =>
           log.info("Desired versions:")
           versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
@@ -95,7 +102,7 @@ object BuilderMain extends App {
         }
       }
 
-      if (!new Builder(distributionClient, config.adminRepositoryUrl).setDesiredVersions(servicesVersions)) {
+      if (!new Builder(syncDistributionClient, config.adminRepositoryUrl).setDesiredVersions(servicesVersions)) {
         Utils.error("Set desired versions error")
       }
 

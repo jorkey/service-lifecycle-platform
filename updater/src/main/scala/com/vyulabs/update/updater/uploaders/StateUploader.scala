@@ -4,13 +4,13 @@ import java.io.File
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.distribution.client.DistributionInterface
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.info.{DirectoryServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger
 
 class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
-                    clientDirectory: DistributionInterface)(implicit log: Logger) extends Thread { self =>
+                    clientDirectory: OldDistributionInterface)(implicit log: Logger) extends Thread { self =>
   private val services = servicesNames.foldLeft(Map.empty[ProfiledServiceName, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(name, () => update()))
   }
