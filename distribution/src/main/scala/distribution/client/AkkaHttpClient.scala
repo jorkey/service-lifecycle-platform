@@ -11,8 +11,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import akka.util.ByteString
 import com.vyulabs.update.distribution.DistributionWebPaths._
-import com.vyulabs.update.distribution.client.HttpClient
-import com.vyulabs.update.distribution.client.graphql.GraphqlRequest
+import com.vyulabs.update.distribution.graphql.HttpClient
+import com.vyulabs.update.distribution.graphql.graphql.GraphqlRequest
 import org.slf4j.LoggerFactory
 import spray.json._
 

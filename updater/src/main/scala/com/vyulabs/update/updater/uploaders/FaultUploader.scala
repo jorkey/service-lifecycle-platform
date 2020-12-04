@@ -5,7 +5,7 @@ import java.nio.file.Files
 import java.util.Date
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.client.OldDistributionInterface
+import com.vyulabs.update.distribution.graphql.OldDistributionInterface
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName, ServiceState}
 import com.vyulabs.update.info.FaultInfo._
 import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}

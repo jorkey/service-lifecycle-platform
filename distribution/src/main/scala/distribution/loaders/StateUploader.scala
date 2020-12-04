@@ -11,8 +11,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
-import com.vyulabs.update.distribution.client.DistributionClient
-import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
+import com.vyulabs.update.distribution.graphql.DistributionClient
+import com.vyulabs.update.distribution.graphql.graphql.{GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState}
 import distribution.client.AkkaHttpClient

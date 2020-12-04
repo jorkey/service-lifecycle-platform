@@ -5,7 +5,7 @@ import java.net.URL
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import distribution.client.AkkaHttpClient

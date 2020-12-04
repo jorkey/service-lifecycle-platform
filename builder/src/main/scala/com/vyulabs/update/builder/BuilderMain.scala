@@ -1,11 +1,13 @@
 package com.vyulabs.update.builder
 
+import ch.qos.logback.classic.Logger
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, LogSender, SyncDistributionClient}
+import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, LogSender, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.logger.{LogBuffer, TraceAppender}
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
@@ -47,9 +49,12 @@ object BuilderMain extends App {
   val distributionClient = new DistributionClient(config.distributionName, new HttpClientImpl(config.distributionUrl))
   val syncDistributionClient = new SyncDistributionClient(distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
 
+  // TODO localise this code
   val logSender = new LogSender(Common.DistributionServiceName, config.instanceId, distributionClient)
+  val appender = log.asInstanceOf[Logger].getAppender("TRACE").asInstanceOf[TraceAppender]
+  val buffer = new LogBuffer(logSender, 25, 1000)
   new Timer().schedule(new TimerTask() {
-    override def run(): Unit = logSender.getBuffer().flush()
+    override def run(): Unit = buffer.flush()
   }, 1000)
 
   command match {

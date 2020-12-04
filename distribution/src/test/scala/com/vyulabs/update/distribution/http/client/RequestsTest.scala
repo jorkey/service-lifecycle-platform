@@ -7,10 +7,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
-import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
-import com.vyulabs.update.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
-import com.vyulabs.update.distribution.client.graphql.ServiceGraphqlCoder._
+import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.distribution.graphql.graphql.AdministratorGraphqlCoder._
+import com.vyulabs.update.distribution.graphql.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
+import com.vyulabs.update.distribution.graphql.graphql.ServiceGraphqlCoder._
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import distribution.client.{AkkaHttpClient}

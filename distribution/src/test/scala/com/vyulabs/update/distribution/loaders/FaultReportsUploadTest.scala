@@ -13,8 +13,8 @@ import distribution.client.AkkaHttpClient
 import distribution.loaders.StateUploader
 import distribution.mongo.{FaultReportDocument, UploadStatus, UploadStatusDocument}
 import com.vyulabs.update.distribution.DistributionWebPaths._
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClient}
-import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
+import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClient}
+import com.vyulabs.update.distribution.graphql.graphql.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import spray.json._
