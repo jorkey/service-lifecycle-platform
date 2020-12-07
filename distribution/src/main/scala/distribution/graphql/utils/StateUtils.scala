@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.Common.{DistributionName, InstanceId, ProcessId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.distribution.server.DistributionDirectory
-import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, TestSignature, TestedDesiredVersions}
+import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, ServiceLogLine, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, TestSignature, TestedDesiredVersions}
 import distribution.config.FaultReportsConfig
 import distribution.mongo.{DatabaseCollections, FaultReportDocument, InstalledDesiredVersionsDocument, MongoDbCollection, ServiceLogLineDocument, ServiceStateDocument, TestedDesiredVersionsDocument}
 import org.bson.BsonDocument
@@ -100,16 +100,16 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
 
   def getServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
                        instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[DistributionServiceState]] = {
-    val clientArg = distributionName.map { client => Filters.eq("state.distributionName", client) }
+    val distributionArg = distributionName.map { distribution => Filters.eq("state.distributionName", distribution) }
     val serviceArg = serviceName.map { service => Filters.eq("state.instance.serviceName", service) }
     val instanceIdArg = instanceId.map { instanceId => Filters.eq("state.instance.instanceId", instanceId) }
     val directoryArg = directory.map { directory => Filters.eq("state.instance.directory", directory) }
-    val args = clientArg ++ serviceArg ++ instanceIdArg ++ directoryArg
+    val args = distributionArg ++ serviceArg ++ instanceIdArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
       collection <- collections.State_ServiceStates
-      profile <- collection.find(filters).map(_.map(_.state))
-    } yield profile
+      states <- collection.find(filters).map(_.map(_.state))
+    } yield states
   }
 
   def addServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId,
@@ -120,8 +120,23 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       result <- collection.insert(
         logs.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
           ServiceLogLineDocument(id - (logs.size-seq.size) + 1,
-            new DistributionServiceLogLine(distributionName, new ServiceLogLine(serviceName, instanceId, processId, directory, line))) })).map(_ => true)
+            new ServiceLogLine(distributionName, serviceName, instanceId, processId, directory, line)) })).map(_ => true)
     } yield result
+  }
+
+  def getServiceLogs(distributionName: Option[DistributionName], serviceName: Option[ServiceName], instanceId: Option[InstanceId],
+                     processId: Option[ProcessId], directory: Option[ServiceDirectory], last: Option[Int]): Future[Seq[ServiceLogLine]] = {
+    val distributionArg = distributionName.map { distribution => Filters.eq("line.distributionName", distribution) }
+    val serviceArg = serviceName.map { service => Filters.eq("line.serviceName", service) }
+    val instanceArg = instanceId.map { instanceId => Filters.eq("line.instanceId", instanceId) }
+    val processArg = processId.map { processId => Filters.eq("line.processId", processId) }
+    val directoryArg = directory.map { directory => Filters.eq("line.directory", directory) }
+    val args = distributionArg ++ serviceArg ++ instanceArg ++ processArg ++ directoryArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    for {
+      collection <- collections.State_ServiceLogs
+      lines <- collection.find(filters).map(_.map(_.line))
+    } yield lines
   }
 
   def addServiceFaultReportInfo(distributionName: DistributionName, report: ServiceFaultReport): Future[Boolean] = {

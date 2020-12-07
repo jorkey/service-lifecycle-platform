@@ -49,12 +49,12 @@ class AddServiceLogsTest extends TestEnvironment {
       """, variables = JsObject("date" -> date.toJson))))
 
     assertResult(Seq(
-      ServiceLogLineDocument(1, new DistributionServiceLogLine("test",
-        ServiceLogLine("service1", "instance1", "process1", "dir", LogLine(date, "INFO", None, "line1")))),
-      ServiceLogLineDocument(2, new DistributionServiceLogLine("test",
-        ServiceLogLine("service1", "instance1", "process1", "dir", LogLine(date, "DEBUG", None, "line2")))),
-      ServiceLogLineDocument(3, new DistributionServiceLogLine("test",
-        ServiceLogLine("service1", "instance1", "process1", "dir", LogLine(date, "ERROR", None, "line3")))))
+      ServiceLogLineDocument(1, new ServiceLogLine("test",
+        "service1", "instance1", "process1", "dir", LogLine(date, "INFO", None, "line1"))),
+      ServiceLogLineDocument(2, new ServiceLogLine("test",
+        "service1", "instance1", "process1", "dir", LogLine(date, "DEBUG", None, "line2"))),
+      ServiceLogLineDocument(3, new ServiceLogLine("test",
+        "service1", "instance1", "process1", "dir", LogLine(date, "ERROR", None, "line3"))))
     )(result(logsCollection.find()))
   }
 }

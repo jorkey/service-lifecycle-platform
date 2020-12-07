@@ -1,9 +1,8 @@
 package distribution.graphql
 
 import java.util.Date
-
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, DistributionFaultReport, DistributionServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceFaultReport, ServiceState, UpdateError, UserInfo, UserRole}
+import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, DistributionFaultReport, DistributionServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, ServiceState, UpdateError, UserInfo, UserRole}
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -95,6 +94,8 @@ object GraphqlTypes {
   implicit val DirectoryServiceStateType = deriveObjectType[Unit, DirectoryServiceState]()
   implicit val InstanceServiceStateType = deriveObjectType[Unit, InstanceServiceState]()
   implicit val ClientServiceStateType = deriveObjectType[Unit, DistributionServiceState]()
+  implicit val LogLineType = deriveObjectType[Unit, LogLine]()
+  implicit val ServiceLogLineType = deriveObjectType[Unit, ServiceLogLine]()
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
   implicit val ServiceFaultReportType = deriveObjectType[Unit, ServiceFaultReport]()
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()

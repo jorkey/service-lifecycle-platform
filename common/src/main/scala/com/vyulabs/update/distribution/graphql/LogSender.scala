@@ -17,7 +17,7 @@ class LogSender(serviceName: ServiceName, instanceId: InstanceId, client: Distri
   private val directory = new java.io.File(".").getCanonicalPath()
 
   override def receiveLogLines(events: Seq[LogLine]): Future[Unit] = {
-    Future(client.graphqlRequest(
-      CommonMutationsCoder.addServiceLogs(serviceName, instanceId, processId.toString, directory, events))).map(_ => ())
+    client.graphqlRequest(
+      CommonMutationsCoder.addServiceLogs(serviceName, instanceId, processId.toString, directory, events)).map(_ => ())
   }
 }

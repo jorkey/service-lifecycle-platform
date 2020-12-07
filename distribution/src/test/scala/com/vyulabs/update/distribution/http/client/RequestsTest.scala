@@ -17,7 +17,6 @@ import distribution.client.{AkkaHttpClient}
 import distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
-import scala.concurrent.Await
 import scala.concurrent.duration.FiniteDuration
 
 /**

@@ -1,21 +1,22 @@
 package com.vyulabs.update.logger
 
 import ch.qos.logback.classic.{Level, Logger}
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import com.vyulabs.update.utils.Utils
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, OneInstancePerTest}
 import org.slf4j.LoggerFactory
 
 import java.io.IOException
-import scala.concurrent.{Promise}
+import scala.concurrent.Promise
 
-class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with OneInstancePerTest {
   behavior of "Log trace appender"
 
   implicit val executionContext = scala.concurrent.ExecutionContext.global
+  implicit val log = Utils.getLogbackLogger(this.getClass)
 
   var messages = Seq.empty[String]
   var promise = Promise[Unit]
 
-  val log: Logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
   log.setLevel(Level.INFO)
   val appender = new TraceAppender()
   val buffer = new LogBuffer(events => { messages = events.map(_.message); promise.future }, 3, 6)

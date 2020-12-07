@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DistributionFaultReport, DistributionServiceLogLine, FaultInfo, LogLine, ServiceFaultReport, ServiceLogLine, ServiceState}
+import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
 import com.vyulabs.update.utils.Utils.DateJson._
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import distribution.mongo.{FaultReportDocument}

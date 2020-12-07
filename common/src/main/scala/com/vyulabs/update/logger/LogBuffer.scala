@@ -14,9 +14,9 @@ trait LogReceiver {
 
 class LogBuffer(logConsumer: LogReceiver, lowWater: Int, highWater: Int)
                (implicit executionContext: ExecutionContext) extends LogListener {
-  var eventsBuffer = Seq.empty[LogLine]
-  var sendingEvents = Seq.empty[LogLine]
-  var skipped = 0
+  private var eventsBuffer = Seq.empty[LogLine]
+  private var sendingEvents = Seq.empty[LogLine]
+  private var skipped = 0
 
   def append(event: ILoggingEvent): Unit = {
     synchronized {
@@ -40,7 +40,7 @@ class LogBuffer(logConsumer: LogReceiver, lowWater: Int, highWater: Int)
 
   def flush(): Unit = {
     synchronized {
-      if (!eventsBuffer.isEmpty) {
+      if (!eventsBuffer.isEmpty && sendingEvents.isEmpty) {
         send()
       }
     }
@@ -61,7 +61,7 @@ class LogBuffer(logConsumer: LogReceiver, lowWater: Int, highWater: Int)
           sendingEvents = Seq.empty
           maybeSend()
         }
-      case Failure(_) =>
+      case Failure(ex) =>
         synchronized {
           eventsBuffer = sendingEvents ++ eventsBuffer
           sendingEvents = Seq.empty

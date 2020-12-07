@@ -5,12 +5,13 @@ import java.net.{URI, URL}
 import java.text.{ParseException, SimpleDateFormat}
 import java.util.{Date, TimeZone}
 import java.util.jar.Attributes
-
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import org.slf4j.Logger
+import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.helpers.SubstituteLogger
 import spray.json.{JsString, JsValue, RootJsonFormat, deserializationError}
 
+import scala.annotation.tailrec
 import scala.util.matching.Regex
 
 /**
@@ -18,6 +19,17 @@ import scala.util.matching.Regex
   * Copyright FanDate, Inc.
   */
 object Utils {
+  @tailrec
+  def getLogbackLogger(cl: Class[_]): ch.qos.logback.classic.Logger = {
+    val log = LoggerFactory.getLogger(cl)
+    if (log.isInstanceOf[SubstituteLogger]) {
+      Thread.sleep(100)
+      getLogbackLogger(cl)
+    } else {
+      log.asInstanceOf[ch.qos.logback.classic.Logger]
+    }
+  }
+
   def serializeISO8601Date(date: Date): String = {
     val timezone = TimeZone.getTimeZone("UTC")
     val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")

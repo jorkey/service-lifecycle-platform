@@ -2,7 +2,7 @@ package distribution.mongo
 
 import com.vyulabs.update.common.Common.DistributionName
 import com.vyulabs.update.config.{DistributionClientInfo, DistributionClientProfile}
-import com.vyulabs.update.info.{ClientDesiredVersion, DistributionFaultReport, DistributionServiceLogLine, DistributionServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, TestedDesiredVersions}
+import com.vyulabs.update.info.{ClientDesiredVersion, DistributionFaultReport, ServiceLogLine, DistributionServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, TestedDesiredVersions}
 
 case class SequenceDocument(name: String, sequence: Long)
 
@@ -19,7 +19,7 @@ case class InstalledDesiredVersionsDocument(distributionName: DistributionName, 
 case class TestedDesiredVersionsDocument(versions: TestedDesiredVersions)
 
 case class ServiceStateDocument(sequence: Long, state: DistributionServiceState)
-case class ServiceLogLineDocument(_id: Long, log: DistributionServiceLogLine)
+case class ServiceLogLineDocument(_id: Long, line: ServiceLogLine)
 case class FaultReportDocument(_id: Long, fault: DistributionFaultReport)
 
 case class UploadStatus(lastUploadSequence: Option[Long], lastError: Option[String])

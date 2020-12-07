@@ -49,6 +49,7 @@ object GraphqlSchema {
 
   val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
+  val OptionProcessArg = Argument("process", OptionInputType(StringType))
   val OptionDirectoryArg = Argument("directory", OptionInputType(StringType))
   val OptionServiceArg = Argument("service", OptionInputType(StringType))
   val OptionServicesArg = Argument("services", OptionInputType(ListInputType(StringType)))
@@ -89,6 +90,10 @@ object GraphqlSchema {
       Field("serviceStates", ListType(ClientServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
+      Field("serviceLogs", ListType(ServiceLogLineType),
+        arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionLastArg :: Nil,
+        resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
+          c.arg(OptionProcessArg), c.arg(OptionDirectoryArg), c.arg(OptionLastArg)) }),
       Field("faultReportsInfo", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })

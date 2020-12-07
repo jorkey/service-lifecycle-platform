@@ -45,7 +45,6 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     classOf[ServiceState],
     classOf[ServiceStateDocument],
     classOf[ServiceLogLine],
-    classOf[DistributionServiceLogLine],
     classOf[ServiceLogLineDocument],
     classOf[DistributionFaultReport],
     classOf[FaultReportDocument],
@@ -107,7 +106,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val State_ServiceLogs = for {
     collection <- db.getOrCreateCollection[ServiceLogLineDocument]("state.serviceLogs")
-    _ <- collection.createIndex(Indexes.ascending("log.distributionName"))
+    _ <- collection.createIndex(Indexes.ascending("line.distributionName"))
   } yield collection
 
   val State_FaultReportsInfo = for {

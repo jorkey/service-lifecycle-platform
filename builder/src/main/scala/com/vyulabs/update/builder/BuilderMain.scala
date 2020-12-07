@@ -51,7 +51,8 @@ object BuilderMain extends App {
 
   // TODO localise this code
   val logSender = new LogSender(Common.DistributionServiceName, config.instanceId, distributionClient)
-  val appender = log.asInstanceOf[Logger].getAppender("TRACE").asInstanceOf[TraceAppender]
+  val logger = Utils.getLogbackLogger(this.getClass)
+  val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
   val buffer = new LogBuffer(logSender, 25, 1000)
   new Timer().schedule(new TimerTask() {
     override def run(): Unit = buffer.flush()

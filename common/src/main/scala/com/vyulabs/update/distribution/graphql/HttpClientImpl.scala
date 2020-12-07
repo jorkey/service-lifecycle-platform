@@ -39,12 +39,12 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
       connection.setReadTimeout(readTimeoutMs)
       val input = connection.getInputStream
       val responseJson = new String(input.readAllBytes(), "utf8").parseJson
-      log.debug(s"Receive graphql response: ${responseJson}")
+      log.debug(s"Received graphql response: ${responseJson}")
       request.decodeResponse(responseJson.asJsObject) match {
         case Left(response) =>
           response
         case Right(error) =>
-          throw new IOException(s"Decode graphql response error: ${error}")
+          throw new IOException(error)
       }
     })
   }

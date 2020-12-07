@@ -14,14 +14,12 @@
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>off</level>
+            <level>info</level>
         </filter>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="STDOUT" />
-    </root>
     <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE" />
     </root>
 </configuration>

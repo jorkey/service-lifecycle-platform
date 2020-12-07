@@ -14,7 +14,7 @@ import spray.json._
 import java.util.Date
 import scala.concurrent.ExecutionContext
 
-class AddServiceLogsTest extends TestEnvironment {
+class ServiceLogsTest extends TestEnvironment {
   behavior of "Service Logs Requests"
 
   implicit val system = ActorSystem("Distribution")
@@ -27,7 +27,7 @@ class AddServiceLogsTest extends TestEnvironment {
 
   val logsCollection = result(collections.State_ServiceLogs)
 
-  it should "add service logs" in {
+  it should "add/get service logs" in {
     val date = new Date()
 
     assertResult((OK,
@@ -48,13 +48,25 @@ class AddServiceLogsTest extends TestEnvironment {
         }
       """, variables = JsObject("date" -> date.toJson))))
 
-    assertResult(Seq(
-      ServiceLogLineDocument(1, new DistributionServiceLogLine("test",
-        ServiceLogLine("service1", "instance1", "process1", "dir", LogLine(date, "INFO", None, "line1")))),
-      ServiceLogLineDocument(2, new DistributionServiceLogLine("test",
-        ServiceLogLine("service1", "instance1", "process1", "dir", LogLine(date, "DEBUG", None, "line2")))),
-      ServiceLogLineDocument(3, new DistributionServiceLogLine("test",
-        ServiceLogLine("service1", "instance1", "process1", "dir", LogLine(date, "ERROR", None, "line3")))))
-    )(result(logsCollection.find()))
+    assertResult((OK,
+      ("""{"data":{"serviceLogs":[""" +
+       """{"instanceId":"instance1","distributionName":"test","line":{"level":"INFO","message":"line1"},"serviceName":"service1","directory":"dir"},""" +
+       """{"instanceId":"instance1","distributionName":"test","line":{"level":"DEBUG","message":"line2"},"serviceName":"service1","directory":"dir"},""" +
+       """{"instanceId":"instance1","distributionName":"test","line":{"level":"ERROR","message":"line3"},"serviceName":"service1","directory":"dir"}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          serviceLogs (distribution: "test", service: "service1") {
+            distributionName
+            serviceName
+            instanceId
+            directory
+            line {
+              level
+              message
+            }
+          }
+        }
+      """))
+    )
   }
 }

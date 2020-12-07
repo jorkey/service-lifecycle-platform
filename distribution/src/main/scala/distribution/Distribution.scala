@@ -1,7 +1,5 @@
 package distribution
 
-import java.io.File
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.common.EntityStreamingSupport
 import akka.http.scaladsl.model.HttpCharsets._
@@ -29,9 +27,7 @@ import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistribut
 import org.slf4j.LoggerFactory
 
 class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentials, graphql: Graphql)
-                  (implicit protected val system: ActorSystem,
-                            protected val materializer: Materializer,
-                            protected val executionContext: ExecutionContext) {
+                  (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -67,37 +63,13 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                         entity(as[JsValue]) { requestJson =>
                           val JsObject(fields) = requestJson
                           val JsString(query) = fields("query")
-                          QueryParser.parse(query) match {
-                            case Success(queryAst) =>
-                              val operation = fields.get("operation") collect {
-                                case JsString(op) => op
-                              }
-                              val variables = fields.get("variables") match {
-                                case Some(obj: JsObject) => obj
-                                case _ => JsObject.empty
-                              }
-                              val context = new GraphqlContext(userInfo, workspace)
-                              complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
-                                context, queryAst, operation, variables))
-                            case Failure(error) =>
-                              complete(BadRequest, JsObject("error" -> JsString(error.toString)))
-                          }
-                        }
+                          val operation = fields.get("operation") collect { case JsString(op) => op }
+                          val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
+                          executeGraphqlRequest(userInfo, workspace, query, operation, variables) }
                       } ~ get {
-                        parameters("query", "operation".?, "variables".?) { (query, operation, variables) =>
-                          QueryParser.parse(query) match {
-                            case Success(queryAst) =>
-                              val vars = variables.map(_.parseJson) match {
-                                case Some(obj: JsObject) => obj
-                                case _ => JsObject.empty
-                              }
-                              val context = new GraphqlContext(userInfo, workspace)
-                              complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
-                                context, queryAst, operation, vars))
-                            case Failure(error) =>
-                              complete(BadRequest, JsObject("error" -> JsString(error.toString)))
-                          }
-                        }
+                        parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
+                          val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
+                          executeGraphqlRequest(userInfo, workspace, query, operation, variables) }
                       }
                     }
                   }
@@ -181,6 +153,23 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
             None
         }
       case _ => None
+    }
+  }
+
+  private def executeGraphqlRequest(userInfo: UserInfo, workspace: GraphqlWorkspace,
+                                    query: String, operation: Option[String], variables: JsObject): Route = {
+    QueryParser.parse(query) match {
+      case Success(queryAst) =>
+        val context = new GraphqlContext(userInfo, workspace)
+        log.debug(s"Execute graphql query ${query}, operation ${operation}, variables ${variables}")
+        complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
+            context, queryAst, operation, variables).andThen {
+          case Success((statusCode, value)) =>
+            log.debug(s"Graphql query terminated with status ${statusCode}, value ${value}")
+          case Failure(ex) =>
+        })
+      case Failure(error) =>
+        complete(BadRequest, JsObject("error" -> JsString(error.toString)))
     }
   }
 

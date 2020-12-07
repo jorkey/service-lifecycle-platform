@@ -1,21 +1,26 @@
 package com.vyulabs.update.distribution.http.client
 
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.{Level, Logger}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, LogSender}
+import com.vyulabs.update.info.{UserInfo, UserRole}
 import com.vyulabs.update.logger.{LogBuffer, TraceAppender}
-import org.slf4j.LoggerFactory
+import com.vyulabs.update.utils.Utils
+import distribution.graphql.{GraphqlContext, GraphqlSchema}
+import sangria.macros.LiteralGraphQLStringContext
 
 import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
+import spray.json._
 
 class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
   behavior of "Log trace sender"
 
-  val logger: Logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
+  val logger = Utils.getLogbackLogger(this.getClass)
   logger.setLevel(Level.INFO)
   val appender = new TraceAppender()
   appender.start()
@@ -33,18 +38,41 @@ class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
 
   appender.addListener(buffer)
 
+  val graphqlContext = new GraphqlContext(UserInfo("administrator", UserRole.Administrator), workspace)
+
   system.scheduler.scheduleWithFixedDelay(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS))(new Runnable {
     override def run(): Unit = { buffer.flush() }
   })
 
   it should "send log records to distribution server" in {
-    logger.info("log line 1")
-    logger.warn("log line 2")
-    logger.error("log line 3")
-    logger.warn("log line 4")
-    logger.info("log line 5")
+    log.info("log line 1")
+    log.warn("log line 2")
+    log.error("log line 3")
+    log.warn("log line 4")
+    log.info("log line 5")
 
-    Thread.sleep(3000)
-    println(result(result(collections.State_ServiceLogs).find()))
+    Thread.sleep(15000)
+
+    assertResult((OK,
+      ("""{"data":{"serviceLogs":[""" +
+        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 1"}},""" +
+        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 2"}},""" +
+        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"ERROR","message":"log line 3"}},""" +
+        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 4"}},""" +
+        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          serviceLogs {
+            distributionName
+            serviceName
+            instanceId
+            line {
+              level
+              message
+            }
+          }
+        }
+      """))
+    )
   }
 }

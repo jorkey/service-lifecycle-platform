@@ -3,14 +3,16 @@ package com.vyulabs.update.logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.{Level, Logger}
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import com.vyulabs.update.utils.Utils
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, OneInstancePerTest}
 
-class TraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class TraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll with OneInstancePerTest {
   behavior of "Log trace appender"
+
+  implicit val log = Utils.getLogbackLogger(this.getClass)
 
   var messages = Seq.empty[String]
 
-  val log: Logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
   log.setLevel(Level.INFO)
   val appender = new TraceAppender()
   appender.addListener(new LogListener {
