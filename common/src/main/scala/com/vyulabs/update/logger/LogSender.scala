@@ -1,9 +1,9 @@
-package com.vyulabs.update.distribution.graphql
+package com.vyulabs.update.logger
 
 import com.vyulabs.update.common.Common.{InstanceId, ServiceName}
+import com.vyulabs.update.distribution.graphql.DistributionClient
 import com.vyulabs.update.distribution.graphql.graphql.CommonMutationsCoder
 import com.vyulabs.update.info.LogLine
-import com.vyulabs.update.logger.{LogReceiver}
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 

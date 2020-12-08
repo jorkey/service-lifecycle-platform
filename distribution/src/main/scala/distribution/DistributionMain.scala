@@ -1,10 +1,10 @@
 package com.vyulabs.update.distribution
 
 import java.io.{File, FileInputStream}
-
 import akka.stream.ActorMaterializer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.lock.SmartFilesLocker
 import distribution.users.UsersCredentials.credentialsFile
@@ -17,15 +17,19 @@ import scala.io.StdIn
 import distribution.users.UsersCredentials._
 import distribution.graphql.{Graphql, GraphqlWorkspace}
 import distribution.mongo.{DatabaseCollections, MongoDb}
-import java.security.{KeyStore, SecureRandom}
 
+import java.security.{KeyStore, SecureRandom}
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.info.UserRole
+import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
 import distribution.Distribution
 import distribution.config.{DistributionConfig, SslConfig}
+import distribution.logger.LogStorer
+
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import spray.json._
 
+import java.util.{Timer, TimerTask}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 /**
@@ -71,6 +75,15 @@ object DistributionMain extends App {
 
         val dir = new DistributionDirectory(new File(config.distributionDirectory))
         val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
+
+        val logStorer = new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, collections)
+        val logger = Utils.getLogbackLogger(this.getClass)
+        val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
+        val buffer = new LogBuffer(logStorer, 25, 1000)
+        appender.addListener(buffer)
+        new Timer().schedule(new TimerTask() {
+          override def run(): Unit = buffer.flush()
+        }, 1000)
 
         config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
           val uploader = StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl)

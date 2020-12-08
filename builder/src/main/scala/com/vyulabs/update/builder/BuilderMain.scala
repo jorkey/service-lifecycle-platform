@@ -5,9 +5,9 @@ import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, LogSender, SyncDistributionClient}
+import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.logger.{LogBuffer, TraceAppender}
+import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
@@ -54,6 +54,7 @@ object BuilderMain extends App {
   val logger = Utils.getLogbackLogger(this.getClass)
   val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
   val buffer = new LogBuffer(logSender, 25, 1000)
+  appender.addListener(buffer)
   new Timer().schedule(new TimerTask() {
     override def run(): Unit = buffer.flush()
   }, 1000)

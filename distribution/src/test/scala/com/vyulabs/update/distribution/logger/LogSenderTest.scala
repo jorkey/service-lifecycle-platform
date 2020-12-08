@@ -1,21 +1,21 @@
-package com.vyulabs.update.distribution.http.client
+package com.vyulabs.update.distribution.logger
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import ch.qos.logback.classic.{Level, Logger}
+import ch.qos.logback.classic.Level
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, LogSender}
+import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl}
 import com.vyulabs.update.info.{UserInfo, UserRole}
-import com.vyulabs.update.logger.{LogBuffer, TraceAppender}
+import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
 import com.vyulabs.update.utils.Utils
 import distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
+import spray.json._
 
 import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import spray.json._
 
 class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
   behavior of "Log trace sender"
@@ -51,7 +51,7 @@ class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
     log.warn("log line 4")
     log.info("log line 5")
 
-    Thread.sleep(15000)
+    Thread.sleep(5000)
 
     assertResult((OK,
       ("""{"data":{"serviceLogs":[""" +

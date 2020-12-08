@@ -102,6 +102,19 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
     getMessages(Seq("log line 1", "log line 2"))
   }
 
+  it should "not flush buffer when sending in process" in {
+    messages = Seq.empty
+    promise = Promise[Unit]
+    log.info("log line 1")
+    log.warn("log line 2")
+    log.error("log line 3")
+    getMessages(Seq("log line 1", "log line 2", "log line 3"))
+    log.warn("log line 4")
+    log.info("log line 5")
+    buffer.flush()
+    getMessages(Seq())
+  }
+
   it should "flush buffer when appender stopped" in {
     messages = Seq.empty
     promise = Promise[Unit]
