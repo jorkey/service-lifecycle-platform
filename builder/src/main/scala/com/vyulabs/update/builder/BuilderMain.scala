@@ -1,11 +1,10 @@
 package com.vyulabs.update.builder
 
-import ch.qos.logback.classic.Logger
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
 import com.vyulabs.update.utils.Utils

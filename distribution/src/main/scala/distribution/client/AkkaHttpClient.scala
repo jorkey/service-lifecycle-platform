@@ -11,8 +11,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import akka.util.ByteString
 import com.vyulabs.update.distribution.DistributionWebPaths._
-import com.vyulabs.update.distribution.graphql.HttpClient
-import com.vyulabs.update.distribution.graphql.graphql.GraphqlRequest
+import com.vyulabs.update.distribution.client.HttpClient
+import com.vyulabs.update.distribution.client.graphql.GraphqlRequest
 import org.slf4j.LoggerFactory
 import spray.json._
 
@@ -22,8 +22,8 @@ class AkkaHttpClient(distributionUrl: URL)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def graphqlRequest[Response](request: GraphqlRequest[Response])
-                              (implicit reader: JsonReader[Response]): Future[Response] = {
+  def graphql[Response](request: GraphqlRequest[Response])
+                       (implicit reader: JsonReader[Response]): Future[Response] = {
     val queryJson = request.encodeRequest()
     log.debug(s"Send graphql query: ${queryJson}")
     var post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,

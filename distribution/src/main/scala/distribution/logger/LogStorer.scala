@@ -22,7 +22,7 @@ class LogStorer(distributionName: DistributionName, serviceName: ServiceName, in
       result <- collection.insert(
         logs.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
           ServiceLogLineDocument(id - (logs.size-seq.size) + 1,
-            new ServiceLogLine(distributionName, serviceName, instanceId, processId, directory, line)) })).map(_ => true)
+            new ServiceLogLine(distributionName, serviceName, instanceId, processId, directory, line)) })).map(_ => ())
     } yield result
   }
 }

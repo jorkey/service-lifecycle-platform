@@ -9,12 +9,11 @@ import com.vyulabs.update.common.Common.FaultId
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
-import distribution.client.AkkaHttpClient
 import distribution.loaders.StateUploader
 import distribution.mongo.{FaultReportDocument, UploadStatus, UploadStatusDocument}
 import com.vyulabs.update.distribution.DistributionWebPaths._
-import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClient}
-import com.vyulabs.update.distribution.graphql.graphql.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
+import com.vyulabs.update.distribution.client.{DistributionClient, HttpClient, HttpClientTestStub}
+import com.vyulabs.update.distribution.client.graphql.{GraphqlArgument, GraphqlMutation, GraphqlRequest}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import spray.json._
@@ -27,44 +26,9 @@ class FaultReportsUploadTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  case class FileUploadRequest(path: String, fieldName: String, file: File)
-
-  var uploadPromise = Promise[FileUploadRequest]
-  var uploadResult = Future.successful()
-
-  var graphqlPromise = Promise[GraphqlRequest[Boolean]]
-  var graphqlResult = Future.successful[Boolean](true)
-
   val date = new Date()
 
-  val httpClient = new HttpClient {
-    override def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Response] = {
-      synchronized {
-        log.info(s"Request ${request}")
-        graphqlPromise.success(request.asInstanceOf[GraphqlRequest[Boolean]])
-        graphqlPromise = Promise[GraphqlRequest[Boolean]]
-        graphqlResult.asInstanceOf[Future[Response]]
-      }
-    }
-
-    override def upload(path: String, fieldName: String, file: File): Future[Unit] = {
-      synchronized {
-        log.info(s"Upload request path ${path} file ${file}")
-        uploadPromise.success(FileUploadRequest(path, fieldName, file))
-        uploadPromise = Promise[FileUploadRequest]
-        uploadResult
-      }
-    }
-
-    override def download(path: String, file: File): Future[Unit] = {
-      throw new NotImplementedError()
-    }
-
-    override def exists(path: String): Future[Unit] = {
-      throw new NotImplementedError()
-    }
-  }
-
+  val httpClient = new HttpClientTestStub()
   val distributionClient = new DistributionClient(distributionName, httpClient)
 
   it should "upload fault reports" in {
@@ -73,7 +37,9 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1")))
-    testAction(() => result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(0, report))).flatten), report, "fault1", "/faults/fault1-fault.zip")
+    result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(0, report))).flatten)
+    waitForFaultReportUpload("fault1").success()
+    waitForAddServiceFaultReportInfo(report).success(true)
 
     Thread.sleep(100)
     uploader.stop()
@@ -84,22 +50,25 @@ class FaultReportsUploadTest extends TestEnvironment {
 
   it should "try to upload service states again after failure" in {
     val uploader = new StateUploader(distributionName, collections, distributionDir, 2, distributionClient)
-    uploadResult = Future.failed(new IOException("upload error"))
     uploader.start()
 
     val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))), None, None, None, None), Seq()), Seq("file1")))
-    testUploadAction(() => result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(0, report1))).flatten), "fault1", "/faults/fault1-fault.zip")
+    result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(0, report1))).flatten)
+    waitForFaultReportUpload( "fault1").failure(new IOException("upload error"))
 
     Thread.sleep(100)
     assertResult(UploadStatusDocument("state.faultReportsInfo", UploadStatus(None, Some("upload error"))))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.faultReportsInfo")).map(_.head)))))
 
-    testAction(() => synchronized { uploadResult = Future.successful() }, report1, "fault1", "/faults/fault1-fault.zip")
+    waitForFaultReportUpload( "fault1")
+    waitForAddServiceFaultReportInfo(report1).success(true)
 
     val report2 = DistributionFaultReport(distributionName, ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "directory", "service2", "profile2",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))), None, None, None, None), Seq()), Seq("file2")))
-    testAction(() => result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(1, report2)))), report2, "fault2", "/faults/fault2-fault.zip")
+    result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(1, report2))))
+    waitForFaultReportUpload( "fault2")
+    waitForAddServiceFaultReportInfo(report2).success(true)
 
     uploader.stop()
 
@@ -107,20 +76,11 @@ class FaultReportsUploadTest extends TestEnvironment {
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 
-  def testUploadAction(action: () => Unit, faultId: FaultId, file: String): Unit = {
-    val uploadPromise = this.uploadPromise
-    action()
-    assertResult(FileUploadRequest(faultReportPath + "/" + faultId, "fault-report",
-      new File(distributionDir.directory, file)))(result(uploadPromise.future))
+  def waitForFaultReportUpload(faultId: FaultId): Promise[Unit] = {
+    httpClient.waitForUpload(faultReportPath + "/" + faultId, "fault-report")
   }
 
-  def testAction(action: () => Unit, report: DistributionFaultReport, faultId: String, file: String): Unit = {
-    val uploadPromise = this.uploadPromise
-    val graphqlPromise = this.graphqlPromise
-    action()
-    assertResult(FileUploadRequest(faultReportPath + "/" + faultId, "fault-report",
-      new File(distributionDir.directory, file)))(result(uploadPromise.future))
-    val graphqlRequest = result(graphqlPromise.future)
-    assertResult(GraphqlMutation("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.report.toJson))))(graphqlRequest)
+  def waitForAddServiceFaultReportInfo(report: DistributionFaultReport): Promise[Boolean] = {
+    httpClient.waitForMutation("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.report.toJson)))
   }
 }

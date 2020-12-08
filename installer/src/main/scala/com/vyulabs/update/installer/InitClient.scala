@@ -5,7 +5,7 @@ import java.net.{URI, URL}
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.graphql.OldDistributionInterface
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.installer.config.InstallerConfig

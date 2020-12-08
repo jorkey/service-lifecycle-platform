@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{DistributionClient, HttpClientImpl}
+import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl}
 import com.vyulabs.update.info.{UserInfo, UserRole}
 import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
 import com.vyulabs.update.utils.Utils

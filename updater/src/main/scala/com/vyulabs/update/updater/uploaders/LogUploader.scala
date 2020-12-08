@@ -2,7 +2,7 @@ package com.vyulabs.update.updater.uploaders
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.LogUploaderConfig
-import com.vyulabs.update.distribution.graphql.OldDistributionInterface
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.info.ProfiledServiceName
 import com.vyulabs.update.logs.ServiceLogs
 import org.slf4j.Logger

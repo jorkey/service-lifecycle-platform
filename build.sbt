@@ -31,7 +31,7 @@ lazy val updateAdmin = project
     libraryDependencies ++= baseDependencies
   )
   .dependsOn(
-    updateCommon
+    updateCommon % "compile->compile;test->test"
   )
   .dependsOn(
     gitLib
@@ -64,7 +64,7 @@ lazy val updater = project
     assemblySettings
   )
   .dependsOn(
-    updateCommon
+    updateCommon % "compile->compile;test->test"
   )
 
 lazy val distribution = project
@@ -74,7 +74,7 @@ lazy val distribution = project
     assemblySettings
   )
   .dependsOn(
-    updateCommon//,
+    updateCommon % "compile->compile;test->test"//,
     //dashboard
   )
 

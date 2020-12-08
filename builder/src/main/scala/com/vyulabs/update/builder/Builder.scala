@@ -17,8 +17,8 @@ import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersio
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 import com.vyulabs.update.config.InstallConfig._
-import com.vyulabs.update.distribution.graphql.{DistributionClient, SyncDistributionClient}
-import com.vyulabs.update.distribution.graphql.graphql.AdministratorGraphqlCoder._
+import com.vyulabs.update.distribution.client.{DistributionClient, SyncDistributionClient}
+import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
 
 class Builder(distributionClient: SyncDistributionClient, adminRepositoryUrl: URI)(implicit filesLocker: SmartFilesLocker) {
   private val builderLockFile = "builder.lock"

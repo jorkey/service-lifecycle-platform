@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 import com.vyulabs.update.common.Common.InstanceId
 import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
-import com.vyulabs.update.distribution.graphql.OldDistributionInterface
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName}
 import com.vyulabs.update.logs.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
