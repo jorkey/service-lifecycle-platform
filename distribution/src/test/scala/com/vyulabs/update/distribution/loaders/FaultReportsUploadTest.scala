@@ -61,13 +61,13 @@ class FaultReportsUploadTest extends TestEnvironment {
     assertResult(UploadStatusDocument("state.faultReportsInfo", UploadStatus(None, Some("upload error"))))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.faultReportsInfo")).map(_.head)))))
 
-    waitForFaultReportUpload( "fault1")
+    waitForFaultReportUpload( "fault1").success()
     waitForAddServiceFaultReportInfo(report1).success(true)
 
     val report2 = DistributionFaultReport(distributionName, ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "directory", "service2", "profile2",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))), None, None, None, None), Seq()), Seq("file2")))
     result(collections.State_FaultReportsInfo.map(_.insert(FaultReportDocument(1, report2))))
-    waitForFaultReportUpload( "fault2")
+    waitForFaultReportUpload( "fault2").success()
     waitForAddServiceFaultReportInfo(report2).success(true)
 
     uploader.stop()

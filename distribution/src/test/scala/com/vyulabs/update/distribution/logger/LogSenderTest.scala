@@ -51,7 +51,7 @@ class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
     log.warn("log line 4")
     log.info("log line 5")
 
-    Thread.sleep(5000)
+    Thread.sleep(10000)
 
     assertResult((OK,
       ("""{"data":{"serviceLogs":[""" +
