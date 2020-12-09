@@ -19,8 +19,8 @@ class SyncDistributionClient(client: DistributionClient, waitDuration: FiniteDur
     result(client.available()).isDefined
   }
 
-  def getDistributionVersion(): Option[ClientDistributionVersion] = {
-    result(client.getDistributionVersion()).flatten
+  def getServiceVersion(serviceName: ServiceName): Option[ClientDistributionVersion] = {
+    result(client.getServiceVersion(serviceName)).flatten
   }
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {

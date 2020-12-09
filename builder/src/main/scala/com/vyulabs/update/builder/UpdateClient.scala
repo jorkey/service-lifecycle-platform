@@ -6,7 +6,7 @@ import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.distribution.client.{OldDistributionInterface, SyncDistributionClient}
-import com.vyulabs.update.info.{ClientDesiredVersions, DeveloperDesiredVersions}
+import com.vyulabs.update.info.{BuildInfo, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersions, InstallInfo}
 import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.IoUtils
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -15,6 +15,9 @@ import org.slf4j.Logger
 
 import java.io.File
 import spray.json.DefaultJsonProtocol._
+
+import java.util.Date
+import javax.print.DocFlavor.URL
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
@@ -29,8 +32,8 @@ class UpdateClient()(implicit log: Logger) {
                      developerDistribution: SyncDistributionClient,
                      servicesOnly: Set[ServiceName],
                      localConfigOnly: Boolean,
-                     assignDesiredVersions: Boolean): InstallResult = {
-    var success = false
+                     assignDesiredVersions: Boolean,
+                     clientDistributionUrl: URL): InstallResult = {
     var clientVersions = Map.empty[ServiceName, ClientDistributionVersion]
     try {
       if (buildDir.exists() && !IoUtils.deleteFileRecursively(buildDir)) {
@@ -108,11 +111,8 @@ class UpdateClient()(implicit log: Logger) {
           clientVersions += (serviceName -> clientVersion)
       }
       log.info("Install updates")
-      //val result = installVersions(adminRepository, clientDistribution, developerDistribution,
-      //  developerVersions, clientVersions, assignDesiredVersions)
-      //success = result != InstallResult.Failure
-      //result
-      InstallResult.Failure
+      installVersions(adminRepository, clientDistribution, developerDistribution,
+        developerVersions, clientVersions, assignDesiredVersions, clientDistributionUrl)
     } catch {
       case ex: Exception =>
         log.error("Exception", ex)
@@ -120,11 +120,12 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  def waitForServerUpdated(distributionClient: SyncDistributionClient, desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int): Boolean = {
+  def waitForServerUpdated(distributionClient: SyncDistributionClient,
+                           serviceName: ServiceName, desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int = 10000): Boolean = {
     log.info(s"Wait for distribution server updated")
     for (_ <- 0 until waitingTimeoutSec) {
       if (distributionClient.available()) {
-        distributionClient.getDistributionVersion() match {
+        distributionClient.getServiceVersion(serviceName) match {
           case Some(version) =>
             if (version == desiredVersion) {
               log.info(s"Distribution server is updated")
@@ -161,7 +162,7 @@ class UpdateClient()(implicit log: Logger) {
     true
   }
 
-  /*def signVersionsAsTested(clientDistribution: SyncDistributionClient, developerDistribution: SyncDistributionClient): Boolean = {
+  def signVersionsAsTested(clientDistribution: SyncDistributionClient, developerDistribution: SyncDistributionClient): Boolean = {
     val clientDesiredVersionsMap = clientDistribution.graphqlRequest(administratorQueries.getClientDesiredVersions())
         .map(ClientDesiredVersions.toMap(_)).getOrElse {
       log.error("Error of getting client desired versions")
@@ -172,24 +173,25 @@ class UpdateClient()(implicit log: Logger) {
       log.error("Error of getting developer desired versions")
       return false
     }
-    if (!clientDesiredVersionsMap.filter(!_._2.client.isDefined).equals(developerDesiredVersionsMap)) {
+    if (!clientDesiredVersionsMap.filter(_._2.distributionName == developerDistribution.distributionName)
+        .mapValues(_.original()).equals(developerDesiredVersionsMap)) {
       log.error("Client versions are different from developer versions:")
       clientDesiredVersionsMap foreach {
-        case (serviceName, version) =>
+        case (serviceName, clientVersion) =>
           developerDesiredVersionsMap.get(serviceName) match {
-            case Some(commonVersion) if commonVersion != version =>
-              log.info(s"  service ${serviceName} version ${version} != ${commonVersion}")
+            case Some(developerVersion) if developerVersion != clientVersion.original() =>
+              log.info(s"  service ${serviceName} version ${clientVersion} != ${developerVersion}")
             case _ =>
           }
       }
       developerDesiredVersionsMap foreach {
-        case (serviceName, commonVersion) =>
+        case (serviceName, developerVersion) =>
           if (!clientDesiredVersionsMap.get(serviceName).isDefined) {
-            log.info(s"  service ${serviceName} version ${commonVersion} is not installed")
+            log.info(s"  service ${serviceName} version ${developerVersion} is not installed")
           }
       }
       clientDesiredVersionsMap foreach {
-        case (serviceName, version) =>
+        case (serviceName, _) =>
           if (!developerDesiredVersionsMap.get(serviceName).isDefined) {
             log.info(s"  service ${serviceName} is not the developer service")
           }
@@ -202,26 +204,25 @@ class UpdateClient()(implicit log: Logger) {
       return false
     }
     true
-  }*/
+  }
 
-  /*
   private def installVersions(adminRepository: AdminRepository,
                               clientDistribution: SyncDistributionClient,
                               developerDistribution: SyncDistributionClient,
                               developerVersions: Map[ServiceName, DeveloperDistributionVersion],
                               clientVersions: Map[ServiceName, ClientDistributionVersion],
-                              assignDesiredVersions: Boolean): InstallResult = {
+                              assignDesiredVersions: Boolean, clientDistributionUrl: URL): InstallResult = {
     if (assignDesiredVersions && developerVersions.get(Common.InstallerServiceName).isDefined) {
       if (!installVersions(adminRepository, clientDistribution, developerDistribution,
         developerVersions.filterKeys(
           serviceName => {
             serviceName == Common.InstallerServiceName || serviceName == Common.DistributionServiceName
-          }), clientVersions)) {
+          }), clientVersions, clientDistributionUrl)) {
         return InstallResult.Failure
       }
       return InstallResult.NeedRestartToUpdate
     }
-    if (!installVersions(adminRepository, clientDistribution, developerDistribution, developerVersions, clientVersions)) {
+    if (!installVersions(adminRepository, clientDistribution, developerDistribution, developerVersions, clientVersions, clientDistributionUrl)) {
       return InstallResult.Failure
     }
     if (assignDesiredVersions) {
@@ -230,21 +231,20 @@ class UpdateClient()(implicit log: Logger) {
         log.error("Set desired versions error")
         return InstallResult.Failure
       }
-      /* TODO graphql
-      developerVersions.get(Common.DistributionServiceName) match {
+      clientVersions.get(Common.DistributionServiceName) match {
         case Some(newDistributionVersion) =>
-          if (!clientDistribution.waitForServerUpdated(clientDistribution.getDistributionVersionPath, newDistributionVersion)) { // see release of waitForServerUpdated below
+          if (!waitForServerUpdated(clientDistribution, Common.DistributionServiceName, newDistributionVersion)) {
             log.error("Update distribution server error")
             return InstallResult.Failure
           }
         case None =>
-          for (newScriptsVersion <- developerVersions.get(Common.ScriptsServiceName)) {
-            if (!clientDistribution.waitForServerUpdated(clientDistribution.getScriptsVersionPath, newScriptsVersion)) {
+          for (newScriptsVersion <- clientVersions.get(Common.ScriptsServiceName)) {
+            if (!waitForServerUpdated(clientDistribution, Common.ScriptsServiceName, newScriptsVersion)) {
               log.error("Update scripts on distribution server error")
               return InstallResult.Failure
             }
           }
-      }*/
+      }
     }
     InstallResult.Complete
   }
@@ -253,11 +253,12 @@ class UpdateClient()(implicit log: Logger) {
                               clientDistribution: SyncDistributionClient,
                               developerDistribution: SyncDistributionClient,
                               developerVersions: Map[ServiceName, DeveloperDistributionVersion],
-                              clientVersions: Map[ServiceName, ClientDistributionVersion]): Boolean = {
+                              clientVersions: Map[ServiceName, ClientDistributionVersion],
+                              clientDistributionUrl: URL): Boolean = {
     developerVersions.foreach {
       case (serviceName, version) =>
         if (!installVersion(adminRepository, clientDistribution, developerDistribution, serviceName, version,
-            clientVersions.get(serviceName).get)) {
+            clientVersions.get(serviceName).get, clientDistributionUrl)) {
           log.error(s"Can't install desired version ${version} of service ${serviceName}")
           return false
         }
@@ -268,18 +269,23 @@ class UpdateClient()(implicit log: Logger) {
   private def installVersion(adminRepository: AdminRepository,
                              clientDistribution: SyncDistributionClient,
                              developerDistribution: SyncDistributionClient,
-                             serviceName: ServiceName, fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion): Boolean = {
+                             serviceName: ServiceName,
+                             fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion,
+                             clientDistributionUrl: URL): Boolean = {
     try {
       log.info(s"Download version ${fromVersion} of service ${serviceName}")
-      val versionInfo = developerDistribution.graphqlRequest(distributionQueries.getDesiredVersions())downloadVersionInfo(serviceName, fromVersion).getOrElse {
-        log.error(s"Can't download version ${fromVersion} of service ${serviceName} info")
+      val versionInfo = developerDistribution.graphqlRequest(distributionQueries.getVersionsInfo(serviceName)).getOrElse {
+        log.error(s"Can't get version ${fromVersion} of service ${serviceName} info")
+        return false
+      }.headOption.getOrElse {
+        log.error(s"Can't get version ${fromVersion} of service ${serviceName} info")
         return false
       }
       if (!IoUtils.deleteDirectoryContents(buildDir)) {
         log.error(s"Can't remove directory ${buildDir} contents")
         return false
       }
-      if (!developerDistribution.downloadDeveloperVersion(serviceName, fromVersion, buildDir)) {
+      if (!developerDistribution.downloadDeveloperVersionImage(serviceName, fromVersion, buildDir)) {
         log.error(s"Can't download version ${fromVersion} of service ${serviceName}")
         return false
       }
@@ -297,7 +303,7 @@ class UpdateClient()(implicit log: Logger) {
       val configDir = adminRepository.getServiceSettingsDir(serviceName)
       if (configDir.exists()) {
         log.info(s"Merge private settings files")
-        if (!mergeSettings(clientDistribution, serviceName, buildDir, configDir, toVersion)) {
+        if (!mergeSettings(clientDistribution, serviceName, buildDir, configDir, toVersion, clientDistributionUrl)) {
           return false
         }
       }
@@ -311,18 +317,17 @@ class UpdateClient()(implicit log: Logger) {
       }
 
       log.info(s"Upload version ${toVersion} of service ${serviceName}")
-      /* TODO graphql
-      val clientVersionInfo = BuildInfo(versionInfo.author, versionInfo.branches, new Date(), versionInfo.comment)
-      if (!clientDistribution.uploadVersion(serviceName, toVersion, clientVersionInfo, buildDir)) {
+      val clientVersionInfo = ClientVersionInfo(serviceName, toVersion, versionInfo.buildInfo, InstallInfo("user", new Date())) // TODO set userName
+      if (!clientDistribution.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
         return false
-      }*/
+      }
       true
     } catch {
       case ex: Exception =>
         log.error("Install updates error", ex)
         false
     }
-  }*/
+  }
 
   private def mergeInstallConfigFile(adminRepository: AdminRepository, serviceName: ServiceName): Boolean = {
     val buildConfigFile = new File(buildDir, Common.InstallConfigFileName)
@@ -342,9 +347,9 @@ class UpdateClient()(implicit log: Logger) {
     }
   }
 
-  private def mergeSettings(clientDistribution: OldDistributionInterface,
+  private def mergeSettings(clientDistribution: SyncDistributionClient,
                             serviceName: ServiceName, buildDirectory: File, localDirectory: File,
-                            version: ClientDistributionVersion, subPath: String = ""): Boolean = {
+                            version: ClientDistributionVersion, clientDistributionUrl: URL, subPath: String = ""): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {
       if (localFile.isDirectory) {
         val newSubPath = subPath + "/" + localFile.getName
@@ -353,7 +358,7 @@ class UpdateClient()(implicit log: Logger) {
           log.error(s"Can't make ${buildSubDirectory}")
           return false
         }
-        if (!mergeSettings(clientDistribution, serviceName, buildDirectory, localDirectory, version, newSubPath)) {
+        if (!mergeSettings(clientDistribution, serviceName, buildDirectory, localDirectory, version, clientDistributionUrl, newSubPath)) {
           return false
         }
       } else {
@@ -383,7 +388,7 @@ class UpdateClient()(implicit log: Logger) {
           val buildConf = new File(buildDirectory, filePath)
           var preSettings = Map.empty[String, String]
           preSettings += ("version" -> version.toString)
-          preSettings += ("distribDirectoryUrl" -> clientDistribution.url.toString)
+          preSettings += ("distribDirectoryUrl" -> clientDistributionUrl.toString)
           val definesSettings = DefinesSettings(localFile, preSettings).getOrElse {
             return false
           }

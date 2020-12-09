@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import spray.json.JsonReader
 
 import java.io.File
+import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
 
 class DistributionClient(val distributionName: DistributionName, client: HttpClient)(implicit executionContext: ExecutionContext) {
@@ -19,8 +20,8 @@ class DistributionClient(val distributionName: DistributionName, client: HttpCli
     client.exists(pingPath)
   }
 
-  def getDistributionVersion(): Future[Option[ClientDistributionVersion]] = {
-    client.graphql(administratorQueries.getServiceStates(Some(distributionName), Some(Common.DistributionServiceName), None, None))
+  def getServiceVersion(serviceName: ServiceName): Future[Option[ClientDistributionVersion]] = {
+    client.graphql(administratorQueries.getServiceStates(Some(distributionName), Some(serviceName), None, None))
       .map(_.headOption.map(_.instance.service.version).flatten)
   }
 

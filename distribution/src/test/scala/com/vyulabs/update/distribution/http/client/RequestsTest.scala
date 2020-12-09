@@ -5,6 +5,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.vyulabs.update.common.Common
 import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
@@ -13,7 +14,7 @@ import com.vyulabs.update.distribution.client.graphql.DistributionGraphqlCoder.{
 import com.vyulabs.update.distribution.client.graphql.ServiceGraphqlCoder._
 import com.vyulabs.update.info._
 import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import distribution.client.{AkkaHttpClient}
+import distribution.client.AkkaHttpClient
 import distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
@@ -55,7 +56,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "execute some requests" in {
-    assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getDistributionVersion())
+    assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(Common.DistributionServiceName))
 
     assertResult(Some(Seq(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))(
       adminClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
