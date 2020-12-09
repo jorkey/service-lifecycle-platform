@@ -4,6 +4,7 @@ import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
+import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
@@ -11,6 +12,7 @@ import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
+import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.{Timer, TimerTask}
 import scala.concurrent.ExecutionContext
@@ -68,8 +70,11 @@ object BuilderMain extends App {
       val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
 
       log.info(s"Make new version of service ${serviceName}")
-      val builder = new Builder(syncDistributionClient, config.adminRepositoryUrl)
-      builder.makeVersion(author, serviceName, comment, version, sourceBranches) match {
+      val adminRepository = AdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
+        Utils.error("Init admin repository error")
+      }
+      val builder = new Builder(syncDistributionClient)
+      builder.makeVersion(adminRepository.getDirectory(), author, serviceName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
             builder.setDesiredVersions(Map(serviceName -> Some(DeveloperDistributionVersion(config.distributionName, version))))
@@ -80,7 +85,7 @@ object BuilderMain extends App {
       }
 
     case "getDesiredVersions" =>
-      new Builder(syncDistributionClient, config.adminRepositoryUrl).getDesiredVersions() match {
+      new Builder(syncDistributionClient).getDesiredVersions() match {
         case Some(versions) =>
           log.info("Desired versions:")
           versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
@@ -108,7 +113,7 @@ object BuilderMain extends App {
         }
       }
 
-      if (!new Builder(syncDistributionClient, config.adminRepositoryUrl).setDesiredVersions(servicesVersions)) {
+      if (!new Builder(syncDistributionClient).setDesiredVersions(servicesVersions)) {
         Utils.error("Set desired versions error")
       }
 

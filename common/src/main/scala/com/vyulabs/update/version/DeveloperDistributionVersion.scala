@@ -31,4 +31,12 @@ object DeveloperDistributionVersion {
     val body = if (index != -1) version.substring(index + 1) else version
     new DeveloperDistributionVersion(distributionName, DeveloperVersion.parse(body))
   }
+
+  val ordering: Ordering[DeveloperDistributionVersion] = Ordering.fromLessThan[DeveloperDistributionVersion]((version1, version2) => {
+    if (version1.distributionName != version2.distributionName) {
+      version1.distributionName.compareTo(version2.distributionName) < 0
+    } else {
+      DeveloperVersion.ordering.lt(version1.version, version2.version)
+    }
+  })
 }

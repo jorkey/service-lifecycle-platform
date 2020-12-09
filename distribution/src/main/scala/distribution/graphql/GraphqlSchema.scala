@@ -104,6 +104,9 @@ object GraphqlSchema {
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("distributionClientConfig", ClientConfigInfoType,
         resolve = c => { c.ctx.workspace.getDistributionClientConfig(c.ctx.userInfo.name) }),
+      Field("versionsInfo", ListType(DeveloperVersionInfoType),
+        arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("desiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.userInfo.name, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })

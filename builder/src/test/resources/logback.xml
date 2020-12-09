@@ -1,7 +1,7 @@
 <configuration>
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <!-- path to your log file, where you want to store logs -->
-        <file>log/distribution-test.log</file>
+        <file>log/builder-test.log</file>
         <append>false</append>
 
         <encoder>

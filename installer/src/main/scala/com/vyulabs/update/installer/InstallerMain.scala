@@ -2,7 +2,6 @@ package com.vyulabs.update.installer
 
 import java.io.File
 import java.net.{URI, URL}
-
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.AdminRepository
@@ -66,6 +65,7 @@ object InstallerMain extends App {
             Utils.error("Init client error")
           }
 
+          /* TODO graphql
         case "installUpdates" =>
           val updateClient = new UpdateClient()
 
@@ -157,7 +157,7 @@ object InstallerMain extends App {
 
           if (!updateClient.signVersionsAsTested(clientDistribution, developerDistribution)) {
             Utils.error("Sign versions as tested error")
-          }
+          }*/
 
         case command =>
           Utils.error(s"Invalid command ${command}\n${usage()}")

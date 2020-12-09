@@ -102,11 +102,6 @@ class OldDistributionInterface(val url: URL)(implicit log: Logger) {
     }
   }
 
-  def uploadTestedVersions(servicesVersions: ServicesVersions): Boolean = {
-    // TODO graphql
-    false
-  }
-
   def getServerVersion(versionPath: String): Option[DeveloperDistributionVersion] = {
     // TODO graphql
     // set version info

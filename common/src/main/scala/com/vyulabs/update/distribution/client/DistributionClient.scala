@@ -15,6 +15,10 @@ import scala.concurrent.{ExecutionContext, Future}
 class DistributionClient(val distributionName: DistributionName, client: HttpClient)(implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
+  def available(): Future[Unit] = {
+    client.exists(pingPath)
+  }
+
   def getDistributionVersion(): Future[Option[ClientDistributionVersion]] = {
     client.graphql(administratorQueries.getServiceStates(Some(distributionName), Some(Common.DistributionServiceName), None, None))
       .map(_.headOption.map(_.instance.service.version).flatten)
