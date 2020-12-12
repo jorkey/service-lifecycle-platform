@@ -107,6 +107,7 @@ function setCurrentVersion {
   set -e
   local versionFile=`getServiceVersionFile $1`
   echo $2 >${versionFile}
+  # TODO graphql - update state request
 }
 
 ### Check service version. Update if need.

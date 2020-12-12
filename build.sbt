@@ -12,7 +12,6 @@ lazy val update = project
   .aggregate(
     updateCommon,
     builder,
-    installer,
     updater,
     distribution
   )
@@ -39,16 +38,6 @@ lazy val updateAdmin = project
 
 lazy val builder = project
   .in(file("builder"))
-  .settings(
-    libraryDependencies ++= baseDependencies,
-    assemblySettings
-  )
-  .dependsOn(
-    updateAdmin
-  )
-
-lazy val installer = project
-  .in(file("installer"))
   .settings(
     libraryDependencies ++= baseDependencies,
     assemblySettings
@@ -200,7 +189,7 @@ lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
 }
 
 lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
-  installNpmModules.init.value
+//  installNpmModules.init.value
   val task = streams.value
   task.log.info(s"Delete React build ...")
   IO.delete(baseDirectory.value / "build")
@@ -212,7 +201,7 @@ lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
 }
 
 lazy val buildUi = taskKey[Seq[File]]("Generate dashboard resources") := {
-  buildReactScripts.init.value
+//  buildReactScripts.init.value
   val webapp = baseDirectory.value / "build"
   val managed = resourceManaged.value
   for {

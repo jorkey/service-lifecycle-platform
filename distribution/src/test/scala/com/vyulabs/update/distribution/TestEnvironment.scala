@@ -46,7 +46,7 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
     distributionClientCredentials.username -> distributionCredentials,
     serviceClientCredentials.username -> serviceCredentials))
 
-  val mongo = new MongoDb(dbName); result(mongo.dropDatabase())
+  val mongo = new MongoDb("mongodb://localhost:27017", dbName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, 100)
   val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
 

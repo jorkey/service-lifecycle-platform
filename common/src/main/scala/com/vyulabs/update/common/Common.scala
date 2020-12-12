@@ -20,7 +20,6 @@ object Common {
   val ScriptsServiceName = "scripts"
   val DistributionServiceName = "distribution"
   val BuilderServiceName = "builder"
-  val InstallerServiceName = "installer"
   val UpdaterServiceName = "updater"
 
   val BuilderJarName = "builder-%s.jar"
@@ -45,7 +44,6 @@ object Common {
     serviceName == ScriptsServiceName ||
     serviceName == DistributionServiceName ||
     serviceName == BuilderServiceName ||
-    serviceName == InstallerServiceName ||
     serviceName == UpdaterServiceName
   }
 }

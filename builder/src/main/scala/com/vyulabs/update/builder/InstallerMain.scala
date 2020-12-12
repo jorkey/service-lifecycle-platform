@@ -1,35 +1,19 @@
-package com.vyulabs.update.installer
+package com.vyulabs.update.builder
+
+import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
+import com.vyulabs.update.lock.SmartFilesLocker
+import com.vyulabs.update.utils.{IoUtils, Utils}
+import org.slf4j.LoggerFactory
 
 import java.io.File
 import java.net.{URI, URL}
-import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.AdminRepository
-import com.vyulabs.update.distribution.client.OldDistributionInterface
-import com.vyulabs.update.installer.config.InstallerConfig
-import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import org.slf4j.LoggerFactory
 
 /**
-  * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 01.02.19.
-  * Copyright FanDate, Inc.
-  */
+ * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 01.02.19.
+ * Copyright FanDate, Inc.
+ */
 object InstallerMain extends App {
   implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  def usage() =
-    "Arguments: initDeveloper <distributionServicePort=value>\n" +
-    "           initClient <clientName=value> [testDistributionMatch=regularValue] <adminRepositoryUrl=value> <clientDistributionUrl=value> <developerDistributionUrl=value> <distributionServicePort=value>\n" +
-    "           installUpdates [servicesOnly=<service1>:[-<profile>][,...]] [localConfigOnly=true] [setDesiredVersions=true]\n" +
-    "           getDesiredVersions\n" +
-    "           setDesiredVersions [services=<service[:version]>,[service1[:version1]],...]\n" +
-    "           signVersionsAsTested"
-  
-  if (args.size < 1) {
-    Utils.error(usage())
-  }
 
   val command = args(0)
   val arguments = Arguments.parse(args.drop(1))
@@ -54,7 +38,7 @@ object InstallerMain extends App {
           }
 
         case "initClient" =>
-          val initClient = new InitClient()
+          val initClient = new BuildDistribution()
           val cloudProvider = arguments.getValue("cloudProvider")
           val distributionName = arguments.getValue("distributionName")
           val adminRepositoryUrl = new URI(arguments.getValue("adminRepositoryUrl"))
@@ -65,7 +49,7 @@ object InstallerMain extends App {
             Utils.error("Init client error")
           }
 
-          /* TODO graphql
+        /* TODO graphql
         case "installUpdates" =>
           val updateClient = new UpdateClient()
 

@@ -42,8 +42,8 @@ object UploadStateConfig {
 }
 
 case class DistributionConfig(distributionName: DistributionName, title: String, instanceId: InstanceId,
-                              mongoDb: String, distributionDirectory: String, network: NetworkConfig,
-                              builderDirectory: Option[String], installerDirectory: String,
+                              mongoDbConnection: String, mongoDbName: String,
+                              distributionDirectory: String, network: NetworkConfig, builderExecutePath: String,
                               versionHistory: VersionHistoryConfig, instanceState: InstanceStateConfig,
                               faultReportsConfig: FaultReportsConfig, uploadStateConfigs: Option[Seq[UploadStateConfig]])
 

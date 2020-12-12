@@ -7,6 +7,7 @@ import org.slf4j.Logger
 
 object ZipUtils {
   def zip(zipFile: File, inputFile: File)(implicit log: Logger): Boolean = {
+    log.debug(s"Zip ${inputFile}")
     var zipOutput: ZipOutputStream = null
     try {
       zipOutput = new ZipOutputStream(new FileOutputStream(zipFile))
@@ -27,6 +28,7 @@ object ZipUtils {
   }
 
   def zip(zipFile: File, inputFiles: Seq[File])(implicit log: Logger): Boolean = {
+    log.debug(s"Zip ${inputFiles}")
     var zipOutput: ZipOutputStream = null
     try {
       zipOutput = new ZipOutputStream(new FileOutputStream(zipFile))
@@ -90,6 +92,7 @@ object ZipUtils {
   }
 
   def unzip(zipFile: File, outputFile: File, map: (String) => Option[String] = Some(_))(implicit log: Logger): Boolean = {
+    log.debug(s"Unzip to ${outputFile}")
     var zipInput: ZipInputStream = null
     try {
       if (log.isDebugEnabled) log.debug(s"Unzip ${zipFile} to ${outputFile}")
@@ -107,6 +110,7 @@ object ZipUtils {
   }
 
   def unzip(zipInput: ZipInputStream, outputFile: File, map: (String) => Option[String])(implicit log: Logger): Boolean = {
+    log.debug(s"Unzip to ${outputFile}")
     try {
       var entry = zipInput.getNextEntry
       while (entry != null) {
@@ -139,6 +143,24 @@ object ZipUtils {
       case ex: Exception =>
         log.error("Unzip exception", ex)
         false
+    }
+  }
+
+  def zipAndSend(directory: File, send: (File) => Boolean)(implicit log: Logger): Boolean = {
+    val tmpFile = File.createTempFile("update", "tmp")
+    try {
+      zip(tmpFile, directory) && send(tmpFile)
+    } finally {
+      tmpFile.delete()
+    }
+  }
+
+  def receiveAndUnzip(receive: (File) => Boolean, directory: File)(implicit log: Logger): Boolean = {
+    val tmpFile = File.createTempFile("update", "tmp")
+    try {
+      receive(tmpFile) && unzip(tmpFile, directory)
+    } finally {
+      tmpFile.delete()
     }
   }
 }

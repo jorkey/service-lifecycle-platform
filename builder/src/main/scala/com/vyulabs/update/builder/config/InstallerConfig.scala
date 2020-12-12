@@ -1,11 +1,11 @@
-package com.vyulabs.update.installer.config
-
-import java.io.File
-import java.net.{URI, URL}
+package com.vyulabs.update.builder.config
 
 import com.vyulabs.update.utils.IoUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
+
+import java.io.File
+import java.net.{URI, URL}
 
 case class InstallerConfig(adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL)
 

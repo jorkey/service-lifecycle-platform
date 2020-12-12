@@ -36,32 +36,6 @@ class StateUploader(distributionName: DistributionName,
 
   var task = Option.empty[Cancellable]
 
-  def setSelfStates(instanceId: InstanceId, homeDirectory: File, builderDirectory: Option[String], installerDirectory: String): Unit = {
-    def addState(state: DistributionServiceState): Future[com.mongodb.reactivestreams.client.Success] = {
-      for {
-        collection <- collections.State_ServiceStates
-        id <- collections.getNextSequence(collection.getName())
-        result <- collection.insert(ServiceStateDocument(id, state))
-      } yield result
-    }
-    Future.sequence(Seq(
-      addState(DistributionServiceState(distributionName, instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, homeDirectory))),
-      addState(DistributionServiceState(distributionName, instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, homeDirectory))),
-    ) ++ builderDirectory.map(builderDirectory => Seq(
-      addState(DistributionServiceState(distributionName, instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, new File(homeDirectory, builderDirectory)))),
-      addState(DistributionServiceState(distributionName, instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, builderDirectory)))))).getOrElse(Seq.empty)
-      ++ Seq(
-      addState(DistributionServiceState(distributionName, instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.InstallerServiceName, new File(homeDirectory, installerDirectory)))),
-      addState(DistributionServiceState(distributionName, instanceId,
-        DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(homeDirectory, installerDirectory)))))
-    )
-  }
-
   def start(): Unit = {
     task = Some(system.scheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState()))
     log.debug("Upload task is scheduled")

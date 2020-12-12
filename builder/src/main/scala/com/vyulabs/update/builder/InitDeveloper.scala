@@ -1,13 +1,13 @@
-package com.vyulabs.update.installer
-
-import java.io.File
+package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
+import com.vyulabs.update.utils.{ProcessUtils, ZipUtils}
 import org.slf4j.Logger
+
+import java.io.File
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.05.19.
@@ -87,7 +87,7 @@ class InitDeveloper()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   }
 
   private def copyUpdateServices(developerDistribution: DistributionDirectory): Boolean = {
-    Seq(Common.DistributionServiceName, Common.BuilderServiceName, Common.InstallerServiceName, Common.UpdaterServiceName).foreach {
+    Seq(Common.DistributionServiceName, Common.BuilderServiceName, Common.UpdaterServiceName).foreach {
       serviceName =>
         if (!copyUpdateService(serviceName, developerDistribution)) {
           log.error(s"Can't copy version image of service ${serviceName}")

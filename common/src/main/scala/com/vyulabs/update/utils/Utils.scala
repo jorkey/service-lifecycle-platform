@@ -1,6 +1,6 @@
 package com.vyulabs.update.utils
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.net.{URI, URL}
 import java.text.{ParseException, SimpleDateFormat}
 import java.util.{Date, TimeZone}
@@ -111,6 +111,10 @@ object Utils {
   def restartToUpdate(msg: String)(implicit log: Logger): Nothing = {
     log.error(msg)
     sys.exit(9)
+  }
+
+  def makeDir(dir: File): File = {
+    dir.mkdir(); dir
   }
 
   object RegexJson {

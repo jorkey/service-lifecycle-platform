@@ -1,27 +1,33 @@
-package com.vyulabs.update.installer
-
-import java.io.File
-import java.net.{URI, URL}
+package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.distribution.AdminRepository
+import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.distribution.server.DistributionDirectory
-import com.vyulabs.update.installer.config.InstallerConfig
 import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
 import com.vyulabs.update.version.DeveloperDistributionVersion
 import org.slf4j.Logger
-import com.vyulabs.update.installer.config.InstallerConfig._
+
+import java.io.File
+import java.net.{URI, URL}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
+class BuildDistribution()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private val adminRepositoryDir = new File("..", "admin")
   private val distributionDir = new File("..", "distrib")
+
+  def buildFromSources(author: String, sourceBranches: Seq[String], distributionConfigFile: File): Boolean = {
+    false
+  }
+
+  def buildFromDeveloperDistribution(developerDistributionName: DistributionName, distributionConfigFile: File): Boolean = {
+    false
+  }
 
   def initClient(cloudProvider: String, distributionName: String,
                  adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL,
@@ -68,40 +74,6 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def initInstallDirectory(scriptsZip: File,
-                                   adminRepositoryUrl: URI, developerDistributionUrl: URL, clientDistributionUrl: URL): Boolean = {
-    log.info(s"Create ${InstallerConfig.configFile}")
-    val config = InstallerConfig(adminRepositoryUrl, developerDistributionUrl, clientDistributionUrl)
-    if (!IoUtils.writeJsonToFile(InstallerConfig.configFile, config)) {
-      return false
-    }
-    log.info("Update installer.sh")
-    if (!ZipUtils.unzip(scriptsZip, new File("."), (name: String) => {
-      if (name == "installer/installer.sh") {
-        Some("installer.sh")
-      } else {
-        None
-      }
-    })) {
-      return false
-    }
-    val installerFile = new File("installer.sh")
-    val content = new String(IoUtils.readFileToBytes(installerFile).getOrElse {
-      log.error(s"Read file ${installerFile} error")
-      return false
-    }, "utf8")
-    installerFile.renameTo(File.createTempFile("installer", "sh"))
-    if (!IoUtils.writeBytesToFile(installerFile, content.getBytes("utf8"))) {
-      log.error(s"Write file ${installerFile} error")
-      return false
-    }
-    if (!ProcessUtils.runProcess("chmod", Seq("+x", "installer.sh"), Map.empty, new File("."),
-          Some(0), None, ProcessUtils.Logging.None)) {
-      log.warn("Can't set execution attribute to installer.sh")
-    }
-    true
-  }
-
   private def initDistribDirectory(cloudProvider: String, name: String,
                                    clientDistribution: DistributionDirectory,
                                    developerDistribution: OldDistributionInterface,
@@ -143,7 +115,7 @@ class InitClient()(implicit filesLocker: SmartFilesLocker, log: Logger) {
   private def downloadUpdateServices(clientDistribution: DistributionDirectory,
                                      developerDistribution: OldDistributionInterface,
                                      desiredVersions: Map[ServiceName, DeveloperDistributionVersion]): Boolean = {
-    Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.InstallerServiceName, Common.UpdaterServiceName).foreach {
+    Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.UpdaterServiceName).foreach {
       serviceName =>
         /* TODO graphql
         if (!downloadVersion(clientDistribution, developerDistribution, serviceName, desiredVersions.get(serviceName).getOrElse {

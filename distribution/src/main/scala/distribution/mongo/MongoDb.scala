@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
-class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27017")
+class MongoDb(connectionString: String, dbName: String)
              (implicit executionContext: ExecutionContext) {
   import distribution.mongo.MongoDb.client
 

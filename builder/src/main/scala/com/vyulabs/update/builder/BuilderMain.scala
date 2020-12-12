@@ -7,14 +7,14 @@ import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.AdminRepository
 import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
+import com.vyulabs.update.logger.{LogSender, TraceAppender}
 import com.vyulabs.update.utils.Utils
 import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
 import java.io.File
+import java.net.{URI, URL}
 import java.util.concurrent.TimeUnit
-import java.util.{Timer, TimerTask}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
@@ -28,40 +28,52 @@ object BuilderMain extends App {
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   def usage(): String =
-    "Use: buildVersion <author=value> <service=value>\n" +
-    "                 [version=value] [comment=value] [sourceBranches=value1,value2,...] [setDesiredVersion=true]\n" +
-    "   getDesiredVersions\n" +
-    "   setDesiredVersions[services=<service[:version]>,[service1[:version1]],...]"
+    "Use:\n" +
+    "  buildDistribution <distributionConfigFile=value> <author=value> [sourceBranches=value1,value2,...]\n" +
+    "  buildDistribution <distributionConfigFile=value> <developerDistributionName=value>\n" +
+    "  <command1[,command2...]> <distributionName=value> [arguments]\n" +
+    "\n" +
+    "  Commands:\n" +
+    "    buildDeveloperVersion <author=value> <service=value> [version=value] [comment=value] [sourceBranches=value1,value2,...]\n" +
+    "    setDeveloperDesiredVersions [services=<service1>[:<service2>...]]\n" +
+    "    downloadUpdates <developerDistributionName=value> [services=<service1>[:<service2>...]]\n" +
+    "    buildClientVersions <author=value> <services=<service1>[:<service2>...]>\n" +
+    "    setClientDesiredVersions [services=<service1>[:<service2>...]]\n" +
+    "    signVersionsAsTested <developerDistributionName=value>"
 
   if (args.size < 1) {
     Utils.error(usage())
   }
 
-  val command = args(0)
-  if (command != "buildVersion" && command != "getDesiredVersions" && command != "setDesiredVersions") {
-    Utils.error(usage())
-  }
+  val commands = args(0)
   val arguments = Arguments.parse(args.drop(1))
 
-  val config = BuilderConfig().getOrElse {
-    Utils.error("No config")
-  }
+  val config = BuilderConfig().getOrElse { Utils.error("No config") }
 
-  val distributionClient = new DistributionClient(config.distributionName, new HttpClientImpl(config.distributionUrl))
-  val syncDistributionClient = new SyncDistributionClient(distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+  commands match {
+    case "buildDistribution" =>
+      val buildDistribution = new BuildDistribution()
+      val distributionConfigFile = new File(arguments.getValue("distributionConfigFile"))
 
-  // TODO localise this code
-  val logSender = new LogSender(Common.DistributionServiceName, config.instanceId, distributionClient)
-  val logger = Utils.getLogbackLogger(this.getClass)
-  val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
-  val buffer = new LogBuffer(logSender, 25, 1000)
-  appender.addListener(buffer)
-  new Timer().schedule(new TimerTask() {
-    override def run(): Unit = buffer.flush()
-  }, 1000)
+      arguments.getOptionValue("author") match {
+        case Some(author) =>
+          val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
+          if (!buildDistribution.buildFromSources(author, sourceBranches, distributionConfigFile)) {
+            Utils.error("Build distribution error")
+          }
+        case None =>
+          arguments.getOptionValue("developerDistributionName") match {
+            case Some(developerDistributionName) =>
+              if (!buildDistribution.buildFromDeveloperDistribution(developerDistributionName, distributionConfigFile)) {
+                Utils.error("Build distribution error")
+              }
+            case None =>
+              Utils.error(usage())
+          }
+      }
 
-  command match {
-    case "buildVersion" =>
+    case commands =>
+      commands.split(",").toSeq
       val author: String = arguments.getValue("author")
       val serviceName: ServiceName = arguments.getValue("service")
       val comment: Option[String] = arguments.getOptionValue("comment")
@@ -69,12 +81,16 @@ object BuilderMain extends App {
       val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
       val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
 
+      val distributionClient = new DistributionClient(config.distributionName, new HttpClientImpl(config.distributionUrl))
+      val syncDistributionClient = new SyncDistributionClient(distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+      TraceAppender.handleLogs(new LogSender(Common.DistributionServiceName, config.instanceId, distributionClient))
+
       log.info(s"Make new version of service ${serviceName}")
       val adminRepository = AdminRepository(config.adminRepositoryUrl, new File("admin")).getOrElse {
         Utils.error("Init admin repository error")
       }
       val builder = new Builder(syncDistributionClient)
-      builder.makeVersion(adminRepository.getDirectory(), author, serviceName, comment, version, sourceBranches) match {
+      builder.makeDeveloperVersion(adminRepository.getDirectory(), author, serviceName, comment, version, sourceBranches) match {
         case Some(version) =>
           if (setDesiredVersion) {
             builder.setDesiredVersions(Map(serviceName -> Some(DeveloperDistributionVersion(config.distributionName, version))))
@@ -82,15 +98,6 @@ object BuilderMain extends App {
         case None =>
           log.error("Make version error")
           System.exit(1)
-      }
-
-    case "getDesiredVersions" =>
-      new Builder(syncDistributionClient).getDesiredVersions() match {
-        case Some(versions) =>
-          log.info("Desired versions:")
-          versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
-        case None =>
-          Utils.error("Get desired versions error")
       }
 
     case "setDesiredVersions" =>

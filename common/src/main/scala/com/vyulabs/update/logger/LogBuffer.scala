@@ -12,7 +12,7 @@ trait LogReceiver {
   def receiveLogLines(lines: Seq[LogLine]): Future[Unit]
 }
 
-class LogBuffer(logConsumer: LogReceiver, lowWater: Int, highWater: Int)
+class LogBuffer(logReceiver: LogReceiver, lowWater: Int, highWater: Int)
                (implicit executionContext: ExecutionContext) extends LogListener {
   private var eventsBuffer = Seq.empty[LogLine]
   private var sendingEvents = Seq.empty[LogLine]
@@ -55,7 +55,7 @@ class LogBuffer(logConsumer: LogReceiver, lowWater: Int, highWater: Int)
   private def send(): Unit = {
     sendingEvents = eventsBuffer
     eventsBuffer = Seq.empty
-    logConsumer.receiveLogLines(sendingEvents).onComplete {
+    logReceiver.receiveLogLines(sendingEvents).onComplete {
       case Success(_) =>
         synchronized {
           sendingEvents = Seq.empty

@@ -47,8 +47,7 @@ object DistributionMain extends App {
   }
 
   def usage() =
-    "Arguments: developer\n" +
-    "           client\n" +
+    "Arguments: run\n" +
     "           addUser <userName=value> <role=value>\n" +
     "           removeUser <userName=value>\n" +
     "           changePassword <userName=value>"
@@ -71,24 +70,15 @@ object DistributionMain extends App {
           Utils.error("No config")
         }
 
-        val mongoDb = new MongoDb("distribution", config.mongoDb)
+        val mongoDb = new MongoDb(config.mongoDbConnection, config.mongoDbName)
 
         val dir = new DistributionDirectory(new File(config.distributionDirectory))
         val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
 
-        val logStorer = new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, collections)
-        val logger = Utils.getLogbackLogger(this.getClass)
-        val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
-        val buffer = new LogBuffer(logStorer, 25, 1000)
-        appender.addListener(buffer)
-        new Timer().schedule(new TimerTask() {
-          override def run(): Unit = buffer.flush()
-        }, 1000)
+        TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, collections))
 
         config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
-          val uploader = StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl)
-          uploader.setSelfStates(config.instanceId, new File("."), config.builderDirectory, config.installerDirectory)
-          uploader.start()
+          StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()
         }
 
         val selfUpdater = new SelfUpdater(collections)

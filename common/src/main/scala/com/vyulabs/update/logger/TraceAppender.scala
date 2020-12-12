@@ -2,6 +2,10 @@ package com.vyulabs.update.logger
 
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
+import com.vyulabs.update.utils.Utils
+
+import java.util.{Timer, TimerTask}
+import scala.concurrent.ExecutionContext
 
 trait LogListener {
   def append(event: ILoggingEvent): Unit
@@ -22,5 +26,17 @@ class TraceAppender extends AppenderBase[ILoggingEvent] {
   override def stop(): Unit = {
     listeners.foreach(_.stop())
     super.stop()
+  }
+}
+
+object TraceAppender {
+  def handleLogs(logReceiver: LogReceiver)(implicit executionContext: ExecutionContext): Unit = {
+    val logger = Utils.getLogbackLogger(this.getClass)
+    val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
+    val buffer = new LogBuffer(logReceiver, 25, 1000)
+    appender.addListener(buffer)
+    new Timer().schedule(new TimerTask() {
+      override def run(): Unit = buffer.flush()
+    }, 1000)
   }
 }
