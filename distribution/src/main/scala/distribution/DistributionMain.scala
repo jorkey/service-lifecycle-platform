@@ -54,7 +54,6 @@ object DistributionMain extends App {
 
   try {
     val command = args(0)
-    val arguments = Arguments.parse(args.drop(1))
 
     implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
 
@@ -95,6 +94,7 @@ object DistributionMain extends App {
         server.bind(distribution.route)
 
       case "addUser" =>
+        val arguments = Arguments.parse(args.drop(1), Set("userName"))
         val userName = arguments.getValue("userName")
         val role = UserRole.withName(arguments.getValue("role"))
         val password = StdIn.readLine("Enter password: ")
@@ -108,6 +108,7 @@ object DistributionMain extends App {
         sys.exit()
 
       case "removeUser" =>
+        val arguments = Arguments.parse(args.drop(1), Set("userName"))
         val userName = arguments.getValue("userName")
         usersCredentials.removeUser(userName)
         if (!IoUtils.writeJsonToFile(credentialsFile, usersCredentials.toJson)) {
@@ -116,6 +117,7 @@ object DistributionMain extends App {
         sys.exit()
 
       case "changePassword" =>
+        val arguments = Arguments.parse(args.drop(1), Set("userName"))
         val userName = arguments.getValue("userName")
         val password = StdIn.readLine("Enter password: ")
         usersCredentials.getCredentials(userName) match {

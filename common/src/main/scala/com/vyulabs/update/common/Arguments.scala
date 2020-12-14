@@ -42,11 +42,14 @@ class Arguments(args: Map[String, String]) {
 object Arguments {
   def empty = new Arguments(Map.empty)
 
-  def parse(args: Array[String]): Arguments = {
+  def parse(args: Array[String], names: Set[String]): Arguments = {
     val map = args.foldLeft(Map.empty[String, String])((map, arg) => {
       val index = arg.indexOf('=')
       if (index > 0) {
         val name = arg.substring(0, index)
+        if (!names.isEmpty && !names.contains(name)) {
+          throw new RuntimeException(s"Invalid argument name ${name}")
+        }
         val value = arg.substring(index + 1)
         map + (name -> value)
       } else {
@@ -56,4 +59,3 @@ object Arguments {
     new Arguments(map)
   }
 }
-

@@ -26,7 +26,6 @@ object UpdaterMain extends App { self =>
   }
 
   val command = args(0)
-  val arguments = Arguments.parse(args.drop(1))
 
   var blacklist = Map.empty[ProfiledServiceName, ClientDistributionVersion]
 
@@ -36,6 +35,8 @@ object UpdaterMain extends App { self =>
 
   command match {
     case "runServices" =>
+      val arguments = Arguments.parse(args.drop(1), Set("services"))
+
       val servicesInstanceNames = arguments.getValue("services").split(",").foldLeft(Set.empty[ProfiledServiceName])((set, record) =>
         set + ProfiledServiceName.parse(record)
       )

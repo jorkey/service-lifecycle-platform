@@ -2,7 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.distribution.AdminRepository
+import com.vyulabs.update.distribution.SettingsDirectory
 import com.vyulabs.update.distribution.client.OldDistributionInterface
 import com.vyulabs.update.distribution.server.DistributionDirectory
 import com.vyulabs.update.lock.SmartFilesLocker
@@ -35,7 +35,7 @@ class BuildDistribution()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     val developerDistribution = new OldDistributionInterface(developerDistributionUrl)
     val clientDistribution = new DistributionDirectory(new File(distributionDir, "directory"))
     log.info("Init admin repository")
-    if (!initAdminRepository()) {
+    if (!initSettingsRepository()) {
       log.error("Can't init admin repository")
       return false
     }
@@ -57,15 +57,15 @@ class BuildDistribution()(implicit filesLocker: SmartFilesLocker, log: Logger) {
     true
   }
 
-  private def initAdminRepository(): Boolean = {
+  private def initSettingsRepository(): Boolean = {
     if (!adminRepositoryDir.exists()) {
-      log.info(s"Create admin repository in directory ${adminRepositoryDir}")
+      log.info(s"Create settings repository in directory ${adminRepositoryDir}")
       if (!adminRepositoryDir.mkdir()) {
         log.error(s"Can't make directory ${adminRepositoryDir}")
         return false
       }
-      if (!AdminRepository.create(adminRepositoryDir)) {
-        log.error("Can't create admin repository")
+      if (!SettingsDirectory.create(adminRepositoryDir)) {
+        log.error("Can't create settings repository")
         return false
       }
     } else {

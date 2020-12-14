@@ -23,12 +23,11 @@ object SourcesConfig extends DefaultJsonProtocol {
 
   implicit val sourcesConfigListJson = jsonFormat1(SourcesConfig.apply)
 
-  def fromFile(directory: File)(implicit log: Logger): Option[SourcesConfig] = {
-    val configFile = new File(directory, "sources.json")
-    if (configFile.exists()) {
-      IoUtils.readFileToJson[SourcesConfig](configFile)
+  def fromFile(file: File)(implicit log: Logger): Option[SourcesConfig] = {
+    if (file.exists()) {
+      IoUtils.readFileToJson[SourcesConfig](file)
     } else {
-      log.error(s"Config file ${configFile} does not exist")
+      log.error(s"Sources config file ${file} does not exist")
       None
     }
   }
