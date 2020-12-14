@@ -10,7 +10,6 @@ import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.client.graphql.DistributionGraphqlCoder._
-import com.vyulabs.update.lock.SmartFilesLocker
 import com.vyulabs.update.utils.Utils.makeDir
 import org.slf4j.Logger
 
@@ -32,67 +31,80 @@ object ClientBuilder {
 
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def buildClientVersions(distributionClient: SyncDistributionClient, settingsDirectory: SettingsDirectory,
-                          author: String, serviceNames: Seq[ServiceName], arguments: Map[String, String])
-                         (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
-    var clientVersions = Map.empty[ServiceName, ClientDistributionVersion]
-    try {
-      log.info("Get developer desired versions")
-      val developerDesiredVersions = distributionClient.graphqlRequest(distributionQueries.getDesiredVersions(serviceNames))
-          .map(DeveloperDesiredVersions.toMap(_)).getOrElse {
-        log.error(s"Can't get developer desired versions.")
-        return false
-      }
-      developerDesiredVersions.foreach {
-        case (serviceName, developerVersion) =>
-          val existingVersions = distributionClient.graphqlRequest(administratorQueries.getClientVersionsInfo(serviceName)).getOrElse {
-            log.error(s"Error of getting service ${serviceName} client versions list")
-            return false
-          }.map(_.version).filter(_.original() == developerVersion)
-          val clientVersion =
-            if (!existingVersions.isEmpty) {
-              existingVersions.sorted(ClientDistributionVersion.ordering).last.next()
-            } else {
-              ClientDistributionVersion(developerVersion)
-            }
-          clientVersions += (serviceName -> clientVersion)
-      }
-      log.info("Install updates")
-      installVersions(distributionClient, settingsDirectory, developerDesiredVersions, clientVersions, arguments)
-    } catch {
-      case ex: Exception =>
-        log.error("Exception", ex)
-        false
+  def downloadUpdates(distributionClient: SyncDistributionClient, developerDistributionClient: SyncDistributionClient, serviceNames: Seq[ServiceName])
+                     (implicit log: Logger): Boolean = {
+    val developerDesiredVersions = developerDistributionClient.graphqlRequest(distributionQueries.getDesiredVersions(serviceNames))
+        .map(DeveloperDesiredVersions.toMap(_)).getOrElse {
+      log.error(s"Can't get developer desired versions.")
+      return false
     }
-  }
-
-  def waitForServerUpdated(distributionClient: SyncDistributionClient,
-                           serviceName: ServiceName, desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int = 10000)(implicit log: Logger): Boolean = {
-    log.info(s"Wait for distribution server updated")
-    for (_ <- 0 until waitingTimeoutSec) {
-      if (distributionClient.available()) {
-        distributionClient.getServiceVersion(serviceName) match {
-          case Some(version) =>
-            if (version == desiredVersion) {
-              log.info(s"Distribution server is updated")
-              return true
-            }
-          case None =>
+    developerDesiredVersions.foreach {
+      case (serviceName, version) if version.distributionName == developerDistributionClient.distributionName =>
+        log.info(s"Download version ${version}")
+        val imageFile = File.createTempFile("version", "image")
+        try {
+          if (!developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)) {
+            log.error(s"Can't download developer version ${version} image file ${imageFile}")
             return false
+          }
+          val versionInfo = developerDistributionClient.graphqlRequest(distributionQueries.getVersionsInfo(serviceName, None, Some(version)))
+            .map(_.headOption).flatten.getOrElse {
+            log.error(s"Can't get developer version ${version} info}")
+            return false
+          }
+          if (!distributionClient.uploadDeveloperVersionImage(serviceName, version, imageFile)) {
+            log.error(s"Can't upload developer version ${version} image file ${imageFile}")
+            return false
+          }
+          if (!distributionClient.graphqlRequest(administratorMutations.addDeveloperVersionInfo(versionInfo)).getOrElse(false)) {
+            log.error(s"Can't add developer version ${version} info")
+            return false
+          }
+        } finally {
+          imageFile.delete()
         }
-      }
-      Thread.sleep(1000)
+      case _ =>
     }
-    log.error(s"Timeout of waiting for distribution server become available")
-    false
+    true
   }
 
-  def setClientDesiredVersions(clientDistribution: SyncDistributionClient, versions: Map[ServiceName, Option[ClientDistributionVersion]])
+  def buildClientVersions(distributionClient: SyncDistributionClient, settingsDirectory: SettingsDirectory,
+                          serviceNames: Seq[ServiceName], author: String, arguments: Map[String, String])
+                         (implicit log: Logger): Map[ServiceName, ClientDistributionVersion] = {
+    var clientVersions = Map.empty[ServiceName, ClientDistributionVersion]
+    log.info("Get developer desired versions")
+    val developerDesiredVersions = distributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions(serviceNames))
+        .map(DeveloperDesiredVersions.toMap(_)).getOrElse {
+      log.error(s"Can't get developer desired versions.")
+      return Map.empty
+    }
+    developerDesiredVersions.foreach {
+      case (serviceName, developerVersion) =>
+        val existingVersions = distributionClient.graphqlRequest(administratorQueries.getClientVersionsInfo(serviceName)).getOrElse {
+          log.error(s"Error of getting service ${serviceName} client versions list")
+          return Map.empty
+        }.map(_.version).filter(_.original() == developerVersion)
+        val clientVersion =
+          if (!existingVersions.isEmpty) {
+            existingVersions.sorted(ClientDistributionVersion.ordering).last.next()
+          } else {
+            ClientDistributionVersion(developerVersion)
+          }
+        clientVersions += (serviceName -> clientVersion)
+    }
+    log.info("Install updates")
+    if (!installVersions(distributionClient, settingsDirectory, developerDesiredVersions, clientVersions, author, arguments)) {
+      clientVersions = Map.empty
+    }
+    clientVersions
+  }
+
+  def setClientDesiredVersions(distributionClient: SyncDistributionClient, versions: Map[ServiceName, Option[ClientDistributionVersion]])
                               (implicit log: Logger): Boolean = {
-    val desiredVersionsMap = clientDistribution.graphqlRequest(administratorQueries.getClientDesiredVersions()) {
+    val desiredVersionsMap = ClientDesiredVersions.toMap(distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions()).getOrElse {
       log.error("Error of getting desired versions")
       return false
-    }.map(ClientDesiredVersions.toMap(_)).getOrElse(Map.empty)
+    })
     val newVersions =
       versions.foldLeft(desiredVersionsMap) {
         (map, entry) => entry._2 match {
@@ -102,16 +114,16 @@ object ClientBuilder {
             map - entry._1
         }}
     val desiredVersions = ClientDesiredVersions.fromMap(newVersions)
-    if (!clientDistribution.graphqlRequest(administratorMutations.setClientDesiredVersions(desiredVersions)).getOrElse(false)) {
+    if (!distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(desiredVersions)).getOrElse(false)) {
       log.error("Error of uploading desired versions")
       return false
     }
     true
   }
 
-  def signVersionsAsTested(clientDistribution: SyncDistributionClient, developerDistribution: SyncDistributionClient)
+  def signVersionsAsTested(distributionClient: SyncDistributionClient, developerDistribution: SyncDistributionClient)
                           (implicit log: Logger): Boolean = {
-    val clientDesiredVersionsMap = clientDistribution.graphqlRequest(administratorQueries.getClientDesiredVersions())
+    val clientDesiredVersionsMap = distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions())
         .map(ClientDesiredVersions.toMap(_)).getOrElse {
       log.error("Error of getting client desired versions")
       return false
@@ -154,38 +166,34 @@ object ClientBuilder {
     true
   }
 
-    /* TODO graphql
-    if (assignDesiredVersions) {
-      log.info("Set desired versions")
-      if (!setDesiredVersions(clientDistribution, clientVersions.map(entry => (entry._1, Some(entry._2))))) {
-        log.error("Set desired versions error")
-        return InstallResult.Failure
-      }
-      clientVersions.get(Common.DistributionServiceName) match {
-        case Some(newDistributionVersion) =>
-          if (!waitForServerUpdated(clientDistribution, Common.DistributionServiceName, newDistributionVersion)) {
-            log.error("Update distribution server error")
-            return InstallResult.Failure
-          }
-        case None =>
-          for (newScriptsVersion <- clientVersions.get(Common.ScriptsServiceName)) {
-            if (!waitForServerUpdated(clientDistribution, Common.ScriptsServiceName, newScriptsVersion)) {
-              log.error("Update scripts on distribution server error")
-              return InstallResult.Failure
+  private def waitForServerUpdated(distributionClient: SyncDistributionClient,
+                                   serviceName: ServiceName, desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int = 10000)(implicit log: Logger): Boolean = {
+    log.info(s"Wait for distribution server updated")
+    for (_ <- 0 until waitingTimeoutSec) {
+      if (distributionClient.available()) {
+        distributionClient.getServiceVersion(serviceName) match {
+          case Some(version) =>
+            if (version == desiredVersion) {
+              log.info(s"Distribution server is updated")
+              return true
             }
-          }
+          case None =>
+            return false
+        }
       }
+      Thread.sleep(1000)
     }
-    InstallResult.Complete
-     */
+    log.error(s"Timeout of waiting for distribution server become available")
+    false
+  }
 
   private def installVersions(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory,
                               developerVersions: Map[ServiceName, DeveloperDistributionVersion],
                               clientVersions: Map[ServiceName, ClientDistributionVersion],
-                              arguments: Map[String, String])(implicit log: Logger): Boolean = {
+                              author: String, arguments: Map[String, String])(implicit log: Logger): Boolean = {
     developerVersions.foreach {
       case (serviceName, version) =>
-        if (!installVersion(distributionClient, settingsRepository, serviceName, version, clientVersions.get(serviceName).get, arguments)) {
+        if (!installVersion(distributionClient, settingsRepository, serviceName, version, clientVersions.get(serviceName).get, author, arguments)) {
           log.error(s"Can't install desired version ${version} of service ${serviceName}")
           return false
         }
@@ -194,7 +202,7 @@ object ClientBuilder {
   }
 
   private def installVersion(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory, serviceName: ServiceName,
-                             fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion,
+                             fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion, author: String,
                              arguments: Map[String, String])(implicit log: Logger): Boolean = {
     try {
       log.info(s"Get developer version ${fromVersion} of service ${serviceName} info")
@@ -243,7 +251,7 @@ object ClientBuilder {
       if (!ZipUtils.zipAndSend(buildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, toVersion, file))) {
         return false
       }
-      val clientVersionInfo = ClientVersionInfo(serviceName, toVersion, versionInfo.buildInfo, InstallInfo("user", new Date())) // TODO set userName
+      val clientVersionInfo = ClientVersionInfo(serviceName, toVersion, versionInfo.buildInfo, InstallInfo(author, new Date()))
       if (!distributionClient.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
         return false
       }

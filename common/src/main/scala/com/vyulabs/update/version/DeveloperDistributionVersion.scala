@@ -11,6 +11,8 @@ import spray.json.{JsString, JsValue, RootJsonFormat}
 case class DeveloperDistributionVersion(distributionName: DistributionName, version: DeveloperVersion) {
   def isEmpty() = version.isEmpty()
 
+  def next() = DeveloperDistributionVersion(distributionName, version.next())
+
   override def toString: String = {
     distributionName + "-" + version.toString
   }

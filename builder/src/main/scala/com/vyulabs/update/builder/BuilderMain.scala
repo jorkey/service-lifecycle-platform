@@ -2,7 +2,6 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
 import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
 import com.vyulabs.update.distribution.SettingsDirectory
 import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
@@ -18,8 +17,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import DeveloperBuilder._
 import ClientBuilder._
-
-import javax.print.DocFlavor.URL
+import com.vyulabs.update.config.DistributionClientConfig
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
@@ -34,8 +32,8 @@ object BuilderMain extends App {
     "Use: <command1> [arguments]\n" +
     "     runCommands \"<command1> [arguments]\" [\"<command2> [arguments]\"] ...\n" +
     "  Commands:\n" +
-    "    buildDistribution <distributionConfigFile=value> <author=value> [sourceBranches=value1[,value2]...]\n" +
-    "    buildDistribution <distributionConfigFile=value> <developerDistributionName=value>\n" +
+    "    buildDistribution <distributionName=value> <author=value> [sourceBranches=value1[,value2]...]\n" +
+    "    buildDistribution <distributionName=value> <developerDistributionName=value>\n" +
     "    buildDeveloperVersion <distributionName=value> <author=value> <service=value> [version=value] [comment=value] [sourceBranches=value1[,value2]...] [setDesiredVersion=true|false]\n" +
     "    downloadUpdates <distributionName=value> <developerDistributionName=value> [services=<service1>[,<service2>]...]\n" +
     "    buildClientVersions <distributionName=value> <author=value> <services=<service1>[,<service2>]...> [setDesiredVersion=true|false]\n" +
@@ -58,6 +56,10 @@ object BuilderMain extends App {
       Map(args(0) -> args.drop(1))
   }
 
+  val settingsRepository = SettingsDirectory(config.adminRepositoryUrl, new File("settings")).getOrElse {
+    Utils.error("Init settings repository error")
+  }
+
   commands foreach {
     case (command, args) =>
       command match {
@@ -67,10 +69,10 @@ object BuilderMain extends App {
 
           arguments.getOptionValue("author") match {
             case Some(author) =>
-              val arguments = Arguments.parse(args.drop(1), Set("distributionConfigFile", "author", "sourceBranches"))
-              val distributionConfigFile = new File(arguments.getValue("distributionConfigFile"))
-              val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
-              if (!buildDistribution.buildFromSources(author, sourceBranches, distributionConfigFile)) {
+              val arguments = Arguments.parse(args.drop(1), Set("distributionName", "author", "sourceBranches"))
+              val distributionName = arguments.getValue("distributionName")
+              val sourceBranch = arguments.getOptionValue("sourceBranch").getOrElse("master")
+              if (!buildDistribution.buildFromSources(distributionName, settingsRepository, sourceBranch, author)) {
                 Utils.error("Build distribution error")
               }
             case None =>
@@ -88,17 +90,13 @@ object BuilderMain extends App {
         case _ =>
           val arguments = Arguments.parse(args.drop(1), Set.empty)
 
-          val adminRepository = SettingsDirectory(config.adminRepositoryUrl, new File("admin")).getOrElse {
-            Utils.error("Init admin repository error")
-          }
-
           val distributionName = arguments.getValue("distributionName")
           val distributionUrl = config.distributionLinks.find(_.distributionName == distributionName).map(_.distributionUrl).getOrElse {
             Utils.error(s"Unknown URL to distribution ${distributionName}")
           }
-          val distributionClient = new DistributionClient(distributionName, new HttpClientImpl(distributionUrl))
-          val syncDistributionClient = new SyncDistributionClient(distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
-          TraceAppender.handleLogs(new LogSender(Common.DistributionServiceName, config.instanceId, distributionClient))
+          val asyncDistributionClient = new DistributionClient(distributionName, new HttpClientImpl(distributionUrl))
+          val distributionClient = new SyncDistributionClient(asyncDistributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+          TraceAppender.handleLogs(new LogSender(Common.DistributionServiceName, config.instanceId, asyncDistributionClient))
 
           command match {
             case "buildDeveloperVersion" =>
@@ -108,28 +106,44 @@ object BuilderMain extends App {
               val comment: Option[String] = arguments.getOptionValue("comment")
               val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
               val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
-              buildDeveloperVersion(syncDistributionClient, adminRepository, author, serviceName, version, comment, sourceBranches) match {
+              buildDeveloperVersion(distributionClient, settingsRepository, author, serviceName, version, comment, sourceBranches) match {
                 case Some(newBuilderVersion) =>
-                  if (setDesiredVersion && !setDeveloperDesiredVersions(syncDistributionClient, Map(serviceName -> Some(DeveloperDistributionVersion(distributionName, newBuilderVersion))))) {
+                  if (setDesiredVersion && !setDeveloperDesiredVersions(distributionClient, Map(serviceName -> Some(newBuilderVersion)))) {
                     Utils.error("Can't set developer desired version")
                   }
                 case None =>
                   Utils.error("Developer version is not generated")
               }
             case "downloadUpdates" =>
-            //"    downloadUpdates <distributionName=value> <developerDistributionName=value> [services=<service1>[,<service2>]...]\n" +
+              val developerDistributionName = arguments.getValue("developerDistributionName")
+              val developerDistributionUrl = config.distributionLinks.find(_.distributionName == developerDistributionName).map(_.distributionUrl).getOrElse {
+                Utils.error(s"Unknown URL to distribution ${developerDistributionName}")
+              }
+              val developerDistributionClient = new SyncDistributionClient(new DistributionClient(distributionName, new HttpClientImpl(distributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
+              val serviceNames = arguments.getOptionValue("services").map(_.split(",").toSeq).getOrElse(Seq.empty)
+              if (downloadUpdates(distributionClient, developerDistributionClient, serviceNames)) {
+                Utils.error("Can't download updates from developer distribution server")
+              }
             case "buildClientVersions" =>
-              //"    buildClientVersions <distributionName=value> <author=value> <services=<service1>[,<service2>]...> [setDesiredVersion=true|false]\n" +
               val author = arguments.getValue("author")
               val serviceNames = arguments.getOptionValue("services").map(_.split(",").toSeq).getOrElse(Seq.empty)
               val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
               val settings = Map("distribDirectoryUrl" -> distributionUrl.toString)
-              buildClientVersions(syncDistributionClient, adminRepository, author, serviceNames, settings)
-
-            case "setClientDesiredVersions" =>
-              Set("services")
+              val newVersions = buildClientVersions(distributionClient, settingsRepository, serviceNames, author, settings)
+              if (setDesiredVersion && !newVersions.isEmpty) {
+                if (!setClientDesiredVersions(distributionClient, newVersions.mapValues(Some(_)))) {
+                  Utils.error("Can't set client desired versions")
+                }
+              }
             case "signVersionsAsTested" =>
-              Set("developerDistributionName")
+              val developerDistributionName = arguments.getValue("developerDistributionName")
+              val developerDistributionUrl = config.distributionLinks.find(_.distributionName == developerDistributionName).map(_.distributionUrl).getOrElse {
+                Utils.error(s"Unknown URL to distribution ${developerDistributionName}")
+              }
+              val developerDistributionClient = new SyncDistributionClient(new DistributionClient(distributionName, new HttpClientImpl(distributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
+              if (!signVersionsAsTested(distributionClient, developerDistributionClient)) {
+                Utils.error("Can't sign versions as tested")
+              }
             case _ =>
               Utils.error(s"Invalid command ${command}\n${usage()}")
           }
