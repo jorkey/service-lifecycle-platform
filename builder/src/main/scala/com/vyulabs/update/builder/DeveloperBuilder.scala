@@ -29,15 +29,15 @@ object DeveloperBuilder {
   private val developerDir = makeDir(new File("developer"))
   private val servicesDir = makeDir(new File(developerDir, "services"))
 
-  private def serviceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
-  private def buildDir(serviceName: ServiceName) = makeDir(new File(serviceDir(serviceName), "build"))
-  private def sourceDir(serviceName: ServiceName) = makeDir(new File(serviceDir(serviceName), "source"))
+  def developerServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
+  def developerBuildDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "build"))
+  def developerSourceDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "source"))
 
   def buildDeveloperVersion(distribution: SyncDistributionClient, settingsDirectory: SettingsDirectory,
                             author: String, serviceName: ServiceName, newVersion: Option[DeveloperVersion],
                             comment: Option[String], sourceBranches: Seq[String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Option[DeveloperDistributionVersion] = {
-    IoUtils.synchronize[Option[DeveloperDistributionVersion]](new File(serviceDir(serviceName), builderLockFile), false,
+    IoUtils.synchronize[Option[DeveloperDistributionVersion]](new File(developerServiceDir(serviceName), builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
           log.info(s"Another builder creates version for ${serviceName} - wait ...")
@@ -68,14 +68,15 @@ object DeveloperBuilder {
         }
 
         log.info(s"Generate version ${version}")
-        if (!generateDeveloperVersion(serviceName, version, sourceRepositories.map(_.getDirectory()))) {
+        val arguments = Map("version" -> version.toString)
+        if (!generateDeveloperVersion(serviceName, sourceRepositories.map(_.getDirectory()), arguments)) {
           log.error(s"Can't generate version")
           return None
         }
 
         log.info(s"Upload version image ${version} to distribution server")
         val buildInfo = BuildInfo(author, sourceBranches, new Date(), comment)
-        if (!ZipUtils.zipAndSend(buildDir(serviceName), file => uploadDeveloperVersionImage(distribution, serviceName, version, buildInfo, file))) {
+        if (!ZipUtils.zipAndSend(developerBuildDir(serviceName), file => uploadDeveloperVersionImage(distribution, serviceName, version, buildInfo, file))) {
           log.error("Can't upload version image")
           return None
         }
@@ -126,9 +127,9 @@ object DeveloperBuilder {
     for (repositoryConf <- sourceRepositoriesConf) {
       val directory = repositoryConf.directory match {
         case Some(dir) =>
-          new File(sourceDir(serviceName), dir)
+          new File(developerSourceDir(serviceName), dir)
         case None =>
-          sourceDir(serviceName)
+          developerSourceDir(serviceName)
       }
       val branch = if (sourceBranchIt.hasNext) {
         sourceBranchIt.next()
@@ -144,9 +145,9 @@ object DeveloperBuilder {
     sourceRepositories
   }
 
-  def generateDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion, sourceDirectories: Seq[File])
+  def generateDeveloperVersion(serviceName: ServiceName, sourceDirectories: Seq[File], arguments: Map[String, String])
                               (implicit log: Logger): Boolean = {
-    val directory = buildDir(serviceName)
+    val directory = developerBuildDir(serviceName)
 
     if (!IoUtils.deleteFileRecursively(directory)) {
       log.error(s"Can't delete build directory ${directory}")
@@ -165,8 +166,7 @@ object DeveloperBuilder {
     })
 
     log.info("Execute build commands")
-    var args = Map.empty[String, String]
-    args += ("version" -> version.toString)
+    var args = arguments
     args += ("PATH" -> System.getenv("PATH"))
     for (command <- updateConfig.build.buildCommands.getOrElse(Seq.empty)) {
       if (!ProcessUtils.runProcess(command, args, mainSourceDirectory, ProcessUtils.Logging.Realtime)) {

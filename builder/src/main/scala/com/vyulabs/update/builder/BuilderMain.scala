@@ -12,12 +12,13 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import DeveloperBuilder._
-import ClientBuilder._
-import com.vyulabs.update.common.config.DistributionClientConfig
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.logger.TraceAppender
 import com.vyulabs.update.distribution.SettingsDirectory
+
+import DistributionBuilder._
+import DeveloperBuilder._
+import ClientBuilder._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
@@ -65,14 +66,13 @@ object BuilderMain extends App {
       command match {
         case "buildDistribution" =>
           val arguments = Arguments.parse(args.drop(1), Set.empty)
-          val buildDistribution = new BuildDistribution()
 
           arguments.getOptionValue("author") match {
             case Some(author) =>
               val arguments = Arguments.parse(args.drop(1), Set("distributionName", "author", "sourceBranches"))
               val distributionName = arguments.getValue("distributionName")
               val sourceBranch = arguments.getOptionValue("sourceBranch").getOrElse("master")
-              if (!buildDistribution.buildFromSources(distributionName, settingsRepository, sourceBranch, author)) {
+              if (!buildDistributionFromSources(distributionName, settingsRepository, sourceBranch, author)) {
                 Utils.error("Build distribution error")
               }
             case None =>
@@ -80,7 +80,7 @@ object BuilderMain extends App {
               val distributionConfigFile = new File(arguments.getValue("distributionConfigFile"))
               arguments.getOptionValue("developerDistributionName") match {
                 case Some(developerDistributionName) =>
-                  if (!buildDistribution.buildFromDeveloperDistribution(developerDistributionName, distributionConfigFile)) {
+                  if (!buildFromDeveloperDistribution(developerDistributionName, distributionConfigFile)) {
                     Utils.error("Build distribution error")
                   }
                 case None =>

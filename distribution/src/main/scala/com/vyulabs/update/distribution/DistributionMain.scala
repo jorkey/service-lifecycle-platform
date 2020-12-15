@@ -79,7 +79,7 @@ object DistributionMain extends App {
           StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()
         }
 
-        val selfUpdater = new SelfUpdater(collections)
+        val selfUpdater = new SelfUpdater(collections, dir)
         selfUpdater.start()
 
         val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, collections, dir)

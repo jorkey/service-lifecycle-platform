@@ -53,7 +53,7 @@ object UpdaterMain extends App { self =>
 
       try {
         val updaterServiceController = instanceState.getServiceStateController(updaterServiceName).get
-        val selfUpdater = SelfUpdater(updaterServiceController, clientDirectory)
+        val selfUpdater = new SelfUpdater(updaterServiceController, clientDirectory)
 
         val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ProfiledServiceName, ServiceUpdater])((updaters, service) =>
           updaters + (service -> new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, clientDirectory)))

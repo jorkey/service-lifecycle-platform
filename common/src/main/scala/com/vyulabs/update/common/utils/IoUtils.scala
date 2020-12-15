@@ -214,7 +214,14 @@ object IoUtils {
     }
   }
 
-  def writeServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)(implicit log: Logger): Boolean = {
+  def writeDesiredServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)
+                                 (implicit log: Logger): Boolean = {
+    val desiredVersionMarkFile = new File(directory, Common.DesiredVersionMarkFile.format(serviceName))
+    writeBytesToFile(desiredVersionMarkFile, version.toString.getBytes("utf8"))
+  }
+
+  def writeServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)
+                         (implicit log: Logger): Boolean = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
     writeBytesToFile(versionMarkFile, version.toString.getBytes("utf8"))
   }

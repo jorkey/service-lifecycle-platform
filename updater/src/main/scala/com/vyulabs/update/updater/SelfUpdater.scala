@@ -51,10 +51,3 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: OldDistributio
     }
   }
 }
-
-object SelfUpdater {
-  def apply(state: ServiceStateController, clientDirectory: OldDistributionInterface)
-           (implicit log: Logger): SelfUpdater = {
-    new SelfUpdater(state, clientDirectory)
-  }
-}

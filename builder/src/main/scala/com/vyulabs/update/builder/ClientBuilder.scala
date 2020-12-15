@@ -5,7 +5,7 @@ import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.distribution.client.SyncDistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
-import com.vyulabs.update.common.info.{ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersions, InstallInfo}
+import com.vyulabs.update.common.info.{BuildInfo, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersions, DeveloperVersionInfo, InstallInfo}
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -26,8 +26,8 @@ object ClientBuilder {
   private val clientDir = makeDir(new File("client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
-  private def serviceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
-  private def buildDir(serviceName: ServiceName) = makeDir(new File(serviceDir(serviceName), "build"))
+  def clientServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
+  def clientBuildDir(serviceName: ServiceName) = makeDir(new File(clientServiceDir(serviceName), "build"))
 
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
@@ -68,7 +68,7 @@ object ClientBuilder {
     true
   }
 
-  def buildClientVersions(distributionClient: SyncDistributionClient, settingsDirectory: SettingsDirectory,
+  def buildClientVersions(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory,
                           serviceNames: Seq[ServiceName], author: String, arguments: Map[String, String])
                          (implicit log: Logger): Map[ServiceName, ClientDistributionVersion] = {
     var clientVersions = Map.empty[ServiceName, ClientDistributionVersion]
@@ -92,11 +92,95 @@ object ClientBuilder {
           }
         clientVersions += (serviceName -> clientVersion)
     }
-    log.info("Install updates")
-    if (!installVersions(distributionClient, settingsDirectory, developerDesiredVersions, clientVersions, author, arguments)) {
-      clientVersions = Map.empty
+    log.info("Build client versions")
+    developerDesiredVersions.foreach {
+      case (serviceName, version) =>
+        log.info(s"Build client version ${version} of service ${serviceName}")
+        if (!buildClientVersion(distributionClient, settingsRepository, serviceName, version, clientVersions.get(serviceName).get, author,
+              arguments + ("version" -> version.toString))) {
+          log.error(s"Can't build client versions")
+          return Map.empty
+        }
     }
     clientVersions
+  }
+
+  def downloadDeveloperVersion(distributionClient: SyncDistributionClient, serviceName: ServiceName,
+                               version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
+    log.info(s"Get developer version ${version} of service ${serviceName} info")
+    val versionInfo = distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName)).getOrElse(Seq.empty).headOption.getOrElse {
+      log.error(s"Can't get developer version ${version} of service ${serviceName} info")
+      return None
+    }
+    if (!IoUtils.deleteDirectoryContents(clientServiceDir(serviceName))) {
+      log.error(s"Can't remove directory ${clientServiceDir(serviceName)} contents")
+      return None
+    }
+    log.info(s"Download developer version ${version} of service ${serviceName}")
+    if (!ZipUtils.receiveAndUnzip(file => distributionClient.downloadDeveloperVersionImage(serviceName, version, file), clientBuildDir(serviceName))) {
+      log.error(s"Can't download developer version ${version} of service ${serviceName}")
+      return None
+    }
+    Some(versionInfo)
+  }
+
+  def buildClientVersion(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory, serviceName: ServiceName,
+                         fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion, author: String,
+                         arguments: Map[String, String])(implicit log: Logger): Boolean = {
+    val versionInfo = downloadDeveloperVersion(distributionClient, serviceName, fromVersion).getOrElse {
+      log.error(s"Can't download developer version ${fromVersion} of service ${serviceName}")
+      return false
+    }
+
+    if (!generateClientVersion(settingsRepository, serviceName, arguments)) {
+      log.error(s"Can't generate client version ${toVersion} of service ${serviceName}")
+      return false
+    }
+
+    log.info(s"Upload client version ${toVersion} of service ${serviceName}")
+    uploadClientVersion(distributionClient, serviceName, toVersion, author, versionInfo.buildInfo)
+  }
+
+  def uploadClientVersion(distributionClient: SyncDistributionClient, serviceName: ServiceName,
+                          version: ClientDistributionVersion, author: String, buildInfo: BuildInfo)(implicit log: Logger): Boolean = {
+    if (!ZipUtils.zipAndSend(clientBuildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, version, file))) {
+      return false
+    }
+    val clientVersionInfo = ClientVersionInfo(serviceName, version, buildInfo, InstallInfo(author, new Date()))
+    if (!distributionClient.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
+      return false
+    }
+    true
+  }
+
+  def generateClientVersion(settingsRepository: SettingsDirectory, serviceName: ServiceName,
+                            arguments: Map[String, String])(implicit log: Logger): Boolean = {
+    if (!settingsRepository.getServiceDir(serviceName).exists()) {
+      log.error(s"Service ${serviceName} directory is not exist in the admin repository")
+      return false
+    }
+
+    if (!mergeInstallConfigFile(settingsRepository, serviceName)) {
+      return false
+    }
+
+    log.info(s"Configure client version of service ${serviceName}")
+    val configDir = settingsRepository.getServiceSettingsDir(serviceName)
+    if (configDir.exists()) {
+      log.info(s"Merge private settings files")
+      if (!mergeSettings(serviceName, clientBuildDir(serviceName), configDir, arguments)) {
+        return false
+      }
+    }
+
+    val privateDir = settingsRepository.getServicePrivateDir(serviceName)
+    if (privateDir.exists()) {
+      log.info(s"Copy private files")
+      if (!IoUtils.copyFile(privateDir, clientBuildDir(serviceName))) {
+        return false
+      }
+    }
+    true
   }
 
   def setClientDesiredVersions(distributionClient: SyncDistributionClient, versions: Map[ServiceName, Option[ClientDistributionVersion]])
@@ -166,8 +250,8 @@ object ClientBuilder {
     true
   }
 
-  private def waitForServerUpdated(distributionClient: SyncDistributionClient,
-                                   serviceName: ServiceName, desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int = 10000)(implicit log: Logger): Boolean = {
+  def waitForServerUpdated(distributionClient: SyncDistributionClient,
+                           serviceName: ServiceName, desiredVersion: ClientDistributionVersion, waitingTimeoutSec: Int = 10000)(implicit log: Logger): Boolean = {
     log.info(s"Wait for distribution server updated")
     for (_ <- 0 until waitingTimeoutSec) {
       if (distributionClient.available()) {
@@ -187,85 +271,9 @@ object ClientBuilder {
     false
   }
 
-  private def installVersions(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory,
-                              developerVersions: Map[ServiceName, DeveloperDistributionVersion],
-                              clientVersions: Map[ServiceName, ClientDistributionVersion],
-                              author: String, arguments: Map[String, String])(implicit log: Logger): Boolean = {
-    developerVersions.foreach {
-      case (serviceName, version) =>
-        if (!installVersion(distributionClient, settingsRepository, serviceName, version, clientVersions.get(serviceName).get, author, arguments)) {
-          log.error(s"Can't install desired version ${version} of service ${serviceName}")
-          return false
-        }
-    }
-    true
-  }
-
-  private def installVersion(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory, serviceName: ServiceName,
-                             fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion, author: String,
-                             arguments: Map[String, String])(implicit log: Logger): Boolean = {
-    try {
-      log.info(s"Get developer version ${fromVersion} of service ${serviceName} info")
-      val versionInfo = distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName)).getOrElse(Seq.empty).headOption.getOrElse {
-        log.error(s"Can't get developer version ${fromVersion} of service ${serviceName} info")
-        return false
-      }
-      if (!IoUtils.deleteDirectoryContents(serviceDir(serviceName))) {
-        log.error(s"Can't remove directory ${serviceDir(serviceName)} contents")
-        return false
-      }
-      log.info(s"Download developer version ${fromVersion} of service ${serviceName}")
-      if (!ZipUtils.receiveAndUnzip(file => distributionClient.downloadDeveloperVersionImage(serviceName, fromVersion, file), buildDir(serviceName))) {
-        log.error(s"Can't download developer version ${fromVersion} of service ${serviceName}")
-        return false
-      }
-
-      if (!Common.isUpdateService(serviceName) && !settingsRepository.getServiceDir(serviceName).exists()) {
-        log.error(s"Service ${serviceName} directory is not exist in the admin repository")
-        return false
-      }
-
-      if (!mergeInstallConfigFile(settingsRepository, serviceName)) {
-        return false
-      }
-
-      log.info(s"Configure version ${toVersion} of service ${serviceName}")
-      val configDir = settingsRepository.getServiceSettingsDir(serviceName)
-      if (configDir.exists()) {
-        log.info(s"Merge private settings files")
-        if (!mergeSettings(distributionClient, serviceName, buildDir(serviceName), configDir, toVersion, arguments)) {
-          return false
-        }
-      }
-
-      val privateDir = settingsRepository.getServicePrivateDir(serviceName)
-      if (privateDir.exists()) {
-        log.info(s"Install private files")
-        if (!IoUtils.copyFile(privateDir, buildDir(serviceName))) {
-          return false
-        }
-      }
-
-      log.info(s"Upload client version ${toVersion} of service ${serviceName}")
-
-      if (!ZipUtils.zipAndSend(buildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, toVersion, file))) {
-        return false
-      }
-      val clientVersionInfo = ClientVersionInfo(serviceName, toVersion, versionInfo.buildInfo, InstallInfo(author, new Date()))
-      if (!distributionClient.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
-        return false
-      }
-      true
-    } catch {
-      case ex: Exception =>
-        log.error("Install updates error", ex)
-        false
-    }
-  }
-
   private def mergeInstallConfigFile(adminRepository: SettingsDirectory, serviceName: ServiceName)
                                     (implicit log: Logger): Boolean = {
-    val buildConfigFile = new File(buildDir(serviceName), Common.InstallConfigFileName)
+    val buildConfigFile = new File(clientBuildDir(serviceName), Common.InstallConfigFileName)
     val clientConfigFile = adminRepository.getServiceInstallConfigFile(serviceName)
     if (clientConfigFile.exists()) {
       log.info(s"Merge ${Common.InstallConfigFileName} with client version")
@@ -282,9 +290,8 @@ object ClientBuilder {
     }
   }
 
-  private def mergeSettings(distribution: SyncDistributionClient,
-                            serviceName: ServiceName, buildDirectory: File, localDirectory: File,
-                            version: ClientDistributionVersion, arguments: Map[String, String], subPath: String = "")(implicit log: Logger): Boolean = {
+  private def mergeSettings(serviceName: ServiceName, buildDirectory: File, localDirectory: File,
+                            arguments: Map[String, String], subPath: String = "")(implicit log: Logger): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {
       if (localFile.isDirectory) {
         val newSubPath = subPath + "/" + localFile.getName
@@ -293,7 +300,7 @@ object ClientBuilder {
           log.error(s"Can't make ${buildSubDirectory}")
           return false
         }
-        if (!mergeSettings(distribution, serviceName, buildDirectory, localDirectory, version, arguments, newSubPath)) {
+        if (!mergeSettings(serviceName, buildDirectory, localDirectory, arguments, newSubPath)) {
           return false
         }
       } else {
@@ -321,9 +328,7 @@ object ClientBuilder {
           val sourceName = originalName.substring(0, originalName.length-8)
           val filePath = if (subPath.isEmpty) sourceName else subPath + "/" + sourceName
           val buildConf = new File(buildDirectory, filePath)
-          var preSettings = arguments
-          preSettings += ("version" -> version.toString)
-          val definesSettings = DefinesSettings(localFile, preSettings).getOrElse {
+          val definesSettings = DefinesSettings(localFile, arguments).getOrElse {
             return false
           }
           log.info(s"Extend configuration file ${filePath} with defines")

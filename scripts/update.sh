@@ -41,6 +41,9 @@ function getDesiredVersion {
   local storedDesiredVersionFile=`getServiceDesiredVersionFile $1`
   if [ -f ${storedDesiredVersionFile} ]; then
     cat ${storedDesiredVersionFile}
+  elif [[ -z ${distribDirectoryUrl} ]]; then
+    >&2 echo "Variable distribDirectoryUrl is not defined"
+    exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
     download ${distribDirectoryUrl}/download-desired-version/${service}?image=false ${tmpFile}
@@ -62,7 +65,10 @@ function downloadVersionImage {
   local service=$1
   local version=$2
   local outputFile=$3
-  if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
+  if [[ -z ${distribDirectoryUrl} ]]; then
+    >&2 echo "Variable distribDirectoryUrl is not defined"
+    exit 1
+  elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
