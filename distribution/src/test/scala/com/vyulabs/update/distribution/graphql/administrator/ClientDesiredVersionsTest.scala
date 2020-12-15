@@ -1,13 +1,14 @@
-package com.vyulabs.update.distribution.client.administrator
+package com.vyulabs.update.distribution.graphql.administrator
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
+import com.vyulabs.update.common.info.UserRole
+import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{UserInfo, UserRole}
-import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{DistributionClientInfoDocument, DistributionClientProfileDocument}
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, DistributionClientProfileDocument}
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
 
 import scala.concurrent.ExecutionContext
 import sangria.macros.LiteralGraphQLStringContext

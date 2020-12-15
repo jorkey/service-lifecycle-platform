@@ -2,20 +2,18 @@ package com.vyulabs.update.distribution
 
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.server.DistributionDirectory
-import com.vyulabs.update.info.UserRole
-import distribution.users.{PasswordHash, UserCredentials, UsersCredentials}
-import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
-import distribution.Distribution
-import distribution.config.{FaultReportsConfig, VersionHistoryConfig}
-import distribution.graphql.{Graphql, GraphqlWorkspace}
-import distribution.mongo.{DatabaseCollections, MongoDb}
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.distribution.config.{FaultReportsConfig, VersionHistoryConfig}
+import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
+import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
+import com.vyulabs.update.distribution.users.{PasswordHash, UserCredentials, UsersCredentials}
+import com.vyulabs.update.common.info.UserRole
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 

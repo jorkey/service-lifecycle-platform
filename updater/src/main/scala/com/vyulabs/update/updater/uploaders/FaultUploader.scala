@@ -3,13 +3,12 @@ package com.vyulabs.update.updater.uploaders
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
-
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.client.OldDistributionInterface
-import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName, ServiceState}
-import com.vyulabs.update.info.FaultInfo._
-import com.vyulabs.update.utils.{IoUtils, Utils, ZipUtils}
-import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName, ServiceState}
+import com.vyulabs.update.common.info.FaultInfo._
+import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 
 import scala.collection.immutable.Queue
 import org.slf4j.Logger

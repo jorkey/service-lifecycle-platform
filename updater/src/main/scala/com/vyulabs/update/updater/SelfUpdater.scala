@@ -1,12 +1,11 @@
 package com.vyulabs.update.updater
 
 import java.io.File
-
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.client.OldDistributionInterface
-import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.ClientDistributionVersion
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
 
 /**

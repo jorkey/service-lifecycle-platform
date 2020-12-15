@@ -1,18 +1,18 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.distribution.SettingsDirectory
-import com.vyulabs.update.distribution.client.OldDistributionInterface
-import com.vyulabs.update.distribution.server.DistributionDirectory
-import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IoUtils, ProcessUtils, ZipUtils}
-import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.lock.SmartFilesLocker
+import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils, ZipUtils}
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.Logger
 
 import java.io.File
 import java.net.{URI, URL}
 import DeveloperBuilder._
+import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.distribution.SettingsDirectory
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.

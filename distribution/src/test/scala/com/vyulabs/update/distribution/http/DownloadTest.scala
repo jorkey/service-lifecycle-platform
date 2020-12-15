@@ -3,8 +3,8 @@ package com.vyulabs.update.distribution.http
 import com.vyulabs.update.distribution.TestEnvironment
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 20.11.20.

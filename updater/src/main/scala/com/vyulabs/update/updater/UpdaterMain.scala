@@ -1,13 +1,13 @@
 package com.vyulabs.update.updater
 
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.client.OldDistributionInterface
-import com.vyulabs.update.info.ProfiledServiceName
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Arguments
+import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.info.ProfiledServiceName
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
-import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
 
 /**

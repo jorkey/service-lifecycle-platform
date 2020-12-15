@@ -3,11 +3,11 @@ package com.vyulabs.update.updater
 import java.io.File
 import java.util.Date
 
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.info.UpdateError
-import com.vyulabs.update.info.{ProfiledServiceName, ServiceState}
-import com.vyulabs.update.utils.{IoUtils, Utils}
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.info.UpdateError
+import com.vyulabs.update.common.info.{ProfiledServiceName, ServiceState}
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 
 /**

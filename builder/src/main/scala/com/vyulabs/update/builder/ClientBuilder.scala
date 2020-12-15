@@ -1,16 +1,16 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.distribution.client.SyncDistributionClient
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
+import com.vyulabs.update.common.info.{ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersions, InstallInfo}
+import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
+import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.distribution.SettingsDirectory
-import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
-import com.vyulabs.update.distribution.client.SyncDistributionClient
-import com.vyulabs.update.info.{ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersions, InstallInfo}
-import com.vyulabs.update.settings.{ConfigSettings, DefinesSettings}
-import com.vyulabs.update.utils.{IoUtils, ZipUtils}
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import com.vyulabs.update.distribution.client.graphql.DistributionGraphqlCoder._
-import com.vyulabs.update.utils.Utils.makeDir
 import org.slf4j.Logger
 
 import java.io.File

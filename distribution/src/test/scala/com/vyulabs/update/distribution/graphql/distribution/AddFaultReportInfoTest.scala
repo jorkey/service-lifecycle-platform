@@ -1,17 +1,17 @@
-package com.vyulabs.update.distribution.client.distribution
+package com.vyulabs.update.distribution.graphql.distribution
 
 import java.util.Date
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.Common.FaultId
+import com.vyulabs.update.common.common.Common.FaultId
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState, UserInfo, UserRole}
-import com.vyulabs.update.utils.Utils.DateJson._
-import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.FaultReportDocument
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.mongo.FaultReportDocument
+import com.vyulabs.update.common.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState, UserInfo, UserRole}
+import com.vyulabs.update.common.utils.Utils.DateJson._
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import org.mongodb.scala.bson.BsonDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._

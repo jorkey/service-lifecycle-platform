@@ -5,17 +5,17 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
-import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
-import com.vyulabs.update.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
-import com.vyulabs.update.distribution.client.graphql.ServiceGraphqlCoder._
-import com.vyulabs.update.info._
-import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import distribution.client.AkkaHttpClient
-import distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
+import com.vyulabs.update.distribution.client.AkkaHttpClient
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
+import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
+import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder._
+import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
+import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.duration.FiniteDuration

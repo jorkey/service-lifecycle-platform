@@ -2,22 +2,22 @@ package com.vyulabs.update.builder
 
 import java.io.File
 import com.vyulabs.libs.git.GitRepository
-import com.vyulabs.update.distribution.{GitRepositoryUtils, SettingsDirectory}
 import com.vyulabs.update.builder.config.SourcesConfig
-import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils, ZipUtils}
-import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.config.UpdateConfig
-import com.vyulabs.update.info.{BuildInfo, DeveloperDesiredVersion, DeveloperVersionInfo}
-import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.IoUtils.copyFile
-import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils, Utils, ZipUtils}
+import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.config.UpdateConfig
+import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersion, DeveloperVersionInfo}
+import com.vyulabs.update.common.lock.SmartFilesLocker
+import com.vyulabs.update.common.utils.IoUtils.copyFile
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
-import com.vyulabs.update.config.InstallConfig._
-import com.vyulabs.update.distribution.client.SyncDistributionClient
-import com.vyulabs.update.distribution.client.graphql.AdministratorGraphqlCoder._
-import com.vyulabs.update.utils.Utils.makeDir
+import com.vyulabs.update.common.config.InstallConfig._
+import com.vyulabs.update.common.distribution.client.SyncDistributionClient
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.utils.Utils.makeDir
+import com.vyulabs.update.distribution.{GitRepositoryUtils, SettingsDirectory}
 
 import java.util.Date
 

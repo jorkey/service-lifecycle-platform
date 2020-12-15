@@ -1,17 +1,19 @@
-package com.vyulabs.update.distribution.client.service
+package com.vyulabs.update.distribution.graphql.service
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info._
-import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.ServiceLogLineDocument
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.mongo.ServiceLogLineDocument
+import com.vyulabs.update.common.info._
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
 import java.util.Date
-import com.vyulabs.update.utils.Utils.DateJson._
+import com.vyulabs.update.common.utils.Utils.DateJson._
+
 import scala.concurrent.ExecutionContext
 
 class AddServiceLogsTest extends TestEnvironment {

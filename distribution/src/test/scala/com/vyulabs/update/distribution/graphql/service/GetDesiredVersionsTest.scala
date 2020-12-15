@@ -1,14 +1,16 @@
-package com.vyulabs.update.distribution.client.service
+package com.vyulabs.update.distribution.graphql.service
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.{ClientDesiredVersion, DeveloperDesiredVersion}
-import com.vyulabs.update.info.{UserInfo, UserRole}
-import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{ClientDesiredVersionsDocument, DeveloperDesiredVersionsDocument}
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.mongo.ClientDesiredVersionsDocument
+import com.vyulabs.update.common.info.{ClientDesiredVersion, DeveloperDesiredVersion}
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
+import com.vyulabs.update.distribution.mongo.ClientDesiredVersionsDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 

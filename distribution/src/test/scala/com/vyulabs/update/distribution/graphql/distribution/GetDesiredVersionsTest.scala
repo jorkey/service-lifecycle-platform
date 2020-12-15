@@ -1,16 +1,18 @@
-package com.vyulabs.update.distribution.client.distribution
+package com.vyulabs.update.distribution.graphql.distribution
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.config.{DistributionClientConfig, DistributionClientInfo}
+import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.info.DeveloperDesiredVersion
-import com.vyulabs.update.info.{UserInfo, UserRole}
-import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
-import distribution.config.VersionHistoryConfig
-import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.mongo.{DeveloperDesiredVersionsDocument, DistributionClientInfoDocument}
+import com.vyulabs.update.distribution.config.VersionHistoryConfig
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.mongo.{DeveloperDesiredVersionsDocument, DistributionClientInfoDocument}
+import com.vyulabs.update.common.info.DeveloperDesiredVersion
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
+import com.vyulabs.update.distribution.mongo.DeveloperDesiredVersionsDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 

@@ -2,10 +2,10 @@ package com.vyulabs.update.builder.config
 
 import java.io.File
 import java.net.{URI, URL}
-import com.vyulabs.update.common.Common.{DistributionName, InstanceId}
-import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.utils.Utils.URLJson._
-import com.vyulabs.update.utils.Utils.URIJson._
+import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId}
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.Utils.URLJson._
+import com.vyulabs.update.common.utils.Utils.URIJson._
 import org.slf4j.Logger
 import spray.json._
 

@@ -4,11 +4,11 @@ import java.io.File
 import java.net.URL
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
-import com.vyulabs.update.utils.IoUtils
-import com.vyulabs.update.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import distribution.client.AkkaHttpClient
+import com.vyulabs.update.distribution.client.AkkaHttpClient
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration

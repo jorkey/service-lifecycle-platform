@@ -2,8 +2,8 @@ package com.vyulabs.update.updater
 
 import java.io.{File, IOException}
 
-import com.vyulabs.update.config.RestartConditionsConfig
-import com.vyulabs.update.utils.{IoUtils, ProcessUtils}
+import com.vyulabs.update.common.config.RestartConditionsConfig
+import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils}
 import org.slf4j.Logger
 
 /**

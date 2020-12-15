@@ -38,16 +38,14 @@ function download {
 function getDesiredVersion {
   set -e
   local service=$1
-  if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    local desiredVersionFile=.desired-version-${service}.json
-    download ${distribDirectoryUrl}/download-desired-version/${service}?image=false ${desiredVersionFile}
-    cat ${desiredVersionFile}
-    rm -f ${desiredVersionFile}
-  elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    local desiredVersionsFile=.desired-versions.json
-    download ${distribDirectoryUrl}/desired-versions.json ${desiredVersionsFile}
-    jq -r .desiredVersions.${service} ${desiredVersionsFile}
-    rm -f ${desiredVersionsFile}
+  local storedDesiredVersionFile=`getServiceDesiredVersionFile $1`
+  if [ -f ${storedDesiredVersionFile} ]; then
+    cat ${storedDesiredVersionFile}
+  elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
+    local tmpFile=`mktemp`
+    download ${distribDirectoryUrl}/download-desired-version/${service}?image=false ${tmpFile}
+    cat ${tmpFile}
+    rm -f ${tmpFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"
     exit 1
@@ -66,11 +64,18 @@ function downloadVersionImage {
   local outputFile=$3
   if [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
-  elif [[ ${distribDirectoryUrl} == file://* ]]; then
-    download ${distribDirectoryUrl}/services/${service}/${service}-${version}.zip ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
   fi
+}
+
+### Get service desired version file.
+# input:
+#  $1 - service
+# output:
+#  stdout - desired version file
+function getServiceDesiredVersionFile {
+  echo ".${1}.desired-version"
 }
 
 ### Get service version file.
@@ -89,9 +94,9 @@ function getServiceVersionFile {
 #  stdout - version
 function getCurrentVersion {
   set -e
-  local versionFile=`getServiceVersionFile $1`
-  if [ -f ${versionFile} ]; then
-    cat ${versionFile}
+  local storedDesiredVersionFile=`getServiceVersionFile $1`
+  if [ -f ${storedDesiredVersionFile} ]; then
+    cat ${storedDesiredVersionFile}
   else
     echo
   fi
@@ -105,8 +110,8 @@ function getCurrentVersion {
 #  stdout - version
 function setCurrentVersion {
   set -e
-  local versionFile=`getServiceVersionFile $1`
-  echo $2 >${versionFile}
+  local storedDesiredVersionFile=`getServiceVersionFile $1`
+  echo $2 >${storedDesiredVersionFile}
   # TODO graphql - update state request
 }
 

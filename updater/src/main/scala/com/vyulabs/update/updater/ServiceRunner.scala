@@ -5,15 +5,14 @@ import java.nio.file.Files
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
-
-import com.vyulabs.update.common.Common.InstanceId
-import com.vyulabs.update.config.{InstallConfig, RunServiceConfig}
-import com.vyulabs.update.distribution.client.OldDistributionInterface
-import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName}
-import com.vyulabs.update.logs.LogWriter
+import com.vyulabs.update.common.common.Common.InstanceId
+import com.vyulabs.update.common.config.{InstallConfig, RunServiceConfig}
+import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName}
+import com.vyulabs.update.common.logs.LogWriter
 import com.vyulabs.update.updater.uploaders.{FaultUploader, LogUploader}
-import com.vyulabs.update.utils.{IoUtils, ProcessUtils, Utils}
-import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils, Utils}
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters._

@@ -4,13 +4,13 @@ import java.util.Date
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
+import com.vyulabs.update.common.distribution.client.DistributionClient
+import com.vyulabs.update.common.distribution.client.graphql.GraphqlArgument
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientTestStub}
-import com.vyulabs.update.distribution.client.graphql.GraphqlArgument
-import com.vyulabs.update.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
-import com.vyulabs.update.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
-import distribution.loaders.StateUploader
-import distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
+import com.vyulabs.update.distribution.client.HttpClientTestStub
+import com.vyulabs.update.distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
+import com.vyulabs.update.common.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import spray.json.{JsonReader, enrichAny}
 import spray.json.DefaultJsonProtocol._
 

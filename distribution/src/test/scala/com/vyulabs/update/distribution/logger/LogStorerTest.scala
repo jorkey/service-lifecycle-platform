@@ -1,16 +1,14 @@
 package com.vyulabs.update.distribution.logger
 
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl}
-import com.vyulabs.update.info.{UserInfo, UserRole}
-import com.vyulabs.update.logger.{LogBuffer, LogSender, TraceAppender}
-import com.vyulabs.update.utils.Utils
-import distribution.graphql.{GraphqlContext, GraphqlSchema}
-import distribution.logger.LogStorer
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.logger.{LogBuffer, LogSender, TraceAppender}
+import com.vyulabs.update.common.utils.Utils
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 

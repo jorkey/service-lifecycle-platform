@@ -1,14 +1,11 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.SettingsDirectory
-import com.vyulabs.update.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
-import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.logger.{LogSender, TraceAppender}
-import com.vyulabs.update.utils.Utils
-import com.vyulabs.update.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.common.{Arguments, Common}
+import com.vyulabs.update.common.lock.SmartFilesLocker
+import com.vyulabs.update.common.logger.{LogSender, TraceAppender}
+import com.vyulabs.update.common.utils.Utils
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
 import java.io.File
@@ -17,7 +14,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import DeveloperBuilder._
 import ClientBuilder._
-import com.vyulabs.update.config.DistributionClientConfig
+import com.vyulabs.update.common.config.DistributionClientConfig
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.logger.TraceAppender
+import com.vyulabs.update.distribution.SettingsDirectory
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
