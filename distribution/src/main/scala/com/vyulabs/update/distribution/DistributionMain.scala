@@ -17,8 +17,10 @@ import org.slf4j.LoggerFactory
 
 import java.io.{File, FileInputStream}
 import java.security.{KeyStore, SecureRandom}
+import java.util.concurrent.TimeUnit
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.04.19.
@@ -30,53 +32,41 @@ object DistributionMain extends App {
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  if (args.size < 1) {
-    Utils.error(usage())
-  }
-
-  def usage() = "Arguments: run"
-
   try {
-    val command = args(0)
-
     implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
-
     implicit val filesLocker = new SmartFilesLocker()
 
-    command match {
-      case "run" =>
-        val graphql = new Graphql()
+    val graphql = new Graphql()
 
-        val config = DistributionConfig.readFromFile().getOrElse {
-          Utils.error("No config")
-        }
-
-        val mongoDb = new MongoDb(config.mongoDbConnection, config.mongoDbName)
-
-        val dir = new DistributionDirectory(new File(config.distributionDirectory))
-        val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
-
-        TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, collections))
-
-        config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
-          StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()
-        }
-
-        val selfUpdater = new SelfUpdater(collections, dir)
-        selfUpdater.start()
-
-        val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, collections, dir)
-        val distribution = new Distribution(workspace, graphql)
-
-        var server = Http().newServerAt("0.0.0.0", config.network.port)
-        config.network.ssl.foreach {
-          log.info("Enable https")
-          ssl => server = server.enableHttps(makeHttpsContext(ssl))
-        }
-        server.bind(distribution.route)
-      case _ =>
-        Utils.error(s"Invalid command ${command}\n${usage()}")
+    val config = DistributionConfig.readFromFile().getOrElse {
+      Utils.error("No config")
     }
+
+    val mongoDb = new MongoDb(config.mongoDbConnection, config.mongoDbName)
+
+    val dir = new DistributionDirectory(new File(config.distributionDirectory))
+    val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
+
+    Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
+
+    TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, collections))
+
+    config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
+      StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()
+    }
+
+    val selfUpdater = new SelfUpdater(collections, dir)
+    selfUpdater.start()
+
+    val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, collections, dir)
+    val distribution = new Distribution(workspace, graphql)
+
+    var server = Http().newServerAt("0.0.0.0", config.network.port)
+    config.network.ssl.foreach {
+      log.info("Enable https")
+      ssl => server = server.enableHttps(makeHttpsContext(ssl))
+    }
+    server.bind(distribution.route)
   } catch {
     case ex: Throwable =>
       log.error("Exception", ex)

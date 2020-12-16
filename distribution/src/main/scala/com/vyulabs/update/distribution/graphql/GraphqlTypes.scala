@@ -77,6 +77,8 @@ object GraphqlTypes {
       case _ => Left(VersionViolation)
     })
 
+  implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
+
   implicit val DeveloperDesiredVersionType = deriveObjectType[Unit, DeveloperDesiredVersion]()
   implicit val ClientDesiredVersionType = deriveObjectType[Unit, ClientDesiredVersion]()
   implicit val BuildVersionInfoType = deriveObjectType[Unit, BuildInfo]()
@@ -87,7 +89,6 @@ object GraphqlTypes {
   implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersionsDocument]()
   implicit val ClientConfigInfoType = deriveObjectType[Unit, DistributionClientConfig]()
   implicit val ClientInfoType = deriveObjectType[Unit, DistributionClientInfo]()
-  implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
   implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()

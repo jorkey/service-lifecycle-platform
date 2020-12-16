@@ -2,7 +2,9 @@ package com.vyulabs.update.distribution
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.{ActorMaterializer, Materializer}
+import akka.testkit.TestDuration
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.UserRole
@@ -17,7 +19,7 @@ import org.slf4j.LoggerFactory
 
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
 abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  = VersionHistoryConfig(3),
@@ -27,6 +29,8 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
+
+  implicit def default(implicit system: ActorSystem) = RouteTestTimeout(new DurationInt(5).second.dilated(system))
 
   def dbName = getClass.getSimpleName
 
@@ -53,11 +57,11 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
   result(for {
     collection <- collections.Users_Info
     _ <- collection.insert(UserInfoDocument(ServerUserInfo(adminClientCredentials.username,
-      adminCredentials.role.toString, adminCredentials.password)))
+      adminCredentials.role.toString, adminCredentials.passwordHash)))
     _ <- collection.insert(UserInfoDocument(ServerUserInfo(distributionClientCredentials.username,
-      distributionCredentials.role.toString, distributionCredentials.password)))
+      distributionCredentials.role.toString, distributionCredentials.passwordHash)))
     _ <- collection.insert(UserInfoDocument(ServerUserInfo(serviceClientCredentials.username,
-      serviceCredentials.role.toString, serviceCredentials.password)))
+      serviceCredentials.role.toString, serviceCredentials.passwordHash)))
   } yield {})
 
   IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))

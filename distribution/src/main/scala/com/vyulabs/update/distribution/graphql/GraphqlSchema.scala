@@ -31,6 +31,10 @@ object GraphqlSchema {
 
   // Arguments
 
+  val UserArg = Argument("user", StringType)
+  val OldPasswordArg = Argument("oldPassword", StringType)
+  val PasswordArg = Argument("password", StringType)
+  val UserRoleArg = Argument("role", UserRoleType)
   val DistributionArg = Argument("distribution", StringType)
   val InstanceArg = Argument("instance", StringType)
   val ProcessArg = Argument("process", StringType)
@@ -47,6 +51,7 @@ object GraphqlSchema {
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
 
+  val OptionUserArg = Argument("user", OptionInputType(StringType))
   val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
   val OptionProcessArg = Argument("process", OptionInputType(StringType))
@@ -68,9 +73,9 @@ object GraphqlSchema {
   def AdministratorQueries = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
-      //Field("usersInfo", ListType(UserInfoType),
-      //  resolve = c => { c.ctx.userInfo }),
-
+      Field("usersInfo", ListType(UserInfoType),
+        arguments = OptionUserArg :: Nil,
+        resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg)) }),
 
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
@@ -132,27 +137,46 @@ object GraphqlSchema {
 
   // Mutations
 
+  def CommonMutations = fields[GraphqlContext, Unit](
+    Field("changePassword", fieldType = BooleanType,
+      arguments = OldPasswordArg :: PasswordArg :: Nil,
+      resolve = c => { c.ctx.workspace.changeUserPassword(c.ctx.userInfo.name, c.arg(OldPasswordArg), c.arg(PasswordArg)) }),
+  )
+
   def AdministratorMutations = ObjectType(
     "Mutation",
-    fields[GraphqlContext, Unit](
+    CommonMutations ++ fields[GraphqlContext, Unit](
+      Field("addUser", BooleanType,
+        arguments = UserArg :: UserRoleArg :: PasswordArg :: Nil,
+        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(UserRoleArg), c.arg(PasswordArg)) }),
+      Field("removeUser", BooleanType,
+        arguments = UserArg :: Nil,
+        resolve = c => { c.ctx.workspace.removeUser(c.arg(UserArg)) }),
+      Field("changeUserPassword", BooleanType,
+        arguments = UserArg :: PasswordArg :: Nil,
+        resolve = c => { c.ctx.workspace.changeUserPassword(c.arg(UserArg), c.arg(PasswordArg)) }),
+
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: DeveloperVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg)) }),
+
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)) }),
       Field("removeClientVersion", BooleanType,
         arguments = ServiceArg :: ClientVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.removeClientVersion(c.arg(ServiceArg), c.arg(ClientVersionArg)) }),
+
       Field("setDeveloperDesiredVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }),
+
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg ::DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.distributionName,
@@ -162,7 +186,7 @@ object GraphqlSchema {
 
   val DistributionMutations = ObjectType(
     "Mutation",
-    fields[GraphqlContext, Unit](
+    CommonMutations ++ fields[GraphqlContext, Unit](
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
         resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.userInfo.name, c.arg(DeveloperDesiredVersionsArg)) }),
@@ -183,7 +207,7 @@ object GraphqlSchema {
 
   val ServiceMutations = ObjectType(
     "Mutation",
-    fields[GraphqlContext, Unit](
+    CommonMutations ++ fields[GraphqlContext, Unit](
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
         resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.workspace.distributionName, c.arg(InstanceServiceStatesArg)) }),

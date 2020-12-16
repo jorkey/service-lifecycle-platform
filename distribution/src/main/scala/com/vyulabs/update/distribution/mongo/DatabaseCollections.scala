@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
+  private implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
     classOf[UserInfoDocument],
@@ -137,5 +137,19 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
         Filters.eq("name", sequenceName), Updates.inc("sequence", increment),
         new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)) }
     } yield sequence).map(_.map(_.sequence).head)
+  }
+
+  def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
+    val filters = Filters.eq("info.userName", "admin")
+    for {
+      usersInfo <- Users_Info
+      adminRecords <- usersInfo.find(filters)
+    } yield {
+      if (adminRecords.isEmpty) {
+        usersInfo.insert(UserInfoDocument(ServerUserInfo("admin", UserRole.Administrator.toString, PasswordHash("admin"))))
+      } else {
+        Future()
+      }
+    }
   }
 }

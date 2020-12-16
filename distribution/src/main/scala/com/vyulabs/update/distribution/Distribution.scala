@@ -146,8 +146,8 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
     credentials match {
       case p@Credentials.Provided(userName) =>
         workspace.getUserCredentials(userName).map {
-          case Some(userCredentials) if p.verify(userCredentials.password.hash,
-              PasswordHash.generatePasswordHash(_, userCredentials.password.salt)) =>
+          case Some(userCredentials) if p.verify(userCredentials.passwordHash.hash,
+              PasswordHash.generatePasswordHash(_, userCredentials.passwordHash.salt)) =>
             Some(UserInfo(userName, userCredentials.role))
           case _ =>
             None
