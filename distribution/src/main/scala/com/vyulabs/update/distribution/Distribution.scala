@@ -17,18 +17,16 @@ import akka.stream.scaladsl.FileIO
 import sangria.parser.QueryParser
 import spray.json._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import com.vyulabs.update.distribution.graphql.Graphql
-import com.vyulabs.update.distribution.users.UsersCredentials
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
-import com.vyulabs.update.distribution.users.{PasswordHash, UsersCredentials}
+import com.vyulabs.update.distribution.users.PasswordHash
 import org.slf4j.LoggerFactory
 
-class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentials, graphql: Graphql)
+class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                   (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
   implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -60,7 +58,7 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
               } {
                 pathPrefix(graphqlPathPrefix) {
                   seal {
-                    authenticateBasic(realm = "Distribution", authenticate) { case userInfo =>
+                    authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
                       post {
                         entity(as[JsValue]) { requestJson =>
                           val JsObject(fields) = requestJson
@@ -79,7 +77,7 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
                   getFromResource("graphiql.html")
                 } ~ pathPrefix(loadPathPrefix) {
                   seal {
-                    authenticateBasic(realm = "Distribution", authenticate) { case userInfo =>
+                    authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
                       path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                         get {
                           authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Distribution) {
@@ -144,17 +142,18 @@ class Distribution(workspace: GraphqlWorkspace, usersCredentials: UsersCredentia
       }
     }
 
-  private def authenticate(credentials: Credentials): Option[UserInfo] = {
+  private def authenticate(credentials: Credentials): Future[Option[UserInfo]] = {
     credentials match {
       case p@Credentials.Provided(userName) =>
-        usersCredentials.getCredentials(userName) match {
+        workspace.getUserCredentials(userName).map {
           case Some(userCredentials) if p.verify(userCredentials.password.hash,
-            PasswordHash.generatePasswordHash(_, userCredentials.password.salt)) =>
+              PasswordHash.generatePasswordHash(_, userCredentials.password.salt)) =>
             Some(UserInfo(userName, userCredentials.role))
           case _ =>
             None
         }
-      case _ => None
+      case _ =>
+        Future(None)
     }
   }
 

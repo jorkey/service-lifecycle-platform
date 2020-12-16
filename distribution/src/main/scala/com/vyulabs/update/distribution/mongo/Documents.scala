@@ -2,9 +2,12 @@ package com.vyulabs.update.distribution.mongo
 
 import com.vyulabs.update.common.common.Common.DistributionName
 import com.vyulabs.update.common.config.{DistributionClientInfo, DistributionClientProfile}
-import com.vyulabs.update.common.info.{ClientDesiredVersion, DistributionFaultReport, ServiceLogLine, DistributionServiceState, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, TestedDesiredVersions}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DistributionFaultReport, DistributionServiceState, ServiceLogLine, TestedDesiredVersions}
+import com.vyulabs.update.distribution.users.ServerUserInfo
 
 case class SequenceDocument(name: String, sequence: Long)
+
+case class UserInfoDocument(info: ServerUserInfo)
 
 case class DistributionClientInfoDocument(info: DistributionClientInfo)
 case class DistributionClientProfileDocument(profile: DistributionClientProfile)

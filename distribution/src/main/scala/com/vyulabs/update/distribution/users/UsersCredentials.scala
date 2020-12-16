@@ -1,17 +1,14 @@
 package com.vyulabs.update.distribution.users
 
-import java.io.File
-import java.security.SecureRandom
-import java.util.Base64
-
 import com.typesafe.config.Config
 import com.vyulabs.update.common.common.Common.UserName
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.utils.{IoUtils, Utils}
+import spray.json._
+
+import java.security.SecureRandom
+import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
-import org.slf4j.{Logger, LoggerFactory}
-import spray.json._
 
 case class PasswordHash(salt: String, hash: String)
 
@@ -46,45 +43,5 @@ object PasswordHash extends DefaultJsonProtocol {
 
 case class UserCredentials(role: UserRole, var password: PasswordHash)
 
-object UserCredentials extends DefaultJsonProtocol {
-  import com.vyulabs.update.common.info.UserRole._
-  import PasswordHash._
-
-  implicit val userCredentialsJson = jsonFormat2(UserCredentials.apply)
-}
-
-case class UsersCredentials(var credentials: Map[UserName, UserCredentials]) {
-  def addUser(user: UserName, credentials: UserCredentials): Unit = {
-    this.credentials += (user -> credentials)
-  }
-
-  def getCredentials(user: UserName): Option[UserCredentials] = {
-    credentials.get(user)
-  }
-
-  def removeUser(user: UserName): Unit = {
-    credentials -= user
-  }
-}
-
-object UsersCredentials extends DefaultJsonProtocol {
-  import UserCredentials._
-
-  implicit val usersCredentialsJson = jsonFormat1(UsersCredentials.apply)
-
-  val credentialsFile = new File("credentials.json")
-
-  def apply(): UsersCredentials = {
-    implicit val log = LoggerFactory.getLogger(this.getClass)
-
-    if (credentialsFile.exists()) {
-      log.debug(s"Parse ${credentialsFile}")
-      IoUtils.readFileToJson[UsersCredentials](credentialsFile).getOrElse {
-        Utils.error(s"Can't read ${credentialsFile}")
-      }
-    } else {
-      log.info(s"File ${credentialsFile} not exists")
-      new UsersCredentials(Map.empty)
-    }
-  }
-}
+// We can't use enumeration role because mongodb does not have codec for enumerations.
+case class ServerUserInfo(userName: UserName, role: String, var password: PasswordHash)

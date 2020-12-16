@@ -5,12 +5,12 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.common.Common.DistributionName
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.distribution.config.{FaultReportsConfig, VersionHistoryConfig}
-import com.vyulabs.update.distribution.graphql.utils.{ClientVersionUtils, DeveloperVersionUtils, DistributionClientsUtils, StateUtils}
+import com.vyulabs.update.distribution.graphql.utils.{ClientVersionUtils, DeveloperVersionUtils, DistributionClientsUtils, StateUtils, UsersUtils}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import GraphqlTypes._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.UserRole.UserRole
 
 import scala.concurrent.ExecutionContext
 import sangria.marshalling.sprayJson._
@@ -22,7 +22,7 @@ case class GraphqlWorkspace(distributionName: DistributionName,
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends DistributionClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
+    extends UsersUtils with DistributionClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
 
 case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
 
@@ -68,6 +68,10 @@ object GraphqlSchema {
   def AdministratorQueries = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
+      //Field("usersInfo", ListType(UserInfoType),
+      //  resolve = c => { c.ctx.userInfo }),
+
+
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),

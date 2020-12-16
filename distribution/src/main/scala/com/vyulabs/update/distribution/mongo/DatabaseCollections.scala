@@ -1,17 +1,17 @@
 package com.vyulabs.update.distribution.mongo
 
-import java.util.concurrent.TimeUnit
-
 import com.mongodb.MongoClientSettings
-import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, IndexOptions, Indexes, ReturnDocument, Updates}
+import com.mongodb.client.model._
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 
 class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit executionContext: ExecutionContext) {
@@ -20,6 +20,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
   implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
+    classOf[UserInfoDocument],
+    classOf[ServerUserInfo],
+    classOf[UserCredentials],
+    classOf[PasswordHash],
     classOf[ClientVersion],
     classOf[ClientDistributionVersion],
     classOf[DeveloperVersion],
@@ -60,6 +64,11 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
   val Sequences = for {
     collection <- db.getOrCreateCollection[SequenceDocument]("_.sequences")
     _ <- collection.createIndex(Indexes.ascending("name"), new IndexOptions().unique(true))
+  } yield collection
+
+  val Users_Info = for {
+    collection <- db.getOrCreateCollection[UserInfoDocument]("usersInfo")
+    _ <- collection.createIndex(Indexes.ascending("info.userName"), new IndexOptions().unique(true))
   } yield collection
 
   val Developer_VersionsInfo = for {

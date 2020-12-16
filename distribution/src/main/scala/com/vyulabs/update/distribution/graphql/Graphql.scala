@@ -7,7 +7,7 @@ import com.vyulabs.update.common.info.UserInfo
 import com.vyulabs.update.common.info.UserRole.UserRole
 import org.slf4j.LoggerFactory
 import sangria.ast.Document
-import sangria.execution.{ErrorWithResolver, ExceptionHandler, Executor, HandledException, QueryAnalysisError}
+import sangria.execution._
 import sangria.marshalling.sprayJson._
 import sangria.schema.Schema
 import spray.json.{JsObject, JsValue}
