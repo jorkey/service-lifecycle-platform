@@ -3,17 +3,21 @@ package com.vyulabs.update.distribution.graphql.utils
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.distribution.client.DistributionClient
+import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.config.VersionHistoryConfig
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
-import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.bson.BsonDocument
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
+import java.io.File
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -140,6 +144,36 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
           getDeveloperDesiredVersions(serviceNames)
       }
     } yield developerVersions
+  }
+
+  def downloadUpdates(developerDistributionClient: DistributionClient, serviceNames: Seq[ServiceName])(implicit log: Logger):
+      Future[Map[ServiceName, DeveloperDistributionVersion]] = {
+    for {
+      developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDesiredVersions(serviceNames))
+          .map(DeveloperDesiredVersions.toMap(_))
+      l <- Future.sequence(developerDesiredVersions.map {
+        case (serviceName, version) if version.distributionName == developerDistributionClient.distributionName =>
+          log.info(s"Download version ${version}")
+          val imageFile = File.createTempFile("version", "image")
+          for {
+            _ <- developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
+              .andThen {
+                case Success(_) =>
+                  imageFile.renameTo(dir.getDeveloperVersionImageFile(serviceName, version))
+                case _ =>
+              }.andThen { case _ => imageFile.delete() }
+            versionInfo <- developerDistributionClient.graphqlRequest(distributionQueries.getVersionsInfo(serviceName, None, Some(version))).map(_.headOption)
+            _ <- versionInfo match {
+                case Some(versionInfo) =>
+                  addDeveloperVersionInfo(versionInfo)
+                case None =>
+                  Future()
+              }
+          } yield {}
+        case _ =>
+          Future()
+      })
+    } yield {}
   }
 
   private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName): Future[Set[DeveloperVersion]] = {

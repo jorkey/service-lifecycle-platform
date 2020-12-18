@@ -2,6 +2,7 @@ package com.vyulabs.update.distribution
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.common.EntityStreamingSupport
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.model.MediaTypes._
 import akka.http.scaladsl.model.StatusCodes.{BadRequest, OK}
@@ -11,20 +12,20 @@ import akka.http.scaladsl.server.Directives.{path, pathPrefix, _}
 import akka.http.scaladsl.server.Route._
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, ExceptionHandler, Route, RouteResult}
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
-import sangria.parser.QueryParser
-import spray.json._
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
 import com.vyulabs.update.distribution.users.PasswordHash
 import org.slf4j.LoggerFactory
+import sangria.ast.OperationType
+import sangria.parser.QueryParser
+import spray.json._
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                   (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) {
@@ -160,25 +161,28 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
   private def executeGraphqlRequest(userInfo: UserInfo, workspace: GraphqlWorkspace,
                                     query: String, operation: Option[String], variables: JsObject): Route = {
     QueryParser.parse(query) match {
-      case Success(queryAst) =>
-        val context = new GraphqlContext(userInfo, workspace)
+      case Success(document) =>
+        val context = GraphqlContext(userInfo, workspace)
         log.debug(s"Execute graphql query ${query}, operation ${operation}, variables ${variables}")
-        complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
-            context, queryAst, operation, variables).andThen {
-          case Success((statusCode, value)) =>
-            log.debug(s"Graphql query terminated with status ${statusCode}, value ${value}")
-          case Failure(ex) =>
-        })
+        document.operationType(operation) match {
+          case Some(OperationType.Subscription) =>
+            complete(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
+                context, document, operation, variables))
+          case _ =>
+            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(userInfo.role),
+                context, document, operation, variables).andThen {
+              case Success((statusCode, value)) =>
+                log.debug(s"Graphql query terminated with status ${statusCode}, value ${value}")
+              case Failure(ex) =>
+                log.error(s"Graphql query terminated with error", ex)
+            })
+        }
       case Failure(error) =>
         complete(BadRequest, JsObject("error" -> JsString(error.toString)))
     }
   }
 
-  private def requestLogger(req: HttpRequest): String = {
-    "Request: " + req.toString()
-  }
+  private def requestLogger(req: HttpRequest): String = "Request: " + req.toString()
 
-  private def resultLogger(res: RouteResult): String = {
-    "Result: " + res.toString()
-  }
+  private def resultLogger(res: RouteResult): String = "Result: " + res.toString()
 }

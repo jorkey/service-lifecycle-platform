@@ -156,6 +156,10 @@ object GraphqlSchema {
         arguments = UserArg :: PasswordArg :: Nil,
         resolve = c => { c.ctx.workspace.changeUserPassword(c.arg(UserArg), c.arg(PasswordArg)) }),
 
+      Field("buildDeveloperVersion", BooleanType,
+        arguments = ServiceArg :: OptionDeveloperVersionArg :: PasswordArg :: Nil,
+        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(UserRoleArg), c.arg(PasswordArg)) }),
+
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),

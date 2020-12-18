@@ -4,10 +4,10 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientVersionInfo}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion}
 import com.vyulabs.update.distribution.config.VersionHistoryConfig
 import com.vyulabs.update.distribution.mongo.{ClientDesiredVersionsDocument, ClientVersionInfoDocument, DatabaseCollections}
-import com.vyulabs.update.common.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, InstallInfo}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 

@@ -1,25 +1,24 @@
 package com.vyulabs.update.distribution.loaders
 
-import java.io.{File, IOException}
-import java.net.URL
-import java.util.concurrent.TimeUnit
 import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.server.directives.FutureDirectives
-import akka.stream.{IOResult, Materializer}
-import org.slf4j.LoggerFactory
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.server.directives.FutureDirectives
+import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts, Updates}
-import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId}
+import com.vyulabs.update.common.common.Common.DistributionName
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import spray.json._
+import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
+import spray.json._
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import java.net.URL
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 /**
@@ -84,7 +83,7 @@ class StateUploader(distributionName: DistributionName,
     } yield {
       if (!newStates.isEmpty) {
         client.graphqlRequest(GraphqlMutation("setServiceStates", Seq(GraphqlArgument("state" -> newStates.toJson)))).
-          onComplete {
+          andThen {
             case Success(_) =>
               setLastUploadSequence(serviceStates.getName(), newStatesDocuments.last.sequence)
             case Failure(ex) =>
