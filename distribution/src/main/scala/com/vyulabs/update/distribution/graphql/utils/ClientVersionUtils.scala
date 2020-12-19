@@ -1,6 +1,5 @@
 package com.vyulabs.update.distribution.graphql.utils
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -14,7 +13,7 @@ import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends DistributionClientsUtils with SprayJsonSupport {
+trait ClientVersionUtils extends DistributionClientsUtils {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   protected val versionHistoryConfig: VersionHistoryConfig

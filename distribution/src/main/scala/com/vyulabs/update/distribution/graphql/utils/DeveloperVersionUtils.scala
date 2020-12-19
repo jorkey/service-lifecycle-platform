@@ -147,33 +147,43 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   }
 
   def downloadUpdates(developerDistributionClient: DistributionClient, serviceNames: Seq[ServiceName])(implicit log: Logger):
-      Future[Map[ServiceName, DeveloperDistributionVersion]] = {
+        Future[Map[ServiceName, DeveloperDistributionVersion]] = {
     for {
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDesiredVersions(serviceNames))
           .map(DeveloperDesiredVersions.toMap(_))
-      l <- Future.sequence(developerDesiredVersions.map {
+      updatedVersions <- (Future.sequence(developerDesiredVersions.map {
         case (serviceName, version) if version.distributionName == developerDistributionClient.distributionName =>
-          log.info(s"Download version ${version}")
-          val imageFile = File.createTempFile("version", "image")
           for {
-            _ <- developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
-              .andThen {
-                case Success(_) =>
-                  imageFile.renameTo(dir.getDeveloperVersionImageFile(serviceName, version))
-                case _ =>
-              }.andThen { case _ => imageFile.delete() }
-            versionInfo <- developerDistributionClient.graphqlRequest(distributionQueries.getVersionsInfo(serviceName, None, Some(version))).map(_.headOption)
-            _ <- versionInfo match {
-                case Some(versionInfo) =>
-                  addDeveloperVersionInfo(versionInfo)
-                case None =>
-                  Future()
-              }
-          } yield {}
+            existVersionInfo <- getDeveloperVersionsInfo(serviceName, Some(developerDistributionClient.distributionName), Some(version)).map(_.headOption)
+            updatedVersion <- existVersionInfo match {
+              case Some(_) =>
+                Future(None)
+              case None =>
+                for {
+                  _ <- {
+                    log.info(s"Download version ${version}")
+                    val imageFile = File.createTempFile("version", "image")
+                    developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
+                      .andThen {
+                        case Success(_) =>
+                          imageFile.renameTo(dir.getDeveloperVersionImageFile(serviceName, version))
+                        case _ =>
+                      }.andThen { case _ => imageFile.delete() }
+                  }
+                  versionInfo <- developerDistributionClient.graphqlRequest(distributionQueries.getVersionsInfo(serviceName, None, Some(version))).map(_.headOption)
+                  updatedVersion <- versionInfo match {
+                    case Some(versionInfo) =>
+                      addDeveloperVersionInfo(versionInfo).map(result => if (result) Some(serviceName -> version) else None)
+                    case None =>
+                      Future(None)
+                  }
+                } yield updatedVersion
+            }
+          } yield updatedVersion
         case _ =>
-          Future()
-      })
-    } yield {}
+          Future(None)
+      }).map(_.flatten.toMap))
+    } yield updatedVersions
   }
 
   private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName): Future[Set[DeveloperVersion]] = {
