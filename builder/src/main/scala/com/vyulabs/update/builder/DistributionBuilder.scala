@@ -2,7 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils, ZipUtils}
+import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.config.InstallConfig
 import com.vyulabs.update.distribution.SettingsDirectory
@@ -11,6 +11,7 @@ import java.io.File
 import DeveloperBuilder._
 import ClientBuilder._
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.process.ProcessUtils
 import org.slf4j.Logger
 
 import java.net.URL

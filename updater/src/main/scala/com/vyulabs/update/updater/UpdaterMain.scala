@@ -1,14 +1,15 @@
 package com.vyulabs.update.updater
 
-import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Arguments
+import com.vyulabs.update.common.common.{Arguments, Common}
 import com.vyulabs.update.common.distribution.client.OldDistributionInterface
 import com.vyulabs.update.common.info.ProfiledServiceName
+import com.vyulabs.update.common.utils.Utils
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
-import com.vyulabs.update.common.utils.{IoUtils, Utils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory
   */
 object UpdaterMain extends App { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
+  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   if (args.size < 1) {
     Utils.error(usage())

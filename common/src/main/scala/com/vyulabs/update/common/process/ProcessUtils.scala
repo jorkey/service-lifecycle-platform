@@ -1,64 +1,17 @@
-package com.vyulabs.update.common.utils
-
-import java.io.{BufferedReader, File, InputStream, InputStreamReader}
+package com.vyulabs.update.common.process
 
 import com.vyulabs.update.common.config.CommandConfig
-import com.vyulabs.update.common.utils.ProcessUtils.Logging.Logging
+import com.vyulabs.update.common.process.ProcessUtils.Logging.Logging
+import com.vyulabs.update.common.utils.Utils.extendMacro
 import org.slf4j.Logger
 
+import java.io.{BufferedReader, File, InputStream, InputStreamReader}
 import scala.collection.JavaConverters._
-import Utils._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 31.07.20.
   * Copyright FanDate, Inc.
   */
-private class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
-                                onLine: (String, Boolean) => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
-
-  override def run(): Unit = {
-    val buffer = StringBuilder.newBuilder
-    val chunk = new Array[Char](1024)
-    try {
-      var cnt = input.read(chunk)
-      while (cnt != -1) {
-        buffer.appendAll(chunk, 0, cnt)
-        var index1 = 0
-        var index2 = 0
-        while (index2 < buffer.size) {
-          if (buffer(index2) == '\n') {
-            onLine(buffer.substring(index1, index2), true)
-            index1 = index2 + 1
-          }
-          index2 += 1
-        }
-        buffer.delete(0, index1)
-        if (!buffer.isEmpty) {
-          for (lineWaitingTimeoutMs <- lineWaitingTimeoutMs) {
-            val expire = System.currentTimeMillis() + lineWaitingTimeoutMs
-            var rest = expire - System.currentTimeMillis()
-            if (rest > 0) {
-              do {
-                Thread.sleep(if (rest > 100) 100 else rest)
-                rest = expire - System.currentTimeMillis()
-              } while (!input.ready() && rest > 0)
-            }
-            if (!input.ready()) {
-              onLine(buffer.toString(), false)
-              buffer.clear()
-            }
-          }
-        }
-        cnt = input.read(chunk)
-      }
-    } catch {
-      case e: Exception =>
-        onError(e)
-    }
-    onEof()
-  }
-}
-
 object ProcessUtils {
 
   object Logging extends Enumeration {
@@ -133,11 +86,6 @@ object ProcessUtils {
         log.error(s"Start process ${command} error: ${ex.toString}", ex)
         false
     }
-  }
-
-  def readOutputLines(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
-                      onLine: (String, Boolean) => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger): Unit = {
-    new LinesReaderThread(input, lineWaitingTimeoutMs, onLine, onEof, onError).start()
   }
 
   def readOutputToString(input: InputStream, logging: Logging)(implicit log: Logger): Option[String] = {

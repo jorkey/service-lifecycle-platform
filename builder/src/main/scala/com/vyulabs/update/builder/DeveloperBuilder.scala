@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import java.io.File
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config.SourcesConfig
-import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils, Utils, ZipUtils}
+import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.UpdateConfig
@@ -16,6 +16,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import com.vyulabs.update.common.config.InstallConfig._
 import com.vyulabs.update.common.distribution.client.SyncDistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.distribution.{GitRepositoryUtils, SettingsDirectory}
 

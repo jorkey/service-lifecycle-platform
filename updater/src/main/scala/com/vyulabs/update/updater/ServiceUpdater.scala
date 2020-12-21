@@ -3,23 +3,23 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.config.InstallConfig
 import com.vyulabs.update.common.distribution.client.OldDistributionInterface
-import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils}
 import com.vyulabs.update.common.info.{ProfiledServiceName, UpdateError}
+import com.vyulabs.update.common.process.ProcessUtils
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.uploaders.FaultUploader
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class ServiceUpdater(instanceId: InstanceId,
-                     profiledServiceName: ProfiledServiceName,
-                     state: ServiceStateController,
-                     clientDirectory: OldDistributionInterface)
-                    (implicit log: Logger) {
+class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServiceName,
+                     state: ServiceStateController, clientDirectory: OldDistributionInterface)
+                    (implicit executionContext: ExecutionContext, log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
-
   private val faultUploader = new FaultUploader(state.faultsDirectory, clientDirectory)
 
   faultUploader.start()
@@ -181,12 +181,13 @@ class ServiceUpdater(instanceId: InstanceId,
         for (runService <- installConfig.runService) {
           state.info(s"Start service of version ${newVersion}")
 
-          var args = Map.empty[String, String]
-          args += ("profile" -> profiledServiceName.profile)
-          args += ("version" -> newVersion.original().toString)
+          var parameters = Map.empty[String, String]
+          parameters += ("profile" -> profiledServiceName.profile)
+          parameters += ("version" -> newVersion.original().toString)
 
-          val runner = new ServiceRunner(instanceId, profiledServiceName, state, clientDirectory, faultUploader)
-          if (!runner.startService(runService, args, state.currentServiceDirectory)) {
+          val runner = new ServiceRunner(runService, parameters, state.currentServiceDirectory, instanceId,
+            profiledServiceName, state, faultUploader)
+          if (!runner.startService()) {
             state.error(s"Can't start service")
             return false
           }

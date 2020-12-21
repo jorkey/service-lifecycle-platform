@@ -1,17 +1,16 @@
-package com.vyulabs.update.updater
-
-import java.io.{File, IOException}
+package com.vyulabs.update.common.process
 
 import com.vyulabs.update.common.config.RestartConditionsConfig
-import com.vyulabs.update.common.utils.{IoUtils, ProcessUtils}
 import org.slf4j.Logger
+
+import java.io.{File, IOException}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 8.05.19.
   * Copyright FanDate, Inc.
   */
-class MonitorThread(state: ServiceStateController,
-                    process: Process, restartConditions: RestartConditionsConfig)(implicit log: Logger) extends Thread {
+class MonitorThread(process: Process, restartConditions: RestartConditionsConfig)
+                   (implicit log: Logger) extends Thread {
   val osName = System.getProperty("os.name")
   val isUnix = osName.startsWith("Linux") || osName.startsWith("Mac")
 
@@ -22,7 +21,7 @@ class MonitorThread(state: ServiceStateController,
         for (maxMemorySize <- restartConditions.maxMemory) {
           for (memorySize <- getProcessMemorySize(pid)) {
             if (memorySize > maxMemorySize) {
-              state.error(s"Process memory size ${memorySize} > ${maxMemorySize}. Kill it.")
+              log.error(s"Process memory size ${memorySize} > ${maxMemorySize}. Kill it.")
               if (isUnix) {
                 Runtime.getRuntime.exec(s"kill -SIGQUIT ${pid}", null, new File("."))
               } else {
@@ -36,7 +35,7 @@ class MonitorThread(state: ServiceStateController,
       }
     } catch {
       case e: Exception =>
-        state.error("Monitor service error", e)
+        log.error("Monitor service error", e)
     }
   }
 
@@ -45,7 +44,7 @@ class MonitorThread(state: ServiceStateController,
       try {
         val proc = Runtime.getRuntime.exec(s"ps -o vsz= -p ${pid}", null, new File("."))
         val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, ProcessUtils.Logging.None).getOrElse {
-          state.error(s"Get 'ps' output error")
+          log.error(s"Get 'ps' output error")
           return None
         }
         try {
@@ -57,12 +56,12 @@ class MonitorThread(state: ServiceStateController,
           }
         } catch {
           case ex: Exception =>
-            state.error(s"Parse 'ps' output error", ex)
+            log.error(s"Parse 'ps' output error", ex)
             None
         }
       } catch {
         case ex: IOException =>
-          state.error("Process creation error", ex)
+          log.error("Process creation error", ex)
           None
       }
     } else {
