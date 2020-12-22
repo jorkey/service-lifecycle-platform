@@ -1,10 +1,11 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.Common.InstanceId
+import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.{InstallConfig, RunServiceConfig}
 import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName}
 import com.vyulabs.update.common.logs.LogWriter
-import com.vyulabs.update.common.process.{ChildProcess, MonitorThread}
+import com.vyulabs.update.common.process.{ChildProcess, ProcessMonitor}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.updater.uploaders.FaultUploader
@@ -26,7 +27,7 @@ import scala.util.{Failure, Success}
   */
 class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], directory: File, instanceId: InstanceId,
                     profiledServiceName: ProfiledServiceName, state: ServiceStateController, faultUploader: FaultUploader)
-                   (implicit log: Logger, executionContext: ExecutionContext) {
+                   (implicit log: Logger, timer: Timer, executionContext: ExecutionContext) {
   private var process = Option.empty[ChildProcess]
 
   private val maxLogHistoryDirCapacity = 5 * 1000 * 1000 * 1000
@@ -53,7 +54,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
               config.logWriter.maxFilesCount,
               config.logWriter.filePrefix,
               (message, exception) => state.error(message, exception))
-            process.handleOutput(Some((line, nl) => {
+            process.handleOutput((line, nl) => {
               val formattedLine = dateFormat match {
                 case Some(dateFormat) =>
                   s"${dateFormat.format(new Date)} ${line}"
@@ -61,11 +62,11 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
                   line
               }
               logWriter.writeLogLine(formattedLine)
-            }))
+            })
             for (restartConditions <- config.restartConditions) {
-              new MonitorThread(process.getProcess(), restartConditions).start()
+              new ProcessMonitor(process, restartConditions).start()
             }
-            process.getExitCode().onComplete {
+            process.waitForTermination().onComplete {
               case Success(exitCode) =>
                 this.process = None
                 val logTail = logWriter.getLogTail()
@@ -87,7 +88,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
     process match {
       case Some(process) =>
         try {
-          Await.result(process.stop(), FiniteDuration(30, TimeUnit.SECONDS))
+          Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
         } catch {
           case _ =>
             false

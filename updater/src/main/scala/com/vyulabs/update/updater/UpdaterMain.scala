@@ -1,6 +1,6 @@
 package com.vyulabs.update.updater
 
-import com.vyulabs.update.common.common.{Arguments, Common}
+import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer, Timer}
 import com.vyulabs.update.common.distribution.client.OldDistributionInterface
 import com.vyulabs.update.common.info.ProfiledServiceName
 import com.vyulabs.update.common.utils.Utils
@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext
 object UpdaterMain extends App { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val timer = new ThreadTimer()
 
   if (args.size < 1) {
     Utils.error(usage())

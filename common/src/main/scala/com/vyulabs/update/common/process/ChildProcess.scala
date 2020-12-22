@@ -16,29 +16,29 @@ class ChildProcess(process: Process)
   private val processTerminateTimeoutMs = 5000
   private val exitCode = Promise[Int]
 
-  def isStarted(): Boolean = process.isAlive
+  def isAlive(): Boolean = process.isAlive
 
-  def getExitCode(): Future[Int] = exitCode.future
+  def waitForTermination(): Future[Int] = exitCode.future
 
-  def getProcess() = process
+  def getHandle() = process
 
-  def handleOutput(onOutputLine: Option[(String, Boolean) => Unit]): Unit = {
+  def handleOutput(onOutputLine: (String, Boolean) => Unit): Unit = {
     val input = new BufferedReader(new InputStreamReader(process.getInputStream))
     new LinesReaderThread(input, None,
-      (_, _) => { for (onOutputLine <- onOutputLine) { onOutputLine(_, _) } },
+      (line, nl) => onOutputLine(line, nl),
       () => {
         val status = process.waitFor()
-        log.info(s"Process ${process.pid()} is terminated with status ${status}.")
-        exitCode.success(status)
+        log.info(s"Process ${process.pid()} is terminated with status ${status}")
+        exitCode.trySuccess(status)
       },
       exception => { if (process.isAlive) log.error(s"Read process output error ${exception.toString}") }
     ).start()
   }
 
-  def stop(): Future[Boolean] = {
+  def terminate(): Future[Boolean] = {
     Future {
       var descendantProcesses = getProcessDescendants(process.toHandle)
-      log.info(s"Stop process ${process.pid()}, descendant processes ${descendantProcesses.map(_.pid())}")
+      log.info(s"Terminate process ${process.pid()}, descendant processes ${descendantProcesses.map(_.pid())}")
       process.destroy()
       if (!process.waitFor(processTerminateTimeoutMs, TimeUnit.MILLISECONDS)) {
         log.error(s"Process ${process.pid()} is not terminated normally during ${processTerminateTimeoutMs}ms - destroy it forcibly")
@@ -46,7 +46,7 @@ class ChildProcess(process: Process)
       }
       val status = process.waitFor()
       log.info(s"Process ${process.pid()} is terminated with status ${status}.")
-      exitCode.success(status)
+      exitCode.trySuccess(status)
       descendantProcesses = descendantProcesses.filter(_.isAlive)
       if (!descendantProcesses.isEmpty) {
         log.info(s"Destroy remaining descendant processes ${descendantProcesses.map(_.pid())}")
@@ -65,6 +65,10 @@ class ChildProcess(process: Process)
     }
   }
 
+  def getProcessDescendants(): Seq[ProcessHandle] = {
+    getProcessDescendants(process.toHandle)
+  }
+
   private def getProcessDescendants(process: ProcessHandle): Seq[ProcessHandle] = {
     var processes = Seq.empty[ProcessHandle]
     process.children().forEach { process =>
@@ -76,10 +80,10 @@ class ChildProcess(process: Process)
 }
 
 object ChildProcess {
-  def start(command: String, args: Seq[String], env: Map[String, String], directory: File)
+  def start(command: String, arguments: Seq[String] = Seq.empty, env: Map[String, String] = Map.empty, directory: File = new File("."))
            (implicit executionContext: ExecutionContext, log: Logger): Option[ChildProcess] = {
     try {
-      val builder = new ProcessBuilder(command).command(args.asJava)
+      val builder = new ProcessBuilder().command((command +: arguments).asJava)
       env.foldLeft(builder.environment())((e, entry) => {
         if (entry._2 != null) { e.put(entry._1, entry._2) }
         else { e.remove(entry._1) }
@@ -87,7 +91,7 @@ object ChildProcess {
       })
       builder.redirectErrorStream(true)
       builder.directory(directory)
-      log.info(s"Start command ${command} with arguments ${args} in directory ${directory}")
+      log.info(s"Start command ${command} with arguments ${arguments} in directory ${directory}")
       log.debug(s"Environment: ${builder.environment().asScala}")
       val process = builder.start()
       log.debug(s"Started process ${process.pid()}")

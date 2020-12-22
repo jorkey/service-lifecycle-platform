@@ -8,6 +8,7 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.logger.TraceAppender
 import com.vyulabs.update.common.utils.Utils
+import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.config.{DistributionConfig, SslConfig}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
 import com.vyulabs.update.distribution.loaders.StateUploader
@@ -34,6 +35,7 @@ object DistributionMain extends App {
 
   try {
     implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+    implicit val timer = new AkkaTimer(system.scheduler)
     implicit val filesLocker = new SmartFilesLocker()
 
     val graphql = new Graphql()

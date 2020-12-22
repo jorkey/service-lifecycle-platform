@@ -4,7 +4,7 @@ import com.vyulabs.update.builder.ClientBuilder._
 import com.vyulabs.update.builder.DeveloperBuilder._
 import com.vyulabs.update.builder.DistributionBuilder._
 import com.vyulabs.update.builder.config.BuilderConfig
-import com.vyulabs.update.common.common.{Arguments, Common}
+import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.logger.{LogSender, TraceAppender}
@@ -26,6 +26,7 @@ object BuilderMain extends App {
   implicit val log = LoggerFactory.getLogger(this.getClass)
   implicit val filesLocker = new SmartFilesLocker()
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val timer = new ThreadTimer()
 
   def usage(): String =
     "Use: <command> [arguments]\n" +

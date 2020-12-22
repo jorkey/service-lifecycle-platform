@@ -1,6 +1,7 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.Common.InstanceId
+import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.InstallConfig
 import com.vyulabs.update.common.distribution.client.OldDistributionInterface
 import com.vyulabs.update.common.info.{ProfiledServiceName, UpdateError}
@@ -18,7 +19,7 @@ import scala.concurrent.ExecutionContext
   */
 class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServiceName,
                      state: ServiceStateController, clientDirectory: OldDistributionInterface)
-                    (implicit executionContext: ExecutionContext, log: Logger) {
+                    (implicit timer: Timer, executionContext: ExecutionContext, log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
   private val faultUploader = new FaultUploader(state.faultsDirectory, clientDirectory)
 
