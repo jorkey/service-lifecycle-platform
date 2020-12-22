@@ -169,4 +169,8 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core"))))))(
       adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some("distribution1"), Some("service1"), Some(2))))
   }
+
+  it should "execute subscription requests" in {
+    adminClient.graphqlRequest(administratorSubscriptions.testSubscription())
+  }
 }

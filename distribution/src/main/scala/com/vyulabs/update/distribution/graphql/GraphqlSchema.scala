@@ -1,26 +1,20 @@
 package com.vyulabs.update.distribution.graphql
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import com.vyulabs.update.common.common.Common.DistributionName
-import com.vyulabs.update.distribution.DistributionMain.log
-import com.vyulabs.update.distribution.config.{FaultReportsConfig, VersionHistoryConfig}
-import com.vyulabs.update.distribution.graphql.utils.{ClientVersionUtils, DeveloperVersionUtils, DistributionClientsUtils, StateUtils, UsersUtils}
-import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import GraphqlTypes._
-import akka.NotUsed
-import akka.stream.scaladsl.Source
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.UserRole.UserRole
-
-import scala.concurrent.ExecutionContext
-import sangria.streaming.akkaStreams._
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.distribution.config.{FaultReportsConfig, VersionHistoryConfig}
+import com.vyulabs.update.distribution.graphql.GraphqlTypes._
+import com.vyulabs.update.distribution.graphql.utils._
+import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import sangria.marshalling.sprayJson._
 import sangria.schema.{Field, _}
+import sangria.streaming.akkaStreams._
 
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext
 
 case class GraphqlWorkspace(distributionName: DistributionName,
                            versionHistoryConfig: VersionHistoryConfig, faultReportsConfig: FaultReportsConfig,
@@ -33,10 +27,6 @@ case class GraphqlWorkspace(distributionName: DistributionName,
 case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
 
 object GraphqlSchema {
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
-  private implicit val system = ActorSystem("Distribution")
-  private implicit val materializer = ActorMaterializer()
-
   // Arguments
 
   val UserArg = Argument("user", StringType)
@@ -139,8 +129,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceStates", ListType(InstanceServiceStateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        resolve = c => { c.ctx.workspace.getServicesState(Some(c.ctx.workspace.distributionName), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg))
-          .map(_.map(_.instance)) })
+        resolve = c => { c.ctx.workspace.getInstanceServicesState(Some(c.ctx.workspace.distributionName), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) })
     )
   )
 
@@ -236,22 +225,20 @@ object GraphqlSchema {
 
   // Subscriptions
 
-  def AdministratorSubscriptions = ObjectType(
+  def AdministratorSubscriptions(implicit materializer: Materializer) = ObjectType(
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("testSubscription", StringType,
-        resolve = (c: Context[GraphqlContext, Unit]) =>
-        { Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line"))
-          .mapMaterializedValue(_ => NotUsed).asInstanceOf[Source[Action[Nothing, String], NotUsed]] })
+        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))
 
-  val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations), subscription = Some(AdministratorSubscriptions))
+  def AdministratorSchemaDefinition(implicit materializer: Materializer) = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations), subscription = Some(AdministratorSubscriptions))
 
-  val DistributionSchemaDefinition = Schema(query = DistributionQueries, mutation = Some(DistributionMutations))
+  def DistributionSchemaDefinition = Schema(query = DistributionQueries, mutation = Some(DistributionMutations))
 
-  val ServiceSchemaDefinition = Schema(query = ServiceQueries, mutation = Some(ServiceMutations))
+  def ServiceSchemaDefinition = Schema(query = ServiceQueries, mutation = Some(ServiceMutations))
 
-  def SchemaDefinition(userRole: UserRole): Schema[GraphqlContext, Unit] = {
+  def SchemaDefinition(userRole: UserRole)(implicit materializer: Materializer): Schema[GraphqlContext, Unit] = {
     userRole match {
       case UserRole.Administrator =>
         AdministratorSchemaDefinition

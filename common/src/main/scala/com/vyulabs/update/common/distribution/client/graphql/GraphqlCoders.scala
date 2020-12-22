@@ -133,7 +133,7 @@ object ServiceMutationsCoder extends CommonMutationsCoder {
 
 object AdministratorSubscriptionsCoder {
   def testSubscription() =
-    GraphqlMutation[Boolean]("testSubscription")
+    GraphqlSubscription[Boolean]("testSubscription")
 }
 
   object AdministratorGraphqlCoder {

@@ -1,9 +1,12 @@
 package com.vyulabs.update.distribution.graphql.utils
 
+import akka.NotUsed
+
 import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId, ProcessId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -12,8 +15,11 @@ import com.vyulabs.update.distribution.mongo.{DatabaseCollections, FaultReportDo
 import com.vyulabs.update.common.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, TestSignature, TestedDesiredVersions}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
+import sangria.schema.Action
 
+import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters.asJavaIterableConverter
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
@@ -112,6 +118,11 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
     } yield states
   }
 
+  def getInstanceServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
+                      instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[InstanceServiceState]] = {
+    getServicesState(distributionName, serviceName, instanceId, directory).map(_.map(_.instance))
+  }
+
   def addServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId,
                      processId: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine]): Future[Boolean] = {
     for {
@@ -159,6 +170,10 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       collection <- collections.State_FaultReportsInfo
       faults <- collection.find(filters, sort, last).map(_.map(_.fault))
     } yield faults
+  }
+
+  def testSubscription(): Source[Action[Nothing, String], NotUsed] = {
+    Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line")).mapMaterializedValue(_ => NotUsed)
   }
 
   private def clearOldReports(): Future[Unit] = {
