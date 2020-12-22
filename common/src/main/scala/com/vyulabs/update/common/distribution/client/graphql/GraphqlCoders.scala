@@ -81,7 +81,7 @@ object ServiceQueriesCoder extends CommonQueriesCoder {
 trait CommonMutationsCoder {
   def addServiceLogs(serviceName: ServiceName, instanceId: InstanceId, processId: ProcessId,
                      serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
-    GraphqlMutation("addServiceLogs",
+    GraphqlMutation[Boolean]("addServiceLogs",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("instance" -> instanceId), GraphqlArgument("process" -> processId),
         GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")))
 }
@@ -90,50 +90,56 @@ object CommonMutationsCoder extends CommonMutationsCoder
 
 object AdministratorMutationsCoder extends CommonMutationsCoder {
   def addDeveloperVersionInfo(info: DeveloperVersionInfo) =
-    GraphqlMutation("addDeveloperVersionInfo", Seq(GraphqlArgument("info" -> info, "DeveloperVersionInfoInput")))
+    GraphqlMutation[Boolean]("addDeveloperVersionInfo", Seq(GraphqlArgument("info" -> info, "DeveloperVersionInfoInput")))
 
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
-    GraphqlMutation("removeDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
+    GraphqlMutation[Boolean]("removeDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo) =
-    GraphqlMutation("addClientVersionInfo", Seq(GraphqlArgument("info" -> versionInfo, "ClientVersionInfoInput")))
+    GraphqlMutation[Boolean]("addClientVersionInfo", Seq(GraphqlArgument("info" -> versionInfo, "ClientVersionInfoInput")))
 
   def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion) =
-    GraphqlMutation("removeClientVersion",
+    GraphqlMutation[Boolean]("removeClientVersion",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 
   def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersion]) =
-    GraphqlMutation("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
+    GraphqlMutation[Boolean]("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
 
   def setClientDesiredVersions(versions: Seq[ClientDesiredVersion]) =
-    GraphqlMutation("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
+    GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
 }
 
 object DistributionMutationsCoder extends CommonMutationsCoder {
   def setTestedVersions(versions: Seq[DeveloperDesiredVersion]) =
-    GraphqlMutation("setTestedVersions", Seq(GraphqlArgument("versions" -> versions)))
+    GraphqlMutation[Boolean]("setTestedVersions", Seq(GraphqlArgument("versions" -> versions)))
 
   def setInstalledDesiredVersions(versions: Seq[ClientDesiredVersion]) =
-    GraphqlMutation("setInstalledDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
+    GraphqlMutation[Boolean]("setInstalledDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
 
   def setServiceStates(states: Seq[InstanceServiceState]) =
-    GraphqlMutation("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
+    GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
 
   def addFaultReportInfo(fault: ServiceFaultReport) =
-    GraphqlMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
+    GraphqlMutation[Boolean]("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
 }
 
 object ServiceMutationsCoder extends CommonMutationsCoder {
   def setServiceStates(states: Seq[InstanceServiceState]) =
-    GraphqlMutation("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
+    GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
 
   def addFaultReportInfo(fault: ServiceFaultReport) =
-    GraphqlMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
+    GraphqlMutation[Boolean]("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
 }
 
-object AdministratorGraphqlCoder {
+object AdministratorSubscriptionsCoder {
+  def testSubscription() =
+    GraphqlMutation[Boolean]("testSubscription")
+}
+
+  object AdministratorGraphqlCoder {
   val administratorQueries = AdministratorQueriesCoder
   val administratorMutations = AdministratorMutationsCoder
+  val administratorSubscriptions = AdministratorSubscriptionsCoder
 }
 
 object DistributionGraphqlCoder {

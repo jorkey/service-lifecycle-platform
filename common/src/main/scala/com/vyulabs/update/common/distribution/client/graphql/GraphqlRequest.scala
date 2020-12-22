@@ -72,7 +72,15 @@ object GraphqlQuery {
 }
 
 object GraphqlMutation {
-  def apply(command: String, arguments: Seq[GraphqlArgument] = Seq.empty) = {
-    GraphqlRequest[Boolean]("mutation", command, arguments)
+  def apply[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
+                     (implicit itemClassTag: ClassTag[Response], reader: JsonReader[Response]) = {
+    GraphqlRequest[Response]("mutation", command, arguments, subSelection)
+  }
+}
+
+object GraphqlSubscription {
+  def apply[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
+                     (implicit itemClassTag: ClassTag[Response], reader: JsonReader[Response]) = {
+    GraphqlRequest[Response]("subscription", command, arguments, subSelection)
   }
 }

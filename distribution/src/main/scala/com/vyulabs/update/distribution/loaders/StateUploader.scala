@@ -82,7 +82,7 @@ class StateUploader(distributionName: DistributionName,
       newStates <- Future(newStatesDocuments.map(_.state))
     } yield {
       if (!newStates.isEmpty) {
-        client.graphqlRequest(GraphqlMutation("setServiceStates", Seq(GraphqlArgument("state" -> newStates.toJson)))).
+        client.graphqlRequest(GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("state" -> newStates.toJson)))).
           andThen {
             case Success(_) =>
               setLastUploadSequence(serviceStates.getName(), newStatesDocuments.last.sequence)
@@ -108,7 +108,7 @@ class StateUploader(distributionName: DistributionName,
           val file = distributionDirectory.getFaultReportFile(report.report.faultId)
           val infoUpload = for {
             _ <- client.uploadFaultReport(report.report.faultId, file)
-            _ <- client.graphqlRequest(GraphqlMutation("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.report.toJson))))
+            _ <- client.graphqlRequest(GraphqlMutation[Boolean]("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.report.toJson))))
           } yield {}
           infoUpload.
             andThen {

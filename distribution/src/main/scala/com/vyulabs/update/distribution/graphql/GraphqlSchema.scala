@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.graphql
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
+import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.DistributionName
 import com.vyulabs.update.distribution.DistributionMain.log
 import com.vyulabs.update.distribution.config.{FaultReportsConfig, VersionHistoryConfig}
@@ -9,12 +9,18 @@ import com.vyulabs.update.distribution.graphql.utils.{ClientVersionUtils, Develo
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import GraphqlTypes._
+import akka.NotUsed
+import akka.stream.scaladsl.Source
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.UserRole.UserRole
 
 import scala.concurrent.ExecutionContext
+import sangria.streaming.akkaStreams._
 import sangria.marshalling.sprayJson._
 import sangria.schema.{Field, _}
+
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 
 case class GraphqlWorkspace(distributionName: DistributionName,
                            versionHistoryConfig: VersionHistoryConfig, faultReportsConfig: FaultReportsConfig,
@@ -28,6 +34,8 @@ case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
 
 object GraphqlSchema {
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
+  private implicit val system = ActorSystem("Distribution")
+  private implicit val materializer = ActorMaterializer()
 
   // Arguments
 
@@ -105,8 +113,9 @@ object GraphqlSchema {
           c.arg(OptionProcessArg), c.arg(OptionDirectoryArg), c.arg(OptionLastArg)) }),
       Field("faultReportsInfo", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) })
-  ))
+        resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
+    )
+  )
 
   val DistributionQueries = ObjectType(
     "Query",
@@ -225,7 +234,18 @@ object GraphqlSchema {
     )
   )
 
-  val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations))
+  // Subscriptions
+
+  def AdministratorSubscriptions = ObjectType(
+    "Subscription",
+    fields[GraphqlContext, Unit](
+      Field.subs("testSubscription", StringType,
+        resolve = (c: Context[GraphqlContext, Unit]) =>
+        { Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line"))
+          .mapMaterializedValue(_ => NotUsed).asInstanceOf[Source[Action[Nothing, String], NotUsed]] })
+    ))
+
+  val AdministratorSchemaDefinition = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations), subscription = Some(AdministratorSubscriptions))
 
   val DistributionSchemaDefinition = Schema(query = DistributionQueries, mutation = Some(DistributionMutations))
 
