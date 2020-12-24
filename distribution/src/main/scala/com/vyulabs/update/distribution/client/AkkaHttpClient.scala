@@ -1,25 +1,26 @@
 package com.vyulabs.update.distribution.client
 
-import java.io.{File, IOException}
-import java.net.URL
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
 import akka.stream.Materializer
-import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.{FileIO, Framing, Source}
 import akka.util.ByteString
+import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
-import com.vyulabs.update.common.distribution.DistributionWebPaths._
+import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import org.slf4j.LoggerFactory
 import spray.json._
 
+import java.io.{File, IOException}
+import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
 
 class AkkaHttpClient(distributionUrl: URL)
-                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient {
+                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def graphql[Response](request: GraphqlRequest[Response])
@@ -43,6 +44,24 @@ class AkkaHttpClient(distributionUrl: URL)
       } else {
         throw new IOException(entity.decodeString("utf8"))
       }
+    }
+  }
+
+
+  override def graphqlSub[Response](request: GraphqlRequest[Response])
+                                   (implicit reader: JsonReader[Response]): Future[AkkaSource[Response]] = {
+    val queryJson = request.encodeRequest()
+    log.debug(s"Send graphql query: ${queryJson}")
+    var post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
+      HttpEntity(ContentTypes.`application/json`, request.encodeRequest().compactPrint.getBytes()))
+    getHttpCredentials().foreach(credentials => post = post.addCredentials(credentials))
+    for {
+      response <- Http(system).singleRequest(post)
+    } yield {
+      response.entity.dataBytes
+        .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024))
+        .map(_.decodeString("utf8"))
+        .map(_.parseJson.asInstanceOf[Response])
     }
   }
 
@@ -92,4 +111,8 @@ class AkkaHttpClient(distributionUrl: URL)
       None
     }
   }
+}
+
+object AkkaHttpClient {
+  type AkkaSource[T] = Source[T, Any]
 }

@@ -1,21 +1,22 @@
 package com.vyulabs.update.distribution.loaders
 
-import java.util.Date
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlArgument
-import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.HttpClientTestStub
-import com.vyulabs.update.distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
 import com.vyulabs.update.common.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
-import spray.json.{JsonReader, enrichAny}
+import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
+import com.vyulabs.update.distribution.client.HttpClientTestStub
+import com.vyulabs.update.distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
 import spray.json.DefaultJsonProtocol._
+import spray.json.enrichAny
 
 import java.io.IOException
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import java.util.Date
+import scala.concurrent.{ExecutionContext, Promise}
 
 class ServicesStateUploadTest extends TestEnvironment {
   behavior of "Services State Upload"
@@ -24,7 +25,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val httpClient = new HttpClientTestStub()
+  val httpClient = new HttpClientTestStub[AkkaSource]()
   val distributionClient = new DistributionClient(distributionName, httpClient)
 
   it should "upload service states" in {

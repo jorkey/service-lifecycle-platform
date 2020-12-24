@@ -1,15 +1,16 @@
 package com.vyulabs.update.distribution.graphql.utils
 
-import com.vyulabs.update.common.distribution.client.{DistributionClient}
+import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.info.{ClientDesiredVersions, DeveloperDesiredVersions}
+import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import org.slf4j.Logger
 
 import scala.concurrent.Future
 import spray.json.DefaultJsonProtocol._
 
 trait TestedVersionsUtils extends ClientVersionUtils {
-  def signVersionsAsTested(developerDistributionClient: DistributionClient)
+  def signVersionsAsTested(developerDistributionClient: DistributionClient[AkkaSource])
                           (implicit log: Logger): Future[Boolean] = {
     for {
       clientDesiredVersions <- getClientDesiredVersions().map(ClientDesiredVersions.toMap(_))

@@ -15,8 +15,12 @@ import scala.concurrent.{ExecutionContext, Future}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
   * Copyright FanDate, Inc.
   */
+trait SyncSource[T] {
+  def next(): Option[T]
+}
+
 class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
-                    (implicit executionContext: ExecutionContext) extends HttpClient {
+                    (implicit executionContext: ExecutionContext) extends HttpClient[SyncSource] {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def graphql[Response](request: GraphqlRequest[Response])
@@ -45,6 +49,41 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
           response
         case Right(error) =>
           throw new IOException(error)
+      }
+    })
+  }
+
+  override def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[SyncSource[Response]] = {
+    executeRequest(new URL(distributionUrl.toString + "/" + graphqlPathPrefix), (connection) => {
+      if (distributionUrl.getUserInfo != null) {
+        val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
+        connection.setRequestProperty("Authorization", "Basic " + encoded)
+      }
+      connection.setRequestProperty("Content-Type", "application/json")
+      connection.setRequestProperty("Accept", "text/event-stream")
+      connection.setRequestMethod("POST")
+      connection.setDoOutput(true)
+      val output = connection.getOutputStream
+      val queryJson = request.encodeRequest()
+      log.debug(s"Send graphql query: ${queryJson}")
+      output.write(queryJson.compactPrint.getBytes("utf8"))
+      output.flush()
+      connection.setConnectTimeout(connectTimeoutMs)
+      connection.setReadTimeout(readTimeoutMs)
+      val input = connection.getInputStream
+      val bufferedReader = new BufferedReader(new InputStreamReader(input))
+      new SyncSource[Response] {
+        override def next(): Option[Response] = {
+          var line = ""
+          do {
+            line = bufferedReader.readLine()
+          } while (line != null && line.length == 0)
+          if (line != null) {
+            Some(line.parseJson.asInstanceOf[Response])
+          } else {
+            None
+          }
+        }
       }
     })
   }

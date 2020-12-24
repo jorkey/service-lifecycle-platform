@@ -1,9 +1,9 @@
 package com.vyulabs.update.common.distribution.client
 
 import com.vyulabs.update.common.common.Common.{DistributionName, FaultId, ServiceName}
-import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
+import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.LoggerFactory
 import spray.json.JsonReader
@@ -11,7 +11,8 @@ import spray.json.JsonReader
 import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
 
-class DistributionClient(val distributionName: DistributionName, client: HttpClient)(implicit executionContext: ExecutionContext) {
+class DistributionClient[Source[_]](val distributionName: DistributionName, client: HttpClient[Source])
+                        (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def available(): Future[Unit] = {

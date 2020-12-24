@@ -2,7 +2,6 @@ package com.vyulabs.update.distribution.client
 
 import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlRequest}
-import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import org.scalatest.Matchers
 import spray.json.JsonReader
 
@@ -10,7 +9,7 @@ import java.io.File
 import scala.collection.immutable.Queue
 import scala.concurrent.{Future, Promise}
 
-class HttpClientTestStub extends HttpClient with Matchers {
+class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
   trait ClientRequest[Response] { val promise = Promise[Response]() }
 
   case class GraphqlClientRequest[Response](request: GraphqlRequest[Response]) extends ClientRequest[Response]
@@ -72,6 +71,10 @@ class HttpClientTestStub extends HttpClient with Matchers {
     val request = GraphqlClientRequest(req)
     synchronized { requests = requests.enqueue(request); notify() }
     request.promise.future
+  }
+
+  override def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Stream[Response]] = {
+    throw new UnsupportedOperationException()
   }
 
   override def upload(path: String, fieldName: String, file: File): Future[Unit] = {

@@ -10,7 +10,7 @@ import java.io.File
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-class SyncDistributionClient(client: DistributionClient, waitDuration: FiniteDuration)(implicit executionContext: ExecutionContext) {
+class SyncDistributionClient[Source[_]](client: DistributionClient[Source], waitDuration: FiniteDuration)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def distributionName = client.distributionName

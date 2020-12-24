@@ -1,19 +1,18 @@
 package com.vyulabs.update.builder
 
+import com.vyulabs.update.builder.ClientBuilder._
+import com.vyulabs.update.builder.DeveloperBuilder._
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.config.InstallConfig
-import com.vyulabs.update.distribution.SettingsDirectory
-
-import java.io.File
-import DeveloperBuilder._
-import ClientBuilder._
-import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.process.ProcessUtils
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.SettingsDirectory
 import org.slf4j.Logger
 
+import java.io.File
 import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
@@ -94,7 +93,7 @@ object DistributionBuilder {
     true
   }
 
-  def waitForServerAvailable(distributionClient: SyncDistributionClient, waitingTimeoutSec: Int = 10000)
+  def waitForServerAvailable(distributionClient: SyncDistributionClient[SyncSource], waitingTimeoutSec: Int = 10000)
                                   (implicit log: Logger): Boolean = {
     log.info(s"Wait for distribution server become available")
     for (_ <- 0 until waitingTimeoutSec) {

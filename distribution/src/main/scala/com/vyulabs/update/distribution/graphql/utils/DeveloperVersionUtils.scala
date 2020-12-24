@@ -1,6 +1,7 @@
 package com.vyulabs.update.distribution.graphql.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.stream.scaladsl.Source
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.distribution.client.DistributionClient
@@ -8,6 +9,7 @@ import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphql
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.config.VersionHistoryConfig
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
@@ -146,8 +148,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield developerVersions
   }
 
-  def downloadUpdates(developerDistributionClient: DistributionClient, serviceNames: Seq[ServiceName])(implicit log: Logger):
-        Future[Map[ServiceName, DeveloperDistributionVersion]] = {
+  def downloadUpdates(developerDistributionClient: DistributionClient[AkkaSource], serviceNames: Seq[ServiceName])
+                     (implicit log: Logger): Future[Map[ServiceName, DeveloperDistributionVersion]] = {
     for {
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDesiredVersions(serviceNames))
           .map(DeveloperDesiredVersions.toMap(_))

@@ -10,6 +10,7 @@ import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.client.AkkaHttpClient
+import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
@@ -27,7 +28,8 @@ import scala.util.{Failure, Success}
   */
 
 class StateUploader(distributionName: DistributionName,
-                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, client: DistributionClient)
+                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int,
+                    client: DistributionClient[AkkaSource])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 

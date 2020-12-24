@@ -2,7 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceName
-import com.vyulabs.update.common.distribution.client.SyncDistributionClient
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
@@ -29,7 +29,7 @@ object ClientBuilder {
 
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def buildClientVersions(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory,
+  def buildClientVersions(distributionClient: SyncDistributionClient[SyncSource], settingsRepository: SettingsDirectory,
                           serviceNames: Seq[ServiceName], author: String, arguments: Map[String, String])
                          (implicit log: Logger): Map[ServiceName, ClientDistributionVersion] = {
     var clientVersions = Map.empty[ServiceName, ClientDistributionVersion]
@@ -66,7 +66,7 @@ object ClientBuilder {
     clientVersions
   }
 
-  def downloadDeveloperVersion(distributionClient: SyncDistributionClient, serviceName: ServiceName,
+  def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                                version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
     log.info(s"Get developer version ${version} of service ${serviceName} info")
     val versionInfo = distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName)).getOrElse(Seq.empty).headOption.getOrElse {
@@ -85,7 +85,7 @@ object ClientBuilder {
     Some(versionInfo)
   }
 
-  def buildClientVersion(distributionClient: SyncDistributionClient, settingsRepository: SettingsDirectory, serviceName: ServiceName,
+  def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], settingsRepository: SettingsDirectory, serviceName: ServiceName,
                          fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion, author: String,
                          arguments: Map[String, String])(implicit log: Logger): Boolean = {
     val versionInfo = downloadDeveloperVersion(distributionClient, serviceName, fromVersion).getOrElse {
@@ -102,7 +102,7 @@ object ClientBuilder {
     uploadClientVersion(distributionClient, serviceName, toVersion, author, versionInfo.buildInfo)
   }
 
-  def uploadClientVersion(distributionClient: SyncDistributionClient, serviceName: ServiceName,
+  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                           version: ClientDistributionVersion, author: String, buildInfo: BuildInfo)(implicit log: Logger): Boolean = {
     if (!ZipUtils.zipAndSend(clientBuildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, version, file))) {
       return false
@@ -144,7 +144,7 @@ object ClientBuilder {
     true
   }
 
-  def setClientDesiredVersions(distributionClient: SyncDistributionClient, versions: Map[ServiceName, Option[ClientDistributionVersion]])
+  def setClientDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Map[ServiceName, Option[ClientDistributionVersion]])
                               (implicit log: Logger): Boolean = {
     val desiredVersionsMap = ClientDesiredVersions.toMap(distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions()).getOrElse {
       log.error("Error of getting desired versions")

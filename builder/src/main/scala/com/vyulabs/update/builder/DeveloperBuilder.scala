@@ -1,25 +1,25 @@
 package com.vyulabs.update.builder
 
-import java.io.File
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config.SourcesConfig
-import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
-import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.config.InstallConfig._
 import com.vyulabs.update.common.config.UpdateConfig
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersion, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
+import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils.copyFile
+import com.vyulabs.update.common.utils.Utils.makeDir
+import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.{GitRepositoryUtils, SettingsDirectory}
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
-import com.vyulabs.update.common.config.InstallConfig._
-import com.vyulabs.update.common.distribution.client.SyncDistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
-import com.vyulabs.update.common.process.ProcessUtils
-import com.vyulabs.update.common.utils.Utils.makeDir
-import com.vyulabs.update.distribution.{GitRepositoryUtils, SettingsDirectory}
 
+import java.io.File
 import java.util.Date
 
 object DeveloperBuilder {
@@ -34,7 +34,7 @@ object DeveloperBuilder {
   def developerBuildDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "build"))
   def developerSourceDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "source"))
 
-  def buildDeveloperVersion(distribution: SyncDistributionClient, settingsDirectory: SettingsDirectory,
+  def buildDeveloperVersion(distribution: SyncDistributionClient[SyncSource], settingsDirectory: SettingsDirectory,
                             author: String, serviceName: ServiceName, newVersion: Option[DeveloperVersion],
                             comment: Option[String], sourceBranches: Seq[String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Option[DeveloperDistributionVersion] = {
@@ -92,7 +92,7 @@ object DeveloperBuilder {
       }).flatten
   }
 
-  def setDeveloperDesiredVersions(distributionClient: SyncDistributionClient,
+  def setDeveloperDesiredVersions(distributionClient: SyncDistributionClient[SyncSource],
                                   servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
                                  (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     log.info(s"Upload developer desired versions ${servicesVersions}")
@@ -211,11 +211,11 @@ object DeveloperBuilder {
     true
   }
 
-  def doesDeveloperVersionExist(distributionClient: SyncDistributionClient, serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
+  def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
     distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName), Some(version))).size != 0
   }
 
-  private def generateNewVersionNumber(distributionClient: SyncDistributionClient, serviceName: ServiceName): DeveloperDistributionVersion = {
+  private def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName): DeveloperDistributionVersion = {
     log.info("Get existing versions")
     distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName))) match {
       case Some(versions) if !versions.isEmpty =>
@@ -242,12 +242,12 @@ object DeveloperBuilder {
     true
   }
 
- def getDeveloperDesiredVersions(distributionClient: SyncDistributionClient): Option[Map[ServiceName, DeveloperDistributionVersion]] = {
+ def getDeveloperDesiredVersions(distributionClient: SyncDistributionClient[SyncSource]): Option[Map[ServiceName, DeveloperDistributionVersion]] = {
     distributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions())
       .map(_.foldLeft(Map.empty[ServiceName, DeveloperDistributionVersion])((map, version) => { map + (version.serviceName -> version.version) }))
   }
 
-  def uploadDeveloperVersionImage(distributionClient: SyncDistributionClient, serviceName: ServiceName,
+  def uploadDeveloperVersionImage(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                                   version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
     if (!distributionClient.uploadDeveloperVersionImage(serviceName, version, imageFile)) {
       log.error("Uploading version image error")

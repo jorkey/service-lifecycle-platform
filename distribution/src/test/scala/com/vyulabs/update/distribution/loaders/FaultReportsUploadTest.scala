@@ -1,6 +1,6 @@
 package com.vyulabs.update.distribution.loaders
 
-import java.io.{File, IOException}
+import java.io.{IOException}
 import java.util.Date
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
@@ -12,10 +12,11 @@ import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.common.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
+import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.client.HttpClientTestStub
 import com.vyulabs.update.distribution.mongo.{FaultReportDocument, UploadStatus, UploadStatusDocument}
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Promise}
 import spray.json._
 import spray.json.DefaultJsonProtocol._
 
@@ -28,7 +29,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
   val date = new Date()
 
-  val httpClient = new HttpClientTestStub()
+  val httpClient = new HttpClientTestStub[AkkaSource]()
   val distributionClient = new DistributionClient(distributionName, httpClient)
 
   it should "upload fault reports" in {
