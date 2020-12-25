@@ -28,6 +28,10 @@ class DistributionClient[Source[_]](val distributionName: DistributionName, clie
     client.graphql(request)
   }
 
+  def graphqlSubRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Source[Response]]= {
+    client.graphqlSub(request)
+  }
+
   def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Future[Unit] = {
     client.download(developerVersionImagePath + "/" + serviceName + "/" + version.toString, file)
   }

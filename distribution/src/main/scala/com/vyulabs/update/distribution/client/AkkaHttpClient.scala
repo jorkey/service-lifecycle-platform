@@ -47,7 +47,6 @@ class AkkaHttpClient(distributionUrl: URL)
     }
   }
 
-
   override def graphqlSub[Response](request: GraphqlRequest[Response])
                                    (implicit reader: JsonReader[Response]): Future[AkkaSource[Response]] = {
     val queryJson = request.encodeRequest()
@@ -61,6 +60,7 @@ class AkkaHttpClient(distributionUrl: URL)
       response.entity.dataBytes
         .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024))
         .map(_.decodeString("utf8"))
+        .filter(!_.isEmpty)
         .map(_.parseJson.asInstanceOf[Response])
     }
   }

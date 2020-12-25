@@ -171,6 +171,11 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "execute subscription requests" in {
-    adminClient.graphqlRequest(administratorSubscriptions.testSubscription())
+    val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription())
+    var line = Option.empty[String]
+    do {
+      line = source.get.next()
+      line.foreach(println(_))
+    } while (line.isDefined)
   }
 }

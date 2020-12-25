@@ -23,8 +23,12 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.getServiceVersion(serviceName)).flatten
   }
 
-  def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response]= {
+  def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response] = {
     result(client.graphqlRequest(request))
+  }
+
+  def graphqlSubRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Source[Response]] = {
+    result(client.graphqlSubRequest(request))
   }
 
   def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {

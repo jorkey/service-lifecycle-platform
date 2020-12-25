@@ -173,7 +173,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   }
 
   def testSubscription(): Source[Action[Nothing, String], NotUsed] = {
-    Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line")).mapMaterializedValue(_ => NotUsed)
+    Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line")).mapMaterializedValue(_ => NotUsed).take(5)
   }
 
   private def clearOldReports(): Future[Unit] = {
