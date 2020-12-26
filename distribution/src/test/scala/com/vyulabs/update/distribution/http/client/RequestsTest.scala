@@ -1,23 +1,23 @@
 package com.vyulabs.update.distribution.http.client
 
-import java.net.URL
-import java.util.Date
-import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
-import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder._
-import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.client.AkkaHttpClient
+import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
+import java.net.URL
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 /**
@@ -31,13 +31,6 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   var server = Http().newServerAt("0.0.0.0", 8081).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
-
-  val adminClient = new SyncDistributionClient(
-    new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
-  val serviceClient = new SyncDistributionClient(
-    new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
-  val distribClient = new SyncDistributionClient(
-    new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
   val stateDate = new Date()
 
@@ -55,127 +48,172 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
           Some(ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3))))), None, None, None, None))))))
   }
 
-  it should "execute some requests" in {
-    assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(Common.DistributionServiceName))
-
-    assertResult(Some(Seq(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))(
-      adminClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
-
-    assertResult(Some(DistributionClientConfig("common", None)))(
-      distribClient.graphqlRequest(distributionQueries.getDistributionClientConfig()))
+  def httpRequests(): Unit = {
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val serviceClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val distribClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+    requests(adminClient, serviceClient, distribClient)
   }
 
-  it should "process request errors" in {
-    assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
-    assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
+  def akkaHttpRequests(): Unit = {
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val serviceClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val distribClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+    requests(adminClient, serviceClient, distribClient)
   }
 
-  it should "execute developer version requests" in {
-    val date = new Date()
+  def requests[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
+    it should "execute some requests" in {
+      assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(Common.DistributionServiceName))
 
-    assert(adminClient.graphqlRequest(administratorMutations.addDeveloperVersionInfo(
-      DeveloperVersionInfo("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
-        BuildInfo("author1", Seq("master"), date, Some("comment"))))).getOrElse(false))
+      assertResult(Some(Seq(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))(
+        adminClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
 
-    assertResult(Some(Seq(DeveloperVersionInfo("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
-      BuildInfo("author1", Seq("master"), date, Some("comment"))))))(
-      adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", None,
-        Some(DeveloperDistributionVersion.parse("test-1.2.3")))))
+      assertResult(Some(DistributionClientConfig("common", None)))(
+        distribClient.graphqlRequest(distributionQueries.getDistributionClientConfig()))
+    }
 
-    assert(adminClient.graphqlRequest(administratorMutations.removeDeveloperVersion("service1",
-      DeveloperDistributionVersion.parse("test-1.2.3"))).getOrElse(false))
+    it should "process request errors" in {
+      assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
+      assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
+    }
 
-    assert(adminClient.graphqlRequest(
-      administratorMutations.setDeveloperDesiredVersions(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))
-      .getOrElse(false))
+    it should "execute developer version requests" in {
+      val date = new Date()
 
-    assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(adminClient.graphqlRequest(
-      administratorQueries.getDeveloperDesiredVersions(Seq("service1"))))
+      assert(adminClient.graphqlRequest(administratorMutations.addDeveloperVersionInfo(
+        DeveloperVersionInfo("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
+          BuildInfo("author1", Seq("master"), date, Some("comment"))))).getOrElse(false))
 
-    assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(
-      distribClient.graphqlRequest(distributionQueries.getDesiredVersions(Seq("service1"))))
+      assertResult(Some(Seq(DeveloperVersionInfo("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
+        BuildInfo("author1", Seq("master"), date, Some("comment"))))))(
+        adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", None,
+          Some(DeveloperDistributionVersion.parse("test-1.2.3")))))
+
+      assert(adminClient.graphqlRequest(administratorMutations.removeDeveloperVersion("service1",
+        DeveloperDistributionVersion.parse("test-1.2.3"))).getOrElse(false))
+
+      assert(adminClient.graphqlRequest(
+        administratorMutations.setDeveloperDesiredVersions(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))
+        .getOrElse(false))
+
+      assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(adminClient.graphqlRequest(
+        administratorQueries.getDeveloperDesiredVersions(Seq("service1"))))
+
+      assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(
+        distribClient.graphqlRequest(distributionQueries.getDesiredVersions(Seq("service1"))))
+    }
+
+    it should "execute client version requests" in {
+      val date = new Date()
+
+      assert(adminClient.graphqlRequest(administratorMutations.addClientVersionInfo(
+        ClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
+          BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))).getOrElse(false))
+
+      assertResult(Some(Seq(ClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
+        BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))))(
+        adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", None,
+          Some(ClientDistributionVersion.parse("test-1.2.3_1")))))
+
+      assert(adminClient.graphqlRequest(administratorMutations.removeClientVersion("service1",
+        ClientDistributionVersion.parse("test-1.2.3_1"))).getOrElse(false))
+
+      assert(adminClient.graphqlRequest(
+        administratorMutations.setClientDesiredVersions(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1"))))).getOrElse(false))
+
+      assertResult(Some(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1")))))(adminClient.graphqlRequest(
+        administratorQueries.getClientDesiredVersions(Seq("service1"))))
+
+      assertResult(Some(List(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1")))))(
+        serviceClient.graphqlRequest(serviceQueries.getDesiredVersions(Seq("service1"))))
+    }
+
+    it should "execute installed versions requests" in {
+      assert(distribClient.graphqlRequest(
+        distributionMutations.setInstalledDesiredVersions(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.1.1"))))).getOrElse(false))
+
+      assertResult(Some(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.1.1")))))(adminClient.graphqlRequest(
+        administratorQueries.getInstalledDesiredVersions("distribution1", Seq("service1"))))
+    }
+
+    it should "execute tested versions requests" in {
+      distribClient.graphqlRequest(distributionMutations.setTestedVersions(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))
+    }
+
+    it should "execute service states requests" in {
+      assert(serviceClient.graphqlRequest(serviceMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
+        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distributionName}-1.2.1")), None, None, None, None))))).getOrElse(false))
+
+      assert(distribClient.graphqlRequest(distributionMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
+        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution1-3.2.1")), None, None, None, None))))).getOrElse(false))
+
+      assertResult(Some(Seq(DistributionServiceState(distributionName, InstanceServiceState("instance1", "service1", "directory1",
+        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distributionName}-1.2.1")), None, None, None, None))))))(
+        adminClient.graphqlRequest(administratorQueries.getServiceStates(Some(distributionName), Some("service1"), Some("instance1"), Some("directory1"))))
+
+      assertResult(Some(Seq(DistributionServiceState("distribution1", InstanceServiceState("instance1", "service1", "directory1",
+        ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution1-3.2.1")), None, None, None, None))))))(
+        adminClient.graphqlRequest(administratorQueries.getServiceStates(Some("distribution1"), Some("service1"), Some("instance1"), Some("directory1"))))
+    }
+
+    it should "execute service log requests" in {
+      assert(serviceClient.graphqlRequest(serviceMutations.addServiceLogs("service1", "instance1", "process1", "directory1",
+        Seq(LogLine(new Date(), "INFO", None, "log line")))).getOrElse(false))
+    }
+
+    it should "execute fault report requests" in {
+      assert(serviceClient.graphqlRequest(serviceMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
+        ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault1.info", "core")))).getOrElse(false))
+
+      assert(distribClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
+        ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core")))).getOrElse(false))
+
+      assertResult(Some(Seq(DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
+        ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault1.info", "core"))))))(
+        adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some(distributionName), Some("service1"), Some(2))))
+
+      assertResult(Some(Seq(DistributionFaultReport("distribution1", ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
+        ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core"))))))(
+        adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some("distribution1"), Some("service1"), Some(2))))
+
+      result(result(collections.State_FaultReportsInfo).dropItems())
+    }
   }
 
-  it should "execute client version requests" in {
-    val date = new Date()
+  def subRequests(): Unit = {
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
-    assert(adminClient.graphqlRequest(administratorMutations.addClientVersionInfo(
-      ClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-        BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))).getOrElse(false))
-
-    assertResult(Some(Seq(ClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-      BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))))(
-      adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", None,
-        Some(ClientDistributionVersion.parse("test-1.2.3_1")))))
-
-    assert(adminClient.graphqlRequest(administratorMutations.removeClientVersion("service1",
-      ClientDistributionVersion.parse("test-1.2.3_1"))).getOrElse(false))
-
-    assert(adminClient.graphqlRequest(
-      administratorMutations.setClientDesiredVersions(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1"))))).getOrElse(false))
-
-    assertResult(Some(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1")))))(adminClient.graphqlRequest(
-      administratorQueries.getClientDesiredVersions(Seq("service1"))))
-
-    assertResult(Some(List(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1")))))(
-      serviceClient.graphqlRequest(serviceQueries.getDesiredVersions(Seq("service1"))))
+    it should "execute subscription requests" in {
+      val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription())
+      var line = Option.empty[String]
+      do {
+        line = source.get.next()
+        line.foreach(println(_))
+      } while (line.isDefined)
+    }
   }
 
-  it should "execute installed versions requests" in {
-    assert(distribClient.graphqlRequest(
-      distributionMutations.setInstalledDesiredVersions(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.1.1"))))).getOrElse(false))
+  def akkaSubRequests(): Unit = {
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
-    assertResult(Some(Seq(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.1.1")))))(adminClient.graphqlRequest(
-      administratorQueries.getInstalledDesiredVersions("distribution1", Seq("service1"))))
+    it should "execute subscription requests" in {
+      val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription()).get
+      result(source.map(println(_)).run())
+    }
   }
 
-  it should "execute tested versions requests" in {
-    distribClient.graphqlRequest(distributionMutations.setTestedVersions(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))
-  }
+  "Http requests" should behave like httpRequests()
+  "Akka http requests" should behave like akkaHttpRequests()
 
-  it should "execute service states requests" in {
-    assert(serviceClient.graphqlRequest(serviceMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
-      ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distributionName}-1.2.1")), None, None, None, None))))).getOrElse(false))
-
-    assert(distribClient.graphqlRequest(distributionMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
-      ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution1-3.2.1")), None, None, None, None))))).getOrElse(false))
-
-    assertResult(Some(Seq(DistributionServiceState(distributionName, InstanceServiceState("instance1", "service1", "directory1",
-      ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distributionName}-1.2.1")), None, None, None, None))))))(
-      adminClient.graphqlRequest(administratorQueries.getServiceStates(Some(distributionName), Some("service1"), Some("instance1"), Some("directory1"))))
-
-    assertResult(Some(Seq(DistributionServiceState("distribution1", InstanceServiceState("instance1", "service1", "directory1",
-      ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"distribution1-3.2.1")), None, None, None, None))))))(
-      adminClient.graphqlRequest(administratorQueries.getServiceStates(Some("distribution1"), Some("service1"), Some("instance1"), Some("directory1"))))
-  }
-
-  it should "execute service log requests" in {
-    assert(serviceClient.graphqlRequest(serviceMutations.addServiceLogs("service1", "instance1", "process1", "directory1",
-      Seq(LogLine(new Date(), "INFO", None, "log line")))).getOrElse(false))
-  }
-
-  it should "execute fault report requests" in {
-    assert(serviceClient.graphqlRequest(serviceMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
-      ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault1.info", "core")))).getOrElse(false))
-
-    assert(distribClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
-      ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core")))).getOrElse(false))
-
-    assertResult(Some(Seq(DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
-      ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault1.info", "core"))))))(
-      adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some(distributionName), Some("service1"), Some(2))))
-
-    assertResult(Some(Seq(DistributionFaultReport("distribution1", ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
-      ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core"))))))(
-      adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some("distribution1"), Some("service1"), Some(2))))
-  }
-
-  it should "execute subscription requests" in {
-    val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription())
-    var line = Option.empty[String]
-    do {
-      line = source.get.next()
-      line.foreach(println(_))
-    } while (line.isDefined)
-  }
+  "Http subscription requests" should behave like subRequests()
+  "Akka http subscription requests" should behave like akkaSubRequests()
 }

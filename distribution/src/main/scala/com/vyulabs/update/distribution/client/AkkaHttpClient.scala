@@ -58,10 +58,16 @@ class AkkaHttpClient(distributionUrl: URL)
       response <- Http(system).singleRequest(post)
     } yield {
       response.entity.dataBytes
-        .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024))
+        .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 10240))
         .map(_.decodeString("utf8"))
         .filter(!_.isEmpty)
-        .map(_.parseJson.asInstanceOf[Response])
+        .map(line => if (line.startsWith("data:")) line.substring(5) else throw new IOException(s"Error data line: ${line}"))
+        .map(line => request.decodeResponse(line.parseJson.asJsObject) match {
+          case Left(response) =>
+            response
+          case Right(error) =>
+            throw new IOException(error)
+        })
     }
   }
 
