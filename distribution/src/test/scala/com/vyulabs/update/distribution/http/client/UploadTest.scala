@@ -25,33 +25,51 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   var server = Http().newServerAt("0.0.0.0", 8083).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
 
-  val adminClient = new SyncDistributionClient(
-    new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-  val serviceClient = new SyncDistributionClient(
-    new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-  val distribClient = new SyncDistributionClient(
-    new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+  def httpUpload(): Unit = {
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val serviceClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val distribClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    upload(adminClient, serviceClient, distribClient)
+  }
+
+  def akkaHttpUpload(): Unit = {
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val serviceClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val distribClient = new SyncDistributionClient(
+      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    upload(adminClient, serviceClient, distribClient)
+  }
 
   override def dbName = super.dbName + "-client"
 
-  it should "upload developer version image" in {
-    val file = File.createTempFile("load-test", "zip")
-    assert(IoUtils.writeBytesToFile(file, "developer version content".getBytes("utf8")))
-    assert(adminClient.uploadDeveloperVersionImage("service1", DeveloperDistributionVersion.parse("test-1.1.1"), file))
+  def upload[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
+    it should "upload developer version image" in {
+      val file = File.createTempFile("load-test", "zip")
+      assert(IoUtils.writeBytesToFile(file, "developer version content".getBytes("utf8")))
+      assert(adminClient.uploadDeveloperVersionImage("service1", DeveloperDistributionVersion.parse("test-1.1.1"), file))
+    }
+
+    it should "upload client version image" in {
+      val file = File.createTempFile("load-test", "zip")
+      assert(IoUtils.writeBytesToFile(file, "client version content".getBytes("utf8")))
+      assert(adminClient.uploadClientVersionImage("service1", ClientDistributionVersion.parse("test-1.1.1_1"), file))
+    }
+
+    it should "upload fault report" in {
+      val file = File.createTempFile("load-test", "zip")
+      assert(IoUtils.writeBytesToFile(file, "fault report content".getBytes("utf8")))
+
+      assert(serviceClient.uploadFaultReport("fault1", file))
+
+      assert(distribClient.uploadFaultReport("fault1", file))
+    }
   }
 
-  it should "upload client version image" in {
-    val file = File.createTempFile("load-test", "zip")
-    assert(IoUtils.writeBytesToFile(file, "client version content".getBytes("utf8")))
-    assert(adminClient.uploadClientVersionImage("service1", ClientDistributionVersion.parse("test-1.1.1_1"), file))
-  }
-
-  it should "upload fault report" in {
-    val file = File.createTempFile("load-test", "zip")
-    assert(IoUtils.writeBytesToFile(file, "fault report content".getBytes("utf8")))
-
-    assert(serviceClient.uploadFaultReport("fault1", file))
-
-    assert(distribClient.uploadFaultReport("fault1", file))
-  }
+  "Http upload" should behave like httpUpload()
+  "Akka http upload" should behave like akkaHttpUpload()
 }
