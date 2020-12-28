@@ -37,13 +37,13 @@ trait ClientVersionUtils extends DistributionClientsUtils {
 
   def getClientVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
                             version: Option[ClientDistributionVersion] = None): Future[Seq[ClientVersionInfo]] = {
-    val serviceArg = Filters.eq("info.serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("info.version.distributionName", distributionName ) }
-    val versionArg = version.map { version => Filters.eq("info.version", version) }
+    val serviceArg = Filters.eq("content.serviceName", serviceName)
+    val distributionArg = distributionName.map { distributionName => Filters.eq("content.version.distributionName", distributionName ) }
+    val versionArg = version.map { version => Filters.eq("content.version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     for {
       collection <- collections.Client_VersionsInfo
-      info <- collection.find(filters).map(_.map(_.info))
+      info <- collection.find(filters).map(_.map(_.content))
     } yield info
   }
 
@@ -68,8 +68,8 @@ trait ClientVersionUtils extends DistributionClientsUtils {
   def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion): Future[Boolean] = {
     log.info(s"Remove client version ${version} of service ${serviceName}")
     val filters = Filters.and(
-      Filters.eq("info.serviceName", serviceName),
-      Filters.eq("info.version", version))
+      Filters.eq("content.serviceName", serviceName),
+      Filters.eq("content.version", version))
     dir.getClientVersionImageFile(serviceName, version).delete()
     for {
       collection <- collections.Client_VersionsInfo
@@ -83,7 +83,7 @@ trait ClientVersionUtils extends DistributionClientsUtils {
     val filters = new BsonDocument()
     for {
       collection <- collections.Client_DesiredVersions
-      profile <- collection.find(filters).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))
+      profile <- collection.find(filters).map(_.headOption.map(_.content).getOrElse(Seq.empty[ClientDesiredVersion]))
         .map(_.filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)).sortBy(_.serviceName))
     } yield profile
   }
@@ -100,10 +100,10 @@ trait ClientVersionUtils extends DistributionClientsUtils {
   }
 
   def getDistributionClientDesiredVersions(distributionName: DistributionName): Future[Seq[ClientDesiredVersion]] = {
-    val clientArg = Filters.eq("versions.distributionName", distributionName)
+    val clientArg = Filters.eq("content.distributionName", distributionName)
     for {
       collection <- collections.Client_DesiredVersions
-      profile <- collection.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))
+      profile <- collection.find(clientArg).map(_.headOption.map(_.content).getOrElse(Seq.empty[ClientDesiredVersion]))
     } yield profile
   }
 

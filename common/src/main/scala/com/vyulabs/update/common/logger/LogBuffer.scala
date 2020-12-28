@@ -23,10 +23,10 @@ class LogBuffer(logReceiver: LogReceiver, lowWater: Int, highWater: Int)
       if (eventsBuffer.size + sendingEvents.size < highWater) {
         if (skipped != 0) {
           eventsBuffer :+= LogLine(new Date(), Level.ERROR.toString, Some("LogSender"),
-            s"------------------------------ Skipped ${skipped} events ------------------------------")
+            s"------------------------------ Skipped ${skipped} events ------------------------------", None)
           skipped = 0
         }
-        eventsBuffer :+= LogLine(new Date(event.getTimeStamp), event.getLevel.toString, Some(event.getLoggerName), event.getMessage)
+        eventsBuffer :+= LogLine(new Date(event.getTimeStamp), event.getLevel.toString, Some(event.getLoggerName), event.getMessage, None)
       } else {
         skipped += 1
       }
@@ -35,6 +35,9 @@ class LogBuffer(logReceiver: LogReceiver, lowWater: Int, highWater: Int)
   }
 
   override def stop(): Unit = {
+    synchronized {
+      eventsBuffer :+= LogLine(new Date(), "", None, "", Some(true))
+    }
     flush()
   }
 

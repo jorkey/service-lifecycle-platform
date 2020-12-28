@@ -68,17 +68,17 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val Users_Info = for {
     collection <- db.getOrCreateCollection[UserInfoDocument]("usersInfo")
-    _ <- collection.createIndex(Indexes.ascending("info.userName"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("content.userName"), new IndexOptions().unique(true))
   } yield collection
 
   val Developer_VersionsInfo = for {
     collection <- db.getOrCreateCollection[DeveloperVersionInfoDocument]("developer.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("info.serviceName", "info.version"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("content.serviceName", "content.version"), new IndexOptions().unique(true))
   } yield collection
 
   val Client_VersionsInfo = for {
     collection <- db.getOrCreateCollection[ClientVersionInfoDocument]("client.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("info.serviceName", "info.version"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("content.serviceName", "content.version"), new IndexOptions().unique(true))
   } yield collection
 
   val Developer_DesiredVersions = db.getOrCreateCollection[DeveloperDesiredVersionsDocument]("developer.desiredVersions")
@@ -86,12 +86,12 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val Developer_DistributionClientsInfo = for {
     collection <- db.getOrCreateCollection[DistributionClientInfoDocument]("developer.distributionClientsInfo")
-    _ <- collection.createIndex(Indexes.ascending("info.distributionName"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("content.distributionName"), new IndexOptions().unique(true))
   } yield collection
 
   val Developer_DistributionClientsProfiles = for {
     collection <- db.getOrCreateCollection[DistributionClientProfileDocument]("developer.distributionClientsProfiles")
-    _ <- collection.createIndex(Indexes.ascending("profile.profileName"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("content.profileName"), new IndexOptions().unique(true))
   } yield collection
 
   val State_InstalledDesiredVersions = for {
@@ -101,15 +101,15 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val State_TestedVersions = for {
     collection <- db.getOrCreateCollection[TestedDesiredVersionsDocument]("state.testedDesiredVersions")
-    _ <- collection.createIndex(Indexes.ascending("versions.profileName"))
+    _ <- collection.createIndex(Indexes.ascending("content.profileName"))
   } yield collection
 
   val State_ServiceStates = for {
     collection <- db.getOrCreateCollection[ServiceStateDocument]("state.serviceStates")
     _ <- collection.createIndex(Indexes.ascending("sequence"), new IndexOptions().unique(true))
-    _ <- collection.createIndex(Indexes.ascending("state.distributionName"))
-    _ <- collection.createIndex(Indexes.ascending("state.instance.instanceId"))
-    _ <- collection.createIndex(Indexes.ascending("state.instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
+    _ <- collection.createIndex(Indexes.ascending("content.distributionName"))
+    _ <- collection.createIndex(Indexes.ascending("content.instance.instanceId"))
+    _ <- collection.createIndex(Indexes.ascending("content.instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
     _ <- collection.dropItems()
   } yield collection
 
@@ -120,9 +120,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val State_FaultReportsInfo = for {
     collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReportsInfo")
-    _ <- collection.createIndex(Indexes.ascending("fault.distributionName"))
-    _ <- collection.createIndex(Indexes.ascending("fault.report.faultId"))
-    _ <- collection.createIndex(Indexes.ascending("fault.report.info.serviceName"))
+    _ <- collection.createIndex(Indexes.ascending("content.distributionName"))
+    _ <- collection.createIndex(Indexes.ascending("content.report.faultId"))
+    _ <- collection.createIndex(Indexes.ascending("content.report.info.serviceName"))
   } yield collection
 
   val State_UploadStatus = for {
@@ -140,7 +140,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
   }
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
-    val filters = Filters.eq("info.userName", "admin")
+    val filters = Filters.eq("content.userName", "admin")
     for {
       usersInfo <- Users_Info
       adminRecords <- usersInfo.find(filters)

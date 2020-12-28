@@ -3,12 +3,10 @@ package com.vyulabs.update.distribution.graphql.administrator
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.ServiceLogLineDocument
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.Utils.DateJson._
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
+import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -55,8 +53,8 @@ class ServiceLogsTest extends TestEnvironment {
        """{"instanceId":"instance1","distributionName":"test","line":{"level":"DEBUG","message":"line2"},"serviceName":"service1","directory":"dir"},""" +
        """{"instanceId":"instance1","distributionName":"test","line":{"level":"ERROR","message":"line3"},"serviceName":"service1","directory":"dir"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          serviceLogs (distribution: "test", service: "service1") {
+        query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
+          serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             distributionName
             serviceName
             instanceId
@@ -67,7 +65,12 @@ class ServiceLogsTest extends TestEnvironment {
             }
           }
         }
-      """))
+      """, variables = JsObject(
+        "distribution" -> JsString("test"),
+        "service" -> JsString("service1"),
+        "instance" -> JsString("instance1"),
+        "process" -> JsString("process1"),
+        "directory" -> JsString("dir"))))
     )
   }
 }

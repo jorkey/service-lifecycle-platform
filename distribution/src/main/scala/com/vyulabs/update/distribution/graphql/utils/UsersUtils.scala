@@ -38,7 +38,7 @@ trait UsersUtils extends SprayJsonSupport {
 
   def removeUser(userName: UserName): Future[Boolean] = {
     log.info(s"Remove user ${userName}")
-    val filters = Filters.eq("info.userName", userName)
+    val filters = Filters.eq("content.userName", userName)
     for {
       collection <- collections.Users_Info
       profile <- {
@@ -65,9 +65,9 @@ trait UsersUtils extends SprayJsonSupport {
 
   def changeUserPassword(userName: UserName, password: String): Future[Boolean] = {
     log.info(s"Change user ${userName} password")
-    val filters = Filters.eq("info.userName", userName)
+    val filters = Filters.eq("content.userName", userName)
     val hash = PasswordHash(password)
-    val updates = Updates.set("info.passwordHash", hash)
+    val updates = Updates.set("content.passwordHash", hash)
     for {
       collection <- collections.Users_Info
       profile <- {
@@ -77,21 +77,21 @@ trait UsersUtils extends SprayJsonSupport {
   }
 
   def getUserCredentials(userName: UserName): Future[Option[UserCredentials]] = {
-    val filters = Filters.eq("info.userName", userName)
+    val filters = Filters.eq("content.userName", userName)
     for {
       collection <- collections.Users_Info
       info <- collection.find(filters).map(_.map(info => UserCredentials(
-        UserRole.withName(info.info.role), info.info.passwordHash)).headOption)
+        UserRole.withName(info.content.role), info.content.passwordHash)).headOption)
     } yield info
   }
 
   def getUsersInfo(userName: Option[UserName] = None): Future[Seq[UserInfo]] = {
-    val clientArg = userName.map(Filters.eq("info.userName", _))
+    val clientArg = userName.map(Filters.eq("content.userName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
       collection <- collections.Users_Info
-      info <- collection.find(filters).map(_.map(info => UserInfo(info.info.userName, UserRole.withName(info.info.role))))
+      info <- collection.find(filters).map(_.map(info => UserInfo(info.content.userName, UserRole.withName(info.content.role))))
     } yield info
   }
 }

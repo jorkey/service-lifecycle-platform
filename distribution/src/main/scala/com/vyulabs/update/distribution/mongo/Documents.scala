@@ -7,23 +7,23 @@ import com.vyulabs.update.distribution.users.ServerUserInfo
 
 case class SequenceDocument(name: String, sequence: Long)
 
-case class UserInfoDocument(info: ServerUserInfo)
+case class UserInfoDocument(content: ServerUserInfo)
 
-case class DistributionClientInfoDocument(info: DistributionClientInfo)
-case class DistributionClientProfileDocument(profile: DistributionClientProfile)
+case class DistributionClientInfoDocument(content: DistributionClientInfo)
+case class DistributionClientProfileDocument(content: DistributionClientProfile)
 
-case class DeveloperVersionInfoDocument(_id: Long, info: DeveloperVersionInfo)
-case class ClientVersionInfoDocument(_id: Long, info: ClientVersionInfo)
+case class DeveloperVersionInfoDocument(_id: Long, content: DeveloperVersionInfo)
+case class ClientVersionInfoDocument(_id: Long, content: ClientVersionInfo)
 
-case class DeveloperDesiredVersionsDocument(versions: Seq[DeveloperDesiredVersion], _id: Long = 0)
-case class ClientDesiredVersionsDocument(versions: Seq[ClientDesiredVersion], _id: Long = 0)
+case class DeveloperDesiredVersionsDocument(content: Seq[DeveloperDesiredVersion], _id: Long = 0)
+case class ClientDesiredVersionsDocument(content: Seq[ClientDesiredVersion], _id: Long = 0)
 
 case class InstalledDesiredVersionsDocument(distributionName: DistributionName, versions: Seq[ClientDesiredVersion])
-case class TestedDesiredVersionsDocument(versions: TestedDesiredVersions)
+case class TestedDesiredVersionsDocument(content: TestedDesiredVersions)
 
-case class ServiceStateDocument(sequence: Long, state: DistributionServiceState)
-case class ServiceLogLineDocument(_id: Long, line: ServiceLogLine)
-case class FaultReportDocument(_id: Long, fault: DistributionFaultReport)
+case class ServiceStateDocument(sequence: Long, content: DistributionServiceState)
+case class ServiceLogLineDocument(_id: Long, content: ServiceLogLine)
+case class FaultReportDocument(_id: Long, content: DistributionFaultReport)
 
 case class UploadStatus(lastUploadSequence: Option[Long], lastError: Option[String])
 case class UploadStatusDocument(component: String, status: UploadStatus)

@@ -81,7 +81,7 @@ class StateUploader(distributionName: DistributionName,
       serviceStates <- collections.State_ServiceStates
       fromSequence <- getLastUploadSequence(serviceStates.getName())
       newStatesDocuments <- serviceStates.find(Filters.gt("sequence", fromSequence), sort = Some(Sorts.ascending("sequence")))
-      newStates <- Future(newStatesDocuments.map(_.state))
+      newStates <- Future(newStatesDocuments.map(_.content))
     } yield {
       if (!newStates.isEmpty) {
         client.graphqlRequest(GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("state" -> newStates.toJson)))).
@@ -103,7 +103,7 @@ class StateUploader(distributionName: DistributionName,
       faultReports <- collections.State_FaultReportsInfo
       fromSequence <- getLastUploadSequence(faultReports.getName())
       newReportsDocuments <- faultReports.find(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
-      newReports <- Future(newReportsDocuments.map(_.fault))
+      newReports <- Future(newReportsDocuments.map(_.content))
     } yield {
       if (!newReports.isEmpty) {
         Future.sequence(newReports.filter(_.distributionName == distributionName).map(report => {

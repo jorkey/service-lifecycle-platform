@@ -1,19 +1,19 @@
 package com.vyulabs.update.distribution
 
-import java.io.{File, IOException}
-import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{CommonServiceProfile, ServiceName}
+import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.common.info.{ClientDesiredVersions, DeveloperDesiredVersions}
+import com.vyulabs.update.common.info.ClientDesiredVersions
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
+import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
 
+import java.io.{File, IOException}
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,9 +39,9 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
       collection <- collections.Client_DesiredVersions
       desiredVersions <- collection.find().map(_.headOption.getOrElse(throw new IOException("Can't find desired versions")))
       distributionNewVersion <- Future(Utils.isServiceNeedUpdate(Common.DistributionServiceName,
-        distributionVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.DistributionServiceName)))
+        distributionVersion, ClientDesiredVersions.toMap(desiredVersions.content).get(Common.DistributionServiceName)))
       scriptsNewVersion <- Future(Utils.isServiceNeedUpdate(Common.ScriptsServiceName,
-        scriptsVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.ScriptsServiceName)))
+        scriptsVersion, ClientDesiredVersions.toMap(desiredVersions.content).get(Common.ScriptsServiceName)))
     } yield {
       val servicesToUpdate = distributionNewVersion.map((Common.DistributionServiceName, _)) ++ scriptsNewVersion.map((Common.ScriptsServiceName, _))
       if (!servicesToUpdate.isEmpty) {

@@ -6,10 +6,10 @@ import spray.json.DefaultJsonProtocol
 
 import java.util.Date
 
-case class LogLine(date: Date, level: String, loggerName: Option[String], message: String)
+case class LogLine(date: Date, level: String, loggerName: Option[String], message: String, eof: Option[Boolean])
 
 object LogLine extends DefaultJsonProtocol {
-  implicit val logLineJson = jsonFormat4(LogLine.apply)
+  implicit val logLineJson = jsonFormat5(LogLine.apply)
 }
 
 case class ServiceLogLine(distributionName: DistributionName, serviceName: ServiceName,

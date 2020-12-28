@@ -3,17 +3,15 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.utils.Utils.DateJson._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import com.vyulabs.update.distribution.mongo.ServiceLogLineDocument
-import com.vyulabs.update.common.info._
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
 import java.util.Date
-import com.vyulabs.update.common.utils.Utils.DateJson._
-
 import scala.concurrent.ExecutionContext
 
 class AddServiceLogsTest extends TestEnvironment {
@@ -52,11 +50,11 @@ class AddServiceLogsTest extends TestEnvironment {
 
     assertResult(Seq(
       ServiceLogLineDocument(1, new ServiceLogLine("test",
-        "service1", "instance1", "process1", "dir", LogLine(date, "INFO", None, "line1"))),
+        "service1", "instance1", "process1", "dir", LogLine(date, "INFO", None, "line1", None))),
       ServiceLogLineDocument(2, new ServiceLogLine("test",
-        "service1", "instance1", "process1", "dir", LogLine(date, "DEBUG", None, "line2"))),
+        "service1", "instance1", "process1", "dir", LogLine(date, "DEBUG", None, "line2", None))),
       ServiceLogLineDocument(3, new ServiceLogLine("test",
-        "service1", "instance1", "process1", "dir", LogLine(date, "ERROR", None, "line3"))))
+        "service1", "instance1", "process1", "dir", LogLine(date, "ERROR", None, "line3", None))))
     )(result(logsCollection.find()))
   }
 }

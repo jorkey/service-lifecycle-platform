@@ -1,21 +1,20 @@
 package com.vyulabs.update.distribution.graphql.distribution
 
-import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.FaultId
+import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.utils.Utils.DateJson._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import com.vyulabs.update.distribution.mongo.FaultReportDocument
-import com.vyulabs.update.common.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState, UserInfo, UserRole}
-import com.vyulabs.update.common.utils.Utils.DateJson._
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import org.mongodb.scala.bson.BsonDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import java.util.Date
 import scala.concurrent.ExecutionContext
 
 class AddFaultReportInfoTest extends TestEnvironment {
@@ -107,11 +106,11 @@ class AddFaultReportInfoTest extends TestEnvironment {
       FaultReportDocument(sequence, DistributionFaultReport("distribution1",
         ServiceFaultReport(faultId, FaultInfo(date, "instance1", "directory1", "service1", "Common", ServiceState(date, None, None, None, None, None, None, None),
           Seq("line1", "line2")), Seq("core", "log/service.log")))))
-    )(result(faultsInfoCollection.find(Filters.eq("fault.report.faultId", faultId))))
+    )(result(faultsInfoCollection.find(Filters.eq("content.report.faultId", faultId))))
   }
 
   def checkReportNotExists(faultId: FaultId): Unit = {
-    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("fault.report.faultId", faultId))))
+    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("content.report.faultId", faultId))))
     assert(!distributionDir.getFaultReportFile(faultId).exists())
   }
 

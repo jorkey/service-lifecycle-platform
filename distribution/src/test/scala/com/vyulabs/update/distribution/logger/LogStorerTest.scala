@@ -3,16 +3,14 @@ package com.vyulabs.update.distribution.logger
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.logger.{LogBuffer, TraceAppender}
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.common.logger.{LogBuffer, LogSender, TraceAppender}
-import com.vyulabs.update.common.utils.Utils
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
@@ -53,8 +51,8 @@ class LogStorerTest extends TestEnvironment with ScalatestRouteTest {
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 4"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
-        query {
-          serviceLogs {
+        query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
+          serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             distributionName
             serviceName
             instanceId
@@ -64,7 +62,12 @@ class LogStorerTest extends TestEnvironment with ScalatestRouteTest {
             }
           }
         }
-      """))
+      """, variables = JsObject(
+        "distribution" -> JsString("test"),
+        "service" -> JsString("service1"),
+        "instance" -> JsString("instance1"),
+        "process" -> JsString(ProcessHandle.current.pid.toString),
+        "directory" -> JsString(new java.io.File(".").getCanonicalPath()))))
     )
   }
 }

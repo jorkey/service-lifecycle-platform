@@ -1,7 +1,6 @@
 package com.vyulabs.update.distribution.graphql.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.stream.scaladsl.Source
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.distribution.client.DistributionClient
@@ -38,7 +37,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       info <- {
         val document = DeveloperVersionInfoDocument(id, versionInfo)
         collection.insert(document).map(_ => document)
-      }.map(_.info)
+      }.map(_.content)
       _ <- removeObsoleteVersions(info.version.distributionName, info.serviceName)
     } yield info).map(_ => true)
   }
@@ -64,8 +63,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Future[Boolean] = {
     log.info(s"Remove developer version ${version} of service ${serviceName}")
     val filters = Filters.and(
-      Filters.eq("info.serviceName", serviceName),
-      Filters.eq("info.version", version))
+      Filters.eq("content.serviceName", serviceName),
+      Filters.eq("content.version", version))
     dir.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
       collection <- collections.Developer_VersionsInfo
@@ -77,13 +76,13 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
 
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
                                version: Option[DeveloperDistributionVersion] = None): Future[Seq[DeveloperVersionInfo]] = {
-    val serviceArg = Filters.eq("info.serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("info.version.distributionName", distributionName ) }
-    val versionArg = version.map { version => Filters.eq("info.version", version) }
+    val serviceArg = Filters.eq("content.serviceName", serviceName)
+    val distributionArg = distributionName.map { distributionName => Filters.eq("content.version.distributionName", distributionName ) }
+    val versionArg = version.map { version => Filters.eq("content.version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     for {
       collection <- collections.Developer_VersionsInfo
-      info <- collection.find(filters).map(_.map(_.info))
+      info <- collection.find(filters).map(_.map(_.content))
     } yield info
   }
 
@@ -98,7 +97,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   def getDeveloperDesiredVersions(serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       collection <- collections.Developer_DesiredVersions
-      profile <- collection.find(new BsonDocument()).map(_.headOption.map(_.versions).getOrElse(Seq.empty[DeveloperDesiredVersion])
+      profile <- collection.find(new BsonDocument()).map(_.headOption.map(_.content).getOrElse(Seq.empty[DeveloperDesiredVersion])
         .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)))
     } yield profile
   }
@@ -111,7 +110,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     for {
       desiredVersions <- future
       installProfile <- getDistributionClientInstallProfile(distributionName)
-      versions <- Future(desiredVersions.filter(version => installProfile.profile.services.contains(version.serviceName)))
+      versions <- Future(desiredVersions.filter(version => installProfile.content.services.contains(version.serviceName)))
     } yield versions
   }
 
