@@ -3,13 +3,13 @@ package com.vyulabs.update.distribution.mongo
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.mongodb.client.model.{FindOneAndUpdateOptions, IndexOptions, ReplaceOptions, ReturnDocument, UpdateOptions}
-import com.mongodb.{ConnectionString, MongoClientSettings}
+import com.mongodb.client.model.{FindOneAndUpdateOptions, IndexOptions, ReplaceOptions, UpdateOptions}
 import com.mongodb.client.result.{DeleteResult, UpdateResult}
 import com.mongodb.reactivestreams.client.{MongoClients, MongoCollection, Success}
+import com.mongodb.{ConnectionString, MongoClientSettings}
 import org.bson.codecs.configuration.CodecRegistry
-import org.bson.{BsonDocument, Document}
 import org.bson.conversions.Bson
+import org.bson.{BsonDocument, Document}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -101,6 +101,12 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T])
 
   def updateOne(filters: Bson, update: Bson, options: UpdateOptions = new UpdateOptions().upsert(true)): Future[UpdateResult] = {
     Source.fromPublisher(collection.updateOne(filters, update, options))
+      .log(s"Update Mongo DB collection ${name} with filters ${filters}")
+      .runWith(Sink.head[UpdateResult])
+  }
+
+  def updateMany(filters: Bson, update: Bson, options: UpdateOptions = new UpdateOptions().upsert(true)): Future[UpdateResult] = {
+    Source.fromPublisher(collection.updateMany(filters, update, options))
       .log(s"Update Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.head[UpdateResult])
   }
