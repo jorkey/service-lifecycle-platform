@@ -1,21 +1,18 @@
 package com.vyulabs.libs.git
 
 import org.eclipse.jgit.api.Git
-
-import collection.JavaConverters._
 import org.eclipse.jgit.api.ListBranchCommand.ListMode
+import org.eclipse.jgit.api.errors.RefAlreadyExistsException
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.revwalk.RevCommit
+import org.eclipse.jgit.submodule.SubmoduleWalk
+import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
+
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
-
-import org.eclipse.jgit.api.errors.RefAlreadyExistsException
-import org.eclipse.jgit.submodule.SubmoduleWalk
-import org.eclipse.jgit.transport.RefSpec
-
-import scala.annotation.tailrec
+import scala.collection.JavaConverters._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
@@ -326,8 +323,10 @@ object GitRepository {
         val walk = SubmoduleWalk.forIndex(git.getRepository)
         while (walk.next) {
           val submoduleRepository = walk.getRepository
-          Git.wrap(submoduleRepository).pull().call()
-          submoduleRepository.close
+          if (walk.getRepository != null) {
+            Git.wrap(submoduleRepository).pull().call()
+            submoduleRepository.close
+          }
         }
         git.pull().call()
         toClose = None
