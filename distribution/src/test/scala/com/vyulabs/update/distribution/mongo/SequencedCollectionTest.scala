@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, Awaitable, ExecutionContext}
+import scala.concurrent.{Await, Awaitable, ExecutionContext, Future}
 
 class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Sequenced Collection"
@@ -37,9 +37,23 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
   val test = new SequencedCollection[TestRecord](collection, sequenceCollection)
 
   it should "insert/modify/delete records" in {
-    result(test.insert(TestRecord("f1", "f2")))
-    result(test.update(Filters.eq("field1", "f1"), f => TestRecord("field1", f.field2)))
-    println(result(test.find()))
-    //test.delete()
+    result(test.insert(TestRecord("v1", "v2")))
+    result(test.update(Filters.eq("field1", "v1"), { f => TestRecord("v3", f.field2) }))
+    assertResult(Seq(TestRecord("v3", "v2")))(result(test.find()))
+
+    var concurrentUpdate: Future[Int] = null
+    assertResult(1)(result(test.update(Filters.eq("field1", "v3"),
+      record => {
+        assertResult(Seq(TestRecord("v3", "v2")))(result(test.find()))
+        concurrentUpdate = test.update(Filters.eq("field1", "v3"), r => TestRecord(r.field1, "v5"))
+        TestRecord(record.field1, "v4")
+      }
+    )))
+    val res = result(concurrentUpdate)
+    assertResult(1)(res)
+    assertResult(Seq(TestRecord("v3", "v5")))(result(test.find()))
+
+    assertResult()(result(test.delete()))
+    assertResult(Seq.empty)(result(test.find()))
   }
 }
