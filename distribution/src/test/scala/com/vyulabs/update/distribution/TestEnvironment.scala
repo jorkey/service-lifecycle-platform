@@ -12,7 +12,7 @@ import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.config.{FaultReportsConfig, VersionHistoryConfig}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
-import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb, UserInfoDocument}
+import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -55,13 +55,9 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
   val distribution = new Distribution(workspace, graphql)
 
   result(for {
-    collection <- collections.Users_Info
-    _ <- collection.insert(UserInfoDocument(ServerUserInfo(adminClientCredentials.username,
-      adminCredentials.role.toString, adminCredentials.passwordHash)))
-    _ <- collection.insert(UserInfoDocument(ServerUserInfo(distributionClientCredentials.username,
-      distributionCredentials.role.toString, distributionCredentials.passwordHash)))
-    _ <- collection.insert(UserInfoDocument(ServerUserInfo(serviceClientCredentials.username,
-      serviceCredentials.role.toString, serviceCredentials.passwordHash)))
+    _ <- collections.Users_Info.insert(ServerUserInfo(adminClientCredentials.username, adminCredentials.role.toString, adminCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(distributionClientCredentials.username, distributionCredentials.role.toString, distributionCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(serviceClientCredentials.username, serviceCredentials.role.toString, serviceCredentials.passwordHash))
   } yield {})
 
   IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
@@ -71,6 +67,6 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
   override protected def afterAll(): Unit = {
     distributionDir.drop()
     IoUtils.deleteFileRecursively(ownServicesDir)
-    result(mongo.dropDatabase())
+    //result(mongo.dropDatabase())
   }
 }

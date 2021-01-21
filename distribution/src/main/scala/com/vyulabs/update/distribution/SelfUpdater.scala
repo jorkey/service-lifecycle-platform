@@ -36,12 +36,11 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
 
   def maybeUpdate(): Unit = {
     for {
-      collection <- collections.Client_DesiredVersions
-      desiredVersions <- collection.find().map(_.headOption.getOrElse(throw new IOException("Can't find desired versions")))
+      desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(throw new IOException("Can't find desired versions")))
       distributionNewVersion <- Future(Utils.isServiceNeedUpdate(Common.DistributionServiceName,
-        distributionVersion, ClientDesiredVersions.toMap(desiredVersions.content).get(Common.DistributionServiceName)))
+        distributionVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.DistributionServiceName)))
       scriptsNewVersion <- Future(Utils.isServiceNeedUpdate(Common.ScriptsServiceName,
-        scriptsVersion, ClientDesiredVersions.toMap(desiredVersions.content).get(Common.ScriptsServiceName)))
+        scriptsVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.ScriptsServiceName)))
     } yield {
       val servicesToUpdate = distributionNewVersion.map((Common.DistributionServiceName, _)) ++ scriptsNewVersion.map((Common.ScriptsServiceName, _))
       if (!servicesToUpdate.isEmpty) {

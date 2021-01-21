@@ -1,7 +1,5 @@
 package com.vyulabs.update.distribution.mongo
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, ReturnDocument, Updates}
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
@@ -14,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
 class SequencedCollection[T: ClassTag](collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]])
-                            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
+                            (implicit executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   implicit val log = LoggerFactory.getLogger(getClass)
 
   private var modifyInProcess = Option.empty[Future[Int]]
@@ -104,12 +102,19 @@ class SequencedCollection[T: ClassTag](collection: Future[MongoDbCollection[Bson
     queueFuture()
   }
 
-  def delete(filters: Bson = new BsonDocument()): Future[Unit] = {
+  def delete(filters: Bson = new BsonDocument()): Future[Long] = {
     for {
       collection <- collection
       result <- collection.updateMany(Filters.and(filters,
         Filters.or(Filters.exists("_expireTime", false))),
-        Updates.set("_expireTime", new BsonDateTime(System.currentTimeMillis()))).map(_ => ())
+        Updates.set("_expireTime", new BsonDateTime(System.currentTimeMillis()))).map(_.getModifiedCount)
+    } yield result
+  }
+
+  def drop(): Future[Unit] = {
+    for {
+      collection <- collection
+      result <- collection.dropItems()
     } yield result
   }
 

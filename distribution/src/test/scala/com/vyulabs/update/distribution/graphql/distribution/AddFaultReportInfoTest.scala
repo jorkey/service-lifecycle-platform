@@ -106,11 +106,11 @@ class AddFaultReportInfoTest extends TestEnvironment {
       FaultReportDocument(sequence, DistributionFaultReport("distribution1",
         ServiceFaultReport(faultId, FaultInfo(date, "instance1", "directory1", "service1", "Common", ServiceState(date, None, None, None, None, None, None, None),
           Seq("line1", "line2")), Seq("core", "log/service.log")))))
-    )(result(faultsInfoCollection.find(Filters.eq("content.report.faultId", faultId))))
+    )(result(faultsInfoCollection.find(Filters.eq("report.faultId", faultId))))
   }
 
   def checkReportNotExists(faultId: FaultId): Unit = {
-    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("content.report.faultId", faultId))))
+    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("report.faultId", faultId))))
     assert(!distributionDir.getFaultReportFile(faultId).exists())
   }
 

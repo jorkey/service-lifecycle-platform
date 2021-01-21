@@ -3,12 +3,10 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.DeveloperVersionInfoDocument
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
+import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -25,8 +23,8 @@ class GetVersionsInfoTest extends TestEnvironment {
   val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
   override def beforeAll(): Unit = {
-    result(result(collections.Developer_VersionsInfo).insert(DeveloperVersionInfoDocument(0,
-      DeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))), BuildInfo("author1", Seq.empty, new Date(), None)))))
+    result(collections.Developer_VersionsInfo.insert(
+      DeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))), BuildInfo("author1", Seq.empty, new Date(), None))))
   }
 
   it should "get version info" in {

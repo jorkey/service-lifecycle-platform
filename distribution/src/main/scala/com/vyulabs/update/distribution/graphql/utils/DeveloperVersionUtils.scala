@@ -11,7 +11,7 @@ import com.vyulabs.update.common.version.{DeveloperDistributionVersion, Develope
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.config.VersionHistoryConfig
 import com.vyulabs.update.distribution.graphql.NotFoundException
-import com.vyulabs.update.distribution.mongo.{DatabaseCollections, DeveloperDesiredVersionsDocument, DeveloperVersionInfoDocument}
+import com.vyulabs.update.distribution.mongo.{DatabaseCollections}
 import org.bson.BsonDocument
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -32,14 +32,9 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo): Future[Boolean] = {
     log.info(s"Add developer version info ${versionInfo}")
     (for {
-      collection <- collections.Developer_VersionsInfo
-      id <- collections.getNextSequence(collection.getName())
-      info <- {
-        val document = DeveloperVersionInfoDocument(id, versionInfo)
-        collection.insert(document).map(_ => document)
-      }.map(_.content)
-      _ <- removeObsoleteVersions(info.version.distributionName, info.serviceName)
-    } yield info).map(_ => true)
+      _ <- collections.Developer_VersionsInfo.insert(versionInfo)
+      _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
+    } yield {}).map(l => true)
   }
 
   private def removeObsoleteVersions(distributionName: DistributionName, serviceName: ServiceName): Future[Unit] = {
@@ -63,41 +58,37 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Future[Boolean] = {
     log.info(s"Remove developer version ${version} of service ${serviceName}")
     val filters = Filters.and(
-      Filters.eq("content.serviceName", serviceName),
-      Filters.eq("content.version", version))
+      Filters.eq("serviceName", serviceName),
+      Filters.eq("version", version))
     dir.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
-      collection <- collections.Developer_VersionsInfo
       profile <- {
-        collection.delete(filters).map(_.getDeletedCount > 0)
+        collections.Developer_VersionsInfo.delete(filters).map(_ > 0)
       }
     } yield profile
   }
 
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
                                version: Option[DeveloperDistributionVersion] = None): Future[Seq[DeveloperVersionInfo]] = {
-    val serviceArg = Filters.eq("content.serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("content.version.distributionName", distributionName ) }
-    val versionArg = version.map { version => Filters.eq("content.version", version) }
+    val serviceArg = Filters.eq("serviceName", serviceName)
+    val distributionArg = distributionName.map { distributionName => Filters.eq("version.distributionName", distributionName ) }
+    val versionArg = version.map { version => Filters.eq("version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     for {
-      collection <- collections.Developer_VersionsInfo
-      info <- collection.find(filters).map(_.map(_.content))
+      info <- collections.Developer_VersionsInfo.find(filters)
     } yield info
   }
 
   def setDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion]): Future[Boolean] = {
     log.info(s"Set developer desired versions ${desiredVersions}")
     for {
-      collection <- collections.Developer_DesiredVersions
-      result <- collection.replace(new BsonDocument(), DeveloperDesiredVersionsDocument(desiredVersions)).map(_ => true)
+      result <- collections.Developer_DesiredVersions.update(new BsonDocument(), _ => DeveloperDesiredVersions(desiredVersions)).map(_ => true)
     } yield result
   }
 
   def getDeveloperDesiredVersions(serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      collection <- collections.Developer_DesiredVersions
-      profile <- collection.find(new BsonDocument()).map(_.headOption.map(_.content).getOrElse(Seq.empty[DeveloperDesiredVersion])
+      profile <- collections.Developer_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[DeveloperDesiredVersion])
         .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)))
     } yield profile
   }

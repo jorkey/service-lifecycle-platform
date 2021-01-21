@@ -26,7 +26,7 @@ trait DistributionClientsUtils extends SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def getDistributionClientsInfo(distributionName: Option[DistributionName] = None): Future[Seq[DistributionClientInfo]] = {
-    val clientArg = distributionName.map(Filters.eq("content.distributionName", _))
+    val clientArg = distributionName.map(Filters.eq("distributionName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
@@ -47,7 +47,7 @@ trait DistributionClientsUtils extends SprayJsonSupport {
   }
 
   def getInstallProfile(profileName: ProfileName): Future[DistributionClientProfileDocument] = {
-    val profileArg = Filters.eq("content.profileName", profileName)
+    val profileArg = Filters.eq("profileName", profileName)
     for {
       collection <- collections.Developer_DistributionClientsProfiles
       profile <- collection.find(profileArg).map(_.headOption

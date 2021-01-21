@@ -23,7 +23,7 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  val mongo = new MongoDb("mongodb://localhost:27017", "SequencedCollection"); result(mongo.dropDatabase())
+  val mongo = new MongoDb("mongodb://localhost:27017", "SequencedCollectionTest"); result(mongo.dropDatabase())
 
   case class TestRecord(field1: String, field2: String)
 
@@ -32,9 +32,9 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
 
   private def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
-  val collection = mongo.createCollection[BsonDocument]("test")
   val sequenceCollection =  mongo.createCollection[SequenceDocument]("sequence")
-  val test = new SequencedCollection[TestRecord](collection, sequenceCollection)
+  val testCollection = mongo.createCollection[BsonDocument]("test")
+  val test = new SequencedCollection[TestRecord](testCollection, sequenceCollection)
 
   it should "insert/modify/delete records" in {
     result(test.insert(TestRecord("v1", "v2")))
@@ -53,7 +53,7 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
     assertResult(1)(res)
     assertResult(Seq(TestRecord("v3", "v5")))(result(test.find()))
 
-    assertResult()(result(test.delete()))
+    assertResult(1)(result(test.delete()))
     assertResult(Seq.empty)(result(test.find()))
   }
 }

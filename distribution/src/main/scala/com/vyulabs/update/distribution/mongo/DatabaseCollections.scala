@@ -6,6 +6,7 @@ import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionC
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
+import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
@@ -20,7 +21,6 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
   private implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
-    classOf[UserInfoDocument],
     classOf[ServerUserInfo],
     classOf[UserCredentials],
     classOf[PasswordHash],
@@ -29,14 +29,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     classOf[DeveloperVersion],
     classOf[DeveloperDistributionVersion],
     classOf[BuildInfo],
-    classOf[DeveloperVersionInfoDocument],
     classOf[ClientVersionInfo],
-    classOf[ClientVersionInfoDocument],
     classOf[DeveloperDesiredVersion],
     classOf[DeveloperVersionInfo],
-    classOf[DeveloperDesiredVersionsDocument],
     classOf[ClientDesiredVersion],
-    classOf[ClientDesiredVersionsDocument],
     classOf[InstalledDesiredVersionsDocument],
     classOf[InstallInfo],
     classOf[DistributionClientProfile],
@@ -66,32 +62,35 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     _ <- collection.createIndex(Indexes.ascending("name"), new IndexOptions().unique(true))
   } yield collection
 
-  val Users_Info = for {
-    collection <- db.getOrCreateCollection[UserInfoDocument]("usersInfo")
-    _ <- collection.createIndex(Indexes.ascending("content.userName"), new IndexOptions().unique(true))
-  } yield collection
+  val Users_Info = new SequencedCollection[ServerUserInfo](for {
+    collection <- db.getOrCreateCollection[BsonDocument]("usersInfo")
+    _ <- collection.createIndex(Indexes.ascending("userName", "_expireTime"), new IndexOptions().unique(true))
+  } yield collection, Sequences)
 
-  val Developer_VersionsInfo = for {
-    collection <- db.getOrCreateCollection[DeveloperVersionInfoDocument]("developer.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("content.serviceName", "content.version"), new IndexOptions().unique(true))
-  } yield collection
+  val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo](for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.versionsInfo")
+    _ <- collection.createIndex(Indexes.ascending("serviceName", "version", "_expireTime"), new IndexOptions().unique(true))
+  } yield collection, Sequences)
 
-  val Client_VersionsInfo = for {
-    collection <- db.getOrCreateCollection[ClientVersionInfoDocument]("client.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("content.serviceName", "content.version"), new IndexOptions().unique(true))
-  } yield collection
+  val Client_VersionsInfo = new SequencedCollection[ClientVersionInfo](for {
+    collection <- db.getOrCreateCollection[BsonDocument]("client.versionsInfo")
+    _ <- collection.createIndex(Indexes.ascending("serviceName", "version", "_expireTime"), new IndexOptions().unique(true))
+  } yield collection, Sequences)
 
-  val Developer_DesiredVersions = db.getOrCreateCollection[DeveloperDesiredVersionsDocument]("developer.desiredVersions")
-  val Client_DesiredVersions = db.getOrCreateCollection[ClientDesiredVersionsDocument]("client.desiredVersions")
+  val Developer_DesiredVersions = new SequencedCollection[DeveloperDesiredVersions](
+    db.getOrCreateCollection[BsonDocument]("developer.desiredVersions"), Sequences)
+
+  val Client_DesiredVersions = new SequencedCollection[ClientDesiredVersions](
+    db.getOrCreateCollection[BsonDocument]("client.desiredVersions"), Sequences)
 
   val Developer_DistributionClientsInfo = for {
     collection <- db.getOrCreateCollection[DistributionClientInfoDocument]("developer.distributionClientsInfo")
-    _ <- collection.createIndex(Indexes.ascending("content.distributionName"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("distributionName"), new IndexOptions().unique(true))
   } yield collection
 
   val Developer_DistributionClientsProfiles = for {
     collection <- db.getOrCreateCollection[DistributionClientProfileDocument]("developer.distributionClientsProfiles")
-    _ <- collection.createIndex(Indexes.ascending("content.profileName"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("profileName"), new IndexOptions().unique(true))
   } yield collection
 
   val State_InstalledDesiredVersions = for {
@@ -101,15 +100,15 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val State_TestedVersions = for {
     collection <- db.getOrCreateCollection[TestedDesiredVersionsDocument]("state.testedDesiredVersions")
-    _ <- collection.createIndex(Indexes.ascending("content.profileName"))
+    _ <- collection.createIndex(Indexes.ascending("profileName"))
   } yield collection
 
   val State_ServiceStates = for {
     collection <- db.getOrCreateCollection[ServiceStateDocument]("state.serviceStates")
     _ <- collection.createIndex(Indexes.ascending("sequence"), new IndexOptions().unique(true))
-    _ <- collection.createIndex(Indexes.ascending("content.distributionName"))
-    _ <- collection.createIndex(Indexes.ascending("content.instance.instanceId"))
-    _ <- collection.createIndex(Indexes.ascending("content.instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
+    _ <- collection.createIndex(Indexes.ascending("distributionName"))
+    _ <- collection.createIndex(Indexes.ascending("instance.instanceId"))
+    _ <- collection.createIndex(Indexes.ascending("instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
     _ <- collection.dropItems()
   } yield collection
 
@@ -120,9 +119,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val State_FaultReportsInfo = for {
     collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReportsInfo")
-    _ <- collection.createIndex(Indexes.ascending("content.distributionName"))
-    _ <- collection.createIndex(Indexes.ascending("content.report.faultId"))
-    _ <- collection.createIndex(Indexes.ascending("content.report.info.serviceName"))
+    _ <- collection.createIndex(Indexes.ascending("distributionName"))
+    _ <- collection.createIndex(Indexes.ascending("report.faultId"))
+    _ <- collection.createIndex(Indexes.ascending("report.info.serviceName"))
   } yield collection
 
   val State_UploadStatus = for {
@@ -142,11 +141,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
     val filters = Filters.eq("content.userName", "admin")
     for {
-      usersInfo <- Users_Info
-      adminRecords <- usersInfo.find(filters)
+      adminRecords <- Users_Info.find(filters)
     } yield {
       if (adminRecords.isEmpty) {
-        usersInfo.insert(UserInfoDocument(ServerUserInfo("admin", UserRole.Administrator.toString, PasswordHash("admin"))))
+        Users_Info.insert(ServerUserInfo("admin", UserRole.Administrator.toString, PasswordHash("admin")))
       } else {
         Future()
       }

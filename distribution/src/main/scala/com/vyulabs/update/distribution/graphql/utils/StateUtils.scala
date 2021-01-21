@@ -71,7 +71,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
             Seq(testRecord)
         }
         val newTestedVersions = TestedDesiredVersionsDocument(TestedDesiredVersions(clientConfig.installProfile, desiredVersions, testSignatures))
-        val profileArg = Filters.eq("content.profileName", clientConfig.installProfile)
+        val profileArg = Filters.eq("profileName", clientConfig.installProfile)
         for {
           collection <- collections.State_TestedVersions
           result <- collection.replace(profileArg, newTestedVersions).map(_ => true)
@@ -81,7 +81,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   }
 
   def getTestedVersions(profileName: ProfileName): Future[Option[TestedDesiredVersions]] = {
-    val profileArg = Filters.eq("content.profileName", profileName)
+    val profileArg = Filters.eq("profileName", profileName)
     for {
       collection <- collections.State_TestedVersions
       profile <- collection.find(profileArg).map(_.headOption.map(_.content))
@@ -97,10 +97,10 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
           id - (instanceStates.size - seq.size) + 1, DistributionServiceState(distributionName, state)))
         Future.sequence(documents.map(doc => {
           val filters = Filters.and(
-            Filters.eq("content.distributionName", distributionName),
-            Filters.eq("content.instance.serviceName", doc.content.instance.serviceName),
-            Filters.eq("content.instance.instanceId", doc.content.instance.instanceId),
-            Filters.eq("content.instance.directory", doc.content.instance.directory))
+            Filters.eq("distributionName", distributionName),
+            Filters.eq("instance.serviceName", doc.content.instance.serviceName),
+            Filters.eq("instance.instanceId", doc.content.instance.instanceId),
+            Filters.eq("instance.directory", doc.content.instance.directory))
           collection.replace(filters, doc)
         })).map(_ => true)
       }
@@ -109,10 +109,10 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
 
   def getServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
                        instanceId: Option[InstanceId], directory: Option[ServiceDirectory]): Future[Seq[DistributionServiceState]] = {
-    val distributionArg = distributionName.map { distribution => Filters.eq("content.distributionName", distribution) }
-    val serviceArg = serviceName.map { service => Filters.eq("content.instance.serviceName", service) }
-    val instanceIdArg = instanceId.map { instanceId => Filters.eq("content.instance.instanceId", instanceId) }
-    val directoryArg = directory.map { directory => Filters.eq("content.instance.directory", directory) }
+    val distributionArg = distributionName.map { distribution => Filters.eq("distributionName", distribution) }
+    val serviceArg = serviceName.map { service => Filters.eq("instance.serviceName", service) }
+    val instanceIdArg = instanceId.map { instanceId => Filters.eq("instance.instanceId", instanceId) }
+    val directoryArg = directory.map { directory => Filters.eq("instance.directory", directory) }
     val args = distributionArg ++ serviceArg ++ instanceIdArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
@@ -145,11 +145,11 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
 
   def getServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId,
                      processId: ProcessId, directory: ServiceDirectory, last: Option[Int]): Future[Seq[ServiceLogLine]] = {
-    val distributionArg = Filters.eq("content.distributionName", distributionName)
-    val serviceArg = Filters.eq("content.serviceName", serviceName)
-    val instanceArg = Filters.eq("content.instanceId", instanceId)
-    val processArg = Filters.eq("content.processId", processId)
-    val directoryArg = Filters.eq("content.directory", directory)
+    val distributionArg = Filters.eq("distributionName", distributionName)
+    val serviceArg = Filters.eq("serviceName", serviceName)
+    val instanceArg = Filters.eq("instanceId", instanceId)
+    val processArg = Filters.eq("processId", processId)
+    val directoryArg = Filters.eq("directory", directory)
     val args = Seq(distributionArg, serviceArg, instanceArg, processArg, directoryArg)
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     for {
@@ -186,8 +186,8 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   }
 
   def getDistributionFaultReportsInfo(distributionName: Option[DistributionName], serviceName: Option[ServiceName], last: Option[Int]): Future[Seq[DistributionFaultReport]] = {
-    val clientArg = distributionName.map { client => Filters.eq("content.distributionName", client) }
-    val serviceArg = serviceName.map { service => Filters.eq("content.report.info.serviceName", service) }
+    val clientArg = distributionName.map { client => Filters.eq("distributionName", client) }
+    val serviceArg = serviceName.map { service => Filters.eq("report.info.serviceName", service) }
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb

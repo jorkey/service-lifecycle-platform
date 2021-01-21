@@ -3,14 +3,10 @@ package com.vyulabs.update.distribution.graphql.service
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersions, UserInfo, UserRole}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.ClientDesiredVersionsDocument
-import com.vyulabs.update.common.info.{ClientDesiredVersion, DeveloperDesiredVersion}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
-import com.vyulabs.update.distribution.mongo.ClientDesiredVersionsDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -26,9 +22,9 @@ class GetDesiredVersionsTest extends TestEnvironment {
   override def dbName = super.dbName + "-service"
 
   override def beforeAll() = {
-    result(collections.Client_DesiredVersions.map(_.insert(ClientDesiredVersionsDocument(Seq(
+    result(collections.Client_DesiredVersions.insert(ClientDesiredVersions(Seq(
       ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1))))),
-      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2))))))))).flatten)
+      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2)))))))))
   }
 
   it should "get desired versions for service" in {

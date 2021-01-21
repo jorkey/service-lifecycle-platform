@@ -4,15 +4,11 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.config.VersionHistoryConfig
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.{DeveloperDesiredVersionsDocument, DistributionClientInfoDocument}
-import com.vyulabs.update.common.info.DeveloperDesiredVersion
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DeveloperDesiredVersions, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
-import com.vyulabs.update.distribution.mongo.DeveloperDesiredVersionsDocument
+import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.mongo.DistributionClientInfoDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -29,11 +25,10 @@ class GetDesiredVersionsTest extends TestEnvironment {
 
   override def beforeAll() = {
     val clientsInfoCollection = result(collections.Developer_DistributionClientsInfo)
-    val desiredVersionsCollection = result(collections.Developer_DesiredVersions)
 
     result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
 
-    result(desiredVersionsCollection.insert(DeveloperDesiredVersionsDocument(Seq(
+    result(collections.Developer_DesiredVersions.insert(DeveloperDesiredVersions(Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1)))),
       DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2))))))))
   }
