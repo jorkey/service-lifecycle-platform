@@ -1,19 +1,17 @@
 package com.vyulabs.update.distribution.graphql.service
 
-import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.utils.Utils.DateJson._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.FaultReportDocument
-import com.vyulabs.update.common.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
-import com.vyulabs.update.common.utils.Utils.DateJson._
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.distribution.mongo.Sequenced
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import java.util.Date
 import scala.concurrent.ExecutionContext
 
 class AddFaultReportInfoTest extends TestEnvironment {
@@ -25,7 +23,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
 
   val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
 
-  val faultsInfoCollection = result(collections.State_FaultReportsInfo)
+  val faultsInfoCollection = collections.State_FaultReportsInfo
 
   override def dbName = super.dbName + "-service"
 
@@ -63,7 +61,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
       """, variables = JsObject("date" -> date.toJson))))
 
     assertResult(Seq(
-      FaultReportDocument(1, DistributionFaultReport(distributionName,
+      Sequenced(1, DistributionFaultReport(distributionName,
         ServiceFaultReport("fault1", FaultInfo(date, "instance1", "directory1", "service1", "Common", ServiceState(date, None, None, None, None, None, None, None),
           Seq("line1", "line2")), Seq("core", "log/service.log")))))
     )(result(faultsInfoCollection.find()))

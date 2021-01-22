@@ -1,22 +1,19 @@
 package com.vyulabs.update.distribution.graphql.distribution
 
-import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
+import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.utils.Utils.DateJson._
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, InstalledDesiredVersionsDocument, TestedDesiredVersionsDocument}
-import com.vyulabs.update.common.info.{ClientDesiredVersion, DeveloperDesiredVersion, TestSignature, TestedDesiredVersions}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
-import com.vyulabs.update.distribution.mongo.TestedDesiredVersionsDocument
+import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
-import com.vyulabs.update.common.utils.Utils.DateJson._
 
+import java.util.Date
 import scala.concurrent.ExecutionContext
 
 class SetStateInfoTest extends TestEnvironment {
@@ -27,7 +24,7 @@ class SetStateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override protected def beforeAll(): Unit = {
-    result(collections.Developer_DistributionClientsInfo.map(_.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test")))))).flatten)
+    result(collections.Developer_DistributionClientsInfo.insert(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test")))))
   }
 
   it should "set tested versions" in {
@@ -48,13 +45,13 @@ class SetStateInfoTest extends TestEnvironment {
 
     val date = new Date()
 
-    result(collections.State_TestedVersions.map(v => result(v.find().map(_.map(v => TestedDesiredVersionsDocument(TestedDesiredVersions(
-      v.content.profileName, v.content.versions, v.content.signatures.map(s => TestSignature(s.distributionName, date))))))
-      .map(assertResult(_)(Seq(TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
+    result(collections.State_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
+      v.profileName, v.versions, v.signatures.map(s => TestSignature(s.distributionName, date))))))
+      .map(assertResult(_)(Seq(TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2)))),
         DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2, 1, 2))))),
-        Seq(TestSignature("distribution1", date))))))))))
-    result(collections.State_TestedVersions.map(_.dropItems()).flatten)
+        Seq(TestSignature("distribution1", date))))))
+    result(collections.State_TestedVersions.drop())
   }
 
   it should "set installed desired versions" in {
@@ -73,10 +70,10 @@ class SetStateInfoTest extends TestEnvironment {
         }
       """)))
 
-    result(collections.State_InstalledDesiredVersions.map(v => result(v.find().map(assertResult(Seq(InstalledDesiredVersionsDocument("distribution1", Seq(
+    result(collections.State_InstalledDesiredVersions.find().map(assertResult(Seq(InstalledDesiredVersions("distribution1", Seq(
       ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))),
-      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 1)))))))))(_)))))
-    result(collections.State_InstalledDesiredVersions.map(_.dropItems()).flatten)
+      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 1)))))))))(_)))
+    result(collections.State_InstalledDesiredVersions.drop())
   }
 
   it should "set services state" in {
@@ -126,6 +123,6 @@ class SetStateInfoTest extends TestEnvironment {
       """))
     )
 
-    result(collections.State_ServiceStates.map(_.dropItems()).flatten)
+    result(collections.State_ServiceStates.drop())
   }
 }

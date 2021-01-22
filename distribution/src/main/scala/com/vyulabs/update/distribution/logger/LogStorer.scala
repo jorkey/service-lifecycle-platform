@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.logger
 
 import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId, ServiceName}
-import com.vyulabs.update.distribution.mongo.{DatabaseCollections, ServiceLogLineDocument}
+import com.vyulabs.update.distribution.mongo.{DatabaseCollections}
 import com.vyulabs.update.common.info.{LogLine, ServiceLogLine}
 import com.vyulabs.update.common.logger.LogReceiver
 import org.slf4j.LoggerFactory
@@ -16,13 +16,8 @@ class LogStorer(distributionName: DistributionName, serviceName: ServiceName, in
   private val directory = new java.io.File(".").getCanonicalPath()
 
   override def receiveLogLines(logs: Seq[LogLine]): Future[Unit] = {
-    for {
-      collection <- collections.State_ServiceLogs
-      id <- collections.getNextSequence(collection.getName(), logs.size)
-      result <- collection.insert(
-        logs.foldLeft(Seq.empty[ServiceLogLineDocument])((seq, line) => { seq :+
-          ServiceLogLineDocument(id - (logs.size-seq.size) + 1,
-            new ServiceLogLine(distributionName, serviceName, instanceId, processId, directory, line)) })).map(_ => ())
-    } yield result
+    collections.State_ServiceLogs.insert(
+      logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
+        ServiceLogLine(distributionName, serviceName, instanceId, processId, directory, line) })).map(_ => ())
   }
 }

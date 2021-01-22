@@ -74,16 +74,12 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     val distributionArg = distributionName.map { distributionName => Filters.eq("version.distributionName", distributionName ) }
     val versionArg = version.map { version => Filters.eq("version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
-    for {
-      info <- collections.Developer_VersionsInfo.find(filters)
-    } yield info
+    collections.Developer_VersionsInfo.find(filters)
   }
 
   def setDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion]): Future[Boolean] = {
     log.info(s"Set developer desired versions ${desiredVersions}")
-    for {
-      result <- collections.Developer_DesiredVersions.update(new BsonDocument(), _ => DeveloperDesiredVersions(desiredVersions)).map(_ => true)
-    } yield result
+    collections.Developer_DesiredVersions.update(new BsonDocument(), _ => Some(DeveloperDesiredVersions(desiredVersions))).map(_ => true)
   }
 
   def getDeveloperDesiredVersions(serviceNames: Set[ServiceName]): Future[Seq[DeveloperDesiredVersion]] = {
@@ -101,7 +97,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     for {
       desiredVersions <- future
       installProfile <- getDistributionClientInstallProfile(distributionName)
-      versions <- Future(desiredVersions.filter(version => installProfile.content.services.contains(version.serviceName)))
+      versions <- Future(desiredVersions.filter(version => installProfile.services.contains(version.serviceName)))
     } yield versions
   }
 

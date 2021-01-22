@@ -1,6 +1,6 @@
 package com.vyulabs.update.distribution.mongo
 
-import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, ReturnDocument, Updates}
+import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, IndexOptions, Indexes, ReturnDocument, Updates}
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
@@ -8,20 +8,31 @@ import org.bson.{BsonDateTime, BsonDocument, BsonDocumentReader, BsonDocumentWra
 import org.mongodb.scala.bson.BsonInt64
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
-class SequencedCollection[T: ClassTag](collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]])
+case class Sequenced[T](sequence: Long, document: T)
+
+class SequencedCollection[T: ClassTag](val name: String,
+                                       collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]],
+                                       historyExpireDays: Int = 7)
                             (implicit executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   implicit val log = LoggerFactory.getLogger(getClass)
 
   private var modifyInProcess = Option.empty[Future[Int]]
 
-  def insert(document: T): Future[Unit] = {
+  for {
+    collection <- collection
+    _ <- collection.createIndex(Indexes.ascending("_expireTime"),
+      new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS))
+  } yield {}
+
+  def insert(document: T): Future[Long] = {
     insert(Seq(document))
   }
 
-  def insert(documents: Seq[T]): Future[Unit] = {
+  def insert(documents: Seq[T]): Future[Long] = {
     for {
       collection <- collection
       sequence <- getNextSequence(collection.getName(), documents.size)
@@ -33,14 +44,14 @@ class SequencedCollection[T: ClassTag](collection: Future[MongoDbCollection[Bson
           doc.append("_time", new BsonDateTime(System.currentTimeMillis()))
           doc
         }
-        collection.insert(docs).map(_ => ())
+        collection.insert(docs).map(_ => sequence)
       }
     } yield result
   }
 
-  def find(filters: Bson = new BsonDocument()): Future[Seq[T]] = {
+  def find(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[T]] = {
     for {
-      docs <- findDocuments(filters)
+      docs <- findDocuments(filters, sort, limit)
     } yield {
       docs.map(doc => {
         val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
@@ -49,31 +60,71 @@ class SequencedCollection[T: ClassTag](collection: Future[MongoDbCollection[Bson
     }
   }
 
-  def update(filters: Bson, modify: T => T): Future[Int] = {
+  def findSequenced(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[Sequenced[T]]] = {
+    for {
+      docs <- findDocuments(filters, sort, limit)
+    } yield {
+      docs.map(doc => {
+        val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+        Sequenced[T](doc.getInt64("_id").getValue, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
+      })
+    }
+  }
+
+  def update(filters: Bson, modify: Option[T] => Option[T]): Future[Int] = {
     def process(): Future[Int] = {
       for {
         collection <- collection
         docs <- findDocuments(filters)
         result <- {
-          Future.sequence(docs.map { doc =>
-            for {
-              sequence <- getNextSequence(collection.getName(), 1)
-              _ <- collection.updateOne(Filters.eq("_id", doc.getInt64("_id")),
-                Updates.combine(Updates.set("_replacedBy", new BsonInt64(sequence)), Updates.set("_expireTime", new BsonDateTime(System.currentTimeMillis()))))
-              result <- {
-                val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-                val document = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build())
-                val newDocument = modify(document)
-                val newDoc = BsonDocumentWrapper.asBsonDocument(newDocument, codecRegistry)
-                newDoc.append("_id", new BsonInt64(sequence))
-                newDoc.append("_time", new BsonDateTime(System.currentTimeMillis()))
-                collection.insert(newDoc)
-              }
-              _ <- collection.updateOne(Filters.eq("_id", doc.getInt64("_id")), Updates.unset("_replacedBy"))
-            } yield result
-          }).map(_.size)
+          if (docs.isEmpty) {
+            Future.sequence(docs.map { doc => updateAndInsert(Some(doc)) }).map(_.foldLeft(0)((sum, elem) => sum + elem))
+          } else {
+            updateAndInsert(None).map(_ => 1)
+          }
         }
       } yield result
+    }
+
+    def updateAndInsert(doc: Option[BsonDocument]): Future[Int] = {
+      for {
+        collection <- collection
+        sequence <- getNextSequence(collection.getName(), 1)
+        result <- {
+          doc match {
+            case Some(doc) =>
+              val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+              val docId = doc.getInt64("_id")
+              val document = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build())
+              modify(Some(document)) match {
+                case Some(document) =>
+                  for {
+                    _ <- collection.updateOne(Filters.eq("_id", docId),
+                      Updates.combine(Updates.set("_replacedBy", new BsonInt64(sequence)), Updates.set("_expireTime", new BsonDateTime(System.currentTimeMillis()))))
+                    result <- insert(collection, document, sequence).map(_ => 1)
+                    _ <- collection.updateOne(Filters.eq("_id", docId),
+                      Updates.unset("_replacedBy"))
+                  } yield result
+                case None =>
+                  Future(0)
+              }
+            case None =>
+              modify(None) match {
+                case Some(document) =>
+                  insert(collection, document, sequence).map(_ => 1)
+                case None =>
+                  Future(0)
+              }
+          }
+        }
+      } yield result
+    }
+
+    def insert(collection: MongoDbCollection[BsonDocument], document: T, sequence: Long): Future[Unit] = {
+      val newDoc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
+      newDoc.append("_id", new BsonInt64(sequence))
+      newDoc.append("_time", new BsonDateTime(System.currentTimeMillis()))
+      collection.insert(newDoc).map(_ => ())
     }
 
     def queueFuture(): Future[Int] = {
@@ -118,7 +169,7 @@ class SequencedCollection[T: ClassTag](collection: Future[MongoDbCollection[Bson
     } yield result
   }
 
-  private def findDocuments(filters: Bson = new BsonDocument()): Future[Seq[BsonDocument]] = {
+  private def findDocuments(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[BsonDocument]] = {
     for {
       collection <- collection
       docs <- collection.find(Filters.and(filters,

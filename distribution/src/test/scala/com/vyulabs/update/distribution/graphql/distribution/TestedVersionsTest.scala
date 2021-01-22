@@ -8,7 +8,6 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, DistributionClientProfileDocument, TestedDesiredVersionsDocument}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -23,13 +22,13 @@ class TestedVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val installProfileCollection = result(collections.Developer_DistributionClientsProfiles)
-    val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)
+    val installProfileCollection = collections.Developer_DistributionClientsProfiles
+    val clientInfoCollection = collections.Developer_DistributionClientsInfo
 
-    result(installProfileCollection.insert(DistributionClientProfileDocument(DistributionClientProfile("common", Set("service1", "service2")))))
+    result(installProfileCollection.insert(DistributionClientProfile("common", Set("service1", "service2"))))
 
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution2", DistributionClientConfig("common", Some("distribution1"))))))
+    result(clientInfoCollection.insert(DistributionClientInfo("distribution1", DistributionClientConfig("common", None))))
+    result(clientInfoCollection.insert(DistributionClientInfo("distribution2", DistributionClientConfig("common", Some("distribution1")))))
   }
 
   it should "set/get tested versions" in {
@@ -61,7 +60,7 @@ class TestedVersionsTest extends TestEnvironment {
         }
       """)))
 
-    result(collections.State_TestedVersions.map(_.dropItems()).flatten)
+    result(collections.State_TestedVersions.drop())
   }
 
   it should "return error if no tested versions for the client's profile" in {
@@ -79,10 +78,10 @@ class TestedVersionsTest extends TestEnvironment {
   }
 
   it should "return error if client required preliminary testing has personal desired versions" in {
-    result(collections.State_TestedVersions.map(_.insert(
-      TestedDesiredVersionsDocument(TestedDesiredVersions("common", Seq(
+    result(collections.State_TestedVersions.insert(
+      TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 0))))),
-        Seq(TestSignature("test-client", new Date())))))).flatten)
+        Seq(TestSignature("test-client", new Date())))))
     result(collections.Client_DesiredVersions.drop())
   }
 }

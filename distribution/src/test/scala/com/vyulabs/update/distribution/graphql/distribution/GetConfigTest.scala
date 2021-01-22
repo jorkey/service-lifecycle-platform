@@ -4,12 +4,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.DistributionClientInfoDocument
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -23,9 +20,7 @@ class GetConfigTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val clientsInfoCollection = result(collections.Developer_DistributionClientsInfo)
-
-    result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test"))))))
+    result(collections.Developer_DistributionClientsInfo.insert(DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test")))))
   }
 
   it should "get config for client" in {

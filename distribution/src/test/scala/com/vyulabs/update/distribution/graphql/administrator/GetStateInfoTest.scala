@@ -6,13 +6,12 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, InstalledDesiredVersionsDocument, ServiceStateDocument}
+import com.vyulabs.update.distribution.graphql.{GraphqlContext}
+import com.vyulabs.update.distribution.mongo.{InstalledDesiredVersions}
 import com.vyulabs.update.common.info.{ClientDesiredVersion, DirectoryServiceState, DistributionServiceState, ServiceState}
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
-import com.vyulabs.update.distribution.mongo.ServiceStateDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -26,27 +25,23 @@ class GetStateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)
-    val installedVersionsCollection = result(collections.State_InstalledDesiredVersions)
-    val serviceStatesCollection = result(collections.State_ServiceStates)
+    result(collections.Developer_DistributionClientsInfo.insert(
+      DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test")))))
 
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(
-      DistributionClientInfo("distribution1", DistributionClientConfig("common", Some("test"))))))
-
-    result(installedVersionsCollection.insert(
-      InstalledDesiredVersionsDocument("distribution1", Seq(
+    result(collections.State_InstalledDesiredVersions.insert(
+      InstalledDesiredVersions("distribution1", Seq(
         ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))),
         ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 3)))))))))
 
-    result(serviceStatesCollection.insert(ServiceStateDocument(0,
+    result(collections.State_ServiceStates.insert(
       DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
         ServiceState(date = new Date(), None, None, version =
-          Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3))))), None, None, None, None))))))
+          Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 2, 3))))), None, None, None, None)))))
 
-    result(serviceStatesCollection.insert(ServiceStateDocument(1,
+    result(collections.State_ServiceStates.insert(
       DistributionServiceState("distribution1", "instance2", DirectoryServiceState("service1", "directory2",
         ServiceState(date = new Date(), None, None, version =
-          Some(ClientDistributionVersion("distribution1", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None))))))
+          Some(ClientDistributionVersion("distribution1", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))))
   }
 
   it should "return own service version" in {

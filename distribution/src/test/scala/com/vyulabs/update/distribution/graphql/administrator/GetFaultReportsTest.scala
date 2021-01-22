@@ -1,19 +1,16 @@
 package com.vyulabs.update.distribution.graphql.administrator
 
-import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common._
+import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.FaultReportDocument
-import com.vyulabs.update.common.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import java.util.Date
 import scala.concurrent.ExecutionContext
 
 class GetFaultReportsTest extends TestEnvironment {
@@ -22,8 +19,6 @@ class GetFaultReportsTest extends TestEnvironment {
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
-
-  val collection = result(collections.State_FaultReportsInfo)
 
   val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
@@ -34,18 +29,18 @@ class GetFaultReportsTest extends TestEnvironment {
   val instance2 = "instance2"
 
   override def beforeAll() = {
-    result(collection.insert(
-      FaultReportDocument(0, DistributionFaultReport(distribution1, ServiceFaultReport("fault1",
+    result(collections.State_FaultReportsInfo.insert(
+      DistributionFaultReport(distribution1, ServiceFaultReport("fault1",
         FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
-        Seq("fault.info", "core"))))))
-    result(collection.insert(
-      FaultReportDocument(1, DistributionFaultReport(distribution2, ServiceFaultReport("fault2",
+        Seq("fault.info", "core")))))
+    result(collections.State_FaultReportsInfo.insert(
+      DistributionFaultReport(distribution2, ServiceFaultReport("fault2",
         FaultInfo(new Date(), instance1, "directory", "serviceA", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
-        Seq("fault.info", "core1"))))))
-    result(collection.insert(
-      FaultReportDocument(2, DistributionFaultReport(distribution1, ServiceFaultReport("fault3",
+        Seq("fault.info", "core1")))))
+    result(collections.State_FaultReportsInfo.insert(
+      DistributionFaultReport(distribution1, ServiceFaultReport("fault3",
         FaultInfo(new Date(), instance2, "directory", "serviceB", CommonServiceProfile, ServiceState(new Date(), None, None, None, None, None, None, None), Seq.empty),
-        Seq("fault.info", "core"))))))
+        Seq("fault.info", "core")))))
   }
 
   it should "get last fault reports for specified client" in {

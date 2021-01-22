@@ -9,7 +9,7 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.Utils.DateJson._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.FaultReportDocument
+import com.vyulabs.update.distribution.mongo.Sequenced
 import org.mongodb.scala.bson.BsonDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
@@ -26,7 +26,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
 
   val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
-  val faultsInfoCollection = result(collections.State_FaultReportsInfo)
+  val faultsInfoCollection = collections.State_FaultReportsInfo
   val sequencesCollection = result(collections.Sequences)
 
   override def dbName = super.dbName + "-distribution"
@@ -103,10 +103,10 @@ class AddFaultReportInfoTest extends TestEnvironment {
 
   def checkReportExists(faultId: FaultId, sequence: Long, date: Date): Unit = {
     assertResult(Seq(
-      FaultReportDocument(sequence, DistributionFaultReport("distribution1",
+      Sequenced(sequence, DistributionFaultReport("distribution1",
         ServiceFaultReport(faultId, FaultInfo(date, "instance1", "directory1", "service1", "Common", ServiceState(date, None, None, None, None, None, None, None),
           Seq("line1", "line2")), Seq("core", "log/service.log")))))
-    )(result(faultsInfoCollection.find(Filters.eq("report.faultId", faultId))))
+    )(result(faultsInfoCollection.findSequenced(Filters.eq("report.faultId", faultId))))
   }
 
   def checkReportNotExists(faultId: FaultId): Unit = {

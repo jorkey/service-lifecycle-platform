@@ -34,19 +34,40 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
 
   val sequenceCollection =  mongo.createCollection[SequenceDocument]("sequence")
   val testCollection = mongo.createCollection[BsonDocument]("test")
-  val test = new SequencedCollection[TestRecord](testCollection, sequenceCollection)
+  val test = new SequencedCollection[TestRecord]("test", testCollection, sequenceCollection)
 
   it should "insert/modify/delete records" in {
     result(test.insert(TestRecord("v1", "v2")))
-    result(test.update(Filters.eq("field1", "v1"), { f => TestRecord("v3", f.field2) }))
+    result(test.update(Filters.eq("field1", "v1"), {
+      record => record match {
+        case Some(r) =>
+          Some(TestRecord("v3", r.field2))
+        case None =>
+          None
+      }
+    }))
     assertResult(Seq(TestRecord("v3", "v2")))(result(test.find()))
 
     var concurrentUpdate: Future[Int] = null
     assertResult(1)(result(test.update(Filters.eq("field1", "v3"),
       record => {
-        assertResult(Seq(TestRecord("v3", "v2")))(result(test.find()))
-        concurrentUpdate = test.update(Filters.eq("field1", "v3"), r => TestRecord(r.field1, "v5"))
-        TestRecord(record.field1, "v4")
+        record match {
+          case Some(r) =>
+            assertResult(Seq(TestRecord("v3", "v2")))(result(test.find()))
+            concurrentUpdate = test.update(Filters.eq("field1", "v3"),
+              record => {
+                record match {
+                  case Some(r) =>
+                    Some(TestRecord(r.field1, "v5"))
+                  case None =>
+                    None
+                }
+              }
+            )
+            Some(TestRecord(r.field1, "v4"))
+          case None =>
+            None
+        }
       }
     )))
     val res = result(concurrentUpdate)

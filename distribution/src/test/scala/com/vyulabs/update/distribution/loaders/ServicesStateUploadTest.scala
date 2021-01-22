@@ -10,7 +10,7 @@ import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersi
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.client.HttpClientTestStub
-import com.vyulabs.update.distribution.mongo.{ServiceStateDocument, UploadStatus, UploadStatusDocument}
+import com.vyulabs.update.distribution.mongo.{UploadStatus, UploadStatusDocument}
 import spray.json.DefaultJsonProtocol._
 import spray.json.enrichAny
 
@@ -34,7 +34,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten)
+    result(collections.State_ServiceStates.insert(state1))
     waitForSetServiceStates(Seq(state1)).success(true)
 
     Thread.sleep(100)
@@ -43,7 +43,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))))
+    result(collections.State_ServiceStates.insert(state2))
     waitForSetServiceStates(Seq(state2)).success(true)
 
     Thread.sleep(100)
@@ -51,7 +51,7 @@ class ServicesStateUploadTest extends TestEnvironment {
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()
-    result(collections.State_ServiceStates.map(_.dropItems()).flatten)
+    result(collections.State_ServiceStates.drop())
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 
@@ -61,7 +61,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(0, state1))).flatten)
+    result(collections.State_ServiceStates.insert(state1))
     waitForSetServiceStates(Seq(state1)).failure(new IOException("upload error"))
 
     Thread.sleep(100)
@@ -70,12 +70,12 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(1, state2))).flatten)
+    result(collections.State_ServiceStates.insert(state2))
     waitForSetServiceStates(Seq(state1, state2)).success(true)
 
     val state3 = DistributionServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
-    result(collections.State_ServiceStates.map(_.insert(ServiceStateDocument(2, state3))).flatten)
+    result(collections.State_ServiceStates.insert(state3))
     waitForSetServiceStates(Seq(state3)).success(true)
 
     Thread.sleep(100)
@@ -84,7 +84,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     uploader.stop()
 
-    result(collections.State_ServiceStates.map(_.dropItems()).flatten)
+    result(collections.State_ServiceStates.drop())
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 

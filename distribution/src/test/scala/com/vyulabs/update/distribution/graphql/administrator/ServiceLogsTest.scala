@@ -24,8 +24,6 @@ class ServiceLogsTest extends TestEnvironment {
 
   val graphqlContext = new GraphqlContext(UserInfo("administrator", UserRole.Administrator), workspace)
 
-  val logsCollection = result(collections.State_ServiceLogs)
-
   it should "add/get service logs" in {
     val date = new Date()
 

@@ -3,11 +3,11 @@ package com.vyulabs.update.distribution.graphql.utils
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
-import com.mongodb.client.model.{Filters, Updates}
+import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.UserName
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.distribution.mongo.{DatabaseCollections}
+import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
@@ -38,11 +38,7 @@ trait UsersUtils extends SprayJsonSupport {
   def removeUser(userName: UserName): Future[Boolean] = {
     log.info(s"Remove user ${userName}")
     val filters = Filters.eq("userName", userName)
-    for {
-      profile <- {
-        collections.Users_Info.delete(filters).map(_ > 0)
-      }
-    } yield profile
+    collections.Users_Info.delete(filters).map(_ > 0)
   }
 
   def changeUserPassword(userName: UserName, oldPassword: String, password: String): Future[Boolean] = {
@@ -65,28 +61,24 @@ trait UsersUtils extends SprayJsonSupport {
     log.info(s"Change user ${userName} password")
     val filters = Filters.eq("userName", userName)
     val hash = PasswordHash(password)
-    val updates = Updates.set("content.passwordHash", hash)
-    for {
-      profile <- {
-        collections.Users_Info.update(filters, r => ServerUserInfo(r.userName, r.role, hash)).map(_ > 0)
-      }
-    } yield profile
+    collections.Users_Info.update(filters, r => r match {
+      case Some(r) =>
+        Some(ServerUserInfo(r.userName, r.role, hash))
+      case None =>
+        None
+    }).map(_ > 0)
   }
 
   def getUserCredentials(userName: UserName): Future[Option[UserCredentials]] = {
     val filters = Filters.eq("content.userName", userName)
-    for {
-      info <- collections.Users_Info.find(filters).map(_.map(info => UserCredentials(
-        UserRole.withName(info.role), info.passwordHash)).headOption)
-    } yield info
+    collections.Users_Info.find(filters).map(_.map(info => UserCredentials(
+      UserRole.withName(info.role), info.passwordHash)).headOption)
   }
 
   def getUsersInfo(userName: Option[UserName] = None): Future[Seq[UserInfo]] = {
     val clientArg = userName.map(Filters.eq("content.userName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    for {
-      info <- collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.userName, UserRole.withName(info.role))))
-    } yield info
+    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.userName, UserRole.withName(info.role))))
   }
 }

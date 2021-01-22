@@ -8,7 +8,6 @@ import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DeveloperDesired
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.distribution.mongo.DistributionClientInfoDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -24,9 +23,9 @@ class GetDesiredVersionsTest extends TestEnvironment {
   override def dbName = super.dbName + "-distribution"
 
   override def beforeAll() = {
-    val clientsInfoCollection = result(collections.Developer_DistributionClientsInfo)
+    val clientsInfoCollection = collections.Developer_DistributionClientsInfo
 
-    result(clientsInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
+    result(clientsInfoCollection.insert(DistributionClientInfo("distribution1", DistributionClientConfig("common", None))))
 
     result(collections.Developer_DesiredVersions.insert(DeveloperDesiredVersions(Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1)))),

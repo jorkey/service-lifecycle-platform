@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql
 
 import java.util.Date
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.distribution.mongo.InstalledDesiredVersionsDocument
+import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import com.vyulabs.update.common.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, DistributionFaultReport, DistributionServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, ServiceState, UpdateError, UserInfo, UserRole}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
@@ -86,7 +86,7 @@ object GraphqlTypes {
   implicit val InstallInfoType = deriveObjectType[Unit, InstallInfo]()
   implicit val ClientVersionInfoType = deriveObjectType[Unit, ClientVersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
-  implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersionsDocument]()
+  implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersions]()
   implicit val ClientConfigInfoType = deriveObjectType[Unit, DistributionClientConfig]()
   implicit val ClientInfoType = deriveObjectType[Unit, DistributionClientInfo]()
   implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()

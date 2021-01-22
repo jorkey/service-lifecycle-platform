@@ -33,23 +33,17 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     classOf[DeveloperDesiredVersion],
     classOf[DeveloperVersionInfo],
     classOf[ClientDesiredVersion],
-    classOf[InstalledDesiredVersionsDocument],
+    classOf[InstalledDesiredVersions],
     classOf[InstallInfo],
     classOf[DistributionClientProfile],
-    classOf[DistributionClientProfileDocument],
     classOf[DistributionClientConfig],
     classOf[DistributionClientInfo],
-    classOf[DistributionClientInfoDocument],
     classOf[DistributionServiceState],
     classOf[InstanceServiceState],
     classOf[ServiceState],
-    classOf[ServiceStateDocument],
     classOf[ServiceLogLine],
-    classOf[ServiceLogLineDocument],
     classOf[DistributionFaultReport],
-    classOf[FaultReportDocument],
     classOf[TestedDesiredVersions],
-    classOf[TestedDesiredVersionsDocument],
     classOf[TestSignature],
     classOf[LogLine],
     classOf[FaultInfo],
@@ -62,67 +56,67 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     _ <- collection.createIndex(Indexes.ascending("name"), new IndexOptions().unique(true))
   } yield collection
 
-  val Users_Info = new SequencedCollection[ServerUserInfo](for {
+  val Users_Info = new SequencedCollection[ServerUserInfo]("usersInfo", for {
     collection <- db.getOrCreateCollection[BsonDocument]("usersInfo")
     _ <- collection.createIndex(Indexes.ascending("userName", "_expireTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
-  val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo](for {
+  val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo]("developer.versionsInfo", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.versionsInfo")
     _ <- collection.createIndex(Indexes.ascending("serviceName", "version", "_expireTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
-  val Client_VersionsInfo = new SequencedCollection[ClientVersionInfo](for {
+  val Client_VersionsInfo = new SequencedCollection[ClientVersionInfo]("client.versionsInfo", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.versionsInfo")
     _ <- collection.createIndex(Indexes.ascending("serviceName", "version", "_expireTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
-  val Developer_DesiredVersions = new SequencedCollection[DeveloperDesiredVersions](
+  val Developer_DesiredVersions = new SequencedCollection[DeveloperDesiredVersions]("developer.desiredVersions",
     db.getOrCreateCollection[BsonDocument]("developer.desiredVersions"), Sequences)
 
-  val Client_DesiredVersions = new SequencedCollection[ClientDesiredVersions](
+  val Client_DesiredVersions = new SequencedCollection[ClientDesiredVersions]("client.desiredVersions",
     db.getOrCreateCollection[BsonDocument]("client.desiredVersions"), Sequences)
 
-  val Developer_DistributionClientsInfo = for {
-    collection <- db.getOrCreateCollection[DistributionClientInfoDocument]("developer.distributionClientsInfo")
-    _ <- collection.createIndex(Indexes.ascending("distributionName"), new IndexOptions().unique(true))
-  } yield collection
+  val Developer_DistributionClientsInfo = new SequencedCollection[DistributionClientInfo]("developer.distributionClientsInfo", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.distributionClientsInfo")
+    _ <- collection.createIndex(Indexes.ascending("distributionName", "_expireTime"), new IndexOptions().unique(true))
+  } yield collection, Sequences)
 
-  val Developer_DistributionClientsProfiles = for {
-    collection <- db.getOrCreateCollection[DistributionClientProfileDocument]("developer.distributionClientsProfiles")
-    _ <- collection.createIndex(Indexes.ascending("profileName"), new IndexOptions().unique(true))
-  } yield collection
+  val Developer_DistributionClientsProfiles = new SequencedCollection[DistributionClientProfile]("developer.distributionClientsProfiles", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.distributionClientsProfiles")
+    _ <- collection.createIndex(Indexes.ascending("profileName", "_expireTime"), new IndexOptions().unique(true))
+  } yield collection, Sequences)
 
-  val State_InstalledDesiredVersions = for {
-    collection <- db.getOrCreateCollection[InstalledDesiredVersionsDocument]("state.installedDesiredVersions")
+  val State_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("state.installedDesiredVersions", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.installedDesiredVersions")
     _ <- collection.createIndex(Indexes.ascending("distributionName"))
-  } yield collection
+  } yield collection, Sequences)
 
-  val State_TestedVersions = for {
-    collection <- db.getOrCreateCollection[TestedDesiredVersionsDocument]("state.testedDesiredVersions")
+  val State_TestedVersions = new SequencedCollection[TestedDesiredVersions]("state.testedDesiredVersions", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.testedDesiredVersions")
     _ <- collection.createIndex(Indexes.ascending("profileName"))
-  } yield collection
+  } yield collection, Sequences)
 
-  val State_ServiceStates = for {
-    collection <- db.getOrCreateCollection[ServiceStateDocument]("state.serviceStates")
-    _ <- collection.createIndex(Indexes.ascending("sequence"), new IndexOptions().unique(true))
+  val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.serviceStates")
+    _ <- collection.createIndex(Indexes.ascending("sequence", "_expireTime"), new IndexOptions().unique(true))
     _ <- collection.createIndex(Indexes.ascending("distributionName"))
     _ <- collection.createIndex(Indexes.ascending("instance.instanceId"))
     _ <- collection.createIndex(Indexes.ascending("instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
     _ <- collection.dropItems()
-  } yield collection
+  } yield collection, Sequences)
 
-  val State_ServiceLogs = for {
-    collection <- db.getOrCreateCollection[ServiceLogLineDocument]("state.serviceLogs")
+  val State_ServiceLogs = new SequencedCollection[ServiceLogLine]("state.serviceLogs", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.serviceLogs")
     _ <- collection.createIndex(Indexes.ascending("line.distributionName"))
-  } yield collection
+  } yield collection, Sequences)
 
-  val State_FaultReportsInfo = for {
-    collection <- db.getOrCreateCollection[FaultReportDocument]("state.faultReportsInfo")
+  val State_FaultReportsInfo = new SequencedCollection[DistributionFaultReport]("state.faultReportsInfo", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.faultReportsInfo")
     _ <- collection.createIndex(Indexes.ascending("distributionName"))
     _ <- collection.createIndex(Indexes.ascending("report.faultId"))
     _ <- collection.createIndex(Indexes.ascending("report.info.serviceName"))
-  } yield collection
+  } yield collection, Sequences)
 
   val State_UploadStatus = for {
     collection <- db.getOrCreateCollection[UploadStatusDocument]("state.uploadStatus")

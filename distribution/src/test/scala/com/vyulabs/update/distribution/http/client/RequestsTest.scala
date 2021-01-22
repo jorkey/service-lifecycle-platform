@@ -12,7 +12,6 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient
-import com.vyulabs.update.distribution.mongo.{DistributionClientInfoDocument, ServiceStateDocument}
 import spray.json.DefaultJsonProtocol._
 
 import java.net.URL
@@ -37,15 +36,15 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   override def dbName = super.dbName + "-client"
 
   override def beforeAll() = {
-    val serviceStatesCollection = result(collections.State_ServiceStates)
-    val clientInfoCollection = result(collections.Developer_DistributionClientsInfo)
+    val serviceStatesCollection = collections.State_ServiceStates
+    val clientInfoCollection = collections.Developer_DistributionClientsInfo
 
-    result(clientInfoCollection.insert(DistributionClientInfoDocument(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))
+    result(clientInfoCollection.insert(DistributionClientInfo("distribution1", DistributionClientConfig("common", None))))
 
-    result(serviceStatesCollection.insert(ServiceStateDocument(0,
+    result(serviceStatesCollection.insert(
       DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
         ServiceState(date = stateDate, None, None, version =
-          Some(ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3))))), None, None, None, None))))))
+          Some(ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3))))), None, None, None, None)))))
   }
 
   def httpRequests(): Unit = {
@@ -183,7 +182,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
         ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault2.info", "core"))))))(
         adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some("distribution1"), Some("service1"), Some(2))))
 
-      result(result(collections.State_FaultReportsInfo).dropItems())
+      result(collections.State_FaultReportsInfo.drop())
     }
   }
 

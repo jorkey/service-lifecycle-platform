@@ -78,18 +78,17 @@ class StateUploader(distributionName: DistributionName,
   private def uploadServiceStates(): Future[Unit] = {
     log.debug("Upload service states")
     for {
-      serviceStates <- collections.State_ServiceStates
-      fromSequence <- getLastUploadSequence(serviceStates.getName())
-      newStatesDocuments <- serviceStates.find(Filters.gt("sequence", fromSequence), sort = Some(Sorts.ascending("sequence")))
-      newStates <- Future(newStatesDocuments.map(_.content))
+      fromSequence <- getLastUploadSequence(collections.State_ServiceStates.name)
+      newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("sequence", fromSequence), sort = Some(Sorts.ascending("sequence")))
+      newStates <- Future(newStatesDocuments)
     } yield {
       if (!newStates.isEmpty) {
-        client.graphqlRequest(GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("state" -> newStates.toJson)))).
+        client.graphqlRequest(GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("state" -> newStates.map(_.document).toJson)))).
           andThen {
             case Success(_) =>
-              setLastUploadSequence(serviceStates.getName(), newStatesDocuments.last.sequence)
+              setLastUploadSequence(collections.State_ServiceStates.name, newStatesDocuments.last.sequence)
             case Failure(ex) =>
-              setLastUploadError(serviceStates.getName(), ex.getMessage)
+              setLastUploadError(collections.State_ServiceStates.name, ex.getMessage)
           }
       } else {
         Promise[Unit].success(Unit).future
@@ -100,24 +99,23 @@ class StateUploader(distributionName: DistributionName,
   private def uploadFaultReports(): Future[Unit] = {
     log.debug("Upload fault reports")
     for {
-      faultReports <- collections.State_FaultReportsInfo
-      fromSequence <- getLastUploadSequence(faultReports.getName())
-      newReportsDocuments <- faultReports.find(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
-      newReports <- Future(newReportsDocuments.map(_.content))
+      fromSequence <- getLastUploadSequence(collections.State_FaultReportsInfo.name)
+      newReportsDocuments <- collections.State_FaultReportsInfo.findSequenced(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
+      newReports <- Future(newReportsDocuments)
     } yield {
       if (!newReports.isEmpty) {
-        Future.sequence(newReports.filter(_.distributionName == distributionName).map(report => {
-          val file = distributionDirectory.getFaultReportFile(report.report.faultId)
+        Future.sequence(newReports.filter(_.document.distributionName == distributionName).map(report => {
+          val file = distributionDirectory.getFaultReportFile(report.document.report.faultId)
           val infoUpload = for {
-            _ <- client.uploadFaultReport(report.report.faultId, file)
-            _ <- client.graphqlRequest(GraphqlMutation[Boolean]("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.report.toJson))))
+            _ <- client.uploadFaultReport(report.document.report.faultId, file)
+            _ <- client.graphqlRequest(GraphqlMutation[Boolean]("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.document.report.toJson))))
           } yield {}
           infoUpload.
             andThen {
               case Success(_) =>
-                setLastUploadSequence(faultReports.getName(), newReportsDocuments.last._id)
+                setLastUploadSequence(collections.State_FaultReportsInfo.name, newReportsDocuments.last.sequence)
               case Failure(ex) =>
-                setLastUploadError(faultReports.getName(), ex.getMessage)
+                setLastUploadError(collections.State_FaultReportsInfo.name, ex.getMessage)
             }
         }))
       } else {
