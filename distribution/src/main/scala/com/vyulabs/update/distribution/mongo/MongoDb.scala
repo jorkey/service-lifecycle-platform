@@ -122,7 +122,7 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T])
       .runWith(Sink.fold[Seq[Document], Document](Seq.empty[Document])((seq, obj) => {seq :+ obj}))
   }
 
-  def delete(filters: Bson): Future[DeleteResult] = {
+  def delete(filters: Bson = new BsonDocument()): Future[DeleteResult] = {
     Source.fromPublisher(collection.deleteMany(filters))
       .log(s"Delete from Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.head[DeleteResult])

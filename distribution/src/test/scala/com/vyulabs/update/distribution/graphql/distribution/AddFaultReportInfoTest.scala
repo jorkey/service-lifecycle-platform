@@ -10,7 +10,6 @@ import com.vyulabs.update.common.utils.Utils.DateJson._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import com.vyulabs.update.distribution.mongo.Sequenced
-import org.mongodb.scala.bson.BsonDocument
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -115,8 +114,8 @@ class AddFaultReportInfoTest extends TestEnvironment {
   }
 
   def clear(): Unit = {
-    result(faultsInfoCollection.delete(new BsonDocument()))
     distributionDir.getFaultsDir().listFiles().foreach(_.delete())
-    result(sequencesCollection.delete(new BsonDocument()))
+    result(faultsInfoCollection.drop())
+    result(sequencesCollection.delete())
   }
 }

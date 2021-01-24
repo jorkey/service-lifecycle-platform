@@ -64,6 +64,6 @@ class AddFaultReportInfoTest extends TestEnvironment {
       Sequenced(1, DistributionFaultReport(distributionName,
         ServiceFaultReport("fault1", FaultInfo(date, "instance1", "directory1", "service1", "Common", ServiceState(date, None, None, None, None, None, None, None),
           Seq("line1", "line2")), Seq("core", "log/service.log")))))
-    )(result(faultsInfoCollection.find()))
+    )(result(faultsInfoCollection.findSequenced()))
   }
 }
