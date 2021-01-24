@@ -38,7 +38,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     waitForSetServiceStates(Seq(state1)).success(true)
 
     Thread.sleep(100)
-    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(0), None)))(
+    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(1), None)))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
@@ -47,7 +47,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     waitForSetServiceStates(Seq(state2)).success(true)
 
     Thread.sleep(100)
-    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(1), None)))(
+    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(2), None)))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()
@@ -79,7 +79,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     waitForSetServiceStates(Seq(state3)).success(true)
 
     Thread.sleep(100)
-    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(2), None)))(
+    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(3), None)))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()

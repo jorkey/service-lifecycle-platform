@@ -79,7 +79,7 @@ class StateUploader(distributionName: DistributionName,
     log.debug("Upload service states")
     for {
       fromSequence <- getLastUploadSequence(collections.State_ServiceStates.name)
-      newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("sequence", fromSequence), sort = Some(Sorts.ascending("sequence")))
+      newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
       newStates <- Future(newStatesDocuments)
     } yield {
       if (!newStates.isEmpty) {
