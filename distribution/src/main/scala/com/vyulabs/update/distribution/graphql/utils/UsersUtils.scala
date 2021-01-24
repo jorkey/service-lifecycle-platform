@@ -70,13 +70,13 @@ trait UsersUtils extends SprayJsonSupport {
   }
 
   def getUserCredentials(userName: UserName): Future[Option[UserCredentials]] = {
-    val filters = Filters.eq("content.userName", userName)
+    val filters = Filters.eq("userName", userName)
     collections.Users_Info.find(filters).map(_.map(info => UserCredentials(
       UserRole.withName(info.role), info.passwordHash)).headOption)
   }
 
   def getUsersInfo(userName: Option[UserName] = None): Future[Seq[UserInfo]] = {
-    val clientArg = userName.map(Filters.eq("content.userName", _))
+    val clientArg = userName.map(Filters.eq("userName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.userName, UserRole.withName(info.role))))

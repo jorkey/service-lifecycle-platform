@@ -1,6 +1,6 @@
 package com.vyulabs.update.distribution.mongo
 
-import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, IndexOptions, Indexes, ReturnDocument, Updates}
+import com.mongodb.client.model._
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
@@ -74,10 +74,9 @@ class SequencedCollection[T: ClassTag](val name: String,
   def update(filters: Bson, modify: Option[T] => Option[T]): Future[Int] = {
     def process(): Future[Int] = {
       for {
-        collection <- collection
         docs <- findDocuments(filters)
         result <- {
-          if (docs.isEmpty) {
+          if (!docs.isEmpty) {
             Future.sequence(docs.map { doc => updateAndInsert(Some(doc)) }).map(_.foldLeft(0)((sum, elem) => sum + elem))
           } else {
             updateAndInsert(None).map(_ => 1)
@@ -173,10 +172,14 @@ class SequencedCollection[T: ClassTag](val name: String,
     for {
       collection <- collection
       docs <- collection.find(Filters.and(filters,
-        Filters.or(Filters.exists("_expireTime", false), Filters.exists("_replacedBy", true))))
+        Filters.or(Filters.exists("_expireTime", false), Filters.exists("_replacedBy", true))), sort)
     } yield {
       val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_id").asInt64())
       docs.filter(doc => { !doc.containsKey("_replacedBy") || !notReplaced.contains(doc.get("_replacedBy").asInt64()) })
+      limit match {
+        case Some(limit) => docs.take(limit)
+        case None => docs
+      }
     }
   }
 

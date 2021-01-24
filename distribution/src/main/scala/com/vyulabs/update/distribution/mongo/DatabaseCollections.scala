@@ -31,8 +31,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
     classOf[BuildInfo],
     classOf[ClientVersionInfo],
     classOf[DeveloperDesiredVersion],
+    classOf[DeveloperDesiredVersions],
     classOf[DeveloperVersionInfo],
     classOf[ClientDesiredVersion],
+    classOf[ClientDesiredVersions],
     classOf[InstalledDesiredVersions],
     classOf[InstallInfo],
     classOf[DistributionClientProfile],
@@ -99,7 +101,6 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
 
   val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.serviceStates")
-    _ <- collection.createIndex(Indexes.ascending("sequence", "_expireTime"), new IndexOptions().unique(true))
     _ <- collection.createIndex(Indexes.ascending("distributionName"))
     _ <- collection.createIndex(Indexes.ascending("instance.instanceId"))
     _ <- collection.createIndex(Indexes.ascending("instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
@@ -133,7 +134,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit exe
   }
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
-    val filters = Filters.eq("content.userName", "admin")
+    val filters = Filters.eq("userName", "admin")
     for {
       adminRecords <- Users_Info.find(filters)
     } yield {
