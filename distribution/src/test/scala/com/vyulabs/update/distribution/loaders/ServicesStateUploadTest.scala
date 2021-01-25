@@ -51,8 +51,7 @@ class ServicesStateUploadTest extends TestEnvironment {
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()
-    result(collections.State_ServiceStates.drop())
-    result(collections.State_UploadStatus.map(_.dropItems()).flatten)
+    clear()
   }
 
   it should "try to upload service states again after failure" in {
@@ -83,12 +82,16 @@ class ServicesStateUploadTest extends TestEnvironment {
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()
-
-    result(collections.State_ServiceStates.drop())
-    result(collections.State_UploadStatus.map(_.dropItems()).flatten)
+    clear()
   }
 
-  def waitForSetServiceStates(states: Seq[DistributionServiceState]): Promise[Boolean] = {
+  private def waitForSetServiceStates(states: Seq[DistributionServiceState]): Promise[Boolean] = {
     httpClient.waitForMutation("setServiceStates", Seq(GraphqlArgument("state" -> states.toJson)))
+  }
+
+  private def clear(): Unit = {
+    result(collections.State_ServiceStates.drop())
+    result(collections.State_UploadStatus.map(_.dropItems()).flatten)
+    result(result(collections.Sequences).drop())
   }
 }

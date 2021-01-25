@@ -5,7 +5,7 @@ import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, G
 import org.scalatest.Matchers
 import spray.json.JsonReader
 
-import java.io.File
+import java.io.{File, IOException}
 import scala.collection.immutable.Queue
 import scala.concurrent.{Future, Promise}
 
@@ -59,7 +59,10 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
   private def waitForRequest[T](): T = {
     synchronized {
       while (requests.isEmpty) {
-        wait()
+        wait(15000)
+      }
+      if (requests.isEmpty) {
+        throw new IOException("Waiting for request timeout")
       }
       val (request, newRequests) = requests.dequeue
       requests = newRequests
