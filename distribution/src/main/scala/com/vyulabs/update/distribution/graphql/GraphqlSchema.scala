@@ -60,6 +60,7 @@ object GraphqlSchema {
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientDistributionVersionType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
+  val OptionFromArg = Argument("from", OptionInputType(LongType))
 
   // Queries
 
@@ -228,6 +229,10 @@ object GraphqlSchema {
   def AdministratorSubscriptions(implicit materializer: Materializer) = ObjectType(
     "Subscription",
     fields[GraphqlContext, Unit](
+      Field.subs("subscribeServiceLogs", SequencedServiceLogLineType,
+        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromArg :: Nil,
+        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeServiceLogs(
+          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
       Field.subs("testSubscription", StringType,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))

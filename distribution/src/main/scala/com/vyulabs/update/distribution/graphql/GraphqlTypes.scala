@@ -1,16 +1,17 @@
 package com.vyulabs.update.distribution.graphql
 
-import java.util.Date
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
-import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
-import com.vyulabs.update.common.info.{BuildInfo, ClientDesiredVersion, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInfo, DeveloperVersionsInfo, DirectoryServiceState, DistributionFaultReport, DistributionServiceState, FaultInfo, InstallInfo, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, ServiceState, UpdateError, UserInfo, UserRole}
+import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import sangria.ast.StringValue
-import sangria.schema._
 import sangria.macros.derive._
+import sangria.schema._
 import sangria.validation.Violation
+
+import java.util.Date
 
 object GraphqlTypes {
   private case object DateCoerceViolation extends Violation {
@@ -77,6 +78,8 @@ object GraphqlTypes {
       case _ => Left(VersionViolation)
     })
 
+  case class SequencedServiceLogLine(sequence: Long, logLine: ServiceLogLine)
+
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
 
   implicit val DeveloperDesiredVersionType = deriveObjectType[Unit, DeveloperDesiredVersion]()
@@ -97,6 +100,7 @@ object GraphqlTypes {
   implicit val ClientServiceStateType = deriveObjectType[Unit, DistributionServiceState]()
   implicit val LogLineType = deriveObjectType[Unit, LogLine]()
   implicit val ServiceLogLineType = deriveObjectType[Unit, ServiceLogLine]()
+  implicit val SequencedServiceLogLineType = deriveObjectType[Unit, SequencedServiceLogLine]()
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
   implicit val ServiceFaultReportType = deriveObjectType[Unit, ServiceFaultReport]()
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
@@ -112,6 +116,6 @@ object GraphqlTypes {
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))
   implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))
   implicit val LogLineInputType = deriveInputObjectType[LogLine](InputObjectTypeName("LogLineInput"))
-  implicit val FaultInfoInputType = deriveInputObjectType[FaultInfo]((InputObjectTypeName("FaultInfoInput")))
-  implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport]((InputObjectTypeName("ServiceFaultReportInput")))
+  implicit val FaultInfoInputType = deriveInputObjectType[FaultInfo](InputObjectTypeName("FaultInfoInput"))
+  implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
 }

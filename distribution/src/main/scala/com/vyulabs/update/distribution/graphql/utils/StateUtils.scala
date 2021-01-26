@@ -6,7 +6,7 @@ import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.{Materializer, OverflowStrategy}
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.{Concat, Sink, Source}
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId, ProcessId, ProfileName, ServiceDirectory, ServiceName}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -14,12 +14,14 @@ import com.vyulabs.update.distribution.config.FaultReportsConfig
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, InstalledDesiredVersions, Sequenced, SequencedCollection}
 import com.vyulabs.update.common.info.{ClientDesiredVersion, DeveloperDesiredVersion, DistributionFaultReport, DistributionServiceState, InstanceServiceState, LogLine, ServiceFaultReport, ServiceLogLine, TestSignature, TestedDesiredVersions}
 import com.vyulabs.update.distribution.common.AkkaSource
+import com.vyulabs.update.distribution.graphql.GraphqlTypes.SequencedServiceLogLine
 import org.bson.BsonDocument
 import org.slf4j.LoggerFactory
 import sangria.schema.Action
 
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters.asJavaIterableConverter
+import scala.collection.immutable.Queue
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,6 +38,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   protected val faultReportsConfig: FaultReportsConfig
 
   private val (logCallback, logPublisher) = Source.fromGraph(new AkkaSource[Sequenced[ServiceLogLine]]()).toMat(Sink.asPublisher(fanout = true))((m1, m2) => (m1, m2)).run()
+  private var logsBuffer = Queue.empty[Sequenced[ServiceLogLine]]
 
   def setInstalledDesiredVersions(distributionName: DistributionName, desiredVersions: Seq[ClientDesiredVersion]): Future[Boolean] = {
     val clientArg = Filters.eq("distributionName", distributionName)
@@ -114,7 +117,12 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
     } yield {
       var sequence = firstSequence
       documents.foreach { doc =>
-        logCallback.invoke(Sequenced(sequence, doc))
+        val log = Sequenced(sequence, doc)
+        logsBuffer = logsBuffer.enqueue(log)
+        if (logsBuffer.size > 1000) {
+          logsBuffer = logsBuffer.takeRight(1000)
+        }
+        logCallback.invoke(log)
         sequence += 1
       }
       true
@@ -134,16 +142,20 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   }
 
   def subscribeServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId,
-                           processId: ProcessId, directory: ServiceDirectory, from: Option[Long]): Source[Action[Nothing, Sequenced[ServiceLogLine]], NotUsed] = {
-    Source.fromPublisher(logPublisher)
+                           processId: ProcessId, directory: ServiceDirectory, fromSequence: Option[Long]): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+    val bufferedLogs = fromSequence.map(sequence => logsBuffer.filter(_.sequence >= sequence)).getOrElse(Queue.empty)
+    val from = fromSequence.map(sequence => Math.max(sequence, bufferedLogs.lastOption.map(_.sequence + 1).getOrElse(sequence)))
+    val bufferSource = Source.fromIterator(() => bufferedLogs.iterator)
+    val publisherSource = Source.fromPublisher(logPublisher)
       .filter(_.document.distributionName == distributionName)
       .filter(_.document.serviceName == serviceName)
       .filter(_.document.instanceId == instanceId)
       .filter(_.document.processId == processId)
       .filter(_.document.directory == directory)
-      .filter(from.isEmpty || from.get < _.sequence)
+      .filter(from.isEmpty || from.get <= _.sequence)
       .takeWhile(!_.document.line.eof.getOrElse(false))
-      .map(Action(_))
+    Source.combine(bufferSource, publisherSource)(Concat(_))
+      .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(250, OverflowStrategy.fail)
   }
 
