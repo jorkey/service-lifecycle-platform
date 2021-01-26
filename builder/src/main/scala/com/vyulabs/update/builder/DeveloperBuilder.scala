@@ -6,9 +6,9 @@ import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.config.InstallConfig._
 import com.vyulabs.update.common.config.UpdateConfig
-import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
-import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersion, DeveloperVersionInfo}
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils.copyFile
@@ -35,7 +35,7 @@ object DeveloperBuilder {
   def developerSourceDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "source"))
 
   def buildDeveloperVersion(distribution: SyncDistributionClient[SyncSource], settingsDirectory: SettingsDirectory,
-                            author: String, serviceName: ServiceName, newVersion: Option[DeveloperVersion],
+                            author: String, serviceName: ServiceName, newVersion: DeveloperVersion,
                             comment: Option[String], sourceBranches: Seq[String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Option[DeveloperDistributionVersion] = {
     IoUtils.synchronize[Option[DeveloperDistributionVersion]](new File(developerServiceDir(serviceName), builderLockFile), false,
@@ -47,18 +47,11 @@ object DeveloperBuilder {
         true
       },
       () => {
-        val version = newVersion match {
-          case Some(version) =>
-            log.info("Check for version exist")
-            val developerDistributionVersion = DeveloperDistributionVersion(distribution.distributionName, version)
-            if (doesDeveloperVersionExist(distribution, serviceName, developerDistributionVersion)) {
-              log.error(s"Version ${version} already exists")
-              return None
-            }
-            developerDistributionVersion
-          case None =>
-            log.error(s"Generate new version number")
-            generateNewVersionNumber(distribution, serviceName)
+        log.info("Check for version exist")
+        val newDistributionVersion = DeveloperDistributionVersion(distribution.distributionName, newVersion)
+        if (doesDeveloperVersionExist(distribution, serviceName, newDistributionVersion)) {
+          log.error(s"Version ${newDistributionVersion} already exists")
+          return None
         }
 
         log.info(s"Pull source repositories")
@@ -68,49 +61,28 @@ object DeveloperBuilder {
           return None
         }
 
-        log.info(s"Generate version ${version}")
-        val arguments = Map("version" -> version.toString)
+        log.info(s"Generate version ${newDistributionVersion}")
+        val arguments = Map("version" -> newDistributionVersion.toString)
         if (!generateDeveloperVersion(serviceName, sourceRepositories.map(_.getDirectory()), arguments)) {
           log.error(s"Can't generate version")
           return None
         }
 
-        log.info(s"Upload version image ${version} to distribution server")
+        log.info(s"Upload version image ${newDistributionVersion} to distribution server")
         val buildInfo = BuildInfo(author, sourceBranches, new Date(), comment)
-        if (!ZipUtils.zipAndSend(developerBuildDir(serviceName), file => uploadDeveloperVersionImage(distribution, serviceName, version, buildInfo, file))) {
+        if (!ZipUtils.zipAndSend(developerBuildDir(serviceName), file => uploadDeveloperVersionImage(distribution, serviceName, newDistributionVersion, buildInfo, file))) {
           log.error("Can't upload version image")
           return None
         }
 
-        log.info(s"Mark source repositories with version ${version}")
-        if (!markSourceRepositories(sourceRepositories, serviceName, version, comment)) {
+        log.info(s"Mark source repositories with version ${newDistributionVersion}")
+        if (!markSourceRepositories(sourceRepositories, serviceName, newDistributionVersion, comment)) {
           log.error("Can't mark source repositories with new version")
         }
 
-        log.info(s"Version ${version} is created successfully")
-        Some(version)
+        log.info(s"Version ${newDistributionVersion} is created successfully")
+        Some(newDistributionVersion)
       }).flatten
-  }
-
-  def setDeveloperDesiredVersions(distributionClient: SyncDistributionClient[SyncSource],
-                                  servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
-                                 (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
-    log.info(s"Upload developer desired versions ${servicesVersions}")
-    var desiredVersionsMap = getDeveloperDesiredVersions(distributionClient).getOrElse(Map.empty)
-    servicesVersions.foreach {
-      case (serviceName, Some(version)) =>
-        desiredVersionsMap += (serviceName -> version)
-      case (serviceName, None) =>
-        desiredVersionsMap -= serviceName
-    }
-    val desiredVersionsList = desiredVersionsMap.foldLeft(Seq.empty[DeveloperDesiredVersion])(
-      (list, entry) => list :+ DeveloperDesiredVersion(entry._1, entry._2)).sortBy(_.serviceName)
-    if (!distributionClient.graphqlRequest(administratorMutations.setDeveloperDesiredVersions(desiredVersionsList)).getOrElse(false)) {
-      log.error("Can't update developer desired versions")
-      return false
-    }
-    log.info(s"Developer desired versions are successfully uploaded")
-    true
   }
 
   def pullSourceDirectories(settingsDirectory: SettingsDirectory, serviceName: ServiceName, sourceBranches: Seq[String]): Seq[GitRepository] = {
@@ -213,19 +185,6 @@ object DeveloperBuilder {
 
   def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
     distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName), Some(version))).size != 0
-  }
-
-  private def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName): DeveloperDistributionVersion = {
-    log.info("Get existing versions")
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName))) match {
-      case Some(versions) if !versions.isEmpty =>
-        val lastVersion = versions.map(_.version).sorted(DeveloperDistributionVersion.ordering).last
-        log.info(s"Last version is ${lastVersion}")
-        lastVersion.next()
-      case _ =>
-        log.error("No existing versions")
-        DeveloperDistributionVersion(distributionClient.distributionName, DeveloperVersion(Seq(1, 0, 0)))
-    }
   }
 
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], serviceName: ServiceName,

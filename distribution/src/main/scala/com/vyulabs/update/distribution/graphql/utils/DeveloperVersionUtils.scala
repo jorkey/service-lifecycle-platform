@@ -3,15 +3,17 @@ package com.vyulabs.update.distribution.graphql.utils
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.distribution.client.DistributionClient
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.config.VersionHistoryConfig
 import com.vyulabs.update.distribution.graphql.NotFoundException
-import com.vyulabs.update.distribution.mongo.{DatabaseCollections}
+import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -28,6 +30,23 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   protected val versionHistoryConfig: VersionHistoryConfig
 
   protected implicit val executionContext: ExecutionContext
+
+  def buildDeveloperVersion(): Unit = {
+
+  }
+
+  def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName): DeveloperDistributionVersion = {
+    log.info("Get existing versions")
+    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName))) match {
+      case Some(versions) if !versions.isEmpty =>
+        val lastVersion = versions.map(_.version).sorted(DeveloperDistributionVersion.ordering).last
+        log.info(s"Last version is ${lastVersion}")
+        lastVersion.next()
+      case _ =>
+        log.error("No existing versions")
+        DeveloperDistributionVersion(distributionClient.distributionName, DeveloperVersion(Seq(1, 0, 0)))
+    }
+  }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo): Future[Boolean] = {
     log.info(s"Add developer version info ${versionInfo}")
@@ -75,6 +94,26 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     val versionArg = version.map { version => Filters.eq("version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     collections.Developer_VersionsInfo.find(filters)
+  }
+
+  def setDeveloperDesiredVersions(servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
+                                 (implicit log: Logger, filesLocker: SmartFilesLocker): Future[Boolean] = {
+    log.info(s"Upload developer desired versions ${servicesVersions}")
+    for {
+      desiredVersions <- getDeveloperDesiredVersions(servicesVersions.keySet)
+      result <- {
+        var desiredVersionsMap = DeveloperDesiredVersions.toMap(desiredVersions)
+        servicesVersions.foreach {
+          case (serviceName, Some(version)) =>
+            desiredVersionsMap += (serviceName -> version)
+          case (serviceName, None) =>
+            desiredVersionsMap -= serviceName
+        }
+        val desiredVersionsList = desiredVersionsMap.foldLeft(Seq.empty[DeveloperDesiredVersion])(
+          (list, entry) => list :+ DeveloperDesiredVersion(entry._1, entry._2)).sortBy(_.serviceName)
+        setDeveloperDesiredVersions(desiredVersionsList)
+      }
+    } yield result
   }
 
   def setDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion]): Future[Boolean] = {

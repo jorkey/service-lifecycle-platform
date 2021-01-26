@@ -8,7 +8,7 @@ import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersi
 import com.vyulabs.update.distribution.config.VersionHistoryConfig
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
@@ -64,6 +64,26 @@ trait ClientVersionUtils extends DistributionClientsUtils {
       Filters.eq("version", version))
     dir.getClientVersionImageFile(serviceName, version).delete()
     collections.Client_VersionsInfo.delete(filters).map(_ > 0)
+  }
+
+  def setClientDesiredVersions(versions: Map[ServiceName, Option[ClientDistributionVersion]])
+                              (implicit log: Logger): Future[Boolean] = {
+    for {
+      desiredVersions <- getClientDesiredVersions(versions.keySet)
+      result <- {
+        val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions)
+        val newVersions =
+          versions.foldLeft(desiredVersionsMap) {
+            (map, entry) => entry._2 match {
+              case Some(version) =>
+                map + (entry._1 -> version)
+              case None =>
+                map - entry._1
+            }}
+        val newDesiredVersions = ClientDesiredVersions.fromMap(newVersions)
+        setClientDesiredVersions(newDesiredVersions)
+      }
+    } yield result
   }
 
   def getClientDesiredVersions(serviceNames: Set[ServiceName] = Set.empty): Future[Seq[ClientDesiredVersion]] = {

@@ -84,28 +84,22 @@ object BuilderMain extends App {
         case "buildDeveloperVersion" =>
           val author = arguments.getValue("author")
           val serviceName = arguments.getValue("service")
-          val version = arguments.getOptionValue("version").map(DeveloperVersion.parse(_))
+          val version = DeveloperVersion.parse(arguments.getValue("version"))
           val comment: Option[String] = arguments.getOptionValue("comment")
           val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
-          val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
           buildDeveloperVersion(distributionClient, settingsRepository, author, serviceName, version, comment, sourceBranches) match {
             case Some(newBuilderVersion) =>
-              if (setDesiredVersion && !setDeveloperDesiredVersions(distributionClient, Map(serviceName -> Some(newBuilderVersion)))) {
-                Utils.error("Can't set developer desired version")
-              }
+              log.info(s"Generated developer version ${newBuilderVersion}")
             case None =>
               Utils.error("Developer version is not generated")
           }
         case "buildClientVersions" =>
           val author = arguments.getValue("author")
           val serviceNames = arguments.getOptionValue("services").map(_.split(",").toSeq).getOrElse(Seq.empty)
-          val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
           val settings = Map("distribDirectoryUrl" -> distributionUrl.toString)
           val newVersions = buildClientVersions(distributionClient, settingsRepository, serviceNames, author, settings)
-          if (setDesiredVersion && !newVersions.isEmpty) {
-            if (!setClientDesiredVersions(distributionClient, newVersions.mapValues(Some(_)))) {
-              Utils.error("Can't set client desired versions")
-            }
+          if (!newVersions.isEmpty) {
+            log.info(s"Generated new client versions ${newVersions}")
           }
       }
   }

@@ -144,28 +144,6 @@ object ClientBuilder {
     true
   }
 
-  def setClientDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Map[ServiceName, Option[ClientDistributionVersion]])
-                              (implicit log: Logger): Boolean = {
-    val desiredVersionsMap = ClientDesiredVersions.toMap(distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions()).getOrElse {
-      log.error("Error of getting desired versions")
-      return false
-    })
-    val newVersions =
-      versions.foldLeft(desiredVersionsMap) {
-        (map, entry) => entry._2 match {
-          case Some(version) =>
-            map + (entry._1 -> version)
-          case None =>
-            map - entry._1
-        }}
-    val desiredVersions = ClientDesiredVersions.fromMap(newVersions)
-    if (!distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(desiredVersions)).getOrElse(false)) {
-      log.error("Error of uploading desired versions")
-      return false
-    }
-    true
-  }
-
   private def mergeInstallConfigFile(adminRepository: SettingsDirectory, serviceName: ServiceName)
                                     (implicit log: Logger): Boolean = {
     val buildConfigFile = new File(clientBuildDir(serviceName), Common.InstallConfigFileName)
