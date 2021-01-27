@@ -188,7 +188,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }),
 
       Field("addServiceLogs", BooleanType,
-        arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg ::  DirectoryArg :: LogLinesArg :: Nil,
+        arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.distributionName,
           c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) })
     )

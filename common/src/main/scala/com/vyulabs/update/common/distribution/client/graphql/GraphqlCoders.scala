@@ -83,7 +83,7 @@ trait CommonMutationsCoder {
                      serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
     GraphqlMutation[Boolean]("addServiceLogs",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("instance" -> instanceId), GraphqlArgument("process" -> processId),
-        GraphqlArgument("taskId" -> taskId), GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")))
+        GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ taskId.map(taskId => GraphqlArgument("taskId" -> taskId)))
 }
 
 object CommonMutationsCoder extends CommonMutationsCoder
