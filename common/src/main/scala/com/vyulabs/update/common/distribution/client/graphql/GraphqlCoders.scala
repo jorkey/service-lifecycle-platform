@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.distribution.client.graphql
 
-import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId, ProcessId, ServiceDirectory, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId, ProcessId, ServiceDirectory, ServiceName, TaskId}
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -79,11 +79,11 @@ object ServiceQueriesCoder extends CommonQueriesCoder {
 }
 
 trait CommonMutationsCoder {
-  def addServiceLogs(serviceName: ServiceName, instanceId: InstanceId, processId: ProcessId,
+  def addServiceLogs(serviceName: ServiceName, instanceId: InstanceId, processId: ProcessId, taskId: Option[TaskId],
                      serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
     GraphqlMutation[Boolean]("addServiceLogs",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("instance" -> instanceId), GraphqlArgument("process" -> processId),
-        GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")))
+        GraphqlArgument("taskId" -> taskId), GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")))
 }
 
 object CommonMutationsCoder extends CommonMutationsCoder

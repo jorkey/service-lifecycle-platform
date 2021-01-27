@@ -1,10 +1,10 @@
 package com.vyulabs.update.distribution.graphql.utils
 
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersions, ClientVersionInfo}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersions}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.config.VersionHistoryConfig
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
@@ -13,14 +13,47 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends DistributionClientsUtils {
+trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsUtils {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
+  protected val distributionName: DistributionName
   protected val versionHistoryConfig: VersionHistoryConfig
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
   protected implicit val executionContext: ExecutionContext
+
+  def buildClientVersions(serviceNames: Seq[ServiceName], author: String): Future[TaskId] = {
+    for {
+      developerDesiredVersions <- getDeveloperDesiredVersions(serviceNames.toSet).map(DeveloperDesiredVersions.toMap(_))
+      clientDesiredVersions <- {
+        Future.sequence(developerDesiredVersions.map {
+          case (serviceName, developerVersion) =>
+            for {
+              existingVersions <- getClientVersionsInfo(serviceName).map(_.map(_.version)
+                .filter(_.original() == developerVersion))
+              result <- {
+                val clientVersion =
+                  if (!existingVersions.isEmpty) {
+                    existingVersions.sorted(ClientDistributionVersion.ordering).last.next()
+                  } else {
+                    ClientDistributionVersion(distributionName, ClientVersion(developerVersion.version))
+                  }
+                buildClientVersion(serviceName, developerVersion, clientVersion, author)
+                  .map(_ => (serviceName -> clientVersion))
+              }
+            } yield result
+        }).map(_.foldLeft(Map.empty[ServiceName, ClientDistributionVersion])((map, entry) => map + entry))
+      }
+      result <- setClientDesiredVersions(ClientDesiredVersions.fromMap(clientDesiredVersions)).map(_ => "12345")
+    } yield result
+  }
+
+  def buildClientVersion(serviceName: ServiceName,
+                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String): Future[Unit] = {
+    // TODO
+    null
+  }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo): Future[Boolean] = {
     log.info(s"Add client version info ${versionInfo}")
@@ -67,7 +100,7 @@ trait ClientVersionUtils extends DistributionClientsUtils {
   }
 
   def setClientDesiredVersions(versions: Map[ServiceName, Option[ClientDistributionVersion]])
-                              (implicit log: Logger): Future[Boolean] = {
+                              (implicit log: Logger): Future[Unit] = {
     for {
       desiredVersions <- getClientDesiredVersions(versions.keySet)
       result <- {

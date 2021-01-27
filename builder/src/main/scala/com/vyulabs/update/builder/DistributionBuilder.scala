@@ -51,6 +51,8 @@ object DistributionBuilder {
       return false
     }
 
+    // TODO init desired versions
+
     false
   }
 

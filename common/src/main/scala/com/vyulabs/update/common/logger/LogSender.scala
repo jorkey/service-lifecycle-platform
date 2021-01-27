@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.logger
 
-import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName}
+import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName, TaskId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.CommonMutationsCoder
 import com.vyulabs.update.common.info.LogLine
@@ -9,7 +9,7 @@ import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LogSender[Source[_]](serviceName: ServiceName, instanceId: InstanceId, client: DistributionClient[Source])
+class LogSender[Source[_]](serviceName: ServiceName, instanceId: InstanceId, taskId: Option[TaskId], client: DistributionClient[Source])
                (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -18,6 +18,6 @@ class LogSender[Source[_]](serviceName: ServiceName, instanceId: InstanceId, cli
 
   override def receiveLogLines(events: Seq[LogLine]): Future[Unit] = {
     client.graphqlRequest(
-      CommonMutationsCoder.addServiceLogs(serviceName, instanceId, processId.toString, directory, events)).map(_ => ())
+      CommonMutationsCoder.addServiceLogs(serviceName, instanceId, processId.toString, taskId, directory, events)).map(_ => ())
   }
 }

@@ -4,12 +4,11 @@ import com.vyulabs.update.builder.ClientBuilder._
 import com.vyulabs.update.builder.DeveloperBuilder._
 import com.vyulabs.update.builder.DistributionBuilder._
 import com.vyulabs.update.builder.config.BuilderConfig
-import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
+import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.lock.SmartFilesLocker
-import com.vyulabs.update.common.logger.{LogSender, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
-import com.vyulabs.update.common.version.DeveloperVersion
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.SettingsDirectory
 import org.slf4j.LoggerFactory
 
@@ -34,7 +33,7 @@ object BuilderMain extends App {
     "    buildDistribution <distributionName=value> <author=value> [sourceBranches=value1[,value2]...]\n" +
     "    buildDistribution <distributionName=value> <developerDistributionName=value>\n" +
     "    buildDeveloperVersion <distributionName=value> <service=value> <version=value> [comment=value] [sourceBranches=value1[,value2]...]\n" +
-    "    buildClientVersion <distributionName=value> <service=value>"
+    "    buildClientVersion <distributionName=value> <service=value> <developerVersion=value> <clientVersion=value>"
 
   if (args.size < 1) Utils.error(usage())
 
@@ -78,7 +77,7 @@ object BuilderMain extends App {
       }
       val asyncDistributionClient = new DistributionClient(distributionName, new HttpClientImpl(distributionUrl))
       val distributionClient = new SyncDistributionClient(asyncDistributionClient, FiniteDuration(60, TimeUnit.SECONDS))
-      TraceAppender.handleLogs(new LogSender(Common.DistributionServiceName, config.instanceId, asyncDistributionClient))
+      //TraceAppender.handleLogs(new LogSender(Common.DistributionServiceName, config.instanceId, asyncDistributionClient))
 
       command match {
         case "buildDeveloperVersion" =>
@@ -87,19 +86,20 @@ object BuilderMain extends App {
           val version = DeveloperVersion.parse(arguments.getValue("version"))
           val comment: Option[String] = arguments.getOptionValue("comment")
           val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
-          buildDeveloperVersion(distributionClient, settingsRepository, author, serviceName, version, comment, sourceBranches) match {
-            case Some(newBuilderVersion) =>
-              log.info(s"Generated developer version ${newBuilderVersion}")
-            case None =>
-              Utils.error("Developer version is not generated")
+          if (!buildDeveloperVersion(distributionClient, settingsRepository, author, serviceName,
+            DeveloperDistributionVersion(distributionName, version), comment, sourceBranches)) {
+            Utils.error("Developer version is not generated")
           }
-        case "buildClientVersions" =>
+        case "buildClientVersion" =>
           val author = arguments.getValue("author")
-          val serviceNames = arguments.getOptionValue("services").map(_.split(",").toSeq).getOrElse(Seq.empty)
-          val settings = Map("distribDirectoryUrl" -> distributionUrl.toString)
-          val newVersions = buildClientVersions(distributionClient, settingsRepository, serviceNames, author, settings)
-          if (!newVersions.isEmpty) {
-            log.info(s"Generated new client versions ${newVersions}")
+          val serviceName = arguments.getValue("service")
+          val developerVersion = DeveloperVersion.parse(arguments.getValue("developerVersion"))
+          val clientVersion = ClientVersion.parse(arguments.getValue("clientVersion"))
+          val buildArguments = Map("distribDirectoryUrl" -> distributionUrl.toString, "version" -> clientVersion.toString)
+          if (!buildClientVersion(distributionClient, settingsRepository, serviceName,
+              DeveloperDistributionVersion(distributionName, developerVersion),
+              ClientDistributionVersion(distributionName, clientVersion), author, buildArguments)) {
+            Utils.error("Client version is not generated")
           }
       }
   }

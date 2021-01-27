@@ -51,7 +51,7 @@ object DistributionMain extends App {
 
     Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
 
-    TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, collections))
+    TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, None, collections))
 
     config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
       StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()

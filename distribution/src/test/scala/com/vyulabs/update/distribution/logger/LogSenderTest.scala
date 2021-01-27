@@ -33,7 +33,7 @@ class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
   val httpClient = new HttpClientImpl(new URL("http://admin:admin@localhost:8084"))
   val distributionClient = new DistributionClient(distributionName, httpClient)
 
-  val sender = new LogSender("service1", "instance1", distributionClient)
+  val sender = new LogSender("service1", "instance1", None, distributionClient)
   val buffer = new LogBuffer(sender, 3, 6)
 
   appender.addListener(buffer)

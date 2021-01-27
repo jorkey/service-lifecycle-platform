@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId, UserName}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
@@ -31,8 +31,10 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
 
   protected implicit val executionContext: ExecutionContext
 
-  def buildDeveloperVersion(): Unit = {
-
+  def buildDeveloperVersion(serviceName: ServiceName, developerVersion: DeveloperVersion, author: UserName,
+                            sourceBranches: Seq[String], comment: Option[String]): Future[TaskId] = {
+    // TODO
+    null
   }
 
   def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName): DeveloperDistributionVersion = {

@@ -13,4 +13,4 @@ object LogLine extends DefaultJsonProtocol {
 }
 
 case class ServiceLogLine(distributionName: DistributionName, serviceName: ServiceName,
-                          instanceId: InstanceId, processId: ProcessId, directory: ServiceDirectory, line: LogLine)
+                          instanceId: InstanceId, processId: ProcessId, taskId: Option[TaskId], directory: ServiceDirectory, line: LogLine)

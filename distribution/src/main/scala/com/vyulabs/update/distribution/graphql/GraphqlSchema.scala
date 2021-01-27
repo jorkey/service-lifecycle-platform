@@ -38,8 +38,10 @@ object GraphqlSchema {
   val ProcessArg = Argument("process", StringType)
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
-  val DeveloperVersionArg = Argument("version", DeveloperDistributionVersionType)
-  val ClientVersionArg = Argument("version", ClientDistributionVersionType)
+  val DeveloperVersionArg = Argument("version", DeveloperVersionType)
+  val ClientVersionArg = Argument("version", ClientVersionType)
+  val DeveloperDistributionVersionArg = Argument("version", DeveloperDistributionVersionType)
+  val ClientDistributionVersionArg = Argument("version", ClientDistributionVersionType)
   val DeveloperVersionInfoArg = Argument("info", DeveloperVersionInfoInputType)
   val ClientVersionInfoArg = Argument("info", ClientVersionInfoInputType)
   val DeveloperDesiredVersionsArg = Argument("versions", ListInputType(DeveloperDesiredVersionInputType))
@@ -50,6 +52,7 @@ object GraphqlSchema {
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
+  val OptionTaskArg = Argument("task", OptionInputType(StringType))
   val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
   val OptionProcessArg = Argument("process", OptionInputType(StringType))
@@ -62,6 +65,7 @@ object GraphqlSchema {
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
   val OptionCommentArg = Argument("comment", OptionInputType(StringType))
+  val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
 
   // Queries
 
@@ -100,9 +104,9 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("serviceLogs", ListType(ServiceLogLineType),
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionLastArg :: Nil,
+        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg),
-          c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionLastArg)) }),
+          c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(OptionLastArg)) }),
       Field("faultReportsInfo", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
@@ -156,35 +160,37 @@ object GraphqlSchema {
         arguments = UserArg :: PasswordArg :: Nil,
         resolve = c => { c.ctx.workspace.changeUserPassword(c.arg(UserArg), c.arg(PasswordArg)) }),
 
-//      Field("buildDeveloperVersion", BooleanType,
-//        arguments = ServiceArg :: DeveloperVersionArg :: OptionCommentArg :: SourceBranchesArg :: Nil,
-//        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(UserRoleArg), c.arg(PasswordArg)) }),
-
+      Field("buildDeveloperVersion", StringType,
+        arguments = ServiceArg :: DeveloperVersionArg :: OptionBranchesArg :: OptionCommentArg :: Nil,
+        resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.userInfo.name,
+          c.arg(OptionBranchesArg).getOrElse(Seq.empty), c.arg(OptionCommentArg)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),
       Field("removeDeveloperVersion", BooleanType,
-        arguments = ServiceArg :: DeveloperVersionArg :: Nil,
-        resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg)) }),
+        arguments = ServiceArg :: DeveloperDistributionVersionArg :: Nil,
+        resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
+      Field("setDeveloperDesiredVersions", BooleanType,
+        arguments = DeveloperDesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
 
+      Field("buildClientVersions", StringType,
+        arguments = OptionServicesArg :: Nil,
+        resolve = c => { c.ctx.workspace.buildClientVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty), c.ctx.userInfo.name) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)) }),
       Field("removeClientVersion", BooleanType,
-        arguments = ServiceArg :: ClientVersionArg :: Nil,
-        resolve = c => { c.ctx.workspace.removeClientVersion(c.arg(ServiceArg), c.arg(ClientVersionArg)) }),
-
-      Field("setDeveloperDesiredVersions", BooleanType,
-        arguments = DeveloperDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
+        arguments = ServiceArg :: ClientDistributionVersionArg :: Nil,
+        resolve = c => { c.ctx.workspace.removeClientVersion(c.arg(ServiceArg), c.arg(ClientDistributionVersionArg)) }),
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }),
 
       Field("addServiceLogs", BooleanType,
-        arguments = ServiceArg :: InstanceArg :: ProcessArg ::DirectoryArg :: LogLinesArg :: Nil,
+        arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg ::  DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.distributionName,
-          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) })
+          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) })
     )
   )
 
@@ -201,9 +207,9 @@ object GraphqlSchema {
         arguments = InstanceServiceStatesArg :: Nil,
         resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.userInfo.name, c.arg(InstanceServiceStatesArg)) }),
       Field("addServiceLogs", BooleanType,
-        arguments = ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: LogLinesArg :: Nil,
+        arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.userInfo.name,
-          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)) }))
@@ -216,9 +222,9 @@ object GraphqlSchema {
         arguments = InstanceServiceStatesArg :: Nil,
         resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.workspace.distributionName, c.arg(InstanceServiceStatesArg)) }),
       Field("addServiceLogs", BooleanType,
-        arguments = ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: LogLinesArg :: Nil,
+        arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.distributionName,
-          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.distributionName, c.arg(ServiceFaultReportInfoArg)) })
@@ -231,9 +237,9 @@ object GraphqlSchema {
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeServiceLogs", SequencedServiceLogLineType,
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromArg :: Nil,
+        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: OptionFromArg :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeServiceLogs(
-          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
+          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
       Field.subs("testSubscription", StringType,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))

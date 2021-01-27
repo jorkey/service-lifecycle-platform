@@ -29,44 +29,24 @@ object ClientBuilder {
 
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def buildClientVersions(distributionClient: SyncDistributionClient[SyncSource], settingsRepository: SettingsDirectory,
-                          serviceNames: Seq[ServiceName], author: String, arguments: Map[String, String])
-                         (implicit log: Logger): Map[ServiceName, ClientDistributionVersion] = {
-    var clientVersions = Map.empty[ServiceName, ClientDistributionVersion]
-    log.info("Get developer desired versions")
-    val developerDesiredVersions = distributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions(serviceNames))
-        .map(DeveloperDesiredVersions.toMap(_)).getOrElse {
-      log.error(s"Can't get developer desired versions.")
-      return Map.empty
+  def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], settingsRepository: SettingsDirectory, serviceName: ServiceName,
+                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion,
+                         author: String, arguments: Map[String, String])(implicit log: Logger): Boolean = {
+    val versionInfo = downloadDeveloperVersion(distributionClient, serviceName, developerVersion).getOrElse {
+      log.error(s"Can't download developer version ${developerVersion} of service ${serviceName}")
+      return false
     }
-    developerDesiredVersions.foreach {
-      case (serviceName, developerVersion) =>
-        val existingVersions = distributionClient.graphqlRequest(administratorQueries.getClientVersionsInfo(serviceName)).getOrElse {
-          log.error(s"Error of getting service ${serviceName} client versions list")
-          return Map.empty
-        }.map(_.version).filter(_.original() == developerVersion)
-        val clientVersion =
-          if (!existingVersions.isEmpty) {
-            existingVersions.sorted(ClientDistributionVersion.ordering).last.next()
-          } else {
-            ClientDistributionVersion(developerVersion)
-          }
-        clientVersions += (serviceName -> clientVersion)
+
+    if (!generateClientVersion(settingsRepository, serviceName, arguments)) {
+      log.error(s"Can't generate client version ${clientVersion} of service ${serviceName}")
+      return false
     }
-    log.info("Build client versions")
-    developerDesiredVersions.foreach {
-      case (serviceName, version) =>
-        log.info(s"Build client version ${version} of service ${serviceName}")
-        if (!buildClientVersion(distributionClient, settingsRepository, serviceName, version, clientVersions.get(serviceName).get, author,
-              arguments + ("version" -> version.toString))) {
-          log.error(s"Can't build client versions")
-          return Map.empty
-        }
-    }
-    clientVersions
+
+    log.info(s"Upload client version ${clientVersion} of service ${serviceName}")
+    uploadClientVersion(distributionClient, serviceName, clientVersion, author, versionInfo.buildInfo)
   }
 
-  def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
+  private def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                                version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
     log.info(s"Get developer version ${version} of service ${serviceName} info")
     val versionInfo = distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName)).getOrElse(Seq.empty).headOption.getOrElse {
@@ -85,24 +65,7 @@ object ClientBuilder {
     Some(versionInfo)
   }
 
-  def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], settingsRepository: SettingsDirectory, serviceName: ServiceName,
-                         fromVersion: DeveloperDistributionVersion, toVersion: ClientDistributionVersion, author: String,
-                         arguments: Map[String, String])(implicit log: Logger): Boolean = {
-    val versionInfo = downloadDeveloperVersion(distributionClient, serviceName, fromVersion).getOrElse {
-      log.error(s"Can't download developer version ${fromVersion} of service ${serviceName}")
-      return false
-    }
-
-    if (!generateClientVersion(settingsRepository, serviceName, arguments)) {
-      log.error(s"Can't generate client version ${toVersion} of service ${serviceName}")
-      return false
-    }
-
-    log.info(s"Upload client version ${toVersion} of service ${serviceName}")
-    uploadClientVersion(distributionClient, serviceName, toVersion, author, versionInfo.buildInfo)
-  }
-
-  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
+  private def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                           version: ClientDistributionVersion, author: String, buildInfo: BuildInfo)(implicit log: Logger): Boolean = {
     if (!ZipUtils.zipAndSend(clientBuildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, version, file))) {
       return false
