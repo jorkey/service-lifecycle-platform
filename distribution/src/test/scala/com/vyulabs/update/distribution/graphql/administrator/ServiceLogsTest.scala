@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
+import com.mongodb.client.model.{Filters, Updates}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.Utils.DateJson._
 import com.vyulabs.update.distribution.TestEnvironment
@@ -30,7 +31,6 @@ class ServiceLogsTest extends TestEnvironment {
   val graphqlContext = new GraphqlContext(UserInfo("administrator", UserRole.Administrator), workspace)
 
   it should "add/get service logs" in {
-
     addServiceLogLine("INFO", "line1")
     addServiceLogLine("DEBUG", "line2")
     addServiceLogLine("ERROR", "line3")
@@ -63,24 +63,50 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   it should "subscribe service logs" in {
-    val response1 = subscribeServiceLogs(2)
+    setSequence(10)
+
+    addServiceLogLine("INFO", "line1")
+
+    val response1 = subscribeServiceLogs(13)
     val source1 = response1.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val input1 = source1.runWith(TestSink.probe[ServerSentEvent])
 
-    addServiceLogLine("INFO", "line1")
-    addServiceLogLine("DEBUG", "line2")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":2,"logLine":{"line":{"level":"DEBUG","message":"line2"}}}}}"""))
+    addServiceLogLine("INFO", "line2")
+    addServiceLogLine("DEBUG", "line3")
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":13,"logLine":{"line":{"level":"DEBUG","message":"line3"}}}}}"""))
 
-    addServiceLogLine("ERROR", "line3")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":3,"logLine":{"line":{"level":"ERROR","message":"line3"}}}}}"""))
+    addServiceLogLine("ERROR", "line4")
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":14,"logLine":{"line":{"level":"ERROR","message":"line4"}}}}}"""))
 
-    val response2 = subscribeServiceLogs(1)
+    val response2 = subscribeServiceLogs(11)
     val source2 = response2.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val input2 = source2.runWith(TestSink.probe[ServerSentEvent])
 
-    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":1,"logLine":{"line":{"level":"INFO","message":"line1"}}}}}"""))
-    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":2,"logLine":{"line":{"level":"DEBUG","message":"line2"}}}}}"""))
-    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":3,"logLine":{"line":{"level":"ERROR","message":"line3"}}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"line1"}}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":12,"logLine":{"line":{"level":"INFO","message":"line2"}}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":13,"logLine":{"line":{"level":"DEBUG","message":"line3"}}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":14,"logLine":{"line":{"level":"ERROR","message":"line4"}}}}}"""))
+  }
+
+  it should "subscribe task logs" in {
+    setSequence(20)
+
+    addTaskLogLine("INFO", "line1")
+
+    val response1 = subscribeTaskLogs(1)
+    val source1 = response1.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
+    val input1 = source1.runWith(TestSink.probe[ServerSentEvent])
+
+    addTaskLogLine("DEBUG", "line2")
+
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"logLine":{"line":{"level":"INFO","message":"line1"}}}}}"""))
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":22,"logLine":{"line":{"level":"DEBUG","message":"line2"}}}}}"""))
+
+    addServiceLogLine("ERROR", "line1")
+    input1.expectNoMessage()
+
+    addTaskLogLine("DEBUG", "line3")
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":24,"logLine":{"line":{"level":"DEBUG","message":"line3"}}}}}"""))
   }
 
   def addServiceLogLine(level: String, message: String): Unit = {
@@ -124,8 +150,45 @@ class ServiceLogsTest extends TestEnvironment {
       """, variables = JsObject("from" -> JsNumber(from))))
   }
 
-  def clear(): Unit = {
-    result(collections.State_ServiceLogs.drop())
-    result(result(collections.Sequences).drop())
+  def addTaskLogLine(level: String, message: String): Unit = {
+    assertResult((OK,
+      ("""{"data":{"addServiceLogs":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+        mutation AddServiceLogs($$date: Date!, $$level: String!, $$message: String!) {
+          addServiceLogs (
+            service: "service2",
+            task: "task1",
+            instance: "instance2",
+            process: "process2",
+            directory: "dir",
+            logs: [
+              { date: $$date, level: $$level, message: $$message }
+            ]
+          )
+        }
+      """, variables = JsObject("date" -> new Date().toJson, "level" -> JsString(level), "message" -> JsString(message)))))
+  }
+
+  def subscribeTaskLogs(from: Long): ToResponseMarshallable = {
+    result(graphql.executeSubscriptionQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        subscription SubscribeTaskLogs($$from: Long!) {
+          subscribeTaskLogs (
+            task: "task1",
+            from: $$from
+          ) {
+            sequence
+            logLine {
+              line {
+                level
+                message
+              }
+            }
+          }
+        }
+      """, variables = JsObject("from" -> JsNumber(from))))
+  }
+
+  def setSequence(sequence: Long): Unit = {
+    result(result(collections.Sequences).updateOne(Filters.eq("name", "state.serviceLogs"), Updates.set("sequence", sequence)))
   }
 }

@@ -164,7 +164,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   def drop(): Future[Unit] = {
     for {
       collection <- collection
-      result <- collection.dropItems()
+      result <- collection.drop()
     } yield result
   }
 

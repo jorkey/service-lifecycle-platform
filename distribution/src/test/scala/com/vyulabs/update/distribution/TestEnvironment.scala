@@ -51,7 +51,7 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
 
   val graphql = new Graphql()
 
-  val workspace = GraphqlWorkspace(distributionName, versionHistoryConfig, faultReportsConfig, collections, distributionDir)
+  val workspace = GraphqlWorkspace(distributionName, versionHistoryConfig, faultReportsConfig, "/tmp", collections, distributionDir)
   val distribution = new Distribution(workspace, graphql)
 
   result(for {

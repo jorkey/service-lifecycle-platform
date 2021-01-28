@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LogStorer(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId, taskId: Option[TaskId], collections: DatabaseCollections)
+class LogStorer(distributionName: DistributionName, serviceName: ServiceName, taskId: Option[TaskId], instanceId: InstanceId, collections: DatabaseCollections)
                (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -18,6 +18,6 @@ class LogStorer(distributionName: DistributionName, serviceName: ServiceName, in
   override def receiveLogLines(logs: Seq[LogLine]): Future[Unit] = {
     collections.State_ServiceLogs.insert(
       logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
-        ServiceLogLine(distributionName, serviceName, instanceId, processId, taskId, directory, line) })).map(_ => ())
+        ServiceLogLine(distributionName, serviceName, taskId, instanceId, processId, directory, line) })).map(_ => ())
   }
 }

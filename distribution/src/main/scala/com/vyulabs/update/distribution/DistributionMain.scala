@@ -51,7 +51,7 @@ object DistributionMain extends App {
 
     Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
 
-    TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, config.instanceId, None, collections))
+    TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, None, config.instanceId, collections))
 
     config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
       StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()
@@ -60,7 +60,7 @@ object DistributionMain extends App {
     val selfUpdater = new SelfUpdater(collections, dir)
     selfUpdater.start()
 
-    val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, collections, dir)
+    val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, config.builderExecutePath, collections, dir)
     val distribution = new Distribution(workspace, graphql)
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

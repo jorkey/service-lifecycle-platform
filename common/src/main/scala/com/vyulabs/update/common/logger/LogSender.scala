@@ -9,7 +9,7 @@ import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LogSender[Source[_]](serviceName: ServiceName, instanceId: InstanceId, taskId: Option[TaskId], client: DistributionClient[Source])
+class LogSender[Source[_]](serviceName: ServiceName, taskId: Option[TaskId], instanceId: InstanceId, client: DistributionClient[Source])
                (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 

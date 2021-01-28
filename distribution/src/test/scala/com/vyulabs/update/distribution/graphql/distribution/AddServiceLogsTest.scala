@@ -50,11 +50,11 @@ class AddServiceLogsTest extends TestEnvironment {
 
     assertResult(Seq(
       Sequenced(1, new ServiceLogLine("test",
-        "service1", "instance1", "process1", None, "dir", LogLine(date, "INFO", None, "line1", None))),
+        "service1", None, "instance1", "process1", "dir", LogLine(date, "INFO", None, "line1", None))),
       Sequenced(2, new ServiceLogLine("test",
-        "service1", "instance1", "process1", None, "dir", LogLine(date, "DEBUG", None, "line2", None))),
+        "service1", None, "instance1", "process1", "dir", LogLine(date, "DEBUG", None, "line2", None))),
       Sequenced(3, new ServiceLogLine("test",
-        "service1", "instance1", "process1", None, "dir", LogLine(date, "ERROR", None, "line3", None))))
+        "service1", None, "instance1", "process1", "dir", LogLine(date, "ERROR", None, "line3", None))))
     )(result(logsCollection.findSequenced()))
   }
 }

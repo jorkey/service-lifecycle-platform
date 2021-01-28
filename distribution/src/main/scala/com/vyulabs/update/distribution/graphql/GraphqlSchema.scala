@@ -17,12 +17,12 @@ import sangria.streaming.akkaStreams._
 import scala.concurrent.ExecutionContext
 
 case class GraphqlWorkspace(distributionName: DistributionName,
-                           versionHistoryConfig: VersionHistoryConfig, faultReportsConfig: FaultReportsConfig,
-                           collections: DatabaseCollections, dir: DistributionDirectory)
+                            versionHistoryConfig: VersionHistoryConfig, faultReportsConfig: FaultReportsConfig, builderExecutePath: String,
+                            collections: DatabaseCollections, dir: DistributionDirectory)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends UsersUtils with DistributionClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils
+    extends UsersUtils with DistributionClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils
 
 case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
 
@@ -36,6 +36,7 @@ object GraphqlSchema {
   val DistributionArg = Argument("distribution", StringType)
   val InstanceArg = Argument("instance", StringType)
   val ProcessArg = Argument("process", StringType)
+  val TaskArg = Argument("task", StringType)
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
   val DeveloperVersionArg = Argument("version", DeveloperVersionType)
@@ -50,6 +51,8 @@ object GraphqlSchema {
   val InstanceServiceStatesArg = Argument("states", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
+  val ArgumentsArg = Argument("arguments", ListInputType(StringType))
+  val FromArg = Argument("from", LongType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -63,7 +66,6 @@ object GraphqlSchema {
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientDistributionVersionType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
-  val OptionFromArg = Argument("from", OptionInputType(LongType))
   val OptionCommentArg = Argument("comment", OptionInputType(StringType))
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
 
@@ -104,9 +106,12 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("serviceLogs", ListType(ServiceLogLineType),
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: OptionLastArg :: Nil,
-        resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg),
-          c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(OptionLastArg)) }),
+        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionLastArg :: Nil,
+        resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(DistributionArg), c.arg(ServiceArg),
+          c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionLastArg)) }),
+      Field("taskLogs", ListType(ServiceLogLineType),
+        arguments = TaskArg :: Nil,
+        resolve = c => { c.ctx.workspace.getTaskLogs(c.arg(TaskArg)) }),
       Field("faultReportsInfo", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
@@ -187,10 +192,14 @@ object GraphqlSchema {
         arguments = ClientDesiredVersionsArg :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }),
 
+      Field("runBuilder", BooleanType,
+        arguments = TaskArg :: ArgumentsArg :: Nil,
+        resolve = c => { c.ctx.workspace.runBuilder(c.arg(TaskArg), c.arg(ArgumentsArg)) }),
+
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.distributionName,
-          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) })
+          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) })
     )
   )
 
@@ -209,7 +218,7 @@ object GraphqlSchema {
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.userInfo.name,
-          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)) }))
@@ -224,7 +233,7 @@ object GraphqlSchema {
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.distributionName,
-          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.distributionName, c.arg(ServiceFaultReportInfoArg)) })
@@ -237,16 +246,27 @@ object GraphqlSchema {
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeServiceLogs", SequencedServiceLogLineType,
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: OptionFromArg :: Nil,
+        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: FromArg :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeServiceLogs(
-          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
+          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(FromArg))),
+      Field.subs("subscribeTaskLogs", SequencedServiceLogLineType,
+        arguments = TaskArg :: FromArg :: Nil,
+        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(FromArg))),
       Field.subs("testSubscription", StringType,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))
 
+  def DistributionSubscriptions(implicit materializer: Materializer) = ObjectType(
+    "Subscription",
+    fields[GraphqlContext, Unit](
+      Field.subs("subscribeTaskLogs", SequencedServiceLogLineType,
+        arguments = TaskArg :: FromArg :: Nil,
+        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(FromArg)))
+    ))
+
   def AdministratorSchemaDefinition(implicit materializer: Materializer) = Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations), subscription = Some(AdministratorSubscriptions))
 
-  def DistributionSchemaDefinition = Schema(query = DistributionQueries, mutation = Some(DistributionMutations))
+  def DistributionSchemaDefinition(implicit materializer: Materializer) = Schema(query = DistributionQueries, mutation = Some(DistributionMutations), subscription = Some(DistributionSubscriptions))
 
   def ServiceSchemaDefinition = Schema(query = ServiceQueries, mutation = Some(ServiceMutations))
 
