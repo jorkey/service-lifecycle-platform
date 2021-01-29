@@ -10,22 +10,20 @@ import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.BsonDocument
-import org.slf4j.LoggerFactory
+import org.slf4j.Logger
 
 import java.io.IOException
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
 trait UsersUtils extends SprayJsonSupport {
-  private implicit val log = LoggerFactory.getLogger(this.getClass)
-
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
 
   protected val collections: DatabaseCollections
 
-  def addUser(userName: UserName, role: UserRole, password: String): Future[Boolean] = {
+  def addUser(userName: UserName, role: UserRole, password: String)(implicit log: Logger): Future[Boolean] = {
     log.info(s"Add user ${userName} with role ${role}")
     for {
       result <- {
@@ -35,13 +33,13 @@ trait UsersUtils extends SprayJsonSupport {
     } yield result
   }
 
-  def removeUser(userName: UserName): Future[Boolean] = {
+  def removeUser(userName: UserName)(implicit log: Logger): Future[Boolean] = {
     log.info(s"Remove user ${userName}")
     val filters = Filters.eq("userName", userName)
     collections.Users_Info.delete(filters).map(_ > 0)
   }
 
-  def changeUserPassword(userName: UserName, oldPassword: String, password: String): Future[Boolean] = {
+  def changeUserPassword(userName: UserName, oldPassword: String, password: String)(implicit log: Logger): Future[Boolean] = {
     for {
       credentials <- getUserCredentials(userName)
       result <- credentials match {
@@ -57,7 +55,7 @@ trait UsersUtils extends SprayJsonSupport {
     } yield result
   }
 
-  def changeUserPassword(userName: UserName, password: String): Future[Boolean] = {
+  def changeUserPassword(userName: UserName, password: String)(implicit log: Logger): Future[Boolean] = {
     log.info(s"Change user ${userName} password")
     val filters = Filters.eq("userName", userName)
     val hash = PasswordHash(password)
@@ -69,13 +67,13 @@ trait UsersUtils extends SprayJsonSupport {
     }).map(_ > 0)
   }
 
-  def getUserCredentials(userName: UserName): Future[Option[UserCredentials]] = {
+  def getUserCredentials(userName: UserName)(implicit log: Logger): Future[Option[UserCredentials]] = {
     val filters = Filters.eq("userName", userName)
     collections.Users_Info.find(filters).map(_.map(info => UserCredentials(
       UserRole.withName(info.role), info.passwordHash)).headOption)
   }
 
-  def getUsersInfo(userName: Option[UserName] = None): Future[Seq[UserInfo]] = {
+  def getUsersInfo(userName: Option[UserName] = None)(implicit log: Logger): Future[Seq[UserInfo]] = {
     val clientArg = userName.map(Filters.eq("userName", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()

@@ -14,6 +14,7 @@ import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
 import com.vyulabs.update.distribution.loaders.StateUploader
 import com.vyulabs.update.distribution.logger.LogStorer
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
+import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.LoggerFactory
 
 import java.io.{File, FileInputStream}
@@ -46,12 +47,14 @@ object DistributionMain extends App {
 
     val mongoDb = new MongoDb(config.mongoDbConnection, config.mongoDbName)
 
-    val dir = new DistributionDirectory(new File(config.distributionDirectory))
     val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
+    val dir = new DistributionDirectory(new File(config.distributionDirectory))
+    val taskManager = new TaskManager(taskId => new LogStorer(config.distributionName, Common.DistributionServiceName, Some(taskId),
+      config.instanceId, collections.State_ServiceLogs))
 
     Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
 
-    TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, None, config.instanceId, collections))
+    TraceAppender.handleLogs(new LogStorer(config.distributionName, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
 
     config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
       StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()
@@ -60,7 +63,7 @@ object DistributionMain extends App {
     val selfUpdater = new SelfUpdater(collections, dir)
     selfUpdater.start()
 
-    val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, config.builderExecutePath, collections, dir)
+    val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, config.builderExecutePath, collections, dir, taskManager)
     val distribution = new Distribution(workspace, graphql)
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

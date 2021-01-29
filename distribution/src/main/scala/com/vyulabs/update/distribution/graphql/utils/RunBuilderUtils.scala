@@ -7,13 +7,11 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import org.slf4j.LoggerFactory
+import org.slf4j.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
-  private implicit val log = LoggerFactory.getLogger(this.getClass)
-
   protected val distributionName: DistributionName
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
@@ -24,7 +22,11 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   implicit val timer = new AkkaTimer(system.scheduler)
 
-  def runBuilder(taskId: TaskId, arguments: Seq[String]): Future[Boolean] = {
+  def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): TaskId = {
+    null
+  }
+
+  def runLocalBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): TaskId = {
     val process = ChildProcess.start(builderExecutePath, arguments).get
     process.handleOutput((line, nl) =>
       println(line)
@@ -37,6 +39,10 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
     } yield result
 */
-    Future(true)
+    null
+  }
+
+  def runRemoteBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): TaskId = {
+    null
   }
 }
