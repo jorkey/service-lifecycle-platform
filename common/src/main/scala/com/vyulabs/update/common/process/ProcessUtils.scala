@@ -92,13 +92,15 @@ object ProcessUtils {
     val stdInput = new BufferedReader(new InputStreamReader(input))
     val output = StringBuilder.newBuilder
     val thread = new LinesReaderThread(stdInput, if (logging == Logging.Realtime) Some(1000) else None,
-      (data, nl) => {
-        if (logging != Logging.None) {
-          log.info(data)
-        }
-        output.append(data)
-        if (nl) {
-          output.append('\n')
+      lines => {
+        lines.foreach { case (data, nl) =>
+          if (logging != Logging.None) {
+            log.info(data)
+          }
+          output.append(data)
+          if (nl) {
+            output.append('\n')
+          }
         }
       },
       () => {},

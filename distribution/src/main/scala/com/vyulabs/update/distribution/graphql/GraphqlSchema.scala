@@ -223,9 +223,9 @@ object GraphqlSchema {
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)) }),
-      Field("runBuilder", StringType,
+      Field("runBuilder", BooleanType,
         arguments = TaskArg :: ArgumentsArg :: Nil,
-        resolve = c => { c.ctx.workspace.runLocalBuilder(c.arg(TaskArg), c.arg(ArgumentsArg)) }),
+        resolve = c => { c.ctx.workspace.runLocalBuilderByRemoveDistribution(c.arg(TaskArg), c.arg(ArgumentsArg)) }),
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
         resolve = c => { c.ctx.workspace.cancelTask(c.arg(TaskArg)) }))

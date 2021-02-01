@@ -5,7 +5,7 @@ import org.slf4j.Logger
 import java.io.BufferedReader
 
 class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
-                        onLine: (String, Boolean) => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
+                        onLines: Seq[(String, Boolean)] => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
 
   override def run(): Unit = {
     val buffer = StringBuilder.newBuilder
@@ -13,12 +13,13 @@ class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int]
     try {
       var cnt = input.read(chunk)
       while (cnt != -1) {
+        var lines = Seq.empty[(String, Boolean)]
         buffer.appendAll(chunk, 0, cnt)
         var index1 = 0
         var index2 = 0
         while (index2 < buffer.size) {
           if (buffer(index2) == '\n') {
-            onLine(buffer.substring(index1, index2), true)
+            lines :+= (buffer.substring(index1, index2), true)
             index1 = index2 + 1
           }
           index2 += 1
@@ -35,10 +36,13 @@ class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int]
               } while (!input.ready() && rest > 0)
             }
             if (!input.ready()) {
-              onLine(buffer.toString(), false)
+              lines :+= (buffer.toString(), false)
               buffer.clear()
             }
           }
+        }
+        if (!lines.isEmpty) {
+          onLines(lines)
         }
         cnt = input.read(chunk)
       }

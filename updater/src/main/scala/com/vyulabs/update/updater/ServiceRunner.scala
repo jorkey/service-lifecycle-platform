@@ -54,7 +54,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
               config.logWriter.maxFilesCount,
               config.logWriter.filePrefix,
               (message, exception) => state.error(message, exception))
-            process.handleOutput((line, nl) => {
+            process.handleOutput(lines => lines.foreach { case (line, nl) => {
               val formattedLine = dateFormat match {
                 case Some(dateFormat) =>
                   s"${dateFormat.format(new Date)} ${line}"
@@ -62,7 +62,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
                   line
               }
               logWriter.writeLogLine(formattedLine)
-            })
+            }})
             for (restartConditions <- config.restartConditions) {
               new ProcessMonitor(process, restartConditions).start()
             }

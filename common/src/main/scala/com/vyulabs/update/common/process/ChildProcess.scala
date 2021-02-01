@@ -22,10 +22,10 @@ class ChildProcess(process: Process)
 
   def getHandle() = process
 
-  def handleOutput(onOutputLine: (String, Boolean) => Unit): Unit = {
+  def handleOutput(onOutputLines: Seq[(String, Boolean)] => Unit): Unit = {
     val input = new BufferedReader(new InputStreamReader(process.getInputStream))
     new LinesReaderThread(input, None,
-      (line, nl) => onOutputLine(line, nl),
+      lines => onOutputLines(lines),
       () => {
         val status = process.waitFor()
         log.info(s"Process ${process.pid()} is terminated with status ${status}")

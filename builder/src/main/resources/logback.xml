@@ -7,7 +7,7 @@
         <append>false</append>
 
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} %X{akkaSource} %msg%n</pattern>
         </encoder>
     </appender>
 
