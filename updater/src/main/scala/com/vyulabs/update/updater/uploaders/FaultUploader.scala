@@ -1,20 +1,17 @@
 package com.vyulabs.update.updater.uploaders
 
+import com.vyulabs.update.common.Common
+import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
+import com.vyulabs.update.info.FaultInfo
+import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
+import com.vyulabs.update.version.BuildVersion
+import org.slf4j.Logger
+import spray.json.enrichAny
+
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
-
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{InstanceId, ServiceDirectory}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.{FaultInfo, ProfiledServiceName, ServiceState}
-import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
-import com.vyulabs.update.version.BuildVersion
-
 import scala.collection.immutable.Queue
-import com.vyulabs.update.info.ServiceState._
-import org.slf4j.Logger
-import spray.json.enrichAny
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
@@ -25,7 +22,7 @@ case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirectoryClient)
                    (implicit log: Logger) extends Thread { self =>
   private var faults = Queue.empty[FaultReport]
-  private val maxServiceDirectoryCapacity = 1000 * 1024 * 1024
+  private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024
   private var stopping = false
 
   if (!archiveDir.exists() && !archiveDir.mkdir()) {

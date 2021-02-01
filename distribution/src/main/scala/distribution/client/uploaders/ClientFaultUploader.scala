@@ -31,7 +31,7 @@ class ClientFaultUploader(dir: ClientDistributionDirectory, developerDirectoryUr
   private val developerDirectory = new DeveloperDistributionDirectoryClient(developerDirectoryUrl)
 
   private val maxFilesCount = 50
-  private val maxServiceDirectoryCapacity = 1000 * 1024 * 1024
+  private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024
 
   private val faultsDirectory = dir.getFaultsDir()
 
