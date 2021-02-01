@@ -1,18 +1,18 @@
 package com.vyulabs.update.updater.uploaders
 
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.info.FaultInfo._
+import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName}
+import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import org.slf4j.Logger
+import spray.json.enrichAny
+
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
-import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.distribution.client.OldDistributionInterface
-import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName, ServiceState}
-import com.vyulabs.update.common.info.FaultInfo._
-import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-
 import scala.collection.immutable.Queue
-import org.slf4j.Logger
-import spray.json.enrichAny
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
@@ -23,7 +23,7 @@ class FaultUploader(archiveDir: File, clientDirectory: OldDistributionInterface)
   private case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 
   private var faults = Queue.empty[FaultReport]
-  private val maxServiceDirectoryCapacity = 1000 * 1024 * 1024
+  private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024
   private var stopping = false
 
   if (!archiveDir.exists() && !archiveDir.mkdir()) {
