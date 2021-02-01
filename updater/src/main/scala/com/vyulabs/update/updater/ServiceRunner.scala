@@ -30,7 +30,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
                    (implicit log: Logger, timer: Timer, executionContext: ExecutionContext) {
   private var process = Option.empty[ChildProcess]
 
-  private val maxLogHistoryDirCapacity = 5 * 1000 * 1000 * 1000
+  private val maxLogHistoryDirCapacity = 5L * 1000 * 1000 * 1000
   private var lastStartTime = 0L
 
   def isStarted() : Boolean = process.isDefined

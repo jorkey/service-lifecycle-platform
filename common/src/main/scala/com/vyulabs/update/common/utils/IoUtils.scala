@@ -1,16 +1,15 @@
 package com.vyulabs.update.common.utils
 
-import java.io._
-import java.util.Date
-
 import com.typesafe.config._
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.lock.SmartFilesLocker
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
 import spray.json._
 
+import java.io._
+import java.util.Date
 import scala.annotation.tailrec
 
 /**
@@ -327,9 +326,11 @@ object IoUtils {
   def maybeFreeSpace(dir: File, maxCapacity: Long, except: Set[File])(implicit log: Logger): Unit = {
     val used = getUsedSpace(dir)
     if (used > maxCapacity) {
+      log.info(s"Directory ${dir} takes ${used} of space that is large than limit ${maxCapacity} - delete old files")
       val files = dir.listFiles().filterNot(except.contains(_))
       if (files.length > 1) {
         val oldestFile = files.sortBy(_.lastModified()).head
+        log.info(s"Delete ${oldestFile}")
         if (!deleteFileRecursively(oldestFile)) {
           log.error(s"Can't delete ${oldestFile}")
         } else {
