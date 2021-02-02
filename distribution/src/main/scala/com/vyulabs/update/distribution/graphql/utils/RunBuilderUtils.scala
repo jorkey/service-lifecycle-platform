@@ -34,14 +34,31 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   implicit val timer = new AkkaTimer(system.scheduler)
 
-  def runBuilder(taskId: TaskId, arguments: Seq[String])
-                (implicit log: Logger): (Future[Boolean], () => Unit) = {
-    null
+  def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Int], Option[() => Unit]) = {
+    config.builderConfig.builderDirectory match {
+      case Some(builderDirectory) =>
+        runLocalBuilder(taskId, arguments, builderDirectory)
+      case None =>
+        config.builderConfig.distributionUrl match {
+          case Some(distributionUrl) =>
+            runRemoteBuilder(taskId, arguments, distributionUrl)
+          case None =>
+            sys.error("Local directory or distribution URL are not defined for builder")
+        }
+    }
   }
 
-  def runLocalBuilder(taskId: TaskId, arguments: Seq[String])
-                     (implicit log: Logger): (Future[Int], Option[() => Unit]) = {
-    val builderDirectory = config.builderConfig.builderDirectory.get
+  def runLocalBuilderByRemoteDistribution(arguments: Seq[String])(implicit log: Logger): TaskId = {
+    val task = taskManager.create("Run local builder by remote distribution",
+      (taskId, logger) => {
+        implicit val log = logger
+        runLocalBuilder(taskId, arguments, config.builderConfig.builderDirectory.get)
+      })
+    task.taskId
+  }
+
+  private def runLocalBuilder(taskId: TaskId, arguments: Seq[String], builderDirectory: String)
+                             (implicit log: Logger): (Future[Int], Option[() => Unit]) = {
     val process = ChildProcess.start(Common.BuilderSh, arguments, Map.empty, new File(builderDirectory)).get
     val exitFuture = Promise[Int]()
     @volatile var logOutputFuture = Option.empty[Future[Unit]]
@@ -67,16 +84,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     (exitFuture.future, Some(() => process.terminate()))
   }
 
-  def runLocalBuilderByRemoteDistribution(arguments: Seq[String])(implicit log: Logger): TaskId = {
-    val task = taskManager.create("Run local builder by remote distribution",
-      (taskId, logger) => {
-        implicit val log = logger
-        runLocalBuilder(taskId, arguments)
-      })
-    task.taskId
-  }
-
-  def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Int], () => Unit) = {
+  private def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Int], Option[() => Unit]) = {
     val result = Promise[Int]()
     val client = new DistributionClient(config.distributionName, new AkkaHttpClient(distributionUrl))
     val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
@@ -84,20 +92,19 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
       remoteTaskId <- remoteTaskId
       logSource <- client.graphqlSubRequest(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTaskId))
     } yield {
+      @volatile var logOutputFuture = Option.empty[Future[Unit]]
       logSource.map(line => {
         for (exitCode <- line.logLine.line.exitCode) {
           result.success(exitCode)
         }
-        addServiceLogs(config.distributionName, Common.DistributionServiceName,
-          Some(taskId), config.instanceId, 0.toString, "", Seq(line.logLine.line)).map(_ => ())
+        logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
+          addServiceLogs(config.distributionName, Common.DistributionServiceName,
+            Some(taskId), config.instanceId, 0.toString, "", Seq(line.logLine.line)).map(_ => ())
+        })
       }).run()
     }
-    (result.future, () => {
-      for {
-        taskId <- remoteTaskId
-      } {
-        client.graphqlRequest(GraphqlMutation[Boolean]("cancelTask", Seq(GraphqlArgument("task" -> taskId)))).map(_ => ())
-      }
-    })
+    (result.future, Some(() => {
+      remoteTaskId.map(remoteTaskId => client.graphqlRequest(GraphqlMutation[Boolean]("cancelTask", Seq(GraphqlArgument("task" -> remoteTaskId)))).map(_ => ()))
+    }))
   }
 }
