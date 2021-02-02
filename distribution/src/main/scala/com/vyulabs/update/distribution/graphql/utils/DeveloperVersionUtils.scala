@@ -14,6 +14,7 @@ import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.config.DistributionConfig
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
+import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -22,17 +23,26 @@ import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with SprayJsonSupport {
+trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with RunBuilderUtils with SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
+  protected val taskManager: TaskManager
 
   protected implicit val executionContext: ExecutionContext
 
   def buildDeveloperVersion(serviceName: ServiceName, developerVersion: DeveloperVersion, author: UserName,
                             sourceBranches: Seq[String], comment: Option[String])(implicit log: Logger): TaskId = {
-    // TODO
-    null
+    val task = taskManager.create(s"Build developer version ${developerVersion} of service ${serviceName}",
+      (taskId, logger) => {
+        implicit val log = logger
+        val arguments = Seq("buildDeveloperVersion",
+          s"distributionName=${config.distributionDirectory}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
+          s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
+          comment.map(comment => s"comment=${comment}")
+        runBuilder(taskId, arguments)
+      })
+    task.taskId
   }
 
   def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName)(implicit log: Logger): DeveloperDistributionVersion = {

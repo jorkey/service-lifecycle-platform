@@ -7,6 +7,7 @@ import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersio
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.config.DistributionConfig
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
+import com.vyulabs.update.distribution.task.Task
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -39,9 +40,9 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
                     } else {
                       ClientDistributionVersion(config.distributionName, ClientVersion(developerVersion.version))
                     }
-                  val (future, cancel) = buildClientVersion(serviceName, developerVersion, clientVersion, author)
-                  cancels :+= cancel
-                  future.map(_ => (serviceName -> clientVersion))
+                  val task = buildClientVersion(serviceName, developerVersion, clientVersion, author)
+                  cancels ++= task.cancel
+                  task.future.map(_ => (serviceName -> clientVersion))
                 }
               } yield result
           }).map(_.foldLeft(Map.empty[ServiceName, ClientDistributionVersion])((map, entry) => map + entry))
@@ -54,9 +55,17 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
 
   def buildClientVersion(serviceName: ServiceName,
                          developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String)
-                        (implicit log: Logger): (Future[Boolean], () => Unit) = {
-    //runBuilder()
-    null
+                        (implicit log: Logger): Task = {
+    val task = taskManager.create(s"Build client version ${developerVersion} of service ${serviceName}",
+      (taskId, logger) => {
+        implicit val log = logger
+        val arguments = Seq("buildClientVersion",
+          s"distributionName=${config.distributionDirectory}", s"service=${serviceName}",
+          s"developerVersion=${developerVersion.toString}", s"clientVersion=${clientVersion.toString}",
+          s"author=${author}")
+        runBuilder(taskId, arguments)
+      })
+    task
   }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Boolean] = {
