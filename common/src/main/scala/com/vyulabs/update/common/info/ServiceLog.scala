@@ -6,7 +6,7 @@ import spray.json.DefaultJsonProtocol
 
 import java.util.Date
 
-case class LogLine(date: Date, level: String, loggerName: Option[String], message: String, eof: Option[Boolean])
+case class LogLine(date: Date, level: String, loggerName: Option[String], message: String, exitCode: Option[Int])
 
 object LogLine extends DefaultJsonProtocol {
   implicit val logLineJson = jsonFormat5(LogLine.apply)
@@ -14,3 +14,13 @@ object LogLine extends DefaultJsonProtocol {
 
 case class ServiceLogLine(distributionName: DistributionName, serviceName: ServiceName,
                           taskId: Option[TaskId], instanceId: InstanceId, processId: ProcessId, directory: ServiceDirectory, line: LogLine)
+
+object ServiceLogLine extends DefaultJsonProtocol {
+  implicit val serviceLogLineJson = jsonFormat7(ServiceLogLine.apply)
+}
+
+case class SequencedServiceLogLine(sequence: Long, logLine: ServiceLogLine)
+
+object SequencedServiceLogLine extends DefaultJsonProtocol {
+  implicit val sequencedServiceLogLineJson = jsonFormat2(SequencedServiceLogLine.apply)
+}

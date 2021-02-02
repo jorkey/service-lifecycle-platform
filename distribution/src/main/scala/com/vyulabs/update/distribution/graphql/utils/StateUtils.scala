@@ -10,8 +10,7 @@ import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.common.AkkaSource
-import com.vyulabs.update.distribution.config.FaultReportsConfig
-import com.vyulabs.update.distribution.graphql.GraphqlTypes.SequencedServiceLogLine
+import com.vyulabs.update.distribution.config.DistributionConfig
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, InstalledDesiredVersions, Sequenced, SequencedCollection}
 import org.bson.BsonDocument
 import org.slf4j.Logger
@@ -32,7 +31,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  protected val faultReportsConfig: FaultReportsConfig
+  protected val config: DistributionConfig
 
   private val (logCallback, logPublisher) = Source.fromGraph(new AkkaSource[Sequenced[ServiceLogLine]]()).toMat(Sink.asPublisher(fanout = true))((m1, m2) => (m1, m2)).run()
   private var logsBuffer = Queue.empty[Sequenced[ServiceLogLine]]
@@ -162,7 +161,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       .filter(_.document.instanceId == instanceId)
       .filter(_.document.processId == processId)
       .filter(_.document.directory == directory)
-      .takeWhile(!_.document.line.eof.getOrElse(false))
+      .takeWhile(!_.document.line.exitCode.isDefined)
       .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(250, OverflowStrategy.fail)
   }
@@ -175,7 +174,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       .filter(line => line.sequence >= fromSequence && line.sequence > bufferedLogs.lastOption.map(_.sequence).getOrElse(0L))
     Source.combine(bufferSource, publisherSource)(Concat(_))
       .filter(_.document.taskId.contains(taskId))
-      .takeWhile(!_.document.line.eof.getOrElse(false))
+      .takeWhile(!_.document.line.exitCode.isDefined)
       .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(250, OverflowStrategy.fail)
   }
@@ -208,8 +207,8 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       result <- {
         val remainReports = reports
           .sortBy(_.document.report.info.date)
-          .filter(_.document.report.info.date.getTime + faultReportsConfig.expirationPeriodMs >= System.currentTimeMillis())
-          .takeRight(faultReportsConfig.maxFaultReportsCount)
+          .filter(_.document.report.info.date.getTime + config.faultReportsConfig.expirationPeriodMs >= System.currentTimeMillis())
+          .takeRight(config.faultReportsConfig.maxFaultReportsCount)
         deleteReports(collections.State_FaultReportsInfo, reports.toSet -- remainReports.toSet)
       }
     } yield result

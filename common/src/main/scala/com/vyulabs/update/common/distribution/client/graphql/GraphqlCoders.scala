@@ -132,11 +132,14 @@ object ServiceMutationsCoder extends CommonMutationsCoder {
 }
 
 object AdministratorSubscriptionsCoder {
+  def subscribeTaskLogs(taskId: TaskId) =
+    GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> taskId, "SequencedServiceLogLine")))
+
   def testSubscription() =
     GraphqlSubscription[String]("testSubscription")
 }
 
-  object AdministratorGraphqlCoder {
+object AdministratorGraphqlCoder {
   val administratorQueries = AdministratorQueriesCoder
   val administratorMutations = AdministratorMutationsCoder
   val administratorSubscriptions = AdministratorSubscriptionsCoder

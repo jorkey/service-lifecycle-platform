@@ -36,7 +36,7 @@ class LogBuffer(logReceiver: LogReceiver, lowWater: Int, highWater: Int)
 
   override def stop(): Unit = {
     synchronized {
-      eventsBuffer :+= LogLine(new Date(), "", None, "", Some(true))
+      eventsBuffer :+= LogLine(new Date(), "", None, "", Some(0))
     }
     flush()
   }

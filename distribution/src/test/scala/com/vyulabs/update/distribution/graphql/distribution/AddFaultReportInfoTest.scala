@@ -56,7 +56,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
     val date1 = new Date()
     addFaultReportInfo("fault1", 1, date1)
 
-    Thread.sleep(faultReportsConfig.expirationPeriodMs)
+    Thread.sleep(config.faultReportsConfig.expirationPeriodMs)
 
     val date2 = new Date()
     addFaultReportInfo("fault2", 2, date2)

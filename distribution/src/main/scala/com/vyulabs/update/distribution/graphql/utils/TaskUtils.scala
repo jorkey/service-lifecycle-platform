@@ -9,8 +9,8 @@ import scala.concurrent.Future
 trait TaskUtils {
   protected val taskManager: TaskManager
 
-  def createTask[T](description: String, run: (TaskId, Logger) => Future[T], cancel: Option[() => Unit])(implicit log: Logger): TaskId = {
-    taskManager.create(description, run, cancel).taskId
+  def createTask[T](description: String, run: (TaskId, Logger) => (Future[T], Option[() => Unit]))(implicit log: Logger): TaskId = {
+    taskManager.create(description, run).taskId
   }
 
   def cancelTask(taskId: TaskId)(implicit log: Logger): Boolean = {

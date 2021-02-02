@@ -78,8 +78,6 @@ object GraphqlTypes {
       case _ => Left(VersionViolation)
     })
 
-  case class SequencedServiceLogLine(sequence: Long, logLine: ServiceLogLine)
-
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
 
   implicit val DeveloperDesiredVersionType = deriveObjectType[Unit, DeveloperDesiredVersion]()

@@ -63,7 +63,7 @@ object DistributionMain extends App {
     val selfUpdater = new SelfUpdater(collections, dir)
     selfUpdater.start()
 
-    val workspace = GraphqlWorkspace(config.distributionName, config.versionHistory, config.faultReportsConfig, config.builderExecutePath, collections, dir, taskManager)
+    val workspace = GraphqlWorkspace(config, collections, dir, taskManager)
     val distribution = new Distribution(workspace, graphql)
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

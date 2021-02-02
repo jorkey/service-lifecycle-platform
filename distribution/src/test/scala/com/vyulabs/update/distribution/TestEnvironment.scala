@@ -11,7 +11,7 @@ import com.vyulabs.update.common.info.UserRole
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.common.AkkaTimer
-import com.vyulabs.update.distribution.config.{FaultReportsConfig, VersionHistoryConfig}
+import com.vyulabs.update.distribution.config.{BuilderConfig, DistributionConfig, FaultReportsConfig, InstanceStateConfig, NetworkConfig, VersionHistoryConfig}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
 import com.vyulabs.update.distribution.logger.LogStorer
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
@@ -20,13 +20,13 @@ import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, User
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
-import java.nio.file.Files
+import java.io.File
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  = VersionHistoryConfig(3),
-                               val faultReportsConfig: FaultReportsConfig = FaultReportsConfig(30000, 3)) extends FlatSpec with Matchers with BeforeAndAfterAll {
+abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAfterAll {
   private implicit val system = ActorSystem("Distribution")
   private implicit val materializer: Materializer = ActorMaterializer()
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
@@ -38,8 +38,12 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
 
   def dbName = getClass.getSimpleName
 
-  val distributionName = "test"
-  val instanceId = "instance1"
+  val config = DistributionConfig("test", "Test distribution server", "instance1", "mongodb://localhost:27017", dbName, NetworkConfig(0, None),
+                                  "/tmp/distribution", BuilderConfig(Some("/tmp/builder"), None),
+                                  VersionHistoryConfig(3), InstanceStateConfig(60), FaultReportsConfig(30000, 3), None)
+
+  val distributionName = config.distributionName
+  val instanceId = config.instanceId
   val adminClientCredentials = BasicHttpCredentials("admin", "admin")
   val distributionClientCredentials = BasicHttpCredentials("distribution1", "distribution1")
   val serviceClientCredentials = BasicHttpCredentials("service1", "service1")
@@ -48,17 +52,14 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
   val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
   val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
 
-  val mongo = new MongoDb("mongodb://localhost:27017", dbName); result(mongo.dropDatabase())
+  val mongo = new MongoDb(config.mongoDbConnection, dbName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, 100)
-  val distributionDir = new DistributionDirectory(Files.createTempDirectory("test").toFile)
+  val distributionDir = new DistributionDirectory(Files.createDirectory(Paths.get(config.distributionDirectory)).toFile)
   val taskManager = new TaskManager(taskId => new LogStorer(distributionName, Common.DistributionServiceName, Some(taskId),
     instanceId, collections.State_ServiceLogs))
 
-  val ownServicesDir = Files.createTempDirectory("test").toFile
-
   val graphql = new Graphql()
-
-  val workspace = GraphqlWorkspace(distributionName, versionHistoryConfig, faultReportsConfig, "/tmp", collections, distributionDir, taskManager)
+  val workspace = GraphqlWorkspace(config, collections, distributionDir, taskManager)
   val distribution = new Distribution(workspace, graphql)
 
   result(for {
@@ -67,13 +68,16 @@ abstract class TestEnvironment(val versionHistoryConfig: VersionHistoryConfig  =
     _ <- collections.Users_Info.insert(ServerUserInfo(serviceClientCredentials.username, serviceCredentials.role.toString, serviceCredentials.passwordHash))
   } yield {})
 
-  IoUtils.writeServiceVersion(ownServicesDir, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
+  IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
     distributionDir.drop()
-    IoUtils.deleteFileRecursively(ownServicesDir)
+    IoUtils.deleteFileRecursively(distributionDir.directory)
+    for (builderDirectory <- config.builderConfig.builderDirectory) {
+      IoUtils.deleteFileRecursively(new File(builderDirectory))
+    }
     //result(mongo.dropDatabase())
   }
 }

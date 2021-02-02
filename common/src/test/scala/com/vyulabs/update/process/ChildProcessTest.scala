@@ -29,7 +29,7 @@ class ChildProcessTest extends FlatSpec with Matchers {
     process.handleOutput(lines => lines.foreach { case (line, nl) =>
       println(line)
     })
-    result(process.waitForTermination())
+    result(process.onTermination())
   }
 
   it should "terminate process" in {
@@ -38,6 +38,6 @@ class ChildProcessTest extends FlatSpec with Matchers {
     println(line)
       assertResult(false)(result(process.terminate()))
     })
-    result(process.waitForTermination())
+    result(process.onTermination())
   }
 }

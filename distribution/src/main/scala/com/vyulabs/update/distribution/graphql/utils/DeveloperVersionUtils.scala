@@ -11,11 +11,11 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
-import com.vyulabs.update.distribution.config.VersionHistoryConfig
+import com.vyulabs.update.distribution.config.DistributionConfig
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
 
 import java.io.File
 import scala.collection.JavaConverters.asJavaIterableConverter
@@ -25,7 +25,7 @@ import scala.util.Success
 trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with SprayJsonSupport {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
-  protected val versionHistoryConfig: VersionHistoryConfig
+  protected val config: DistributionConfig
 
   protected implicit val executionContext: ExecutionContext
 
@@ -63,8 +63,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       complete <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
-        if (notUsedVersions.size > versionHistoryConfig.maxSize) {
-          Future.sequence(notUsedVersions.take(notUsedVersions.size - versionHistoryConfig.maxSize).map { version =>
+        if (notUsedVersions.size > config.versionHistory.maxSize) {
+          Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versionHistory.maxSize).map { version =>
             removeDeveloperVersion(serviceName, version)
           })
         } else {

@@ -18,7 +18,7 @@ class ChildProcess(process: Process)
 
   def isAlive(): Boolean = process.isAlive
 
-  def waitForTermination(): Future[Int] = exitCode.future
+  def onTermination(): Future[Int] = exitCode.future
 
   def getHandle() = process
 

@@ -66,7 +66,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
             for (restartConditions <- config.restartConditions) {
               new ProcessMonitor(process, restartConditions).start()
             }
-            process.waitForTermination().onComplete {
+            process.onTermination().onComplete {
               case Success(exitCode) =>
                 this.process = None
                 val logTail = logWriter.getLogTail()
