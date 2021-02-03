@@ -7,22 +7,23 @@ import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersio
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.config.DistributionConfig
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.Task
+import com.vyulabs.update.distribution.task.{Task, TaskManager}
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsUtils with TaskUtils with RunBuilderUtils {
+trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsUtils with RunBuilderUtils {
   protected val dir: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
+  protected val taskManager: TaskManager
 
   protected implicit val executionContext: ExecutionContext
 
   def buildClientVersions(serviceNames: Seq[ServiceName], author: String)(implicit log: Logger): TaskId = {
-    createTask(s"Build client versions for services ${serviceNames} by ${author}", (taskId, logger) => {
+    taskManager.create(s"Build client versions for services ${serviceNames} by ${author}", (taskId, logger) => {
       implicit val log = logger
       @volatile var cancels = Seq.empty[() => Unit]
       val future = for {
@@ -50,7 +51,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
         result <- setClientDesiredVersions(ClientDesiredVersions.fromMap(clientDesiredVersions))
       } yield result
       (future, Some(() => cancels.foreach { _() }))
-    })
+    }).taskId
   }
 
   def buildClientVersion(serviceName: ServiceName,

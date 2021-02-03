@@ -1,9 +1,8 @@
 package com.vyulabs.update.common.logger
 
-import ch.qos.logback.classic.{Level, Logger}
+import ch.qos.logback.classic.Level
 import com.vyulabs.update.common.utils.Utils
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, OneInstancePerTest}
-import org.slf4j.LoggerFactory
 
 import java.io.IOException
 import scala.concurrent.Promise
@@ -19,7 +18,8 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
 
   log.setLevel(Level.INFO)
   val appender = new TraceAppender()
-  val buffer = new LogBuffer(events => { messages = events.map(_.message); promise.future }, 3, 6)
+  val buffer = new LogBuffer("Test", "PROCESS",
+    events => { messages = events.map(_.message); promise.future }, 3, 6)
   appender.addListener(buffer)
   appender.start()
   log.addAppender(appender)

@@ -44,9 +44,9 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
         val command = Utils.extendMacro(config.command, parameters)
         val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters))
         val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters))
-        process = ChildProcess.start(command, arguments, env, directory)
-        process match {
-          case Some(process) =>
+        ChildProcess.start(command, arguments, env, directory).onComplete {
+          case Success(process) =>
+            this.process = Some(process)
             lastStartTime = System.currentTimeMillis()
             val dateFormat = config.logWriter.dateFormat.map(new SimpleDateFormat(_))
             val logWriter = new LogWriter(new File(state.currentServiceDirectory, config.logWriter.directory),
@@ -76,8 +76,8 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
                 this.process = None
                 // TODO
             }
-          case None =>
-            // TODO
+          case Failure(ex) =>
+            log.error(s"Can't start process ${command}", ex)
         }
         true
       }

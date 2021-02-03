@@ -34,7 +34,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   implicit val timer = new AkkaTimer(system.scheduler)
 
-  def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Int], Option[() => Unit]) = {
+  def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Boolean], Option[() => Unit]) = {
     config.builderConfig.builderDirectory match {
       case Some(builderDirectory) =>
         runLocalBuilder(taskId, arguments, builderDirectory)
@@ -58,34 +58,37 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   }
 
   private def runLocalBuilder(taskId: TaskId, arguments: Seq[String], builderDirectory: String)
-                             (implicit log: Logger): (Future[Int], Option[() => Unit]) = {
-    val process = ChildProcess.start(Common.BuilderSh, arguments, Map.empty, new File(builderDirectory)).get
-    val exitFuture = Promise[Int]()
-    @volatile var logOutputFuture = Option.empty[Future[Unit]]
-    process.handleOutput(lines => {
-      val logLines = lines.map(line => {
-        val array = line._1.split(" ", 6)
-        val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
-        val date = dateFormat.parse(s"${array(0)} ${array(1)}")
-        LogLine(date, array(2), Some(array(3)), array(5), None)
+                             (implicit log: Logger): (Future[Boolean], Option[() => Unit]) = {
+    val process = for {
+      process <- ChildProcess.start(Common.BuilderSh, arguments, Map.empty, new File(builderDirectory))
+    } yield {
+      @volatile var logOutputFuture = Option.empty[Future[Unit]]
+      process.handleOutput(lines => {
+        val logLines = lines.map(line => {
+          val array = line._1.split(" ", 6)
+          val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+          val date = dateFormat.parse(s"${array(0)} ${array(1)}")
+          LogLine(date, array(2), Some(array(3)), array(5), None)
+        })
+        logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
+          addServiceLogs(config.distributionName, Common.DistributionServiceName,
+            Some(taskId), config.instanceId, process.getHandle().pid().toString, builderDirectory, logLines).map(_ => ())
+        })
       })
-      logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-        addServiceLogs(config.distributionName, Common.DistributionServiceName,
-          Some(taskId), config.instanceId, process.getHandle().pid().toString, builderDirectory, logLines).map(_ => ())
-      })
-    })
-    logOutputFuture.getOrElse(Future()).flatMap { _ =>
-      process.onTermination().map { exitCode =>
-        exitFuture.success(exitCode)
-        addServiceLogs(config.distributionName, Common.DistributionServiceName,
-          Some(taskId), config.instanceId, process.getHandle().pid().toString, builderDirectory, Seq(LogLine(new Date, "", None, "", Some(exitCode))))
+      logOutputFuture.getOrElse(Future()).flatMap { _ =>
+        process.onTermination().map { exitCode =>
+          addServiceLogs(config.distributionName, Common.DistributionServiceName,
+            Some(taskId), config.instanceId, process.getHandle().pid().toString, builderDirectory, Seq(LogLine(new Date, "", Some("PROCESS"),
+              s"Builder process terminated with status ${exitCode}", None)))
+        }
       }
+      process
     }
-    (exitFuture.future, Some(() => process.terminate()))
+    (process.map(_.onTermination().map(_ == 0)).flatten, Some(() => process.map(_.terminate())))
   }
 
-  private def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Int], Option[() => Unit]) = {
-    val result = Promise[Int]()
+  private def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Boolean], Option[() => Unit]) = {
+    val result = Promise[Boolean]()
     val client = new DistributionClient(config.distributionName, new AkkaHttpClient(distributionUrl))
     val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
     for {
@@ -94,8 +97,8 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     } yield {
       @volatile var logOutputFuture = Option.empty[Future[Unit]]
       logSource.map(line => {
-        for (exitCode <- line.logLine.line.exitCode) {
-          result.success(exitCode)
+        for (terminationStatus <- line.logLine.line.terminationStatus) {
+          result.success(terminationStatus)
         }
         logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
           addServiceLogs(config.distributionName, Common.DistributionServiceName,

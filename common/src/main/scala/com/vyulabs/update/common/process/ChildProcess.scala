@@ -81,8 +81,8 @@ class ChildProcess(process: Process)
 
 object ChildProcess {
   def start(command: String, arguments: Seq[String] = Seq.empty, env: Map[String, String] = Map.empty, directory: File = new File("."))
-           (implicit executionContext: ExecutionContext, log: Logger): Option[ChildProcess] = {
-    try {
+           (implicit executionContext: ExecutionContext, log: Logger): Future[ChildProcess] = {
+    Future {
       val builder = new ProcessBuilder().command((command +: arguments).asJava)
       env.foldLeft(builder.environment())((e, entry) => {
         if (entry._2 != null) { e.put(entry._1, entry._2) }
@@ -95,11 +95,7 @@ object ChildProcess {
       log.debug(s"Environment: ${builder.environment().asScala}")
       val process = builder.start()
       log.debug(s"Started process ${process.pid()}")
-      Some(new ChildProcess(process))
-    } catch {
-      case e: Exception =>
-        log.error("Start process error", e)
-        None
+      new ChildProcess(process)
     }
   }
 }

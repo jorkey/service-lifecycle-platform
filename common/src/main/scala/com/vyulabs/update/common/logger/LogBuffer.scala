@@ -12,17 +12,25 @@ trait LogReceiver {
   def receiveLogLines(lines: Seq[LogLine]): Future[Unit]
 }
 
-class LogBuffer(logReceiver: LogReceiver, lowWater: Int, highWater: Int)
+class LogBuffer(description: String, loggerName: String,
+                logReceiver: LogReceiver, lowWater: Int, highWater: Int)
                (implicit executionContext: ExecutionContext) extends LogListener {
   private var eventsBuffer = Seq.empty[LogLine]
   private var sendingEvents = Seq.empty[LogLine]
   private var skipped = 0
 
+  override def start(): Unit = {
+    synchronized {
+      eventsBuffer :+= LogLine(new Date, "INFO", Some(loggerName), s"${description} started", None)
+    }
+    flush()
+  }
+
   def append(event: ILoggingEvent): Unit = {
     synchronized {
       if (eventsBuffer.size + sendingEvents.size < highWater) {
         if (skipped != 0) {
-          eventsBuffer :+= LogLine(new Date(), Level.ERROR.toString, Some("LogSender"),
+          eventsBuffer :+= LogLine(new Date(), Level.ERROR.toString, Some(loggerName),
             s"------------------------------ Skipped ${skipped} events ------------------------------", None)
           skipped = 0
         }
@@ -34,9 +42,14 @@ class LogBuffer(logReceiver: LogReceiver, lowWater: Int, highWater: Int)
     }
   }
 
-  override def stop(): Unit = {
+  override def stop(status: Option[Boolean], error: Option[String]): Unit = {
+    val stat = status match {
+      case Some(true) => "successfully"
+      case Some(false) => "with error: " + error.getOrElse("")
+      case None => ""
+    }
     synchronized {
-      eventsBuffer :+= LogLine(new Date(), "", None, "", Some(0))
+      eventsBuffer :+= LogLine(new Date(), "INFO", Some(loggerName), s"${description} finished ${stat}", status)
     }
     flush()
   }

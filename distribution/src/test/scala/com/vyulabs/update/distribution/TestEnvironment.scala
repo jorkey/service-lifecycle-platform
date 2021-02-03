@@ -52,6 +52,9 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
   val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
 
+  IoUtils.deleteFileRecursively(new File(config.distributionDirectory))
+  config.builderConfig.builderDirectory.foreach(dir => IoUtils.deleteFileRecursively(new File(dir)))
+
   val mongo = new MongoDb(config.mongoDbConnection, dbName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, 100)
   val distributionDir = new DistributionDirectory(Files.createDirectory(Paths.get(config.distributionDirectory)).toFile)
@@ -74,10 +77,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
 
   override protected def afterAll(): Unit = {
     distributionDir.drop()
-    IoUtils.deleteFileRecursively(distributionDir.directory)
-    for (builderDirectory <- config.builderConfig.builderDirectory) {
-      IoUtils.deleteFileRecursively(new File(builderDirectory))
-    }
+    config.builderConfig.builderDirectory.foreach(dir => IoUtils.deleteFileRecursively(new File(dir)))
     //result(mongo.dropDatabase())
   }
 }

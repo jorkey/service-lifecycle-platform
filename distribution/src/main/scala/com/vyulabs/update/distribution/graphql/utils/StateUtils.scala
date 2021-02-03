@@ -149,32 +149,34 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
 
   def subscribeServiceLogs(distributionName: DistributionName, serviceName: ServiceName,
                            instanceId: InstanceId, processId: ProcessId, directory: ServiceDirectory,
-                           fromSequence: Long)(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+                           fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+    val from = fromSequence.getOrElse(0L)
     val bufferedLogs = logsBuffer
-      .filter(_.sequence >= fromSequence)
+      .filter(_.sequence >= from)
     val bufferSource = Source.fromIterator(() => bufferedLogs.iterator)
     val publisherSource = Source.fromPublisher(logPublisher)
-      .filter(line => line.sequence >= fromSequence && line.sequence > bufferedLogs.lastOption.map(_.sequence).getOrElse(0L))
+      .filter(line => line.sequence >= from && line.sequence > bufferedLogs.lastOption.map(_.sequence).getOrElse(0L))
     Source.combine(bufferSource, publisherSource)(Concat(_))
       .filter(_.document.distributionName == distributionName)
       .filter(_.document.serviceName == serviceName)
       .filter(_.document.instanceId == instanceId)
       .filter(_.document.processId == processId)
       .filter(_.document.directory == directory)
-      .takeWhile(!_.document.line.exitCode.isDefined)
+      .takeWhile(!_.document.line.terminationStatus.isDefined)
       .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(250, OverflowStrategy.fail)
   }
 
-  def subscribeTaskLogs(taskId: TaskId, fromSequence: Long)(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+  def subscribeTaskLogs(taskId: TaskId, fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+    val from = fromSequence.getOrElse(0L)
     val bufferedLogs = logsBuffer
-      .filter(_.sequence >= fromSequence)
+      .filter(_.sequence >= from)
     val bufferSource = Source.fromIterator(() => bufferedLogs.iterator)
     val publisherSource = Source.fromPublisher(logPublisher)
-      .filter(line => line.sequence >= fromSequence && line.sequence > bufferedLogs.lastOption.map(_.sequence).getOrElse(0L))
+      .filter(line => line.sequence >= from && line.sequence > bufferedLogs.lastOption.map(_.sequence).getOrElse(0L))
     Source.combine(bufferSource, publisherSource)(Concat(_))
       .filter(_.document.taskId.contains(taskId))
-      .takeWhile(!_.document.line.exitCode.isDefined)
+      .takeWhile(!_.document.line.terminationStatus.isDefined)
       .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(250, OverflowStrategy.fail)
   }

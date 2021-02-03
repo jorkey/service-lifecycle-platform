@@ -51,7 +51,6 @@ object GraphqlSchema {
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
-  val FromArg = Argument("from", LongType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -67,6 +66,7 @@ object GraphqlSchema {
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
   val OptionCommentArg = Argument("comment", OptionInputType(StringType))
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
+  val OptionFromArg = Argument("from", OptionInputType(LongType))
 
   // Queries
 
@@ -198,7 +198,7 @@ object GraphqlSchema {
 
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.cancelTask(c.arg(TaskArg)) })
+        resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) })
     )
   )
 
@@ -226,7 +226,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.runLocalBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.cancelTask(c.arg(TaskArg)) }))
+        resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) }))
   )
 
   def ServiceMutations(implicit log: Logger) = ObjectType(
@@ -251,12 +251,12 @@ object GraphqlSchema {
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeServiceLogs", SequencedServiceLogLineType,
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: FromArg :: Nil,
+        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromArg :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeServiceLogs(
-          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(FromArg))),
+          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
       Field.subs("subscribeTaskLogs", SequencedServiceLogLineType,
-        arguments = TaskArg :: FromArg :: Nil,
-        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(FromArg))),
+        arguments = TaskArg :: OptionFromArg :: Nil,
+        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg))),
       Field.subs("testSubscription", StringType,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))
@@ -265,8 +265,8 @@ object GraphqlSchema {
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeTaskLogs", SequencedServiceLogLineType,
-        arguments = TaskArg :: FromArg :: Nil,
-        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(FromArg)))
+        arguments = TaskArg :: OptionFromArg :: Nil,
+        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg)))
     ))
 
   def AdministratorSchemaDefinition(implicit materializer: Materializer, log: Logger) =

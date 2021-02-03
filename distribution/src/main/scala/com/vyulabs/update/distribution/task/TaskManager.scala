@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-case class Task(taskId: TaskId, description: String, future: Future[_], cancel: Option[() => Unit]) {
+case class Task(taskId: TaskId, description: String, future: Future[Boolean], cancel: Option[() => Unit]) {
   val startDate: Date = new Date
 }
 
@@ -22,24 +22,28 @@ class TaskManager(logStorer: TaskId => LogStorer)(implicit timer: Timer, executi
   private val idGenerator = new IdGenerator()
   private var activeTasks = Map.empty[TaskId, Task]
 
-  def create[T](description: String, run: (TaskId, Logger) => (Future[T], Option[() => Unit])): Task = {
+  def create(description: String, run: (TaskId, Logger) => (Future[Boolean], Option[() => Unit])): Task = {
     val taskId = idGenerator.generateId(8)
-    val (future, cancel) = {
-      val appender = new TraceAppender(); appender.start()
-      val logger = Utils.getLogbackLogger(Task.getClass)
-      logger.addAppender(appender)
-      val buffer = new LogBuffer(logStorer(taskId), 10, 1000)
-      timer.schedulePeriodically(() => buffer.flush(), FiniteDuration(1, TimeUnit.SECONDS))
-      appender.addListener(buffer)
-      run(taskId, logger)
-    }
+    log.info(s"Started task ${taskId} '${description}''")
+    val appender = new TraceAppender()
+    val logger = Utils.getLogbackLogger(Task.getClass)
+    logger.addAppender(appender)
+    val buffer = new LogBuffer(description, "TASK", logStorer(taskId), 1, 1000)
+    timer.schedulePeriodically(() => buffer.flush(), FiniteDuration(1, TimeUnit.SECONDS))
+    appender.addListener(buffer)
+    appender.start()
+    val (future, cancel) = run(taskId, logger)
     val task = Task(taskId, description, future, cancel)
     activeTasks += (task.taskId -> task)
-    log.info(s"Create new task ${task.taskId}")
-    task.future.andThen {
-      case result =>
-        log.info(s"Task ${task.taskId} is terminated with result ${result}")
-        activeTasks -= task.taskId
+    future.andThen { case status =>
+      log.info(s"Task ${taskId} '${description}' is finished with status ${status}")
+      if (status.isSuccess) {
+        appender.setTerminationStatus(status.get, None)
+      } else {
+        appender.setTerminationStatus(false, Some(status.failed.get.toString))
+      }
+      appender.stop()
+      activeTasks -= taskId
     }
     task
   }

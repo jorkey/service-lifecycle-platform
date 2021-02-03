@@ -25,7 +25,7 @@ class ChildProcessTest extends FlatSpec with Matchers {
   IoUtils.writeBytesToFile(script, "echo \"message1\"\nsleep 5\necho \"message2\"".getBytes)
 
   it should "run process and read output" in {
-    val process = ChildProcess.start("/bin/sh", Seq(script.toString)).get
+    val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
     process.handleOutput(lines => lines.foreach { case (line, nl) =>
       println(line)
     })
@@ -33,7 +33,7 @@ class ChildProcessTest extends FlatSpec with Matchers {
   }
 
   it should "terminate process" in {
-    val process = ChildProcess.start("/bin/sh", Seq(script.toString)).get
+    val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
     process.handleOutput(lines => lines.foreach { case (line, nl) =>
     println(line)
       assertResult(false)(result(process.terminate()))
