@@ -17,8 +17,14 @@ class LogStorer(distributionName: DistributionName, serviceName: ServiceName,
   private val processId = ProcessHandle.current.pid.toString
   private val directory = new java.io.File(".").getCanonicalPath()
 
+  @volatile private var logOutputFuture = Option.empty[Future[Unit]]
+
   override def receiveLogLines(logs: Seq[LogLine]): Future[Unit] = {
-    collection.insert(logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
-      ServiceLogLine(distributionName, serviceName, taskId, instanceId, processId, directory, line) })).map(_ => ())
+    logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
+      collection.insert(logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => {
+        seq :+ ServiceLogLine(distributionName, serviceName, taskId, instanceId, processId, directory, line)
+      })).map(_ => ())
+    })
+    logOutputFuture.get
   }
 }

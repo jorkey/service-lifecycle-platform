@@ -11,7 +11,7 @@ import com.vyulabs.update.common.info.UserRole
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.common.AkkaTimer
-import com.vyulabs.update.distribution.config.{BuilderConfig, DistributionConfig, FaultReportsConfig, InstanceStateConfig, NetworkConfig, VersionHistoryConfig}
+import com.vyulabs.update.distribution.config._
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
 import com.vyulabs.update.distribution.logger.LogStorer
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
@@ -20,8 +20,7 @@ import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, User
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
-import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
@@ -38,9 +37,18 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
 
   def dbName = getClass.getSimpleName
 
-  val config = DistributionConfig("test", "Test distribution server", "instance1", "mongodb://localhost:27017", dbName, NetworkConfig(0, None),
-                                  "/tmp/distribution", BuilderConfig(Some("/tmp/builder"), None),
-                                  VersionHistoryConfig(3), InstanceStateConfig(60), FaultReportsConfig(30000, 3), None)
+  val distributionDirectory = Files.createTempDirectory("distribution-").toFile
+  val builderDirectory = Files.createTempDirectory("builder-").toFile
+
+  def networkConfig = NetworkConfig(0, None)
+  def builderConfig = BuilderConfig(None, None)
+  def versionHistoryConfig = VersionHistoryConfig(3)
+  def instanceStateConfig = InstanceStateConfig(60)
+  def faultReportsConfig = FaultReportsConfig(30000, 3)
+
+  val config = DistributionConfig("test", "Test distribution server", "instance1", "mongodb://localhost:27017", dbName,
+                                  networkConfig, distributionDirectory.toString,
+                                  builderConfig, versionHistoryConfig, instanceStateConfig, faultReportsConfig, None)
 
   val distributionName = config.distributionName
   val instanceId = config.instanceId
@@ -52,12 +60,9 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
   val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
 
-  IoUtils.deleteFileRecursively(new File(config.distributionDirectory))
-  config.builderConfig.builderDirectory.foreach(dir => IoUtils.deleteFileRecursively(new File(dir)))
-
   val mongo = new MongoDb(config.mongoDbConnection, dbName); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, 100)
-  val distributionDir = new DistributionDirectory(Files.createDirectory(Paths.get(config.distributionDirectory)).toFile)
+  val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(taskId => new LogStorer(distributionName, Common.DistributionServiceName, Some(taskId),
     instanceId, collections.State_ServiceLogs))
 
@@ -76,8 +81,8 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
-    distributionDir.drop()
-    config.builderConfig.builderDirectory.foreach(dir => IoUtils.deleteFileRecursively(new File(dir)))
+    //distributionDir.drop()
+    //config.builderConfig.builderDirectory.foreach(dir => IoUtils.deleteFileRecursively(new File(dir)))
     //result(mongo.dropDatabase())
   }
 }

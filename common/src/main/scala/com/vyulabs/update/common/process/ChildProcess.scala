@@ -31,7 +31,7 @@ class ChildProcess(process: Process)
         log.info(s"Process ${process.pid()} is terminated with status ${status}")
         exitCode.trySuccess(status)
       },
-      exception => { if (process.isAlive) log.error(s"Read process output error ${exception.toString}") }
+      exception => { log.error(s"Read process output error", exception) }
     ).start()
   }
 

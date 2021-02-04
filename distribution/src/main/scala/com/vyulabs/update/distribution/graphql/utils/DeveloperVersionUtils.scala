@@ -37,7 +37,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
-          s"distributionName=${config.distributionDirectory}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
+          s"distributionName=${config.distributionName}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
           s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
           comment.map(comment => s"comment=${comment}")
         runBuilder(taskId, arguments)
@@ -107,7 +107,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   }
 
   def setDeveloperDesiredVersions(servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
-                                 (implicit log: Logger, filesLocker: SmartFilesLocker): Future[Boolean] = {
+                                 (implicit log: Logger, filesLocker: SmartFilesLocker): Future[Unit] = {
     log.info(s"Upload developer desired versions ${servicesVersions}")
     for {
       desiredVersions <- getDeveloperDesiredVersions(servicesVersions.keySet)
@@ -126,9 +126,9 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield result
   }
 
-  def setDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Boolean] = {
+  def setDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     log.info(s"Set developer desired versions ${desiredVersions}")
-    collections.Developer_DesiredVersions.update(new BsonDocument(), _ => Some(DeveloperDesiredVersions(desiredVersions))).map(_ => true)
+    collections.Developer_DesiredVersions.update(new BsonDocument(), _ => Some(DeveloperDesiredVersions(desiredVersions))).map(_ => ())
   }
 
   def getDeveloperDesiredVersions(serviceNames: Set[ServiceName])(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {

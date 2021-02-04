@@ -62,10 +62,10 @@ object GraphqlSchema {
   val OptionServicesArg = Argument("services", OptionInputType(ListInputType(StringType)))
   val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperDistributionVersionType))
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientDistributionVersionType))
-  val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
   val OptionCommentArg = Argument("comment", OptionInputType(StringType))
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
+  val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
 
   // Queries
@@ -75,7 +75,7 @@ object GraphqlSchema {
       resolve = c => { c.ctx.userInfo }),
   )
 
-  def AdministratorQueries(implicit log: Logger) = ObjectType(
+  def AdministratorQueries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("usersInfo", ListType(UserInfoType),
@@ -105,12 +105,12 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("serviceLogs", ListType(ServiceLogLineType),
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionLastArg :: Nil,
+        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromArg :: Nil,
         resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(DistributionArg), c.arg(ServiceArg),
-          c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionLastArg)) }),
+          c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg)).map(_.map(_.document)) }),
       Field("taskLogs", ListType(ServiceLogLineType),
-        arguments = TaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.getTaskLogs(c.arg(TaskArg)) }),
+        arguments = TaskArg :: OptionFromArg :: Nil,
+        resolve = c => { c.ctx.workspace.getTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg)).map(_.map(_.document)) }),
       Field("faultReportsInfo", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
@@ -152,12 +152,12 @@ object GraphqlSchema {
       resolve = c => { c.ctx.workspace.changeUserPassword(c.ctx.userInfo.name, c.arg(OldPasswordArg), c.arg(PasswordArg)) }),
   )
 
-  def AdministratorMutations(implicit log: Logger) = ObjectType(
+  def AdministratorMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Mutation",
     CommonMutations ++ fields[GraphqlContext, Unit](
       Field("addUser", BooleanType,
         arguments = UserArg :: UserRoleArg :: PasswordArg :: Nil,
-        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(UserRoleArg), c.arg(PasswordArg)) }),
+        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(UserRoleArg), c.arg(PasswordArg)).map(_ => true) }),
       Field("removeUser", BooleanType,
         arguments = UserArg :: Nil,
         resolve = c => { c.ctx.workspace.removeUser(c.arg(UserArg)) }),
@@ -177,24 +177,24 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setDeveloperDesiredVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)) }),
+        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
 
       Field("buildClientVersions", StringType,
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.workspace.buildClientVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty), c.ctx.userInfo.name) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
-        resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)) }),
+        resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)).map(_ => true) }),
       Field("removeClientVersion", BooleanType,
         arguments = ServiceArg :: ClientDistributionVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.removeClientVersion(c.arg(ServiceArg), c.arg(ClientDistributionVersionArg)) }),
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)) }),
+        resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
-          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
 
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
@@ -202,25 +202,25 @@ object GraphqlSchema {
     )
   )
 
-  def DistributionMutations(implicit log: Logger) = ObjectType(
+  def DistributionMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Mutation",
     CommonMutations ++ fields[GraphqlContext, Unit](
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.userInfo.name, c.arg(DeveloperDesiredVersionsArg)) }),
+        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.userInfo.name, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(ClientDesiredVersionsArg)) }),
+        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.userInfo.name, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
-        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.userInfo.name, c.arg(InstanceServiceStatesArg)) }),
+        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.userInfo.name, c.arg(InstanceServiceStatesArg)).map(_ => true) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.userInfo.name,
-          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)) }),
+        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.userInfo.name, c.arg(ServiceFaultReportInfoArg)).map(_ => true) }),
       Field("runBuilder", StringType,
         arguments = ArgumentsArg :: Nil,
         resolve = c => { c.ctx.workspace.runLocalBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
@@ -229,25 +229,25 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) }))
   )
 
-  def ServiceMutations(implicit log: Logger) = ObjectType(
+  def ServiceMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Mutation",
     CommonMutations ++ fields[GraphqlContext, Unit](
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
-        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distributionName, c.arg(InstanceServiceStatesArg)) }),
+        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distributionName, c.arg(InstanceServiceStatesArg)).map(_ => true) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
-          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)) }),
+          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distributionName, c.arg(ServiceFaultReportInfoArg)) })
+        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distributionName, c.arg(ServiceFaultReportInfoArg)).map(_ => true) })
     )
   )
 
   // Subscriptions
 
-  def AdministratorSubscriptions(implicit materializer: Materializer, log: Logger) = ObjectType(
+  def AdministratorSubscriptions(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeServiceLogs", SequencedServiceLogLineType,
@@ -261,7 +261,7 @@ object GraphqlSchema {
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))
 
-  def DistributionSubscriptions(implicit materializer: Materializer, log: Logger) = ObjectType(
+  def DistributionSubscriptions(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeTaskLogs", SequencedServiceLogLineType,
@@ -269,16 +269,16 @@ object GraphqlSchema {
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg)))
     ))
 
-  def AdministratorSchemaDefinition(implicit materializer: Materializer, log: Logger) =
+  def AdministratorSchemaDefinition(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) =
     Schema(query = AdministratorQueries, mutation = Some(AdministratorMutations), subscription = Some(AdministratorSubscriptions))
 
-  def DistributionSchemaDefinition(implicit materializer: Materializer, log: Logger) =
+  def DistributionSchemaDefinition(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) =
     Schema(query = DistributionQueries, mutation = Some(DistributionMutations), subscription = Some(DistributionSubscriptions))
 
-  def ServiceSchemaDefinition(implicit log: Logger) =
+  def ServiceSchemaDefinition(implicit executionContext: ExecutionContext, log: Logger) =
     Schema(query = ServiceQueries, mutation = Some(ServiceMutations))
 
-  def SchemaDefinition(userRole: UserRole)(implicit materializer: Materializer, log: Logger): Schema[GraphqlContext, Unit] = {
+  def SchemaDefinition(userRole: UserRole)(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger): Schema[GraphqlContext, Unit] = {
     userRole match {
       case UserRole.Administrator =>
         AdministratorSchemaDefinition

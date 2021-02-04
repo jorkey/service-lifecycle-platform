@@ -23,12 +23,12 @@ trait UsersUtils extends SprayJsonSupport {
 
   protected val collections: DatabaseCollections
 
-  def addUser(userName: UserName, role: UserRole, password: String)(implicit log: Logger): Future[Boolean] = {
+  def addUser(userName: UserName, role: UserRole, password: String)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add user ${userName} with role ${role}")
     for {
       result <- {
         val document = ServerUserInfo(userName, role.toString, PasswordHash(password))
-        collections.Users_Info.insert(document).map(_ => true)
+        collections.Users_Info.insert(document)
       }
     } yield result
   }

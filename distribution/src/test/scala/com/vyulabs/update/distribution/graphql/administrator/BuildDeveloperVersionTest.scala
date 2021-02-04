@@ -10,11 +10,14 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.config.BuilderConfig
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json.{JsObject, JsString}
 
+import java.io.File
 import scala.concurrent.ExecutionContext
 
 class BuildDeveloperVersionTest extends TestEnvironment {
@@ -22,9 +25,17 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => {
+    ex.printStackTrace(); log.error("Uncatched exception", ex)
+  })
 
   val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+
+  val dummyBuilder = new File(builderDirectory, "builder.sh")
+  println("write " + IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes))
+  println(s"file ${dummyBuilder}")
+
+  override def builderConfig = BuilderConfig(Some(builderDirectory.toString), None)
 
   it should "build developer version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -41,14 +52,28 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    println(logInput.requestNext())
+    val builderDir = config.builderConfig.builderDirectory.get
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Build developer version 1.1.1 of service service1 started"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDir}"}}}}}"""))
+    logInput.requestNext()
+    logInput.requestNext()
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":6,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":7,"logLine":{"line":{"level":"INFO","message":"Builder continued"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":8,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
+    logInput.requestNext()
   }
 
   def subscribeTaskLogs(taskId: TaskId): ToResponseMarshallable = {
     result(graphql.executeSubscriptionQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         subscription SubscribeTaskLogs($$taskId: String!) {
           subscribeTaskLogs (
-            task: $$taskId
+            task: $$taskId,
+            from: 1
           ) {
             sequence
             logLine {

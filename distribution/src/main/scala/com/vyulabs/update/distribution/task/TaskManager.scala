@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-case class Task(taskId: TaskId, description: String, future: Future[Boolean], cancel: Option[() => Unit]) {
+case class Task[T](taskId: TaskId, description: String, future: Future[T], cancel: Option[() => Unit]) {
   val startDate: Date = new Date
 }
 
@@ -20,9 +20,9 @@ class TaskManager(logStorer: TaskId => LogStorer)(implicit timer: Timer, executi
   private implicit val log = LoggerFactory.getLogger(getClass)
 
   private val idGenerator = new IdGenerator()
-  private var activeTasks = Map.empty[TaskId, Task]
+  private var activeTasks = Map.empty[TaskId, Task[_]]
 
-  def create(description: String, run: (TaskId, Logger) => (Future[Boolean], Option[() => Unit])): Task = {
+  def create[T](description: String, run: (TaskId, Logger) => (Future[T], Option[() => Unit])): Task[T] = {
     val taskId = idGenerator.generateId(8)
     log.info(s"Started task ${taskId} '${description}''")
     val appender = new TraceAppender()
@@ -38,7 +38,7 @@ class TaskManager(logStorer: TaskId => LogStorer)(implicit timer: Timer, executi
     future.andThen { case status =>
       log.info(s"Task ${taskId} '${description}' is finished with status ${status}")
       if (status.isSuccess) {
-        appender.setTerminationStatus(status.get, None)
+        appender.setTerminationStatus(true, None)
       } else {
         appender.setTerminationStatus(false, Some(status.failed.get.toString))
       }
@@ -58,7 +58,7 @@ class TaskManager(logStorer: TaskId => LogStorer)(implicit timer: Timer, executi
     false
   }
 
-  def getTasks(): Seq[Task] = {
+  def getTasks(): Seq[Task[_]] = {
     activeTasks.values.toSeq.sortBy(_.startDate)
   }
 }

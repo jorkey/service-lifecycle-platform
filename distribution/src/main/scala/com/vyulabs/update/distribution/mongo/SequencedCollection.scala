@@ -1,12 +1,16 @@
 package com.vyulabs.update.distribution.mongo
 
+import akka.NotUsed
+import akka.actor.ActorSystem
+import akka.stream.scaladsl.{Concat, Sink, Source}
 import com.mongodb.client.model._
+import com.vyulabs.update.distribution.common.AkkaSource
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
 import org.bson.{BsonDateTime, BsonDocument, BsonDocumentReader, BsonDocumentWrapper}
 import org.mongodb.scala.bson.BsonInt64
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,9 +20,10 @@ case class Sequenced[T](sequence: Long, document: T)
 
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]],
-                                       historyExpireDays: Int = 7)
-                            (implicit executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
+                                       historyExpireDays: Int = 7)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   implicit val log = LoggerFactory.getLogger(getClass)
+
+  private val (logCallback, logPublisher) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(Sink.asPublisher(fanout = true))((m1, m2) => (m1, m2)).run()
 
   private var modifyInProcess = Option.empty[Future[Int]]
 
@@ -46,7 +51,15 @@ class SequencedCollection[T: ClassTag](val name: String,
         }
         collection.insert(docs).map(_ => sequence)
       }
-    } yield result
+    } yield {
+      var seq = sequence - documents.size
+      documents.foreach { doc =>
+        val log = Sequenced(seq, doc)
+        logCallback.invoke(log)
+        seq += 1
+      }
+      result
+    }
   }
 
   def find(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[T]] = {
@@ -166,6 +179,21 @@ class SequencedCollection[T: ClassTag](val name: String,
       collection <- collection
       result <- collection.drop()
     } yield result
+  }
+
+  def subscribe(filters: Bson = new BsonDocument(), fromSequence: Option[Long] = None)
+               (implicit log: Logger): Source[Sequenced[T], NotUsed] = {
+    val from = fromSequence.getOrElse(0L)
+    val filtersArg = Filters.and(filters, fromSequence.map(sequence => Filters.gte("_id", sequence)).getOrElse(new BsonDocument()))
+    val source = for {
+      documents <- findSequenced(filtersArg)
+    } yield {
+      val collectionSource = Source.fromIterator(() => documents.iterator)
+      val publisherSource = Source.fromPublisher(logPublisher)
+        .filter(line => line.sequence >= from && line.sequence > documents.lastOption.map(_.sequence).getOrElse(0L))
+      Source.combine(collectionSource, publisherSource)(Concat(_))
+    }
+    Source.futureSource(source).mapMaterializedValue(_ => NotUsed)
   }
 
   private def findDocuments(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[BsonDocument]] = {

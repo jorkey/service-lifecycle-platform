@@ -56,7 +56,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
 
   def buildClientVersion(serviceName: ServiceName,
                          developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String)
-                        (implicit log: Logger): Task = {
+                        (implicit log: Logger): Task[Boolean] = {
     val task = taskManager.create(s"Build client version ${developerVersion} of service ${serviceName}",
       (taskId, logger) => {
         implicit val log = logger
@@ -69,10 +69,10 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
     task
   }
 
-  def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Boolean] = {
+  def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add client version info ${versionInfo}")
     for {
-      result <- collections.Client_VersionsInfo.insert(versionInfo).map(_ => true)
+      result <- collections.Client_VersionsInfo.insert(versionInfo)
       _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
     } yield result
   }
@@ -139,8 +139,8 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
       .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)).sortBy(_.serviceName))
   }
 
-  def setClientDesiredVersions(desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Boolean] = {
-    collections.Client_DesiredVersions.update(new BsonDocument(), _ => Some(ClientDesiredVersions(desiredVersions))).map(_ => true)
+  def setClientDesiredVersions(desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Unit] = {
+    collections.Client_DesiredVersions.update(new BsonDocument(), _ => Some(ClientDesiredVersions(desiredVersions))).map(_ => ())
   }
 
   def getClientDesiredVersion(serviceName: ServiceName)(implicit log: Logger): Future[Option[ClientDistributionVersion]] = {
