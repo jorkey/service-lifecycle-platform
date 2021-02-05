@@ -19,6 +19,7 @@ import spray.json.{JsObject, JsString}
 
 import java.io.File
 import scala.concurrent.ExecutionContext
+import spray.json._
 
 class BuildDeveloperVersionTest extends TestEnvironment {
   behavior of "Build Developer Version"
@@ -69,6 +70,43 @@ class BuildDeveloperVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"Builder process terminated with status 0"}}}}}"""))
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"Build developer version 1.1.1 of service service1 finished successfully"}}}}}"""))
+    logInput.expectComplete()
+  }
+
+  it should "cancel of building developer version" in {
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          buildDeveloperVersion (service: "service1", version: "1.1.1", branches: ["master", "master"], comment: "Test version")
+        }
+      """))
+    assertResult(OK)(buildResponse._1)
+    val fields = buildResponse._2.asJsObject.fields
+    val data = fields.get("data").get.asJsObject
+    val taskId = data.fields.get("buildDeveloperVersion").get.toString().drop(1).dropRight(1)
+
+    val subscribeResponse = subscribeTaskLogs(taskId)
+    val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
+    val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
+
+    val builderDir = config.builderConfig.builderDirectory.get
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Build developer version 1.1.1 of service service1 started"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDir}"}}}}}"""))
+    logInput.requestNext()
+    logInput.requestNext()
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":6,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
+
+    assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation CancelTask($$taskId: String!) {
+          cancelTask (task: $$taskId)
+        }
+      """, variables = JsObject("taskId" -> JsString(taskId)))))
+
+    println(logInput.requestNext())
+    println(logInput.requestNext())
+    println(logInput.requestNext())
     logInput.expectComplete()
   }
 

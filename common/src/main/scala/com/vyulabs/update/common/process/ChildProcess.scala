@@ -44,9 +44,7 @@ class ChildProcess(process: Process)
         log.error(s"Process ${process.pid()} is not terminated normally during ${processTerminateTimeoutMs}ms - destroy it forcibly")
         process.destroyForcibly()
       }
-      val status = process.waitFor()
-      log.info(s"Process ${process.pid()} is terminated with status ${status}.")
-      exitCode.trySuccess(status)
+      process.waitFor()
       descendantProcesses = descendantProcesses.filter(_.isAlive)
       if (!descendantProcesses.isEmpty) {
         log.info(s"Destroy remaining descendant processes ${descendantProcesses.map(_.pid())}")

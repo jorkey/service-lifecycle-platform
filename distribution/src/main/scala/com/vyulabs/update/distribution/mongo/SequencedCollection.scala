@@ -200,13 +200,19 @@ class SequencedCollection[T: ClassTag](val name: String,
     val source = for {
       storedDocuments <- findSequenced(filtersArg, Some(Sorts.ascending("_id")))
     } yield {
-      var from = Math.max(1, storedDocuments.lastOption.map(_.sequence).getOrElse(0L) + 1)
+      val bufferSource = Source.fromIterator(() => synchronized { publisherBuffer.iterator })
+      val publisherSource = Source.fromPublisher(publisher)
       val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
-      val bufferedDocuments = synchronized { publisherBuffer.filter(_.sequence >= from) }
-      val bufferSource = Source.fromIterator(() => bufferedDocuments.iterator)
-      from = Math.max(from, bufferedDocuments.lastOption.map(_.sequence).getOrElse(0L) + 1)
-      val publisherSource = Source.fromPublisher(publisher).filter(_.sequence >= from)
+      var sequence = 0L
       Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))
+        .filter(doc => {
+          if (doc.sequence > sequence) {
+            sequence = doc.sequence
+            true
+          } else {
+            false
+          }
+        })
     }
     Source.futureSource(source).mapMaterializedValue(_ => NotUsed)
   }
