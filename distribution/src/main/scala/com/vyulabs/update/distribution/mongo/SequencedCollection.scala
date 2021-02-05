@@ -13,6 +13,7 @@ import org.mongodb.scala.bson.BsonInt64
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.concurrent.TimeUnit
+import scala.collection.immutable.Queue
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
@@ -23,7 +24,8 @@ class SequencedCollection[T: ClassTag](val name: String,
                                        historyExpireDays: Int = 7)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   implicit val log = LoggerFactory.getLogger(getClass)
 
-  private val (logCallback, logPublisher) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(Sink.asPublisher(fanout = true))((m1, m2) => (m1, m2)).run()
+  private val (publisherCallback, publisher) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(Sink.asPublisher(fanout = true))((m1, m2) => (m1, m2)).run()
+  private var publisherBuffer = Queue.empty[Sequenced[T]]
 
   private var modifyInProcess = Option.empty[Future[Int]]
 
@@ -52,11 +54,22 @@ class SequencedCollection[T: ClassTag](val name: String,
         collection.insert(docs).map(_ => sequence)
       }
     } yield {
-      var seq = sequence - documents.size
-      documents.foreach { doc =>
-        val log = Sequenced(seq, doc)
-        logCallback.invoke(log)
-        seq += 1
+      var seq = sequence - documents.size + 1
+      synchronized {
+        documents.foreach { doc =>
+          val log = Sequenced(seq, doc)
+          if (!publisherBuffer.isEmpty) {
+            if (sequence <= publisherBuffer.last.sequence) {
+              publisherBuffer = Queue.empty
+            }
+          }
+          publisherBuffer = publisherBuffer.enqueue(log)
+          if (publisherBuffer.size > 100) {
+            publisherBuffer = publisherBuffer.takeRight(100)
+          }
+          publisherCallback.invoke(log)
+          seq += 1
+        }
       }
       result
     }
@@ -183,15 +196,17 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   def subscribe(filters: Bson = new BsonDocument(), fromSequence: Option[Long] = None)
                (implicit log: Logger): Source[Sequenced[T], NotUsed] = {
-    val from = fromSequence.getOrElse(0L)
     val filtersArg = Filters.and(filters, fromSequence.map(sequence => Filters.gte("_id", sequence)).getOrElse(new BsonDocument()))
     val source = for {
-      documents <- findSequenced(filtersArg)
+      storedDocuments <- findSequenced(filtersArg, Some(Sorts.ascending("_id")))
     } yield {
-      val collectionSource = Source.fromIterator(() => documents.iterator)
-      val publisherSource = Source.fromPublisher(logPublisher)
-        .filter(line => line.sequence >= from && line.sequence > documents.lastOption.map(_.sequence).getOrElse(0L))
-      Source.combine(collectionSource, publisherSource)(Concat(_))
+      var from = Math.max(1, storedDocuments.lastOption.map(_.sequence).getOrElse(0L) + 1)
+      val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
+      val bufferedDocuments = synchronized { publisherBuffer.filter(_.sequence >= from) }
+      val bufferSource = Source.fromIterator(() => bufferedDocuments.iterator)
+      from = Math.max(from, bufferedDocuments.lastOption.map(_.sequence).getOrElse(0L) + 1)
+      val publisherSource = Source.fromPublisher(publisher).filter(_.sequence >= from)
+      Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))
     }
     Source.futureSource(source).mapMaterializedValue(_ => NotUsed)
   }

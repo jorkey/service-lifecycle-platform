@@ -32,8 +32,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
   val dummyBuilder = new File(builderDirectory, "builder.sh")
-  println("write " + IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes))
-  println(s"file ${dummyBuilder}")
+  IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes)
 
   override def builderConfig = BuilderConfig(Some(builderDirectory.toString), None)
 
@@ -66,6 +65,11 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":8,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
     logInput.requestNext()
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"Builder process terminated with status 0"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"Build developer version 1.1.1 of service service1 finished successfully"}}}}}"""))
+    logInput.expectComplete()
   }
 
   def subscribeTaskLogs(taskId: TaskId): ToResponseMarshallable = {
