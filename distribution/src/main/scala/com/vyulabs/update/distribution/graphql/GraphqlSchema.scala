@@ -42,6 +42,8 @@ object GraphqlSchema {
   val ClientVersionArg = Argument("version", ClientVersionType)
   val DeveloperDistributionVersionArg = Argument("version", DeveloperDistributionVersionType)
   val ClientDistributionVersionArg = Argument("version", ClientDistributionVersionType)
+  val DeveloperDistributionVersionUniqueArg = Argument("developerVersion", DeveloperDistributionVersionType)
+  val ClientDistributionVersionUniqueArg = Argument("clientVersion", ClientDistributionVersionType)
   val DeveloperVersionInfoArg = Argument("info", DeveloperVersionInfoInputType)
   val ClientVersionInfoArg = Argument("info", ClientVersionInfoInputType)
   val DeveloperDesiredVersionsArg = Argument("versions", ListInputType(DeveloperDesiredVersionInputType))
@@ -179,9 +181,10 @@ object GraphqlSchema {
         arguments = DeveloperDesiredVersionsArg :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
 
-      Field("buildClientVersions", StringType,
-        arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.workspace.buildClientVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty), c.ctx.userInfo.name) }),
+      Field("buildClientVersion", StringType,
+        arguments = ServiceArg :: DeveloperDistributionVersionUniqueArg :: ClientDistributionVersionUniqueArg :: Nil,
+        resolve = c => { c.ctx.workspace.buildClientVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionUniqueArg),
+          c.arg(ClientDistributionVersionUniqueArg), c.ctx.userInfo.name) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)).map(_ => true) }),

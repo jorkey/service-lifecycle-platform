@@ -3,11 +3,11 @@ package com.vyulabs.update.distribution.graphql.utils
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersions}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersions, ClientVersionInfo}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.config.DistributionConfig
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.{Task, TaskManager}
+import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -22,6 +22,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
 
   protected implicit val executionContext: ExecutionContext
 
+  /*
   def buildClientVersions(serviceNames: Seq[ServiceName], author: String)(implicit log: Logger): TaskId = {
     taskManager.create(s"Build client versions for services ${serviceNames} by ${author}", (taskId, logger) => {
       implicit val log = logger
@@ -52,21 +53,21 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
       } yield result
       (future, Some(() => cancels.foreach { _() }))
     }).taskId
-  }
+  }*/
 
   def buildClientVersion(serviceName: ServiceName,
                          developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String)
-                        (implicit log: Logger): Task = {
+                        (implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Build client version ${developerVersion} of service ${serviceName}",
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildClientVersion",
-          s"distributionName=${config.distributionDirectory}", s"service=${serviceName}",
+          s"distributionName=${config.distributionName}", s"service=${serviceName}",
           s"developerVersion=${developerVersion.toString}", s"clientVersion=${clientVersion.toString}",
           s"author=${author}")
         runBuilder(taskId, arguments)
       })
-    task
+    task.taskId
   }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {

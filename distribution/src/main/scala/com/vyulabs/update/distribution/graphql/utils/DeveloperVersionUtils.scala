@@ -39,10 +39,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
           s"distributionName=${config.distributionName}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
           s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
           comment.map(comment => s"comment=${comment}")
-        val (buildFuture, buildCancel) = runBuilder(taskId, arguments)
-        (buildFuture.map { _ =>
-          setDeveloperDesiredVersions(Map.empty + (serviceName -> Some(DeveloperDistributionVersion(config.distributionName, developerVersion))))
-        }, buildCancel)
+        runBuilder(taskId, arguments)
       })
     task.taskId
   }

@@ -20,8 +20,8 @@ import spray.json.{JsObject, JsString, _}
 import java.io.File
 import scala.concurrent.ExecutionContext
 
-class BuildDeveloperVersionTest extends TestEnvironment {
-  behavior of "Build Developer Version"
+class BuildClientVersionTest extends TestEnvironment {
+  behavior of "Build Client Version"
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
@@ -36,16 +36,16 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
   override def builderConfig = BuilderConfig(Some(builderDirectory.toString), None)
 
-  it should "build developer version" in {
+  it should "build client version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         mutation {
-          buildDeveloperVersion (service: "service1", version: "1.1.1", branches: ["master", "master"], comment: "Test version")
+          buildClientVersion (service: "service1", developerVersion: "test-1.1.1", clientVersion: "test-1.1.1")
         }
       """))
     assertResult(OK)(buildResponse._1)
     val fields = buildResponse._2.asJsObject.fields
     val data = fields.get("data").get.asJsObject
-    val taskId = data.fields.get("buildDeveloperVersion").get.toString().drop(1).dropRight(1)
+    val taskId = data.fields.get("buildClientVersion").get.toString().drop(1).dropRight(1)
 
     val subscribeResponse = subscribeTaskLogs(taskId)
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
@@ -53,9 +53,9 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val builderDir = config.builderConfig.builderDirectory.get
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Build client version test-1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDir}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildClientVersion, distributionName=test, service=service1, developerVersion=test-1.1.1, clientVersion=test-1.1.1, author=admin) in directory ${builderDir}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -66,7 +66,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":8,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"Logger `Build client version test-1.1.1 of service service1` finished successfully"}}}}}"""))
     logInput.expectComplete()
   }
 
