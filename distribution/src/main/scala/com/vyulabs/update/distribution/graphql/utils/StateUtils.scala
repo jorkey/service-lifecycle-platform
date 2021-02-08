@@ -7,9 +7,9 @@ import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, OverflowStrategy}
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.common.Common._
+import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.distribution.config.DistributionConfig
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, InstalledDesiredVersions, Sequenced, SequencedCollection}
 import org.bson.BsonDocument
 import org.slf4j.Logger

@@ -1,13 +1,14 @@
-package com.vyulabs.update.distribution.config
+package com.vyulabs.update.common.config
+
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId}
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.Utils.URLJson.URLJsonFormat
+import org.slf4j.Logger
+import spray.json.DefaultJsonProtocol._
 
 import java.io.File
 import java.net.URL
-import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId}
-import com.vyulabs.update.common.utils.IoUtils
-import org.slf4j.Logger
-import spray.json.DefaultJsonProtocol
-import DefaultJsonProtocol._
-import com.vyulabs.update.common.utils.Utils.URLJson.URLJsonFormat
 
 case class NetworkConfig(port: Int, ssl: Option[SslConfig])
 
@@ -62,7 +63,11 @@ object DistributionConfig {
       versionHistory, instanceState, faultReportsConfig, uploadStateConfigs))
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {
-    val configFile = new File("distribution.json")
+    val configFile = new File(Common.DistributionConfigFileName)
+    readFromFile(configFile)
+  }
+
+  def readFromFile(configFile: File)(implicit log: Logger): Option[DistributionConfig] = {
     if (configFile.exists()) {
       IoUtils.readFileToJson[DistributionConfig](configFile)
     } else {

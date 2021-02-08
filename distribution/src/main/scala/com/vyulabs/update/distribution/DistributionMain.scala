@@ -4,12 +4,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.{ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.ActorMaterializer
 import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.config.{DistributionConfig, SslConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.logger.TraceAppender
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.common.AkkaTimer
-import com.vyulabs.update.distribution.config.{DistributionConfig, SslConfig}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
 import com.vyulabs.update.distribution.loaders.StateUploader
 import com.vyulabs.update.distribution.logger.LogStorer

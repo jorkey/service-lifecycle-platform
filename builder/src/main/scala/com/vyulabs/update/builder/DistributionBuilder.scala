@@ -4,12 +4,12 @@ import com.vyulabs.update.builder.ClientBuilder._
 import com.vyulabs.update.builder.DeveloperBuilder._
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.config.InstallConfig
+import com.vyulabs.update.common.config.{DistributionConfig, InstallConfig}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.SettingsDirectory
 import org.slf4j.Logger
 
 import java.io.File
@@ -23,7 +23,7 @@ import scala.concurrent.duration.FiniteDuration
   * Copyright FanDate, Inc.
   */
 object DistributionBuilder {
-  val distributionDirectory = new File("..")
+  private val distributionDirectory = new File("..")
 
   def buildDistributionFromSources(distributionName: DistributionName,
                                    settingsDirectory: SettingsDirectory, sourceBranch: String, author: String)
@@ -42,7 +42,13 @@ object DistributionBuilder {
       return false
     }
 
-    val distributionUrl: URL = null // TODO
+    val config = DistributionConfig.readFromFile(new File(distributionDirectory, Common.DistributionConfigFileName)).getOrElse {
+      log.error(s"Can't read distribution config file in the directory ${distributionDirectory}")
+      return false
+    }
+    val protocol = if (config.network.ssl.isDefined) "https" else "http"
+    val port = config.network.port
+    val distributionUrl: URL = new URL(protocol, "localhost", port, "")
 
     val distributionClient = new SyncDistributionClient(
       new DistributionClient(distributionName, new HttpClientImpl(distributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
@@ -53,7 +59,7 @@ object DistributionBuilder {
 
     // TODO init desired versions
 
-    false
+    true
   }
 
   def buildFromDeveloperDistribution(developerDistributionName: DistributionName, distributionConfigFile: File): Boolean = {
@@ -62,8 +68,8 @@ object DistributionBuilder {
 
   def installDistributionService(distributionDirectory: File): Boolean = {
     if (!IoUtils.copyFile(new File(clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory) ||
-      !IoUtils.copyFile(new File(clientBuildDir(Common.ScriptsServiceName), "update.sh"), distributionDirectory) ||
-      !IoUtils.copyFile(clientBuildDir(Common.DistributionServiceName), distributionDirectory)) {
+        !IoUtils.copyFile(new File(clientBuildDir(Common.ScriptsServiceName), "update.sh"), distributionDirectory) ||
+        !IoUtils.copyFile(clientBuildDir(Common.DistributionServiceName), distributionDirectory)) {
       return false
     }
     val installConfig = InstallConfig.read(distributionDirectory).getOrElse {

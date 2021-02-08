@@ -8,6 +8,7 @@ import com.vyulabs.update.common.config.InstallConfig._
 import com.vyulabs.update.common.config.UpdateConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
@@ -15,7 +16,7 @@ import com.vyulabs.update.common.utils.IoUtils.copyFile
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
-import com.vyulabs.update.distribution.{GitRepositoryUtils, SettingsDirectory}
+import com.vyulabs.update.distribution.GitRepositoryUtils
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
 

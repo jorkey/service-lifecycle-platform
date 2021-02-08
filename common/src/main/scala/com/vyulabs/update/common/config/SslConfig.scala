@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.config
+package com.vyulabs.update.common.config
 
 import spray.json.DefaultJsonProtocol
 

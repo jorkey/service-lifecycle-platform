@@ -4,12 +4,12 @@ import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import com.vyulabs.update.distribution.SettingsDirectory
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 

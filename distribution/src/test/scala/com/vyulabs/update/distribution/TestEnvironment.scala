@@ -6,6 +6,7 @@ import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestDuration
 import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.config.{BuilderConfig, DistributionConfig, FaultReportsConfig, InstanceStateConfig, NetworkConfig, VersionHistoryConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.UserRole
 import com.vyulabs.update.common.utils.IoUtils

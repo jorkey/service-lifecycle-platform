@@ -9,10 +9,10 @@ import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
+import com.vyulabs.update.common.config.BuilderConfig
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.config.BuilderConfig
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json.{JsObject, JsString, _}

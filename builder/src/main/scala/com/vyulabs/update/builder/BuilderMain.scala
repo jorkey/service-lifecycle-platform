@@ -6,10 +6,11 @@ import com.vyulabs.update.builder.DistributionBuilder._
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.SettingsDirectory
+import com.vyulabs.update.distribution.GitRepositoryUtils
 import org.slf4j.LoggerFactory
 
 import java.io.File
@@ -40,9 +41,11 @@ object BuilderMain extends App {
   val command = args(0)
   val config = BuilderConfig().getOrElse { Utils.error("No config") }
 
-  val settingsRepository = SettingsDirectory(config.adminRepositoryUrl, new File("settings")).getOrElse {
+  val settingsDir = GitRepositoryUtils.getGitRepository(config.adminRepositoryUrl, "master",
+    false, new File("settings")).getOrElse {
     Utils.error("Init settings repository error")
-  }
+  }.getDirectory()
+  val settingsDirectory  = new SettingsDirectory(settingsDir)
 
   command match {
     case "buildDistribution" =>
@@ -53,7 +56,7 @@ object BuilderMain extends App {
           val arguments = Arguments.parse(args.drop(1), Set("distributionName", "author", "sourceBranches"))
           val distributionName = arguments.getValue("distributionName")
           val sourceBranch = arguments.getOptionValue("sourceBranch").getOrElse("master")
-          if (!buildDistributionFromSources(distributionName, settingsRepository, sourceBranch, author)) {
+          if (!buildDistributionFromSources(distributionName, settingsDirectory, sourceBranch, author)) {
             Utils.error("Build distribution error")
           }
         case None =>
@@ -86,7 +89,7 @@ object BuilderMain extends App {
           val version = DeveloperVersion.parse(arguments.getValue("version"))
           val comment: Option[String] = arguments.getOptionValue("comment")
           val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
-          if (!buildDeveloperVersion(distributionClient, settingsRepository, author, serviceName,
+          if (!buildDeveloperVersion(distributionClient, settingsDirectory, author, serviceName,
             DeveloperDistributionVersion(distributionName, version), comment, sourceBranches)) {
             Utils.error("Developer version is not generated")
           }
@@ -96,7 +99,7 @@ object BuilderMain extends App {
           val developerVersion = DeveloperVersion.parse(arguments.getValue("developerVersion"))
           val clientVersion = ClientVersion.parse(arguments.getValue("clientVersion"))
           val buildArguments = Map("distribDirectoryUrl" -> distributionUrl.toString, "version" -> clientVersion.toString)
-          if (!buildClientVersion(distributionClient, settingsRepository, serviceName,
+          if (!buildClientVersion(distributionClient, settingsDirectory, serviceName,
               DeveloperDistributionVersion(distributionName, developerVersion),
               ClientDistributionVersion(distributionName, clientVersion), author, buildArguments)) {
             Utils.error("Client version is not generated")

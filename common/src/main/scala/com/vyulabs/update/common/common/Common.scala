@@ -32,6 +32,7 @@ object Common {
   val DesiredVersionMarkFile = ".%s.desired-version"
   val VersionMarkFile = ".%s.version"
 
+  val DistributionConfigFileName = "distribution.json"
   val UpdateConfigFileName = "update.json"
   val InstallConfigFileName = "install.json"
 
