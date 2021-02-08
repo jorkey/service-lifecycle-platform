@@ -21,7 +21,7 @@ class LogBuffer(description: String, loggerName: String,
 
   override def start(): Unit = {
     synchronized {
-      eventsBuffer :+= LogLine(new Date, "INFO", Some(loggerName), s"${description} started", None)
+      eventsBuffer :+= LogLine(new Date, "INFO", Some(loggerName), s"Logger `${description}` started", None)
     }
     flush()
   }
@@ -53,7 +53,7 @@ class LogBuffer(description: String, loggerName: String,
       case None => ""
     }
     synchronized {
-      eventsBuffer :+= LogLine(new Date(), "INFO", Some(loggerName), s"${description} finished ${stat}", status)
+      eventsBuffer :+= LogLine(new Date(), "INFO", Some(loggerName), s"Logger `${description}` finished ${stat}", status)
     }
     flush()
   }

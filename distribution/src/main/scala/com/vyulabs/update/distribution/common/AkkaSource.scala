@@ -1,15 +1,11 @@
 package com.vyulabs.update.distribution.common
 
-import akka.actor.ActorSystem
-import akka.event.Logging
-import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterializedValue, OutHandler}
 
 import scala.collection.immutable.Queue
 
-class AkkaSource[Stream]()(implicit system:ActorSystem) extends GraphStageWithMaterializedValue[SourceShape[Stream], AsyncCallback[Stream]] {
-  private val log = Logging(system, getClass)
+class AkkaSource[Stream]() extends GraphStageWithMaterializedValue[SourceShape[Stream], AsyncCallback[Stream]] {
   private val out = Outlet[Stream](s"AkkaSource")
 
   override val shape: SourceShape[Stream] = SourceShape.of(out)
@@ -19,9 +15,11 @@ class AkkaSource[Stream]()(implicit system:ActorSystem) extends GraphStageWithMa
       var buffer = Queue.empty[Stream]
 
       val callback = getAsyncCallback[Stream] { packet =>
-          if (isAvailable(out)) {
-            push(out, packet)
-          }
+        if (isAvailable(out)) {
+          push(out, packet)
+        } else {
+          buffer = buffer.enqueue(packet)
+        }
       }
 
       setHandler(out, new OutHandler {
@@ -31,14 +29,8 @@ class AkkaSource[Stream]()(implicit system:ActorSystem) extends GraphStageWithMa
             buffer = buf
             push(out, packet)
           }
-      }})
+        }})
     }
     (logic, logic.callback)
-  }
-}
-
-object AkkaSource {
-  def ttt[T]()(implicit system:ActorSystem) = {
-    val l = Source.fromGraph(new AkkaSource[T]()).runWith(Sink.asPublisher(fanout = true))
   }
 }

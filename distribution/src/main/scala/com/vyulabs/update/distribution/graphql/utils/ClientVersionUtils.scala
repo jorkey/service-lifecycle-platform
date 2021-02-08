@@ -56,7 +56,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
 
   def buildClientVersion(serviceName: ServiceName,
                          developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String)
-                        (implicit log: Logger): Task[Boolean] = {
+                        (implicit log: Logger): Task = {
     val task = taskManager.create(s"Build client version ${developerVersion} of service ${serviceName}",
       (taskId, logger) => {
         implicit val log = logger

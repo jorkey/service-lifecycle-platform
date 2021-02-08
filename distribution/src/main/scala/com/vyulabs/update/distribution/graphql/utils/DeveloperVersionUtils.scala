@@ -8,7 +8,6 @@ import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphql
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.config.DistributionConfig
@@ -40,7 +39,10 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
           s"distributionName=${config.distributionName}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
           s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
           comment.map(comment => s"comment=${comment}")
-        runBuilder(taskId, arguments)
+        val (buildFuture, buildCancel) = runBuilder(taskId, arguments)
+        (buildFuture.map { _ =>
+          setDeveloperDesiredVersions(Map.empty + (serviceName -> Some(DeveloperDistributionVersion(config.distributionName, developerVersion))))
+        }, buildCancel)
       })
     task.taskId
   }
@@ -107,7 +109,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   }
 
   def setDeveloperDesiredVersions(servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
-                                 (implicit log: Logger, filesLocker: SmartFilesLocker): Future[Unit] = {
+                                 (implicit log: Logger): Future[Unit] = {
     log.info(s"Upload developer desired versions ${servicesVersions}")
     for {
       desiredVersions <- getDeveloperDesiredVersions(servicesVersions.keySet)

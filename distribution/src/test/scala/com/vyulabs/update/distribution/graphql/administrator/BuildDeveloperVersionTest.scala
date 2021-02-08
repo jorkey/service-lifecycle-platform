@@ -15,11 +15,10 @@ import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.config.BuilderConfig
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
-import spray.json.{JsObject, JsString}
+import spray.json.{JsObject, JsString, _}
 
 import java.io.File
 import scala.concurrent.ExecutionContext
-import spray.json._
 
 class BuildDeveloperVersionTest extends TestEnvironment {
   behavior of "Build Developer Version"
@@ -54,7 +53,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val builderDir = config.builderConfig.builderDirectory.get
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Build developer version 1.1.1 of service service1 started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDir}"}}}}}"""))
     logInput.requestNext()
@@ -67,9 +66,9 @@ class BuildDeveloperVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":8,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"Builder process terminated with status 0"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"Upload developer desired versions Map(service1 -> Some(test-1.1.1))"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"Build developer version 1.1.1 of service service1 finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` finished successfully"}}}}}"""))
     logInput.expectComplete()
   }
 
@@ -90,7 +89,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val builderDir = config.builderConfig.builderDirectory.get
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Build developer version 1.1.1 of service service1 started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDir}"}}}}}"""))
     logInput.requestNext()
@@ -107,6 +106,41 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     println(logInput.requestNext())
     println(logInput.requestNext())
     println(logInput.requestNext())
+    println(logInput.requestNext())
+    logInput.expectComplete()
+  }
+
+  it should "run builder for remote distribution" in {
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          runBuilder (arguments: ["buildDeveloperVersion", "distributionName=test", "service=service1", "version=1.1.1", "author=admin", "sourceBranches=master,master"])
+        }
+      """))
+    assertResult(OK)(buildResponse._1)
+    val fields = buildResponse._2.asJsObject.fields
+    val data = fields.get("data").get.asJsObject
+    val taskId = data.fields.get("runBuilder").get.toString().drop(1).dropRight(1)
+
+    val subscribeResponse = subscribeTaskLogs(taskId)
+    val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
+    val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
+
+    val builderDir = config.builderConfig.builderDirectory.get
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Run local builder by remote distribution` started"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDir}"}}}}}"""))
+    logInput.requestNext()
+    logInput.requestNext()
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":6,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":7,"logLine":{"line":{"level":"INFO","message":"Builder continued"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":8,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
+    logInput.requestNext()
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"Logger `Run local builder by remote distribution` finished successfully"}}}}}"""))
     logInput.expectComplete()
   }
 

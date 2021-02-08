@@ -17,7 +17,7 @@ import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
-import java.io.File
+import java.io.{File, IOException}
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
@@ -32,7 +32,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   implicit val timer = new AkkaTimer(system.scheduler)
 
-  def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Boolean], Option[() => Unit]) = {
+  def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     config.builderConfig.builderDirectory match {
       case Some(builderDirectory) =>
         runLocalBuilder(taskId, arguments, builderDirectory)
@@ -56,12 +56,11 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   }
 
   private def runLocalBuilder(taskId: TaskId, arguments: Seq[String], builderDirectory: String)
-                             (implicit log: Logger): (Future[Boolean], Option[() => Unit]) = {
+                             (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
       process <- ChildProcess.start("/bin/sh", Common.BuilderSh +: arguments, Map.empty, new File(builderDirectory))
     } yield {
       process.handleOutput(lines => { lines.foreach(line => log.info(line._1)) })
-      process.onTermination().map { exitCode => log.info(s"Builder process terminated with status ${exitCode}") }
 //      @volatile var logOutputFuture = Option.empty[Future[Unit]]
 //      process.handleOutput(lines => {
 //        val logLines = lines.map(line => {
@@ -83,11 +82,14 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 //        })
       process
     }
-    (process.map(_.onTermination().map(_ == 0)).flatten, Some(() => process.map(_.terminate())))
+    (process.map(_.onTermination().map {
+      case 0 => ()
+      case error => throw new IOException(s"Builder process terminated with status ${error}")
+    }).flatten, Some(() => process.map(_.terminate())))
   }
 
-  private def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Boolean], Option[() => Unit]) = {
-    val result = Promise[Boolean]()
+  private def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    val result = Promise[Unit]()
     val client = new DistributionClient(config.distributionName, new AkkaHttpClient(distributionUrl))
     val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
     for {
