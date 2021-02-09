@@ -1,7 +1,5 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.builder.ClientBuilder._
-import com.vyulabs.update.builder.DeveloperBuilder._
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.config.{DistributionConfig, InstallConfig}
@@ -9,8 +7,9 @@ import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpCl
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.Utils.extendMacro
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import org.slf4j.Logger
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.File
 import java.net.URL
@@ -22,26 +21,35 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-object DistributionBuilder {
-  private val distributionDirectory = new File("..")
+class DistributionBuilder(builderDir: File, arguments: Map[String, String]) {
+  implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def buildDistributionFromSources(distributionName: DistributionName,
-                                   settingsDirectory: SettingsDirectory, sourceBranch: String, author: String)
+  private val developerBuilder = new DeveloperBuilder(builderDir)
+  private val clientBuilder = new ClientBuilder(builderDir)
+
+  def buildDistributionFromSources(distributionName: DistributionName, distributionDirectory: File,
+                                   settingsDirectory: SettingsDirectory, author: String)
                                   (implicit executionContext: ExecutionContext): Boolean = {
-    pullSourcesAndGenerateInitVersions(settingsDirectory,
-      Seq(Common.ScriptsServiceName, Common.BuilderServiceName, Common.DistributionServiceName), Seq(sourceBranch),
-      DeveloperDistributionVersion(distributionName, DeveloperVersion(Seq(1, 0, 0))))
+    log.info(s"------------------------------ Generate initial versions of services -----------------------------------")
+    if (!generateInitVersions(settingsDirectory,
+        Seq(Common.ScriptsServiceName, Common.BuilderServiceName, Common.DistributionServiceName),
+        DeveloperDistributionVersion(distributionName, DeveloperVersion(Seq(1, 0, 0))))) {
+      return false
+    }
 
+    log.info(s"---------------------------------- Install distribution service ----------------------------------------")
     if (!installDistributionService(distributionDirectory)) {
       log.error("Can't install distribution service")
       return false
     }
 
+    log.info(s"------------------------------------ Start distribution service ----------------------------------------")
     if (!startDistributionService(distributionDirectory)) {
       log.error("Can't start distribution service")
       return false
     }
 
+    log.info(s"------------------------ Waiting for distribution service became available -----------------------------")
     val config = DistributionConfig.readFromFile(new File(distributionDirectory, Common.DistributionConfigFileName)).getOrElse {
       log.error(s"Can't read distribution config file in the directory ${distributionDirectory}")
       return false
@@ -67,9 +75,9 @@ object DistributionBuilder {
   }
 
   def installDistributionService(distributionDirectory: File): Boolean = {
-    if (!IoUtils.copyFile(new File(clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory) ||
-        !IoUtils.copyFile(new File(clientBuildDir(Common.ScriptsServiceName), "update.sh"), distributionDirectory) ||
-        !IoUtils.copyFile(clientBuildDir(Common.DistributionServiceName), distributionDirectory)) {
+    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory) ||
+        !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory, Common.UpdateSh)) ||
+        !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDirectory)) {
       return false
     }
     val installConfig = InstallConfig.read(distributionDirectory).getOrElse {
@@ -77,7 +85,7 @@ object DistributionBuilder {
       return false
     }
     for (command <- installConfig.installCommands.getOrElse(Seq.empty)) {
-      if (!ProcessUtils.runProcess(command, Map.empty, distributionDirectory, ProcessUtils.Logging.Realtime)) {
+      if (!ProcessUtils.runProcess(command, arguments, distributionDirectory, ProcessUtils.Logging.Realtime)) {
         log.error(s"Install distribution server error")
         return false
       }
@@ -92,7 +100,7 @@ object DistributionBuilder {
     }
     for (run <- installConfig.runService) {
       log.info(s"Run distribution server")
-      if (!ProcessUtils.runProcess(run.command, run.args.getOrElse(Seq.empty), run.env.getOrElse(Map.empty),
+      if (!ProcessUtils.runProcess(extendMacro(run.command, arguments), run.args.getOrElse(Seq.empty), run.env.getOrElse(Map.empty),
           distributionDirectory, Some(0), None, ProcessUtils.Logging.Realtime)) {
         log.error(s"Run distribution server error")
         return false
@@ -114,25 +122,26 @@ object DistributionBuilder {
     false
   }
 
-  private def pullSourcesAndGenerateInitVersions(settingsDirectory: SettingsDirectory, serviceNames: Seq[ServiceName], sourceBranches: Seq[String],
-                                                 version: DeveloperDistributionVersion): Boolean = {
+  private def generateInitVersions(settingsDirectory: SettingsDirectory, serviceNames: Seq[ServiceName],
+                                   version: DeveloperDistributionVersion): Boolean = {
     for (serviceName <- serviceNames) {
-      log.info(s"Pull source repositories for service ${serviceName}")
-      val sourceRepositories = pullSourceDirectories(settingsDirectory, serviceName, sourceBranches)
-      if (sourceRepositories.isEmpty) {
-        log.error(s"Can't pull source directories for service ${serviceName}")
+      log.info(s"---------------- Generate init version of service ${serviceName} -----------------")
+      log.info(s"Generate developer version ${version} for service ${serviceName}")
+      val arguments = Map.empty + ("version" -> version.toString)
+      if (!developerBuilder.generateDeveloperVersion(serviceName, new File("."), arguments)) {
+        log.error(s"Can't generate developer version for service ${serviceName}")
         return false
       }
 
-      log.info(s"Generate developer version ${version} for service ${serviceName}")
-      if (!generateDeveloperVersion(serviceName, sourceRepositories.map(_.getDirectory()), Map.empty)) {
-        log.error(s"Can't generate developer version")
+      log.info(s"Copy developer init version of service ${serviceName} to client directory")
+      if (!IoUtils.copyFile(developerBuilder.developerBuildDir(serviceName), clientBuilder.clientBuildDir(serviceName))) {
+        log.error(s"Can't copy ${developerBuilder.developerBuildDir(serviceName)} to ${clientBuilder.clientBuildDir(serviceName)}")
         return false
       }
 
       log.info(s"Generate client version ${version} for service ${serviceName}")
-      if (!generateClientVersion(settingsDirectory, serviceName, Map.empty)) {
-        log.error(s"Can't generate client version")
+      if (!clientBuilder.generateClientVersion(settingsDirectory, serviceName, Map.empty)) {
+        log.error(s"Can't generate client version for service ${serviceName}")
         return false
       }
     }

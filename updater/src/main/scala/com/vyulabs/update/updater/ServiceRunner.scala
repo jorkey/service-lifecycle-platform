@@ -48,29 +48,36 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
           case Success(process) =>
             this.process = Some(process)
             lastStartTime = System.currentTimeMillis()
-            val dateFormat = config.logWriter.dateFormat.map(new SimpleDateFormat(_))
-            val logWriter = new LogWriter(new File(state.currentServiceDirectory, config.logWriter.directory),
-              config.logWriter.maxFileSizeMB * 1024 * 1024,
-              config.logWriter.maxFilesCount,
-              config.logWriter.filePrefix,
-              (message, exception) => state.error(message, exception))
-            process.handleOutput(lines => lines.foreach { case (line, nl) => {
-              val formattedLine = dateFormat match {
-                case Some(dateFormat) =>
-                  s"${dateFormat.format(new Date)} ${line}"
-                case None =>
-                  line
+            val logWriter = config.logWriter.map { logWriterConfig =>
+              val dateFormat = logWriterConfig.dateFormat.map(new SimpleDateFormat(_))
+              val logWriter = new LogWriter(new File(state.currentServiceDirectory, logWriterConfig.directory),
+                logWriterConfig.maxFileSizeMB * 1024 * 1024,
+                logWriterConfig.maxFilesCount,
+                logWriterConfig.filePrefix,
+                (message, exception) => state.error(message, exception))
+              process.handleOutput(lines => lines.foreach { case (line, nl) => {
+                val formattedLine = dateFormat match {
+                  case Some(dateFormat) =>
+                    s"${dateFormat.format(new Date)} ${line}"
+                  case None =>
+                    line
+                }
+                logWriter.writeLogLine(formattedLine)
               }
-              logWriter.writeLogLine(formattedLine)
-            }})
+              })
+              logWriter
+            }
             for (restartConditions <- config.restartConditions) {
               new ProcessMonitor(process, restartConditions).start()
             }
             process.onTermination().onComplete {
               case Success(exitCode) =>
                 this.process = None
-                val logTail = logWriter.getLogTail()
-                logWriter.close()
+                val logTail = logWriter.map  { logWriter =>
+                  val logTail = logWriter.getLogTail()
+                  logWriter.close()
+                  logTail
+                }.getOrElse(Queue.empty)
                 processFault(process, exitCode, logTail)
               case Failure(ex) =>
                 this.process = None
@@ -100,7 +107,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
 
   def saveLogs(failed: Boolean): Unit = {
     for (currentInstallConfig <- InstallConfig.read(state.currentServiceDirectory)) {
-      for (logDirectory <- currentInstallConfig.runService.map(_.logWriter.directory).map(new File(state.currentServiceDirectory, _))) {
+      for (logDirectory <- currentInstallConfig.runService.map(_.logWriter.map(_.directory).map(new File(state.currentServiceDirectory, _))).flatten) {
         state.info(s"Save log files to history directory")
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
           val dirName = state.getVersion().getOrElse(DeveloperDistributionVersion("???", DeveloperVersion.empty)).toString + s"-${Utils.serializeISO8601Date(new Date())}" +

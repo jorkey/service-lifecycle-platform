@@ -23,19 +23,19 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.io.File
 import java.util.Date
 
-object DeveloperBuilder {
+class DeveloperBuilder(builderDir: File) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val builderLockFile = "builder.lock"
 
-  private val developerDir = makeDir(new File("developer"))
+  private val developerDir = makeDir(new File(builderDir, "developer"))
   private val servicesDir = makeDir(new File(developerDir, "services"))
 
   def developerServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
   def developerBuildDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "build"))
   def developerSourceDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "source"))
 
-  def buildDeveloperVersion(distribution: SyncDistributionClient[SyncSource], settingsDirectory: SettingsDirectory,
+  def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], settingsDirectory: SettingsDirectory,
                             author: String, serviceName: ServiceName, newDistributionVersion: DeveloperDistributionVersion,
                             comment: Option[String], sourceBranches: Seq[String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
@@ -49,7 +49,7 @@ object DeveloperBuilder {
       },
       () => {
         log.info("Check for version exist")
-        if (doesDeveloperVersionExist(distribution, serviceName, newDistributionVersion)) {
+        if (doesDeveloperVersionExist(distributionClient, serviceName, newDistributionVersion)) {
           log.error(s"Version ${newDistributionVersion} already exists")
           return false
         }
@@ -63,14 +63,14 @@ object DeveloperBuilder {
 
         log.info(s"Generate version ${newDistributionVersion}")
         val arguments = Map("version" -> newDistributionVersion.toString)
-        if (!generateDeveloperVersion(serviceName, sourceRepositories.map(_.getDirectory()), arguments)) {
+        if (!generateDeveloperVersion(serviceName, sourceRepositories.head.getDirectory, arguments)) {
           log.error(s"Can't generate version")
           return false
         }
 
         log.info(s"Upload version image ${newDistributionVersion} to distribution server")
         val buildInfo = BuildInfo(author, sourceBranches, new Date(), comment)
-        if (!ZipUtils.zipAndSend(developerBuildDir(serviceName), file => uploadDeveloperVersionImage(distribution, serviceName, newDistributionVersion, buildInfo, file))) {
+        if (!ZipUtils.zipAndSend(developerBuildDir(serviceName), file => uploadDeveloperVersionImage(distributionClient, serviceName, newDistributionVersion, buildInfo, file))) {
           log.error("Can't upload version image")
           return false
         }
@@ -118,7 +118,7 @@ object DeveloperBuilder {
     sourceRepositories
   }
 
-  def generateDeveloperVersion(serviceName: ServiceName, sourceDirectories: Seq[File], arguments: Map[String, String])
+  def generateDeveloperVersion(serviceName: ServiceName, sourceDirectory: File, arguments: Map[String, String])
                               (implicit log: Logger): Boolean = {
     val directory = developerBuildDir(serviceName)
 
@@ -127,10 +127,8 @@ object DeveloperBuilder {
       return false
     }
 
-    val mainSourceDirectory = sourceDirectories.head
-
     log.info("Initialize update config")
-    val servicesUpdateConfig = UpdateConfig.read(mainSourceDirectory).getOrElse {
+    val servicesUpdateConfig = UpdateConfig.read(sourceDirectory).getOrElse {
       return false
     }
     val updateConfig = servicesUpdateConfig.services.getOrElse(serviceName, {
@@ -142,7 +140,7 @@ object DeveloperBuilder {
     var args = arguments
     args += ("PATH" -> System.getenv("PATH"))
     for (command <- updateConfig.build.buildCommands.getOrElse(Seq.empty)) {
-      if (!ProcessUtils.runProcess(command, args, mainSourceDirectory, ProcessUtils.Logging.Realtime)) {
+      if (!ProcessUtils.runProcess(command, args, sourceDirectory, ProcessUtils.Logging.Realtime)) {
         return false
       }
     }
@@ -153,7 +151,7 @@ object DeveloperBuilder {
       val in = if (sourceFile.startsWith("/")) {
         new File(sourceFile)
       } else {
-        new File(mainSourceDirectory, sourceFile)
+        new File(sourceDirectory, sourceFile)
       }
       val out = new File(directory, Utils.extendMacro(copyCommand.destinationFile, args))
       val outDir = out.getParentFile

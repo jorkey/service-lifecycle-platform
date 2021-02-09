@@ -20,8 +20,8 @@ import java.util.Date
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-object ClientBuilder {
-  private val clientDir = makeDir(new File("client"))
+class ClientBuilder(builderDir: File) {
+  private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
   def clientServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
@@ -53,8 +53,8 @@ object ClientBuilder {
       log.error(s"Can't get developer version ${version} of service ${serviceName} info")
       return None
     }
-    if (!IoUtils.deleteDirectoryContents(clientServiceDir(serviceName))) {
-      log.error(s"Can't remove directory ${clientServiceDir(serviceName)} contents")
+    if (!IoUtils.deleteDirectoryContents(clientBuildDir(serviceName))) {
+      log.error(s"Can't remove directory ${clientBuildDir(serviceName)} contents")
       return None
     }
     log.info(s"Download developer version ${version} of service ${serviceName}")
@@ -79,11 +79,6 @@ object ClientBuilder {
 
   def generateClientVersion(settingsRepository: SettingsDirectory, serviceName: ServiceName,
                             arguments: Map[String, String])(implicit log: Logger): Boolean = {
-    if (!settingsRepository.getServiceDir(serviceName).exists()) {
-      log.error(s"Service ${serviceName} directory is not exist in the admin repository")
-      return false
-    }
-
     if (!mergeInstallConfigFile(settingsRepository, serviceName)) {
       return false
     }

@@ -1,8 +1,5 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.builder.ClientBuilder._
-import com.vyulabs.update.builder.DeveloperBuilder._
-import com.vyulabs.update.builder.DistributionBuilder._
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
@@ -45,7 +42,8 @@ object BuilderMain extends App {
     false, new File("settings")).getOrElse {
     Utils.error("Init settings repository error")
   }.getDirectory()
-  val settingsDirectory  = new SettingsDirectory(settingsDir)
+  val settingsDirectory = new SettingsDirectory(settingsDir)
+  val distributionBuilder = new DistributionBuilder(new File("."), Map.empty + ("distribution_setup" -> "distribution_setup.sh"))
 
   command match {
     case "buildDistribution" =>
@@ -53,10 +51,10 @@ object BuilderMain extends App {
 
       arguments.getOptionValue("author") match {
         case Some(author) =>
-          val arguments = Arguments.parse(args.drop(1), Set("distributionName", "author", "sourceBranches"))
+          val arguments = Arguments.parse(args.drop(1), Set("distributionName", "distributionDirectory", "author"))
           val distributionName = arguments.getValue("distributionName")
-          val sourceBranch = arguments.getOptionValue("sourceBranch").getOrElse("master")
-          if (!buildDistributionFromSources(distributionName, settingsDirectory, sourceBranch, author)) {
+          val distributionDirectory = new File(arguments.getValue("distributionDirectory"))
+          if (!distributionBuilder.buildDistributionFromSources(distributionName, distributionDirectory, settingsDirectory, author)) {
             Utils.error("Build distribution error")
           }
         case None =>
@@ -64,7 +62,7 @@ object BuilderMain extends App {
           val distributionConfigFile = new File(arguments.getValue("distributionConfigFile"))
           arguments.getOptionValue("developerDistributionName") match {
             case Some(developerDistributionName) =>
-              if (!buildFromDeveloperDistribution(developerDistributionName, distributionConfigFile)) {
+              if (!distributionBuilder.buildFromDeveloperDistribution(developerDistributionName, distributionConfigFile)) {
                 Utils.error("Build distribution error")
               }
             case None =>
@@ -89,7 +87,8 @@ object BuilderMain extends App {
           val version = DeveloperVersion.parse(arguments.getValue("version"))
           val comment: Option[String] = arguments.getOptionValue("comment")
           val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
-          if (!buildDeveloperVersion(distributionClient, settingsDirectory, author, serviceName,
+          val developerBuilder = new DeveloperBuilder(new File("."))
+          if (!developerBuilder.buildDeveloperVersion(distributionClient, settingsDirectory, author, serviceName,
             DeveloperDistributionVersion(distributionName, version), comment, sourceBranches)) {
             Utils.error("Developer version is not generated")
           }
@@ -99,7 +98,8 @@ object BuilderMain extends App {
           val developerVersion = DeveloperVersion.parse(arguments.getValue("developerVersion"))
           val clientVersion = ClientVersion.parse(arguments.getValue("clientVersion"))
           val buildArguments = Map("distribDirectoryUrl" -> distributionUrl.toString, "version" -> clientVersion.toString)
-          if (!buildClientVersion(distributionClient, settingsDirectory, serviceName,
+          val clientBuilder = new ClientBuilder(new File("."))
+          if (!clientBuilder.buildClientVersion(distributionClient, settingsDirectory, serviceName,
               DeveloperDistributionVersion(distributionName, developerVersion),
               ClientDistributionVersion(distributionName, clientVersion), author, buildArguments)) {
             Utils.error("Client version is not generated")

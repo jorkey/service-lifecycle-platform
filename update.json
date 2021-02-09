@@ -16,10 +16,6 @@
           "destinationFile": "builder/builder.sh"
         },
         {
-          "sourceFile": "scripts/installer/installer.sh",
-          "destinationFile": "installer/installer.sh"
-        },
-        {
           "sourceFile": "scripts/updater/updater.sh",
           "destinationFile": "updater/updater.sh"
         },
@@ -49,12 +45,12 @@
         {
           "command": "sbt",
           "args": [
-            "clean",
             "set version in builder := \"%%version%%\"",
             "set assemblyOutputPath in assembly in builder := new File(\"target/builder-%%version%%.jar\")",
+            "set test in assembly in builder := {}",
             "builder/assembly"],
           "exitCode": 0,
-          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+          "outputMatch": "(?s).*\\[success\\].*"
         }
       ],
       "copyFiles": [
@@ -72,12 +68,12 @@
         {
           "command": "sbt",
           "args": [
-            "clean",
             "set version in installer := \"%%version%%\"",
             "set assemblyOutputPath in assembly in installer := new File(\"target/installer-%%version%%.jar\")",
+            "set test in assembly in installer := {}",
             "installer/assembly"],
           "exitCode": 0,
-          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+          "outputMatch": "(?s).*\\[success\\].*"
         }
       ],
       "copyFiles": [
@@ -95,12 +91,12 @@
         {
           "command": "sbt",
           "args": [
-            "clean",
             "set version in updater := \"%%version%%\"",
             "set assemblyOutputPath in assembly in updater := new File(\"target/updater-%%version%%.jar\")",
+            "set test in assembly in updater := {}",
             "updater/assembly"],
           "exitCode": 0,
-          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+          "outputMatch": "(?s).*\\[success\\].*"
         }
       ],
       "copyFiles": [
@@ -118,13 +114,12 @@
         {
           "command": "sbt",
           "args": [
-            "clean",
             "set version in distribution := \"%%version%%\"",
             "set assemblyOutputPath in assembly in distribution := new File(\"target/distribution-%%version%%.jar\")",
             "set test in assembly in distribution := {}",
             "distribution/assembly"],
           "exitCode": 0,
-          "outputMatch": "(?s).*\\e\\[32msuccess\\e.*"
+          "outputMatch": "(?s).*\\[success\\].*"
         }
       ],
       "copyFiles": [
@@ -133,6 +128,14 @@
           "destinationFile": "distribution-%%version%%.jar"
         }
       ]
+    },
+    "install": {
+      "runService": {
+        "command": "./%%distribution_setup%%",
+        "args": [
+          "Azure"
+        ]
+      }
     }
   }
 ]}

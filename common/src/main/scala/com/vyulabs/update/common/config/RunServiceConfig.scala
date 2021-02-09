@@ -7,7 +7,7 @@ case class RestartConditions(maxMemoryMB: Option[Long], makeCore: Boolean, check
 }
 
 case class RunServiceConfig(command: String, args: Option[Seq[String]], env: Option[Map[String, String]],
-                            logWriter: LogWriterConfig, logUploader: Option[LogUploaderConfig], faultFilesMatch: Option[String],
+                            logWriter: Option[LogWriterConfig], logUploader: Option[LogUploaderConfig], faultFilesMatch: Option[String],
                             restartOnFault: Option[Boolean], restartConditions: Option[RestartConditions])
 
 object RunServiceConfig extends DefaultJsonProtocol {
