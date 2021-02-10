@@ -128,14 +128,6 @@
           "destinationFile": "distribution-%%version%%.jar"
         }
       ]
-    },
-    "install": {
-      "runService": {
-        "command": "./%%distribution_setup%%",
-        "args": [
-          "Azure"
-        ]
-      }
     }
   }
 ]}

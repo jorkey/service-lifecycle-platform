@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
@@ -9,7 +9,7 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
@@ -20,30 +20,33 @@ import java.util.Date
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class ClientBuilder(builderDir: File) {
+class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) {
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
+
+  private val settingsDirectory = new SettingsDirectory(builderDir, clientDistributionName)
 
   def clientServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
   def clientBuildDir(serviceName: ServiceName) = makeDir(new File(clientServiceDir(serviceName), "build"))
 
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], settingsRepository: SettingsDirectory, serviceName: ServiceName,
-                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion,
+  def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
+                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientVersion,
                          author: String, arguments: Map[String, String])(implicit log: Logger): Boolean = {
     val versionInfo = downloadDeveloperVersion(distributionClient, serviceName, developerVersion).getOrElse {
       log.error(s"Can't download developer version ${developerVersion} of service ${serviceName}")
       return false
     }
 
-    if (!generateClientVersion(settingsRepository, serviceName, arguments)) {
+    if (!generateClientVersion(serviceName, arguments)) {
       log.error(s"Can't generate client version ${clientVersion} of service ${serviceName}")
       return false
     }
 
     log.info(s"Upload client version ${clientVersion} of service ${serviceName}")
-    uploadClientVersion(distributionClient, serviceName, clientVersion, author, versionInfo.buildInfo)
+    uploadClientVersion(distributionClient, serviceName, ClientDistributionVersion(clientDistributionName, clientVersion),
+      author, versionInfo.buildInfo)
   }
 
   private def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
@@ -77,14 +80,13 @@ class ClientBuilder(builderDir: File) {
     true
   }
 
-  def generateClientVersion(settingsRepository: SettingsDirectory, serviceName: ServiceName,
-                            arguments: Map[String, String])(implicit log: Logger): Boolean = {
-    if (!mergeInstallConfigFile(settingsRepository, serviceName)) {
+  def generateClientVersion(serviceName: ServiceName, arguments: Map[String, String])(implicit log: Logger): Boolean = {
+    if (!mergeInstallConfigFile(serviceName)) {
       return false
     }
 
     log.info(s"Configure client version of service ${serviceName}")
-    val configDir = settingsRepository.getServiceSettingsDir(serviceName)
+    val configDir = settingsDirectory.getServiceSettingsDir(serviceName)
     if (configDir.exists()) {
       log.info(s"Merge private settings files")
       if (!mergeSettings(serviceName, clientBuildDir(serviceName), configDir, arguments)) {
@@ -92,7 +94,7 @@ class ClientBuilder(builderDir: File) {
       }
     }
 
-    val privateDir = settingsRepository.getServicePrivateDir(serviceName)
+    val privateDir = settingsDirectory.getServicePrivateDir(serviceName)
     if (privateDir.exists()) {
       log.info(s"Copy private files")
       if (!IoUtils.copyFile(privateDir, clientBuildDir(serviceName))) {
@@ -102,10 +104,9 @@ class ClientBuilder(builderDir: File) {
     true
   }
 
-  private def mergeInstallConfigFile(adminRepository: SettingsDirectory, serviceName: ServiceName)
-                                    (implicit log: Logger): Boolean = {
+  private def mergeInstallConfigFile(serviceName: ServiceName)(implicit log: Logger): Boolean = {
     val buildConfigFile = new File(clientBuildDir(serviceName), Common.InstallConfigFileName)
-    val clientConfigFile = adminRepository.getServiceInstallConfigFile(serviceName)
+    val clientConfigFile = settingsDirectory.getServiceInstallConfigFile(serviceName)
     if (clientConfigFile.exists()) {
       log.info(s"Merge ${Common.InstallConfigFileName} with client version")
       val clientConfig = IoUtils.parseConfigFile(clientConfigFile).getOrElse(return false)

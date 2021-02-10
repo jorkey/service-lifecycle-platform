@@ -18,6 +18,8 @@ import spray.json._
 
 import java.io.IOException
 import java.util.Date
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Promise}
 
 class FaultReportsUploadTest extends TestEnvironment {
@@ -33,7 +35,7 @@ class FaultReportsUploadTest extends TestEnvironment {
   val distributionClient = new DistributionClient(distributionName, httpClient)
 
   it should "upload fault reports" in {
-    val uploader = new StateUploader(distributionName, collections, distributionDir, 1, distributionClient)
+    val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)
     uploader.start()
 
     val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
@@ -50,7 +52,7 @@ class FaultReportsUploadTest extends TestEnvironment {
   }
 
   it should "try to upload service states again after failure" in {
-    val uploader = new StateUploader(distributionName, collections, distributionDir, 2, distributionClient)
+    val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(2, TimeUnit.SECONDS), distributionClient)
     uploader.start()
 
     val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",

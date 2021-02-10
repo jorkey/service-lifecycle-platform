@@ -1,16 +1,15 @@
 package com.vyulabs.update.common.info
 
-import java.util.Date
-
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.utils.JsonFormats._
+import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import spray.json.DefaultJsonProtocol
+
+import java.util.Date
 
 case class BuildInfo(author: String, branches: Seq[String], date: Date, comment: Option[String])
 
 object BuildInfo extends DefaultJsonProtocol {
-  import com.vyulabs.update.common.utils.Utils.DateJson._
-
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)
 }
 
@@ -29,7 +28,5 @@ object DeveloperVersionsInfoJson extends DefaultJsonProtocol {
 case class InstallInfo(user: String, date: Date)
 
 object InstallInfo extends DefaultJsonProtocol {
-  import com.vyulabs.update.common.utils.Utils.DateJson._
-
   implicit val installInfoJson = jsonFormat2(InstallInfo.apply)
 }

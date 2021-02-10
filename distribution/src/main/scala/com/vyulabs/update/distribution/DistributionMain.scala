@@ -45,20 +45,20 @@ object DistributionMain extends App {
       Utils.error("No config")
     }
 
-    val mongoDb = new MongoDb(config.mongoDbConnection, config.mongoDbName)
+    val mongoDb = new MongoDb(config.mongoDb.connection, config.mongoDb.name)
 
-    val collections = new DatabaseCollections(mongoDb, config.instanceState.expireSec)
-    val dir = new DistributionDirectory(new File(config.distributionDirectory))
-    val taskManager = new TaskManager(taskId => new LogStorer(config.distributionName, Common.DistributionServiceName, Some(taskId),
+    val collections = new DatabaseCollections(mongoDb, config.instanceState.expirationTimeout)
+    val dir = new DistributionDirectory(new File("directory"))
+    val taskManager = new TaskManager(taskId => new LogStorer(config.name, Common.DistributionServiceName, Some(taskId),
       config.instanceId, collections.State_ServiceLogs))
 
     Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
 
     TraceAppender.handleLogs("Distribution server", "PROCESS",
-      new LogStorer(config.distributionName, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
+      new LogStorer(config.name, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
 
-    config.uploadStateConfigs.getOrElse(Seq.empty).foreach { uploadConfig =>
-      StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateIntervalSec, uploadConfig.distributionUrl).start()
+    config.uploadState.getOrElse(Seq.empty).foreach { uploadConfig =>
+      StateUploader(config.name, collections, dir, uploadConfig.uploadStateInterval, uploadConfig.distributionUrl).start()
     }
 
     val selfUpdater = new SelfUpdater(collections, dir)

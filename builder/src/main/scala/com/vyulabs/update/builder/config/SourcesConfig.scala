@@ -7,12 +7,11 @@ import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.utils.IoUtils
 import org.slf4j.Logger
 import spray.json._
+import com.vyulabs.update.common.utils.JsonFormats._
 
 case class RepositoryConfig(url: URI, cloneSubmodules: Option[Boolean], directory: Option[String])
 
 object RepositoryConfig extends DefaultJsonProtocol {
-  import com.vyulabs.update.common.utils.Utils.URIJson._
-
   implicit val repositoryConfigJson = jsonFormat3(RepositoryConfig.apply)
 }
 

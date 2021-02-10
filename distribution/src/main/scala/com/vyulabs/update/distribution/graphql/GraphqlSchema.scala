@@ -141,7 +141,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceStates", ListType(InstanceServiceStateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        resolve = c => { c.ctx.workspace.getInstanceServicesState(Some(c.ctx.workspace.config.distributionName),
+        resolve = c => { c.ctx.workspace.getInstanceServicesState(Some(c.ctx.workspace.config.name),
           c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) })
     )
   )
@@ -196,7 +196,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
+        resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.name,
           c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
 
       Field("cancelTask", BooleanType,
@@ -237,14 +237,14 @@ object GraphqlSchema {
     CommonMutations ++ fields[GraphqlContext, Unit](
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
-        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distributionName, c.arg(InstanceServiceStatesArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.workspace.config.name, c.arg(InstanceServiceStatesArg)).map(_ => true) }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
+        resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.name,
           c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distributionName, c.arg(ServiceFaultReportInfoArg)).map(_ => true) })
+        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.name, c.arg(ServiceFaultReportInfoArg)).map(_ => true) })
     )
   )
 

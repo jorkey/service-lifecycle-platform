@@ -188,8 +188,9 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       result <- {
         val remainReports = reports
           .sortBy(_.document.report.info.date)
-          .filter(_.document.report.info.date.getTime + config.faultReportsConfig.expirationPeriodMs >= System.currentTimeMillis())
-          .takeRight(config.faultReportsConfig.maxFaultReportsCount)
+          .filter(_.document.report.info.date.getTime +
+            config.faultReports.expirationTimeout.toMillis >= System.currentTimeMillis())
+          .takeRight(config.faultReports.maxReportsCount)
         deleteReports(collections.State_FaultReportsInfo, reports.toSet -- remainReports.toSet)
       }
     } yield result

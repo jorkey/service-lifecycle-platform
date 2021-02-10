@@ -14,9 +14,9 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   val distributionName = "test"
-  val distributionDirectory = Files.createTempDirectory("distrib").toFile
-  val settingsDir = Files.createTempDirectory("settings").toFile
-  val settingsDirectory = new SettingsDirectory(settingsDir)
+  val distributionDir = Files.createTempDirectory("distrib").toFile
+  val builderDir = Files.createTempDirectory("builder").toFile
+  val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
   val sourceBranch = "graphql"
 
   override protected def beforeAll() = {
@@ -46,8 +46,8 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
   }
 
   it should "build distribution from sources" in {
-    val builderDir = Files.createTempDirectory("builder").toFile
-    val distributionBuilder = new DistributionBuilder(builderDir, Map("distribution_setup" -> "test_distribution_setup.sh"))
-    assert(distributionBuilder.buildDistributionFromSources(distributionName, distributionDirectory, settingsDirectory, "test"))
+    val distributionBuilder = new DistributionBuilder(builderDir, "test_distribution_setup.sh",
+      "dummyCloud", distributionDir, distributionName, "Test distribution server", "test")
+    assert(distributionBuilder.buildDistributionFromSources("ak"))
   }
 }

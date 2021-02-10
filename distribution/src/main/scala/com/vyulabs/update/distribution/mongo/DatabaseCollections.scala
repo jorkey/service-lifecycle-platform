@@ -13,10 +13,11 @@ import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
 import org.slf4j.LoggerFactory
 
-import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit system: ActorSystem, executionContext: ExecutionContext) {
+class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuration)
+                         (implicit system: ActorSystem, executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
@@ -115,7 +116,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireSec: Int)(implicit sys
     collection <- db.getOrCreateCollection[BsonDocument]("state.serviceStates")
     _ <- collection.createIndex(Indexes.ascending("distributionName"))
     _ <- collection.createIndex(Indexes.ascending("instance.instanceId"))
-    _ <- collection.createIndex(Indexes.ascending("instance.service.date"), new IndexOptions().expireAfter(instanceStateExpireSec, TimeUnit.SECONDS))
+    _ <- collection.createIndex(Indexes.ascending("instance.service.date"), new IndexOptions()
+      .expireAfter(instanceStateExpireTimeout.length, instanceStateExpireTimeout.unit))
     _ <- collection.dropItems()
     _ <- getNextSequence("state.serviceStates")
   } yield collection, Sequences)

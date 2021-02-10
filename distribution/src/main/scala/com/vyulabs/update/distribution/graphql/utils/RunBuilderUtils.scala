@@ -32,17 +32,14 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   implicit val timer = new AkkaTimer(system.scheduler)
 
+  private val builderDirectory = new File(dir.directory, "builder")
+
   def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    config.builderConfig.builderDirectory match {
-      case Some(builderDirectory) =>
-        runLocalBuilder(taskId, arguments, builderDirectory)
+    config.remoteBuilder match {
+      case Some(remoteBuilder) =>
+        runRemoteBuilder(taskId, arguments, remoteBuilder.distributionUrl)
       case None =>
-        config.builderConfig.distributionUrl match {
-          case Some(distributionUrl) =>
-            runRemoteBuilder(taskId, arguments, distributionUrl)
-          case None =>
-            sys.error("Local directory or distribution URL are not defined for builder")
-        }
+        runLocalBuilder(taskId, arguments)
     }
   }
 
@@ -50,15 +47,15 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     val task = taskManager.create("Run local builder by remote distribution",
       (taskId, logger) => {
         implicit val log = logger
-        runLocalBuilder(taskId, arguments, config.builderConfig.builderDirectory.get)
+        runLocalBuilder(taskId, arguments)
       })
     task.taskId
   }
 
-  private def runLocalBuilder(taskId: TaskId, arguments: Seq[String], builderDirectory: String)
+  private def runLocalBuilder(taskId: TaskId, arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
-      process <- ChildProcess.start("/bin/sh", Common.BuilderSh +: arguments, Map.empty, new File(builderDirectory))
+      process <- ChildProcess.start("/bin/sh", Common.BuilderSh +: arguments, Map.empty, builderDirectory)
     } yield {
       process.handleOutput(lines => { lines.foreach(line => log.info(line._1)) })
 //      @volatile var logOutputFuture = Option.empty[Future[Unit]]
@@ -90,7 +87,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   private def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val result = Promise[Unit]()
-    val client = new DistributionClient(config.distributionName, new AkkaHttpClient(distributionUrl))
+    val client = new DistributionClient(config.name, new AkkaHttpClient(distributionUrl))
     val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
     for {
       remoteTaskId <- remoteTaskId
@@ -102,7 +99,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
           result.success(terminationStatus)
         }
         logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-          addServiceLogs(config.distributionName, Common.DistributionServiceName,
+          addServiceLogs(config.name, Common.DistributionServiceName,
             Some(taskId), config.instanceId, 0.toString, "", Seq(line.logLine.line)).map(_ => ())
         })
       }).run()

@@ -62,7 +62,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildClientVersion",
-          s"distributionName=${config.distributionName}", s"service=${serviceName}",
+          s"distributionName=${config.name}", s"service=${serviceName}",
           s"developerVersion=${developerVersion.toString}", s"clientVersion=${clientVersion.toString}",
           s"author=${author}")
         runBuilder(taskId, arguments)
@@ -94,8 +94,8 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
       _ <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
-        if (notUsedVersions.size > config.versionHistory.maxSize) {
-          Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versionHistory.maxSize).map { version =>
+        if (notUsedVersions.size > config.versions.maxHistorySize) {
+          Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
             removeClientVersion(serviceName, version)
           })
         } else {

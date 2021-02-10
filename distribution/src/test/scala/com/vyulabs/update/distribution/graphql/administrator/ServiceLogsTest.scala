@@ -10,7 +10,7 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.{Filters, Updates}
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.utils.Utils.DateJson._
+import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext

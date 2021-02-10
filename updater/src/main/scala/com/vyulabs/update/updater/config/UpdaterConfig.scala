@@ -7,12 +7,11 @@ import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.utils.IoUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
+import com.vyulabs.update.common.utils.JsonFormats._
 
 case class UpdaterConfig(instanceId: InstanceId, clientDistributionUrl: URL)
 
 object UpdaterConfig extends DefaultJsonProtocol {
-  import com.vyulabs.update.common.utils.Utils.URLJson._
-
   implicit val updaterConfigJson = jsonFormat2(UpdaterConfig.apply)
 
   def apply()(implicit log: Logger): Option[UpdaterConfig] = {

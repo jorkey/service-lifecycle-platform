@@ -36,7 +36,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
-          s"distributionName=${config.distributionName}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
+          s"distributionName=${config.name}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
           s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
           comment.map(comment => s"comment=${comment}")
         runBuilder(taskId, arguments)
@@ -72,8 +72,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       complete <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
-        if (notUsedVersions.size > config.versionHistory.maxSize) {
-          Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versionHistory.maxSize).map { version =>
+        if (notUsedVersions.size > config.versions.maxHistorySize) {
+          Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
             removeDeveloperVersion(serviceName, version)
           })
         } else {

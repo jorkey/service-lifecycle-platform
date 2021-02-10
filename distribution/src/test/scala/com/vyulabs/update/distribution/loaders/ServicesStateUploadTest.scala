@@ -16,6 +16,8 @@ import spray.json.enrichAny
 
 import java.io.IOException
 import java.util.Date
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Promise}
 
 class ServicesStateUploadTest extends TestEnvironment {
@@ -29,7 +31,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   val distributionClient = new DistributionClient(distributionName, httpClient)
 
   it should "upload service states" in {
-    val uploader = new StateUploader("distribution", collections, distributionDir, 1, distributionClient)
+    val uploader = new StateUploader("distribution", collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)
     uploader.start()
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
@@ -55,7 +57,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   it should "try to upload service states again after failure" in {
-    val uploader = new StateUploader("distribution", collections, distributionDir, 2, distributionClient)
+    val uploader = new StateUploader("distribution", collections, distributionDir, FiniteDuration(2, TimeUnit.SECONDS), distributionClient)
     uploader.start()
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",

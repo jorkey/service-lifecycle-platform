@@ -8,7 +8,7 @@ import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.common.utils.Utils.DateJson._
+import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext

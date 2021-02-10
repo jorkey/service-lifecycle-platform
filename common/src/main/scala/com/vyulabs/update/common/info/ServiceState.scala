@@ -1,14 +1,14 @@
 package com.vyulabs.update.common.info
 
-import java.io.File
-import java.util.Date
-
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.utils.Utils.DateJson.DateJsonFormat
-import com.vyulabs.update.common.utils.{IoUtils, Utils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.JsonFormats._
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
+
+import java.io.File
+import java.util.Date
 
 case class UpdateError(critical: Boolean, error: String)
 
@@ -21,9 +21,6 @@ case class ServiceState(date: Date, installDate: Option[Date], startDate: Option
                         updateError: Option[UpdateError], failuresCount: Option[Int], lastExitCode: Option[Int])
 
 object ServiceState extends DefaultJsonProtocol {
-  import com.vyulabs.update.common.utils.Utils.DateJson._
-  import com.vyulabs.update.common.version.DeveloperDistributionVersion._
-
   implicit val stateJson = jsonFormat8(ServiceState.apply)
 }
 

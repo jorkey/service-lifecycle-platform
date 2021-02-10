@@ -6,7 +6,7 @@ import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestDuration
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.config.{BuilderConfig, DistributionConfig, FaultReportsConfig, InstanceStateConfig, NetworkConfig, VersionHistoryConfig}
+import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.UserRole
 import com.vyulabs.update.common.utils.IoUtils
@@ -20,6 +20,7 @@ import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, User
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
+import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -38,19 +39,18 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def dbName = getClass.getSimpleName
 
   val distributionDirectory = Files.createTempDirectory("distribution-").toFile
-  val builderDirectory = Files.createTempDirectory("builder-").toFile
+  val builderDirectory = new File(distributionDirectory, "builder")
 
+  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName)
   def networkConfig = NetworkConfig(0, None)
-  def builderConfig = BuilderConfig(None, None)
-  def versionHistoryConfig = VersionHistoryConfig(3)
-  def instanceStateConfig = InstanceStateConfig(60)
-  def faultReportsConfig = FaultReportsConfig(30000, 3)
+  def versionsConfig = VersionsConfig(3)
+  def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
+  def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 
-  val config = DistributionConfig("test", "Test distribution server", "instance1", "mongodb://localhost:27017", dbName,
-                                  networkConfig, distributionDirectory.toString,
-                                  builderConfig, versionHistoryConfig, instanceStateConfig, faultReportsConfig, None)
+  val config = DistributionConfig("test", "Test distribution server", "instance1", mongoDbConfig,
+                                  networkConfig, None, versionsConfig, instanceStateConfig, faultReportsConfig, None)
 
-  val distributionName = config.distributionName
+  val distributionName = config.name
   val instanceId = config.instanceId
   val adminClientCredentials = BasicHttpCredentials("admin", "admin")
   val distributionClientCredentials = BasicHttpCredentials("distribution1", "distribution1")
@@ -60,8 +60,8 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
   val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
 
-  val mongo = new MongoDb(config.mongoDbConnection, dbName); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo, 100)
+  val mongo = new MongoDb(config.mongoDb.connection, dbName); result(mongo.dropDatabase())
+  val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS))
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(taskId => new LogStorer(distributionName, Common.DistributionServiceName, Some(taskId),
     instanceId, collections.State_ServiceLogs))

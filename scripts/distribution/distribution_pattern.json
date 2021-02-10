@@ -1,0 +1,22 @@
+{
+  "name": "undefined",
+  "title": "undefined",
+  "instanceId": "undefined",
+  "mongoDb" : {
+    "connection" : "mongodb://localhost:27017",
+    "name": "undefined"
+  },
+  "network": {
+    "port" : 8000
+  },
+  "versions": {
+    "maxHistorySize": 100
+  },
+  "instanceState": {
+    "expirationTimeout": { "length": 60, "period": "SECONDS" }
+  },
+  "faultReports": {
+    "expirationTimeout": { "length": 7, "period": "DAYS" },
+    "maxReportsCount": 100
+  }
+}

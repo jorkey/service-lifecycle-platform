@@ -6,12 +6,12 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.FaultId
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.utils.Utils.DateJson._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import com.vyulabs.update.distribution.mongo.Sequenced
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
+import com.vyulabs.update.common.utils.JsonFormats._
 
 import java.util.Date
 import scala.concurrent.ExecutionContext
@@ -56,7 +56,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
     val date1 = new Date()
     addFaultReportInfo("fault1", 1, date1)
 
-    Thread.sleep(config.faultReportsConfig.expirationPeriodMs)
+    Thread.sleep(config.faultReports.expirationTimeout.toMillis)
 
     val date2 = new Date()
     addFaultReportInfo("fault2", 2, date2)

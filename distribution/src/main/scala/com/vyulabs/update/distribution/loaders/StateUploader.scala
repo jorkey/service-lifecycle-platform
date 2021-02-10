@@ -17,7 +17,6 @@ import spray.json.DefaultJsonProtocol._
 import spray.json._
 
 import java.net.URL
-import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
@@ -28,7 +27,7 @@ import scala.util.{Failure, Success}
   */
 
 class StateUploader(distributionName: DistributionName,
-                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int,
+                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration,
                     client: DistributionClient[AkkaSource])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -36,7 +35,7 @@ class StateUploader(distributionName: DistributionName,
   var task = Option.empty[Cancellable]
 
   def start(): Unit = {
-    task = Some(system.scheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState()))
+    task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
     log.debug("Upload task is scheduled")
   }
 
@@ -70,7 +69,7 @@ class StateUploader(distributionName: DistributionName,
         } else {
           log.debug(s"State is failed to upload")
         }
-        system.getScheduler.scheduleOnce(FiniteDuration(uploadIntervalSec, TimeUnit.SECONDS))(uploadState())
+        system.getScheduler.scheduleOnce(uploadInterval)(uploadState())
         log.debug("Upload task is scheduled")
     }
   }
@@ -152,9 +151,9 @@ class StateUploader(distributionName: DistributionName,
 
 object StateUploader {
   def apply(distributionName: DistributionName,
-            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadIntervalSec: Int, distributionUrl: URL)
+            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration, distributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
-    new StateUploader(distributionName, collections, distributionDirectory, uploadIntervalSec, new DistributionClient(
+    new StateUploader(distributionName, collections, distributionDirectory, uploadInterval, new DistributionClient(
       distributionName, new AkkaHttpClient(distributionUrl)))
   }
 }

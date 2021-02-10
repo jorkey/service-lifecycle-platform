@@ -9,9 +9,10 @@ import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.helpers.SubstituteLogger
-import spray.json.{JsString, JsValue, RootJsonFormat, deserializationError}
+import spray.json.{DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, deserializationError}
 
 import scala.annotation.tailrec
+import scala.concurrent.duration.FiniteDuration
 import scala.util.matching.Regex
 
 /**
@@ -115,35 +116,5 @@ object Utils {
 
   def makeDir(dir: File): File = {
     dir.mkdir(); dir
-  }
-
-  object RegexJson {
-    implicit object RegexFormat extends RootJsonFormat[Regex] {
-      def write(value: Regex) = JsString(value.toString)
-      def read(value: JsValue) = (value.asInstanceOf[JsString].value.r)
-    }
-  }
-
-  object URIJson {
-    implicit object URIJsonFormat extends RootJsonFormat[URI] {
-      def write(value: URI) = JsString(value.toString)
-      def read(value: JsValue) = new URI(value.asInstanceOf[JsString].value)
-    }
-  }
-
-  object URLJson {
-    implicit object URLJsonFormat extends RootJsonFormat[URL] {
-      def write(value: URL) = JsString(value.toString)
-      def read(value: JsValue) = new URL(value.asInstanceOf[JsString].value)
-    }
-  }
-
-  object DateJson {
-    implicit object DateJsonFormat extends RootJsonFormat[Date] {
-      def write(value: Date) = JsString(serializeISO8601Date(value))
-      def read(value: JsValue) = parseISO8601Date(value.asInstanceOf[JsString].value).getOrElse {
-        deserializationError(s"Parse date error. Value is ${value}")
-      }
-    }
   }
 }

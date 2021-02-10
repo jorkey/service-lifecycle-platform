@@ -1,8 +1,7 @@
 package com.vyulabs.update.common.distribution.server
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.ServiceName
-import org.slf4j.Logger
+import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 
 import java.io.File
 
@@ -10,8 +9,9 @@ import java.io.File
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.01.20.
   * Copyright FanDate, Inc.
   */
-class SettingsDirectory(directory: File)(implicit log: Logger) {
-  private val servicesDir = new File(directory, "services")
+class SettingsDirectory(builderDirectory: File, distributionName: DistributionName) {
+  private val settingsDirectory = new File(builderDirectory, s"settings.${distributionName}")
+  private val servicesDir = new File(settingsDirectory, "services")
 
   private val serviceSettingsDirName = "settings"
   private val servicePrivateDirName = "private"

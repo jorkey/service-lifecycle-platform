@@ -1,8 +1,8 @@
 package com.vyulabs.update.common.info
 
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.utils.Utils.DateJson._
 import spray.json.DefaultJsonProtocol
+import com.vyulabs.update.common.utils.JsonFormats._
 
 import java.util.Date
 

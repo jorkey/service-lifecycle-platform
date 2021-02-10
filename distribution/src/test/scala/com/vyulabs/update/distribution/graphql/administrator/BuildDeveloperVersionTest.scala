@@ -9,7 +9,6 @@ import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
-import com.vyulabs.update.common.config.BuilderConfig
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.distribution.TestEnvironment
@@ -34,8 +33,6 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   val dummyBuilder = new File(builderDirectory, "builder.sh")
   IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes)
 
-  override def builderConfig = BuilderConfig(Some(builderDirectory.toString), None)
-
   it should "build developer version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         mutation {
@@ -51,11 +48,10 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    val builderDir = config.builderConfig.builderDirectory.get
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDir}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -85,11 +81,10 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    val builderDir = config.builderConfig.builderDirectory.get
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDir}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -123,11 +118,10 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    val builderDir = config.builderConfig.builderDirectory.get
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Logger `Run local builder by remote distribution` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDir}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":3,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
