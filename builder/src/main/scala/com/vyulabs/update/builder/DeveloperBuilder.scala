@@ -21,6 +21,7 @@ import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.File
+import java.nio.file.Files
 import java.util.Date
 
 class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
@@ -71,10 +72,15 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
           return false
         }
 
+        log.info(s"Make version image ${newVersion}")
+        val imageFile = makeDeveloperVersionImage(serviceName).getOrElse {
+          log.error("Can't make version image")
+          return false
+        }
+
         log.info(s"Upload version image ${newVersion} to distribution server")
         val buildInfo = BuildInfo(author, sourceBranches, new Date(), comment)
-        if (!ZipUtils.zipAndSend(developerBuildDir(serviceName), file => uploadDeveloperVersionImage(distributionClient, serviceName,
-            newDistributionVersion, buildInfo, file))) {
+        if (uploadDeveloperVersionImage(distributionClient, serviceName, newDistributionVersion, buildInfo, imageFile)) {
           log.error("Can't upload version image")
           return false
         }
@@ -185,6 +191,31 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
     true
   }
 
+  def makeDeveloperVersionImage(serviceName: ServiceName): Option[File] = {
+    val directory = developerBuildDir(serviceName)
+    val file = Files.createTempFile(s"${serviceName}-version", "zip").toFile
+    file.deleteOnExit()
+    if (ZipUtils.zip(file, directory)) {
+      Some(file)
+    } else {
+      None
+    }
+  }
+
+  def uploadDeveloperVersionImage(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
+                                  version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
+    if (!distributionClient.uploadDeveloperVersionImage(serviceName, version, imageFile)) {
+      log.error("Uploading version image error")
+      return false
+    }
+    if (!distributionClient.graphqlRequest(
+      administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo(serviceName, version, buildInfo))).getOrElse(false)) {
+      log.error("Adding version info error")
+      return false
+    }
+    true
+  }
+
   private def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
     distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName), Some(version))).size != 0
   }
@@ -199,20 +230,6 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       if (!repository.push(Seq(new RefSpec(tag)))) {
         return false
       }
-    }
-    true
-  }
-
-  private def uploadDeveloperVersionImage(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
-                                  version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
-    if (!distributionClient.uploadDeveloperVersionImage(serviceName, version, imageFile)) {
-      log.error("Uploading version image error")
-      return false
-    }
-    if (!distributionClient.graphqlRequest(
-      administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo(serviceName, version, buildInfo))).getOrElse(false)) {
-      log.error("Adding version info error")
-      return false
     }
     true
   }

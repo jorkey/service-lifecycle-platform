@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -e
 
 if [ -z "$4" ]
 then

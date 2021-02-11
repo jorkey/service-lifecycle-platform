@@ -46,8 +46,8 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
   }
 
   it should "build distribution from sources" in {
-    val distributionBuilder = new DistributionBuilder(builderDir, "test_distribution_setup.sh",
-      "dummyCloud", distributionDir, distributionName, "Test distribution server", "test")
+    val distributionBuilder = new DistributionBuilder(builderDir, false,
+      "None", distributionDir, distributionName, "Test distribution server", "test")
     assert(distributionBuilder.buildDistributionFromSources("ak"))
   }
 }

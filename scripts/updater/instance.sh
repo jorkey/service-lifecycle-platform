@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -e
 
 distribDirectoryUrl=$3
 serviceToSetup=updater

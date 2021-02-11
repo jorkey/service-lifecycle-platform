@@ -8,8 +8,16 @@
           "destinationFile": "distribution/distribution.sh"
         },
         {
-          "sourceFile": "scripts/distribution/distribution_setup.sh",
-          "destinationFile": "distribution/distribution_setup.sh"
+          "sourceFile": "scripts/distribution/make_config.sh",
+          "destinationFile": "distribution/make_config.sh"
+        },
+        {
+          "sourceFile": "scripts/distribution/create_service.sh",
+          "destinationFile": "distribution/create_service.sh"
+        },
+        {
+          "sourceFile": "scripts/distribution/config_pattern.json",
+          "destinationFile": "distribution/config_pattern.json"
         },
         {
           "sourceFile": "scripts/builder/builder.sh",

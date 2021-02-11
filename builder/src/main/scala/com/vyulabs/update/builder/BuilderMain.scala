@@ -51,7 +51,7 @@ object BuilderMain extends App {
       val distributionName = arguments.getValue("distributionName")
       val distributionTitle = arguments.getValue("distributionTitle")
       val mongoDbName = arguments.getValue("mongoDbName")
-      val distributionBuilder = new DistributionBuilder(new File("."), "distribution_setup.sh",
+      val distributionBuilder = new DistributionBuilder(new File("."), true,
         cloudProvider, new File(distributionDirectory), distributionName, distributionTitle, mongoDbName)
 
       arguments.getOptionValue("author") match {

@@ -41,6 +41,15 @@ object ProcessUtils {
                  dir: File, exitCodeMatch: Option[Int], outputMatch: Option[String],
                  logging: Logging)(implicit log: Logger): Boolean = {
     log.info(s"Executing ${command} with arguments ${args} in directory ${dir}")
+    var processToTerminate = Option.empty[Process]
+    val terminateThread = new Thread() {
+      override def run(): Unit = {
+        processToTerminate.foreach( proc => {
+          log.info(s"Program is terminating - kill child process ${proc.pid()}")
+          proc.destroy()
+        })
+    }}
+    Runtime.getRuntime.addShutdownHook(terminateThread)
     try {
       val builder = new ProcessBuilder((command +: args).toList.asJava)
       builder.redirectErrorStream(true)
@@ -55,7 +64,7 @@ object ProcessUtils {
       log.debug(s"Environment: ${builder.environment()}")
       builder.directory(dir)
       val proc = builder.start()
-
+      processToTerminate = Some(proc)
       val output = readOutputToString(proc.getInputStream, logging).getOrElse {
         log.error("Can't read process output")
         return false
@@ -85,6 +94,8 @@ object ProcessUtils {
       case ex: Exception =>
         log.error(s"Start process ${command} error: ${ex.toString}", ex)
         false
+    } finally {
+      Runtime.getRuntime.removeShutdownHook(terminateThread)
     }
   }
 

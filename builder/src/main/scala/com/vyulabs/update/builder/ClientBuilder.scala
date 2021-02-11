@@ -10,10 +10,11 @@ import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
-import org.slf4j.Logger
+import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
 import java.io.File
+import java.nio.file.Files
 import java.util.Date
 
 /**
@@ -21,6 +22,8 @@ import java.util.Date
   * Copyright FanDate, Inc.
   */
 class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) {
+  implicit val log = LoggerFactory.getLogger(this.getClass)
+
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
@@ -102,6 +105,17 @@ class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) 
       }
     }
     true
+  }
+
+  def makeClientVersionImage(serviceName: ServiceName): Option[File] = {
+    val directory = clientBuildDir(serviceName)
+    val file = Files.createTempFile(s"${serviceName}-version", "zip").toFile
+    file.deleteOnExit()
+    if (ZipUtils.zip(file, directory)) {
+      Some(file)
+    } else {
+      None
+    }
   }
 
   private def mergeInstallConfigFile(serviceName: ServiceName)(implicit log: Logger): Boolean = {
