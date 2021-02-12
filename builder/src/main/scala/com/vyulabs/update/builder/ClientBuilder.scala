@@ -9,7 +9,7 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
@@ -28,6 +28,8 @@ class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) 
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
   private val settingsDirectory = new SettingsDirectory(builderDir, clientDistributionName)
+
+  val initialClientVersion = ClientDistributionVersion(clientDistributionName, ClientVersion(DeveloperVersion(Seq(1, 0, 0))))
 
   def clientServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
   def clientBuildDir(serviceName: ServiceName) = makeDir(new File(clientServiceDir(serviceName), "build"))
@@ -52,6 +54,32 @@ class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) 
       author, versionInfo.buildInfo)
   }
 
+  def uploadClientInitVersion(distributionClient: SyncDistributionClient[SyncSource],
+                                 serviceName: ServiceName, author: String): Boolean = {
+    val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
+    uploadClientVersion(distributionClient, serviceName, initialClientVersion, author, buildInfo)
+  }
+
+  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
+                          version: ClientDistributionVersion, author: String, buildInfo: BuildInfo)(implicit log: Logger): Boolean = {
+    if (!ZipUtils.zipAndSend(clientBuildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, version, file))) {
+      return false
+    }
+    val clientVersionInfo = ClientVersionInfo(serviceName, version, buildInfo, InstallInfo(author, new Date()))
+    if (!distributionClient.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
+      return false
+    }
+    true
+  }
+
+  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Unit = {
+    setDesiredVersions(distributionClient, serviceNames.map { ClientDesiredVersion(_, initialClientVersion) })
+  }
+
+  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[ClientDesiredVersion]): Boolean = {
+    distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(versions)).getOrElse(false)
+  }
+
   private def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                                version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
     log.info(s"Get developer version ${version} of service ${serviceName} info")
@@ -69,18 +97,6 @@ class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) 
       return None
     }
     Some(versionInfo)
-  }
-
-  private def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
-                          version: ClientDistributionVersion, author: String, buildInfo: BuildInfo)(implicit log: Logger): Boolean = {
-    if (!ZipUtils.zipAndSend(clientBuildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, version, file))) {
-      return false
-    }
-    val clientVersionInfo = ClientVersionInfo(serviceName, version, buildInfo, InstallInfo(author, new Date()))
-    if (!distributionClient.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
-      return false
-    }
-    true
   }
 
   def generateClientVersion(serviceName: ServiceName, arguments: Map[String, String])(implicit log: Logger): Boolean = {

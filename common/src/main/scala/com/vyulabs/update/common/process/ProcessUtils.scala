@@ -6,7 +6,11 @@ import com.vyulabs.update.common.utils.Utils.extendMacro
 import org.slf4j.Logger
 
 import java.io.{BufferedReader, File, InputStream, InputStreamReader}
+import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 31.07.20.
@@ -46,7 +50,7 @@ object ProcessUtils {
       override def run(): Unit = {
         processToTerminate.foreach( proc => {
           log.info(s"Program is terminating - kill child process ${proc.pid()}")
-          proc.destroy()
+          Await.result(new ChildProcess(proc).terminate(), FiniteDuration(3, TimeUnit.SECONDS))
         })
     }}
     Runtime.getRuntime.addShutdownHook(terminateThread)
@@ -95,7 +99,7 @@ object ProcessUtils {
         log.error(s"Start process ${command} error: ${ex.toString}", ex)
         false
     } finally {
-      Runtime.getRuntime.removeShutdownHook(terminateThread)
+      try { Runtime.getRuntime.removeShutdownHook(terminateThread) } catch { case _: Exception => {} }
     }
   }
 

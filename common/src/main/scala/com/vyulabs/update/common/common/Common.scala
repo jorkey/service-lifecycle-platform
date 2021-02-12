@@ -35,6 +35,7 @@ object Common {
   val DistributionConfigFileName = "distribution.json"
   val UpdateConfigFileName = "update.json"
   val InstallConfigFileName = "install.json"
+  val BuilderConfigFileName = "builder.json"
 
   val FaultInfoFileName = "fault.json"
 

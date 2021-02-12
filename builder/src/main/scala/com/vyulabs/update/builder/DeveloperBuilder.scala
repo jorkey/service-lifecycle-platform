@@ -9,7 +9,7 @@ import com.vyulabs.update.common.config.UpdateConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
-import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo}
+import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersion, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils.copyFile
@@ -33,6 +33,8 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   private val servicesDir = makeDir(new File(developerDir, "services"))
 
   private val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
+
+  val initialDeveloperVersion = DeveloperDistributionVersion(distributionName, DeveloperVersion(Seq(1, 0, 0)))
 
   def developerServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
   def developerBuildDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "build"))
@@ -80,7 +82,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
 
         log.info(s"Upload version image ${newVersion} to distribution server")
         val buildInfo = BuildInfo(author, sourceBranches, new Date(), comment)
-        if (uploadDeveloperVersionImage(distributionClient, serviceName, newDistributionVersion, buildInfo, imageFile)) {
+        if (uploadDeveloperVersion(distributionClient, serviceName, newDistributionVersion, buildInfo, imageFile)) {
           log.error("Can't upload version image")
           return false
         }
@@ -202,8 +204,16 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
     }
   }
 
-  def uploadDeveloperVersionImage(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
-                                  version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
+  def uploadDeveloperInitVersion(distributionClient: SyncDistributionClient[SyncSource],
+                                 serviceName: ServiceName, author: String): Boolean = {
+    val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
+    ZipUtils.zipAndSend(developerBuildDir(serviceName), file => {
+      uploadDeveloperVersion(distributionClient, serviceName, initialDeveloperVersion, buildInfo, file)
+    })
+  }
+
+  def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
+                             version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
     if (!distributionClient.uploadDeveloperVersionImage(serviceName, version, imageFile)) {
       log.error("Uploading version image error")
       return false
@@ -214,6 +224,14 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       return false
     }
     true
+  }
+
+  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Unit = {
+    setDesiredVersions(distributionClient, serviceNames.map { DeveloperDesiredVersion(_, initialDeveloperVersion) })
+  }
+
+  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[DeveloperDesiredVersion]): Boolean = {
+    distributionClient.graphqlRequest(administratorMutations.setDeveloperDesiredVersions(versions)).getOrElse(false)
   }
 
   private def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {

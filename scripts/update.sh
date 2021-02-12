@@ -47,7 +47,7 @@ function getDesiredVersion {
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
-    download ${distribDirectoryUrl}/download-desired-version/${service}?image=false ${tmpFile}
+    download ${distribDirectoryUrl}/download-desired-version/${service} ${tmpFile}
     cat ${tmpFile}
     rm -f ${tmpFile}
   else

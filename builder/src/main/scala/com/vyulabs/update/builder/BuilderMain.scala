@@ -6,7 +6,6 @@ import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpCl
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.GitRepositoryUtils
 import org.slf4j.LoggerFactory
 
 import java.io.File
@@ -35,12 +34,6 @@ object BuilderMain extends App {
   if (args.size < 1) Utils.error(usage())
 
   val command = args(0)
-  val config = BuilderConfig().getOrElse { Utils.error("No config") }
-
-  val settingsDir = GitRepositoryUtils.getGitRepository(config.adminRepositoryUrl, "master",
-    false, new File("settings")).getOrElse {
-    Utils.error("Init settings repository error")
-  }.getDirectory()
 
   command match {
     case "buildDistribution" =>
@@ -75,6 +68,7 @@ object BuilderMain extends App {
     case _ =>
       val arguments = Arguments.parse(args.drop(1), Set.empty)
 
+      val config = BuilderConfig().getOrElse { Utils.error("No config") }
       val distributionName = arguments.getValue("distributionName")
       val distributionUrl = config.distributionLinks.find(_.distributionName == distributionName).map(_.distributionUrl).getOrElse {
         Utils.error(s"Unknown URL to distribution ${distributionName}")
