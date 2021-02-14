@@ -31,6 +31,37 @@ function download {
   fi
 }
 
+### Graphql request
+# input:
+#  $1 - source URL
+#  $2 - query
+#  $3 - sub selection
+#  $4 - output file
+function graphqlQuery() {
+  set -e
+  local url="$1/graphql"
+  local query=$2
+  local subSelection=$3
+  local outputFile=$4
+  rm -f ${outputFile}
+  local tmpFile=`mktemp`
+  local http_code
+
+  if ! http_code=`curl -X POST -H "Content-Type: application/json" --data '{ "query": "{ '${query}' }" }' ${url} \
+      --output ${tmpFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
+    rm -f ${tmpFile}
+    exit 1
+  elif [[ (${url} == http* && $http_code != "200") || (`jq -r .errors ${tmpFile}` != "null") || (`jq -r .data ${tmpFile}` == "null") ]] ; then
+    if [ -f ${tmpFile} ]; then
+      >&2 echo "Graphql query: ${query} to url ${url}"
+      >&2 echo "Response: `cat ${tmpFile}`"
+      rm ${tmpFile}
+    fi
+    exit 1
+  fi
+  jq -r .data.${subSelection} ${tmpFile} >${outputFile}
+}
+
 ### Get desired version number of service.
 # input:
 #   $1 - service name
@@ -47,7 +78,7 @@ function getDesiredVersion {
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
-    download ${distribDirectoryUrl}/download-desired-version/${service} ${tmpFile}
+    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version}" "clientDesiredVersions[0].version" ${tmpFile}
     cat ${tmpFile}
     rm -f ${tmpFile}
   else
@@ -70,7 +101,7 @@ function downloadVersionImage {
     >&2 echo "Variable distribDirectoryUrl is not defined"
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    download ${distribDirectoryUrl}/download-version/${service}/${version} ${outputFile}
+    download ${distribDirectoryUrl}/client-version-image/${service}/${version} ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
   fi
@@ -210,8 +241,8 @@ function runService {
     local buildVersion=`echo ${currentVersion} | sed -e 's/_.*//'`
 
     if [ -f install.json ]; then
-      if ! command=`jq -r '.runService.command' install.json`; then
-        >&2 echo "runService.command is not defined in the install.json"
+      if ! query=`jq -r '.runService.query' install.json`; then
+        >&2 echo "runService.query is not defined in the install.json"
       fi
       if ! args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${buildVersion}/`; then
         >&2 echo "runService.args is not defined in the install.json"
@@ -221,14 +252,14 @@ function runService {
         >&2 echo "No <${serviceToRun}-${buildVersion}>.jar in the build"
         exit 1
       fi
-      command="/usr/bin/java"
+      query="/usr/bin/java"
       args="-jar ${serviceToRun}-${buildVersion}.jar"
     fi
 
     if tty -s; then
       set +e
-      echo "Run ${command} ${args} $@"
-      ${command} ${args} "$@"
+      echo "Run ${query} ${args} $@"
+      ${query} ${args} "$@"
       local status=$?
       set -e
     else
@@ -239,8 +270,8 @@ function runService {
       }
       trap trapKill TERM INT
       set +e
-      echo "Run service ${command} ${args} $@"
-      ${command} ${args} "$@" &
+      echo "Run service ${query} ${args} $@"
+      ${query} ${args} "$@" &
       child=$!
       wait ${child}
       trap - TERM INT

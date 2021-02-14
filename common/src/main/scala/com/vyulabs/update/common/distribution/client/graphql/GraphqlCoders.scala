@@ -65,15 +65,15 @@ object DistributionQueriesCoder extends CommonQueriesCoder {
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
       "{ serviceName, version, buildInfo { author, branches, date, comment } }")
 
-  def getDesiredVersions(serviceNames: Seq[ServiceName] = Seq.empty) =
-    GraphqlQuery[Seq[DeveloperDesiredVersion]]("desiredVersions",
+  def getDeveloperDesiredVersions(serviceNames: Seq[ServiceName] = Seq.empty) =
+    GraphqlQuery[Seq[DeveloperDesiredVersion]]("developerDesiredVersions",
       Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 }
 
 object ServiceQueriesCoder extends CommonQueriesCoder {
-  def getDesiredVersions(serviceNames: Seq[ServiceName]) =
-    GraphqlQuery[Seq[ClientDesiredVersion]]("desiredVersions",
+  def getClientDesiredVersions(serviceNames: Seq[ServiceName]) =
+    GraphqlQuery[Seq[ClientDesiredVersion]]("clientDesiredVersions",
       Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
      "{ serviceName, version }")
 }

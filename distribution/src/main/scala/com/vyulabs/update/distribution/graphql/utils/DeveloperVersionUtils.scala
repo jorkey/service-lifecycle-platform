@@ -187,7 +187,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   def downloadUpdates(developerDistributionClient: DistributionClient[AkkaSource], serviceNames: Seq[ServiceName])
                      (implicit log: Logger): Future[Map[ServiceName, DeveloperDistributionVersion]] = {
     for {
-      developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDesiredVersions(serviceNames))
+      developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(serviceNames))
           .map(DeveloperDesiredVersions.toMap(_))
       updatedVersions <- (Future.sequence(developerDesiredVersions.map {
         case (serviceName, version) if version.distributionName == developerDistributionClient.distributionName =>

@@ -50,10 +50,10 @@ class TestedVersionsTest extends TestEnvironment {
     val graphqlContext2 = new GraphqlContext(UserInfo("distribution2", UserRole.Distribution), workspace)
 
     assertResult((OK,
-      ("""{"data":{"desiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.1"}]}}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.1"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext2, graphql"""
         query {
-          desiredVersions {
+          developerDesiredVersions {
             serviceName
             version
           }
@@ -66,7 +66,7 @@ class TestedVersionsTest extends TestEnvironment {
   it should "return error if no tested versions for the client's profile" in {
     val graphqlContext = new GraphqlContext(UserInfo("distribution2", UserRole.Distribution), workspace)
     assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested by anyone","path":["desiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested by anyone","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         query {
           desiredVersions {

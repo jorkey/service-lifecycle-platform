@@ -106,7 +106,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
         administratorQueries.getDeveloperDesiredVersions(Seq("service1"))))
 
       assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(
-        distribClient.graphqlRequest(distributionQueries.getDesiredVersions(Seq("service1"))))
+        distribClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(Seq("service1"))))
     }
 
     it should "execute client version requests" in {
@@ -131,7 +131,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
         administratorQueries.getClientDesiredVersions(Seq("service1"))))
 
       assertResult(Some(List(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1")))))(
-        serviceClient.graphqlRequest(serviceQueries.getDesiredVersions(Seq("service1"))))
+        serviceClient.graphqlRequest(serviceQueries.getClientDesiredVersions(Seq("service1"))))
     }
 
     it should "execute installed versions requests" in {

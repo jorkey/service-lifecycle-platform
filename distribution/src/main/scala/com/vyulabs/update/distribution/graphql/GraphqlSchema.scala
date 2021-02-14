@@ -127,7 +127,7 @@ object GraphqlSchema {
       Field("versionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
-      Field("desiredVersions", ListType(DeveloperDesiredVersionType),
+      Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.userInfo.name, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
     )
@@ -136,7 +136,7 @@ object GraphqlSchema {
   def ServiceQueries(implicit log: Logger) = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
-      Field("desiredVersions", ListType(ClientDesiredVersionType),
+      Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceStates", ListType(InstanceServiceStateType),

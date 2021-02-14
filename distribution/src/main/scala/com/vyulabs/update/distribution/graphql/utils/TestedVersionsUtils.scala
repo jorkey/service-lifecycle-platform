@@ -14,7 +14,7 @@ trait TestedVersionsUtils extends ClientVersionUtils {
                           (implicit log: Logger): Future[Boolean] = {
     for {
       clientDesiredVersions <- getClientDesiredVersions().map(ClientDesiredVersions.toMap(_))
-      developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDesiredVersions()).map(DeveloperDesiredVersions.toMap(_))
+      developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions()).map(DeveloperDesiredVersions.toMap(_))
       result <- {
         if (!clientDesiredVersions.filter(_._2.distributionName == developerDistributionClient.distributionName)
           .mapValues(_.original()).equals(developerDesiredVersions)) {
