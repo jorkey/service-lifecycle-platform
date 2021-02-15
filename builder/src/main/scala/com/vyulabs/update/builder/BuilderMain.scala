@@ -9,6 +9,7 @@ import com.vyulabs.update.common.version.{ClientVersion, DeveloperDistributionVe
 import org.slf4j.LoggerFactory
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
@@ -27,7 +28,7 @@ object BuilderMain extends App {
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
     "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <developerDistributionName=?>\n" +
+    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> <developerDistributionUrL=?>\n" +
     "    buildDeveloperVersion <distributionName=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
     "    buildClientVersion <distributionName=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -44,26 +45,19 @@ object BuilderMain extends App {
       val distributionName = arguments.getValue("distributionName")
       val distributionTitle = arguments.getValue("distributionTitle")
       val mongoDbName = arguments.getValue("mongoDbName")
-      val test = arguments.getOptionBooleanValue("test").getOrElse(false)
-      val distributionBuilder = new DistributionBuilder(new File("."),
-        cloudProvider, new File(distributionDirectory), distributionName, distributionTitle, mongoDbName, test)
+      val author = arguments.getValue("author")
+      val port = arguments.getOptionIntValue("port").getOrElse(8000)
+      val distributionBuilder = new DistributionBuilder(new File("."), cloudProvider,
+        true, new File(distributionDirectory), distributionName, distributionTitle, mongoDbName, false, port)
 
-      arguments.getOptionValue("author") match {
-        case Some(author) =>
-          val arguments = Arguments.parse(args.drop(1), Set("distributionName", "distributionDirectory", "author"))
+      arguments.getOptionValue("developerDistributionUrl") match {
+        case None =>
           if (!distributionBuilder.buildDistributionFromSources(author)) {
             Utils.error("Build distribution error")
           }
-        case None =>
-          val arguments = Arguments.parse(args.drop(1), Set("distributionConfigFile", "developerDistributionName"))
-          val distributionConfigFile = new File(arguments.getValue("distributionConfigFile"))
-          arguments.getOptionValue("developerDistributionName") match {
-            case Some(developerDistributionName) =>
-              if (!distributionBuilder.buildFromDeveloperDistribution(developerDistributionName)) {
-                Utils.error("Build distribution error")
-              }
-            case None =>
-              Utils.error(usage())
+        case Some(developerDistributionUrl) =>
+          if (!distributionBuilder.buildFromDeveloperDistribution(new URL(developerDistributionUrl), author)) {
+            Utils.error("Build distribution error")
           }
       }
     case _ =>

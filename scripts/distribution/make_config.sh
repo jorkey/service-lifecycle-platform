@@ -2,11 +2,11 @@
 set -e
 
 function exitUsage() {
-  >&2 echo "Use: $0 <cloudProvider> <distributionName> <distributionTitle> <mongoDbName> <test>"
+  >&2 echo "Use: $0 <cloudProvider> <distributionName> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port>"
   exit 1
 }
 
-if [ $# -ne 5 ]; then
+if [ $# -ne 6 ]; then
   exitUsage
 fi
 
@@ -14,7 +14,8 @@ cloudProvider=$1
 distributionName=$2
 distributionTitle=$3
 mongoDbName=$4
-test=$5
+mongoDbTemporary=$5
+port=$6
 
 if [ "${cloudProvider}" == "Azure" ]; then
   if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, ":", .compute.name'`; then
@@ -28,7 +29,7 @@ else
   exit 1
 fi
 
-jq ".name=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${test}" >distribution.json <<EOF
+jq ".name=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port}" >distribution.json <<EOF
 {
   "name": "undefined",
   "title": "undefined",
