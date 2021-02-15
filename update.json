@@ -16,10 +16,6 @@
           "destinationFile": "distribution/create_service.sh"
         },
         {
-          "sourceFile": "scripts/distribution/config_pattern.json",
-          "destinationFile": "distribution/config_pattern.json"
-        },
-        {
           "sourceFile": "scripts/builder/builder.sh",
           "destinationFile": "builder/builder.sh"
         },

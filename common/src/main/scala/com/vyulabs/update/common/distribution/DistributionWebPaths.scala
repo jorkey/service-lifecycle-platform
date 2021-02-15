@@ -14,14 +14,14 @@ object DistributionWebPaths {
 
   val pingPath = "ping"
 
-  val loadPathPrefix = "load"
+  val imagePathPrefix = "image"
 
-  val developerVersionImagePath = "developer-version-image"
-  val clientVersionImagePath = "client-version-image"
+  val developerVersionPath = "developer-version"
+  val clientVersionPath = "client-version"
 
   val faultReportPath = "fault-report"
 
-  val versionImageField = "version-image"
+  val imageField = "image"
   val faultReportField = "fault-report"
 
   def encode(pathSegment: String): String = URLEncoder.encode(pathSegment, "utf8")

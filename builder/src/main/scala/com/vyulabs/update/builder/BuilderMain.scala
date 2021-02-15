@@ -26,7 +26,7 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...]\n" +
+    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
     "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <developerDistributionName=?>\n" +
     "    buildDeveloperVersion <distributionName=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
     "    buildClientVersion <distributionName=?> <service=?> <developerVersion=?> <clientVersion=?>"
@@ -44,8 +44,9 @@ object BuilderMain extends App {
       val distributionName = arguments.getValue("distributionName")
       val distributionTitle = arguments.getValue("distributionTitle")
       val mongoDbName = arguments.getValue("mongoDbName")
-      val distributionBuilder = new DistributionBuilder(new File("."), true,
-        cloudProvider, new File(distributionDirectory), distributionName, distributionTitle, mongoDbName)
+      val test = arguments.getOptionBooleanValue("test").getOrElse(false)
+      val distributionBuilder = new DistributionBuilder(new File("."),
+        cloudProvider, new File(distributionDirectory), distributionName, distributionTitle, mongoDbName, test)
 
       arguments.getOptionValue("author") match {
         case Some(author) =>

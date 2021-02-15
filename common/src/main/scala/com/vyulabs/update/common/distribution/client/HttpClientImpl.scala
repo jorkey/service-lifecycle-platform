@@ -167,7 +167,7 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
     Future {
-      val connection = openConnection(loadPathPrefix + "/" + path)
+      val connection = openConnection(imagePathPrefix + "/" + path)
       try {
         if (distributionUrl.getUserInfo != null) {
           val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
@@ -200,7 +200,7 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
   private def download(path: String, output: OutputStream): Future[Unit] = {
     if (log.isDebugEnabled) log.debug(s"Download by url ${path}")
     Future {
-      val connection = openConnection(loadPathPrefix + "/" + path)
+      val connection = openConnection(imagePathPrefix + "/" + path)
       try {
         if (!distributionUrl.getUserInfo.isEmpty) {
           val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))

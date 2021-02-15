@@ -79,8 +79,13 @@ function getDesiredVersion {
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
     graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version}" "clientDesiredVersions[0].version" ${tmpFile}
-    cat ${tmpFile}
+    version=`cat ${tmpFile}`
     rm -f ${tmpFile}
+    if [[ ${version} == "null" ]]; then
+      >&2 echo "Client desired version is not defined for service ${service}"
+      exit 1
+    fi
+    echo ${version}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"
     exit 1
@@ -101,7 +106,7 @@ function downloadVersionImage {
     >&2 echo "Variable distribDirectoryUrl is not defined"
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    download ${distribDirectoryUrl}/client-version-image/${service}/${version} ${outputFile}
+    download ${distribDirectoryUrl}/image/client-version/${service}/${version} ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
   fi

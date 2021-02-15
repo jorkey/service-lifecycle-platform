@@ -12,18 +12,32 @@ import org.bson.conversions.Bson
 import org.bson.{BsonDocument, Document}
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
 
-class MongoDb(connectionString: String, dbName: String)
+class MongoDb(connectionString: String, dbName: String, temporary: Boolean)
              (implicit executionContext: ExecutionContext) {
-  import MongoDb.client
-
   implicit val system = ActorSystem(s"MongoDB_${dbName}")
   implicit val materializer = ActorMaterializer()
+  implicit val log = LoggerFactory.getLogger(this.getClass)
+
+  private val client = MongoClients.create(MongoClientSettings.builder
+    .applyConnectionString(new ConnectionString(connectionString))
+    //.applyToConnectionPoolSettings(builder => builder.maxSize(10).minSize(10))
+    .build)
 
   private val db = client.getDatabase(dbName)
+
+  if (temporary) {
+    Runtime.getRuntime.addShutdownHook(new Thread() {
+      override def run(): Unit = {
+        log.info(s"Shutdown: drop temporary database ${dbName}")
+        Await.result(dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+      }})
+  }
 
   def getCollectionNames(): Future[Seq[String]] = {
     Source.fromPublisher(db.listCollectionNames())
@@ -139,11 +153,4 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T])
       .log(s"Drop Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }
-}
-
-object MongoDb {
-  val client = MongoClients.create(MongoClientSettings.builder
-    .applyConnectionString(new ConnectionString( "mongodb://localhost:27017"))
-    //.applyToConnectionPoolSettings(builder => builder.maxSize(10).minSize(10))
-    .build)
 }

@@ -19,8 +19,8 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class DistributionBuilder(builderDir: File, daemon: Boolean,
-                          cloudProvider: String, distributionDir: File, distributionName: String, distributionTitle: String, mongoDbName: String) {
+class DistributionBuilder(builderDir: File, cloudProvider: String,
+                          distributionDir: File, distributionName: String, distributionTitle: String, mongoDbName: String, test: Boolean) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val developerBuilder = new DeveloperBuilder(builderDir, distributionName)
@@ -105,6 +105,11 @@ class DistributionBuilder(builderDir: File, daemon: Boolean,
         !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDir)) {
       return false
     }
+    distributionDir.listFiles().foreach { file =>
+      if (file.getName.endsWith(".sh") && !IoUtils.setExecuteFilePermissions(file)) {
+        return false
+      }
+    }
     if (!IoUtils.writeDesiredServiceVersion(distributionDir, Common.ScriptsServiceName, clientBuilder.initialClientVersion) ||
         !IoUtils.writeServiceVersion(distributionDir, Common.ScriptsServiceName, clientBuilder.initialClientVersion)) {
       return false
@@ -114,7 +119,7 @@ class DistributionBuilder(builderDir: File, daemon: Boolean,
       return false
     }
     log.info(s"Make distribution config file")
-    val arguments = Seq(cloudProvider, distributionName, distributionTitle, mongoDbName)
+    val arguments = Seq(cloudProvider, distributionName, distributionTitle, mongoDbName, false.toString)
     if (!ProcessUtils.runProcess("/bin/sh", "make_config.sh" +: arguments, Map.empty,
         distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
@@ -131,7 +136,7 @@ class DistributionBuilder(builderDir: File, daemon: Boolean,
       }
       true
     }
-    if (daemon) {
+    if (!test) {
       startService("create_service.sh")
     } else {
       new Thread() {
@@ -167,6 +172,11 @@ class DistributionBuilder(builderDir: File, daemon: Boolean,
     if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "builder"), builderDir) ||
         !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
       return false
+    }
+    builderDir.listFiles().foreach { file =>
+      if (file.getName.endsWith(".sh") && !IoUtils.setExecuteFilePermissions(file)) {
+        return false
+      }
     }
 
     log.info(s"--------------------------- Create builder config")

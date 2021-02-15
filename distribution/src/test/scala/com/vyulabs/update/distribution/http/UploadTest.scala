@@ -4,7 +4,7 @@ import java.io.File
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.vyulabs.update.common.distribution.DistributionWebPaths.versionImageField
+import com.vyulabs.update.common.distribution.DistributionWebPaths.imageField
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -19,7 +19,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   val route = distribution.route
 
   it should "upload developer version image" in {
-    Post("/load/developer-version-image/service1/test-1.1.1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/image/developer-version/service1/test-1.1.1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
 
@@ -27,7 +27,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "upload client version image" in {
-    Post("/load/client-version-image/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/image/client-version/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
 
@@ -35,7 +35,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "return error when illegal access" in {
-    Post("/load/client-version-image/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(distributionClientCredentials) ~> route ~> check {
+    Post("/image/client-version/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(distributionClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.Forbidden
     }
   }
@@ -47,7 +47,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   def makeVersionMultipart(): Multipart.FormData.Strict = {
-    Multipart.FormData(Multipart.FormData.BodyPart.Strict(versionImageField,
+    Multipart.FormData(Multipart.FormData.BodyPart.Strict(imageField,
       HttpEntity(ContentTypes.`application/octet-stream`, "version image content".getBytes),
       Map("filename" -> "version.zip")))
   }

@@ -41,7 +41,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionDirectory = Files.createTempDirectory("distribution-").toFile
   val builderDirectory = new File(distributionDirectory, "builder")
 
-  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName)
+  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, true)
   def networkConfig = NetworkConfig(0, None)
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
@@ -60,7 +60,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
   val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
 
-  val mongo = new MongoDb(config.mongoDb.connection, dbName); result(mongo.dropDatabase())
+  val mongo = new MongoDb(config.mongoDb.connection, config.mongoDb.name, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS))
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(taskId => new LogStorer(distributionName, Common.DistributionServiceName, Some(taskId),
@@ -81,8 +81,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
-    //distributionDir.drop()
-    //config.builderConfig.builderDirectory.foreach(dir => IoUtils.deleteFileRecursively(new File(dir)))
-    //result(mongo.dropDatabase())
+    distributionDir.drop()
+    IoUtils.deleteFileRecursively(builderDirectory)
   }
 }

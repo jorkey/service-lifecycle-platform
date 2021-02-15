@@ -9,8 +9,11 @@ import org.slf4j.Logger
 import spray.json._
 
 import java.io._
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import java.util.Date
 import scala.annotation.tailrec
+import scala.collection.JavaConverters._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
@@ -367,5 +370,17 @@ object IoUtils {
     } else {
       Seq(path)
     }
+  }
+
+  def setExecuteFilePermissions(file: File)(implicit log: Logger): Boolean = {
+    try {
+      Files.setPosixFilePermissions(file.toPath,
+        (Files.getPosixFilePermissions(file.toPath).asScala.toSet + PosixFilePermission.OWNER_EXECUTE).asJava)
+    } catch {
+      case e: Exception =>
+        log.error(s"Can't set execute permissions on file ${file}")
+        return false
+    }
+    true
   }
 }

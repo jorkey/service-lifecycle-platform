@@ -77,7 +77,7 @@ class AkkaHttpClient(distributionUrl: URL)
         fieldName,
         HttpEntity(ContentTypes.`application/octet-stream`, file.length, FileIO.fromPath(file.toPath)),
         Map("filename" -> file.getName)))
-    var post = Post(distributionUrl.toString + "/" + loadPathPrefix + "/" + path, multipartForm)
+    var post = Post(distributionUrl.toString + "/" + imagePathPrefix + "/" + path, multipartForm)
     getHttpCredentials().foreach(credentials => post = post.addCredentials(credentials))
     for {
       response <- Http(system).singleRequest(post)
@@ -90,7 +90,7 @@ class AkkaHttpClient(distributionUrl: URL)
   }
 
   def download(path: String, file: File): Future[Unit] = {
-    var get = Get(distributionUrl.toString + "/" + loadPathPrefix + "/" + path)
+    var get = Get(distributionUrl.toString + "/" + imagePathPrefix + "/" + path)
     getHttpCredentials().foreach(credentials => get = get.addCredentials(credentials))
     for {
       response <- Http(system).singleRequest(get)

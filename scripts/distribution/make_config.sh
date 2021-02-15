@@ -2,11 +2,11 @@
 set -e
 
 function exitUsage() {
-  >&2 echo "Use: $0 <cloudProvider> <distributionName> <distributionTitle> <mongoDbName>"
+  >&2 echo "Use: $0 <cloudProvider> <distributionName> <distributionTitle> <mongoDbName> <test>"
   exit 1
 }
 
-if [ $# -ne 4 ]; then
+if [ $# -ne 5 ]; then
   exitUsage
 fi
 
@@ -14,6 +14,7 @@ cloudProvider=$1
 distributionName=$2
 distributionTitle=$3
 mongoDbName=$4
+test=$5
 
 if [ "${cloudProvider}" == "Azure" ]; then
   if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, ":", .compute.name'`; then
@@ -27,4 +28,28 @@ else
   exit 1
 fi
 
-jq ".name=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .mongoDb.name=\"${mongoDbName}\"" config_pattern.json > distribution.json
+jq ".name=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${test}" >distribution.json <<EOF
+{
+  "name": "undefined",
+  "title": "undefined",
+  "instanceId": "undefined",
+  "mongoDb" : {
+    "connection" : "mongodb://localhost:27017",
+    "name": "undefined",
+    "test": false
+  },
+  "network": {
+    "port" : 8000
+  },
+  "versions": {
+    "maxHistorySize": 100
+  },
+  "instanceState": {
+    "expirationTimeout": { "length": 60, "unit": "s" }
+  },
+  "faultReports": {
+    "expirationTimeout": { "length": 7, "unit": "d" },
+    "maxReportsCount": 100
+  }
+}
+EOF
