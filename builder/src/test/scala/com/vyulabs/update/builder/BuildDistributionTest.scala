@@ -52,7 +52,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       |}""".stripMargin.getBytes("utf8"))
   }
 
-  it should "build distribution from sources" in {
+  it should "build developer and client distribution" in {
     val developerDistributionBuilder = new DistributionBuilder(developerBuilderDir,
       "None", false, developerDistributionDir, developerDistributionName, "Test developer distribution server",
       "BuildDistributionTest-developer",true, 8000)
@@ -61,6 +61,6 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     val clientDistributionBuilder = new DistributionBuilder(clientBuilderDir,
       "None", false, clientDistributionDir, clientDistributionName, "Test client distribution server",
       "BuildDistributionTest-client",true, 8001)
-    assert(clientDistributionBuilder.buildFromDeveloperDistribution(new URL("http://localhost:8000"), "ak"))
+    assert(clientDistributionBuilder.buildFromDeveloperDistribution(new URL("http://admin:admin@localhost:8000"), "ak"))
   }
 }

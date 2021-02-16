@@ -25,7 +25,7 @@ object DeveloperDistributionVersion {
   }
 
   def parse(version: String): DeveloperDistributionVersion = {
-    val index = version.indexOf('-')
+    val index = version.lastIndexOf('-')
     if (index == -1) {
       throw new IllegalArgumentException(s"Invalid version ${version}")
     }

@@ -226,7 +226,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
     true
   }
 
-  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Unit = {
+  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Boolean = {
     setDesiredVersions(distributionClient, serviceNames.map { DeveloperDesiredVersion(_, initialDeveloperVersion) })
   }
 

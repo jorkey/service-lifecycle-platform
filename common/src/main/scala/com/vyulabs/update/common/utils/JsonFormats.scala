@@ -5,6 +5,7 @@ import spray.json.{DeserializationException, JsNumber, JsObject, JsString, JsVal
 
 import java.net.{URI, URL}
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.matching.Regex
 
@@ -40,7 +41,7 @@ object JsonFormats {
     def read(value: JsValue) = {
       value.asJsObject.getFields("length", "unit") match {
         case Seq(JsNumber(length), JsString(unit)) =>
-          FiniteDuration(length.toLong, unit)
+          FiniteDuration(length.toLong, TimeUnit.valueOf(unit))
         case _ => throw new DeserializationException("FiniteDuration expected")
       }
     }

@@ -48,7 +48,6 @@ class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int]
       }
     } catch {
       case e: Exception =>
-        onError(e)
     }
     onEof()
   }

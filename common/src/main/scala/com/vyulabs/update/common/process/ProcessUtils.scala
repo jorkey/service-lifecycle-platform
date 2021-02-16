@@ -50,7 +50,11 @@ object ProcessUtils {
       override def run(): Unit = {
         processToTerminate.foreach( proc => {
           log.info(s"Program is terminating - kill child process ${proc.pid()}")
-          Await.result(new ChildProcess(proc).terminate(), FiniteDuration(3, TimeUnit.SECONDS))
+          try {
+            Await.result(new ChildProcess(proc).terminate(), FiniteDuration(3, TimeUnit.SECONDS))
+          } catch {
+            case e: Exception =>
+          }
         })
     }}
     Runtime.getRuntime.addShutdownHook(terminateThread)

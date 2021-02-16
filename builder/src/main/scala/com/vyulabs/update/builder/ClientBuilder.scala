@@ -21,15 +21,15 @@ import java.util.Date
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) {
+class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
-  private val settingsDirectory = new SettingsDirectory(builderDir, clientDistributionName)
+  private val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
 
-  val initialClientVersion = ClientDistributionVersion(clientDistributionName, ClientVersion(DeveloperVersion(Seq(1, 0, 0))))
+  val initialClientVersion = ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 0, 0))))
 
   def clientServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
   def clientBuildDir(serviceName: ServiceName) = makeDir(new File(clientServiceDir(serviceName), "build"))
@@ -50,14 +50,14 @@ class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) 
     }
 
     log.info(s"Upload client version ${clientVersion} of service ${serviceName}")
-    uploadClientVersion(distributionClient, serviceName, ClientDistributionVersion(clientDistributionName, clientVersion),
+    uploadClientVersion(distributionClient, serviceName, ClientDistributionVersion(distributionName, clientVersion),
       author, versionInfo.buildInfo)
   }
 
-  def uploadClientInitVersion(distributionClient: SyncDistributionClient[SyncSource],
-                                 serviceName: ServiceName, author: String): Boolean = {
+  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
+                          version: ClientDistributionVersion, author: String): Boolean = {
     val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
-    uploadClientVersion(distributionClient, serviceName, initialClientVersion, author, buildInfo)
+    uploadClientVersion(distributionClient, serviceName, version, author, buildInfo)
   }
 
   def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
@@ -72,7 +72,7 @@ class ClientBuilder(builderDir: File, clientDistributionName: DistributionName) 
     true
   }
 
-  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Unit = {
+  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Boolean = {
     setDesiredVersions(distributionClient, serviceNames.map { ClientDesiredVersion(_, initialClientVersion) })
   }
 

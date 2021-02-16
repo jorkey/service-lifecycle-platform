@@ -57,4 +57,5 @@ EOF
 echo "Service ${name} is created"
 
 sudo systemctl daemon-reload
+sudo systemctl reenable update-${name}.service
 sudo systemctl restart update-${name}.service

@@ -46,10 +46,10 @@ jq ".name=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceI
     "maxHistorySize": 100
   },
   "instanceState": {
-    "expirationTimeout": { "length": 60, "unit": "s" }
+    "expirationTimeout": { "length": 60, "unit": "SECONDS" }
   },
   "faultReports": {
-    "expirationTimeout": { "length": 7, "unit": "d" },
+    "expirationTimeout": { "length": 7, "unit": "DAYS" },
     "maxReportsCount": 100
   }
 }

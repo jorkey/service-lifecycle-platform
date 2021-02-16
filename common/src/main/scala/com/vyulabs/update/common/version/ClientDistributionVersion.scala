@@ -28,7 +28,7 @@ object ClientDistributionVersion {
     ClientDistributionVersion(version.distributionName, ClientVersion(version.version))
 
   def parse(version: String): ClientDistributionVersion = {
-    val index = version.indexOf('-')
+    val index = version.lastIndexOf('-')
     if (index == -1) {
       throw new IllegalArgumentException(s"Invalid version ${version}")
     }

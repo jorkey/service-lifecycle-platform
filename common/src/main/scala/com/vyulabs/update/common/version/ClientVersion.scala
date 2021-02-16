@@ -34,7 +34,7 @@ object ClientVersion {
   }
 
   def parse(version: String): ClientVersion = {
-    val index = version.indexOf('_')
+    val index = version.lastIndexOf('_')
     val developerVersion = DeveloperVersion.parse(if (index != -1) version.substring(0, index) else version)
     val localBuild = if (index != -1) Some(version.substring(index + 1).toInt) else None
     new ClientVersion(developerVersion, localBuild)

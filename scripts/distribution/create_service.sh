@@ -26,6 +26,7 @@ EOF
   echo "Start distribution service"
 
   sudo systemctl daemon-reload
+  sudo systemctl reenable update-distribution.service
   sudo systemctl restart update-distribution.service
 }
 
