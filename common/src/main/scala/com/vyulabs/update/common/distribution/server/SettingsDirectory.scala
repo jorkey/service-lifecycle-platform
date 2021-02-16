@@ -16,6 +16,11 @@ class SettingsDirectory(builderDirectory: File, distributionName: DistributionNa
   private val serviceSettingsDirName = "settings"
   private val servicePrivateDirName = "private"
 
+  def init(): Unit = {
+    settingsDirectory.mkdir()
+    servicesDir.mkdir()
+  }
+
   def getSourcesFile(): File = {
     new File("sources.json")
   }

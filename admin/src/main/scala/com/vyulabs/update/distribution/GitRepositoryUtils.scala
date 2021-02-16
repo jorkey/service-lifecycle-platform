@@ -24,7 +24,7 @@ object GitRepositoryUtils {
           }
           cloneRepository(uri, branch, directory, cloneSubmodules)
         case rep =>
-          return rep
+          rep
       }
     }
   }

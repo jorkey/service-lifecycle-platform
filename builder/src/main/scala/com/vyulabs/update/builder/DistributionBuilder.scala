@@ -6,6 +6,7 @@ import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName}
 import com.vyulabs.update.common.config.{DistributionConfig, NetworkConfig, UploadStateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion}
@@ -262,6 +263,9 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     if (!IoUtils.writeJsonToFile(new File(builderDir, Common.BuilderConfigFileName), BuilderConfig(instanceId, distributionLinks))) {
       return false
     }
+
+    log.info(s"--------------------------- Create settings repository")
+    new SettingsDirectory(builderDir, distributionName).init()
 
     true
   }
