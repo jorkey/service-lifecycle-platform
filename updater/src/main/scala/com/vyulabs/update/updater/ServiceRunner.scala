@@ -81,7 +81,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
                 processFault(process, exitCode, logTail)
               case Failure(ex) =>
                 this.process = None
-                // TODO
+                log.error(s"Waiting for process termination error", ex)
             }
           case Failure(ex) =>
             log.error(s"Can't start process ${command}", ex)

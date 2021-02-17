@@ -20,6 +20,8 @@
 
     <appender name="TRACE" class="com.vyulabs.update.common.logger.TraceAppender"/>
 
+    <logger name="akka.event.slf4j.Slf4jLogger" level="ERROR"/>
+
     <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>

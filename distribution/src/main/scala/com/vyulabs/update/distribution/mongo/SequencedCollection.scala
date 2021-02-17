@@ -28,6 +28,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   private var publisherBuffer = Queue.empty[Sequenced[T]]
 
   private var modifyInProcess = Option.empty[Future[Int]]
+  private var nextSequenceInProcess = Option.empty[Future[Long]]
 
   for {
     collection <- collection
@@ -98,7 +99,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   def update(filters: Bson, modify: Option[T] => Option[T]): Future[Int] = {
-    def process(): Future[Int] = {
+    def update(): Future[Int] = {
       for {
         docs <- findDocuments(filters)
         result <- {
@@ -152,30 +153,7 @@ class SequencedCollection[T: ClassTag](val name: String,
       collection.insert(newDoc).map(_ => ())
     }
 
-    def queueFuture(): Future[Int] = {
-      synchronized {
-        val future = modifyInProcess match {
-          case Some(currentProcess) if !currentProcess.isCompleted =>
-            currentProcess.transformWith(_ => process())
-          case _ =>
-            process()
-        }
-        modifyInProcess = Some(future)
-        future.andThen {
-          case _ =>
-            synchronized {
-              modifyInProcess match {
-                case Some(`future`) =>
-                  modifyInProcess = None
-                case _ =>
-              }
-            }
-        }
-        future
-      }
-    }
-
-    queueFuture()
+    queueFuture[Int](() => modifyInProcess, f => { modifyInProcess = f }, () => update())
   }
 
   def delete(filters: Bson = new BsonDocument()): Future[Long] = {
@@ -190,7 +168,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   def drop(): Future[Unit] = {
     for {
       collection <- collection
-      result <- collection.drop()
+      result <- collection.drop().map(_ => ())
     } yield result
   }
 
@@ -233,11 +211,39 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   private def getNextSequence(sequenceName: String, increment: Int = 1): Future[Long] = {
-    (for {
-      sequenceCollection <- sequenceCollection
-      sequence <- { sequenceCollection.findOneAndUpdate(
-        Filters.eq("name", sequenceName), Updates.inc("sequence", increment),
-        new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)) }
-    } yield sequence).map(_.map(_.sequence).head)
+    def getNextSequence(): Future[Long] = {
+      (for {
+        sequenceCollection <- sequenceCollection
+        sequence <- { sequenceCollection.findOneAndUpdate(
+          Filters.eq("name", sequenceName), Updates.inc("sequence", increment),
+          new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)) }
+      } yield sequence).map(_.map(_.sequence).head)
+    }
+
+    queueFuture[Long](() => nextSequenceInProcess, nextSequenceInProcess = _, () => getNextSequence())
+  }
+
+  private def queueFuture[T](getLast: () => Option[Future[T]], setLast: (Option[Future[T]]) => Unit,
+                             process: () => Future[T]): Future[T] = {
+    synchronized {
+      val future = getLast() match {
+        case Some(currentProcess) if !currentProcess.isCompleted =>
+          currentProcess.transformWith(_ => process())
+        case _ =>
+          process()
+      }
+      setLast(Some(future))
+      future.andThen {
+        case _ =>
+          synchronized {
+            getLast() match {
+              case Some(`future`) =>
+                setLast(None)
+              case _ =>
+            }
+          }
+      }
+      future
+    }
   }
 }

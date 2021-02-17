@@ -264,8 +264,8 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
       return false
     }
 
-    log.info(s"--------------------------- Create settings repository")
-    new SettingsDirectory(builderDir, distributionName).init()
+    log.info(s"--------------------------- Create settings directory")
+    new SettingsDirectory(builderDir, distributionName)
 
     true
   }

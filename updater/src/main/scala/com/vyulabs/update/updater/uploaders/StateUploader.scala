@@ -1,32 +1,21 @@
 package com.vyulabs.update.updater.uploaders
 
-import java.io.File
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.InstanceId
+import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.{serviceMutations}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{DirectoryServiceState, InstanceServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
-import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.serviceMutations
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
+
+import java.io.File
 
 class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
                     distributionClient: SyncDistributionClient[SyncSource])(implicit log: Logger) extends Thread { self =>
   private val services = servicesNames.foldLeft(Map.empty[ProfiledServiceName, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(name, () => update()))
   }
-
-  /* TODO graphql
-  for (serviceStates <- clientDirectory.downloadServicesState(instanceId)) {
-    serviceStates.foreach { case state =>
-        services.foreach { case (name, controller) =>
-          if (name.name == state.serviceName && controller.serviceDirectory.getCanonicalPath == state.directory) {
-            controller.initFromState(state.state)
-          }
-        }
-      }
-    }
-  */
 
   def getServiceStateController(profiledServiceName: ProfiledServiceName): Option[ServiceStateController] = {
     services.get(profiledServiceName)

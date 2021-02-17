@@ -18,6 +18,8 @@
         </filter>
     </appender>
 
+    <logger name="org.mongodb" level="ERROR"/>
+
     <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE" />

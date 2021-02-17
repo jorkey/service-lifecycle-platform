@@ -24,6 +24,9 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
   appender.start()
   log.addAppender(appender)
 
+  getMessages(Seq("Logger `Test` started"))
+  resetPromise()
+
   it should "buffer log records up to low water mark" in {
     promise = Promise[Unit]
     log.info("log line 1")
@@ -122,7 +125,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
     log.warn("log line 2")
     getMessages(Seq())
     appender.stop()
-    getMessages(Seq("log line 1", "log line 2"))
+    getMessages(Seq("log line 1", "log line 2", "Logger `Test` finished"))
   }
 
   private def resetPromise(): Unit = {

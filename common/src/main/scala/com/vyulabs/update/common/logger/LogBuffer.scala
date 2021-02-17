@@ -44,16 +44,16 @@ class LogBuffer(description: String, loggerName: String,
 
   override def stop(status: Option[Boolean], error: Option[String]): Unit = {
     val stat = status match {
-      case Some(true) => "successfully"
-      case Some(false) => "with error" +
+      case Some(true) => " successfully"
+      case Some(false) => " with error" +
         (error match {
-          case Some(error) => s": ${error}"
+          case Some(error) => s" : ${error}"
           case None => ""
         })
       case None => ""
     }
     synchronized {
-      eventsBuffer :+= LogLine(new Date(), "INFO", Some(loggerName), s"Logger `${description}` finished ${stat}", status)
+      eventsBuffer :+= LogLine(new Date(), "INFO", Some(loggerName), s"Logger `${description}` finished${stat}", status)
     }
     flush()
   }
