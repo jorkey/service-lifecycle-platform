@@ -87,7 +87,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   private def runRemoteBuilder(taskId: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val result = Promise[Unit]()
-    val client = new DistributionClient(config.name, new AkkaHttpClient(distributionUrl))
+    val client = new DistributionClient(new AkkaHttpClient(distributionUrl))
     val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
     for {
       remoteTaskId <- remoteTaskId

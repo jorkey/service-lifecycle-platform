@@ -28,7 +28,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   val httpClient = new HttpClientTestStub[AkkaSource]()
-  val distributionClient = new DistributionClient(distributionName, httpClient)
+  val distributionClient = new DistributionClient(httpClient)
 
   it should "upload service states" in {
     val uploader = new StateUploader("distribution", collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)

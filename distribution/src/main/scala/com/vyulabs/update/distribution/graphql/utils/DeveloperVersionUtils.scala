@@ -46,14 +46,14 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
 
   def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName)(implicit log: Logger): DeveloperDistributionVersion = {
     log.info("Get existing versions")
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName))) match {
+    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(config.name))) match {
       case Some(versions) if !versions.isEmpty =>
         val lastVersion = versions.map(_.version).sorted(DeveloperDistributionVersion.ordering).last
         log.info(s"Last version is ${lastVersion}")
         lastVersion.next()
       case _ =>
         log.error("No existing versions")
-        DeveloperDistributionVersion(distributionClient.distributionName, DeveloperVersion(Seq(1, 0, 0)))
+        DeveloperDistributionVersion(config.name, DeveloperVersion(Seq(1, 0, 0)))
     }
   }
 
@@ -190,9 +190,9 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(serviceNames))
           .map(DeveloperDesiredVersions.toMap(_))
       updatedVersions <- (Future.sequence(developerDesiredVersions.map {
-        case (serviceName, version) if version.distributionName == developerDistributionClient.distributionName =>
+        case (serviceName, version) if version.distributionName == config.name =>
           for {
-            existVersionInfo <- getDeveloperVersionsInfo(serviceName, Some(developerDistributionClient.distributionName), Some(version)).map(_.headOption)
+            existVersionInfo <- getDeveloperVersionsInfo(serviceName, Some(config.name), Some(version)).map(_.headOption)
             updatedVersion <- existVersionInfo match {
               case Some(_) =>
                 Future(None)

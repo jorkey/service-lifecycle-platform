@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.distribution.client
 
-import com.vyulabs.update.common.common.Common.{FaultId, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionName, FaultId, ServiceName}
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.{Logger, LoggerFactory}
@@ -13,14 +13,12 @@ import scala.concurrent.{Await, Awaitable, ExecutionContext}
 class SyncDistributionClient[Source[_]](client: DistributionClient[Source], waitDuration: FiniteDuration)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def distributionName = client.distributionName
-
   def available(): Boolean = {
     result(client.available()).isDefined
   }
 
-  def getServiceVersion(serviceName: ServiceName): Option[ClientDistributionVersion] = {
-    result(client.getServiceVersion(serviceName)).flatten
+  def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName): Option[ClientDistributionVersion] = {
+    result(client.getServiceVersion(distributionName, serviceName)).flatten
   }
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response] = {

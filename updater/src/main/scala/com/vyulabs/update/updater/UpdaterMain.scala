@@ -1,15 +1,18 @@
 package com.vyulabs.update.updater
 
-import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer, Timer}
-import com.vyulabs.update.common.distribution.client.OldDistributionInterface
-import com.vyulabs.update.common.info.ProfiledServiceName
+import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.info.{ClientDesiredVersions, ProfiledServiceName}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
@@ -48,18 +51,19 @@ object UpdaterMain extends App { self =>
 
       val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
 
-      val clientDirectory = new OldDistributionInterface(config.clientDistributionUrl)
+      val distributionClient = new SyncDistributionClient(
+        new DistributionClient(new HttpClientImpl(config.clientDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
-      val instanceState = new StateUploader(config.instanceId, servicesInstanceNames + updaterServiceName, clientDirectory)
+      val instanceState = new StateUploader(config.instanceId, servicesInstanceNames + updaterServiceName, distributionClient)
 
       instanceState.start()
 
       try {
         val updaterServiceController = instanceState.getServiceStateController(updaterServiceName).get
-        val selfUpdater = new SelfUpdater(updaterServiceController, clientDirectory)
+        val selfUpdater = new SelfUpdater(updaterServiceController, distributionClient)
 
         val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ProfiledServiceName, ServiceUpdater])((updaters, service) =>
-          updaters + (service -> new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, clientDirectory)))
+          updaters + (service -> new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, distributionClient)))
 
         var lastUpdateTime = 0L
 
@@ -129,10 +133,11 @@ object UpdaterMain extends App { self =>
 
         def maybeUpdate(): Boolean = {
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
-            clientDirectory.downloadInstalledDesiredVersions() match {
+            distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions(Seq(Common.ScriptsServiceName, Common.UpdaterServiceName))) match {
               case Some(desiredVersions) =>
+                val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions)
                 var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, ClientDistributionVersion])((map, updater) => {
-                  updater._2.needUpdate(desiredVersions.get(updater._1.name)) match {
+                  updater._2.needUpdate(desiredVersionsMap.get(updater._1.name)) match {
                     case Some(version) =>
                       map + (updater._1 -> version)
                     case None =>
@@ -141,10 +146,10 @@ object UpdaterMain extends App { self =>
                 })
                 if (!needUpdate.isEmpty) {
                   selfUpdater.needUpdate(Common.UpdaterServiceName,
-                      desiredVersions.get(Common.UpdaterServiceName)).foreach(version =>
+                      desiredVersionsMap.get(Common.UpdaterServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.UpdaterServiceName) -> version))
                   selfUpdater.needUpdate(Common.ScriptsServiceName,
-                      desiredVersions.get(Common.ScriptsServiceName)).foreach(version =>
+                      desiredVersionsMap.get(Common.ScriptsServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.ScriptsServiceName) -> version))
                   val toUpdate = needUpdate.filterNot { case (serviceName, version) =>
                     blacklist.get(serviceName) match {

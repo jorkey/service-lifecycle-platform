@@ -3,13 +3,15 @@ package com.vyulabs.update.updater.uploaders
 import java.io.File
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.InstanceId
-import com.vyulabs.update.common.distribution.client.OldDistributionInterface
-import com.vyulabs.update.common.info.{DirectoryServiceState, ProfiledServiceName}
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.info.{DirectoryServiceState, InstanceServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
+import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.serviceMutations
 import org.slf4j.Logger
+import spray.json.DefaultJsonProtocol._
 
 class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
-                    clientDirectory: OldDistributionInterface)(implicit log: Logger) extends Thread { self =>
+                    distributionClient: SyncDistributionClient[SyncSource])(implicit log: Logger) extends Thread { self =>
   private val services = servicesNames.foldLeft(Map.empty[ProfiledServiceName, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(name, () => update()))
   }
@@ -60,6 +62,7 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
     val scriptsState = DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
     val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
       state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
-    clientDirectory.uploadServicesStates(serviceStates)
+    val instanceServiceStates = serviceStates.map(state => InstanceServiceState(instanceId, state.serviceName, state.directory, state.state))
+    distributionClient.graphqlRequest(serviceMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
   }
 }

@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import java.io.File
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceName
-import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
@@ -12,7 +12,7 @@ import org.slf4j.Logger
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class SelfUpdater(state: ServiceStateController, clientDirectory: OldDistributionInterface)
+class SelfUpdater(state: ServiceStateController, distributionClient: SyncDistributionClient[SyncSource])
                  (implicit log: Logger) {
   private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
 
@@ -30,7 +30,7 @@ class SelfUpdater(state: ServiceStateController, clientDirectory: OldDistributio
     state.info(s"Service ${serviceName} is obsolete. Own version ${getVersion(serviceName)} desired version ${toVersion}")
     state.beginUpdateToVersion(toVersion)
     log.info(s"Downloading ${serviceName} of version ${toVersion}")
-    if (!clientDirectory.downloadClientVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
+    if (!distributionClient.downloadClientVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
       state.updateError(false, s"Downloading ${serviceName} error")
       return false
     }

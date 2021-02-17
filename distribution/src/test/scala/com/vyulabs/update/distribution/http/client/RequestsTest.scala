@@ -49,27 +49,27 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   def httpRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
     val serviceClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
     requests(adminClient, serviceClient, distribClient)
   }
 
   def akkaHttpRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
     val serviceClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://service1:service1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
     requests(adminClient, serviceClient, distribClient)
   }
 
   def requests[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "execute some requests" in {
-      assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(Common.DistributionServiceName))
+      assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(distributionName, Common.DistributionServiceName))
 
       assertResult(Some(Seq(DistributionClientInfo("distribution1", DistributionClientConfig("common", None)))))(
         adminClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
@@ -188,7 +188,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   def subRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
     it should "execute subscription requests" in {
       val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription())
@@ -202,7 +202,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   def akkaSubRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
     it should "execute subscription requests" in {
       val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription()).get

@@ -27,21 +27,21 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
 
   def httpUpload(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val serviceClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     upload(adminClient, serviceClient, distribClient)
   }
 
   def akkaHttpUpload(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val serviceClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     upload(adminClient, serviceClient, distribClient)
   }
 

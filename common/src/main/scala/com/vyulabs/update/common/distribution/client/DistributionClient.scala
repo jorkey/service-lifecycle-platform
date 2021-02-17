@@ -11,7 +11,7 @@ import spray.json.JsonReader
 import java.io.File
 import scala.concurrent.{ExecutionContext, Future}
 
-class DistributionClient[Source[_]](val distributionName: DistributionName, client: HttpClient[Source])
+class DistributionClient[Source[_]](client: HttpClient[Source])
                         (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -19,7 +19,7 @@ class DistributionClient[Source[_]](val distributionName: DistributionName, clie
     client.exists(pingPath)
   }
 
-  def getServiceVersion(serviceName: ServiceName): Future[Option[ClientDistributionVersion]] = {
+  def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName): Future[Option[ClientDistributionVersion]] = {
     client.graphql(administratorQueries.getServiceStates(Some(distributionName), Some(serviceName), None, None))
       .map(_.headOption.map(_.instance.service.version).flatten)
   }

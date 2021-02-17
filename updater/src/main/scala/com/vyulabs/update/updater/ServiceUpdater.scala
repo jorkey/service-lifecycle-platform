@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.InstallConfig
-import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{ProfiledServiceName, UpdateError}
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
@@ -18,10 +18,10 @@ import scala.concurrent.ExecutionContext
   * Copyright FanDate, Inc.
   */
 class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServiceName,
-                     state: ServiceStateController, clientDirectory: OldDistributionInterface)
+                     state: ServiceStateController, distributionClient: SyncDistributionClient[SyncSource])
                     (implicit timer: Timer, executionContext: ExecutionContext, log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
-  private val faultUploader = new FaultUploader(state.faultsDirectory, clientDirectory)
+  private val faultUploader = new FaultUploader(state.faultsDirectory, distributionClient)
 
   faultUploader.start()
 
@@ -72,7 +72,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
         state.updateError(true, s"Can't make directory ${state.newServiceDirectory}")
         return false
       }
-      if (!clientDirectory.downloadClientVersion(profiledServiceName.name, newVersion, state.newServiceDirectory)) {
+      if (!distributionClient.downloadClientVersionImage(profiledServiceName.name, newVersion, state.newServiceDirectory)) {
         state.updateError(false, s"Can't download ${profiledServiceName.name} version ${newVersion}")
         return false
       }

@@ -1,7 +1,7 @@
 package com.vyulabs.update.updater.uploaders
 
-import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.distribution.client.OldDistributionInterface
+import com.vyulabs.update.common.common.{Common, IdGenerator}
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.FaultInfo._
 import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName}
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
@@ -18,10 +18,11 @@ import scala.collection.immutable.Queue
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
   * Copyright FanDate, Inc.
   */
-class FaultUploader(archiveDir: File, clientDirectory: OldDistributionInterface)
+class FaultUploader(archiveDir: File, distributionClient: SyncDistributionClient[SyncSource])
                    (implicit log: Logger) extends Thread { self =>
   private case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 
+  private val idGenerator = new IdGenerator()
   private var faults = Queue.empty[FaultReport]
   private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024
   private var stopping = false
@@ -96,7 +97,8 @@ class FaultUploader(archiveDir: File, clientDirectory: OldDistributionInterface)
         IoUtils.deleteFileRecursively(tmpDirectory)
       }
       fault.reportFilesTmpDir.foreach(IoUtils.deleteFileRecursively(_))
-      if (!clientDirectory.uploadServiceFault(profiledServiceName.name, archiveFile)) {
+      val faultId = idGenerator.generateId(8)
+      if (!distributionClient.uploadFaultReport(faultId, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }

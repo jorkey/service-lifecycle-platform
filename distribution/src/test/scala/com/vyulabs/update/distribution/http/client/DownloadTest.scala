@@ -26,21 +26,21 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
 
   def httpDownload(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://admin:admin@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val serviceClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://service1:service1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://service1:service1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     download(adminClient, serviceClient, distribClient)
   }
 
   def akkaHttpDownload(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://admin:admin@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val serviceClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://service1:service1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://service1:service1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     download(adminClient, serviceClient, distribClient)
   }
 

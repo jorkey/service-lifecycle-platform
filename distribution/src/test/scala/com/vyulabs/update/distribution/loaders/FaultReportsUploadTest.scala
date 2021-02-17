@@ -32,7 +32,7 @@ class FaultReportsUploadTest extends TestEnvironment {
   val date = new Date()
 
   val httpClient = new HttpClientTestStub[AkkaSource]()
-  val distributionClient = new DistributionClient(distributionName, httpClient)
+  val distributionClient = new DistributionClient(httpClient)
 
   it should "upload fault reports" in {
     val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)

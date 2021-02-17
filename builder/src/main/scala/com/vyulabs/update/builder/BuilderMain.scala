@@ -68,7 +68,7 @@ object BuilderMain extends App {
       val distributionUrl = config.distributionLinks.find(_.distributionName == distributionName).map(_.distributionUrl).getOrElse {
         Utils.error(s"Unknown URL to distribution ${distributionName}")
       }
-      val asyncDistributionClient = new DistributionClient(distributionName, new HttpClientImpl(distributionUrl))
+      val asyncDistributionClient = new DistributionClient(new HttpClientImpl(distributionUrl))
       val distributionClient = new SyncDistributionClient(asyncDistributionClient, FiniteDuration(60, TimeUnit.SECONDS))
       //TraceAppender.handleLogs(new LogSender(Common.DistributionServiceName, config.instanceId, asyncDistributionClient))
 

@@ -235,7 +235,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   private def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionClient.distributionName), Some(version))).size != 0
+    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionName), Some(version))).size != 0
   }
 
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], serviceName: ServiceName,

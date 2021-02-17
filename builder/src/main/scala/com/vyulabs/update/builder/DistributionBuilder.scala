@@ -98,7 +98,7 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
 
   def buildFromDeveloperDistribution(developerDistributionURL: URL, author: String): Boolean = {
     val developerDistributionClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(developerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(developerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS))
 
     log.info(s"########################### Download and generate client versions")
     val scriptsVersion = downloadDeveloperAndGenerateClientVersion(developerDistributionClient, Common.ScriptsServiceName).getOrElse {
@@ -219,7 +219,7 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     log.info(s"--------------------------- Waiting for distribution service became available")
     log.info(s"Connect to distribution URL ${distributionUrl} ...")
     val distributionClient = new SyncDistributionClient(
-      new DistributionClient(distributionName, new HttpClientImpl(distributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl(distributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
     if (!waitForServerAvailable(distributionClient, 10000)) {
       log.error("Can't start distribution server")
       return None

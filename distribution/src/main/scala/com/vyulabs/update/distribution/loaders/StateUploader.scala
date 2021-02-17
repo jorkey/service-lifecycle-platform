@@ -153,7 +153,6 @@ object StateUploader {
   def apply(distributionName: DistributionName,
             collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration, distributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
-    new StateUploader(distributionName, collections, distributionDirectory, uploadInterval, new DistributionClient(
-      distributionName, new AkkaHttpClient(distributionUrl)))
+    new StateUploader(distributionName, collections, distributionDirectory, uploadInterval, new DistributionClient(new AkkaHttpClient(distributionUrl)))
   }
 }
