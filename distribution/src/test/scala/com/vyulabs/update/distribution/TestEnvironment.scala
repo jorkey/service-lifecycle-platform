@@ -41,7 +41,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionDirectory = Files.createTempDirectory("distribution-").toFile
   val builderDirectory = new File(distributionDirectory, "builder"); builderDirectory.mkdir()
 
-  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, true)
+  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, false)
   def networkConfig = NetworkConfig(0, None)
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))

@@ -19,7 +19,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   val route = distribution.route
 
   it should "upload developer version image" in {
-    Post("/image/developer-version/service1/test-1.1.1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/load/developer-version-image/service1/test-1.1.1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
 
@@ -27,7 +27,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "upload client version image" in {
-    Post("/image/client-version/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/load/client-version-image/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
 
@@ -35,7 +35,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "return error when illegal access" in {
-    Post("/image/client-version/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(distributionClientCredentials) ~> route ~> check {
+    Post("/load/client-version-image/service1/test-1.1.1_1", makeVersionMultipart()) ~> addCredentials(distributionClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.Forbidden
     }
   }

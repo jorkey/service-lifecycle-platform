@@ -31,10 +31,10 @@ class GetDesiredVersionsTest extends TestEnvironment {
     val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
 
     assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         query {
-          developerDesiredVersions {
+          clientDesiredVersions {
              serviceName
              version
           }
@@ -46,10 +46,10 @@ class GetDesiredVersionsTest extends TestEnvironment {
     val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
 
     assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"version":"test-1"}]}}""").parseJson))(
+      ("""{"data":{"clientDesiredVersions":[{"version":"test-1"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
         query {
-          developerDesiredVersions (services: ["service1"]) {
+          clientDesiredVersions (services: ["service1"]) {
              version
           }
         }

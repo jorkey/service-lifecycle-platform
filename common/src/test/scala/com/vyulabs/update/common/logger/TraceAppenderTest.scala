@@ -1,10 +1,9 @@
 package com.vyulabs.update.common.logger
 
-import ch.qos.logback.classic.{Level, Logger}
+import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.spi.ILoggingEvent
 import com.vyulabs.update.common.utils.Utils
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, OneInstancePerTest}
-import org.slf4j.LoggerFactory
 
 class TraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll with OneInstancePerTest {
   behavior of "Log trace appender"
@@ -12,8 +11,8 @@ class TraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll wi
   var messages = Seq.empty[String]
 
   it should "find global appender" in {
-    val logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
-    val traceAppender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
+    val log = Utils.getLogbackLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+    val traceAppender = log.getAppender("TRACE").asInstanceOf[TraceAppender]
     assert(traceAppender != null)
   }
 

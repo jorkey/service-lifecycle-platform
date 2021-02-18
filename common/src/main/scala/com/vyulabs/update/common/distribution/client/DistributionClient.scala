@@ -33,19 +33,19 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
   }
 
   def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Future[Unit] = {
-    client.download(developerVersionPath + "/" + serviceName + "/" + version.toString, file)
+    client.download(developerVersionImagePath + "/" + serviceName + "/" + version.toString, file)
   }
 
   def downloadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Future[Unit] = {
-    client.download(clientVersionPath + "/" + serviceName + "/" + version.toString, file)
+    client.download(clientVersionImagePath + "/" + serviceName + "/" + version.toString, file)
   }
 
   def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Future[Unit] = {
-    client.upload(developerVersionPath + "/" + serviceName + "/" + version.toString, imageField, file)
+    client.upload(developerVersionImagePath + "/" + serviceName + "/" + version.toString, imageField, file)
   }
 
   def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Future[Unit] = {
-    client.upload(clientVersionPath + "/" + serviceName + "/" + version.toString, imageField, file)
+    client.upload(clientVersionImagePath + "/" + serviceName + "/" + version.toString, imageField, file)
   }
 
   def uploadFaultReport(faultId: FaultId, faultReportFile: File): Future[Unit] = {

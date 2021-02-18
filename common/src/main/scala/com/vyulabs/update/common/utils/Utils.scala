@@ -1,19 +1,15 @@
 package com.vyulabs.update.common.utils
 
-import java.io.{File, IOException}
-import java.net.{URI, URL}
-import java.text.{ParseException, SimpleDateFormat}
-import java.util.{Date, TimeZone}
-import java.util.jar.Attributes
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.helpers.SubstituteLogger
-import spray.json.{DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, deserializationError}
+import org.slf4j.{Logger, LoggerFactory}
 
+import java.io.{File, IOException}
+import java.text.{ParseException, SimpleDateFormat}
+import java.util.jar.Attributes
+import java.util.{Date, TimeZone}
 import scala.annotation.tailrec
-import scala.concurrent.duration.FiniteDuration
-import scala.util.matching.Regex
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 31.07.20.
@@ -26,6 +22,17 @@ object Utils {
     if (log.isInstanceOf[SubstituteLogger]) {
       Thread.sleep(100)
       getLogbackLogger(cl)
+    } else {
+      log.asInstanceOf[ch.qos.logback.classic.Logger]
+    }
+  }
+
+  @tailrec
+  def getLogbackLogger(name: String): ch.qos.logback.classic.Logger = {
+    val log = LoggerFactory.getLogger(name)
+    if (log.isInstanceOf[SubstituteLogger]) {
+      Thread.sleep(100)
+      getLogbackLogger(name)
     } else {
       log.asInstanceOf[ch.qos.logback.classic.Logger]
     }

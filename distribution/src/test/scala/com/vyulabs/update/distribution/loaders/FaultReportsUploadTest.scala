@@ -44,7 +44,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     waitForFaultReportUpload("fault1").success()
     waitForAddServiceFaultReportInfo(report).success(true)
 
-    Thread.sleep(100)
+    Thread.sleep(500)
     uploader.stop()
 
     result(collections.State_FaultReportsInfo.drop())
@@ -60,7 +60,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     result(collections.State_FaultReportsInfo.insert(report1))
     waitForFaultReportUpload( "fault1").failure(new IOException("upload error"))
 
-    Thread.sleep(100)
+    Thread.sleep(500)
     assertResult(UploadStatusDocument("state.faultReportsInfo", UploadStatus(None, Some("upload error"))))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.faultReportsInfo")).map(_.head)))))
 

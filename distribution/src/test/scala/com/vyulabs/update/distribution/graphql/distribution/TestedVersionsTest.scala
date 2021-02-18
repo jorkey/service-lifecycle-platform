@@ -69,7 +69,7 @@ class TestedVersionsTest extends TestEnvironment {
       ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested by anyone","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         query {
-          desiredVersions {
+          developerDesiredVersions {
             serviceName
             version
           }

@@ -18,6 +18,7 @@
         </filter>
     </appender>
 
+    <logger name="akka.event.slf4j.Slf4jLogger" level="ERROR"/>
     <logger name="org.mongodb" level="ERROR"/>
 
     <root level="DEBUG">

@@ -14,10 +14,10 @@ object DistributionWebPaths {
 
   val pingPath = "ping"
 
-  val imagePathPrefix = "image"
+  val loadPathPrefix = "load"
 
-  val developerVersionPath = "developer-version"
-  val clientVersionPath = "client-version"
+  val developerVersionImagePath = "developer-version-image"
+  val clientVersionImagePath = "client-version-image"
 
   val faultReportPath = "fault-report"
 

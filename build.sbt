@@ -6,8 +6,8 @@ name := "update"
 
 scalaVersion in ThisBuild := "2.12.12"
 
-//parallelExecution in ThisBuild in Test := false
-//fork in ThisBuild in Test := false
+parallelExecution in Test := false
+fork in Test := false
 
 lazy val update = project
   .in(file("."))

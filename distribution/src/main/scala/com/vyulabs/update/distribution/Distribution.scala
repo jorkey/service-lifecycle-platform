@@ -76,10 +76,10 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                   }
                 } ~ pathPrefix(interactiveGraphqlPathPrefix) {
                   getFromResource("graphiql.html")
-                } ~ pathPrefix(imagePathPrefix) {
+                } ~ pathPrefix(loadPathPrefix) {
                   seal {
                     authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
-                      path(developerVersionPath / ".*".r / ".*".r) { (service, version) =>
+                      path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                         get {
                           authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Distribution) {
                             getFromFile(workspace.dir.getDeveloperVersionImageFile(service,
@@ -95,7 +95,7 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                             }
                           }
                         }
-                      } ~ path(clientVersionPath / ".*".r / ".*".r) { (service, version) =>
+                      } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                         get {
                           authorize(userInfo.role == UserRole.Administrator || userInfo.role == UserRole.Service) {
                             getFromFile(workspace.dir.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))

@@ -181,11 +181,11 @@ class SequencedCollection[T: ClassTag](val name: String,
       val bufferSource = Source.fromIterator(() => synchronized { publisherBuffer.iterator })
       val publisherSource = Source.fromPublisher(publisher)
       val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
-      var sequence = 0L
+      var sequence = fromSequence.getOrElse(0L)
       Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))
         .filter(doc => {
-          if (doc.sequence > sequence) {
-            sequence = doc.sequence
+          if (doc.sequence >= sequence) {
+            sequence = doc.sequence + 1
             true
           } else {
             false
