@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
-import com.mongodb.client.model.{Filters, Updates}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.distribution.TestEnvironment
@@ -63,7 +62,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   it should "subscribe service logs" in {
-    setSequence(10)
+    setSequence("state.serviceLogs", 10)
 
     addServiceLogLine("INFO", "line1")
 
@@ -89,7 +88,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   it should "subscribe task logs" in {
-    setSequence(20)
+    setSequence("state.serviceLogs", 20)
 
     addTaskLogLine("INFO", "line1")
 
@@ -186,9 +185,5 @@ class ServiceLogsTest extends TestEnvironment {
           }
         }
       """, variables = JsObject("from" -> JsNumber(from))))
-  }
-
-  def setSequence(sequence: Long): Unit = {
-    result(result(collections.Sequences).updateOne(Filters.eq("name", "state.serviceLogs"), Updates.set("sequence", sequence)))
   }
 }

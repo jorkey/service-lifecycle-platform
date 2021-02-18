@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestDuration
+import com.mongodb.client.model.{Filters, Updates}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -83,5 +84,9 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   override protected def afterAll(): Unit = {
     distributionDir.drop()
     IoUtils.deleteFileRecursively(builderDirectory)
+  }
+
+  def setSequence(name: String, sequence: Long): Unit = {
+    result(result(collections.Sequences).updateOne(Filters.eq("name", name), Updates.set("sequence", sequence)))
   }
 }

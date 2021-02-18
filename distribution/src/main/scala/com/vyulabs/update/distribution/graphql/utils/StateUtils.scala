@@ -10,7 +10,7 @@ import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.distribution.mongo.{DatabaseCollections, InstalledDesiredVersions, Sequenced, SequencedCollection}
+import com.vyulabs.update.distribution.mongo.{DatabaseCollections, InstalledDesiredVersions, NippleFlow, Sequenced, SequencedCollection}
 import org.bson.BsonDocument
 import org.slf4j.Logger
 import sangria.schema.Action
@@ -142,7 +142,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
       .filter(_.document.instanceId == instanceId)
       .filter(_.document.processId == processId)
       .filter(_.document.directory == directory)
-      .takeWhile(!_.document.line.terminationStatus.isDefined, true)
+      .via(NippleFlow.takeWhile(!_.document.line.terminationStatus.isDefined))
       .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(250, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
@@ -153,7 +153,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
     val filters = Filters.eq("taskId", taskId)
     val source = collections.State_ServiceLogs.subscribe(filters, fromSequence)
       .filter(_.document.taskId.contains(taskId))
-      .takeWhile(!_.document.line.terminationStatus.isDefined, true)
+      .via(NippleFlow.takeWhile(!_.document.line.terminationStatus.isDefined))
       .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(250, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)

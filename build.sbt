@@ -7,6 +7,7 @@ name := "update"
 scalaVersion in ThisBuild := "2.12.12"
 
 parallelExecution in Test := false
+concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
 fork in Test := false
 
 lazy val update = project
