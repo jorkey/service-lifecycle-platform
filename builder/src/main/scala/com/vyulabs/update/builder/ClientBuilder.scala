@@ -2,14 +2,14 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
@@ -28,8 +28,6 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
   private val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
-
-  val initialClientVersion = ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 0, 0))))
 
   def clientServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
   def clientBuildDir(serviceName: ServiceName) = makeDir(new File(clientServiceDir(serviceName), "build"))

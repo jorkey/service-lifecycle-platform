@@ -28,6 +28,8 @@ case class DeveloperVersion(build: Seq[Int]) {
 }
 
 object DeveloperVersion {
+  val initialVersion = DeveloperVersion(Seq(1, 0, 0))
+
   implicit object DeveloperVersionJsonFormat extends RootJsonFormat[DeveloperVersion] {
     def write(value: DeveloperVersion) = JsString(value.toString)
     def read(value: JsValue) = DeveloperVersion.parse(value.asInstanceOf[JsString].value)

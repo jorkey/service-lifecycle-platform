@@ -3,6 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -49,7 +50,7 @@ object BuilderMain extends App {
       val port = arguments.getOptionIntValue("port").getOrElse(8000)
       val test = arguments.getOptionBooleanValue("test").getOrElse(false)
       val distributionBuilder = new DistributionBuilder(new File("."), cloudProvider,
-        !test, new File(distributionDirectory), distributionName, distributionTitle, mongoDbName, test, port)
+        !test, new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, test, port)
 
       arguments.getOptionValue("developerDistributionUrl") match {
         case None =>

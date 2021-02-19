@@ -1,6 +1,6 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.common.distribution.server.SettingsDirectory
+import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.utils.IoUtils
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -54,12 +54,12 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
 
   it should "build developer and client distribution" in {
     val developerDistributionBuilder = new DistributionBuilder(developerBuilderDir,
-      "None", false, developerDistributionDir, developerDistributionName, "Test developer distribution server",
+      "None", false, new DistributionDirectory(developerDistributionDir), developerDistributionName, "Test developer distribution server",
       "BuildDistributionTest-developer",true, 8000)
     assert(developerDistributionBuilder.buildDistributionFromSources("ak"))
 
     val clientDistributionBuilder = new DistributionBuilder(clientBuilderDir,
-      "None", false, clientDistributionDir, clientDistributionName, "Test client distribution server",
+      "None", false, new DistributionDirectory(clientDistributionDir), clientDistributionName, "Test client distribution server",
       "BuildDistributionTest-client",true, 8001)
     assert(clientDistributionBuilder.buildFromDeveloperDistribution(new URL("http://admin:admin@localhost:8000"), "ak"))
   }

@@ -1,6 +1,6 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.libs.git.{GitRepository, GitRepositoryUtils}
+import com.vyulabs.libs.git.{GitRepository}
 import com.vyulabs.update.builder.config.SourcesConfig
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
@@ -32,8 +32,6 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   private val servicesDir = makeDir(new File(developerDir, "services"))
 
   private val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
-
-  val initialDeveloperVersion = DeveloperDistributionVersion(distributionName, DeveloperVersion(Seq(1, 0, 0)))
 
   def developerServiceDir(serviceName: ServiceName) = makeDir(new File(servicesDir, serviceName))
   def developerBuildDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "build"))
@@ -121,7 +119,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
         "master"
       }
       val sourceRepository =
-        GitRepositoryUtils.getGitRepository(repositoryConf.url, branch, repositoryConf.cloneSubmodules.getOrElse(true), directory).getOrElse {
+        GitRepository.getGitRepository(repositoryConf.url, branch, repositoryConf.cloneSubmodules.getOrElse(true), directory).getOrElse {
           return Seq.empty
         }
       sourceRepositories :+= sourceRepository
@@ -207,7 +205,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
                                  serviceName: ServiceName, author: String): Boolean = {
     val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
     ZipUtils.zipAndSend(developerBuildDir(serviceName), file => {
-      uploadDeveloperVersion(distributionClient, serviceName, initialDeveloperVersion, buildInfo, file)
+      uploadDeveloperVersion(distributionClient, serviceName, DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion), buildInfo, file)
     })
   }
 
@@ -226,7 +224,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Boolean = {
-    setDesiredVersions(distributionClient, serviceNames.map { DeveloperDesiredVersion(_, initialDeveloperVersion) })
+    setDesiredVersions(distributionClient, serviceNames.map { DeveloperDesiredVersion(_, DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion)) })
   }
 
   def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[DeveloperDesiredVersion]): Boolean = {

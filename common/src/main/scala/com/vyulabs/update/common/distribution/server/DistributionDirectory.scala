@@ -1,5 +1,6 @@
 package com.vyulabs.update.common.distribution.server
 
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -14,11 +15,13 @@ import java.io._
 class DistributionDirectory(val directory: File) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  protected val developerDir = new File(directory, "developer")
-  protected val developerServicesDir = new File(developerDir, "services")
-  protected val clientDir = new File(directory, "client")
-  protected val clientServicesDir = new File(clientDir, "services")
-  protected val faultsDir = new File(directory, "faults")
+  private val developerDir = new File(directory, "developer")
+  private val developerServicesDir = new File(developerDir, "services")
+  private val clientDir = new File(directory, "client")
+  private val clientServicesDir = new File(clientDir, "services")
+  private val faultsDir = new File(directory, "faults")
+
+  private val builderDir = new File(directory, "builder")
 
   if (!directory.exists()) directory.mkdirs()
   if (!developerDir.exists()) developerDir.mkdir()
@@ -26,6 +29,10 @@ class DistributionDirectory(val directory: File) {
   if (!clientDir.exists()) clientDir.mkdir()
   if (!clientServicesDir.exists()) clientServicesDir.mkdir()
   if (!faultsDir.exists()) faultsDir.mkdir()
+
+  def getConfigFile(): File = {
+    new File(directory, Common.DistributionConfigFileName)
+  }
 
   def getDeveloperVersionImageFileName(serviceName: ServiceName, version: DeveloperVersion): String = {
     serviceName + "-" + version + ".zip"
@@ -73,5 +80,9 @@ class DistributionDirectory(val directory: File) {
 
   def getFaultReportFile(faultId: String): File = {
     new File(faultsDir, getFaultReportFileName(faultId))
+  }
+
+  def getBuilderDir(): File = {
+    builderDir
   }
 }

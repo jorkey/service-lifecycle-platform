@@ -1,5 +1,6 @@
 package com.vyulabs.libs.git
 
+import com.vyulabs.update.common.utils.IoUtils
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand.ListMode
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException
@@ -10,7 +11,6 @@ import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
 import java.io.File
-import java.net.URI
 import java.nio.file.Path
 import scala.collection.JavaConverters._
 
@@ -276,11 +276,11 @@ object GitRepository {
     }
   }
 
-  def initRepository(url: URI, directory: File)(implicit log: Logger): Option[GitRepository] = {
+  def initRepository(url: String, directory: File)(implicit log: Logger): Option[GitRepository] = {
     try {
       val git = Git.init().setDirectory(directory).call()
       val config = git.getRepository.getConfig
-      config.setString("remote", "origin", "url", url.toString)
+      config.setString("remote", "origin", "url", url)
       config.save()
       Some(new GitRepository(git))
     } catch {
@@ -290,11 +290,11 @@ object GitRepository {
     }
   }
 
-  def cloneRepository(uri: URI, branch: String, directory: File, cloneSubmodules: Boolean)(implicit log: Logger): Option[GitRepository] = {
+  def cloneRepository(uri: String, branch: String, directory: File, cloneSubmodules: Boolean)(implicit log: Logger): Option[GitRepository] = {
     log.info(s"Clone repository ${uri} to ${directory}")
     try {
       val git = Git.cloneRepository()
-        .setURI(uri.toString)
+        .setURI(uri)
         .setBranch(branch)
         .setDirectory(directory)
         .setCloneSubmodules(cloneSubmodules)
@@ -307,7 +307,35 @@ object GitRepository {
     }
   }
 
-  def openAndPullRepository(uri: URI, branch: String, directory: File)(implicit log: Logger): Option[GitRepository] = {
+  def openRepository(directory: File)(implicit log: Logger): Option[GitRepository] = {
+    log.info(s"Open repository in directory ${directory}")
+    try {
+      val git = Git.open(directory)
+      Some(new GitRepository(git))
+    } catch {
+      case ex:Exception =>
+        log.error("Clone Git repository error", ex)
+        None
+    }
+  }
+
+  def getGitRepository(uri: String, branch: String, cloneSubmodules: Boolean, directory: File)(implicit log: Logger): Option[GitRepository] = {
+    if (!directory.exists()) {
+      cloneRepository(uri, branch, directory, cloneSubmodules)
+    } else {
+      openAndPullRepository(uri, branch, directory) match {
+        case None =>
+          if (!IoUtils.deleteFileRecursively(directory)) {
+            return None
+          }
+          cloneRepository(uri, branch, directory, cloneSubmodules)
+        case rep =>
+          rep
+      }
+    }
+  }
+
+  def openAndPullRepository(uri: String, branch: String, directory: File)(implicit log: Logger): Option[GitRepository] = {
     log.info(s"Open and pull repository in directory ${directory}")
     var attempt = 1
     while (true) {

@@ -1,9 +1,9 @@
 package com.vyulabs.update.common.distribution.client.graphql
 
-import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId, ProcessId, ServiceDirectory, ServiceName, TaskId}
+import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
@@ -89,22 +89,24 @@ trait CommonMutationsCoder {
 object CommonMutationsCoder extends CommonMutationsCoder
 
 object AdministratorMutationsCoder extends CommonMutationsCoder {
+  def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
+    GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
   def addDeveloperVersionInfo(info: DeveloperVersionInfo) =
     GraphqlMutation[Boolean]("addDeveloperVersionInfo", Seq(GraphqlArgument("info" -> info, "DeveloperVersionInfoInput")))
-
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
     GraphqlMutation[Boolean]("removeDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 
+  def buildClientVersion(serviceName: ServiceName, developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion) =
+    GraphqlMutation[String]("buildClientVersion", Seq(GraphqlArgument("service" -> serviceName),
+      GraphqlArgument("developerVersion" -> developerVersion), GraphqlArgument("clientVersion" -> clientVersion)))
   def addClientVersionInfo(versionInfo: ClientVersionInfo) =
     GraphqlMutation[Boolean]("addClientVersionInfo", Seq(GraphqlArgument("info" -> versionInfo, "ClientVersionInfoInput")))
-
   def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion) =
     GraphqlMutation[Boolean]("removeClientVersion",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 
   def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersion]) =
     GraphqlMutation[Boolean]("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
-
   def setClientDesiredVersions(versions: Seq[ClientDesiredVersion]) =
     GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
 }

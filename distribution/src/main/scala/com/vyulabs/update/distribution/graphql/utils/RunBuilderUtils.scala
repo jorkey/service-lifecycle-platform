@@ -17,7 +17,7 @@ import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
-import java.io.{File, IOException}
+import java.io.IOException
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
@@ -31,8 +31,6 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   protected implicit val system: ActorSystem
 
   implicit val timer = new AkkaTimer(system.scheduler)
-
-  private val builderDirectory = new File(dir.directory, "builder")
 
   def runBuilder(taskId: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     config.remoteBuilder match {
@@ -55,7 +53,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   private def runLocalBuilder(taskId: TaskId, arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
-      process <- ChildProcess.start("/bin/sh", Common.BuilderSh +: arguments, Map.empty, builderDirectory)
+      process <- ChildProcess.start("/bin/sh", Common.BuilderSh +: arguments, Map.empty, dir.getBuilderDir())
     } yield {
       process.handleOutput(lines => { lines.foreach(line => log.info(line._1)) })
 //      @volatile var logOutputFuture = Option.empty[Future[Unit]]

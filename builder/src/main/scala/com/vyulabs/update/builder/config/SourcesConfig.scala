@@ -1,15 +1,13 @@
 package com.vyulabs.update.builder.config
 
-import java.io.File
-import java.net.URI
-
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.utils.IoUtils
 import org.slf4j.Logger
 import spray.json._
-import com.vyulabs.update.common.utils.JsonFormats._
 
-case class RepositoryConfig(url: URI, cloneSubmodules: Option[Boolean], directory: Option[String])
+import java.io.File
+
+case class RepositoryConfig(url: String, cloneSubmodules: Option[Boolean], directory: Option[String])
 
 object RepositoryConfig extends DefaultJsonProtocol {
   implicit val repositoryConfigJson = jsonFormat3(RepositoryConfig.apply)

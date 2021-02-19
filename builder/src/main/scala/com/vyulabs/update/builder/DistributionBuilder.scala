@@ -1,17 +1,19 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.builder.config.{BuilderConfig, DistributionLink}
+import com.vyulabs.libs.git.GitRepository
+import com.vyulabs.update.builder.config.{BuilderConfig, DistributionLink, RepositoryConfig}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName}
 import com.vyulabs.update.common.config.{DistributionConfig, NetworkConfig, UploadStateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.SettingsDirectory
+import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.info.ClientDesiredVersion
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.{Logger, LoggerFactory}
+import spray.json.DefaultJsonProtocol._
 
 import java.io.File
 import java.net.URL
@@ -24,7 +26,7 @@ import scala.concurrent.duration.FiniteDuration
   * Copyright FanDate, Inc.
   */
 class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Boolean,
-                          distributionDir: File, distributionName: String, distributionTitle: String,
+                          distributionDirectory: DistributionDirectory, distributionName: String, distributionTitle: String,
                           mongoDbName: String, mongoDbTemporary: Boolean, port: Int)
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -34,21 +36,24 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
 
   def buildDistributionFromSources(author: String): Boolean = {
     log.info(s"########################### Generate initial versions of services")
-    if (!generateInitVersions(Common.ScriptsServiceName) || !generateInitVersions(Common.BuilderServiceName) ||
-        !generateInitVersions(Common.UpdaterServiceName) || !generateInitVersions(Common.DistributionServiceName)) {
+    if (!generateDeveloperAndClientVersions(Common.ScriptsServiceName, DeveloperVersion.initialVersion) ||
+        !generateDeveloperAndClientVersions(Common.BuilderServiceName, DeveloperVersion.initialVersion) ||
+        !generateDeveloperAndClientVersions(Common.UpdaterServiceName, DeveloperVersion.initialVersion) ||
+        !generateDeveloperAndClientVersions(Common.DistributionServiceName, DeveloperVersion.initialVersion)) {
       log.error("Can't generate initial versions")
       return false
     }
 
     log.info(s"########################### Install distribution service")
-    if (!installDistributionService(clientBuilder.initialClientVersion, clientBuilder.initialClientVersion)) {
+    val initialClientVersion = ClientDistributionVersion(DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion))
+    if (!installDistributionService(initialClientVersion, initialClientVersion)) {
       log.error("Can't install distribution service")
       return false
     }
 
     log.info(s"########################### Read distribution config")
-    val config = DistributionConfig.readFromFile(new File(distributionDir, Common.DistributionConfigFileName)).getOrElse {
-      log.error(s"Can't read distribution config file in the directory ${distributionDir}")
+    val config = DistributionConfig.readFromFile(distributionDirectory.getConfigFile()).getOrElse {
+      log.error(s"Can't read distribution config file ${distributionDirectory.getConfigFile()}")
       return false
     }
     val distributionUrl = makeDistributionUrl(config.network)
@@ -76,25 +81,26 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     }
 
     log.info(s"########################### Upload client images of services")
-    if (!clientBuilder.uploadClientVersion(distributionClient, Common.ScriptsServiceName, clientBuilder.initialClientVersion, author) ||
-        !clientBuilder.uploadClientVersion(distributionClient, Common.BuilderServiceName, clientBuilder.initialClientVersion, author) ||
-        !clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, clientBuilder.initialClientVersion, author)) {
+    if (!clientBuilder.uploadClientVersion(distributionClient, Common.ScriptsServiceName, initialClientVersion, author) ||
+        !clientBuilder.uploadClientVersion(distributionClient, Common.BuilderServiceName, initialClientVersion, author) ||
+        !clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, initialClientVersion, author)) {
       log.error("Can't upload client initial versions")
       return false
     }
 
     log.info(s"########################### Set client desired versions")
     if (!clientBuilder.setDesiredVersions(distributionClient, Seq(
-          ClientDesiredVersion(Common.ScriptsServiceName, clientBuilder.initialClientVersion),
-          ClientDesiredVersion(Common.BuilderServiceName, clientBuilder.initialClientVersion),
-          ClientDesiredVersion(Common.UpdaterServiceName, clientBuilder.initialClientVersion),
-          ClientDesiredVersion(Common.DistributionServiceName, clientBuilder.initialClientVersion)))) {
+          ClientDesiredVersion(Common.ScriptsServiceName, initialClientVersion),
+          ClientDesiredVersion(Common.BuilderServiceName, initialClientVersion),
+          ClientDesiredVersion(Common.UpdaterServiceName, initialClientVersion),
+          ClientDesiredVersion(Common.DistributionServiceName, initialClientVersion)))) {
       log.error("Set client desired versions error")
       return false
     }
 
     log.info(s"########################### Install builder")
-    if (!installBuilder(config.instanceId, Seq(DistributionLink(distributionName, distributionUrl)))) {
+    val updateSourcesUri = GitRepository.openRepository(new File(".")).map(_.getUrl())
+    if (!installBuilder(config.instanceId, Seq(DistributionLink(distributionName, distributionUrl)), updateSourcesUri)) {
       return false
     }
 
@@ -127,9 +133,8 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     }
 
     log.info(s"########################### Read and modify distribution config")
-    val configFile = new File(distributionDir, Common.DistributionConfigFileName)
-    val config = DistributionConfig.readFromFile(configFile).getOrElse {
-      log.error(s"Can't read distribution config file in the directory ${distributionDir}")
+    val config = DistributionConfig.readFromFile(distributionDirectory.getConfigFile()).getOrElse {
+      log.error(s"Can't read distribution config file ${distributionDirectory.getConfigFile()}")
       return false
     }
     val distributionUrl = makeDistributionUrl(config.network)
@@ -137,8 +142,8 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     val uploadStateConfig = UploadStateConfig(developerDistributionURL, FiniteDuration(30, TimeUnit.SECONDS))
     val newDistributionConfig = DistributionConfig(config.name, config.title, config.instanceId, config.mongoDb, config.network,
       config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Some(Seq(uploadStateConfig)))
-    if (!IoUtils.writeJsonToFile(configFile, newDistributionConfig)) {
-      log.error(s"Can't write distribution config file to the directory ${distributionDir}")
+    if (!IoUtils.writeJsonToFile(distributionDirectory.getConfigFile(), newDistributionConfig)) {
+      log.error(s"Can't write distribution config file ${distributionDirectory.getConfigFile()}")
       return false
     }
 
@@ -168,7 +173,7 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     }
 
     log.info(s"########################### Install builder")
-    if (!installBuilder(config.instanceId, Seq(DistributionLink(distributionName, distributionUrl)))) {
+    if (!installBuilder(config.instanceId, Seq(DistributionLink(distributionName, distributionUrl)), None)) {
       return false
     }
 
@@ -177,28 +182,28 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
   }
 
   def installDistributionService(scriptsVersion: ClientDistributionVersion, distributionVersion: ClientDistributionVersion): Boolean = {
-    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDir) ||
-        !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDir, Common.UpdateSh)) ||
-        !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDir)) {
+    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory.directory) ||
+        !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory.directory, Common.UpdateSh)) ||
+        !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDirectory.directory)) {
       return false
     }
-    distributionDir.listFiles().foreach { file =>
+    distributionDirectory.directory.listFiles().foreach { file =>
       if (file.getName.endsWith(".sh") && !IoUtils.setExecuteFilePermissions(file)) {
         return false
       }
     }
-    if (!IoUtils.writeDesiredServiceVersion(distributionDir, Common.ScriptsServiceName, scriptsVersion) ||
-        !IoUtils.writeServiceVersion(distributionDir, Common.ScriptsServiceName, scriptsVersion)) {
+    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion) ||
+        !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion)) {
       return false
     }
-    if (!IoUtils.writeDesiredServiceVersion(distributionDir, Common.DistributionServiceName, distributionVersion) ||
-        !IoUtils.writeServiceVersion(distributionDir, Common.DistributionServiceName, distributionVersion)) {
+    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion) ||
+        !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion)) {
       return false
     }
     log.info(s"Make distribution config file")
     val arguments = Seq(cloudProvider, distributionName, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString)
     if (!ProcessUtils.runProcess("/bin/sh", "make_config.sh" +: arguments, Map.empty,
-        distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)) {
+        distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
       return false
     }
@@ -215,7 +220,7 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     log.info(s"--------------------------- Start distribution service")
     val startService = (script: String) => {
       ProcessUtils.runProcess("/bin/sh", script +: Seq.empty, Map.empty,
-          distributionDir, Some(0), None, ProcessUtils.Logging.Realtime)
+          distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)
     }
     if (asService) {
       if (!startService("create_service.sh")) {
@@ -258,11 +263,10 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     false
   }
 
-  def installBuilder(instanceId: InstanceId, distributionLinks: Seq[DistributionLink]): Boolean = {
+  def installBuilder(instanceId: InstanceId, distributionLinks: Seq[DistributionLink], updateSourcesUri: Option[String]): Boolean = {
     log.info(s"--------------------------- Initialize builder directory")
-    val builderDir = new File(distributionDir, "builder")
-    if (!builderDir.mkdir()) {
-      log.error(s"Can't make directory ${builderDir}")
+    if (!distributionDirectory.getBuilderDir().mkdir()) {
+      log.error(s"Can't make directory ${distributionDirectory.getBuilderDir()}")
       return false
     }
     if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "builder"), builderDir) ||
@@ -281,15 +285,30 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     }
 
     log.info(s"--------------------------- Create settings directory")
-    new SettingsDirectory(builderDir, distributionName)
+    val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
+
+    for (updateSourcesUri <- updateSourcesUri) {
+      log.info(s"--------------------------- Create sources config")
+      val sourcesConfig = Map.empty[ServiceName, Seq[RepositoryConfig]] +
+        (Common.ScriptsServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None))) +
+        (Common.BuilderServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None))) +
+        (Common.UpdaterServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None))) +
+        (Common.DistributionServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None)))
+      println(s"-------------- write config ${settingsDirectory.getSourcesFile()}")
+      if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), sourcesConfig)) {
+        log.error(s"Can't write sources config file")
+        return false
+      }
+    }
 
     true
   }
 
-  private def generateInitVersions(serviceName: ServiceName): Boolean = {
-    log.info(s"--------------------------- Generate initial version of service ${serviceName}")
-    log.info(s"Generate developer version ${developerBuilder.initialDeveloperVersion} for service ${serviceName}")
-    val arguments = Map.empty + ("version" -> developerBuilder.initialDeveloperVersion.toString)
+  private def generateDeveloperAndClientVersions(serviceName: ServiceName, developerVersion: DeveloperVersion): Boolean = {
+    val developerDistributionVersion = DeveloperDistributionVersion(distributionName, developerVersion)
+    log.info(s"--------------------------- Generate version ${developerDistributionVersion} of service ${serviceName}")
+    log.info(s"Generate developer version for service ${serviceName}")
+    val arguments = Map.empty + ("version" -> developerDistributionVersion.toString)
     if (!developerBuilder.generateDeveloperVersion(serviceName, new File("."), arguments)) {
       log.error(s"Can't generate developer version for service ${serviceName}")
       return false
@@ -301,7 +320,7 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
       return false
     }
 
-    log.info(s"Generate client version ${clientBuilder.initialClientVersion} for service ${serviceName}")
+    log.info(s"Generate client version for service ${serviceName}")
     if (!clientBuilder.generateClientVersion(serviceName, Map.empty)) {
       log.error(s"Can't generate client version for service ${serviceName}")
       return false
