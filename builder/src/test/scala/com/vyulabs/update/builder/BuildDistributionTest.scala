@@ -1,7 +1,6 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
@@ -16,49 +15,19 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
 
   val developerDistributionName = "test-developer"
   val developerDistributionDir = Files.createTempDirectory("distrib").toFile
-  val developerBuilderDir = Files.createTempDirectory("builder").toFile
-  val developerSettingsDirectory = new SettingsDirectory(developerBuilderDir, developerDistributionName)
 
   val clientDistributionName = "test-client"
   val clientDistributionDir = Files.createTempDirectory("distrib").toFile
-  val clientBuilderDir = Files.createTempDirectory("builder").toFile
-  val clientSettingsDirectory = new SettingsDirectory(clientBuilderDir, clientDistributionName)
 
   val sourceBranch = "graphql"
 
-  override protected def beforeAll() = {
-    IoUtils.writeBytesToFile(developerSettingsDirectory.getSourcesFile(),
-      """{
-      |  "sources": {
-      |    "builder" : [
-      |      {
-      |        "url": "ssh://git@github.com/jorkey/update.git",
-      |        "directory": "builder"
-      |      }
-      |    ],
-      |    "scripts" : [
-      |      {
-      |        "url": "ssh://git@github.com/jorkey/update.git",
-      |        "directory": "scripts"
-      |      }
-      |    ],
-      |    "distribution" : [
-      |      {
-      |        "url": "ssh://git@github.com/jorkey/update.git",
-      |        "directory": "distribution"
-      |      }
-      |    ]
-      |  }
-      |}""".stripMargin.getBytes("utf8"))
-  }
-
   it should "build developer and client distribution" in {
-    val developerDistributionBuilder = new DistributionBuilder(developerBuilderDir,
+    val developerDistributionBuilder = new DistributionBuilder(
       "None", false, new DistributionDirectory(developerDistributionDir), developerDistributionName, "Test developer distribution server",
       "BuildDistributionTest-developer",true, 8000)
     assert(developerDistributionBuilder.buildDistributionFromSources("ak"))
 
-    val clientDistributionBuilder = new DistributionBuilder(clientBuilderDir,
+    val clientDistributionBuilder = new DistributionBuilder(
       "None", false, new DistributionDirectory(clientDistributionDir), clientDistributionName, "Test client distribution server",
       "BuildDistributionTest-client",true, 8001)
     assert(clientDistributionBuilder.buildFromDeveloperDistribution(new URL("http://admin:admin@localhost:8000"), "ak"))

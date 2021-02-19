@@ -308,7 +308,7 @@ object GitRepository {
   }
 
   def openRepository(directory: File)(implicit log: Logger): Option[GitRepository] = {
-    log.info(s"Open repository in directory ${directory}")
+    log.info(s"Open Git repository in directory ${directory}")
     try {
       val git = Git.open(directory)
       Some(new GitRepository(git))

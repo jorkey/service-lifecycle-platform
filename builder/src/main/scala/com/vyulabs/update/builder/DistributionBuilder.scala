@@ -25,14 +25,14 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Boolean,
+class DistributionBuilder(cloudProvider: String, asService: Boolean,
                           distributionDirectory: DistributionDirectory, distributionName: String, distributionTitle: String,
                           mongoDbName: String, mongoDbTemporary: Boolean, port: Int)
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val developerBuilder = new DeveloperBuilder(builderDir, distributionName)
-  private val clientBuilder = new ClientBuilder(builderDir, distributionName)
+  private val developerBuilder = new DeveloperBuilder(distributionDirectory.getBuilderDir(), distributionName)
+  private val clientBuilder = new ClientBuilder(distributionDirectory.getBuilderDir(), distributionName)
 
   def buildDistributionFromSources(author: String): Boolean = {
     log.info(s"########################### Generate initial versions of services")
@@ -75,7 +75,7 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
 
     log.info(s"########################### Set developer desired versions")
     if (!developerBuilder.setInitialDesiredVersions(distributionClient, Seq(
-        Common.ScriptsServiceName, Common.BuilderServiceName, Common.DistributionServiceName))) {
+        Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName, Common.DistributionServiceName))) {
       log.error("Set developer desired versions error")
       return false
     }
@@ -265,27 +265,23 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
 
   def installBuilder(instanceId: InstanceId, distributionLinks: Seq[DistributionLink], updateSourcesUri: Option[String]): Boolean = {
     log.info(s"--------------------------- Initialize builder directory")
-    if (!distributionDirectory.getBuilderDir().mkdir()) {
-      log.error(s"Can't make directory ${distributionDirectory.getBuilderDir()}")
+    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "builder"), distributionDirectory.getBuilderDir()) ||
+        !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory.getBuilderDir(), Common.UpdateSh))) {
       return false
     }
-    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "builder"), builderDir) ||
-        !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
-      return false
-    }
-    builderDir.listFiles().foreach { file =>
+    distributionDirectory.getBuilderDir().listFiles().foreach { file =>
       if (file.getName.endsWith(".sh") && !IoUtils.setExecuteFilePermissions(file)) {
         return false
       }
     }
 
     log.info(s"--------------------------- Create builder config")
-    if (!IoUtils.writeJsonToFile(new File(builderDir, Common.BuilderConfigFileName), BuilderConfig(instanceId, distributionLinks))) {
+    if (!IoUtils.writeJsonToFile(new File(distributionDirectory.getBuilderDir(), Common.BuilderConfigFileName), BuilderConfig(instanceId, distributionLinks))) {
       return false
     }
 
     log.info(s"--------------------------- Create settings directory")
-    val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
+    val settingsDirectory = new SettingsDirectory(distributionDirectory.getBuilderDir(), distributionName)
 
     for (updateSourcesUri <- updateSourcesUri) {
       log.info(s"--------------------------- Create sources config")

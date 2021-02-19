@@ -20,7 +20,6 @@ class DistributionDirectory(val directory: File) {
   private val clientDir = new File(directory, "client")
   private val clientServicesDir = new File(clientDir, "services")
   private val faultsDir = new File(directory, "faults")
-
   private val builderDir = new File(directory, "builder")
 
   if (!directory.exists()) directory.mkdirs()
@@ -29,6 +28,7 @@ class DistributionDirectory(val directory: File) {
   if (!clientDir.exists()) clientDir.mkdir()
   if (!clientServicesDir.exists()) clientServicesDir.mkdir()
   if (!faultsDir.exists()) faultsDir.mkdir()
+  if (!builderDir.exists()) builderDir.mkdir()
 
   def getConfigFile(): File = {
     new File(directory, Common.DistributionConfigFileName)
