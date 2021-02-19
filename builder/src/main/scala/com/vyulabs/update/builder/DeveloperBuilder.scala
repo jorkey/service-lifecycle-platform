@@ -1,6 +1,6 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.libs.git.GitRepository
+import com.vyulabs.libs.git.{GitRepository, GitRepositoryUtils}
 import com.vyulabs.update.builder.config.SourcesConfig
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
@@ -16,7 +16,6 @@ import com.vyulabs.update.common.utils.IoUtils.copyFile
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.GitRepositoryUtils
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
 

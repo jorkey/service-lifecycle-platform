@@ -72,10 +72,6 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
     true
   }
 
-  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Boolean = {
-    setDesiredVersions(distributionClient, serviceNames.map { ClientDesiredVersion(_, initialClientVersion) })
-  }
-
   def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[ClientDesiredVersion]): Boolean = {
     distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(versions)).getOrElse(false)
   }

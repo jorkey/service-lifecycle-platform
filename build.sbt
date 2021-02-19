@@ -8,36 +8,23 @@ scalaVersion in ThisBuild := "2.12.12"
 
 parallelExecution in Test := false
 concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
-fork in Test := false
 
 lazy val update = project
   .in(file("."))
   .disablePlugins(sbtassembly.AssemblyPlugin)
   .aggregate(
-    updateCommon,
+    common,
     builder,
     updater,
-    distribution
+    distribution,
+    tests
   )
 
-lazy val updateCommon = project
+lazy val common = project
   .in(file("common"))
   .disablePlugins(sbtassembly.AssemblyPlugin)
   .settings(
     libraryDependencies ++= (baseDependencies ++ sprayDependencies)
-  )
-
-lazy val updateAdmin = project
-  .in(file("admin"))
-  .disablePlugins(sbtassembly.AssemblyPlugin)
-  .settings(
-    libraryDependencies ++= baseDependencies
-  )
-  .dependsOn(
-    updateCommon % "compile->compile;test->test"
-  )
-  .dependsOn(
-    gitLib
   )
 
 lazy val builder = project
@@ -47,7 +34,7 @@ lazy val builder = project
     assemblySettings
   )
   .dependsOn(
-    updateAdmin
+    gitLib
   )
 
 lazy val updater = project
@@ -57,7 +44,7 @@ lazy val updater = project
     assemblySettings
   )
   .dependsOn(
-    updateCommon % "compile->compile;test->test"
+    common % "compile->compile;test->test"
   )
 
 lazy val distribution = project
@@ -67,7 +54,7 @@ lazy val distribution = project
     assemblySettings
   )
   .dependsOn(
-    updateCommon % "compile->compile;test->test"//,
+    common % "compile->compile;test->test"//,
     //dashboard
   )
 
@@ -77,12 +64,24 @@ lazy val dashboard = project
     resourceGenerators in Compile += buildUi.init
   )
 
+lazy val tests = project
+  .in(file("tests"))
+  .dependsOn(
+    common % "compile->compile;test->test",
+    distribution,
+    builder,
+    updater
+  )
+
 lazy val gitLib = project
   .in(file("git"))
   .settings(
     libraryDependencies ++= baseDependencies ++ Seq(
       dependencies.jGit
     )
+  )
+  .dependsOn(
+    common % "compile->compile;test->test"
   )
 
 lazy val baseDependencies = Seq(
@@ -215,4 +214,3 @@ lazy val buildUi = taskKey[Seq[File]]("Generate dashboard resources") := {
     to
   }
 }
-

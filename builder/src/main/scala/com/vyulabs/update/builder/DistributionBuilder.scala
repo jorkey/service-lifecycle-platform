@@ -7,6 +7,7 @@ import com.vyulabs.update.common.config.{DistributionConfig, NetworkConfig, Uplo
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
+import com.vyulabs.update.common.info.ClientDesiredVersion
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion}
@@ -33,7 +34,8 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
 
   def buildDistributionFromSources(author: String): Boolean = {
     log.info(s"########################### Generate initial versions of services")
-    if (!generateInitVersions(Common.ScriptsServiceName) || !generateInitVersions(Common.BuilderServiceName) || !generateInitVersions(Common.DistributionServiceName)) {
+    if (!generateInitVersions(Common.ScriptsServiceName) || !generateInitVersions(Common.BuilderServiceName) ||
+        !generateInitVersions(Common.UpdaterServiceName) || !generateInitVersions(Common.DistributionServiceName)) {
       log.error("Can't generate initial versions")
       return false
     }
@@ -60,6 +62,7 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     log.info(s"########################### Upload developer images of services")
     if (!developerBuilder.uploadDeveloperInitVersion(distributionClient, Common.ScriptsServiceName, author) ||
         !developerBuilder.uploadDeveloperInitVersion(distributionClient, Common.BuilderServiceName, author) ||
+        !developerBuilder.uploadDeveloperInitVersion(distributionClient, Common.UpdaterServiceName, author) ||
         !developerBuilder.uploadDeveloperInitVersion(distributionClient, Common.DistributionServiceName, author)) {
       log.error("Can't upload developer initial versions")
       return false
@@ -81,8 +84,11 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     }
 
     log.info(s"########################### Set client desired versions")
-    if (!clientBuilder.setInitialDesiredVersions(distributionClient, Seq(
-        Common.ScriptsServiceName, Common.BuilderServiceName, Common.DistributionServiceName))) {
+    if (!clientBuilder.setDesiredVersions(distributionClient, Seq(
+          ClientDesiredVersion(Common.ScriptsServiceName, clientBuilder.initialClientVersion),
+          ClientDesiredVersion(Common.BuilderServiceName, clientBuilder.initialClientVersion),
+          ClientDesiredVersion(Common.UpdaterServiceName, clientBuilder.initialClientVersion),
+          ClientDesiredVersion(Common.DistributionServiceName, clientBuilder.initialClientVersion)))) {
       log.error("Set client desired versions error")
       return false
     }
@@ -104,10 +110,13 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     val scriptsVersion = downloadDeveloperAndGenerateClientVersion(developerDistributionClient, Common.ScriptsServiceName).getOrElse {
       return false
     }
-    val distributionVersion = downloadDeveloperAndGenerateClientVersion(developerDistributionClient, Common.DistributionServiceName).getOrElse {
+    val builderVersion = downloadDeveloperAndGenerateClientVersion(developerDistributionClient, Common.BuilderServiceName).getOrElse {
       return false
     }
-    val builderVersion = downloadDeveloperAndGenerateClientVersion(developerDistributionClient, Common.BuilderServiceName).getOrElse {
+    val updaterVersion = downloadDeveloperAndGenerateClientVersion(developerDistributionClient, Common.UpdaterServiceName).getOrElse {
+      return false
+    }
+    val distributionVersion = downloadDeveloperAndGenerateClientVersion(developerDistributionClient, Common.DistributionServiceName).getOrElse {
       return false
     }
 
@@ -142,14 +151,18 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
     log.info(s"########################### Upload client images of services")
     if (!clientBuilder.uploadClientVersion(distributionClient, Common.ScriptsServiceName, scriptsVersion, author) ||
         !clientBuilder.uploadClientVersion(distributionClient, Common.BuilderServiceName, builderVersion, author) ||
+        !clientBuilder.uploadClientVersion(distributionClient, Common.UpdaterServiceName, updaterVersion, author) ||
         !clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, distributionVersion, author)) {
       log.error("Can't upload client initial versions")
       return false
     }
 
     log.info(s"########################### Set client desired versions")
-    if (!clientBuilder.setInitialDesiredVersions(distributionClient, Seq(
-        Common.ScriptsServiceName, Common.BuilderServiceName, Common.DistributionServiceName))) {
+    if (!clientBuilder.setDesiredVersions(distributionClient, Seq(
+        ClientDesiredVersion(Common.ScriptsServiceName, scriptsVersion),
+        ClientDesiredVersion(Common.BuilderServiceName, builderVersion),
+        ClientDesiredVersion(Common.UpdaterServiceName, updaterVersion),
+        ClientDesiredVersion(Common.DistributionServiceName, distributionVersion)))) {
       log.error("Set client desired versions error")
       return false
     }
@@ -212,7 +225,10 @@ class DistributionBuilder(builderDir: File, cloudProvider: String, asService: Bo
       new Thread() {
         override def run(): Unit = {
           log.info("Start distribution server")
-          startService("distribution.sh")
+          while (true) {
+            startService("distribution.sh")
+            log.info("Distribution server is terminated. Restart distribution server")
+          }
         }
       }.start()
     }

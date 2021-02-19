@@ -106,7 +106,7 @@ function downloadVersionImage {
     >&2 echo "Variable distribDirectoryUrl is not defined"
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    download ${distribDirectoryUrl}/load/client-version/${service}/${version} ${outputFile}
+    download ${distribDirectoryUrl}/load/client-version-image/${service}/${version} ${outputFile}
   else
     >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
   fi

@@ -19,12 +19,12 @@ import scala.collection.JavaConverters._
   * Copyright FanDate, Inc.
   */
 class GitRepository(git: Git)(implicit log: Logger) {
-  def getDirectory(): File = {
-    git.getRepository.getWorkTree
+  def getUrl(): String ={
+    git.getRepository.getConfig().getString("remote", "origin", "url")
   }
 
-  def close(): Unit = {
-    git.close()
+  def getDirectory(): File = {
+    git.getRepository.getWorkTree
   }
 
   def setBare(bare: Boolean): Boolean = {
@@ -253,6 +253,10 @@ class GitRepository(git: Git)(implicit log: Logger) {
         log.error(s"Create branch ${branch} error", ex)
         false
     }
+  }
+
+  def close(): Unit = {
+    git.close()
   }
 
   private def getSubPath(file: File): Path = {
