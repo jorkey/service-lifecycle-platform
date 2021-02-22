@@ -203,7 +203,7 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
     }
     log.info(s"Make distribution config file")
     val arguments = Seq(cloudProvider, distributionName, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString)
-    if (!ProcessUtils.runProcess("/bin/sh", "make_config.sh" +: arguments, Map.empty,
+    if (!ProcessUtils.runProcess("/bin/sh", ".make_distribution_config.sh" +: arguments, Map.empty,
         distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
       return false
@@ -224,7 +224,7 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
           distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)
     }
     if (asService) {
-      if (!startService("create_service.sh")) {
+      if (!startService(".create_distribution_service.sh")) {
         return None
       }
     } else {
@@ -287,10 +287,10 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
     for (updateSourcesUri <- updateSourcesUri) {
       log.info(s"--------------------------- Create sources config")
       val sourcesConfig = Map.empty[ServiceName, Seq[SourceConfig]] +
-        (Common.ScriptsServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None))))) +
-        (Common.BuilderServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None))))) +
-        (Common.UpdaterServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None))))) +
-        (Common.DistributionServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None)))))
+        (Common.ScriptsServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
+        (Common.BuilderServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
+        (Common.UpdaterServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
+        (Common.DistributionServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None)))
       if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), SourcesConfig(sourcesConfig))) {
         log.error(s"Can't write sources config file")
         return false

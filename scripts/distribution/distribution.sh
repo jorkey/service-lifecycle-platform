@@ -3,4 +3,4 @@ set -e
 
 serviceToRun=distribution
 
-. update.sh
+. .update.sh

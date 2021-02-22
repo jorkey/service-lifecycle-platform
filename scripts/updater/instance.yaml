@@ -4,8 +4,8 @@ runcmd:
   - su - ec2-user -c "curl -X POST -H "Content-Type: application/json" --data '{ "query": "{ 'clientDesiredVersions(services:[\"scripts\"]){version}' }" }' %%distribDirectoryUrl%%/graphql \
         --write-out "%{http_code}" --output .scripts.version --retry 1000 --retry-delay 2 --connect-timeout 5" | jq -r .data.desiredVersions[0].version >/home/ec2-user/.scripts.version
   - su - ec2-user -c "curl %%distribDirectoryUrl%%/image/client-version-image/scripts/`cat /home/ec2-user/.scripts.version` --output .scripts.zip --retry 1000 --retry-delay 2 --connect-timeout 5"
-  - su - ec2-user -c "unzip -o .scripts.zip update.sh"
+  - su - ec2-user -c "unzip -o .scripts.zip .update.sh"
   - su - ec2-user -c "unzip -jo .scripts.zip updater/*"
-  - su - ec2-user -c "chmod +x *.sh"
+  - su - ec2-user -c "chmod +x .*.sh"
   - [ sh, -xc, "echo 'Execute setup'" ]
-  - su - ec2-user -c "./updater_setup.sh Azure %%name%% %%services%% %%distribDirectoryUrl%%"
+  - su - ec2-user -c "./.updater_setup.sh Azure %%name%% %%services%% %%distribDirectoryUrl%%"

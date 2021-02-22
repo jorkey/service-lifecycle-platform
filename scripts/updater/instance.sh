@@ -6,4 +6,4 @@ serviceToSetup=updater
 . update.sh
 
 echo "Execute setup"
-./updater_setup.sh Azure $@
+./.updater_setup.sh Azure $@

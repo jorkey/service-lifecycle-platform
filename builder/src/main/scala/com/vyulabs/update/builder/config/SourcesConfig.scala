@@ -13,7 +13,7 @@ object GitConfig extends DefaultJsonProtocol {
   implicit val gitConfigJson = jsonFormat2(GitConfig.apply)
 }
 
-case class SourceConfig(subDirectory: Option[String], git: Option[GitConfig])
+case class SourceConfig(source: Either[String, GitConfig], buildDirectory: Option[String])
 
 object SourceConfig extends DefaultJsonProtocol {
   implicit val repositoryConfigJson = jsonFormat2(SourceConfig.apply)

@@ -37,6 +37,12 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   def developerBuildDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "build"))
   def developerSourceDir(serviceName: ServiceName) = makeDir(new File(developerServiceDir(serviceName), "source"))
 
+  def getBuildDirectory(serviceName: ServiceName, subDirectory: Option[String]): File = {
+    subDirectory.map(subDirectory => new File(developerSourceDir(serviceName), subDirectory)).getOrElse {
+      developerSourceDir(serviceName)
+    }
+  }
+
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
                             author: String, serviceName: ServiceName, newVersion: DeveloperVersion,
                             comment: Option[String], sourceBranches: Seq[String])
@@ -57,30 +63,29 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
           return false
         }
 
-        log.info("Prepare sources")
+        log.info(s"Prepare source directories of service ${serviceName}")
         val sourcesConfig = getSourcesConfig(serviceName)
-        val sourceRepositories = pullSourceDirectories(serviceName, sourceBranches, sourcesConfig)
-        if (sourceRepositories.isEmpty) {
+        val sourceRepositories = prepareSourceDirectories(serviceName, sourceBranches, sourcesConfig).getOrElse {
           log.error(s"Can't pull source directories")
           return false
         }
 
-        log.info(s"Generate version ${newVersion}")
+        log.info(s"Generate version ${newVersion} of service ${serviceName}")
         val arguments = Map("version" -> newVersion.toString)
-        if (!generateDeveloperVersion(serviceName, getSourceDirectory(serviceName, sourcesConfig.head.subDirectory), arguments)) {
+        if (!generateDeveloperVersion(serviceName, getBuildDirectory(serviceName, sourcesConfig.head.buildDirectory), arguments)) {
           log.error(s"Can't generate version")
           return false
         }
 
-        log.info(s"Make version image ${newVersion}")
+        log.info(s"Make version image ${newVersion} of service ${serviceName}")
         val imageFile = makeDeveloperVersionImage(serviceName).getOrElse {
           log.error("Can't make version image")
           return false
         }
 
-        log.info(s"Upload version image ${newVersion} to distribution server")
+        log.info(s"Upload version image ${newVersion} of service ${serviceName} to distribution server")
         val buildInfo = BuildInfo(author, sourceBranches, new Date(), comment)
-        if (uploadDeveloperVersion(distributionClient, serviceName, newDistributionVersion, buildInfo, imageFile)) {
+        if (!uploadDeveloperVersion(distributionClient, serviceName, newDistributionVersion, buildInfo, imageFile)) {
           log.error("Can't upload version image")
           return false
         }
@@ -105,32 +110,31 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
     }
   }
 
-  def getSourceDirectory(serviceName: ServiceName, subDirectory: Option[String]): File = {
-    subDirectory.map(subDirectory => new File(developerSourceDir(serviceName), subDirectory)).getOrElse {
-      developerSourceDir(serviceName)
-    }
-  }
-
-  def pullSourceDirectories(serviceName: ServiceName, sourceBranches: Seq[String],
-                            sourcesConfig: Seq[SourceConfig]): Seq[GitRepository] = {
-    var sourceRepositories = Seq.empty[GitRepository]
+  def prepareSourceDirectories(serviceName: ServiceName, sourceBranches: Seq[String],
+                               sourcesConfig: Seq[SourceConfig]): Option[Seq[GitRepository]] = {
+    var gitRepositories = Seq.empty[GitRepository]
     val sourceBranchIt = sourceBranches.iterator
-    for (sourceConf <- sourcesConfig) {
-      for (git <- sourceConf.git) {
-        val branch = if (sourceBranchIt.hasNext) {
-          sourceBranchIt.next()
-        } else {
-          "master"
-        }
-        val sourceRepository =
-          GitRepository.getGitRepository(git.url, branch, git.cloneSubmodules.getOrElse(true),
-              getSourceDirectory(serviceName, sourceConf.subDirectory)).getOrElse {
-            return Seq.empty
+    for (sourceConfig <- sourcesConfig) {
+      sourceConfig.source match {
+        case Left(directory) =>
+          if (!IoUtils.copyFile(new File(directory), getBuildDirectory(serviceName, sourceConfig.buildDirectory))) {
+            return None
           }
-        sourceRepositories :+= sourceRepository
+        case Right(git) =>
+          val branch = if (sourceBranchIt.hasNext) {
+            sourceBranchIt.next()
+          } else {
+            "master"
+          }
+          val sourceRepository =
+            GitRepository.getGitRepository(git.url, branch, git.cloneSubmodules.getOrElse(true),
+                getBuildDirectory(serviceName, sourceConfig.buildDirectory)).getOrElse {
+              return None
+            }
+          gitRepositories :+= sourceRepository
       }
     }
-    sourceRepositories
+    Some(gitRepositories)
   }
 
   def generateDeveloperVersion(serviceName: ServiceName, sourceDirectory: File, arguments: Map[String, String])
@@ -222,7 +226,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       return false
     }
     if (!distributionClient.graphqlRequest(
-      administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo(serviceName, version, buildInfo))).getOrElse(false)) {
+        administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo(serviceName, version, buildInfo))).getOrElse(false)) {
       log.error("Adding version info error")
       return false
     }

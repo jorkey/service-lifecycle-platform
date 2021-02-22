@@ -8,12 +8,12 @@
           "destinationFile": "distribution/distribution.sh"
         },
         {
-          "sourceFile": "scripts/distribution/make_config.sh",
-          "destinationFile": "distribution/make_config.sh"
+          "sourceFile": "scripts/distribution/.make_distribution_config.sh",
+          "destinationFile": "distribution/.make_distribution_config.sh"
         },
         {
-          "sourceFile": "scripts/distribution/create_service.sh",
-          "destinationFile": "distribution/create_service.sh"
+          "sourceFile": "scripts/distribution/.create_distribution_service.sh",
+          "destinationFile": "distribution/.create_distribution_service.sh"
         },
         {
           "sourceFile": "scripts/builder/builder.sh",
@@ -24,8 +24,8 @@
           "destinationFile": "updater/updater.sh"
         },
         {
-          "sourceFile": "scripts/updater/updater_setup.sh",
-          "destinationFile": "updater/updater_setup.sh"
+          "sourceFile": "scripts/updater/.updater_setup.sh",
+          "destinationFile": "updater/.updater_setup.sh"
         },
         {
           "sourceFile": "scripts/updater/instance.yaml",
@@ -36,8 +36,8 @@
           "destinationFile": "updater/instance.sh"
         },
         {
-          "sourceFile": "scripts/update.sh",
-          "destinationFile": "update.sh"
+          "sourceFile": "scripts/.update.sh",
+          "destinationFile": ".update.sh"
         }
       ]
     }

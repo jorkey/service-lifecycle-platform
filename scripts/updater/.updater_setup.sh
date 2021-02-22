@@ -14,7 +14,7 @@ distribDirectoryUrl=$4
 environment=$5
 
 serviceToSetup=updater
-. update.sh
+. .update.sh
 
 if [ "${cloudProvider}" == "Azure" ]; then
   if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, ":", .compute.name'`; then

@@ -197,7 +197,7 @@ function updateScripts {
   fi
   if [ -f ${scriptsZipFile} ]; then
     echo "Update scripts"
-    unzip -qo ${scriptsZipFile} update.sh
+    unzip -qo ${scriptsZipFile} .update.sh
     unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
     rm -f ${scriptsZipFile}
     chmod +x *.sh
