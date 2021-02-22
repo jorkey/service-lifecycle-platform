@@ -7,16 +7,22 @@ import spray.json._
 
 import java.io.File
 
-case class RepositoryConfig(url: String, cloneSubmodules: Option[Boolean], directory: Option[String])
+case class GitConfig(url: String, cloneSubmodules: Option[Boolean])
 
-object RepositoryConfig extends DefaultJsonProtocol {
-  implicit val repositoryConfigJson = jsonFormat3(RepositoryConfig.apply)
+object GitConfig extends DefaultJsonProtocol {
+  implicit val gitConfigJson = jsonFormat2(GitConfig.apply)
 }
 
-case class SourcesConfig(sources: Map[ServiceName, Seq[RepositoryConfig]])
+case class SourceConfig(subDirectory: Option[String], git: Option[GitConfig])
+
+object SourceConfig extends DefaultJsonProtocol {
+  implicit val repositoryConfigJson = jsonFormat2(SourceConfig.apply)
+}
+
+case class SourcesConfig(sources: Map[ServiceName, Seq[SourceConfig]])
 
 object SourcesConfig extends DefaultJsonProtocol {
-  import RepositoryConfig._
+  import SourceConfig._
 
   implicit val sourcesConfigListJson = jsonFormat1(SourcesConfig.apply)
 

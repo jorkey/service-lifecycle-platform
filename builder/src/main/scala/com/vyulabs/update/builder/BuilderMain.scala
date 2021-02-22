@@ -49,8 +49,8 @@ object BuilderMain extends App {
       val author = arguments.getValue("author")
       val port = arguments.getOptionIntValue("port").getOrElse(8000)
       val test = arguments.getOptionBooleanValue("test").getOrElse(false)
-      val distributionBuilder = new DistributionBuilder(cloudProvider,
-        !test, new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, test, port)
+      val distributionBuilder = new DistributionBuilder(cloudProvider, !test,
+        new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, test, port)
 
       arguments.getOptionValue("developerDistributionUrl") match {
         case None =>

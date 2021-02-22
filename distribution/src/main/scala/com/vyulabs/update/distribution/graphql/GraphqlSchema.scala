@@ -17,7 +17,7 @@ import sangria.streaming.akkaStreams._
 
 import scala.concurrent.ExecutionContext
 
-case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCollections, dir: DistributionDirectory, taskManager: TaskManager)
+case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCollections, directory: DistributionDirectory, taskManager: TaskManager)
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)

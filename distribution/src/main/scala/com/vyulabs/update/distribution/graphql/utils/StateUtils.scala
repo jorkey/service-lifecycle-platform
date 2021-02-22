@@ -26,7 +26,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
 
-  protected val dir: DistributionDirectory
+  protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
   protected val config: DistributionConfig
@@ -200,7 +200,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
                            (implicit log: Logger): Future[Unit] = {
     Future.sequence(reports.map { report =>
       log.debug(s"Delete fault report ${report.sequence}")
-      val faultFile = dir.getFaultReportFile(report.document.report.faultId)
+      val faultFile = directory.getFaultReportFile(report.document.report.faultId)
       faultFile.delete()
       collection.delete(Filters.and(Filters.eq("_id", report.sequence)))
     }).map(_ => Unit)

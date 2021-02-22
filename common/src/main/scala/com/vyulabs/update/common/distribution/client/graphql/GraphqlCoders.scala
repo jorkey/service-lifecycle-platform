@@ -135,7 +135,8 @@ object ServiceMutationsCoder extends CommonMutationsCoder {
 
 object AdministratorSubscriptionsCoder {
   def subscribeTaskLogs(taskId: TaskId) =
-    GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> taskId, "SequencedServiceLogLine")))
+    GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> taskId, "String")),
+      "{ sequence, logLine { distributionName, serviceName, taskId, instanceId, processId, directory, line { date, level, loggerName, message, terminationStatus } } }")
 
   def testSubscription() =
     GraphqlSubscription[String]("testSubscription")

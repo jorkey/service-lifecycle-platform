@@ -15,7 +15,7 @@ import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsUtils with RunBuilderUtils {
-  protected val dir: DistributionDirectory
+  protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
   protected val taskManager: TaskManager
@@ -110,7 +110,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
     val filters = Filters.and(
       Filters.eq("serviceName", serviceName),
       Filters.eq("version", version))
-    dir.getClientVersionImageFile(serviceName, version).delete()
+    directory.getClientVersionImageFile(serviceName, version).delete()
     collections.Client_VersionsInfo.delete(filters).map(_ > 0)
   }
 

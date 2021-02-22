@@ -89,7 +89,7 @@ object ChildProcess {
       })
       builder.redirectErrorStream(true)
       builder.directory(directory)
-      log.info(s"Start command ${command} with arguments ${arguments} in directory ${directory}")
+      log.info(s"Start command ${command} with arguments ${arguments} in directory ${directory.getAbsolutePath}")
       log.debug(s"Environment: ${builder.environment().asScala}")
       val process = builder.start()
       log.debug(s"Started process ${process.pid()}")

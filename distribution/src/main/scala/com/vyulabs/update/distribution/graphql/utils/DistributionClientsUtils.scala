@@ -20,7 +20,7 @@ trait DistributionClientsUtils extends SprayJsonSupport {
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
 
-  protected val dir: DistributionDirectory
+  protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
   def getDistributionClientsInfo(distributionName: Option[DistributionName] = None)(implicit log: Logger): Future[Seq[DistributionClientInfo]] = {

@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
-import com.vyulabs.update.builder.config.{BuilderConfig, DistributionLink, RepositoryConfig}
+import com.vyulabs.update.builder.config.{BuilderConfig, DistributionLink, GitConfig, SourceConfig, SourcesConfig}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName}
 import com.vyulabs.update.common.config.{DistributionConfig, NetworkConfig, UploadStateConfig}
@@ -26,7 +26,8 @@ import scala.concurrent.duration.FiniteDuration
   * Copyright FanDate, Inc.
   */
 class DistributionBuilder(cloudProvider: String, asService: Boolean,
-                          distributionDirectory: DistributionDirectory, distributionName: String, distributionTitle: String,
+                          distributionDirectory: DistributionDirectory,
+                          distributionName: String, distributionTitle: String,
                           mongoDbName: String, mongoDbTemporary: Boolean, port: Int)
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -285,13 +286,12 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
 
     for (updateSourcesUri <- updateSourcesUri) {
       log.info(s"--------------------------- Create sources config")
-      val sourcesConfig = Map.empty[ServiceName, Seq[RepositoryConfig]] +
-        (Common.ScriptsServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None))) +
-        (Common.BuilderServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None))) +
-        (Common.UpdaterServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None))) +
-        (Common.DistributionServiceName -> Seq(RepositoryConfig(updateSourcesUri, None, None)))
-      println(s"-------------- write config ${settingsDirectory.getSourcesFile()}")
-      if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), sourcesConfig)) {
+      val sourcesConfig = Map.empty[ServiceName, Seq[SourceConfig]] +
+        (Common.ScriptsServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None))))) +
+        (Common.BuilderServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None))))) +
+        (Common.UpdaterServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None))))) +
+        (Common.DistributionServiceName -> Seq(SourceConfig(None, Some(GitConfig(updateSourcesUri, None)))))
+      if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), SourcesConfig(sourcesConfig))) {
         log.error(s"Can't write sources config file")
         return false
       }

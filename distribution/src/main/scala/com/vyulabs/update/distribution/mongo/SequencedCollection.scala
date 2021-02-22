@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.mongo
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Concat, Sink, Source}
+import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
 import com.mongodb.client.model._
 import com.vyulabs.update.distribution.common.AkkaSource
 import org.bson.codecs.DecoderContext
@@ -24,7 +24,7 @@ class SequencedCollection[T: ClassTag](val name: String,
                                        historyExpireDays: Int = 7)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   implicit val log = LoggerFactory.getLogger(getClass)
 
-  private val (publisherCallback, publisher) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(Sink.asPublisher(fanout = true))((m1, m2) => (m1, m2)).run()
+  private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(BroadcastHub.sink)(Keep.both).run()
   private var publisherBuffer = Queue.empty[Sequenced[T]]
 
   private var modifyInProcess = Option.empty[Future[Int]]
@@ -179,7 +179,6 @@ class SequencedCollection[T: ClassTag](val name: String,
       storedDocuments <- findSequenced(filtersArg, Some(Sorts.ascending("_id")))
     } yield {
       val bufferSource = Source.fromIterator(() => synchronized { publisherBuffer.iterator })
-      val publisherSource = Source.fromPublisher(publisher)
       val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
       var sequence = fromSequence.getOrElse(0L)
       Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))

@@ -22,7 +22,7 @@ import java.net.URL
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
-  protected val dir: DistributionDirectory
+  protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
   protected val taskManager: TaskManager
@@ -53,7 +53,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   private def runLocalBuilder(taskId: TaskId, arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
-      process <- ChildProcess.start("/bin/sh", Common.BuilderSh +: arguments, Map.empty, dir.getBuilderDir())
+      process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments, Map.empty, directory.getBuilderDir())
     } yield {
       process.handleOutput(lines => { lines.foreach(line => log.info(line._1)) })
 //      @volatile var logOutputFuture = Option.empty[Future[Unit]]

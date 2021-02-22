@@ -15,19 +15,24 @@ import java.io._
 class DistributionDirectory(val directory: File) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val developerDir = new File(directory, "developer")
+  private val directoryDir = new File(directory, "directory")
+  private val developerDir = new File(directoryDir, "developer")
   private val developerServicesDir = new File(developerDir, "services")
-  private val clientDir = new File(directory, "client")
+  private val clientDir = new File(directoryDir, "client")
   private val clientServicesDir = new File(clientDir, "services")
-  private val faultsDir = new File(directory, "faults")
+  private val faultsDir = new File(directoryDir, "faults")
+
   private val builderDir = new File(directory, "builder")
 
   if (!directory.exists()) directory.mkdirs()
+
+  if (!directoryDir.exists()) directoryDir.mkdir()
   if (!developerDir.exists()) developerDir.mkdir()
   if (!developerServicesDir.exists()) developerServicesDir.mkdir()
   if (!clientDir.exists()) clientDir.mkdir()
   if (!clientServicesDir.exists()) clientServicesDir.mkdir()
   if (!faultsDir.exists()) faultsDir.mkdir()
+
   if (!builderDir.exists()) builderDir.mkdir()
 
   def getConfigFile(): File = {

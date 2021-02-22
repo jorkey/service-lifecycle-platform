@@ -265,9 +265,9 @@ class GitRepository(git: Git)(implicit log: Logger) {
 }
 
 object GitRepository {
-  def createBareRepository(directory: File)(implicit log: Logger): Option[GitRepository] = {
+  def createRepository(directory: File, bare: Boolean)(implicit log: Logger): Option[GitRepository] = {
     try {
-      val git = Git.init().setDirectory(directory).setBare(true).call()
+      val git = Git.init().setDirectory(directory).setBare(bare).call()
       Some(new GitRepository(git))
     } catch {
       case ex:Exception =>

@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with RunBuilderUtils with SprayJsonSupport {
-  protected val dir: DistributionDirectory
+  protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
   protected val taskManager: TaskManager
@@ -88,7 +88,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     val filters = Filters.and(
       Filters.eq("serviceName", serviceName),
       Filters.eq("version", version))
-    dir.getDeveloperVersionImageFile(serviceName, version).delete()
+    directory.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
       profile <- {
         collections.Developer_VersionsInfo.delete(filters).map(_ > 0)
@@ -204,7 +204,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
                     developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
                       .andThen {
                         case Success(_) =>
-                          imageFile.renameTo(dir.getDeveloperVersionImageFile(serviceName, version))
+                          imageFile.renameTo(directory.getDeveloperVersionImageFile(serviceName, version))
                         case _ =>
                       }.andThen { case _ => imageFile.delete() }
                   }

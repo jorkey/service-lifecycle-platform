@@ -1,14 +1,13 @@
 package com.vyulabs.update.tests
 
-import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.BuilderMain
-import com.vyulabs.update.builder.config.{RepositoryConfig, SourcesConfig}
+import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
+import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
@@ -25,16 +24,21 @@ class TestLifecycle {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def run()(implicit executionContext: ExecutionContext): Unit = {
+    val distributionName = "test-distribution"
+    val distributionDir = Files.createTempDirectory("distribution").toFile
+    val builderDir = new File(distributionDir, "builder")
+    val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
+    val distributionUrl = new URL("http://admin:admin@localhost:8000")
+    val testServiceName = "test"
+
     println("====================================== Setup and start distribution server")
     println()
-    val distributionName = "test-distribution"
-    val distributionDir = new DistributionDirectory(Files.createTempDirectory("distribution").toFile)
     val distributionReady = Promise[Unit]()
     new Thread {
       override def run(): Unit = {
         try {
           BuilderMain.main(Array("buildDistribution", "cloudProvider=None",
-            s"distributionDirectory=${distributionDir.directory.toString}", s"distributionName=${distributionName}", "distributionTitle=Test distribution server",
+            s"distributionDirectory=${distributionDir.toString}", s"distributionName=${distributionName}", "distributionTitle=Test distribution server",
             "mongoDbName=test", "author=ak", "test=true"))
           distributionReady.success()
         } finally {
@@ -44,13 +48,9 @@ class TestLifecycle {
     }.start()
     Await.ready(distributionReady.future, FiniteDuration(5, TimeUnit.MINUTES))
 
-    println("====================================== Configure test service")
-    println()
-    val testServiceName = "test"
     val serviceSourceDir = Files.createTempDirectory("service").toFile
-    val git = GitRepository.createBareRepository(serviceSourceDir).getOrElse {
-      sys.error(s"Can't create Git repository in the file ${serviceSourceDir}")
-    }
+    println(s"====================================== Configure test service in directory ${serviceSourceDir}")
+    println()
     val buildConfig = BuildConfig(None, Seq(CopyFileConfig("sourceScript.sh", "runScript.sh", None, None)))
     val installConfig = InstallConfig(None, None, Some(RunServiceConfig("/bin/sh", Some(Seq("./runScript.sh")), None, None, None, None, None, None)))
     val updateConfig = UpdateConfig(Map.empty + (testServiceName -> ServiceUpdateConfig(buildConfig, Some(installConfig))))
@@ -61,16 +61,14 @@ class TestLifecycle {
     if (!IoUtils.writeBytesToFile(new File(serviceSourceDir, "runScript.sh"), scriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }
-    val settingsDirectory = new SettingsDirectory(distributionDir.getBuilderDir(), distributionName)
     val sourcesConfig = IoUtils.readFileToJson[SourcesConfig](settingsDirectory.getSourcesFile()).getOrElse {
       sys.error(s"Can't read sources config file")
     }
-    sourcesConfig.sources + (testServiceName -> Seq(RepositoryConfig(git.getUrl(), None, None)))
-    if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), sourcesConfig)) {
+    val newSourcesConfig = SourcesConfig(sourcesConfig.sources + (testServiceName -> Seq(SourceConfig(None, None))))
+    if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), newSourcesConfig)) {
       sys.error(s"Can't write sources config file")
     }
 
-    val distributionUrl = new URL("http://admin:admin@localhost")
     val distributionClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(distributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 

@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.libs.git.{GitRepository}
-import com.vyulabs.update.builder.config.SourcesConfig
+import com.vyulabs.libs.git.GitRepository
+import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.config.InstallConfig._
@@ -53,12 +53,13 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       () => {
         log.info("Check for version exist")
         if (doesDeveloperVersionExist(distributionClient, serviceName, newDistributionVersion)) {
-          log.error(s"Version ${newVersion} already exists")
+          log.error(s"Version ${newVersion} of service ${serviceName} already exists")
           return false
         }
 
-        log.info(s"Pull source repositories")
-        val sourceRepositories = pullSourceDirectories(serviceName, sourceBranches)
+        log.info("Prepare sources")
+        val sourcesConfig = getSourcesConfig(serviceName)
+        val sourceRepositories = pullSourceDirectories(serviceName, sourceBranches, sourcesConfig)
         if (sourceRepositories.isEmpty) {
           log.error(s"Can't pull source directories")
           return false
@@ -66,7 +67,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
 
         log.info(s"Generate version ${newVersion}")
         val arguments = Map("version" -> newVersion.toString)
-        if (!generateDeveloperVersion(serviceName, sourceRepositories.head.getDirectory, arguments)) {
+        if (!generateDeveloperVersion(serviceName, getSourceDirectory(serviceName, sourcesConfig.head.subDirectory), arguments)) {
           log.error(s"Can't generate version")
           return false
         }
@@ -84,7 +85,6 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
           return false
         }
 
-        log.info(s"Mark source repositories with version ${newVersion}")
         if (!markSourceRepositories(sourceRepositories, serviceName, newDistributionVersion, comment)) {
           log.error("Can't mark source repositories with new version")
         }
@@ -94,35 +94,41 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       }).getOrElse(false)
   }
 
-  def pullSourceDirectories(serviceName: ServiceName, sourceBranches: Seq[String]): Seq[GitRepository] = {
+  def getSourcesConfig(serviceName: ServiceName): Seq[SourceConfig] = {
     val sourcesConfig = SourcesConfig.fromFile(settingsDirectory.getSourcesFile()).getOrElse {
       log.error("Can't get config of sources")
       return Seq.empty
     }
-    val sourceRepositoriesConf = sourcesConfig.sources.get(serviceName).getOrElse {
+    sourcesConfig.sources.get(serviceName).getOrElse {
       log.error(s"Source repositories of service ${serviceName} is not specified.")
       return Seq.empty
     }
+  }
 
+  def getSourceDirectory(serviceName: ServiceName, subDirectory: Option[String]): File = {
+    subDirectory.map(subDirectory => new File(developerSourceDir(serviceName), subDirectory)).getOrElse {
+      developerSourceDir(serviceName)
+    }
+  }
+
+  def pullSourceDirectories(serviceName: ServiceName, sourceBranches: Seq[String],
+                            sourcesConfig: Seq[SourceConfig]): Seq[GitRepository] = {
     var sourceRepositories = Seq.empty[GitRepository]
     val sourceBranchIt = sourceBranches.iterator
-    for (repositoryConf <- sourceRepositoriesConf) {
-      val directory = repositoryConf.directory match {
-        case Some(dir) =>
-          new File(developerSourceDir(serviceName), dir)
-        case None =>
-          developerSourceDir(serviceName)
-      }
-      val branch = if (sourceBranchIt.hasNext) {
-        sourceBranchIt.next()
-      } else {
-        "master"
-      }
-      val sourceRepository =
-        GitRepository.getGitRepository(repositoryConf.url, branch, repositoryConf.cloneSubmodules.getOrElse(true), directory).getOrElse {
-          return Seq.empty
+    for (sourceConf <- sourcesConfig) {
+      for (git <- sourceConf.git) {
+        val branch = if (sourceBranchIt.hasNext) {
+          sourceBranchIt.next()
+        } else {
+          "master"
         }
-      sourceRepositories :+= sourceRepository
+        val sourceRepository =
+          GitRepository.getGitRepository(git.url, branch, git.cloneSubmodules.getOrElse(true),
+              getSourceDirectory(serviceName, sourceConf.subDirectory)).getOrElse {
+            return Seq.empty
+          }
+        sourceRepositories :+= sourceRepository
+      }
     }
     sourceRepositories
   }
@@ -232,12 +238,13 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   private def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionName), Some(version))).size != 0
+    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionName), Some(version))).map(_.size != 0).getOrElse(false)
   }
 
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], serviceName: ServiceName,
-                             version: DeveloperDistributionVersion, comment: Option[String]): Boolean = {
+                                      version: DeveloperDistributionVersion, comment: Option[String]): Boolean = {
     for (repository <- sourceRepositories) {
+      log.info(s"Mark source repository with version ${version}")
       val tag = serviceName + "-" + version.toString
       if (!repository.setTag(tag, comment)) {
         return false
