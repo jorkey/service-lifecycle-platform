@@ -84,6 +84,7 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
     log.info(s"########################### Upload client images of services")
     if (!clientBuilder.uploadClientVersion(distributionClient, Common.ScriptsServiceName, initialClientVersion, author) ||
         !clientBuilder.uploadClientVersion(distributionClient, Common.BuilderServiceName, initialClientVersion, author) ||
+        !clientBuilder.uploadClientVersion(distributionClient, Common.UpdaterServiceName, initialClientVersion, author) ||
         !clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, initialClientVersion, author)) {
       log.error("Can't upload client initial versions")
       return false
@@ -256,6 +257,7 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
     log.info(s"Wait for distribution server become available")
     for (_ <- 0 until waitingTimeoutSec) {
       if (distributionClient.available()) {
+        Thread.sleep(1000)
         return true
       }
       Thread.sleep(1000)

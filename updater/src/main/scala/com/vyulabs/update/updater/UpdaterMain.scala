@@ -133,7 +133,8 @@ object UpdaterMain extends App { self =>
 
         def maybeUpdate(): Boolean = {
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
-            distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions(Seq(Common.ScriptsServiceName, Common.UpdaterServiceName))) match {
+            distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions(
+                Seq(Common.ScriptsServiceName, Common.UpdaterServiceName) ++ serviceUpdaters.map(_._1.name))) match {
               case Some(desiredVersions) =>
                 val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions)
                 var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, ClientDistributionVersion])((map, updater) => {

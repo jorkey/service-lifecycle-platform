@@ -6,7 +6,7 @@ import com.vyulabs.update.common.config.InstallConfig
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{ProfiledServiceName, UpdateError}
 import com.vyulabs.update.common.process.ProcessUtils
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import org.slf4j.Logger
@@ -72,7 +72,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
         state.updateError(true, s"Can't make directory ${state.newServiceDirectory}")
         return false
       }
-      if (!distributionClient.downloadClientVersionImage(profiledServiceName.name, newVersion, state.newServiceDirectory)) {
+      if (!ZipUtils.receiveAndUnzip(file => distributionClient.downloadClientVersionImage(profiledServiceName.name, newVersion, file), state.newServiceDirectory)) {
         state.updateError(false, s"Can't download ${profiledServiceName.name} version ${newVersion}")
         return false
       }

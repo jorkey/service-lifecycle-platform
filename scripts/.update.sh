@@ -279,8 +279,8 @@ function runService {
       ${query} ${args} "$@" &
       child=$!
       wait ${child}
-      trap - TERM INT
-      wait ${child}
+#      trap - TERM INT
+#      wait ${child}
       local status=$?
       set -e
       echo "Service ${serviceToRun} is terminated with status ${status}"

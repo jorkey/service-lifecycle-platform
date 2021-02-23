@@ -9,7 +9,7 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
@@ -35,7 +35,7 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
-                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientVersion,
+                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion,
                          author: String, arguments: Map[String, String])(implicit log: Logger): Boolean = {
     val versionInfo = downloadDeveloperVersion(distributionClient, serviceName, developerVersion).getOrElse {
       log.error(s"Can't download developer version ${developerVersion} of service ${serviceName}")
@@ -48,7 +48,7 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
     }
 
     log.info(s"Upload client version ${clientVersion} of service ${serviceName}")
-    uploadClientVersion(distributionClient, serviceName, ClientDistributionVersion(distributionName, clientVersion),
+    uploadClientVersion(distributionClient, serviceName, clientVersion,
       author, versionInfo.buildInfo)
   }
 

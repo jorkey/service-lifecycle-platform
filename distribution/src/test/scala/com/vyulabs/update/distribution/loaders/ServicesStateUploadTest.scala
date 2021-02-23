@@ -39,7 +39,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     result(collections.State_ServiceStates.insert(state1))
     waitForSetServiceStates(Seq(state1)).success(true)
 
-    Thread.sleep(100)
+    Thread.sleep(500)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(1), None)))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
@@ -48,7 +48,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     result(collections.State_ServiceStates.insert(state2))
     waitForSetServiceStates(Seq(state2)).success(true)
 
-    Thread.sleep(100)
+    Thread.sleep(500)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(2), None)))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
@@ -65,7 +65,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     result(collections.State_ServiceStates.insert(state1))
     waitForSetServiceStates(Seq(state1)).failure(new IOException("upload error"))
 
-    Thread.sleep(100)
+    Thread.sleep(500)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(None, Some("upload error"))))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
@@ -79,7 +79,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     result(collections.State_ServiceStates.insert(state3))
     waitForSetServiceStates(Seq(state3)).success(true)
 
-    Thread.sleep(100)
+    Thread.sleep(500)
     assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(3), None)))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 

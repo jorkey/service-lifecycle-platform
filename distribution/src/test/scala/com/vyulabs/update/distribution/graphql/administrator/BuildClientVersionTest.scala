@@ -51,7 +51,7 @@ class BuildClientVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":1,"logLine":{"line":{"level":"INFO","message":"Logger `Build client version test-1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildClientVersion, distributionName=test, service=service1, developerVersion=test-1.1.1, clientVersion=test-1.1.1, author=admin) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildClientVersion, distributionName=test, service=service1, developerVersion=test-1.1.1, clientVersion=test-1.1.1, author=admin) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -86,7 +86,7 @@ class BuildClientVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -125,7 +125,7 @@ class BuildClientVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"logLine":{"line":{"level":"INFO","message":"Logger `Run local builder by remote distribution` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(

@@ -2,6 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
+import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
@@ -89,6 +90,9 @@ trait CommonMutationsCoder {
 object CommonMutationsCoder extends CommonMutationsCoder
 
 object AdministratorMutationsCoder extends CommonMutationsCoder {
+  def addUser(userName: UserName, role: UserRole, password: String) =
+    GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> userName), GraphqlArgument("role" -> role, "UserRole"), GraphqlArgument("password" -> password)))
+
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
   def addDeveloperVersionInfo(info: DeveloperVersionInfo) =

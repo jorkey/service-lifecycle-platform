@@ -1,17 +1,13 @@
 <configuration>
     <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>log/distribution.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>log/test-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>10MB</maxFileSize>
-            <maxHistory>10</maxHistory>
-            <totalSizeCap>100MB</totalSizeCap>
-        </rollingPolicy>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <!-- path to your log file, where you want to store logs -->
+        <file>log/test.log</file>
+        <append>false</append>
 
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} %X{akkaSource} %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -34,6 +30,5 @@
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
-        <appender-ref ref="TRACE" />
     </root>
 </configuration>

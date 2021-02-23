@@ -45,6 +45,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[DistributionServiceState],
     classOf[InstanceServiceState],
     classOf[ServiceState],
+    classOf[UpdateError],
     classOf[ServiceLogLine],
     classOf[DistributionFaultReport],
     classOf[TestedDesiredVersions],

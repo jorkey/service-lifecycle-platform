@@ -6,7 +6,7 @@ import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpCl
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
-import com.vyulabs.update.common.version.{ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
 import java.io.File
@@ -89,7 +89,7 @@ object BuilderMain extends App {
           val author = arguments.getValue("author")
           val serviceName = arguments.getValue("service")
           val developerVersion = DeveloperDistributionVersion.parse(arguments.getValue("developerVersion"))
-          val clientVersion = ClientVersion.parse(arguments.getValue("clientVersion"))
+          val clientVersion = ClientDistributionVersion.parse(arguments.getValue("clientVersion"))
           val buildArguments = Map("distribDirectoryUrl" -> distributionUrl.toString, "version" -> clientVersion.toString)
           val clientBuilder = new ClientBuilder(new File("."), distributionName)
           if (!clientBuilder.buildClientVersion(distributionClient, serviceName, developerVersion, clientVersion, author, buildArguments)) {
@@ -97,4 +97,6 @@ object BuilderMain extends App {
           }
       }
   }
+
+  sys.exit()
 }

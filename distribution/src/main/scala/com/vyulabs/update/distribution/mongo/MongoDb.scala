@@ -34,7 +34,7 @@ class MongoDb(connectionString: String, dbName: String, temporary: Boolean)
   if (temporary) {
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
-        log.info(s"Shutdown: drop temporary database '${dbName}''")
+        log.info(s"Shutdown: drop temporary database '${dbName}'")
         Await.result(dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
       }})
   }
