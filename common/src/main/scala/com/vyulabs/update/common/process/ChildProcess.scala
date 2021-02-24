@@ -11,17 +11,16 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.04.19.
   * Copyright FanDate, Inc.
   */
-class ChildProcess(process: Process)
+class ChildProcess(process: Process, onOutputLines: Seq[(String, Boolean)] => Unit = _ => ())
                   (implicit executionContext: ExecutionContext, log: Logger) {
   private val processTerminateTimeoutMs = 5000
   private val exitCode = Promise[Int]
   private val input = new BufferedReader(new InputStreamReader(process.getInputStream))
 
-  @volatile
-  private var onOutputLines = Option.empty[Seq[(String, Boolean)] => Unit]
-
   new LinesReaderThread(input, None,
-    lines => onOutputLines.foreach(_(lines)),
+    lines => {
+      onOutputLines(lines)
+    },
     () => {
       val status = process.waitFor()
       log.info(s"Process ${process.pid()} is terminated with status ${status}")
@@ -35,10 +34,6 @@ class ChildProcess(process: Process)
   def onTermination(): Future[Int] = exitCode.future
 
   def getHandle() = process
-
-  def handleOutput(onOutputLines: Seq[(String, Boolean)] => Unit): Unit = {
-    this.onOutputLines = Some(onOutputLines)
-  }
 
   def terminate(): Future[Boolean] = {
     Future {
@@ -83,8 +78,8 @@ class ChildProcess(process: Process)
 }
 
 object ChildProcess {
-  def start(command: String, arguments: Seq[String] = Seq.empty, env: Map[String, String] = Map.empty, directory: File = new File("."))
-           (implicit executionContext: ExecutionContext, log: Logger): Future[ChildProcess] = {
+  def start(command: String, arguments: Seq[String] = Seq.empty, env: Map[String, String] = Map.empty, directory: File = new File("."),
+            onOutputLines: Seq[(String, Boolean)] => Unit = _ => ())(implicit executionContext: ExecutionContext, log: Logger): Future[ChildProcess] = {
     Future {
       val builder = new ProcessBuilder().command((command +: arguments).asJava)
       env.foldLeft(builder.environment())((e, entry) => {
@@ -98,7 +93,7 @@ object ChildProcess {
       log.debug(s"Environment: ${builder.environment().asScala}")
       val process = builder.start()
       log.debug(s"Started process ${process.pid()}")
-      new ChildProcess(process)
+      new ChildProcess(process, onOutputLines)
     }
   }
 }

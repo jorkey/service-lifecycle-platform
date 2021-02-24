@@ -41,29 +41,29 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
       val command = Utils.extendMacro(config.command, parameters)
       val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters))
       val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters))
-      ChildProcess.start(command, arguments, env, directory).onComplete {
+      val logWriter = config.logWriter.map { logWriterConfig =>
+        new LogWriter(new File(state.currentServiceDirectory, logWriterConfig.directory),
+          logWriterConfig.maxFileSizeMB * 1024 * 1024,
+          logWriterConfig.maxFilesCount,
+          logWriterConfig.filePrefix,
+          (message, exception) => state.error(message, exception))
+      }
+      val onOutputLines = logWriter.map { logWriter =>
+        val dateFormat = config.logWriter.get.dateFormat.map(new SimpleDateFormat(_))
+        (lines: Seq[(String, Boolean)]) => lines.foreach { case (line, nl) => {
+          val formattedLine = dateFormat match {
+            case Some(dateFormat) =>
+              s"${dateFormat.format(new Date)} ${line}"
+            case None =>
+              line
+          }
+          logWriter.writeLogLine(formattedLine)
+        }}
+      }.getOrElse((_: Seq[(String, Boolean)]) => ())
+      ChildProcess.start(command, arguments, env, directory, onOutputLines).onComplete {
         case Success(process) =>
           currentProcess = Some(process)
           lastStartTime = System.currentTimeMillis()
-          val logWriter = config.logWriter.map { logWriterConfig =>
-            val dateFormat = logWriterConfig.dateFormat.map(new SimpleDateFormat(_))
-            val logWriter = new LogWriter(new File(state.currentServiceDirectory, logWriterConfig.directory),
-              logWriterConfig.maxFileSizeMB * 1024 * 1024,
-              logWriterConfig.maxFilesCount,
-              logWriterConfig.filePrefix,
-              (message, exception) => state.error(message, exception))
-            process.handleOutput(lines => lines.foreach { case (line, nl) => {
-              val formattedLine = dateFormat match {
-                case Some(dateFormat) =>
-                  s"${dateFormat.format(new Date)} ${line}"
-                case None =>
-                  line
-              }
-              logWriter.writeLogLine(formattedLine)
-            }
-            })
-            logWriter
-          }
           for (restartConditions <- config.restartConditions) {
             new ProcessMonitor(process, restartConditions).start()
           }

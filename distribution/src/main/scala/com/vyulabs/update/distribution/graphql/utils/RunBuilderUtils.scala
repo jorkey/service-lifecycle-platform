@@ -53,9 +53,9 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   private def runLocalBuilder(taskId: TaskId, arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
-      process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments, Map.empty, directory.getBuilderDir())
-    } yield {
-      process.handleOutput(lines => { lines.foreach(line => log.info(line._1)) })
+      process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments, Map.empty, directory.getBuilderDir(),
+        lines => { lines.foreach(line => log.info(line._1)) })
+//    } yield {
 //      @volatile var logOutputFuture = Option.empty[Future[Unit]]
 //      process.handleOutput(lines => {
 //        val logLines = lines.map(line => {
@@ -75,8 +75,8 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 //            Some(taskId), config.instanceId, process.getHandle().pid().toString, builderDirectory, Seq(LogLine(new Date, "", Some("PROCESS"),
 //              s"Builder process terminated with status ${exitCode}", None)))
 //        })
-      process
-    }
+//      process
+    } yield process
     (process.map(_.onTermination().map {
       case 0 => ()
       case error => throw new IOException(s"Builder process terminated with status ${error}")

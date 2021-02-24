@@ -61,7 +61,7 @@ class TestLifecycle {
     val buildConfig = BuildConfig(None, Seq(CopyFileConfig("sourceScript.sh", "runScript.sh", None, Some(Map.empty + ("version" -> "%%version%%")))))
     val installCommands = Seq(CommandConfig("chmod", Some(Seq("+x", "runScript.sh")), None, None, None, None))
     val logWriter = LogWriterConfig("log", "test", 1, 10, None)
-    val installConfig = InstallConfig(Some(installCommands), None, Some(RunServiceConfig("/bin/sh", Some(Seq("-c", "./runScript.sh | tee service.output")),
+    val installConfig = InstallConfig(Some(installCommands), None, Some(RunServiceConfig("/bin/sh", Some(Seq("-c", "./runScript.sh")),
       None, Some(logWriter), None, None, None, None)))
     val updateConfig = UpdateConfig(Map.empty + (testServiceName -> ServiceUpdateConfig(buildConfig, Some(installConfig))))
     if (!IoUtils.writeJsonToFile(new File(testServiceSourcesDir, Common.UpdateConfigFileName), updateConfig)) {
@@ -126,9 +126,9 @@ class TestLifecycle {
       sys.error(s"Can't write ${Common.UpdaterConfigFileName}")
     }
     val process = Await.result(
-      ChildProcess.start("/bin/sh", Seq("./updater.sh", "runServices", s"services=${testServiceName}"), Map.empty, testServiceInstanceDir), FiniteDuration(15, TimeUnit.SECONDS))
+      ChildProcess.start("/bin/sh", Seq("./updater.sh", "runServices", s"services=${testServiceName}"),
+        Map.empty, testServiceInstanceDir, lines => lines.foreach(line => println(s"Updater: ${line._1}"))), FiniteDuration(15, TimeUnit.SECONDS))
     process.onTermination().map(status => println(s"Updater is terminated with status ${status}"))
-    process.handleOutput(_.foreach(line => println(s"Updater: ${line._1}")))
     Thread.sleep(100000)
   }
 
