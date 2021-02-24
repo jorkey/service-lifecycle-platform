@@ -181,7 +181,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
         }
       }
       if (!copyFile(in, out, file => !copyCommand.except.getOrElse(Set.empty).contains(in.toPath.relativize(file.toPath).toString),
-          copyCommand.settings.getOrElse(Map.empty))) {
+          copyCommand.settings.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, args)))) {
         return false
       }
     }

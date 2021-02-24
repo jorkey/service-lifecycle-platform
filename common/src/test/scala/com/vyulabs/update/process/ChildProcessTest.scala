@@ -24,6 +24,11 @@ class ChildProcessTest extends FlatSpec with Matchers {
   val script = File.createTempFile("test1", ".sh"); script.deleteOnExit()
   IoUtils.writeBytesToFile(script, "echo \"message1\"\nsleep 5\necho \"message2\"".getBytes)
 
+  it should "run process and wait termination" in {
+    val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
+    result(process.onTermination())
+  }
+
   it should "run process and read output" in {
     val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
     process.handleOutput(lines => lines.foreach { case (line, nl) =>

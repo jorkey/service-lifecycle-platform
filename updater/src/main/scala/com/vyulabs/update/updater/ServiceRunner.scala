@@ -28,76 +28,79 @@ import scala.util.{Failure, Success}
 class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], directory: File, instanceId: InstanceId,
                     profiledServiceName: ProfiledServiceName, state: ServiceStateController, faultUploader: FaultUploader)
                    (implicit log: Logger, timer: Timer, executionContext: ExecutionContext) {
-  private var process = Option.empty[ChildProcess]
-
   private val maxLogHistoryDirCapacity = 5L * 1000 * 1000 * 1000
+
+  @volatile private var currentProcess = Option.empty[ChildProcess]
   private var lastStartTime = 0L
 
-  def isStarted() : Boolean = process.isDefined
-
   def startService(): Boolean = {
-    synchronized {
-      if (isStarted()) {
-        state.error("Service process is already started")
-        false
-      } else {
-        val command = Utils.extendMacro(config.command, parameters)
-        val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters))
-        val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters))
-        ChildProcess.start(command, arguments, env, directory).onComplete {
-          case Success(process) =>
-            this.process = Some(process)
-            lastStartTime = System.currentTimeMillis()
-            val logWriter = config.logWriter.map { logWriterConfig =>
-              val dateFormat = logWriterConfig.dateFormat.map(new SimpleDateFormat(_))
-              val logWriter = new LogWriter(new File(state.currentServiceDirectory, logWriterConfig.directory),
-                logWriterConfig.maxFileSizeMB * 1024 * 1024,
-                logWriterConfig.maxFilesCount,
-                logWriterConfig.filePrefix,
-                (message, exception) => state.error(message, exception))
-              process.handleOutput(lines => lines.foreach { case (line, nl) => {
-                val formattedLine = dateFormat match {
-                  case Some(dateFormat) =>
-                    s"${dateFormat.format(new Date)} ${line}"
-                  case None =>
-                    line
-                }
-                logWriter.writeLogLine(formattedLine)
+    if (currentProcess.isDefined) {
+      state.error("Service process is already started")
+      false
+    } else {
+      val command = Utils.extendMacro(config.command, parameters)
+      val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters))
+      val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters))
+      ChildProcess.start(command, arguments, env, directory).onComplete {
+        case Success(process) =>
+          currentProcess = Some(process)
+          lastStartTime = System.currentTimeMillis()
+          val logWriter = config.logWriter.map { logWriterConfig =>
+            val dateFormat = logWriterConfig.dateFormat.map(new SimpleDateFormat(_))
+            val logWriter = new LogWriter(new File(state.currentServiceDirectory, logWriterConfig.directory),
+              logWriterConfig.maxFileSizeMB * 1024 * 1024,
+              logWriterConfig.maxFilesCount,
+              logWriterConfig.filePrefix,
+              (message, exception) => state.error(message, exception))
+            process.handleOutput(lines => lines.foreach { case (line, nl) => {
+              val formattedLine = dateFormat match {
+                case Some(dateFormat) =>
+                  s"${dateFormat.format(new Date)} ${line}"
+                case None =>
+                  line
               }
-              })
-              logWriter
+              logWriter.writeLogLine(formattedLine)
             }
-            for (restartConditions <- config.restartConditions) {
-              new ProcessMonitor(process, restartConditions).start()
-            }
-            process.onTermination().onComplete {
-              case Success(exitCode) =>
-                this.process = None
-                val logTail = logWriter.map  { logWriter =>
-                  val logTail = logWriter.getLogTail()
-                  logWriter.close()
-                  logTail
-                }.getOrElse(Queue.empty)
-                processFault(process, exitCode, logTail)
-              case Failure(ex) =>
-                this.process = None
-                log.error(s"Waiting for process termination error", ex)
-            }
-          case Failure(ex) =>
-            log.error(s"Can't start process ${command}", ex)
-        }
-        true
+            })
+            logWriter
+          }
+          for (restartConditions <- config.restartConditions) {
+            new ProcessMonitor(process, restartConditions).start()
+          }
+          process.onTermination().onComplete {
+            case result =>
+              if (currentProcess.contains(process)) {
+                result match {
+                  case Success(exitCode) =>
+                    val logTail = logWriter.map { logWriter =>
+                      val logTail = logWriter.getLogTail()
+                      logWriter.close()
+                      logTail
+                    }.getOrElse(Queue.empty)
+                    log.info(s"Process fault of service process ${process.getHandle().pid()}")
+                    processFault(exitCode, logTail)
+                  case Failure(ex) =>
+                    log.error(s"Waiting for process termination error", ex)
+                }
+                currentProcess = None
+              } else {
+                log.warn(s"Process ${process.getHandle().pid()} terminated, but current process is ${currentProcess.map(_.getHandle().pid())}")
+              }
+          }
+        case Failure(ex) =>
+          log.error(s"Can't start process ${command}", ex)
       }
+      true
     }
   }
 
   def stopService(): Boolean = {
-    process match {
+    currentProcess match {
       case Some(process) =>
         try {
           Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
         } catch {
-          case _ =>
+          case _: Exception =>
             false
         }
       case None =>
@@ -132,46 +135,42 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
     }
   }
 
-  private def processFault(stoppedProcess: ChildProcess, exitCode: Int, logTail: Queue[String]): Unit = {
-    synchronized {
-      if (process.contains(stoppedProcess)) {
-        state.failure(exitCode)
-        saveLogs(true)
-        val pattern = config.faultFilesMatch.getOrElse("core")
-        val regPattern = Utils.extendMacro(pattern, parameters).r
-        val files = directory.listFiles().filter { file =>
-          file.getName match {
-            case regPattern() => true
-            case _ => false
-          }
-        }
-        val reportFilesTmpDir = if (!files.isEmpty) {
-          val reportTmpDir = Files.createTempDirectory(s"${profiledServiceName}-fault-").toFile
-          for (file <- files) {
-            val tmpFile = new File(reportTmpDir, file.getName)
-            if (!file.renameTo(tmpFile)) log.error(s"Can't rename ${file} to ${tmpFile}")
-          }
-          Some(reportTmpDir)
-        } else {
-          None
-        }
-        val info = FaultInfo(new Date(),  instanceId,
-          new java.io.File(".").getCanonicalPath(), profiledServiceName.name, profiledServiceName.profile, state.getState(), logTail)
-        faultUploader.addFaultReport(info, reportFilesTmpDir)
-        val restartOnFault = config.restartOnFault.getOrElse(true)
-        if (restartOnFault) {
-          state.info("Try to restart service")
-          val period = System.currentTimeMillis() - lastStartTime
-          if (period < 1000) {
-            Thread.sleep(1000 - period)
-          }
-          if (!startService()) {
-            state.error("Can't restart service")
-          }
-        } else {
-          state.info(s"Service is failed")
-        }
+  private def processFault(exitCode: Int, logTail: Queue[String]): Unit = {
+    state.failure(exitCode)
+    saveLogs(true)
+    val pattern = config.faultFilesMatch.getOrElse("core")
+    val regPattern = Utils.extendMacro(pattern, parameters).r
+    val files = directory.listFiles().filter { file =>
+      file.getName match {
+        case regPattern() => true
+        case _ => false
       }
+    }
+    val reportFilesTmpDir = if (!files.isEmpty) {
+      val reportTmpDir = Files.createTempDirectory(s"${profiledServiceName}-fault-").toFile
+      for (file <- files) {
+        val tmpFile = new File(reportTmpDir, file.getName)
+        if (!file.renameTo(tmpFile)) log.error(s"Can't rename ${file} to ${tmpFile}")
+      }
+      Some(reportTmpDir)
+    } else {
+      None
+    }
+    val info = FaultInfo(new Date(),  instanceId,
+      new java.io.File(".").getCanonicalPath(), profiledServiceName.name, profiledServiceName.profile, state.getState(), logTail)
+    faultUploader.addFaultReport(info, reportFilesTmpDir)
+    val restartOnFault = config.restartOnFault.getOrElse(true)
+    if (restartOnFault) {
+      state.info("Try to restart service")
+      val period = System.currentTimeMillis() - lastStartTime
+      if (period < 1000) {
+        Thread.sleep(1000 - period)
+      }
+      if (!startService()) {
+        state.error("Can't restart service")
+      }
+    } else {
+      state.info(s"Service is failed")
     }
   }
 }

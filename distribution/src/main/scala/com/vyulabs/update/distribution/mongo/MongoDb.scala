@@ -1,6 +1,7 @@
 package com.vyulabs.update.distribution.mongo
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.mongodb.client.model.{FindOneAndUpdateOptions, IndexOptions, ReplaceOptions, UpdateOptions}
@@ -10,7 +11,6 @@ import com.mongodb.{ConnectionString, MongoClientSettings}
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
 import org.bson.{BsonDocument, Document}
-import org.slf4j.LoggerFactory
 
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
@@ -22,7 +22,7 @@ class MongoDb(connectionString: String, dbName: String, temporary: Boolean)
              (implicit executionContext: ExecutionContext) {
   implicit val system = ActorSystem(s"MongoDB_${dbName}")
   implicit val materializer = ActorMaterializer()
-  implicit val log = LoggerFactory.getLogger(this.getClass)
+  implicit val log = Logging(system, this.getClass)
 
   private val client = MongoClients.create(MongoClientSettings.builder
     .applyConnectionString(new ConnectionString(connectionString))
@@ -75,8 +75,8 @@ class MongoDb(connectionString: String, dbName: String, temporary: Boolean)
 }
 
 class MongoDbCollection[T](name: String, collection: MongoCollection[T])
-                          (implicit materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
-  implicit val log = LoggerFactory.getLogger(getClass)
+                          (implicit system: ActorSystem, materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
+  implicit val log = Logging(system, this.getClass)
 
   def getName() = name
 

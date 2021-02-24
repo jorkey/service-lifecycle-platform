@@ -2,6 +2,7 @@ package com.vyulabs.update.distribution.mongo
 
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.event.Logging
 import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
 import com.mongodb.client.model._
 import com.vyulabs.update.distribution.common.AkkaSource
@@ -10,7 +11,7 @@ import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
 import org.bson.{BsonDateTime, BsonDocument, BsonDocumentReader, BsonDocumentWrapper}
 import org.mongodb.scala.bson.BsonInt64
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
 
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
@@ -22,7 +23,7 @@ case class Sequenced[T](sequence: Long, document: T)
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]],
                                        historyExpireDays: Int = 7)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
-  implicit val log = LoggerFactory.getLogger(getClass)
+  private implicit val log = Logging(system, this.getClass)
 
   private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(BroadcastHub.sink)(Keep.both).run()
   private var publisherBuffer = Queue.empty[Sequenced[T]]

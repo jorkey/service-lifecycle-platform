@@ -1,6 +1,7 @@
 package com.vyulabs.update.distribution.mongo
 
 import akka.actor.ActorSystem
+import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
 import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
@@ -11,14 +12,13 @@ import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
-import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuration)
                          (implicit system: ActorSystem, executionContext: ExecutionContext) {
-  private implicit val log = LoggerFactory.getLogger(this.getClass)
+  private implicit val log = Logging(system, this.getClass)
 
   private implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,

@@ -15,6 +15,20 @@ class ChildProcess(process: Process)
                   (implicit executionContext: ExecutionContext, log: Logger) {
   private val processTerminateTimeoutMs = 5000
   private val exitCode = Promise[Int]
+  private val input = new BufferedReader(new InputStreamReader(process.getInputStream))
+
+  @volatile
+  private var onOutputLines = Option.empty[Seq[(String, Boolean)] => Unit]
+
+  new LinesReaderThread(input, None,
+    lines => onOutputLines.foreach(_(lines)),
+    () => {
+      val status = process.waitFor()
+      log.info(s"Process ${process.pid()} is terminated with status ${status}")
+      exitCode.trySuccess(status)
+    },
+    exception => { log.error(s"Read process output error", exception) }
+  ).start()
 
   def isAlive(): Boolean = process.isAlive
 
@@ -23,16 +37,7 @@ class ChildProcess(process: Process)
   def getHandle() = process
 
   def handleOutput(onOutputLines: Seq[(String, Boolean)] => Unit): Unit = {
-    val input = new BufferedReader(new InputStreamReader(process.getInputStream))
-    new LinesReaderThread(input, None,
-      lines => onOutputLines(lines),
-      () => {
-        val status = process.waitFor()
-        log.info(s"Process ${process.pid()} is terminated with status ${status}")
-        exitCode.trySuccess(status)
-      },
-      exception => { log.error(s"Read process output error", exception) }
-    ).start()
+    this.onOutputLines = Some(onOutputLines)
   }
 
   def terminate(): Future[Boolean] = {
