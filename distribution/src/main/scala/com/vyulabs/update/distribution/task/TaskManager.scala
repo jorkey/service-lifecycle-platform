@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.common.{IdGenerator, Timer}
 import com.vyulabs.update.common.logger.{LogBuffer, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
-import com.vyulabs.update.distribution.logger.LogStorer
+import com.vyulabs.update.distribution.logger.LogStorekeeper
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.Date
@@ -16,7 +16,7 @@ case class Task(taskId: TaskId, description: String, future: Future[Unit], cance
   val startDate: Date = new Date
 }
 
-class TaskManager(logStorer: TaskId => LogStorer)(implicit timer: Timer, executionContext: ExecutionContext) {
+class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Timer, executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(getClass)
 
   private val idGenerator = new IdGenerator()
@@ -28,7 +28,7 @@ class TaskManager(logStorer: TaskId => LogStorer)(implicit timer: Timer, executi
     val appender = new TraceAppender()
     val logger = Utils.getLogbackLogger(Task.getClass)
     logger.addAppender(appender)
-    val buffer = new LogBuffer(description, "TASK", logStorer(taskId), 1, 1000)
+    val buffer = new LogBuffer(description, "TASK", logStorekeeper(taskId), 1, 1000)
     timer.schedulePeriodically(() => buffer.flush(), FiniteDuration(1, TimeUnit.SECONDS))
     appender.addListener(buffer)
     appender.start()

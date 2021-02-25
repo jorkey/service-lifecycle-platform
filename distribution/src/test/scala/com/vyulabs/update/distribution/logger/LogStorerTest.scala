@@ -23,7 +23,7 @@ class LogStorerTest extends TestEnvironment with ScalatestRouteTest {
   appender.start()
   logger.addAppender(appender)
 
-  val storer = new LogStorer(distributionName, "service1", None, "instance1", collections.State_ServiceLogs)
+  val storer = new LogStorekeeper(distributionName, "service1", None, "instance1", collections.State_ServiceLogs)
   val buffer = new LogBuffer("Test", "PROCESS", storer, 3, 6)
 
   appender.addListener(buffer)

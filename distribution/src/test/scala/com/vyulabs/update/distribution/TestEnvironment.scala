@@ -14,7 +14,7 @@ import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
-import com.vyulabs.update.distribution.logger.LogStorer
+import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
@@ -64,7 +64,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val mongo = new MongoDb(config.mongoDb.connection, config.mongoDb.name, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS))
   val distributionDir = new DistributionDirectory(distributionDirectory)
-  val taskManager = new TaskManager(taskId => new LogStorer(distributionName, Common.DistributionServiceName, Some(taskId),
+  val taskManager = new TaskManager(taskId => new LogStorekeeper(distributionName, Common.DistributionServiceName, Some(taskId),
     instanceId, collections.State_ServiceLogs))
 
   val graphql = new Graphql()

@@ -1,14 +1,13 @@
 package com.vyulabs.update.updater
 
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.info.{ProfiledServiceName, ServiceState, UpdateError}
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
+import com.vyulabs.update.common.version.ClientDistributionVersion
+import org.slf4j.Logger
+
 import java.io.File
 import java.util.Date
-
-import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.info.UpdateError
-import com.vyulabs.update.common.info.{ProfiledServiceName, ServiceState}
-import com.vyulabs.update.common.utils.{IoUtils, Utils}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import org.slf4j.Logger
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.04.19.
@@ -16,7 +15,7 @@ import org.slf4j.Logger
   */
 class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRepository: () => Unit)(implicit log: Logger) {
   val serviceDirectory = new File(if (profiledServiceName.name == Common.UpdaterServiceName) "." else profiledServiceName.toString)
-  val currentServiceDirectory = new File(serviceDirectory, "current")
+  val currentServiceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) serviceDirectory else new File(serviceDirectory, "current")
   val faultsDirectory = new File(serviceDirectory, "faults")
   val newServiceDirectory = new File(serviceDirectory, "new")
   val logHistoryDirectory = new File(serviceDirectory, "log.history")
@@ -29,8 +28,6 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
   @volatile private var lastExitCode = Option.empty[Int]
   @volatile private var failuresCount = Option.empty[Int]
 
-  private val maxLastErrors = 25
-
   if (!serviceDirectory.exists() && !serviceDirectory.mkdir()) {
     Utils.error(s"Can't create directory ${serviceDirectory}")
   }
@@ -42,15 +39,6 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
   def getVersion() = version
 
   def getUpdateError() = updateError
-
-  def initFromState(state: ServiceState): Unit = {
-    failuresCount = state.failuresCount
-    if (profiledServiceName.name == Common.UpdaterServiceName) {
-      if (updateToVersion.isEmpty) {
-        failuresCount = Some(failuresCount.getOrElse(0) + 1)
-      }
-    }
-  }
 
   def setVersion(version: ClientDistributionVersion): Unit = synchronized {
     this.installDate = Some(new Date())

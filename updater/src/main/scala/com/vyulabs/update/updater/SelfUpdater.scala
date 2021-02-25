@@ -1,12 +1,13 @@
 package com.vyulabs.update.updater
 
-import java.io.File
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
+
+import java.io.File
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
@@ -15,6 +16,7 @@ import org.slf4j.Logger
 class SelfUpdater(state: ServiceStateController, distributionClient: SyncDistributionClient[SyncSource])
                  (implicit log: Logger) {
   private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
+  private val updaterVersion = IoUtils.readServiceVersion(Common.UpdaterServiceName, new File("."))
 
   state.serviceStarted()
 
@@ -43,7 +45,7 @@ class SelfUpdater(state: ServiceStateController, distributionClient: SyncDistrib
 
   private def getVersion(serviceName: ServiceName): Option[ClientDistributionVersion] = {
     if (serviceName == Common.UpdaterServiceName) {
-      state.getVersion()
+      updaterVersion
     } else if (serviceName == Common.ScriptsServiceName) {
       scriptsVersion
     } else {

@@ -12,7 +12,7 @@ import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
 import com.vyulabs.update.distribution.loaders.StateUploader
-import com.vyulabs.update.distribution.logger.LogStorer
+import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.LoggerFactory
@@ -49,13 +49,13 @@ object DistributionMain extends App {
 
     val collections = new DatabaseCollections(mongoDb, config.instanceState.expirationTimeout)
     val dir = new DistributionDirectory(new File("."))
-    val taskManager = new TaskManager(taskId => new LogStorer(config.name, Common.DistributionServiceName, Some(taskId),
+    val taskManager = new TaskManager(taskId => new LogStorekeeper(config.name, Common.DistributionServiceName, Some(taskId),
       config.instanceId, collections.State_ServiceLogs))
 
     Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
 
     TraceAppender.handleLogs("Distribution server", "PROCESS",
-      new LogStorer(config.name, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
+      new LogStorekeeper(config.name, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
 
     config.uploadState.getOrElse(Seq.empty).foreach { uploadConfig =>
       StateUploader(config.name, collections, dir, uploadConfig.uploadStateInterval, uploadConfig.distributionUrl).start()

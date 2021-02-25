@@ -70,6 +70,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
           process.onTermination().onComplete {
             case result =>
               if (currentProcess.contains(process)) {
+                currentProcess = None
                 result match {
                   case Success(exitCode) =>
                     val logTail = logWriter.map { logWriter =>
@@ -82,7 +83,6 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], d
                   case Failure(ex) =>
                     log.error(s"Waiting for process termination error", ex)
                 }
-                currentProcess = None
               } else {
                 log.warn(s"Process ${process.getHandle().pid()} terminated, but current process is ${currentProcess.map(_.getHandle().pid())}")
               }

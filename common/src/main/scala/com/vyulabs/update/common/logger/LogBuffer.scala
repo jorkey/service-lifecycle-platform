@@ -34,7 +34,7 @@ class LogBuffer(description: String, loggerName: String,
             s"------------------------------ Skipped ${skipped} events ------------------------------", None)
           skipped = 0
         }
-        eventsBuffer :+= LogLine(new Date(event.getTimeStamp), event.getLevel.toString, Some(event.getLoggerName), event.getMessage, None)
+        eventsBuffer :+= LogLine(new Date(event.getTimeStamp), event.getLevel.toString, Some(event.getLoggerName), event.getFormattedMessage, None)
       } else {
         skipped += 1
       }

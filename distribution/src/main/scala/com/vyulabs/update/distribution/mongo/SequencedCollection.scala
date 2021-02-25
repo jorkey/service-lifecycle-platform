@@ -113,6 +113,13 @@ class SequencedCollection[T: ClassTag](val name: String,
       } yield result
     }
 
+    def insert(collection: MongoDbCollection[BsonDocument], document: T, sequence: Long): Future[Unit] = {
+      val newDoc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
+      newDoc.append("_id", new BsonInt64(sequence))
+      newDoc.append("_time", new BsonDateTime(System.currentTimeMillis()))
+      collection.insert(newDoc).map(_ => ())
+    }
+
     def updateAndInsert(doc: Option[BsonDocument]): Future[Int] = {
       for {
         collection <- collection
@@ -145,13 +152,6 @@ class SequencedCollection[T: ClassTag](val name: String,
           }
         }
       } yield result
-    }
-
-    def insert(collection: MongoDbCollection[BsonDocument], document: T, sequence: Long): Future[Unit] = {
-      val newDoc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
-      newDoc.append("_id", new BsonInt64(sequence))
-      newDoc.append("_time", new BsonDateTime(System.currentTimeMillis()))
-      collection.insert(newDoc).map(_ => ())
     }
 
     queueFuture[Int](() => modifyInProcess, f => { modifyInProcess = f }, () => update())
