@@ -94,7 +94,11 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
       @volatile var logOutputFuture = Option.empty[Future[Unit]]
       logSource.map(line => {
         for (terminationStatus <- line.logLine.line.terminationStatus) {
-          result.success(terminationStatus)
+          if (terminationStatus) {
+            result.success()
+          } else {
+            result.failure(throw new IOException(s"Remote builder is failed"))
+          }
         }
         logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
           addServiceLogs(config.name, Common.DistributionServiceName,

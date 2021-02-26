@@ -73,7 +73,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add client version info ${versionInfo}")
     for {
-      result <- collections.Client_VersionsInfo.insert(versionInfo)
+      result <- collections.Client_VersionsInfo.insert(versionInfo).map(_ => ())
       _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
     } yield result
   }

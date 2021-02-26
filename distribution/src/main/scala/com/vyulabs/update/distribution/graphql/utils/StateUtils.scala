@@ -60,7 +60,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
         }
         val newTestedVersions = TestedDesiredVersions(clientConfig.installProfile, desiredVersions, testSignatures)
         val profileArg = Filters.eq("profileName", clientConfig.installProfile)
-        collections.State_TestedVersions.update(profileArg, _ => Some(newTestedVersions))
+        collections.State_TestedVersions.update(profileArg, _ => Some(newTestedVersions)).map(_ => ())
       }
     } yield result
   }
@@ -165,7 +165,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
 
   def addServiceFaultReportInfo(distributionName: DistributionName, report: ServiceFaultReport)(implicit log: Logger): Future[Unit] = {
     for {
-      result <- collections.State_FaultReportsInfo.insert(DistributionFaultReport(distributionName, report))
+      result <- collections.State_FaultReportsInfo.insert(DistributionFaultReport(distributionName, report)).map(_ => ())
       _ <- clearOldReports()
     } yield result
   }

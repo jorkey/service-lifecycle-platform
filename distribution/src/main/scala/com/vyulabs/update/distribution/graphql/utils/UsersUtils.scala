@@ -28,7 +28,7 @@ trait UsersUtils extends SprayJsonSupport {
     for {
       result <- {
         val document = ServerUserInfo(userName, role.toString, PasswordHash(password))
-        collections.Users_Info.insert(document)
+        collections.Users_Info.insert(document).map(_ => ())
       }
     } yield result
   }
