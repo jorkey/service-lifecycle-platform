@@ -11,10 +11,10 @@ import spray.json.DefaultJsonProtocol._
 
 import java.io.File
 
-class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
+class StateUploader(directory: File, instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
                     distributionClient: SyncDistributionClient[SyncSource])(implicit log: Logger) extends Thread { self =>
   private val services = servicesNames.foldLeft(Map.empty[ProfiledServiceName, ServiceStateController]){ (services, name) =>
-    services + (name -> new ServiceStateController(name, () => update()))
+    services + (name -> new ServiceStateController(directory, name, () => update()))
   }
 
   def getServiceStateController(profiledServiceName: ProfiledServiceName): Option[ServiceStateController] = {

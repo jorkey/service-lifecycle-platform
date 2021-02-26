@@ -68,9 +68,9 @@ lazy val tests = project
   .in(file("tests"))
   .dependsOn(
     common % "compile->compile;test->test",
-    distribution,
-    builder,
-    updater
+    distribution % "compile->compile;test->test",
+    builder % "compile->compile;test->test",
+    updater % "compile->compile;test->test"
   )
 
 lazy val gitLib = project

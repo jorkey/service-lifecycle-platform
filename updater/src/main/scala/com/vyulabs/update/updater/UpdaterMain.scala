@@ -4,12 +4,14 @@ import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.info.{ClientDesiredVersions, ProfiledServiceName}
+import com.vyulabs.update.common.logger.PrefixedLogger
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.config.UpdaterConfig
 import com.vyulabs.update.updater.uploaders.StateUploader
 import org.slf4j.LoggerFactory
 
+import java.io.File
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
@@ -54,7 +56,7 @@ object UpdaterMain extends App { self =>
       val distributionClient = new SyncDistributionClient(
         new DistributionClient(new HttpClientImpl(config.clientDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
-      val instanceState = new StateUploader(config.instanceId, servicesInstanceNames + updaterServiceName, distributionClient)
+      val instanceState = new StateUploader(new File("."), config.instanceId, servicesInstanceNames + updaterServiceName, distributionClient)
 
       instanceState.start()
 
@@ -62,8 +64,10 @@ object UpdaterMain extends App { self =>
         val updaterServiceController = instanceState.getServiceStateController(updaterServiceName).get
         val selfUpdater = new SelfUpdater(updaterServiceController, distributionClient)
 
-        val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ProfiledServiceName, ServiceUpdater])((updaters, service) =>
-          updaters + (service -> new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, distributionClient)))
+        val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ProfiledServiceName, ServiceUpdater])((updaters, service) => {
+          implicit val serviceLogger = new PrefixedLogger(s"Service ${service.toString}: ", log)
+          updaters + (service -> new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, distributionClient))
+        })
 
         var lastUpdateTime = 0L
 
@@ -172,7 +176,7 @@ object UpdaterMain extends App { self =>
                   }
                 }
               case None =>
-                updaterServiceController.error("Can't get desired versions")
+                log.error("Can't get desired versions")
             }
             lastUpdateTime = System.currentTimeMillis()
           }

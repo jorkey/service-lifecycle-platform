@@ -15,13 +15,17 @@ import java.nio.file.Files
 import java.util.Date
 import scala.collection.immutable.Queue
 
-
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
   * Copyright FanDate, Inc.
   */
-class FaultUploader(archiveDir: File, distributionClient: SyncDistributionClient[SyncSource])
-                   (implicit log: Logger) extends Thread { self =>
+trait FaultUploader {
+  def addFaultReport(info: FaultInfo, reportFilesTmpDir: Option[File]): Unit
+  def close(): Unit
+}
+
+class FaultUploaderImpl(archiveDir: File, distributionClient: SyncDistributionClient[SyncSource])
+                        (implicit log: Logger) extends Thread with FaultUploader { self =>
   private case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 
   private val idGenerator = new IdGenerator()

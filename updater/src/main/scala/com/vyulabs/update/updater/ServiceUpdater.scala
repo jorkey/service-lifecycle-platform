@@ -8,7 +8,7 @@ import com.vyulabs.update.common.info.{ProfiledServiceName, UpdateError}
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
-import com.vyulabs.update.updater.uploaders.FaultUploader
+import com.vyulabs.update.updater.uploaders.FaultUploaderImpl
 import org.slf4j.Logger
 
 import scala.concurrent.ExecutionContext
@@ -21,7 +21,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
                      state: ServiceStateController, distributionClient: SyncDistributionClient[SyncSource])
                     (implicit timer: Timer, executionContext: ExecutionContext, log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
-  private val faultUploader = new FaultUploader(state.faultsDirectory, distributionClient)
+  private val faultUploader = new FaultUploaderImpl(state.faultsDirectory, distributionClient)
 
   faultUploader.start()
 
@@ -38,23 +38,23 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
   def needUpdate(desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
     desiredVersion match {
       case Some(newVersion) if (state.getVersion.isEmpty) =>
-        state.info(s"Service is not installed")
+        log.info(s"Service is not installed")
         Some(newVersion)
       case Some(newVersion) if (!state.getVersion.contains(newVersion)) =>
-        state.info(s"Is obsolete. Current version ${state.getVersion()} desired version ${newVersion}")
+        log.info(s"Is obsolete. Current version ${state.getVersion()} desired version ${newVersion}")
         Some(newVersion)
       case Some(_) =>
-        state.info(s"Up to date")
+        log.info(s"Up to date")
         None
       case None =>
-        state.error(s"No desired version for service")
+        log.error(s"No desired version for service")
         None
     }
   }
 
   def beginInstall(newVersion: ClientDistributionVersion): Boolean = {
     try {
-      state.info("Begin install")
+      log.info("Begin install")
 
       if (!state.serviceDirectory.exists() && !state.serviceDirectory.mkdir()) {
         state.updateError(true, s"Can't make directory ${state.serviceDirectory}")
@@ -63,7 +63,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
 
       state.beginUpdateToVersion(newVersion)
 
-      state.info(s"Download version ${newVersion}")
+      log.info(s"Download version ${newVersion}")
       if (state.newServiceDirectory.exists() && !IoUtils.deleteFileRecursively(state.newServiceDirectory)) {
         state.updateError(true, s"Can't remove directory ${state.newServiceDirectory}")
         return false
@@ -77,7 +77,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
         return false
       }
 
-      state.info(s"Install service")
+      log.info(s"Install service")
       var args = Map.empty[String, String]
       args += ("profile" -> profiledServiceName.profile)
       args += ("version" -> newVersion.original().toString)
@@ -98,22 +98,22 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
       true
     } catch {
       case e: Exception =>
-        state.error(s"Install exception", e)
+        log.error(s"Install exception", e)
         false
     }
   }
 
   def finishInstall(newVersion: ClientDistributionVersion): Boolean = {
     try {
-      state.info("Finish install")
+      log.info("Finish install")
 
       if (state.currentServiceDirectory.exists()) {
         for (serviceRunner <- serviceRunner) {
-          state.info(s"Stop old version ${state.getVersion()}")
+          log.info(s"Stop old version ${state.getVersion()}")
           if (serviceRunner.stopService()) {
             state.serviceStopped()
           } else {
-            state.error(s"Can't stop service")
+            log.error(s"Can't stop service")
           }
           serviceRunner.saveLogs(false)
           this.serviceRunner = None
@@ -137,7 +137,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
         return false
       }
 
-      state.info(s"Post install service")
+      log.info(s"Post install service")
       var args = Map.empty[String, String]
       args += ("profile" -> profiledServiceName.profile)
       args += ("version" -> newVersion.original().toString)
@@ -157,7 +157,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
       true
     } catch {
       case e: Exception =>
-        state.error(s"Install exception", e)
+        log.error(s"Install exception", e)
         false
     }
   }
@@ -170,26 +170,25 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
     try {
       if (serviceRunner.isEmpty) {
         val newVersion = state.getVersion().getOrElse {
-          state.error("Can't start service because it is not installed")
+          log.error("Can't start service because it is not installed")
           return false
         }
 
         val installConfig = InstallConfig.read(state.currentServiceDirectory).getOrElse {
-          state.error(s"No install config in the build directory")
+          log.error(s"No install config in the build directory")
           return false
         }
 
         for (runService <- installConfig.runService) {
-          state.info(s"Start service of version ${newVersion}")
+          log.info(s"Start service of version ${newVersion}")
 
           var parameters = Map.empty[String, String]
           parameters += ("profile" -> profiledServiceName.profile)
           parameters += ("version" -> newVersion.original().toString)
 
-          val runner = new ServiceRunner(runService, parameters, state.currentServiceDirectory, instanceId,
-            profiledServiceName, state, faultUploader)
+          val runner = new ServiceRunner(runService, parameters, instanceId, profiledServiceName, state, faultUploader)
           if (!runner.startService()) {
-            state.error(s"Can't start service")
+            log.error(s"Can't start service")
             return false
           }
           serviceRunner = Some(runner)
@@ -197,13 +196,13 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
 
         state.serviceStarted()
       } else {
-        state.error(s"Service is already started")
+        log.error(s"Service is already started")
       }
 
       true
     } catch {
       case e: Exception =>
-        state.error(s"Execute exception", e)
+        log.error(s"Execute exception", e)
         false
     }
   }

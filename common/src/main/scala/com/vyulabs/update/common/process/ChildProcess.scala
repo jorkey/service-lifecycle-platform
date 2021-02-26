@@ -92,7 +92,7 @@ object ChildProcess {
       log.info(s"Start command ${command} with arguments ${arguments} in directory ${directory.getAbsolutePath}")
       log.debug(s"Environment: ${builder.environment().asScala}")
       val process = builder.start()
-      log.debug(s"Started process ${process.pid()}")
+      log.info(s"Started process ${process.pid()}")
       new ChildProcess(process, onOutputLines)
     }
   }

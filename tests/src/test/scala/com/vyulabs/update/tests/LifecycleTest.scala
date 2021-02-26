@@ -1,10 +1,11 @@
 package com.vyulabs.update.tests
 
 import com.vyulabs.update.builder.DistributionBuilder
+import com.vyulabs.update.common.config.{BuildConfig, CommandConfig, CopyFileConfig, InstallConfig, LogUploaderConfig, LogWriterConfig, LogWriterInit, RunServiceConfig, ServiceUpdateConfig, UpdateConfig}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.TaskId
-import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
@@ -20,11 +21,14 @@ import java.io.File
 import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.FiniteDuration
 
-class TestLifecycle {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
+class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+  behavior of "Update lifecycle"
+
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   val distributionName = "test-distribution"
   val distributionDir = Files.createTempDirectory("distribution").toFile
@@ -36,7 +40,7 @@ class TestLifecycle {
   val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
-  def run()(implicit executionContext: ExecutionContext): Unit = {
+  it should "provide simple lifecycle" in {
     println()
     println("====================================== Setup and start distribution server")
     println()
@@ -88,7 +92,7 @@ class TestLifecycle {
     println(s"====================================== Setup and start updater with test service in directory ${testServiceInstanceDir}")
     println()
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
-        !IoUtils.copyFile(new File("./scripts/.update.sh"), new File(testServiceInstanceDir, ".update.sh"))) {
+      !IoUtils.copyFile(new File("./scripts/.update.sh"), new File(testServiceInstanceDir, ".update.sh"))) {
       sys.error("Copying of updater scripts error")
     }
     val updaterConfig = UpdaterConfig("Test", serviceDistributionUrl)
@@ -142,10 +146,10 @@ class TestLifecycle {
     println("====================================== Set client desired versions")
     println()
     if (!distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(Seq(
-      ClientDesiredVersion(Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(version))),
-      ClientDesiredVersion(Common.UpdaterServiceName, ClientDistributionVersion(distributionName, ClientVersion(version))),
-      ClientDesiredVersion(Common.ScriptsServiceName, ClientDistributionVersion(distributionName, ClientVersion(version))),
-      ClientDesiredVersion(Common.BuilderServiceName, ClientDistributionVersion(distributionName, ClientVersion(version))),
+      ClientDesiredVersion(Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
+      ClientDesiredVersion(Common.UpdaterServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
+      ClientDesiredVersion(Common.ScriptsServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
+      ClientDesiredVersion(Common.BuilderServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
       ClientDesiredVersion(testServiceName, ClientDistributionVersion(distributionName, ClientVersion(version)))))).getOrElse(false)) {
       log.error("Set client desired versions error")
       return false

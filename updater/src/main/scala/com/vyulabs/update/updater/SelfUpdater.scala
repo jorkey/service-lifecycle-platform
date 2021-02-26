@@ -29,7 +29,7 @@ class SelfUpdater(state: ServiceStateController, distributionClient: SyncDistrib
   }
 
   def beginServiceUpdate(serviceName: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
-    state.info(s"Service ${serviceName} is obsolete. Own version ${getVersion(serviceName)} desired version ${toVersion}")
+    log.info(s"Service ${serviceName} is obsolete. Own version ${getVersion(serviceName)} desired version ${toVersion}")
     state.beginUpdateToVersion(toVersion)
     log.info(s"Downloading ${serviceName} of version ${toVersion}")
     if (!distributionClient.downloadClientVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {

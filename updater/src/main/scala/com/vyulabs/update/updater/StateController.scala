@@ -13,12 +13,19 @@ import java.util.Date
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRepository: () => Unit)(implicit log: Logger) {
-  val serviceDirectory = new File(if (profiledServiceName.name == Common.UpdaterServiceName) "." else profiledServiceName.toString)
+class ServiceStateController(directory: File, profiledServiceName: ProfiledServiceName, updateRepository: () => Unit)
+                            (implicit log: Logger) {
+  val serviceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) directory else new File(directory, profiledServiceName.toString)
   val currentServiceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) serviceDirectory else new File(serviceDirectory, "current")
   val faultsDirectory = new File(serviceDirectory, "faults")
   val newServiceDirectory = new File(serviceDirectory, "new")
   val logHistoryDirectory = new File(serviceDirectory, "log.history")
+
+  serviceDirectory.mkdirs()
+  currentServiceDirectory.mkdir()
+  faultsDirectory.mkdir()
+  newServiceDirectory.mkdir()
+  logHistoryDirectory.mkdir()
 
   @volatile private var installDate = Option.empty[Date]
   @volatile private var startDate = Option.empty[Date]
@@ -44,11 +51,11 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
     this.installDate = Some(new Date())
     this.version = Some(version)
     if (updateToVersion.isDefined) {
-      info(s"Updated to version ${version}")
+      log.info(s"Updated to version ${version}")
       updateToVersion = None
       updateError = None
     } else {
-      info(s"Installed version ${version}")
+      log.info(s"Installed version ${version}")
     }
     updateRepository()
   }
@@ -72,32 +79,13 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
   def beginUpdateToVersion(serviceVersion: ClientDistributionVersion): Unit = synchronized {
     this.updateToVersion = Some(serviceVersion)
     this.updateError = None
-    info(s"Begin update to version ${serviceVersion}")
-    updateRepository()
-  }
-
-  def beginUpdateScriptsToVersion(serviceVersion: ClientDistributionVersion): Unit = synchronized {
-    info(s"Begin update scripts to version ${serviceVersion}")
+    log.info(s"Begin update to version ${serviceVersion}")
     updateRepository()
   }
 
   def updateError(critical: Boolean, msg: String): Unit = synchronized {
     this.updateError = Some(UpdateError(critical, msg))
-    error(s"Update ${if (critical) "fatal " else ""}error: ${msg}")
-    updateRepository()
-  }
-
-  def info(message: String): Unit = {
-    log.info(s"Service ${profiledServiceName}: ${message}")
-  }
-
-  def error(message: String): Unit = {
-    log.error(s"Service ${profiledServiceName}: ${message}")
-    updateRepository()
-  }
-
-  def error(message: String, exception: Throwable): Unit = {
-    log.error(s"Service ${profiledServiceName}: ${message}", exception)
+    log.error(s"Update ${if (critical) "fatal " else ""}error: ${msg}")
     updateRepository()
   }
 
