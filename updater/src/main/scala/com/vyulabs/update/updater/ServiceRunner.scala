@@ -32,13 +32,12 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
   private val maxLogHistoryDirCapacity = 5L * 1000 * 1000 * 1000
 
   private var currentProcess = Option.empty[ChildProcess]
-  private var stopped = false
+  private var stopping = false
   private var lastStartTime = 0L
 
   def startService(): Boolean = {
     synchronized {
       log.info("Start service")
-      stopped = false
       if (currentProcess.isDefined) {
         log.error("Service process is already started")
         false
@@ -83,22 +82,18 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         process.onTermination().onComplete {
           case result =>
             synchronized {
-              if (currentProcess.contains(process)) {
-                currentProcess = None
-                result match {
-                  case Success(exitCode) =>
-                    val logTail = logWriter.map { logWriter =>
-                      val logTail = logWriter.getLogTail()
-                      logWriter.close()
-                      logTail
-                    }.getOrElse(Queue.empty)
-                    log.info(s"Process fault of service process ${process.getHandle().pid()}")
-                    processFault(exitCode, logTail)
-                  case Failure(ex) =>
-                    log.error(s"Waiting for process termination error", ex)
-                }
-              } else {
-                log.warn(s"Process ${process.getHandle().pid()} terminated, but current process is ${currentProcess.map(_.getHandle().pid())}")
+              currentProcess = None
+              result match {
+                case Success(exitCode) =>
+                  val logTail = logWriter.map { logWriter =>
+                    val logTail = logWriter.getLogTail()
+                    logWriter.close()
+                    logTail
+                  }.getOrElse(Queue.empty)
+                  log.info(s"Process fault of service process ${process.getHandle().pid()}")
+                  processFault(exitCode, logTail)
+                case Failure(ex) =>
+                  log.error(s"Waiting for process termination error", ex)
               }
             }
         }
@@ -110,19 +105,31 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
   def stopService(): Boolean = {
     synchronized {
       log.info("Stop service")
-      stopped = true
-      val result = currentProcess match {
-        case Some(process) =>
-          try {
-            Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
-          } catch {
-            case _: Exception =>
-              false
-          }
-        case None =>
-          true
+      stopping = true
+      try {
+        val result = currentProcess match {
+          case Some(process) =>
+            try {
+              val result = Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
+              currentProcess = None
+              result
+            } catch {
+              case _: Exception =>
+                false
+            }
+          case None =>
+            true
+        }
+        result
+      } finally {
+        stopping = false
       }
-      result
+    }
+  }
+
+  def isServiceRunning(): Boolean = {
+    synchronized {
+      currentProcess.isDefined
     }
   }
 
@@ -179,7 +186,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         new java.io.File(".").getCanonicalPath(), profiledServiceName.name, profiledServiceName.profile, state.getState(), logTail)
       faultUploader.addFaultReport(info, reportFilesTmpDir)
       val restartOnFault = config.restartOnFault.getOrElse(true)
-      if (restartOnFault && !stopped) {
+      if (restartOnFault && !stopping) {
         log.info("Try to restart service")
         val period = System.currentTimeMillis() - lastStartTime
         if (period < 1000) {

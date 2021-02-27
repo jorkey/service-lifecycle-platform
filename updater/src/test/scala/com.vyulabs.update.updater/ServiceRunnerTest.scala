@@ -23,18 +23,44 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   val serviceName = ProfiledServiceName("test-service")
 
-  val faultUploader = new FaultUploader {
+  val faultUploaderStub = new FaultUploader {
     override def addFaultReport(info: FaultInfo, reportFilesTmpDir: Option[File]): Unit = {}
     override def close(): Unit = {}
   }
 
   it should "start/stop service" in {
+    val (stateController, serviceRunner) = makeServiceRunner("echo \"Script is executing\"\nsleep 10\n")
+
+    serviceRunner.startService()
+    assert(serviceRunner.isServiceRunning())
+
+    assertResult(None)(stateController.getState().failuresCount)
+
+    serviceRunner.stopService()
+    assert(!serviceRunner.isServiceRunning())
+  }
+
+  it should "save logs of failed service and restart it" in {
+    val (stateController, serviceRunner) = makeServiceRunner("echo \"Script is executing\"")
+
+    serviceRunner.startService()
+    assert(serviceRunner.isServiceRunning())
+
+    Thread.sleep(1000)
+
+    assert(stateController.getState().failuresCount.getOrElse(0) > 0)
+    assert(stateController.logHistoryDirectory.list().size > 0)
+
+    serviceRunner.stopService()
+    assert(!serviceRunner.isServiceRunning())
+  }
+
+  def makeServiceRunner(scriptContent: String): (ServiceStateController, ServiceRunner) = {
     val directory = Files.createTempDirectory("test").toFile
     val stateController = new ServiceStateController(directory, serviceName, () => ())
     stateController.setVersion(ClientDistributionVersion(DeveloperDistributionVersion("test-distribution", DeveloperVersion.initialVersion)))
 
     val scriptFile = new File(stateController.currentServiceDirectory, "script.sh")
-    val scriptContent = "echo \"Script is executing\""
     if (!IoUtils.writeBytesToFile(scriptFile, scriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }
@@ -44,17 +70,12 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     val logWriter = LogWriterConfig("log", "test", 1, 10, None)
     val logUploader = LogUploaderConfig(LogWriterInit("test", 1, 10))
-    val runServiceConfig = RunServiceConfig("/bin/sh", Some(Seq("-c", "./script.sh")), None, Some(logWriter), Some(logUploader), None, None, None)
+    val runServiceConfig = RunServiceConfig("/bin/sh", Some(Seq("-c", "./script.sh")),
+      None, Some(logWriter), Some(logUploader), Some("script.sh"), None, None)
 
     implicit val serviceLogger = new PrefixedLogger(s"Service ${serviceName.toString}: ", log)
-    val serviceRunner = new ServiceRunner(runServiceConfig, Map.empty, "none", serviceName, stateController, faultUploader)
+    val serviceRunner = new ServiceRunner(runServiceConfig, Map.empty, "none", serviceName, stateController, faultUploaderStub)
 
-    serviceRunner.startService()
-
-    Thread.sleep(5000)
-
-    serviceRunner.stopService()
-
-    Thread.sleep(10000)
+    (stateController, serviceRunner)
   }
 }
