@@ -31,7 +31,7 @@ class ChildProcessTest extends FlatSpec with Matchers {
 
   it should "run process and read output" in {
     val process = result(ChildProcess.start("/bin/sh", Seq(script.toString),
-      onOutputLines = lines => lines.foreach { case (line, nl) => println(line) }))
+      onOutput = lines => lines.foreach { case (line, nl) => println(line) }))
     result(process.onTermination())
   }
 

@@ -3,26 +3,29 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.InstallConfig
-import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{ProfiledServiceName, UpdateError}
+import com.vyulabs.update.common.logger.LogUploader
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.uploaders.FaultUploaderImpl
 import org.slf4j.Logger
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
 class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServiceName,
-                     state: ServiceStateController, distributionClient: SyncDistributionClient[SyncSource])
+                     state: ServiceStateController, distributionClient: DistributionClient[SyncSource])
                     (implicit timer: Timer, executionContext: ExecutionContext, log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
-  private val faultUploader = new FaultUploaderImpl(state.faultsDirectory, distributionClient)
 
+  private val faultUploader = new FaultUploaderImpl(state.faultsDirectory, distributionClient)
   faultUploader.start()
 
   def close(): Unit = {
@@ -53,6 +56,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
   }
 
   def beginInstall(newVersion: ClientDistributionVersion): Boolean = {
+    val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
     try {
       log.info("Begin install")
 
@@ -72,7 +76,8 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
         state.updateError(true, s"Can't make directory ${state.newServiceDirectory}")
         return false
       }
-      if (!ZipUtils.receiveAndUnzip(file => distributionClient.downloadClientVersionImage(profiledServiceName.name, newVersion, file), state.newServiceDirectory)) {
+      if (!ZipUtils.receiveAndUnzip(file => syncDistributionClient.downloadClientVersionImage(
+          profiledServiceName.name, newVersion, file), state.newServiceDirectory)) {
         state.updateError(false, s"Can't download ${profiledServiceName.name} version ${newVersion}")
         return false
       }
@@ -186,7 +191,10 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
           parameters += ("profile" -> profiledServiceName.profile)
           parameters += ("version" -> newVersion.original().toString)
 
-          val runner = new ServiceRunner(runService, parameters, instanceId, profiledServiceName, state, faultUploader)
+          val logUploader = if (runService.uploadLogs.getOrElse(false))
+            Some(new LogUploader(profiledServiceName.name, None, instanceId, distributionClient)) else None
+
+          val runner = new ServiceRunner(runService, parameters, instanceId, profiledServiceName, state, logUploader, faultUploader)
           if (!runner.startService()) {
             log.error(s"Can't start service")
             return false

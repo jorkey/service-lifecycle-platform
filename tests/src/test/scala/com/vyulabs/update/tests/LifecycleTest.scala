@@ -1,7 +1,7 @@
 package com.vyulabs.update.tests
 
-import com.vyulabs.update.builder.DistributionBuilder
-import com.vyulabs.update.common.config.{BuildConfig, CommandConfig, CopyFileConfig, InstallConfig, LogUploaderConfig, LogWriterConfig, LogWriterInit, RunServiceConfig, ServiceUpdateConfig, UpdateConfig}
+import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
+import com.vyulabs.update.common.config.{BuildConfig, CommandConfig, CopyFileConfig, InstallConfig, LogWriterConfig, RunServiceConfig, ServiceUpdateConfig, UpdateConfig}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
 import com.vyulabs.update.common.common.Common
@@ -40,12 +40,14 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
+  val distributionBuilder = new DistributionBuilder("None", false,
+    new DistributionDirectory(distributionDir), distributionName, "Test distribution server", "test", true, 8000)
+  val clientBuilder = new ClientBuilder(builderDir, distributionName)
+
   it should "provide simple lifecycle" in {
     println()
     println("====================================== Setup and start distribution server")
     println()
-    val distributionBuilder = new DistributionBuilder("None", false,
-      new DistributionDirectory(distributionDir), distributionName, "Test distribution server", "test", true, 8000)
     if (!distributionBuilder.buildDistributionFromSources("ak")) {
       sys.error("Can't build distribution server")
     }
@@ -64,10 +66,9 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     println()
     val buildConfig = BuildConfig(None, Seq(CopyFileConfig("sourceScript.sh", "runScript.sh", None, Some(Map.empty + ("version" -> "%%version%%")))))
     val installCommands = Seq(CommandConfig("chmod", Some(Seq("+x", "runScript.sh")), None, None, None, None))
-    val logWriter = LogWriterConfig("log", "test", 1, 10, None)
-    val logUploader = LogUploaderConfig(LogWriterInit("test", 1, 10))
+    val logWriter = LogWriterConfig("log", "test", 1, 10)
     val installConfig = InstallConfig(Some(installCommands), None, Some(RunServiceConfig("/bin/sh", Some(Seq("-c", "./runScript.sh")),
-      None, Some(logWriter), Some(logUploader), None, None, None)))
+      None, Some(logWriter), Some(false), None, None, None)))
     val updateConfig = UpdateConfig(Map.empty + (testServiceName -> ServiceUpdateConfig(buildConfig, Some(installConfig))))
     if (!IoUtils.writeJsonToFile(new File(testServiceSourcesDir, Common.UpdateConfigFileName), updateConfig)) {
       sys.error(s"Can't write update config file")
@@ -115,6 +116,22 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     println()
     println(s"====================================== Make fixed test service version")
     buildTestServiceVersions(distributionClient, DeveloperVersion.initialVersion.next())
+
+    println()
+    println(s"====================================== Upload new client version of distribution")
+    println()
+    if (!clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName,
+        ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion, Some(1))), "ak")) {
+      sys.error(s"Can't write script")
+    }
+//    if (!clientBuilder.setDesiredVersions(distributionClient, Seq(
+//        ClientDesiredVersion(Common.ScriptsServiceName, initialClientVersion),
+//        ClientDesiredVersion(Common.BuilderServiceName, initialClientVersion),
+//        ClientDesiredVersion(Common.UpdaterServiceName, initialClientVersion),
+//        ClientDesiredVersion(Common.DistributionServiceName, initialClientVersion)))) {
+//        log.error("Set client desired versions error")
+//        return false
+//    }
 
     Thread.sleep(100000)
   }

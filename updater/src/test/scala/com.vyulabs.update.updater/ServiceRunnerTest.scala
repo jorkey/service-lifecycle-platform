@@ -1,9 +1,9 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.ThreadTimer
-import com.vyulabs.update.common.config.{LogUploaderConfig, LogWriterConfig, LogWriterInit, RunServiceConfig}
-import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName}
-import com.vyulabs.update.common.logger.PrefixedLogger
+import com.vyulabs.update.common.config.{LogWriterConfig, RunServiceConfig}
+import com.vyulabs.update.common.info.{FaultInfo, LogLine, ProfiledServiceName}
+import com.vyulabs.update.common.logger.{LogReceiver, PrefixedLogger}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.updater.uploaders.FaultUploader
@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory
 
 import java.io.File
 import java.nio.file.Files
-import scala.concurrent.ExecutionContext
+import java.text.SimpleDateFormat
+import java.util.TimeZone
+import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
@@ -29,7 +31,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "start/stop service" in {
-    val (stateController, serviceRunner) = makeServiceRunner("echo \"Script is executing\"\nsleep 10\n")
+    val (stateController, serviceRunner) = makeServiceRunner("echo \"Script is executing\"\nsleep 10\n", None)
 
     serviceRunner.startService()
     assert(serviceRunner.isServiceRunning())
@@ -40,8 +42,55 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     assert(!serviceRunner.isServiceRunning())
   }
 
+  it should "save logs of service" in {
+    val (stateController, serviceRunner) = makeServiceRunner("echo \"2021-03-01 16:19:36.038 DEBUG module1 Script is executing\"\nsleep 10\n", None)
+
+    serviceRunner.startService()
+    assert(serviceRunner.isServiceRunning())
+
+    Thread.sleep(1000)
+
+    val logContent = new String(IoUtils.readFileToBytes(new File(stateController.logDirectory, "test.log")).getOrElse {
+      sys.error("Can't read log file")
+    }, "utf8")
+    assertResult("2021-03-01 16:19:36.038 DEBUG module1 Script is executing\n")(logContent)
+
+    serviceRunner.stopService()
+    assert(!serviceRunner.isServiceRunning())
+  }
+
+  it should "upload logs of service" in {
+    var logLines = Seq.empty[LogLine]
+
+    val logUploaderStub = new LogReceiver {
+      override def receiveLogLines(lines: Seq[LogLine]): Future[Unit] = {
+        logLines ++= lines
+        Future()
+      }
+    }
+
+    val (stateController, serviceRunner) = makeServiceRunner("echo \"2021-03-01 16:19:36.038 DEBUG module1 Script is executing\"\n" +
+      "echo \"Unformatted line\"\nsleep 10\n", Some(logUploaderStub))
+
+    serviceRunner.startService()
+    assert(serviceRunner.isServiceRunning())
+
+    Thread.sleep(1000)
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+    dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
+    val logDate = dateFormat.parse("2021-03-01 16:19:36.038")
+
+    assertResult(Seq(LogLine(logDate, "DEBUG", "module1", "Script is executing", None)))(
+      logLines.filter(_.unit == "module1"))
+    assertResult(Seq("`Service test-service` started", "Unformatted line"))(
+      logLines.filter(_.unit == "SERVICE").map(_.message))
+
+    serviceRunner.stopService()
+    assert(!serviceRunner.isServiceRunning())
+  }
+
   it should "save logs of failed service and restart it" in {
-    val (stateController, serviceRunner) = makeServiceRunner("echo \"Script is executing\"")
+    val (stateController, serviceRunner) = makeServiceRunner("echo \"Script is executing\"", None)
 
     serviceRunner.startService()
     assert(serviceRunner.isServiceRunning())
@@ -55,7 +104,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     assert(!serviceRunner.isServiceRunning())
   }
 
-  def makeServiceRunner(scriptContent: String): (ServiceStateController, ServiceRunner) = {
+  def makeServiceRunner(scriptContent: String, logUploader: Option[LogReceiver]): (ServiceStateController, ServiceRunner) = {
     val directory = Files.createTempDirectory("test").toFile
     val stateController = new ServiceStateController(directory, serviceName, () => ())
     stateController.setVersion(ClientDistributionVersion(DeveloperDistributionVersion("test-distribution", DeveloperVersion.initialVersion)))
@@ -68,13 +117,12 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       sys.error(s"Can't set execute permissions to script file")
     }
 
-    val logWriter = LogWriterConfig("log", "test", 1, 10, None)
-    val logUploader = LogUploaderConfig(LogWriterInit("test", 1, 10))
+    val logWriter = LogWriterConfig("log", "test", 1, 10)
     val runServiceConfig = RunServiceConfig("/bin/sh", Some(Seq("-c", "./script.sh")),
-      None, Some(logWriter), Some(logUploader), Some("script.sh"), None, None)
+      None, Some(logWriter), Some(logUploader.isDefined), Some("script.sh"), None, None)
 
     implicit val serviceLogger = new PrefixedLogger(s"Service ${serviceName.toString}: ", log)
-    val serviceRunner = new ServiceRunner(runServiceConfig, Map.empty, "none", serviceName, stateController, faultUploaderStub)
+    val serviceRunner = new ServiceRunner(runServiceConfig, Map.empty, "none", serviceName, stateController, logUploader, faultUploaderStub)
 
     (stateController, serviceRunner)
   }

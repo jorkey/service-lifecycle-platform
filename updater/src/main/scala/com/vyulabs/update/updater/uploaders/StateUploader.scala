@@ -2,17 +2,22 @@ package com.vyulabs.update.updater.uploaders
 
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.InstanceId
-import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.{serviceMutations}
-import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.serviceMutations
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{DirectoryServiceState, InstanceServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
 import java.io.File
+import java.util.concurrent.TimeUnit
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 class StateUploader(directory: File, instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
-                    distributionClient: SyncDistributionClient[SyncSource])(implicit log: Logger) extends Thread { self =>
+                    distributionClient: DistributionClient[SyncSource])(implicit executionContext: ExecutionContext, log: Logger) extends Thread { self =>
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+
   private val services = servicesNames.foldLeft(Map.empty[ProfiledServiceName, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(directory, name, () => update()))
   }
@@ -52,6 +57,6 @@ class StateUploader(directory: File, instanceId: InstanceId, servicesNames: Set[
     val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
       state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
     val instanceServiceStates = serviceStates.map(state => InstanceServiceState(instanceId, state.serviceName, state.directory, state.state))
-    distributionClient.graphqlRequest(serviceMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
+    syncDistributionClient.graphqlRequest(serviceMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
   }
 }

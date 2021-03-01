@@ -4,15 +4,15 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import com.vyulabs.update.common.common.Timer
+import com.vyulabs.update.common.info.LogLine
 import org.slf4j.LoggerFactory
 
-import java.util.concurrent.TimeUnit
+import java.util.Date
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
 
 trait LogListener {
   def start(): Unit
-  def append(event: ILoggingEvent): Unit
+  def append(line: LogLine): Unit
   def stop(status: Option[Boolean], error: Option[String]): Unit
 }
 
@@ -31,7 +31,7 @@ class TraceAppender extends AppenderBase[ILoggingEvent] {
   }
 
   override def append(event: ILoggingEvent): Unit = {
-    listeners.foreach(_.append(event))
+    listeners.foreach(_.append(LogLine(new Date(event.getTimeStamp), event.getLevel.toString, event.getLoggerName, event.getFormattedMessage, None)))
   }
 
   def setTerminationStatus(status: Boolean, error: Option[String]): Unit = {
@@ -46,11 +46,11 @@ class TraceAppender extends AppenderBase[ILoggingEvent] {
 }
 
 object TraceAppender {
-  def handleLogs(description: String, loggerName: String, logReceiver: LogReceiver)(implicit timer: Timer, executionContext: ExecutionContext): Unit = {
+  def handleLogs(description: String, unitName: String, logReceiver: LogReceiver)(implicit timer: Timer, executionContext: ExecutionContext): Unit = {
     val logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
     val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
-    val buffer = new LogBuffer(description, loggerName, logReceiver, 25, 1000)
+    val buffer = new LogBuffer(description, unitName, logReceiver, 25, 1000)
     appender.addListener(buffer)
-    timer.schedulePeriodically(() => buffer.flush(), FiniteDuration(1, TimeUnit.SECONDS))
+    buffer.start()
   }
 }

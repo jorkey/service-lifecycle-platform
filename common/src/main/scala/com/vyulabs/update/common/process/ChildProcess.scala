@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.04.19.
   * Copyright FanDate, Inc.
   */
-class ChildProcess(process: Process, onOutputLines: Seq[(String, Boolean)] => Unit = _ => ())
+class ChildProcess(process: Process, onOutput: Seq[(String, Boolean)] => Unit = _ => (), onExit: Int => Unit = _ => ())
                   (implicit executionContext: ExecutionContext, log: Logger) {
   private val processTerminateTimeoutMs = 5000
   private val exitCode = Promise[Int]
@@ -19,11 +19,12 @@ class ChildProcess(process: Process, onOutputLines: Seq[(String, Boolean)] => Un
 
   new LinesReaderThread(input, None,
     lines => {
-      onOutputLines(lines)
+      onOutput(lines)
     },
     () => {
       val status = process.waitFor()
       log.info(s"Process ${process.pid()} is terminated with status ${status}")
+      onExit(status)
       exitCode.trySuccess(status)
     },
     exception => { log.error(s"Read process output error", exception) }
@@ -79,7 +80,8 @@ class ChildProcess(process: Process, onOutputLines: Seq[(String, Boolean)] => Un
 
 object ChildProcess {
   def start(command: String, arguments: Seq[String] = Seq.empty, env: Map[String, String] = Map.empty, directory: File = new File("."),
-            onOutputLines: Seq[(String, Boolean)] => Unit = _ => ())(implicit executionContext: ExecutionContext, log: Logger): Future[ChildProcess] = {
+            onOutput: Seq[(String, Boolean)] => Unit = _ => (), onExit: Int => Unit = _ => ())
+           (implicit executionContext: ExecutionContext, log: Logger): Future[ChildProcess] = {
     Future {
       val builder = new ProcessBuilder().command((command +: arguments).asJava)
       env.foldLeft(builder.environment())((e, entry) => {
@@ -93,7 +95,7 @@ object ChildProcess {
       log.debug(s"Environment: ${builder.environment().asScala}")
       val process = builder.start()
       log.info(s"Started process ${process.pid()}")
-      new ChildProcess(process, onOutputLines)
+      new ChildProcess(process, onOutput, onExit)
     }
   }
 }

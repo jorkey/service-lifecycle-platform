@@ -8,8 +8,6 @@ import com.vyulabs.update.distribution.logger.LogStorekeeper
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.Date
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Task(taskId: TaskId, description: String, future: Future[Unit], cancel: Option[() => Unit]) {
@@ -29,7 +27,6 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
     val logger = Utils.getLogbackLogger(Task.getClass)
     logger.addAppender(appender)
     val buffer = new LogBuffer(description, "TASK", logStorekeeper(taskId), 1, 1000)
-    timer.schedulePeriodically(() => buffer.flush(), FiniteDuration(1, TimeUnit.SECONDS))
     appender.addListener(buffer)
     appender.start()
     val (future, cancel) = run(taskId, logger)

@@ -1,11 +1,13 @@
 package com.vyulabs.update.common.logger
 
 import ch.qos.logback.classic.Level
+import com.vyulabs.update.common.common.{Cancelable, Timer}
 import com.vyulabs.update.common.utils.Utils
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, OneInstancePerTest}
 
 import java.io.IOException
 import scala.concurrent.Promise
+import scala.concurrent.duration.FiniteDuration
 
 class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with OneInstancePerTest {
   behavior of "Log trace appender"
@@ -13,6 +15,19 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
   implicit val executionContext = scala.concurrent.ExecutionContext.global
   implicit val log = Utils.getLogbackLogger(this.getClass)
 
+  implicit val timer = new Timer() {
+    override def schedulePeriodically(task: () => Unit, period: FiniteDuration): Cancelable = {
+      timerTask = Some(task)
+      new Cancelable {
+        override def cancel(): Boolean = {
+          timerTask = None
+          true
+        }
+      }
+    }
+  }
+
+  var timerTask = Option.empty[() => Unit]
   var messages = Seq.empty[String]
   var promise = Promise[Unit]
 
@@ -24,7 +39,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
   appender.start()
   log.addAppender(appender)
 
-  getMessages(Seq("Logger `Test` started"))
+  getMessages(Seq("`Test` started"))
   resetPromise()
 
   it should "buffer log records up to low water mark" in {
@@ -101,7 +116,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
     log.info("log line 1")
     log.warn("log line 2")
     getMessages(Seq())
-    buffer.flush()
+    timerTask.foreach(_())
     getMessages(Seq("log line 1", "log line 2"))
   }
 
@@ -114,7 +129,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
     getMessages(Seq("log line 1", "log line 2", "log line 3"))
     log.warn("log line 4")
     log.info("log line 5")
-    buffer.flush()
+    timerTask.foreach(_())
     getMessages(Seq())
   }
 
@@ -125,7 +140,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
     log.warn("log line 2")
     getMessages(Seq())
     appender.stop()
-    getMessages(Seq("log line 1", "log line 2", "Logger `Test` finished"))
+    getMessages(Seq("log line 1", "log line 2", "`Test` finished"))
   }
 
   private def resetPromise(): Unit = {

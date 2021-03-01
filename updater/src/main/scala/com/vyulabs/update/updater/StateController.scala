@@ -17,6 +17,7 @@ class ServiceStateController(directory: File, profiledServiceName: ProfiledServi
                             (implicit log: Logger) {
   val serviceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) directory else new File(directory, profiledServiceName.toString)
   val currentServiceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) serviceDirectory else new File(serviceDirectory, "current")
+  val logDirectory = new File(currentServiceDirectory, "log")
   val faultsDirectory = new File(serviceDirectory, "faults")
   val newServiceDirectory = new File(serviceDirectory, "new")
   val logHistoryDirectory = new File(serviceDirectory, "log.history")

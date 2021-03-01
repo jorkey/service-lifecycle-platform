@@ -2,7 +2,7 @@ package com.vyulabs.update.updater.uploaders
 
 import com.vyulabs.update.common.common.{Common, IdGenerator}
 import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.serviceMutations
-import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.FaultInfo._
 import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName, ServiceFaultReport}
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
@@ -13,7 +13,10 @@ import spray.json.enrichAny
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
@@ -24,10 +27,11 @@ trait FaultUploader {
   def close(): Unit
 }
 
-class FaultUploaderImpl(archiveDir: File, distributionClient: SyncDistributionClient[SyncSource])
-                        (implicit log: Logger) extends Thread with FaultUploader { self =>
+class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient[SyncSource])
+                        (implicit executionContext: ExecutionContext, log: Logger) extends Thread with FaultUploader { self =>
   private case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
   private val idGenerator = new IdGenerator()
   private var faults = Queue.empty[FaultReport]
   private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024
@@ -105,11 +109,11 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: SyncDistributionCl
       val reportFiles = fault.reportFilesTmpDir.map(_.list().toSeq).getOrElse(Seq.empty[String])
       fault.reportFilesTmpDir.foreach(IoUtils.deleteFileRecursively(_))
       val faultId = idGenerator.generateId(8)
-      if (!distributionClient.uploadFaultReport(faultId, archiveFile)) {
+      if (!syncDistributionClient.uploadFaultReport(faultId, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }
-      if (!distributionClient.graphqlRequest(serviceMutations.addFaultReportInfo(ServiceFaultReport(faultId, fault.info, reportFiles))).getOrElse(false)) {
+      if (!syncDistributionClient.graphqlRequest(serviceMutations.addFaultReportInfo(ServiceFaultReport(faultId, fault.info, reportFiles))).getOrElse(false)) {
         log.error(s"Can't upload service fault info")
         return false
       }

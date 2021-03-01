@@ -49,7 +49,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":1,"logLine":{"line":{"level":"INFO","message":"Logger `Build client version test-1.1.1 of service service1` started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":1,"logLine":{"line":{"level":"INFO","message":"`Build client version test-1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildClientVersion, distributionName=test, service=service1, developerVersion=test-1.1.1, clientVersion=test-1.1.1, author=admin) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
@@ -62,7 +62,7 @@ class BuildClientVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":7,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":9,"logLine":{"line":{"level":"INFO","message":"Logger `Build client version test-1.1.1 of service service1` finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":9,"logLine":{"line":{"level":"INFO","message":"`Build client version test-1.1.1 of service service1` finished successfully"}}}}}"""))
     logInput.expectComplete()
   }
 
@@ -84,7 +84,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"Logger `Build developer version 1.1.1 of service service1` started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
@@ -123,7 +123,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"logLine":{"line":{"level":"INFO","message":"Logger `Run local builder by remote distribution` started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"logLine":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` started"}}}}}"""))
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
@@ -136,7 +136,7 @@ class BuildClientVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":27,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":29,"logLine":{"line":{"level":"INFO","message":"Logger `Run local builder by remote distribution` finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":29,"logLine":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}}"""))
     logInput.expectComplete()
   }
 

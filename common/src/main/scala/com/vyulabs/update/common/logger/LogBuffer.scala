@@ -1,10 +1,12 @@
 package com.vyulabs.update.common.logger
 
 import ch.qos.logback.classic.Level
-import ch.qos.logback.classic.spi.ILoggingEvent
+import com.vyulabs.update.common.common.{Cancelable, Timer}
 import com.vyulabs.update.common.info.LogLine
 
 import java.util.Date
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -12,29 +14,30 @@ trait LogReceiver {
   def receiveLogLines(lines: Seq[LogLine]): Future[Unit]
 }
 
-class LogBuffer(description: String, loggerName: String,
-                logReceiver: LogReceiver, lowWater: Int, highWater: Int)
-               (implicit executionContext: ExecutionContext) extends LogListener {
+class LogBuffer(description: String, unitName: String, logReceiver: LogReceiver, lowWater: Int, highWater: Int)
+               (implicit timer: Timer, executionContext: ExecutionContext) extends LogListener {
   private var eventsBuffer = Seq.empty[LogLine]
   private var sendingEvents = Seq.empty[LogLine]
   private var skipped = 0
+  private var timerTask = Option.empty[Cancelable]
 
   override def start(): Unit = {
     synchronized {
-      eventsBuffer :+= LogLine(new Date, "INFO", Some(loggerName), s"Logger `${description}` started", None)
+      eventsBuffer :+= LogLine(new Date, "INFO", unitName, s"`${description}` started", None)
+      timerTask = Some(timer.schedulePeriodically(() => flush(), FiniteDuration(1, TimeUnit.SECONDS)))
     }
     flush()
   }
 
-  def append(event: ILoggingEvent): Unit = {
+  def append(line: LogLine): Unit = {
     synchronized {
       if (eventsBuffer.size + sendingEvents.size < highWater) {
         if (skipped != 0) {
-          eventsBuffer :+= LogLine(new Date(), Level.ERROR.toString, Some(loggerName),
+          eventsBuffer :+= LogLine(new Date(), Level.ERROR.toString, unitName,
             s"------------------------------ Skipped ${skipped} events ------------------------------", None)
           skipped = 0
         }
-        eventsBuffer :+= LogLine(new Date(event.getTimeStamp), event.getLevel.toString, Some(event.getLoggerName), event.getFormattedMessage, None)
+        eventsBuffer :+= line
       } else {
         skipped += 1
       }
@@ -53,12 +56,14 @@ class LogBuffer(description: String, loggerName: String,
       case None => ""
     }
     synchronized {
-      eventsBuffer :+= LogLine(new Date(), "INFO", Some(loggerName), s"Logger `${description}` finished${stat}", status)
+      eventsBuffer :+= LogLine(new Date(), "INFO", unitName, s"`${description}` finished${stat}", status)
+      flush()
+      timerTask.foreach(_.cancel())
+      timerTask = None
     }
-    flush()
   }
 
-  def flush(): Unit = {
+  private def flush(): Unit = {
     synchronized {
       if (!eventsBuffer.isEmpty && sendingEvents.isEmpty) {
         send()

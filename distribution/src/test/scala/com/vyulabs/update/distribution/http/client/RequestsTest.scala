@@ -164,7 +164,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
     it should "execute service log requests" in {
       assert(serviceClient.graphqlRequest(serviceMutations.addServiceLogs("service1", "instance1", "process1", None, "directory1",
-        Seq(LogLine(new Date(), "INFO", None, "log line", None)))).getOrElse(false))
+        Seq(LogLine(new Date(), "INFO", "-", "log line", None)))).getOrElse(false))
     }
 
     it should "execute fault report requests" in {

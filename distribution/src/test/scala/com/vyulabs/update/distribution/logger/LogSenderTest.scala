@@ -4,9 +4,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
+import com.vyulabs.update.common.common.ThreadTimer
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl}
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
-import com.vyulabs.update.common.logger.{LogBuffer, LogSender, TraceAppender}
+import com.vyulabs.update.common.logger.{LogBuffer, LogUploader, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -14,16 +15,15 @@ import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
 import java.net.URL
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 
 class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
   behavior of "Log trace sender"
 
+  implicit val timer = new ThreadTimer()
+
   val logger = Utils.getLogbackLogger(this.getClass)
   logger.setLevel(Level.INFO)
   val appender = new TraceAppender()
-  appender.start()
   logger.addAppender(appender)
 
   val route = distribution.route
@@ -33,16 +33,13 @@ class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
   val httpClient = new HttpClientImpl(new URL("http://admin:admin@localhost:8084"))
   val distributionClient = new DistributionClient(httpClient)
 
-  val sender = new LogSender("service1", None, "instance1", distributionClient)
+  val sender = new LogUploader("service1", None, "instance1", distributionClient)
   val buffer = new LogBuffer("Test", "PROCESS", sender, 3, 6)
 
   appender.addListener(buffer)
+  appender.start()
 
   val graphqlContext = new GraphqlContext(UserInfo("administrator", UserRole.Administrator), workspace)
-
-  system.scheduler.scheduleWithFixedDelay(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS))(new Runnable {
-    override def run(): Unit = { buffer.flush() }
-  })
 
   it should "send log records to distribution server" in {
     log.info("log line 1")
@@ -51,10 +48,11 @@ class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
     log.warn("log line 4")
     log.info("log line 5")
 
-    Thread.sleep(10000)
+    Thread.sleep(5000)
 
     assertResult((OK,
       ("""{"data":{"serviceLogs":[""" +
+        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"`Test` started"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 1"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 2"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"ERROR","message":"log line 3"}},""" +

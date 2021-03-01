@@ -2,9 +2,9 @@ package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
-import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{ClientDesiredVersions, ProfiledServiceName}
-import com.vyulabs.update.common.logger.PrefixedLogger
+import com.vyulabs.update.common.logger.{LogUploader, PrefixedLogger, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.config.UpdaterConfig
@@ -41,6 +41,11 @@ object UpdaterMain extends App { self =>
     Utils.error("No config")
   }
 
+  val distributionClient = new DistributionClient(new HttpClientImpl(config.clientDistributionUrl))
+
+  TraceAppender.handleLogs("Updater", "PROCESS",
+    new LogUploader[SyncSource](Common.DistributionServiceName, None, config.instanceId, distributionClient))
+
   command match {
     case "runServices" =>
       val arguments = Arguments.parse(args.drop(1), Set("services"))
@@ -52,9 +57,6 @@ object UpdaterMain extends App { self =>
       log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${servicesInstanceNames} -------------------------")
 
       val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
-
-      val distributionClient = new SyncDistributionClient(
-        new DistributionClient(new HttpClientImpl(config.clientDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
       val instanceState = new StateUploader(new File("."), config.instanceId, servicesInstanceNames + updaterServiceName, distributionClient)
 
@@ -137,7 +139,8 @@ object UpdaterMain extends App { self =>
 
         def maybeUpdate(): Boolean = {
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
-            distributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions(
+            val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+            syncDistributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions(
                 Seq(Common.ScriptsServiceName, Common.UpdaterServiceName) ++ serviceUpdaters.map(_._1.name))) match {
               case Some(desiredVersions) =>
                 val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions)

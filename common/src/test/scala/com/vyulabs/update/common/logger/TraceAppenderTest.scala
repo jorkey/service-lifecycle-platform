@@ -1,7 +1,7 @@
 package com.vyulabs.update.common.logger
 
 import ch.qos.logback.classic.Level
-import ch.qos.logback.classic.spi.ILoggingEvent
+import com.vyulabs.update.common.info.LogLine
 import com.vyulabs.update.common.utils.Utils
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, OneInstancePerTest}
 
@@ -22,8 +22,8 @@ class TraceAppenderTest extends FlatSpec with Matchers with BeforeAndAfterAll wi
     val appender = new TraceAppender()
     appender.addListener(new LogListener {
       override def start(): Unit = {}
-      override def append(event: ILoggingEvent): Unit =
-        messages :+= event.getMessage
+      override def append(line: LogLine): Unit =
+        messages :+= line.message
       override def stop(status: Option[Boolean], error: Option[String]): Unit = {}
     })
     appender.start()

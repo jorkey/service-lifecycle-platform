@@ -3,7 +3,8 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.RunServiceConfig
-import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName}
+import com.vyulabs.update.common.info.{FaultInfo, LogLine, ProfiledServiceName}
+import com.vyulabs.update.common.logger.{LogBuffer, LogReceiver}
 import com.vyulabs.update.common.logs.LogWriter
 import com.vyulabs.update.common.process.{ChildProcess, ProcessMonitor}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
@@ -13,21 +14,20 @@ import org.slf4j.Logger
 
 import java.io.File
 import java.nio.file.Files
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.text.{ParseException, SimpleDateFormat}
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.{Date, TimeZone}
 import scala.collection.immutable.Queue
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
-import scala.util.{Failure, Success}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.04.19.
   * Copyright FanDate, Inc.
   */
 class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], instanceId: InstanceId,
-                    profiledServiceName: ProfiledServiceName, state: ServiceStateController, faultUploader: FaultUploader)
+                    profiledServiceName: ProfiledServiceName, state: ServiceStateController,
+                    logUploader: Option[LogReceiver], faultUploader: FaultUploader)
                    (implicit log: Logger, timer: Timer, executionContext: ExecutionContext) {
   private val maxLogHistoryDirCapacity = 5L * 1000 * 1000 * 1000
 
@@ -35,11 +35,13 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
   private var stopping = false
   private var lastStartTime = 0L
 
+  private val logUnitName = "SERVICE"
+
   def startService(): Boolean = {
     synchronized {
       log.info("Start service")
       if (currentProcess.isDefined) {
-        log.error("Service process is already started")
+        log.error("Service is already started")
         false
       } else {
         val command = Utils.extendMacro(config.command, parameters)
@@ -52,50 +54,60 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
             logWriterConfig.filePrefix,
             (message, exception) => log.error(message, exception))
         }
-        val onOutputLines = logWriter.map { logWriter =>
-          val dateFormat = config.logWriter.get.dateFormat.map(new SimpleDateFormat(_))
-          (lines: Seq[(String, Boolean)]) =>
-            lines.foreach { case (line, nl) => {
-              val formattedLine = dateFormat match {
-                case Some(dateFormat) =>
-                  s"${dateFormat.format(new Date)} ${line}"
-                case None =>
-                  line
-              }
-              logWriter.writeLogLine(formattedLine)
+        val logUploaderBuffer = logUploader.map { logUploader =>
+          new LogBuffer(s"Service ${profiledServiceName}", logUnitName,
+            logUploader, 100, 1000)
+        }
+        val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
+        val formattedLogRegex = "(.[^ ]* .[^ ]*) (.[^ ]*) (.[^ ]*) (.*)".r
+        val onOutput = logWriter.map { logWriter =>
+          (lines: Seq[(String, Boolean)]) => {
+            lines.foreach {
+              case (line, nl) =>
+                logWriter.writeLogLine(line)
+                logUploaderBuffer.foreach(uploaderBuffer => {
+                  val logLine = line match {
+                    case formattedLogRegex(date, level, unit, message) =>
+                      try {
+                        val logDate = dateFormat.parse(date)
+                        LogLine(logDate, level, unit, message, None)
+                      } catch {
+                        case _: ParseException =>
+                          LogLine(new Date(), "INFO", logUnitName, line, None)
+                      }
+                    case line =>
+                      LogLine(new Date(), "INFO", logUnitName, line, None)
+                  }
+                  uploaderBuffer.append(logLine)
+                })
             }
-            }
+            ()
+          }
         }.getOrElse((_: Seq[(String, Boolean)]) => ())
+        val onExit = (exitCode: Int) => {
+          val logTail = logWriter.map { logWriter =>
+            val logTail = logWriter.getLogTail()
+            logWriter.close()
+            logTail
+          }.getOrElse(Queue.empty)
+          log.info(s"Process fault of service process")
+          processFault(exitCode, logTail)
+          logUploaderBuffer.foreach(_.stop(Some(exitCode==0), None))
+        }
         val process = try {
-          Await.result(ChildProcess.start(command, arguments, env, state.currentServiceDirectory, onOutputLines),
-            FiniteDuration(10, TimeUnit.SECONDS))
+          Await.result(ChildProcess.start(command, arguments, env, state.currentServiceDirectory, onOutput, onExit), FiniteDuration(10, TimeUnit.SECONDS))
         } catch {
           case e: Exception =>
+            logUploaderBuffer.foreach(_.append(LogLine(new Date(), "ERROR", logUnitName, s"Can't start process ${e.getMessage}", None)))
             log.error("Can't start process", e)
             return false
         }
+        logUploaderBuffer.foreach(_.start())
         currentProcess = Some(process)
         lastStartTime = System.currentTimeMillis()
         for (restartConditions <- config.restartConditions) {
           new ProcessMonitor(process, restartConditions).start()
-        }
-        process.onTermination().onComplete {
-          case result =>
-            synchronized {
-              currentProcess = None
-              result match {
-                case Success(exitCode) =>
-                  val logTail = logWriter.map { logWriter =>
-                    val logTail = logWriter.getLogTail()
-                    logWriter.close()
-                    logTail
-                  }.getOrElse(Queue.empty)
-                  log.info(s"Process fault of service process ${process.getHandle().pid()}")
-                  processFault(exitCode, logTail)
-                case Failure(ex) =>
-                  log.error(s"Waiting for process termination error", ex)
-              }
-            }
         }
         true
       }
