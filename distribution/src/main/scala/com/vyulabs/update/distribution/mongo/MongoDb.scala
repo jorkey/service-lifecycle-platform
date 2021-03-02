@@ -18,7 +18,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
 
-class MongoDb(connectionString: String, dbName: String, temporary: Boolean)
+class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27017", temporary: Boolean = false)
              (implicit executionContext: ExecutionContext) {
   implicit val system = ActorSystem(s"MongoDB_${dbName}")
   implicit val materializer = ActorMaterializer()

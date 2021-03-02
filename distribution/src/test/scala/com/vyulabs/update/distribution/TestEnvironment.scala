@@ -61,7 +61,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
   val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
 
-  val mongo = new MongoDb(config.mongoDb.connection, config.mongoDb.name, config.mongoDb.temporary); result(mongo.dropDatabase())
+  val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS))
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(taskId => new LogStorekeeper(distributionName, Common.DistributionServiceName, Some(taskId),

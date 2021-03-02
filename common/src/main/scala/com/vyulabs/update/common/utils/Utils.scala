@@ -4,11 +4,13 @@ import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.helpers.SubstituteLogger
 import org.slf4j.{Logger, LoggerFactory}
-
 import java.io.{File, IOException}
 import java.text.{ParseException, SimpleDateFormat}
 import java.util.jar.Attributes
 import java.util.{Date, TimeZone}
+
+import com.vyulabs.update.common.logger.TraceAppender
+
 import scala.annotation.tailrec
 
 /**
@@ -35,6 +37,18 @@ object Utils {
       getLogbackLogger(name)
     } else {
       log.asInstanceOf[ch.qos.logback.classic.Logger]
+    }
+  }
+
+  @tailrec
+  def getLogbackTraceAppender(): TraceAppender = {
+    val logger = Utils.getLogbackLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+    val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
+    if (appender == null) {
+      Thread.sleep(100)
+      getLogbackTraceAppender()
+    } else {
+      appender
     }
   }
 

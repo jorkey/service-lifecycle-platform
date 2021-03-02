@@ -47,8 +47,7 @@ class TraceAppender extends AppenderBase[ILoggingEvent] {
 
 object TraceAppender {
   def handleLogs(description: String, unitName: String, logReceiver: LogReceiver)(implicit timer: Timer, executionContext: ExecutionContext): Unit = {
-    val logger = Utils.getLogbackLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
-    val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
+    val appender = Utils.getLogbackTraceAppender()
     val buffer = new LogBuffer(description, unitName, logReceiver, 25, 1000)
     appender.addListener(buffer)
     buffer.start()

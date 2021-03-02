@@ -23,7 +23,7 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  val mongo = new MongoDb("mongodb://localhost:27017", "SequencedCollectionTest", false); result(mongo.dropDatabase())
+  val mongo = new MongoDb("SequencedCollectionTest", "mongodb://localhost:27017", false); result(mongo.dropDatabase())
 
   case class TestRecord(field1: String, field2: String)
 
