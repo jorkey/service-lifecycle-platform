@@ -66,6 +66,14 @@ class SimpleLifecycle {
     }
 
     println()
+    println(s"************************************** Distribution server is ready")
+  }
+
+  def installTestService(buggy: Boolean = false): Unit = {
+    println()
+    println(s"************************************** Install test service")
+    println()
+    println()
     println(s"====================================== Configure test service in directory ${testServiceSourcesDir}")
     println()
     val buildConfig = BuildConfig(None, Seq(CopyFileConfig("sourceScript.sh", "runScript.sh", None, Some(Map.empty + ("version" -> "%%version%%")))))
@@ -77,7 +85,7 @@ class SimpleLifecycle {
     if (!IoUtils.writeJsonToFile(new File(testServiceSourcesDir, Common.UpdateConfigFileName), updateConfig)) {
       sys.error(s"Can't write update config file")
     }
-    val scriptContent = "echo \"Executed version %%version%%\""
+    val scriptContent = "echo \"Executed version %%version%%\"" + (if (!buggy) "\nsleep 10000" else "")
     if (!IoUtils.writeBytesToFile(new File(testServiceSourcesDir, "sourceScript.sh"), scriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }
@@ -91,6 +99,7 @@ class SimpleLifecycle {
 
     println()
     println(s"====================================== Make test service version")
+    println()
     buildTestServiceVersions(distributionClient, DeveloperVersion.initialVersion)
 
     println()
@@ -113,10 +122,8 @@ class SimpleLifecycle {
         Await.result(process.terminate(), FiniteDuration(3, TimeUnit.SECONDS))
       }
     })
-
-
     println()
-    println(s"************************************** Distribution server is ready")
+    println(s"************************************** Test service is installed")
   }
 
   def updateTestService(): Unit = {
@@ -133,7 +140,7 @@ class SimpleLifecycle {
     buildTestServiceVersions(distributionClient, DeveloperVersion.initialVersion.next())
 
     println()
-    println(s"************************************** Test service is fixed")
+    println(s"************************************** Test service is updated")
   }
 
   def updateDistribution(): Unit = {

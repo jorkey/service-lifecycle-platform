@@ -9,6 +9,7 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   it should "provide simple lifecycle" in {
     lifecycle.makeAndRunDistribution()
+    lifecycle.installTestService(true)
     lifecycle.updateTestService()
     lifecycle.updateDistribution()
   }

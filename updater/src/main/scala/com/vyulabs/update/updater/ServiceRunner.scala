@@ -86,6 +86,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           }
         }.getOrElse((_: Seq[(String, Boolean)]) => ())
         val onExit = (exitCode: Int) => {
+          currentProcess = None
           val logTail = logWriter.map { logWriter =>
             val logTail = logWriter.getLogTail()
             logWriter.close()

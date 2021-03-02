@@ -40,15 +40,13 @@ object Utils {
     }
   }
 
-  @tailrec
-  def getLogbackTraceAppender(): TraceAppender = {
+  def getLogbackTraceAppender(): Option[TraceAppender] = {
     val logger = Utils.getLogbackLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
     val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
-    if (appender == null) {
-      Thread.sleep(100)
-      getLogbackTraceAppender()
+    if (appender != null) {
+      Some(appender)
     } else {
-      appender
+      None
     }
   }
 
