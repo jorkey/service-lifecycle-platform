@@ -49,23 +49,23 @@ object DistributionMain extends App {
 
     val collections = new DatabaseCollections(mongoDb, config.instanceState.expirationTimeout)
     val dir = new DistributionDirectory(new File("."))
-    val taskManager = new TaskManager(taskId => new LogStorekeeper(config.name, Common.DistributionServiceName, Some(taskId),
+    val taskManager = new TaskManager(taskId => new LogStorekeeper(config.distributionName, Common.DistributionServiceName, Some(taskId),
       config.instanceId, collections.State_ServiceLogs))
 
     Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
 
     TraceAppender.handleLogs("Distribution server", "PROCESS",
-      new LogStorekeeper(config.name, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
+      new LogStorekeeper(config.distributionName, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
 
     config.uploadState.getOrElse(Seq.empty).foreach { uploadConfig =>
-      StateUploader(config.name, collections, dir, uploadConfig.uploadStateInterval, uploadConfig.distributionUrl).start()
+      StateUploader(config.distributionName, collections, dir, uploadConfig.uploadStateInterval, uploadConfig.distributionUrl).start()
     }
-
-    val selfUpdater = new SelfUpdater(collections, dir)
-    selfUpdater.start()
 
     val workspace = GraphqlWorkspace(config, collections, dir, taskManager)
     val distribution = new Distribution(workspace, graphql)
+
+    val selfUpdater = new SelfUpdater(collections, dir, workspace)
+    selfUpdater.start()
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)
     config.network.ssl.foreach {

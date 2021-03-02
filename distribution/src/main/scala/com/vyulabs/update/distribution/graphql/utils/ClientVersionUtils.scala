@@ -4,7 +4,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersions, ClientVersionInfo}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
@@ -62,7 +62,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildClientVersion",
-          s"distributionName=${config.name}", s"service=${serviceName}",
+          s"distributionName=${config.distributionName}", s"service=${serviceName}",
           s"developerVersion=${developerVersion.toString}", s"clientVersion=${clientVersion.toString}",
           s"author=${author}")
         runBuilder(taskId, arguments)
@@ -114,34 +114,26 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
     collections.Client_VersionsInfo.delete(filters).map(_ > 0)
   }
 
-  def setClientDesiredVersions(versions: Map[ServiceName, Option[ClientDistributionVersion]])
-                              (implicit log: Logger): Future[Unit] = {
-    for {
-      desiredVersions <- getClientDesiredVersions(versions.keySet)
-      result <- {
-        val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions)
-        val newVersions =
-          versions.foldLeft(desiredVersionsMap) {
-            (map, entry) => entry._2 match {
-              case Some(version) =>
-                map + (entry._1 -> version)
-              case None =>
-                map - entry._1
-            }}
-        val newDesiredVersions = ClientDesiredVersions.fromMap(newVersions)
-        setClientDesiredVersions(newDesiredVersions)
-      }
-    } yield result
+  def setClientDesiredVersions(deltas: Seq[ClientDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
+    log.info(s"Upload client desired versions ${deltas}")
+    collections.Client_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
+      val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions.map(_.versions).getOrElse(Seq.empty))
+      val newVersions =
+        deltas.foldLeft(desiredVersionsMap) {
+          (map, entry) => entry.version match {
+            case Some(version) =>
+              map + (entry.serviceName -> version)
+            case None =>
+              map - entry.serviceName
+          }}
+      Some(ClientDesiredVersions(ClientDesiredVersions.fromMap(newVersions)))
+    }).map(_ => ())
   }
 
   def getClientDesiredVersions(serviceNames: Set[ServiceName] = Set.empty)
                               (implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
     collections.Client_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[ClientDesiredVersion])
       .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)).sortBy(_.serviceName))
-  }
-
-  def setClientDesiredVersions(desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Unit] = {
-    collections.Client_DesiredVersions.update(new BsonDocument(), _ => Some(ClientDesiredVersions(desiredVersions))).map(_ => ())
   }
 
   def getClientDesiredVersion(serviceName: ServiceName)(implicit log: Logger): Future[Option[ClientDistributionVersion]] = {

@@ -29,9 +29,9 @@ else
   exit 1
 fi
 
-jq ".name=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port}" >distribution.json <<EOF
+jq ".distributionName=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port}" >distribution.json <<EOF
 {
-  "name": "undefined",
+  "distributionName": "undefined",
   "title": "undefined",
   "instanceId": "undefined",
   "mongoDb" : {

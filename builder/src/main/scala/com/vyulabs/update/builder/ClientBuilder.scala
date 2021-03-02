@@ -70,7 +70,7 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
     true
   }
 
-  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[ClientDesiredVersion]): Boolean = {
+  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[ClientDesiredVersionDelta]): Boolean = {
     distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(versions)).getOrElse(false)
   }
 

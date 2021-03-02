@@ -51,7 +51,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val config = DistributionConfig("test", "Test distribution server", "instance1", mongoDbConfig,
                                   networkConfig, None, versionsConfig, instanceStateConfig, faultReportsConfig, None)
 
-  val distributionName = config.name
+  val distributionName = config.distributionName
   val instanceId = config.instanceId
   val adminClientCredentials = BasicHttpCredentials("admin", "admin")
   val distributionClientCredentials = BasicHttpCredentials("distribution1", "distribution1")

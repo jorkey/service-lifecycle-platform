@@ -19,7 +19,7 @@ trait TestedVersionsUtils extends ClientVersionUtils {
       clientDesiredVersions <- getClientDesiredVersions().map(ClientDesiredVersions.toMap(_))
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions()).map(DeveloperDesiredVersions.toMap(_))
       result <- {
-        if (!clientDesiredVersions.filter(_._2.distributionName == config.name)
+        if (!clientDesiredVersions.filter(_._2.distributionName == config.distributionName)
           .mapValues(_.original()).equals(developerDesiredVersions)) {
           log.error("Client versions are different from developer versions:")
           clientDesiredVersions foreach {

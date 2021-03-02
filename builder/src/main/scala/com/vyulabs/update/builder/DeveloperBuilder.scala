@@ -9,7 +9,7 @@ import com.vyulabs.update.common.config.UpdateConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
-import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersion, DeveloperVersionInfo}
+import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils.copyFile
@@ -234,10 +234,11 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Boolean = {
-    setDesiredVersions(distributionClient, serviceNames.map { DeveloperDesiredVersion(_, DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion)) })
+    setDesiredVersions(distributionClient, serviceNames.map { DeveloperDesiredVersionDelta(_,
+      Some(DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion))) })
   }
 
-  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[DeveloperDesiredVersion]): Boolean = {
+  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[DeveloperDesiredVersionDelta]): Boolean = {
     distributionClient.graphqlRequest(administratorMutations.setDeveloperDesiredVersions(versions)).getOrElse(false)
   }
 

@@ -53,7 +53,7 @@ object UploadStateConfig {
   implicit val developerConfigJson = jsonFormat2(UploadStateConfig.apply)
 }
 
-case class DistributionConfig(name: DistributionName, title: String, instanceId: InstanceId,
+case class DistributionConfig(distributionName: DistributionName, title: String, instanceId: InstanceId,
                               mongoDb: MongoDbConfig, network: NetworkConfig, remoteBuilder: Option[RemoteBuilderConfig],
                               versions: VersionsConfig, instanceState: InstanceStateConfig, faultReports: FaultReportsConfig,
                               uploadState: Option[Seq[UploadStateConfig]])

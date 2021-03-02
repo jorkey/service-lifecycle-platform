@@ -36,7 +36,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
-          s"distributionName=${config.name}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
+          s"distributionName=${config.distributionName}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
           s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
           comment.map(comment => s"comment=${comment}")
         runBuilder(taskId, arguments)
@@ -46,14 +46,14 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
 
   def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName)(implicit log: Logger): DeveloperDistributionVersion = {
     log.info("Get existing versions")
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(config.name))) match {
+    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(config.distributionName))) match {
       case Some(versions) if !versions.isEmpty =>
         val lastVersion = versions.map(_.version).sorted(DeveloperDistributionVersion.ordering).last
         log.info(s"Last version is ${lastVersion}")
         lastVersion.next()
       case _ =>
         log.error("No existing versions")
-        DeveloperDistributionVersion(config.name, DeveloperVersion(Seq(1, 0, 0)))
+        DeveloperDistributionVersion(config.distributionName, DeveloperVersion(Seq(1, 0, 0)))
     }
   }
 
@@ -105,29 +105,20 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     collections.Developer_VersionsInfo.find(filters)
   }
 
-  def setDeveloperDesiredVersions(servicesVersions: Map[ServiceName, Option[DeveloperDistributionVersion]])
-                                 (implicit log: Logger): Future[Unit] = {
-    log.info(s"Upload developer desired versions ${servicesVersions}")
-    for {
-      desiredVersions <- getDeveloperDesiredVersions(servicesVersions.keySet)
-      result <- {
-        var desiredVersionsMap = DeveloperDesiredVersions.toMap(desiredVersions)
-        servicesVersions.foreach {
-          case (serviceName, Some(version)) =>
-            desiredVersionsMap += (serviceName -> version)
-          case (serviceName, None) =>
-            desiredVersionsMap -= serviceName
-        }
-        val desiredVersionsList = desiredVersionsMap.foldLeft(Seq.empty[DeveloperDesiredVersion])(
-          (list, entry) => list :+ DeveloperDesiredVersion(entry._1, entry._2)).sortBy(_.serviceName)
-        setDeveloperDesiredVersions(desiredVersionsList)
-      }
-    } yield result
-  }
-
-  def setDeveloperDesiredVersions(desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
-    log.info(s"Set developer desired versions ${desiredVersions}")
-    collections.Developer_DesiredVersions.update(new BsonDocument(), _ => Some(DeveloperDesiredVersions(desiredVersions))).map(_ => ())
+  def setDeveloperDesiredVersions(deltas: Seq[DeveloperDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
+    log.info(s"Upload developer desired versions ${deltas}")
+    collections.Developer_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
+      val desiredVersionsMap = DeveloperDesiredVersions.toMap(desiredVersions.map(_.versions).getOrElse(Seq.empty))
+      val newVersions =
+        deltas.foldLeft(desiredVersionsMap) {
+          (map, entry) => entry.version match {
+            case Some(version) =>
+              map + (entry.serviceName -> version)
+            case None =>
+              map - entry.serviceName
+          }}
+      Some(DeveloperDesiredVersions(DeveloperDesiredVersions.fromMap(newVersions)))
+    }).map(_ => ())
   }
 
   def getDeveloperDesiredVersions(serviceNames: Set[ServiceName])(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
@@ -190,9 +181,9 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(serviceNames))
           .map(DeveloperDesiredVersions.toMap(_))
       updatedVersions <- (Future.sequence(developerDesiredVersions.map {
-        case (serviceName, version) if version.distributionName == config.name =>
+        case (serviceName, version) if version.distributionName == config.distributionName =>
           for {
-            existVersionInfo <- getDeveloperVersionsInfo(serviceName, Some(config.name), Some(version)).map(_.headOption)
+            existVersionInfo <- getDeveloperVersionsInfo(serviceName, Some(config.distributionName), Some(version)).map(_.headOption)
             updatedVersion <- existVersionInfo match {
               case Some(_) =>
                 Future(None)

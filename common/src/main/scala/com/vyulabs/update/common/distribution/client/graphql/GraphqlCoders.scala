@@ -43,7 +43,7 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 
-  def getServiceStates(distributionName: Option[DistributionName], serviceName: Option[ServiceName], instanceId: Option[InstanceId], directory: Option[ServiceDirectory]) =
+  def getServiceStates(distributionName: Option[DistributionName] = None, serviceName: Option[ServiceName] = None, instanceId: Option[InstanceId] = None, directory: Option[ServiceDirectory] = None) =
     GraphqlQuery[Seq[DistributionServiceState]]("serviceStates",
       Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName),
         GraphqlArgument("instance" -> instanceId), GraphqlArgument("directory" -> directory)).filter(_.value != JsNull),
@@ -109,10 +109,10 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
     GraphqlMutation[Boolean]("removeClientVersion",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 
-  def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersion]) =
-    GraphqlMutation[Boolean]("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
-  def setClientDesiredVersions(versions: Seq[ClientDesiredVersion]) =
-    GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
+  def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersionDelta]) =
+    GraphqlMutation[Boolean]("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionDeltaInput!]")))
+  def setClientDesiredVersions(versions: Seq[ClientDesiredVersionDelta]) =
+    GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionDeltaInput!]")))
 }
 
 object DistributionMutationsCoder extends CommonMutationsCoder {

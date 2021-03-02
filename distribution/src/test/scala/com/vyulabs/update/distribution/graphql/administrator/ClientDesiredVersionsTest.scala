@@ -61,5 +61,28 @@ class ClientDesiredVersionsTest extends TestEnvironment {
           }
         }
       """)))
+
+    assertResult((OK,
+      ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          setClientDesiredVersions (
+            versions: [
+               { serviceName: "service1" },
+            ]
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          clientDesiredVersions {
+             serviceName
+             version
+          }
+        }
+      """)))
   }
 }

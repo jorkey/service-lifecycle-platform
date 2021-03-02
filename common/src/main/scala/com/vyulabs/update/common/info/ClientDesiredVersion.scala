@@ -23,3 +23,10 @@ object ClientDesiredVersions extends DefaultJsonProtocol {
     versions.foldLeft(Seq.empty[ClientDesiredVersion])((seq, e)=> seq :+ ClientDesiredVersion(e._1, e._2)).sortBy(_.serviceName)
   }
 }
+
+case class ClientDesiredVersionDelta(serviceName: ServiceName, version: Option[ClientDistributionVersion])
+
+object ClientDesiredVersionDelta extends DefaultJsonProtocol {
+  implicit val desiredVersionJson = jsonFormat2(ClientDesiredVersionDelta.apply)
+}
+

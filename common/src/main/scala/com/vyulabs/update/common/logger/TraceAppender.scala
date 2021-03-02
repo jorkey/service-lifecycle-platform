@@ -5,7 +5,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.info.LogLine
-import org.slf4j.LoggerFactory
+import com.vyulabs.update.common.utils.Utils
 
 import java.util.Date
 import scala.concurrent.ExecutionContext
@@ -47,7 +47,7 @@ class TraceAppender extends AppenderBase[ILoggingEvent] {
 
 object TraceAppender {
   def handleLogs(description: String, unitName: String, logReceiver: LogReceiver)(implicit timer: Timer, executionContext: ExecutionContext): Unit = {
-    val logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).asInstanceOf[Logger]
+    val logger = Utils.getLogbackLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
     val appender = logger.getAppender("TRACE").asInstanceOf[TraceAppender]
     val buffer = new LogBuffer(description, unitName, logReceiver, 25, 1000)
     appender.addListener(buffer)

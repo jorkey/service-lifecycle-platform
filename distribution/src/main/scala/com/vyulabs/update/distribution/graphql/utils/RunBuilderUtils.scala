@@ -101,7 +101,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
           }
         }
         logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-          addServiceLogs(config.name, Common.DistributionServiceName,
+          addServiceLogs(config.distributionName, Common.DistributionServiceName,
             Some(taskId), config.instanceId, 0.toString, "", Seq(line.logLine.line)).map(_ => ())
         })
       }).run()

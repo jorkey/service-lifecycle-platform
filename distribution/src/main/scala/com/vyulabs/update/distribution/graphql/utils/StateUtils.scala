@@ -10,7 +10,7 @@ import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.distribution.mongo.{DatabaseCollections, InstalledDesiredVersions, NippleFlow, Sequenced, SequencedCollection}
+import com.vyulabs.update.distribution.mongo._
 import org.bson.BsonDocument
 import org.slf4j.Logger
 import sangria.schema.Action
@@ -68,6 +68,10 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
   def getTestedVersions(profileName: ProfileName)(implicit log: Logger): Future[Option[TestedDesiredVersions]] = {
     val profileArg = Filters.eq("profileName", profileName)
     collections.State_TestedVersions.find(profileArg).map(_.headOption)
+  }
+
+  def setSelfServiceStates(states: Seq[DirectoryServiceState])(implicit log: Logger): Future[Unit] = {
+    setServiceStates(config.distributionName, states.map(state => InstanceServiceState(config.instanceId, state.serviceName, state.directory, state.state)))
   }
 
   def setServiceStates(distributionName: DistributionName, instanceStates: Seq[InstanceServiceState])(implicit log: Logger): Future[Unit] = {

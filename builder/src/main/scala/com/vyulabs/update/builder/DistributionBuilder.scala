@@ -1,14 +1,14 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
-import com.vyulabs.update.builder.config.{BuilderConfig, DistributionLink, GitConfig, SourceConfig, SourcesConfig}
+import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName}
 import com.vyulabs.update.common.config.{DistributionConfig, NetworkConfig, UploadStateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
-import com.vyulabs.update.common.info.ClientDesiredVersion
+import com.vyulabs.update.common.info.ClientDesiredVersionDelta
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -92,10 +92,10 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
 
     log.info(s"########################### Set client desired versions")
     if (!clientBuilder.setDesiredVersions(distributionClient, Seq(
-          ClientDesiredVersion(Common.ScriptsServiceName, initialClientVersion),
-          ClientDesiredVersion(Common.BuilderServiceName, initialClientVersion),
-          ClientDesiredVersion(Common.UpdaterServiceName, initialClientVersion),
-          ClientDesiredVersion(Common.DistributionServiceName, initialClientVersion)))) {
+          ClientDesiredVersionDelta(Common.ScriptsServiceName, Some(initialClientVersion)),
+          ClientDesiredVersionDelta(Common.BuilderServiceName, Some(initialClientVersion)),
+          ClientDesiredVersionDelta(Common.UpdaterServiceName, Some(initialClientVersion)),
+          ClientDesiredVersionDelta(Common.DistributionServiceName, Some(initialClientVersion))))) {
       log.error("Set client desired versions error")
       return false
     }
@@ -142,7 +142,7 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
     val distributionUrl = makeDistributionUrl(config.network)
 
     val uploadStateConfig = UploadStateConfig(developerDistributionURL, FiniteDuration(30, TimeUnit.SECONDS))
-    val newDistributionConfig = DistributionConfig(config.name, config.title, config.instanceId, config.mongoDb, config.network,
+    val newDistributionConfig = DistributionConfig(config.distributionName, config.title, config.instanceId, config.mongoDb, config.network,
       config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Some(Seq(uploadStateConfig)))
     if (!IoUtils.writeJsonToFile(distributionDirectory.getConfigFile(), newDistributionConfig)) {
       log.error(s"Can't write distribution config file ${distributionDirectory.getConfigFile()}")
@@ -166,10 +166,10 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
 
     log.info(s"########################### Set client desired versions")
     if (!clientBuilder.setDesiredVersions(distributionClient, Seq(
-        ClientDesiredVersion(Common.ScriptsServiceName, scriptsVersion),
-        ClientDesiredVersion(Common.BuilderServiceName, builderVersion),
-        ClientDesiredVersion(Common.UpdaterServiceName, updaterVersion),
-        ClientDesiredVersion(Common.DistributionServiceName, distributionVersion)))) {
+        ClientDesiredVersionDelta(Common.ScriptsServiceName, Some(scriptsVersion)),
+        ClientDesiredVersionDelta(Common.BuilderServiceName, Some(builderVersion)),
+        ClientDesiredVersionDelta(Common.UpdaterServiceName, Some(updaterVersion)),
+        ClientDesiredVersionDelta(Common.DistributionServiceName, Some(distributionVersion))))) {
       log.error("Set client desired versions error")
       return false
     }

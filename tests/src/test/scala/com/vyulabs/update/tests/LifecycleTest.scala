@@ -1,19 +1,19 @@
 package com.vyulabs.update.tests
 
-import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
-import com.vyulabs.update.common.config.{BuildConfig, CommandConfig, CopyFileConfig, InstallConfig, LogWriterConfig, RunServiceConfig, ServiceUpdateConfig, UpdateConfig}
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
+import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.TaskId
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorSubscriptions}
+import com.vyulabs.update.common.config._
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
-import com.vyulabs.update.common.info.{ClientDesiredVersion, UserRole}
+import com.vyulabs.update.common.info.{ClientDesiredVersionDelta, UserRole}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.updater.config.UpdaterConfig
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 
@@ -21,8 +21,8 @@ import java.io.File
 import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext}
 
 class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "Update lifecycle"
@@ -41,7 +41,7 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
   val distributionBuilder = new DistributionBuilder("None", false,
-    new DistributionDirectory(distributionDir), distributionName, "Test distribution server", "test", true, 8000)
+    new DistributionDirectory(distributionDir), distributionName, "Test distribution server", "test", false, 8000)
   val clientBuilder = new ClientBuilder(builderDir, distributionName)
 
   it should "provide simple lifecycle" in {
@@ -120,18 +120,24 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     println()
     println(s"====================================== Upload new client version of distribution")
     println()
-    if (!clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName,
-        ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion, Some(1))), "ak")) {
+    val newDistributionVersion = ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion, Some(1)))
+    if (!clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
       sys.error(s"Can't write script")
     }
-//    if (!clientBuilder.setDesiredVersions(distributionClient, Seq(
-//        ClientDesiredVersion(Common.ScriptsServiceName, initialClientVersion),
-//        ClientDesiredVersion(Common.BuilderServiceName, initialClientVersion),
-//        ClientDesiredVersion(Common.UpdaterServiceName, initialClientVersion),
-//        ClientDesiredVersion(Common.DistributionServiceName, initialClientVersion)))) {
-//        log.error("Set client desired versions error")
-//        return false
-//    }
+    if (!clientBuilder.setDesiredVersions(distributionClient, Seq(ClientDesiredVersionDelta(Common.DistributionServiceName, Some(newDistributionVersion))))) {
+        sys.error("Set distribution desired version error")
+    }
+
+    println()
+    println(s"====================================== Wait for distribution server updated")
+    println()
+    Thread.sleep(5000)
+    distributionBuilder.waitForServerAvailable(distributionClient)
+    val states = distributionClient.graphqlRequest(administratorQueries.getServiceStates(distributionName = Some(distributionName),
+        serviceName = Some(Common.DistributionServiceName))).getOrElse {
+      sys.error("Can't get version of distribution server")
+    }
+    assertResult(Some(newDistributionVersion))(states.head.instance.service.version)
 
     Thread.sleep(100000)
   }
@@ -163,11 +169,7 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     println("====================================== Set client desired versions")
     println()
     if (!distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(Seq(
-      ClientDesiredVersion(Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
-      ClientDesiredVersion(Common.UpdaterServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
-      ClientDesiredVersion(Common.ScriptsServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
-      ClientDesiredVersion(Common.BuilderServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion))),
-      ClientDesiredVersion(testServiceName, ClientDistributionVersion(distributionName, ClientVersion(version)))))).getOrElse(false)) {
+        ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion(distributionName, ClientVersion(version))))))).getOrElse(false)) {
       log.error("Set client desired versions error")
       return false
     }

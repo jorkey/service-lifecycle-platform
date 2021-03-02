@@ -28,3 +28,10 @@ object DeveloperDesiredVersions extends DefaultJsonProtocol {
 
 case class TestSignature(distributionName: DistributionName, date: Date)
 case class TestedDesiredVersions(profileName: ProfileName, versions: Seq[DeveloperDesiredVersion], signatures: Seq[TestSignature])
+
+case class DeveloperDesiredVersionDelta(serviceName: ServiceName, version: Option[DeveloperDistributionVersion])
+
+object DeveloperDesiredVersionDelta extends DefaultJsonProtocol {
+  implicit val desiredVersionJson = jsonFormat2(DeveloperDesiredVersionDelta.apply)
+}
+

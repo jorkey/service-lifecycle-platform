@@ -110,6 +110,8 @@ object GraphqlTypes {
   implicit val BuildVersionInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildVersionInfoInput"))
   implicit val DeveloperDesiredVersionInputType = deriveInputObjectType[DeveloperDesiredVersion](InputObjectTypeName("DeveloperDesiredVersionInput"))
   implicit val ClientDesiredVersionInputType = deriveInputObjectType[ClientDesiredVersion](InputObjectTypeName("ClientDesiredVersionInput"))
+  implicit val DeveloperDesiredVersionDeltaInputType = deriveInputObjectType[DeveloperDesiredVersionDelta](InputObjectTypeName("DeveloperDesiredVersionDeltaInput"))
+  implicit val ClientDesiredVersionDeltaInputType = deriveInputObjectType[ClientDesiredVersionDelta](InputObjectTypeName("ClientDesiredVersionDeltaInput"))
   implicit val UpdateErrorInputType = deriveInputObjectType[UpdateError](InputObjectTypeName("UpdateErrorInput"))
   implicit val ServiceStateInputType = deriveInputObjectType[ServiceState](InputObjectTypeName("ServiceStateInput"))
   implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))

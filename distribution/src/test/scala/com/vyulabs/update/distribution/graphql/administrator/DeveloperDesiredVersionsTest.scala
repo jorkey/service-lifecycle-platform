@@ -50,5 +50,28 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
           }
         }
       """)))
+
+    assertResult((OK,
+      ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        mutation {
+          setDeveloperDesiredVersions (
+            versions: [
+               { serviceName: "service2"}
+            ]
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          developerDesiredVersions {
+             serviceName
+             version
+          }
+        }
+      """)))
   }
 }
