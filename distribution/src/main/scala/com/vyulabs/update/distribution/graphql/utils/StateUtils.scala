@@ -106,7 +106,6 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
                      instanceId: InstanceId, processId: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
     val documents = logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
       ServiceLogLine(distributionName, serviceName, taskId, instanceId, processId, directory, line) })
-    log.info(s"addServiceLogs ${logs}")
     collections.State_ServiceLogs.insert(documents).map(_ => ())
   }
 

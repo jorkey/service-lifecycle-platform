@@ -2,8 +2,10 @@ package com.vyulabs.update.common.distribution.client
 
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import spray.json.JsonReader
-
 import java.io._
+
+import org.slf4j.Logger
+
 import scala.concurrent.Future
 
 /**
@@ -11,13 +13,13 @@ import scala.concurrent.Future
   * Copyright FanDate, Inc.
   */
 trait HttpClient[Stream[_]] {
-  def graphql[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Response]
+  def graphql[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Response]
 
-  def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Stream[Response]]
+  def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
 
-  def upload(path: String, fieldName: String, file: File): Future[Unit]
+  def upload(path: String, fieldName: String, file: File)(implicit log: Logger): Future[Unit]
 
-  def download(path: String, file: File): Future[Unit]
+  def download(path: String, file: File)(implicit log: Logger): Future[Unit]
 
-  def exists(path: String): Future[Unit]
+  def exists(path: String)(implicit log: Logger): Future[Unit]
 }

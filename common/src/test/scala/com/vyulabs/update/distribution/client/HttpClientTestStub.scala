@@ -4,8 +4,10 @@ import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlRequest}
 import org.scalatest.Matchers
 import spray.json.JsonReader
-
 import java.io.{File, IOException}
+
+import org.slf4j.Logger
+
 import scala.collection.immutable.Queue
 import scala.concurrent.{Future, Promise}
 
@@ -70,29 +72,31 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
     }
   }
 
-  override def graphql[Response](req: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Response] = {
+  override def graphql[Response](req: GraphqlRequest[Response])
+                                (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
     val request = GraphqlClientRequest(req)
     synchronized { requests = requests.enqueue(request); notify() }
     request.promise.future
   }
 
-  override def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Stream[Response]] = {
+  override def graphqlSub[Response](request: GraphqlRequest[Response])
+                                   (implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
     throw new UnsupportedOperationException()
   }
 
-  override def upload(path: String, fieldName: String, file: File): Future[Unit] = {
+  override def upload(path: String, fieldName: String, file: File)(implicit log: Logger): Future[Unit] = {
     val request = UploadClientRequest(path, fieldName, file)
     synchronized { requests = requests.enqueue(request); notify() }
     request.promise.future
   }
 
-  override def download(path: String, file: File): Future[Unit] = {
+  override def download(path: String, file: File)(implicit log: Logger): Future[Unit] = {
     val request = DownloadClientRequest(path, file)
     synchronized { requests = requests.enqueue(request); notify() }
     request.promise.future
   }
 
-  override def exists(path: String): Future[Unit] = {
+  override def exists(path: String)(implicit log: Logger): Future[Unit] = {
     val request = ExistsClientRequest(path)
     synchronized { requests = requests.enqueue(request); notify() }
     request.promise.future

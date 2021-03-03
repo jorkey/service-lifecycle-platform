@@ -5,50 +5,56 @@ import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import spray.json.JsonReader
-
 import java.io.File
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class DistributionClient[Source[_]](client: HttpClient[Source])
                         (implicit executionContext: ExecutionContext) {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
-  def available(): Future[Unit] = {
+  def available()(implicit log: Logger): Future[Unit] = {
     client.exists(pingPath)
   }
 
-  def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName): Future[Option[ClientDistributionVersion]] = {
+  def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName)
+                       (implicit log: Logger): Future[Option[ClientDistributionVersion]] = {
     client.graphql(administratorQueries.getServiceStates(Some(distributionName), Some(serviceName), None, None))
       .map(_.headOption.map(_.instance.service.version).flatten)
   }
 
-  def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Response]= {
+  def graphqlRequest[Response](request: GraphqlRequest[Response])
+                              (implicit reader: JsonReader[Response], log: Logger): Future[Response]= {
     client.graphql(request)
   }
 
-  def graphqlSubRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[Source[Response]]= {
+  def graphqlSubRequest[Response](request: GraphqlRequest[Response])
+                                 (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
     client.graphqlSub(request)
   }
 
-  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Future[Unit] = {
+  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File)
+                                   (implicit log: Logger): Future[Unit] = {
     client.download(developerVersionImagePath + "/" + serviceName + "/" + version.toString, file)
   }
 
-  def downloadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Future[Unit] = {
+  def downloadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File)
+                                (implicit log: Logger): Future[Unit] = {
     client.download(clientVersionImagePath + "/" + serviceName + "/" + version.toString, file)
   }
 
-  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Future[Unit] = {
+  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File)
+                                 (implicit log: Logger): Future[Unit] = {
     client.upload(developerVersionImagePath + "/" + serviceName + "/" + version.toString, imageField, file)
   }
 
-  def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Future[Unit] = {
+  def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File)
+                              (implicit log: Logger): Future[Unit] = {
     client.upload(clientVersionImagePath + "/" + serviceName + "/" + version.toString, imageField, file)
   }
 
-  def uploadFaultReport(faultId: FaultId, faultReportFile: File): Future[Unit] = {
+  def uploadFaultReport(faultId: FaultId, faultReportFile: File)
+                       (implicit log: Logger): Future[Unit] = {
     client.upload(faultReportPath + "/" + faultId, faultReportField, faultReportFile)
   }
 }

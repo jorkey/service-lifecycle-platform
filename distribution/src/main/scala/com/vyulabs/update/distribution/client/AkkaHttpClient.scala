@@ -12,19 +12,17 @@ import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import spray.json._
-
 import java.io.{File, IOException}
 import java.net.URL
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class AkkaHttpClient(distributionUrl: URL)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
   def graphql[Response](request: GraphqlRequest[Response])
-                       (implicit reader: JsonReader[Response]): Future[Response] = {
+                       (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
     val queryJson = request.encodeRequest()
     log.debug(s"Send graphql query: ${queryJson}")
     var post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
@@ -48,7 +46,7 @@ class AkkaHttpClient(distributionUrl: URL)
   }
 
   override def graphqlSub[Response](request: GraphqlRequest[Response])
-                                   (implicit reader: JsonReader[Response]): Future[AkkaSource[Response]] = {
+                                   (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
     val queryJson = request.encodeRequest()
     log.debug(s"Send graphql query: ${queryJson}")
     var post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
@@ -71,7 +69,8 @@ class AkkaHttpClient(distributionUrl: URL)
     }
   }
 
-  def upload(path: String, fieldName: String, file: File): Future[Unit] = {
+  def upload(path: String, fieldName: String, file: File)
+            (implicit log: Logger): Future[Unit] = {
     val multipartForm =
       Multipart.FormData(Multipart.FormData.BodyPart(
         fieldName,
@@ -89,7 +88,7 @@ class AkkaHttpClient(distributionUrl: URL)
     }
   }
 
-  def download(path: String, file: File): Future[Unit] = {
+  def download(path: String, file: File)(implicit log: Logger): Future[Unit] = {
     var get = Get(distributionUrl.toString + "/" + loadPathPrefix + "/" + path)
     getHttpCredentials().foreach(credentials => get = get.addCredentials(credentials))
     for {
@@ -98,7 +97,7 @@ class AkkaHttpClient(distributionUrl: URL)
     } yield result
   }
 
-  override def exists(path: String): Future[Unit] = {
+  override def exists(path: String)(implicit log: Logger): Future[Unit] = {
     throw new NotImplementedError()
   }
 

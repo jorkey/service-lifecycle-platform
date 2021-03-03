@@ -2,13 +2,13 @@ package com.vyulabs.update.common.distribution.client
 
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 import spray.json.{JsonReader, _}
-
 import java.io._
 import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -21,10 +21,8 @@ trait SyncSource[T] {
 
 class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
                     (implicit executionContext: ExecutionContext) extends HttpClient[SyncSource] {
-  implicit val log = LoggerFactory.getLogger(this.getClass)
-
   def graphql[Response](request: GraphqlRequest[Response])
-                       (implicit reader: JsonReader[Response]): Future[Response] = {
+                       (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
     Future {
       val connection = openConnection(graphqlPathPrefix)
       try {
@@ -59,7 +57,8 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     }
   }
 
-  override def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Future[SyncSource[Response]] = {
+  override def graphqlSub[Response](request: GraphqlRequest[Response])
+                                   (implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
     Future {
       val connection = openConnection(graphqlPathPrefix)
       try {
@@ -112,7 +111,8 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     }
   }
 
-  def upload(path: String, fieldName: String, file: File): Future[Unit] = {
+  def upload(path: String, fieldName: String, file: File)
+            (implicit log: Logger): Future[Unit] = {
     for {
       input <- Future {
         try {
@@ -128,7 +128,8 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     } yield result
   }
 
-  def download(path: String, file: File): Future[Unit] = {
+  def download(path: String, file: File)
+              (implicit log: Logger): Future[Unit] = {
     for {
       output <- Future {
         try {
@@ -144,7 +145,7 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     } yield result
   }
 
-  def exists(path: String): Future[Unit] = {
+  def exists(path: String)(implicit log: Logger): Future[Unit] = {
     Future {
       val connection = openConnection(path)
       try {
@@ -162,7 +163,8 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     }
   }
 
-  private def upload(path: String, fieldName: String, destinationFile: String, input: InputStream): Future[Unit] = {
+  private def upload(path: String, fieldName: String, destinationFile: String, input: InputStream)
+                    (implicit log: Logger): Future[Unit] = {
     if (log.isDebugEnabled) log.debug(s"Upload by url ${path}")
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
@@ -197,7 +199,8 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     }
   }
 
-  private def download(path: String, output: OutputStream): Future[Unit] = {
+  private def download(path: String, output: OutputStream)
+                      (implicit log: Logger): Future[Unit] = {
     if (log.isDebugEnabled) log.debug(s"Download by url ${path}")
     Future {
       val connection = openConnection(loadPathPrefix + "/" + path)

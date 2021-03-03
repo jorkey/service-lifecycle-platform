@@ -5,13 +5,14 @@ import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.CommonMutationsCoder
 import com.vyulabs.update.common.info.LogLine
 import org.slf4j.LoggerFactory
+import org.slf4j.helpers.NOPLogger
 import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class LogUploader[Source[_]](serviceName: ServiceName, taskId: Option[TaskId], instanceId: InstanceId, client: DistributionClient[Source])
                             (implicit executionContext: ExecutionContext) extends LogReceiver {
-  private implicit val log = LoggerFactory.getLogger(this.getClass)
+  private implicit val log = NOPLogger.NOP_LOGGER
 
   private val processId = ProcessHandle.current.pid
   private val directory = new java.io.File(".").getCanonicalPath()

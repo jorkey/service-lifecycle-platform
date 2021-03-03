@@ -16,8 +16,8 @@ import spray.json._
 
 import java.net.URL
 
-class LogSenderTest extends TestEnvironment with ScalatestRouteTest {
-  behavior of "Log trace sender"
+class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
+  behavior of "Log trace uploader"
 
   implicit val timer = new ThreadTimer()
 
