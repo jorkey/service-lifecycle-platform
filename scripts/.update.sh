@@ -221,7 +221,7 @@ function updateJavaService {
     echo "Update ${service}"
     rm -f ${service}-*.jar
     unzip -qo ${serviceZipFile}
-    rm -f ${serviceZipFile}
+    #rm -f ${serviceZipFile}
   fi
 }
 

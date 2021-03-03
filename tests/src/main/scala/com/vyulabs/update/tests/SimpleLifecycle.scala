@@ -146,11 +146,11 @@ class SimpleLifecycle {
     println()
   }
 
-  def updateDistribution(): Unit = {
+  def updateDistribution(newVersion: ClientVersion): Unit = {
     println()
-    println(s"************************************** Upload new client version of distribution")
+    println(s"************************************** Upload new client version of distribution of version ${newVersion}")
     println()
-    val newDistributionVersion = ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion, Some(1)))
+    val newDistributionVersion = ClientDistributionVersion(distributionName, newVersion)
     if (!clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
       sys.error(s"Can't write script")
     }
@@ -161,16 +161,19 @@ class SimpleLifecycle {
     println()
     println(s"====================================== Wait for distribution server updated")
     println()
-    Thread.sleep(5000)
+    Thread.sleep(10000)
     distributionBuilder.waitForServerAvailable(distributionClient)
+    Thread.sleep(5000)
     val states = distributionClient.graphqlRequest(administratorQueries.getServiceStates(distributionName = Some(distributionName),
       serviceName = Some(Common.DistributionServiceName))).getOrElse {
       sys.error("Can't get version of distribution server")
     }
-    assert(Some(newDistributionVersion) == states.head.instance.service.version)
+    if (Some(newDistributionVersion) != states.head.instance.service.version) {
+      sys.error(s"Distribution server version ${states.head.instance.service.version} is not equals expected ${newDistributionVersion}")
+    }
 
     println()
-    println(s"************************************** Distribution is updated")
+    println(s"************************************** Distribution is updated to version ${newVersion}")
     println()
   }
 

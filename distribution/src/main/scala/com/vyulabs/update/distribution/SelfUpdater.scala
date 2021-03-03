@@ -12,11 +12,12 @@ import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.graphql.utils.StateUtils
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
-
 import java.io.{File, IOException}
 import java.util.concurrent.TimeUnit
+
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 9.12.19.
@@ -36,12 +37,12 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
       DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")),
       DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
     ))
-    system.scheduler.scheduleWithFixedDelay(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS))(() => maybeUpdate())
+    system.scheduler.scheduleOnce(checkUpdateTimeout)(maybeUpdate())
   }
 
   def maybeUpdate(): Unit = {
-    for {
-      desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(throw new IOException("Can't find desired versions")))
+    (for {
+      desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(ClientDesiredVersions(Seq.empty)))
       distributionNewVersion <- Future(Utils.isServiceNeedUpdate(Common.DistributionServiceName,
         distributionVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.DistributionServiceName)))
       scriptsNewVersion <- Future(Utils.isServiceNeedUpdate(Common.ScriptsServiceName,
@@ -65,9 +66,18 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
                 Utils.restartToUpdate("Restart to update")
               }
           }
+        false
       } else {
-        system.scheduler.scheduleOnce(checkUpdateTimeout)(() => maybeUpdate())
+        true
       }
+    }).onComplete {
+      case Success(continue) =>
+        if (continue) {
+          system.scheduler.scheduleOnce(checkUpdateTimeout)(maybeUpdate())
+        }
+      case Failure(ex) =>
+        log.error("Self update error", ex)
+        system.scheduler.scheduleOnce(checkUpdateTimeout)(maybeUpdate())
     }
   }
 
