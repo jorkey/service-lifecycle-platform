@@ -44,6 +44,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         log.error("Service is already started")
         false
       } else {
+        stopping = false
         val command = Utils.extendMacro(config.command, parameters)
         val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters))
         val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters))
@@ -86,14 +87,13 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           }
         }.getOrElse((_: Seq[(String, Boolean)]) => ())
         val onExit = (exitCode: Int) => {
-          currentProcess = None
           val logTail = logWriter.map { logWriter =>
             val logTail = logWriter.getLogTail()
             logWriter.close()
             logTail
           }.getOrElse(Queue.empty)
-          log.info(s"Process fault of service process")
-          processFault(exitCode, logTail)
+          log.info(s"Process exit of service process")
+          processExit(exitCode, logTail)
           logUploaderBuffer.foreach(_.stop(Some(exitCode==0), None))
         }
         val process = try {
@@ -119,24 +119,20 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
     synchronized {
       log.info("Stop service")
       stopping = true
-      try {
-        val result = currentProcess match {
-          case Some(process) =>
-            try {
-              val result = Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
-              currentProcess = None
-              result
-            } catch {
-              case _: Exception =>
-                false
-            }
-          case None =>
-            true
-        }
-        result
-      } finally {
-        stopping = false
+      val result = currentProcess match {
+        case Some(process) =>
+          try {
+            val result = Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
+            currentProcess = None
+            result
+          } catch {
+            case _: Exception =>
+              false
+          }
+        case None =>
+          true
       }
+      result
     }
   }
 
@@ -173,7 +169,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
     }
   }
 
-  private def processFault(exitCode: Int, logTail: Queue[String]): Unit = {
+  private def processExit(exitCode: Int, logTail: Queue[String]): Unit = {
     synchronized {
       state.failure(exitCode)
       saveLogs(true)
@@ -211,6 +207,8 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
       } else {
         log.info(s"Service is terminated")
       }
+      currentProcess = None
+      stopping = false
     }
   }
 }
