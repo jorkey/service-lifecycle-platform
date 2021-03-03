@@ -4,7 +4,6 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
-import java.io.File
 import java.net.URL
 import java.nio.file.Files
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,7 +22,6 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
   val sourceBranch = "graphql"
 
   it should "build developer and client distribution" in {
-    /*
     val developerDistributionBuilder = new DistributionBuilder(
       "None", false, new DistributionDirectory(developerDistributionDir),
       developerDistributionName, "Test developer distribution server",
@@ -35,6 +33,5 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       clientDistributionName, "Test client distribution server",
       "BuildDistributionTest-client",true, 8001)
     assert(clientDistributionBuilder.buildFromDeveloperDistribution(new URL("http://admin:admin@localhost:8000"), "ak"))
-     */
   }
 }
