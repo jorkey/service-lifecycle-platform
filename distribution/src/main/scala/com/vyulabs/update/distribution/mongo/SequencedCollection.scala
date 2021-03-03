@@ -33,7 +33,7 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   for {
     collection <- collection
-    _ <- collection.createIndex(Indexes.ascending("_expireTime"),
+    _ <- collection.createIndex(Indexes.ascending("_archiveTime"),
       new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS))
   } yield {}
 
@@ -134,7 +134,8 @@ class SequencedCollection[T: ClassTag](val name: String,
                 case Some(document) =>
                   for {
                     _ <- collection.updateOne(Filters.eq("_id", docId),
-                      Updates.combine(Updates.set("_replacedBy", new BsonInt64(sequence)), Updates.set("_expireTime", new BsonDateTime(System.currentTimeMillis()))))
+                      Updates.combine(Updates.set("_replacedBy", new BsonInt64(sequence)),
+                        Updates.set("_archiveTime", new BsonDateTime(System.currentTimeMillis()))))
                     result <- insert(collection, document, sequence).map(_ => 1)
                     _ <- collection.updateOne(Filters.eq("_id", docId),
                       Updates.unset("_replacedBy"))
@@ -161,8 +162,8 @@ class SequencedCollection[T: ClassTag](val name: String,
     for {
       collection <- collection
       result <- collection.updateMany(Filters.and(filters,
-        Filters.or(Filters.exists("_expireTime", false))),
-        Updates.set("_expireTime", new BsonDateTime(System.currentTimeMillis()))).map(_.getModifiedCount)
+        Filters.or(Filters.exists("_archiveTime", false))),
+        Updates.set("_archiveTime", new BsonDateTime(System.currentTimeMillis()))).map(_.getModifiedCount)
     } yield result
   }
 
@@ -199,7 +200,7 @@ class SequencedCollection[T: ClassTag](val name: String,
     for {
       collection <- collection
       docs <- collection.find(Filters.and(filters,
-        Filters.or(Filters.exists("_expireTime", false), Filters.exists("_replacedBy", true))), sort)
+        Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true))), sort)
     } yield {
       val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_id").asInt64())
       docs.filter(doc => { !doc.containsKey("_replacedBy") || !notReplaced.contains(doc.get("_replacedBy").asInt64()) })

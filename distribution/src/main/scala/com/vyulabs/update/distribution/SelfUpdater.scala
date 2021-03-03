@@ -51,7 +51,7 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
       if (!servicesToUpdate.isEmpty) {
         servicesToUpdate.foreach {
           case (serviceName, version) =>
-            log.error(s"Begin service ${serviceName} update to version ${version}")
+            log.info(s"Begin service ${serviceName} update to version ${version}")
             if (!beginServiceUpdate(serviceName, version)) {
               log.error(s"Can't begin service ${serviceName} update")
               return

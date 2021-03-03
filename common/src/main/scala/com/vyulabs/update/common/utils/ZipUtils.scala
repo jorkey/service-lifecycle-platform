@@ -148,6 +148,7 @@ object ZipUtils {
 
   def zipAndSend(directory: File, send: (File) => Boolean)(implicit log: Logger): Boolean = {
     val tmpFile = File.createTempFile("update", "tmp")
+    log.info(s"Zip to ${tmpFile}")
     try {
       zip(tmpFile, directory) && send(tmpFile)
     } finally {

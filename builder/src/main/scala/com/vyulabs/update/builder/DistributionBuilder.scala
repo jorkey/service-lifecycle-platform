@@ -65,7 +65,7 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
       return false
     }
 
-    log.info(s"########################### Upload developer images of services")
+    log.info(s"########################### Upload initial developer images of services")
     if (!developerBuilder.uploadDeveloperInitVersion(distributionClient, Common.ScriptsServiceName, author) ||
         !developerBuilder.uploadDeveloperInitVersion(distributionClient, Common.BuilderServiceName, author) ||
         !developerBuilder.uploadDeveloperInitVersion(distributionClient, Common.UpdaterServiceName, author) ||
@@ -74,14 +74,14 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
       return false
     }
 
-    log.info(s"########################### Set developer desired versions")
+    log.info(s"########################### Set initial developer desired versions")
     if (!developerBuilder.setInitialDesiredVersions(distributionClient, Seq(
         Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName, Common.DistributionServiceName))) {
-      log.error("Set developer desired versions error")
+      log.error("Set initial developer desired versions error")
       return false
     }
 
-    log.info(s"########################### Upload client images of services")
+    log.info(s"########################### Upload initial client images of services")
     if (!clientBuilder.uploadClientVersion(distributionClient, Common.ScriptsServiceName, initialClientVersion, author) ||
         !clientBuilder.uploadClientVersion(distributionClient, Common.BuilderServiceName, initialClientVersion, author) ||
         !clientBuilder.uploadClientVersion(distributionClient, Common.UpdaterServiceName, initialClientVersion, author) ||

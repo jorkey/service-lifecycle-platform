@@ -46,7 +46,7 @@ class SimpleLifecycle {
   private val distributionClient = new SyncDistributionClient(
     new DistributionClient(new HttpClientImpl(adminDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
-  Await.result(new MongoDb("test").dropDatabase(), FiniteDuration(5, TimeUnit.SECONDS))
+  Await.result(new MongoDb("test").dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
 
   def makeAndRunDistribution(): Unit = {
     println()
@@ -67,6 +67,7 @@ class SimpleLifecycle {
 
     println()
     println(s"************************************** Distribution server is ready")
+    println()
   }
 
   def installTestService(buggy: Boolean = false): Unit = {
@@ -124,6 +125,7 @@ class SimpleLifecycle {
     })
     println()
     println(s"************************************** Test service is installed")
+    println()
   }
 
   def updateTestService(): Unit = {
@@ -141,9 +143,11 @@ class SimpleLifecycle {
 
     println()
     println(s"************************************** Test service is updated")
+    println()
   }
 
   def updateDistribution(): Unit = {
+    println()
     println(s"************************************** Upload new client version of distribution")
     println()
     val newDistributionVersion = ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion.initialVersion, Some(1)))
@@ -167,6 +171,7 @@ class SimpleLifecycle {
 
     println()
     println(s"************************************** Distribution is updated")
+    println()
   }
 
   private def buildTestServiceVersions(distributionClient: SyncDistributionClient[SyncSource], version: DeveloperVersion): Unit = {
@@ -197,8 +202,7 @@ class SimpleLifecycle {
     println()
     if (!distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(Seq(
         ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion(distributionName, ClientVersion(version))))))).getOrElse(false)) {
-      log.error("Set client desired versions error")
-      return false
+      sys.error("Set client desired versions error")
     }
   }
 
