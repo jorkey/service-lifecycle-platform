@@ -34,7 +34,8 @@ lazy val builder = project
     assemblySettings
   )
   .dependsOn(
-    gitLib
+    gitLib,
+    distribution % "test->test"
   )
 
 lazy val updater = project

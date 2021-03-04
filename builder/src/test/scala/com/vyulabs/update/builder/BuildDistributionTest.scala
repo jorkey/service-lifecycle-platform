@@ -7,10 +7,14 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 import java.net.URL
 import java.nio.file.Files
+import java.util.concurrent.TimeUnit
 
 import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
+import com.vyulabs.update.distribution.mongo.MongoDb
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAll {
@@ -26,12 +30,22 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
 
   val sourceBranch = "graphql"
 
+  val developerMongoDbName = "BuildDistributionTest-developer"
+  val clientMongoDbName = "BuildDistributionTest-client"
+
   var processes = Set.empty[ChildProcess]
+
+  override protected def beforeAll(): Unit = {
+    Await.result(new MongoDb(developerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    Await.result(new MongoDb(clientMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+  }
 
   override protected def afterAll(): Unit = {
     synchronized {
       processes.foreach(_.terminate())
     }
+    Await.result(new MongoDb(developerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    Await.result(new MongoDb(clientMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   it should "build developer and client distribution" in {
@@ -40,7 +54,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     val developerDistributionBuilder = new DistributionBuilder(
       "None", () => startService(developerDistributionDir), new DistributionDirectory(developerDistributionDir),
       developerDistributionName, "Test developer distribution server",
-      "BuildDistributionTest-developer",true, 8000)
+      developerMongoDbName,true, 8000)
     assert(developerDistributionBuilder.buildDistributionFromSources("ak"))
 
     log.info(s"*************************** Build client distribution from developer distribution")
@@ -48,7 +62,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     val clientDistributionBuilder = new DistributionBuilder(
       "None", () => startService(clientDistributionDir), new DistributionDirectory(clientDistributionDir),
       clientDistributionName, "Test client distribution server",
-      "BuildDistributionTest-client",true, 8001)
+      clientMongoDbName,true, 8001)
     assert(clientDistributionBuilder.buildFromDeveloperDistribution(new URL("http://admin:admin@localhost:8000"), "ak"))
   }
 
