@@ -49,7 +49,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     result(collections.State_FaultReportsInfo.drop())
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
-  }
+ }
 
   it should "try to upload service states again after failure" in {
     val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(2, TimeUnit.SECONDS), distributionClient)

@@ -35,18 +35,22 @@ class StateUploader(distributionName: DistributionName,
   var task = Option.empty[Cancellable]
 
   def start(): Unit = {
-    task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
-    log.debug("Upload task is scheduled")
+    synchronized {
+      task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
+      log.debug("Upload task is scheduled")
+    }
   }
 
   def stop(): Unit = {
-    for (task <- task) {
-      if (task.cancel() || !task.isCancelled) {
-        log.debug("Upload task is cancelled")
-      } else {
-        log.debug("Upload task failed to cancel")
+    synchronized {
+      for (task <- task) {
+        if (task.cancel() || !task.isCancelled) {
+          log.debug("Upload task is cancelled")
+        } else {
+          log.debug("Upload task failed to cancel")
+        }
+        this.task = None
       }
-      this.task = None
     }
   }
 
@@ -64,13 +68,17 @@ class StateUploader(distributionName: DistributionName,
     } yield {}
     result.andThen {
       case result =>
-        if (result.isSuccess) {
-          log.debug(s"State is uploaded successfully")
-        } else {
-          log.debug(s"State is failed to upload")
+        synchronized {
+          for (_ <- task) {
+            if (result.isSuccess) {
+              log.debug(s"State is uploaded successfully")
+            } else {
+              log.debug(s"State is failed to upload")
+            }
+            task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
+            log.debug("Upload task is scheduled")
+          }
         }
-        system.getScheduler.scheduleOnce(uploadInterval)(uploadState())
-        log.debug("Upload task is scheduled")
     }
   }
 

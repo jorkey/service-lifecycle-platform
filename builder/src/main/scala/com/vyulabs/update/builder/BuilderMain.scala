@@ -8,10 +8,12 @@ import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
-
 import java.io.File
 import java.net.URL
 import java.util.concurrent.TimeUnit
+
+import com.vyulabs.update.common.process.ProcessUtils
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
@@ -50,8 +52,12 @@ object BuilderMain extends App {
       val port = arguments.getOptionIntValue("port").getOrElse(8000)
       val test = arguments.getOptionBooleanValue("test").getOrElse(false)
 
-      val distributionBuilder = new DistributionBuilder(cloudProvider, !test,
-        new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, test, port)
+      val startService = () => {
+        ProcessUtils.runProcess("/bin/sh", Seq(".create_distribution_service.sh"), Map.empty,
+          new File(distributionDirectory), Some(0), None, ProcessUtils.Logging.Realtime)
+      }
+      val distributionBuilder = new DistributionBuilder(cloudProvider, startService,
+        new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, false, port)
 
       arguments.getOptionValue("developerDistributionUrl") match {
         case None =>

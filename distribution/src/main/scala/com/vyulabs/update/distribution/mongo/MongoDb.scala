@@ -31,12 +31,12 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
 
   private val db = client.getDatabase(dbName)
 
-  if (temporary) {
-    Runtime.getRuntime.addShutdownHook(new Thread() {
-      override def run(): Unit = {
-        log.info(s"Shutdown: drop temporary database '${dbName}'")
-        Await.result(dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
-      }})
+  def close(): Unit = {
+    if (temporary) {
+      log.info(s"Drop temporary database '${dbName}'")
+      Await.result(dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    }
+    client.close()
   }
 
   def getCollectionNames(): Future[Seq[String]] = {

@@ -9,15 +9,15 @@ import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphq
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.info.ClientDesiredVersionDelta
-import com.vyulabs.update.common.process.ProcessUtils
+import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
-
 import java.io.File
 import java.net.URL
 import java.util.concurrent.TimeUnit
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,7 +25,7 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class DistributionBuilder(cloudProvider: String, startService: () => Unit,
+class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
                           distributionDirectory: DistributionDirectory,
                           distributionName: String, distributionTitle: String,
                           mongoDbName: String, mongoDbTemporary: Boolean, port: Int)
@@ -219,8 +219,11 @@ class DistributionBuilder(cloudProvider: String, startService: () => Unit,
   }
 
   def startDistributionService(distributionUrl: URL): Option[SyncDistributionClient[SyncSource]] = {
-    log.info(s"--------------------------- Start distribution service")
-    startService()
+    log.info(s"--------------------------- Start service")
+    if (!startService()) {
+      log.error("Can't start service process")
+      return None
+    }
     log.info(s"--------------------------- Waiting for distribution service became available")
     log.info(s"Connect to distribution URL ${distributionUrl} ...")
     val distributionClient = new SyncDistributionClient(

@@ -14,7 +14,7 @@ import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphq
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.info.{ClientDesiredVersionDelta, UserRole}
-import com.vyulabs.update.common.process.ChildProcess
+import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.MongoDb
@@ -24,6 +24,7 @@ import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
+import scala.util.{Failure, Success}
 
 class SimpleLifecycle {
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
@@ -39,14 +40,37 @@ class SimpleLifecycle {
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
-  private val distributionBuilder = new DistributionBuilder("None", false,
+  private val distributionBuilder = new DistributionBuilder("None", startDistribution,
     new DistributionDirectory(distributionDir), distributionName, "Test distribution server", "test", false, 8000)
   private val clientBuilder = new ClientBuilder(builderDir, distributionName)
 
   private val distributionClient = new SyncDistributionClient(
     new DistributionClient(new HttpClientImpl(adminDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
+  private var processes = Set.empty[ChildProcess]
+
+  private def startDistribution(): Boolean = {
+    log.info("Start distribution server")
+    val startProcess = ChildProcess.start("/bin/sh", Seq("distribution.sh"), Map.empty, distributionDir)
+    startProcess.onComplete {
+      case Success(process) =>
+        log.info("Distribution server started")
+        synchronized { processes += process }
+        process.onTermination().map(_ => synchronized{ processes -= process })
+      case Failure(ex) =>
+        sys.error("Can't start distribution process")
+        ex.printStackTrace()
+    }
+    true
+  }
+
   Await.result(new MongoDb("test").dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
+
+  def close(): Unit = {
+    synchronized {
+      processes.foreach(_.terminate())
+    }
+  }
 
   def makeAndRunDistribution(): Unit = {
     println()
@@ -117,12 +141,11 @@ class SimpleLifecycle {
     val process = Await.result(
       ChildProcess.start("/bin/sh", Seq("./updater.sh", "runServices", s"services=${testServiceName}"),
         Map.empty, testServiceInstanceDir, lines => lines.foreach(line => println(s"Updater: ${line._1}"))), FiniteDuration(15, TimeUnit.SECONDS))
-    process.onTermination().map(status => println(s"Updater is terminated with status ${status}"))
-    Runtime.getRuntime.addShutdownHook(new Thread() {
-      override def run(): Unit = {
-        Await.result(process.terminate(), FiniteDuration(3, TimeUnit.SECONDS))
-      }
-    })
+    process.onTermination().map { status =>
+      println(s"Updater is terminated with status ${status}")
+      synchronized { processes -= process }
+    }
+    synchronized { processes += process }
     println()
     println(s"************************************** Test service is installed")
     println()

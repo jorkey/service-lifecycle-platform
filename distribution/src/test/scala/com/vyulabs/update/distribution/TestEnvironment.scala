@@ -42,7 +42,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionDirectory = Files.createTempDirectory("distribution-").toFile
   val builderDirectory = new File(distributionDirectory, "builder"); builderDirectory.mkdir()
 
-  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, false)
+  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, true)
   def networkConfig = NetworkConfig(0, None)
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
@@ -82,6 +82,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
+    mongo.close()
     distributionDir.drop()
     IoUtils.deleteFileRecursively(builderDirectory)
   }
