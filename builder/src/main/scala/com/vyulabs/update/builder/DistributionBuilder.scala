@@ -25,7 +25,7 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class DistributionBuilder(cloudProvider: String, asService: Boolean,
+class DistributionBuilder(cloudProvider: String, startService: () => Unit,
                           distributionDirectory: DistributionDirectory,
                           distributionName: String, distributionTitle: String,
                           mongoDbName: String, mongoDbTemporary: Boolean, port: Int)
@@ -220,25 +220,7 @@ class DistributionBuilder(cloudProvider: String, asService: Boolean,
 
   def startDistributionService(distributionUrl: URL): Option[SyncDistributionClient[SyncSource]] = {
     log.info(s"--------------------------- Start distribution service")
-    val startService = (script: String) => {
-      ProcessUtils.runProcess("/bin/sh", script +: Seq.empty, Map.empty,
-          distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)
-    }
-    if (asService) {
-      if (!startService(".create_distribution_service.sh")) {
-        return None
-      }
-    } else {
-      new Thread() {
-        override def run(): Unit = {
-          log.info("Start distribution server")
-          while (true) {
-            startService("distribution.sh")
-            log.info("Distribution server is terminated. Restart distribution server")
-          }
-        }
-      }.start()
-    }
+    startService()
     log.info(s"--------------------------- Waiting for distribution service became available")
     log.info(s"Connect to distribution URL ${distributionUrl} ...")
     val distributionClient = new SyncDistributionClient(
