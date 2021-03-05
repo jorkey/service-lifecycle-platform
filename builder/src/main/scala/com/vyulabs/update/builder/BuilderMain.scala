@@ -61,7 +61,7 @@ object BuilderMain extends App {
 
       arguments.getOptionValue("developerDistributionUrl") match {
         case None =>
-          if (!distributionBuilder.buildDistributionFromSources(author)) {
+          if (!distributionBuilder.buildDistributionFromSources()) {
             Utils.error("Build distribution error")
           }
         case Some(developerDistributionUrl) =>
@@ -79,7 +79,6 @@ object BuilderMain extends App {
       }
       val asyncDistributionClient = new DistributionClient(new HttpClientImpl(distributionUrl))
       val distributionClient = new SyncDistributionClient(asyncDistributionClient, FiniteDuration(60, TimeUnit.SECONDS))
-      //TraceAppender.handleLogs(new LogSender(Common.DistributionServiceName, config.instanceId, asyncDistributionClient))
 
       command match {
         case "buildDeveloperVersion" =>

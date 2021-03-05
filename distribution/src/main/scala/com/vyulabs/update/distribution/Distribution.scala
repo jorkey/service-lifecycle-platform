@@ -22,6 +22,7 @@ import com.vyulabs.update.distribution.users.PasswordHash
 import org.slf4j.LoggerFactory
 import sangria.ast.OperationType
 import sangria.parser.QueryParser
+import sangria.renderer.SchemaRenderer
 import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,7 +58,15 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                     rejection
                 })
               } {
-                pathPrefix(graphqlPathPrefix) {
+                pathPrefix(graphqlDslPathPrefix) {
+                  seal {
+                    get {
+                      authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
+                        complete(SchemaRenderer.renderSchema(GraphqlSchema.SchemaDefinition(userInfo.role)))
+                      }
+                    }
+                  }
+                } ~ pathPrefix(graphqlPathPrefix) {
                   seal {
                     authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
                       post {
@@ -66,16 +75,24 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                           val JsString(query) = fields("query")
                           val operation = fields.get("operation") collect { case JsString(op) => op }
                           val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
-                          executeGraphqlRequest(userInfo, workspace, query, operation, variables) }
+                          executeGraphqlRequest(userInfo, workspace, query, operation, variables)
+                        }
                       } ~ get {
                         parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
                           val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
-                          executeGraphqlRequest(userInfo, workspace, query, operation, variables) }
+                          executeGraphqlRequest(userInfo, workspace, query, operation, variables)
+                        }
                       }
                     }
                   }
-                } ~ pathPrefix(interactiveGraphqlPathPrefix) {
-                  getFromResource("graphiql.html")
+                } ~ pathPrefix(graphqlDslPathPrefix) {
+                  seal {
+                    get {
+                      authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
+                        complete(SchemaRenderer.renderSchema(GraphqlSchema.SchemaDefinition(userInfo.role)))
+                      }
+                    }
+                  }
                 } ~ pathPrefix(loadPathPrefix) {
                   seal {
                     authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>

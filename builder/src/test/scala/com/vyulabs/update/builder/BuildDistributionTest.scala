@@ -9,7 +9,9 @@ import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
+import com.vyulabs.update.common.version.DeveloperVersion
 import com.vyulabs.update.distribution.mongo.MongoDb
 
 import scala.concurrent.Await
@@ -55,7 +57,12 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       "None", () => startService(developerDistributionDir), new DistributionDirectory(developerDistributionDir),
       developerDistributionName, "Test developer distribution server",
       developerMongoDbName,true, 8000)
-    assert(developerDistributionBuilder.buildDistributionFromSources("ak"))
+    assert(developerDistributionBuilder.buildDistributionFromSources())
+    assert(developerDistributionBuilder.generateDeveloperAndClientVersions(Map.empty +
+      (Common.ScriptsServiceName -> DeveloperVersion.initialVersion) +
+      (Common.BuilderServiceName -> DeveloperVersion.initialVersion) +
+      (Common.UpdaterServiceName -> DeveloperVersion.initialVersion)))
+    assert(developerDistributionBuilder.installBuilderFromSources())
 
     log.info(s"*************************** Build client distribution from developer distribution")
     log.info("")

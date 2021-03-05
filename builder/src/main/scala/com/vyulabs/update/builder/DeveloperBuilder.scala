@@ -233,11 +233,6 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
     true
   }
 
-  def setInitialDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], serviceNames: Seq[ServiceName]): Boolean = {
-    setDesiredVersions(distributionClient, serviceNames.map { DeveloperDesiredVersionDelta(_,
-      Some(DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion))) })
-  }
-
   def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[DeveloperDesiredVersionDelta]): Boolean = {
     distributionClient.graphqlRequest(administratorMutations.setDeveloperDesiredVersions(versions)).getOrElse(false)
   }

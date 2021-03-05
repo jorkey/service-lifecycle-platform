@@ -34,4 +34,3 @@ case class DeveloperDesiredVersionDelta(serviceName: ServiceName, version: Optio
 object DeveloperDesiredVersionDelta extends DefaultJsonProtocol {
   implicit val desiredVersionJson = jsonFormat2(DeveloperDesiredVersionDelta.apply)
 }
-

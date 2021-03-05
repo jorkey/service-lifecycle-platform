@@ -55,8 +55,8 @@ lazy val distribution = project
     assemblySettings
   )
   .dependsOn(
-    common % "compile->compile;test->test"//,
-    //dashboard
+    common % "compile->compile;test->test",
+    dashboard
   )
 
 lazy val dashboard = project

@@ -86,6 +86,16 @@ object GraphqlSchema {
         arguments = OptionUserArg :: Nil,
         resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg)) }),
 
+      Field("distributionUpdateList", ListType(DeveloperDesiredVersionType),
+        resolve = c => { c.ctx.workspace.getDistributionUpdateList() }),
+
+      Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
+        arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
+      Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
+        arguments = OptionServicesArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
@@ -169,13 +179,17 @@ object GraphqlSchema {
         arguments = UserArg :: PasswordArg :: Nil,
         resolve = c => { c.ctx.workspace.changeUserPassword(c.arg(UserArg), c.arg(PasswordArg)) }),
 
+      Field("downloadDistributionUpdates", BooleanType,
+        arguments = DeveloperDesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.workspace.downloadDistributionUpdates(c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
+
       Field("buildDeveloperVersion", StringType,
         arguments = ServiceArg :: DeveloperVersionArg :: OptionBranchesArg :: OptionCommentArg :: Nil,
         resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.userInfo.name,
           c.arg(OptionBranchesArg).getOrElse(Seq.empty), c.arg(OptionCommentArg)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
-        resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)) }),
+        resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)).map(_ => true) }),
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: DeveloperDistributionVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),

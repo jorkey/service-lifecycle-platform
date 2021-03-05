@@ -6,7 +6,7 @@ import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, T
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
-import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
@@ -16,10 +16,14 @@ import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
+import java.io.{File, IOException}
+import java.util.concurrent.TimeUnit
 
-import java.io.File
+import com.vyulabs.update.distribution.client.AkkaHttpClient
+
 import scala.collection.JavaConverters.asJavaIterableConverter
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Success
 
 trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with RunBuilderUtils with SprayJsonSupport {
@@ -29,6 +33,10 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   protected val taskManager: TaskManager
 
   protected implicit val executionContext: ExecutionContext
+
+  val developerDistributionClient = config.developer.map { config =>
+    new DistributionClient(new AkkaHttpClient(config.distributionUrl))
+  }
 
   def buildDeveloperVersion(serviceName: ServiceName, developerVersion: DeveloperVersion, author: UserName,
                             sourceBranches: Seq[String], comment: Option[String])(implicit log: Logger): TaskId = {
@@ -57,12 +65,12 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     }
   }
 
-  def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Boolean] = {
+  def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add developer version info ${versionInfo}")
-    (for {
+    for {
       _ <- collections.Developer_VersionsInfo.insert(versionInfo)
       _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
-    } yield {}).map(l => true)
+    } yield {}
   }
 
   private def removeObsoleteVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Unit] = {
@@ -175,44 +183,70 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield developerVersions
   }
 
-  def downloadUpdates(developerDistributionClient: DistributionClient[AkkaSource], serviceNames: Seq[ServiceName])
-                     (implicit log: Logger): Future[Map[ServiceName, DeveloperDistributionVersion]] = {
-    for {
-      developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(serviceNames))
-          .map(DeveloperDesiredVersions.toMap(_))
-      updatedVersions <- (Future.sequence(developerDesiredVersions.map {
-        case (serviceName, version) if version.distributionName == config.distributionName =>
-          for {
-            existVersionInfo <- getDeveloperVersionsInfo(serviceName, Some(config.distributionName), Some(version)).map(_.headOption)
-            updatedVersion <- existVersionInfo match {
-              case Some(_) =>
-                Future(None)
-              case None =>
+  def getDistributionUpdateList()(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+    developerDistributionClient match {
+      case Some(developerDistributionClient) =>
+        for {
+          developerDesiredVersions <- developerDistributionClient.graphqlRequest(
+            distributionQueries.getDeveloperDesiredVersions())
+            .map(DeveloperDesiredVersions.toMap(_))
+          existingVersions <- Future.sequence(developerDesiredVersions.map { case (serviceName, version) =>
+            getDeveloperVersionsInfo(serviceName, Some(config.distributionName), Some(version))
+              .map(_.map(_ => DeveloperDesiredVersion(serviceName, version)))
+          }).map(_.flatten)
+        } yield {
+          val toUpdate = developerDesiredVersions.filterNot { case (serviceName, _) =>
+            existingVersions.exists(_.serviceName == serviceName)
+          }
+          DeveloperDesiredVersions.fromMap(toUpdate)
+        }
+        null
+      case None =>
+        Promise.apply[Seq[DeveloperDesiredVersion]].failure(
+          new IOException("Developer distribution server is not defined")
+        ).future
+    }
+  }
+
+  def downloadDistributionUpdates(desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
+    developerDistributionClient match {
+      case Some(developerDistributionClient) =>
+        for {
+          _ <- Future.sequence(desiredVersions.map { version =>
+            for {
+              versionExists <- getDeveloperVersionsInfo(
+                version.serviceName, Some(config.distributionName), Some(version.version)).map(!_.isEmpty)
+            } yield {
+              if (!versionExists) {
+                log.info(s"Download developer version ${version}")
+                val imageFile = File.createTempFile("version", "image")
                 for {
-                  _ <- {
-                    log.info(s"Download version ${version}")
-                    val imageFile = File.createTempFile("version", "image")
-                    developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
-                      .andThen {
-                        case Success(_) =>
-                          imageFile.renameTo(directory.getDeveloperVersionImageFile(serviceName, version))
-                        case _ =>
-                      }.andThen { case _ => imageFile.delete() }
-                  }
-                  versionInfo <- developerDistributionClient.graphqlRequest(distributionQueries.getVersionsInfo(serviceName, None, Some(version))).map(_.headOption)
-                  updatedVersion <- versionInfo match {
+                  _ <- developerDistributionClient.downloadDeveloperVersionImage(version.serviceName, version.version, imageFile)
+                    .andThen {
+                      case Success(_) =>
+                        imageFile.renameTo(directory.getDeveloperVersionImageFile(version.serviceName, version.version))
+                      case _ =>
+                    }.andThen { case _ => imageFile.delete() }
+                  versionInfo <- developerDistributionClient.graphqlRequest(
+                    distributionQueries.getVersionsInfo(version.serviceName, None, Some(version.version))).map(_.headOption)
+                  _ <- versionInfo match {
                     case Some(versionInfo) =>
-                      addDeveloperVersionInfo(versionInfo).map(result => if (result) Some(serviceName -> version) else None)
+                      addDeveloperVersionInfo(versionInfo)
                     case None =>
                       Future(None)
                   }
-                } yield updatedVersion
+                } yield {}
+              } else {
+                Future()
+              }
             }
-          } yield updatedVersion
-        case _ =>
-          Future(None)
-      }).map(_.flatten.toMap))
-    } yield updatedVersions
+          }).map(_ => ())
+        } yield {}
+      case None =>
+        Promise.apply[Unit].failure(
+          new IOException("Developer distribution server is not defined")
+        ).future
+    }
   }
 
   private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Set[DeveloperVersion]] = {

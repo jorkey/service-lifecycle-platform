@@ -78,7 +78,7 @@ class SimpleLifecycle {
     println()
     println("====================================== Setup and start distribution server")
     println()
-    if (!distributionBuilder.buildDistributionFromSources("ak")) {
+    if (!distributionBuilder.buildDistributionFromSources()) {
       sys.error("Can't build distribution server")
     }
 
@@ -185,7 +185,7 @@ class SimpleLifecycle {
     println(s"====================================== Wait for distribution server updated")
     println()
     Thread.sleep(10000)
-    distributionBuilder.waitForServerAvailable(distributionClient)
+    distributionBuilder.waitForServerAvailable()
     Thread.sleep(5000)
     val states = distributionClient.graphqlRequest(administratorQueries.getServiceStates(distributionName = Some(distributionName),
       serviceName = Some(Common.DistributionServiceName))).getOrElse {

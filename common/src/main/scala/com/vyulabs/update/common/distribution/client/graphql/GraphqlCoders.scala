@@ -14,6 +14,9 @@ trait CommonQueriesCoder {
 }
 
 object AdministratorQueriesCoder extends CommonQueriesCoder {
+  def getDistributionUpdateList() =
+    GraphqlQuery[Seq[DeveloperDesiredVersion]]("distributionUpdateList", Seq.empty)
+
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperDistributionVersion] = None) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
@@ -92,6 +95,10 @@ object CommonMutationsCoder extends CommonMutationsCoder
 object AdministratorMutationsCoder extends CommonMutationsCoder {
   def addUser(userName: UserName, role: UserRole, password: String) =
     GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> userName), GraphqlArgument("role" -> role, "UserRole"), GraphqlArgument("password" -> password)))
+
+  def downloadDistributionUpdates(versions: Seq[DeveloperDesiredVersion]) =
+    GraphqlMutation[Boolean]("downloadDistributionUpdates",
+      Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
 
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
