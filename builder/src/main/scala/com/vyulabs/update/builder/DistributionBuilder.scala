@@ -230,11 +230,11 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def updateDistribution(developerDistributionClient: SyncDistributionClient[SyncSource]): Boolean = {
-    val updateList = developerDistributionClient.graphqlRequest(administratorQueries.getDistributionUpdateList()).getOrElse {
+    val updateList = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperUpdateList()).getOrElse {
       log.error("Can't get distribution update list")
       return false
     }
-    if (!developerDistributionClient.graphqlRequest(administratorMutations.downloadDistributionUpdates(updateList)).getOrElse(false)) {
+    if (!developerDistributionClient.graphqlRequest(administratorMutations.installDeveloperUpdates(updateList)).getOrElse(false)) {
       
     }
   }

@@ -86,8 +86,10 @@ object GraphqlSchema {
         arguments = OptionUserArg :: Nil,
         resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg)) }),
 
-      Field("distributionUpdateList", ListType(DeveloperDesiredVersionType),
-        resolve = c => { c.ctx.workspace.getDistributionUpdateList() }),
+      Field("developerUpdateList", ListType(DeveloperDesiredVersionType),
+        resolve = c => { c.ctx.workspace.getDeveloperUpdateList() }),
+      Field("clientUpdateList", ListType(ClientDesiredVersionType),
+        resolve = c => { c.ctx.workspace.getClientUpdateList() }),
 
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
@@ -179,9 +181,12 @@ object GraphqlSchema {
         arguments = UserArg :: PasswordArg :: Nil,
         resolve = c => { c.ctx.workspace.changeUserPassword(c.arg(UserArg), c.arg(PasswordArg)) }),
 
-      Field("downloadDistributionUpdates", BooleanType,
+      Field("installDeveloperUpdates", StringType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        resolve = c => { c.ctx.workspace.downloadDistributionUpdates(c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.installDeveloperUpdates(c.arg(DeveloperDesiredVersionsArg)) }),
+      Field("installClientUpdates", StringType,
+        arguments = ClientDesiredVersionsArg :: Nil,
+        resolve = c => { c.ctx.workspace.installClientUpdates(c.arg(ClientDesiredVersionsArg)) }),
 
       Field("buildDeveloperVersion", StringType,
         arguments = ServiceArg :: DeveloperVersionArg :: OptionBranchesArg :: OptionCommentArg :: Nil,

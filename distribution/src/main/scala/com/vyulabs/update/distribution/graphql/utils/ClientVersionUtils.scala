@@ -145,6 +145,27 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionClientsU
     collections.Client_DesiredVersions.find(filters).map(_.map(_.versions).headOption.getOrElse(Seq.empty[ClientDesiredVersion]))
   }
 
+  def getClientUpdateList()(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
+    for {
+      clientDesiredVersions <- getClientDesiredVersions()
+        .map(ClientDesiredVersions.toMap(_))
+      existingVersions <- Future.sequence(clientDesiredVersions.map { case (serviceName, version) =>
+        getClientVersionsInfo(serviceName, Some(config.distributionName), Some(version))
+          .map(_.map(_ => ClientDesiredVersion(serviceName, version)))
+      }).map(_.flatten)
+    } yield {
+      val toUpdate = clientDesiredVersions.filterNot { case (serviceName, _) =>
+        existingVersions.exists(_.serviceName == serviceName)
+      }
+      ClientDesiredVersions.fromMap(toUpdate)
+    }
+  }
+
+  def installClientUpdates(desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): TaskId = {
+    // TODO
+    null
+  }
+
   private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Set[ClientVersion]] = {
     getClientDesiredVersion(serviceName).map(_.toSet.filter(_.distributionName == distributionName).map(_.version))
   }

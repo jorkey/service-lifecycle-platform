@@ -6,23 +6,19 @@ import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, T
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
-import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
+import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
+
 import java.io.{File, IOException}
-import java.util.concurrent.TimeUnit
-
-import com.vyulabs.update.distribution.client.AkkaHttpClient
-
 import scala.collection.JavaConverters.asJavaIterableConverter
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Success
 
@@ -183,7 +179,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield developerVersions
   }
 
-  def getDistributionUpdateList()(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+  def getDeveloperUpdateList()(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     developerDistributionClient match {
       case Some(developerDistributionClient) =>
         for {
@@ -200,7 +196,6 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
           }
           DeveloperDesiredVersions.fromMap(toUpdate)
         }
-        null
       case None =>
         Promise.apply[Seq[DeveloperDesiredVersion]].failure(
           new IOException("Developer distribution server is not defined")
@@ -208,45 +203,51 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     }
   }
 
-  def downloadDistributionUpdates(desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
-    developerDistributionClient match {
-      case Some(developerDistributionClient) =>
-        for {
-          _ <- Future.sequence(desiredVersions.map { version =>
+  def installDeveloperUpdates(desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): TaskId = {
+    val task = taskManager.create(s"Download developer updates",
+      (taskId, logger) => {
+        implicit val log = logger
+        val future = developerDistributionClient match {
+          case Some(developerDistributionClient) =>
             for {
-              versionExists <- getDeveloperVersionsInfo(
-                version.serviceName, Some(config.distributionName), Some(version.version)).map(!_.isEmpty)
-            } yield {
-              if (!versionExists) {
-                log.info(s"Download developer version ${version}")
-                val imageFile = File.createTempFile("version", "image")
+              _ <- Future.sequence(desiredVersions.map { version =>
                 for {
-                  _ <- developerDistributionClient.downloadDeveloperVersionImage(version.serviceName, version.version, imageFile)
-                    .andThen {
-                      case Success(_) =>
-                        imageFile.renameTo(directory.getDeveloperVersionImageFile(version.serviceName, version.version))
-                      case _ =>
-                    }.andThen { case _ => imageFile.delete() }
-                  versionInfo <- developerDistributionClient.graphqlRequest(
-                    distributionQueries.getVersionsInfo(version.serviceName, None, Some(version.version))).map(_.headOption)
-                  _ <- versionInfo match {
-                    case Some(versionInfo) =>
-                      addDeveloperVersionInfo(versionInfo)
-                    case None =>
-                      Future(None)
+                  versionExists <- getDeveloperVersionsInfo(
+                    version.serviceName, Some(config.distributionName), Some(version.version)).map(!_.isEmpty)
+                } yield {
+                  if (!versionExists) {
+                    log.info(s"Download developer version ${version}")
+                    val imageFile = File.createTempFile("version", "image")
+                    for {
+                      _ <- developerDistributionClient.downloadDeveloperVersionImage(version.serviceName, version.version, imageFile)
+                        .andThen {
+                          case Success(_) =>
+                            imageFile.renameTo(directory.getDeveloperVersionImageFile(version.serviceName, version.version))
+                          case _ =>
+                        }.andThen { case _ => imageFile.delete() }
+                      versionInfo <- developerDistributionClient.graphqlRequest(
+                        distributionQueries.getVersionsInfo(version.serviceName, None, Some(version.version))).map(_.headOption)
+                      _ <- versionInfo match {
+                        case Some(versionInfo) =>
+                          addDeveloperVersionInfo(versionInfo)
+                        case None =>
+                          Future(None)
+                      }
+                    } yield {}
+                  } else {
+                    Future()
                   }
-                } yield {}
-              } else {
-                Future()
-              }
-            }
-          }).map(_ => ())
-        } yield {}
-      case None =>
-        Promise.apply[Unit].failure(
-          new IOException("Developer distribution server is not defined")
-        ).future
-    }
+                }
+              }).map(_ => ())
+            } yield {}
+          case None =>
+            Promise.apply[Unit].failure(
+              new IOException("Developer distribution server is not defined")
+            ).future
+        }
+        (future, None)
+      })
+    task.taskId
   }
 
   private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Set[DeveloperVersion]] = {
