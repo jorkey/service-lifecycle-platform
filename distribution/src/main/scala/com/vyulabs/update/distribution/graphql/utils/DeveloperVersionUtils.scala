@@ -30,7 +30,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
 
   protected implicit val executionContext: ExecutionContext
 
-  val developerDistributionClient = config.developer.map { config =>
+  val partnerDistributionClient = config.partnerDistribution.map { config =>
     new DistributionClient(new AkkaHttpClient(config.distributionUrl))
   }
 
@@ -179,23 +179,10 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield developerVersions
   }
 
-  def getDeveloperUpdateList()(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
-    developerDistributionClient match {
+  def getPartnerDeveloperDesiredVersions()(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+    partnerDistributionClient match {
       case Some(developerDistributionClient) =>
-        for {
-          developerDesiredVersions <- developerDistributionClient.graphqlRequest(
-            distributionQueries.getDeveloperDesiredVersions())
-            .map(DeveloperDesiredVersions.toMap(_))
-          existingVersions <- Future.sequence(developerDesiredVersions.map { case (serviceName, version) =>
-            getDeveloperVersionsInfo(serviceName, Some(config.distributionName), Some(version))
-              .map(_.map(_ => DeveloperDesiredVersion(serviceName, version)))
-          }).map(_.flatten)
-        } yield {
-          val toUpdate = developerDesiredVersions.filterNot { case (serviceName, _) =>
-            existingVersions.exists(_.serviceName == serviceName)
-          }
-          DeveloperDesiredVersions.fromMap(toUpdate)
-        }
+        developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
       case None =>
         Promise.apply[Seq[DeveloperDesiredVersion]].failure(
           new IOException("Developer distribution server is not defined")
@@ -203,42 +190,40 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     }
   }
 
-  def installDeveloperUpdates(desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): TaskId = {
-    val task = taskManager.create(s"Download developer updates",
+  def installPartnerDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion)
+                                     (implicit log: Logger): TaskId = {
+    val task = taskManager.create(s"Download and install developer version ${version} of service ${serviceName}",
       (taskId, logger) => {
         implicit val log = logger
-        val future = developerDistributionClient match {
+        val future = partnerDistributionClient match {
           case Some(developerDistributionClient) =>
             for {
-              _ <- Future.sequence(desiredVersions.map { version =>
-                for {
-                  versionExists <- getDeveloperVersionsInfo(
-                    version.serviceName, Some(config.distributionName), Some(version.version)).map(!_.isEmpty)
-                } yield {
-                  if (!versionExists) {
-                    log.info(s"Download developer version ${version}")
-                    val imageFile = File.createTempFile("version", "image")
-                    for {
-                      _ <- developerDistributionClient.downloadDeveloperVersionImage(version.serviceName, version.version, imageFile)
-                        .andThen {
-                          case Success(_) =>
-                            imageFile.renameTo(directory.getDeveloperVersionImageFile(version.serviceName, version.version))
-                          case _ =>
-                        }.andThen { case _ => imageFile.delete() }
-                      versionInfo <- developerDistributionClient.graphqlRequest(
-                        distributionQueries.getVersionsInfo(version.serviceName, None, Some(version.version))).map(_.headOption)
-                      _ <- versionInfo match {
-                        case Some(versionInfo) =>
-                          addDeveloperVersionInfo(versionInfo)
-                        case None =>
-                          Future(None)
-                      }
-                    } yield {}
-                  } else {
-                    Future()
-                  }
+              versionExists <- getDeveloperVersionsInfo(
+                serviceName, Some(config.distributionName), Some(version)).map(!_.isEmpty)
+              _ <-
+                if (!versionExists) {
+                  log.info(s"Download developer version ${version}")
+                  val imageFile = File.createTempFile("version", "image")
+                  for {
+                    _ <- developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
+                      .andThen {
+                        case Success(_) =>
+                          imageFile.renameTo(directory.getDeveloperVersionImageFile(serviceName, version))
+                        case _ =>
+                      }.andThen { case _ => imageFile.delete() }
+                    versionInfo <- developerDistributionClient.graphqlRequest(
+                      distributionQueries.getVersionsInfo(serviceName, None, Some(version))).map(_.headOption)
+                    _ <- versionInfo match {
+                      case Some(versionInfo) =>
+                        addDeveloperVersionInfo(versionInfo)
+                      case None =>
+                        Future()
+                    }
+                  } yield {}
+                } else {
+                  log.info(s"Version ${version} already exists")
+                  Future()
                 }
-              }).map(_ => ())
             } yield {}
           case None =>
             Promise.apply[Unit].failure(

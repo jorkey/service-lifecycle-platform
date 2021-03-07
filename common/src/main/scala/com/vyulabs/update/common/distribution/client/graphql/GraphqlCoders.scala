@@ -14,12 +14,6 @@ trait CommonQueriesCoder {
 }
 
 object AdministratorQueriesCoder extends CommonQueriesCoder {
-  def getDeveloperUpdateList() =
-    GraphqlQuery[Seq[DeveloperDesiredVersion]]("developerUpdateList", Seq.empty)
-
-  def getClientUpdateList() =
-    GraphqlQuery[Seq[ClientDesiredVersion]]("clientUpdateList", Seq.empty)
-
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperDistributionVersion] = None) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
@@ -60,6 +54,9 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
     GraphqlQuery[Seq[DistributionFaultReport]]("faultReportsInfo",
       Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
       "{ distributionName, report { faultId, info { date, instanceId, serviceDirectory, serviceName, serviceProfile, state { date, installDate, startDate, version, updateToVersion, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
+
+  def getPartnerDeveloperDesiredVersions() =
+    GraphqlQuery[Seq[DeveloperDesiredVersion]]("getPartnerDeveloperDesiredVersions", Seq.empty)
 }
 
 object DistributionQueriesCoder extends CommonQueriesCoder {
@@ -99,13 +96,6 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
   def addUser(userName: UserName, role: UserRole, password: String) =
     GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> userName), GraphqlArgument("role" -> role, "UserRole"), GraphqlArgument("password" -> password)))
 
-  def installDeveloperUpdates(versions: Seq[DeveloperDesiredVersion]) =
-    GraphqlMutation[String]("installDeveloperUpdates",
-      Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
-  def installClientUpdates(versions: Seq[ClientDesiredVersion]) =
-    GraphqlMutation[String]("installClientUpdates",
-      Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))
-
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
   def addDeveloperVersionInfo(info: DeveloperVersionInfo) =
@@ -126,6 +116,10 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
     GraphqlMutation[Boolean]("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionDeltaInput!]")))
   def setClientDesiredVersions(versions: Seq[ClientDesiredVersionDelta]) =
     GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionDeltaInput!]")))
+
+  def installPartnerDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
+    GraphqlMutation[String]("installPartnerDeveloperVersion",
+      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 }
 
 object DistributionMutationsCoder extends CommonMutationsCoder {

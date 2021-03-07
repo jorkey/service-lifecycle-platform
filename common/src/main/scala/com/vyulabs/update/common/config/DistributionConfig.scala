@@ -47,22 +47,22 @@ object FaultReportsConfig {
   implicit val faultReportsConfigJson = jsonFormat2(FaultReportsConfig.apply)
 }
 
-case class DeveloperDistributionConfig(distributionUrl: URL, uploadStateInterval: FiniteDuration)
+case class PartnerDistributionConfig(distributionUrl: URL, uploadStateInterval: Option[FiniteDuration])
 
-object DeveloperDistributionConfig {
-  implicit val developerConfigJson = jsonFormat2(DeveloperDistributionConfig.apply)
+object PartnerDistributionConfig {
+  implicit val developerConfigJson = jsonFormat2(PartnerDistributionConfig.apply)
 }
 
 case class DistributionConfig(distributionName: DistributionName, title: String, instanceId: InstanceId,
                               mongoDb: MongoDbConfig, network: NetworkConfig, remoteBuilder: Option[RemoteBuilderConfig],
                               versions: VersionsConfig, instanceState: InstanceStateConfig, faultReports: FaultReportsConfig,
-                              developer: Option[DeveloperDistributionConfig])
+                              partnerDistribution: Option[PartnerDistributionConfig])
 
 object DistributionConfig {
   implicit val distributionConfigJson = jsonFormat10((name: DistributionName, title: String, instanceId: InstanceId,
                                                       mongoDb: MongoDbConfig, network: NetworkConfig, builder: Option[RemoteBuilderConfig],
                                                       versions: VersionsConfig, instanceState: InstanceStateConfig,
-                                                      faultReports: FaultReportsConfig, uploadState: Option[DeveloperDistributionConfig]) =>
+                                                      faultReports: FaultReportsConfig, uploadState: Option[PartnerDistributionConfig]) =>
     DistributionConfig.apply(name, title, instanceId, mongoDb, network, builder,
       versions, instanceState, faultReports, uploadState))
 

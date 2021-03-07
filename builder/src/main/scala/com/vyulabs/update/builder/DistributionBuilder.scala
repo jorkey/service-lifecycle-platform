@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName}
-import com.vyulabs.update.common.config.{DeveloperDistributionConfig, DistributionConfig, NetworkConfig}
+import com.vyulabs.update.common.config.{PartnerDistributionConfig, DistributionConfig, NetworkConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
@@ -150,7 +150,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       return false
     }
 
-    val developerDistributionConfig = DeveloperDistributionConfig(developerDistributionURL, FiniteDuration(30, TimeUnit.SECONDS))
+    val developerDistributionConfig = PartnerDistributionConfig(developerDistributionURL, Some(FiniteDuration(30, TimeUnit.SECONDS)))
     val newDistributionConfig = DistributionConfig(config.distributionName, config.title, config.instanceId, config.mongoDb, config.network,
       config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Some(developerDistributionConfig))
     if (!IoUtils.writeJsonToFile(distributionDirectory.getConfigFile(), newDistributionConfig)) {
@@ -230,13 +230,14 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def updateDistribution(developerDistributionClient: SyncDistributionClient[SyncSource]): Boolean = {
-    val updateList = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperUpdateList()).getOrElse {
-      log.error("Can't get distribution update list")
-      return false
-    }
-    if (!developerDistributionClient.graphqlRequest(administratorMutations.installDeveloperUpdates(updateList)).getOrElse(false)) {
-      
-    }
+//    val updateList = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperUpdateList()).getOrElse {
+//      log.error("Can't get distribution update list")
+//      return false
+//    }
+//    if (!developerDistributionClient.graphqlRequest(administratorMutations.installDeveloperUpdates(updateList)).getOrElse(false)) {
+//
+//    }
+    false
   }
 
   def installBuilderFromSources(): Boolean = {
