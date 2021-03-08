@@ -74,12 +74,10 @@ object BuilderMain extends App {
           }
         case Some(partnerDistributionUrl) =>
           val partnerDistributionURL = new URL(partnerDistributionUrl)
-          val partnerDistributionClient = new SyncDistributionClient(
-            new DistributionClient(new HttpClientImpl(partnerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS))
-          if (!distributionBuilder.buildFromPartnerDistribution(partnerDistributionURL, partnerDistributionClient, author)) {
+          if (!distributionBuilder.buildFromPartnerDistribution(partnerDistributionURL)) {
             Utils.error("Build distribution error")
           }
-          if (!distributionBuilder.updateDistributionFromPartner(partnerDistributionClient)) {
+          if (!distributionBuilder.updateDistributionFromPartner()) {
             Utils.error("Build distribution error")
           }
       }

@@ -71,7 +71,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       clientDistributionName, "Test client distribution server",
       clientMongoDbName,true, 8001)
 
-    assert(clientDistributionBuilder.buildFromPartnerDistribution(new URL("http://admin:admin@localhost:8000"), "ak"))
+    assert(clientDistributionBuilder.buildFromPartnerDistribution(new URL("http://admin:admin@localhost:8000")))
   }
 
   def startService(directory: File): Boolean = {

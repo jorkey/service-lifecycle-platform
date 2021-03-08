@@ -41,6 +41,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private var distributionClient = Option.empty[SyncDistributionClient[SyncSource]]
   private var distributionConfig = Option.empty[DistributionConfig]
 
+  private var partnerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
+
   def buildDistributionFromSources(): Boolean = {
     log.info(s"########################### Generate initial versions of services")
     if (!generateDeveloperAndClientVersions(Common.DistributionServiceName, DeveloperVersion.initialVersion)) {
@@ -121,12 +123,15 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def buildFromPartnerDistribution(partnerDistributionURL: URL, partnerDistributionClient: SyncDistributionClient[SyncSource], author: String): Boolean = {
+  def buildFromPartnerDistribution(partnerDistributionURL: URL): Boolean = {
+    partnerDistributionClient = Some(new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(partnerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
+
     log.info(s"########################### Download and generate client versions")
-    val scriptsVersion = downloadAndGenerateClientVersion(partnerDistributionClient, Common.ScriptsServiceName).getOrElse {
+    val scriptsVersion = downloadAndGenerateClientVersion(partnerDistributionClient.get, Common.ScriptsServiceName).getOrElse {
       return false
     }
-    val distributionVersion = downloadAndGenerateClientVersion(partnerDistributionClient, Common.DistributionServiceName).getOrElse {
+    val distributionVersion = downloadAndGenerateClientVersion(partnerDistributionClient.get, Common.DistributionServiceName).getOrElse {
       return false
     }
 
@@ -211,8 +216,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     Some(distributionClient)
   }
 
-  def updateDistributionFromPartner(partnerDistributionClient: SyncDistributionClient[SyncSource]): Boolean = {
-    val partnerDesiredVersions = DeveloperDesiredVersions.toMap(partnerDistributionClient.graphqlRequest(administratorQueries.getPartnerDeveloperDesiredVersions()).getOrElse {
+  def updateDistributionFromPartner(): Boolean = {
+    val partnerDesiredVersions = DeveloperDesiredVersions.toMap(
+        partnerDistributionClient.get.graphqlRequest(administratorQueries.getPartnerDeveloperDesiredVersions()).getOrElse {
       log.error("Can't get partner distribution developer desired versions")
       return false
     })
