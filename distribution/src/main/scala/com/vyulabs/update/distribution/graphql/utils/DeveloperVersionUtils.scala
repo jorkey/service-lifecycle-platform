@@ -4,13 +4,13 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId, UserName}
 import com.vyulabs.update.common.config.DistributionConfig
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
+import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
-import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
+import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
@@ -30,8 +30,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
 
   protected implicit val executionContext: ExecutionContext
 
-  val partnerDistributionClient = config.partnerDistribution.map { config =>
-    new DistributionClient(new AkkaHttpClient(config.distributionUrl))
+  val distributionProvidersClients = config.distributionProviders.foldLeft(Map.empty[DistributionName, DistributionClient[AkkaSource]]) { (map, config) =>
+    (map + (config.distributionName -> new DistributionClient(new AkkaHttpClient(config.distributionUrl))))
   }
 
   def buildDeveloperVersion(serviceName: ServiceName, developerVersion: DeveloperVersion, author: UserName,
@@ -46,20 +46,6 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
         runBuilder(taskId, arguments)
       })
     task.taskId
-  }
-
-  def generateNewVersionNumber(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName)(implicit log: Logger): DeveloperDistributionVersion = {
-    log.info("Get existing versions")
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(config.distributionName))) match {
-      case Some(versions) if !versions.isEmpty =>
-        val lastVersion = versions.map(version => DeveloperDistributionVersion(version.distributionName, version.version))
-          .sorted(DeveloperDistributionVersion.ordering).last
-        log.info(s"Last version is ${lastVersion}")
-        lastVersion.next()
-      case _ =>
-        log.error("No existing versions")
-        DeveloperDistributionVersion(config.distributionName, DeveloperVersion(Seq(1, 0, 0)))
-    }
   }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
@@ -181,23 +167,23 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield developerVersions
   }
 
-  def getPartnerDeveloperDesiredVersions()(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
-    partnerDistributionClient match {
+  def getProviderDeveloperDesiredVersions(providerDistributionName: DistributionName)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+    distributionProvidersClients.get(providerDistributionName) match {
       case Some(developerDistributionClient) =>
         developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
       case None =>
         Promise.apply[Seq[DeveloperDesiredVersion]].failure(
-          new IOException("Developer distribution server is not defined")
+          new IOException(s"Provider distribution server ${providerDistributionName} is not defined")
         ).future
     }
   }
 
-  def installPartnerDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion)
+  def installProviderDeveloperVersion(providerDistributionName: DistributionName, serviceName: ServiceName, version: DeveloperDistributionVersion)
                                      (implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Download and install developer version ${version} of service ${serviceName}",
       (taskId, logger) => {
         implicit val log = logger
-        val future = partnerDistributionClient match {
+        val future = distributionProvidersClients.get(providerDistributionName) match {
           case Some(developerDistributionClient) =>
             for {
               versionExists <- getDeveloperVersionsInfo(
@@ -229,7 +215,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
             } yield {}
           case None =>
             Promise.apply[Unit].failure(
-              new IOException("Developer distribution server is not defined")
+              new IOException(s"Provider distribution server ${providerDistributionName} is not defined")
             ).future
         }
         (future, None)

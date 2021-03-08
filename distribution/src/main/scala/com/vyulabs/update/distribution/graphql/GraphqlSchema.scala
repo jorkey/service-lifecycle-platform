@@ -33,6 +33,7 @@ object GraphqlSchema {
   val PasswordArg = Argument("password", StringType)
   val UserRoleArg = Argument("role", UserRoleType)
   val DistributionArg = Argument("distribution", StringType)
+  val ProviderDistributionArg = Argument("provider", StringType)
   val InstanceArg = Argument("instance", StringType)
   val ProcessArg = Argument("process", StringType)
   val TaskArg = Argument("task", StringType)
@@ -119,8 +120,9 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
 
-      Field("partnerDeveloperDesiredVersions", ListType(DeveloperDesiredVersionType),
-        resolve = c => { c.ctx.workspace.getPartnerDeveloperDesiredVersions() }),
+      Field("providerDeveloperDesiredVersions", ListType(DeveloperDesiredVersionType),
+        arguments = ProviderDistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getProviderDeveloperDesiredVersions(c.arg(ProviderDistributionArg)) }),
     )
   )
 
@@ -204,10 +206,9 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
           c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
 
-      Field("installPartnerDeveloperVersion", StringType,
-        arguments = ServiceArg :: DeveloperDistributionVersionArg :: Nil,
-        resolve = c => { c.ctx.workspace.installPartnerDeveloperVersion(
-          c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
+      Field("installProviderDeveloperVersion", StringType,
+        arguments = ProviderDistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
+        resolve = c => { c.ctx.workspace.installProviderDeveloperVersion(c.arg(ProviderDistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
 
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,

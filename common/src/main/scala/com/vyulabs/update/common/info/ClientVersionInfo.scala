@@ -10,7 +10,7 @@ case class ClientVersionInfo(serviceName: ServiceName, distributionName: Distrib
 object ClientVersionInfo extends DefaultJsonProtocol {
   implicit val installVersionInfoJson = jsonFormat5(ClientVersionInfo.apply)
 
-  def apply(serviceName: ServiceName, version: ClientDistributionVersion, buildInfo: BuildInfo, installInfo: InstallInfo): ClientVersionInfo = {
+  def from(serviceName: ServiceName, version: ClientDistributionVersion, buildInfo: BuildInfo, installInfo: InstallInfo): ClientVersionInfo = {
     new ClientVersionInfo(serviceName, version.distributionName, version.version, buildInfo, installInfo)
   }
 }

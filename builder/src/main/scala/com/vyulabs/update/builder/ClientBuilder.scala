@@ -63,7 +63,7 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
     if (!ZipUtils.zipAndSend(clientBuildDir(serviceName), file => distributionClient.uploadClientVersionImage(serviceName, version, file))) {
       return false
     }
-    val clientVersionInfo = ClientVersionInfo(serviceName, version, buildInfo, InstallInfo(author, new Date()))
+    val clientVersionInfo = ClientVersionInfo.from(serviceName, version, buildInfo, InstallInfo(author, new Date()))
     if (!distributionClient.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
       return false
     }

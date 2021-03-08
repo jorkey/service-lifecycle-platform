@@ -47,24 +47,24 @@ object FaultReportsConfig {
   implicit val faultReportsConfigJson = jsonFormat2(FaultReportsConfig.apply)
 }
 
-case class PartnerDistributionConfig(distributionUrl: URL, uploadStateInterval: Option[FiniteDuration])
+case class ProviderDistributionConfig(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration])
 
-object PartnerDistributionConfig {
-  implicit val developerConfigJson = jsonFormat2(PartnerDistributionConfig.apply)
+object ProviderDistributionConfig {
+  implicit val developerConfigJson = jsonFormat3(ProviderDistributionConfig.apply)
 }
 
 case class DistributionConfig(distributionName: DistributionName, title: String, instanceId: InstanceId,
                               mongoDb: MongoDbConfig, network: NetworkConfig, remoteBuilder: Option[RemoteBuilderConfig],
                               versions: VersionsConfig, instanceState: InstanceStateConfig, faultReports: FaultReportsConfig,
-                              partnerDistribution: Option[PartnerDistributionConfig])
+                              distributionProviders: Seq[ProviderDistributionConfig])
 
 object DistributionConfig {
   implicit val distributionConfigJson = jsonFormat10((name: DistributionName, title: String, instanceId: InstanceId,
                                                       mongoDb: MongoDbConfig, network: NetworkConfig, builder: Option[RemoteBuilderConfig],
                                                       versions: VersionsConfig, instanceState: InstanceStateConfig,
-                                                      faultReports: FaultReportsConfig, uploadState: Option[PartnerDistributionConfig]) =>
+                                                      faultReports: FaultReportsConfig, distributionProviders: Seq[ProviderDistributionConfig]) =>
     DistributionConfig.apply(name, title, instanceId, mongoDb, network, builder,
-      versions, instanceState, faultReports, uploadState))
+      versions, instanceState, faultReports, distributionProviders))
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {
     val configFile = new File(Common.DistributionConfigFileName)

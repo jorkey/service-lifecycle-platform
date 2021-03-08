@@ -87,10 +87,10 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       val date = new Date()
 
       assert(adminClient.graphqlRequest(administratorMutations.addDeveloperVersionInfo(
-        DeveloperVersionInfo("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
+        DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
           BuildInfo("author1", Seq("master"), date, Some("comment"))))).getOrElse(false))
 
-      assertResult(Some(Seq(DeveloperVersionInfo("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
+      assertResult(Some(Seq(DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
         BuildInfo("author1", Seq("master"), date, Some("comment"))))))(
         adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", Some("test"),
           Some(DeveloperVersion.parse("1.2.3")))))
@@ -113,10 +113,10 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       val date = new Date()
 
       assert(adminClient.graphqlRequest(administratorMutations.addClientVersionInfo(
-        ClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
+        ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
           BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))).getOrElse(false))
 
-      assertResult(Some(Seq(ClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
+      assertResult(Some(Seq(ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
         BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))))(
         adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", Some("test"),
           Some(ClientVersion.parse("1.2.3_1")))))

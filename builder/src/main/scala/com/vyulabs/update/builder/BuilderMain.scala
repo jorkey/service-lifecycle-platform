@@ -31,7 +31,7 @@ object BuilderMain extends App {
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
     "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> <partnerDistributionUrL=?>\n" +
+    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> <providerDistributionName=?> <providerDistributionUrL=?>\n" +
     "    buildDeveloperVersion <distributionName=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
     "    buildClientVersion <distributionName=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -59,25 +59,24 @@ object BuilderMain extends App {
       val distributionBuilder = new DistributionBuilder(cloudProvider, startService,
         new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, false, port)
 
-      arguments.getOptionValue("partnerDistributionUrl") match {
+      arguments.getOptionValue("providerDistributionName") match {
         case None =>
           if (!distributionBuilder.buildDistributionFromSources()) {
             Utils.error("Build distribution error")
           }
           val developerVersion = DeveloperVersion.initialVersion
-          val developerDistributionVersion = DeveloperDistributionVersion(distributionName, developerVersion)
           if (!distributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
               (Common.ScriptsServiceName -> developerVersion),
               (Common.BuilderServiceName -> developerVersion),
               (Common.UpdaterServiceName -> developerVersion)), author)) {
             Utils.error("Build distribution error")
           }
-        case Some(partnerDistributionUrl) =>
-          val partnerDistributionURL = new URL(partnerDistributionUrl)
-          if (!distributionBuilder.buildFromPartnerDistribution(partnerDistributionURL)) {
+        case Some(providerDistributionName) =>
+          val providerDistributionURL = new URL(arguments.getValue("providerDistributionUrl"))
+          if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL)) {
             Utils.error("Build distribution error")
           }
-          if (!distributionBuilder.updateDistributionFromPartner()) {
+          if (!distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }
       }

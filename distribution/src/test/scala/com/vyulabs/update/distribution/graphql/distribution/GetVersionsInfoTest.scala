@@ -24,7 +24,7 @@ class GetVersionsInfoTest extends TestEnvironment {
 
   override def beforeAll(): Unit = {
     result(collections.Developer_VersionsInfo.insert(
-      DeveloperVersionInfo("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))), BuildInfo("author1", Seq.empty, new Date(), None))))
+      DeveloperVersionInfo.from("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))), BuildInfo("author1", Seq.empty, new Date(), None))))
   }
 
   it should "get version info" in {

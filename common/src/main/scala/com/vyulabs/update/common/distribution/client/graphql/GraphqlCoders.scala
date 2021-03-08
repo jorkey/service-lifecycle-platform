@@ -55,8 +55,8 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
       "{ distributionName, report { faultId, info { date, instanceId, serviceDirectory, serviceName, serviceProfile, state { date, installDate, startDate, version, updateToVersion, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 
-  def getPartnerDeveloperDesiredVersions() =
-    GraphqlQuery[Seq[DeveloperDesiredVersion]]("getPartnerDeveloperDesiredVersions", Seq.empty)
+  def getProviderDeveloperDesiredVersions() =
+    GraphqlQuery[Seq[DeveloperDesiredVersion]]("getProviderDeveloperDesiredVersions", Seq.empty)
 }
 
 object DistributionQueriesCoder extends CommonQueriesCoder {
@@ -117,8 +117,8 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
   def setClientDesiredVersions(versions: Seq[ClientDesiredVersionDelta]) =
     GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionDeltaInput!]")))
 
-  def installPartnerDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
-    GraphqlMutation[String]("installPartnerDeveloperVersion",
+  def installProviderDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
+    GraphqlMutation[String]("installProviderDeveloperVersion",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 }
 

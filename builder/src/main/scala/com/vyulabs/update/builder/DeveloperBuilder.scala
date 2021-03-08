@@ -9,7 +9,7 @@ import com.vyulabs.update.common.config.UpdateConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
-import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo}
+import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersionDelta, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils.copyFile
@@ -18,6 +18,7 @@ import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
+
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
@@ -225,7 +226,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       return false
     }
     if (!distributionClient.graphqlRequest(
-        administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo(serviceName, version, buildInfo))).getOrElse(false)) {
+        administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo.from(serviceName, version, buildInfo))).getOrElse(false)) {
       log.error("Adding version info error")
       return false
     }

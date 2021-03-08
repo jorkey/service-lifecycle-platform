@@ -1,19 +1,17 @@
 package com.vyulabs.update.builder
 
-import java.io.File
-
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.process.ChildProcess
+import com.vyulabs.update.common.version.DeveloperVersion
+import com.vyulabs.update.distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
+
+import java.io.File
 import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-
-import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
-import com.vyulabs.update.common.version.DeveloperVersion
-import com.vyulabs.update.distribution.mongo.MongoDb
-
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
@@ -58,10 +56,10 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       developerDistributionName, "Test developer distribution server",
       developerMongoDbName,true, 8000)
     assert(developerDistributionBuilder.buildDistributionFromSources())
-    assert(developerDistributionBuilder.generateDeveloperAndClientVersions(Map.empty +
-      (Common.ScriptsServiceName -> DeveloperVersion.initialVersion) +
-      (Common.BuilderServiceName -> DeveloperVersion.initialVersion) +
-      (Common.UpdaterServiceName -> DeveloperVersion.initialVersion)))
+    assert(developerDistributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
+      (Common.ScriptsServiceName -> DeveloperVersion.initialVersion),
+      (Common.BuilderServiceName -> DeveloperVersion.initialVersion),
+      (Common.UpdaterServiceName -> DeveloperVersion.initialVersion)), "ak"))
     assert(developerDistributionBuilder.installBuilderFromSources())
 
     log.info(s"*************************** Build client distribution from developer distribution")
@@ -71,7 +69,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       clientDistributionName, "Test client distribution server",
       clientMongoDbName,true, 8001)
 
-    assert(clientDistributionBuilder.buildFromPartnerDistribution(new URL("http://admin:admin@localhost:8000")))
+    assert(clientDistributionBuilder.buildFromProviderDistribution(clientDistributionName, new URL("http://admin:admin@localhost:8000")))
   }
 
   def startService(directory: File): Boolean = {

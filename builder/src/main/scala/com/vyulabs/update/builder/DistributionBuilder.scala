@@ -3,22 +3,21 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName}
-import com.vyulabs.update.common.config.{DistributionConfig, NetworkConfig, PartnerDistributionConfig}
+import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.config.{DistributionConfig, ProviderDistributionConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.info.{ClientDesiredVersionDelta, DeveloperDesiredVersionDelta, DeveloperDesiredVersions, SequencedServiceLogLine}
-import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
+import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
+
 import java.io.File
 import java.net.URL
-import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
@@ -41,7 +40,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private var distributionClient = Option.empty[SyncDistributionClient[SyncSource]]
   private var distributionConfig = Option.empty[DistributionConfig]
 
-  private var partnerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
+  private var providerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
 
   def buildDistributionFromSources(): Boolean = {
     log.info(s"########################### Generate initial versions of services")
@@ -74,64 +73,15 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def uploadDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
-    if (!uploadDeveloperVersions(versions, author)) {
-      return false
-    }
-    if (!uploadClientVersions(versions.mapValues(version => ClientDistributionVersion(version)), author)) {
-      return false
-    }
-    true
-  }
-
-
-  private def uploadDeveloperVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
-    log.info(s"########################### Upload developer images of services")
-    versions.foreach { case (serviceName, version) =>
-      if (!developerBuilder.uploadDeveloperVersion(distributionClient.get, serviceName, version, author)) {
-        log.error(s"Can't upload developer version ${version} of service ${serviceName}")
-        return false
-      }
-    }
-
-    log.info(s"########################### Set developer desired versions")
-    if (!developerBuilder.setDesiredVersions(distributionClient.get, versions.map { case (serviceName, version) =>
-        DeveloperDesiredVersionDelta(serviceName, Some(version)) }.toSeq)) {
-      log.error("Set developer desired versions error")
-      return false
-    }
-
-    true
-  }
-
-  private def uploadClientVersions(versions: Map[ServiceName, ClientDistributionVersion], author: String): Boolean = {
-    log.info(s"########################### Upload client images of services")
-    versions.foreach { case (serviceName, version) =>
-      if (!clientBuilder.uploadClientVersion(distributionClient.get, serviceName, version, author)) {
-        log.error(s"Can't upload developer version ${version} of service ${serviceName}")
-        return false
-      }
-    }
-
-    log.info(s"########################### Set client desired versions")
-    if (!clientBuilder.setDesiredVersions(distributionClient.get, versions.map { case (serviceName, version) =>
-      ClientDesiredVersionDelta(serviceName, Some(version)) }.toSeq)) {
-      log.error("Set developer desired versions error")
-      return false
-    }
-
-    true
-  }
-
-  def buildFromPartnerDistribution(partnerDistributionURL: URL): Boolean = {
-    partnerDistributionClient = Some(new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(partnerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
+  def buildFromProviderDistribution(providerDistributionName: DistributionName, providerDistributionURL: URL): Boolean = {
+    providerDistributionClient = Some(new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(providerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
 
     log.info(s"########################### Download and generate client versions")
-    val scriptsVersion = downloadAndGenerateClientVersion(partnerDistributionClient.get, Common.ScriptsServiceName).getOrElse {
+    val scriptsVersion = downloadAndGenerateClientVersion(providerDistributionClient.get, Common.ScriptsServiceName).getOrElse {
       return false
     }
-    val distributionVersion = downloadAndGenerateClientVersion(partnerDistributionClient.get, Common.DistributionServiceName).getOrElse {
+    val distributionVersion = downloadAndGenerateClientVersion(providerDistributionClient.get, Common.DistributionServiceName).getOrElse {
       return false
     }
 
@@ -147,9 +97,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       return false
     }
 
-    val developerDistributionConfig = PartnerDistributionConfig(partnerDistributionURL, Some(FiniteDuration(30, TimeUnit.SECONDS)))
+    val providerDistributionConfig = ProviderDistributionConfig(providerDistributionName, providerDistributionURL, Some(FiniteDuration(30, TimeUnit.SECONDS)))
     val newDistributionConfig = DistributionConfig(config.distributionName, config.title, config.instanceId, config.mongoDb, config.network,
-      config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Some(developerDistributionConfig))
+      config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Seq(providerDistributionConfig))
     if (!IoUtils.writeJsonToFile(distributionDirectory.getConfigFile(), newDistributionConfig)) {
       log.error(s"Can't write distribution config file ${distributionDirectory.getConfigFile()}")
       return false
@@ -164,35 +114,6 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     log.info(s"########################### Distribution service is ready")
-    true
-  }
-
-  private def installDistributionService(scriptsVersion: ClientDistributionVersion, distributionVersion: ClientDistributionVersion): Boolean = {
-    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory.directory) ||
-        !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory.directory, Common.UpdateSh)) ||
-        !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDirectory.directory)) {
-      return false
-    }
-    distributionDirectory.directory.listFiles().foreach { file =>
-      if (file.getName.endsWith(".sh") && !IoUtils.setExecuteFilePermissions(file)) {
-        return false
-      }
-    }
-    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion) ||
-        !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion)) {
-      return false
-    }
-    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion) ||
-        !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion)) {
-      return false
-    }
-    log.info(s"Make distribution config file")
-    val arguments = Seq(cloudProvider, distributionName, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString)
-    if (!ProcessUtils.runProcess("/bin/sh", ".make_distribution_config.sh" +: arguments, Map.empty,
-        distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
-      log.error(s"Make distribution config file error")
-      return false
-    }
     true
   }
 
@@ -216,13 +137,13 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     Some(distributionClient)
   }
 
-  def updateDistributionFromPartner(): Boolean = {
-    val partnerDesiredVersions = DeveloperDesiredVersions.toMap(
-        partnerDistributionClient.get.graphqlRequest(administratorQueries.getPartnerDeveloperDesiredVersions()).getOrElse {
-      log.error("Can't get partner distribution developer desired versions")
+  def updateDistributionFromProvider(): Boolean = {
+    val providerDesiredVersions = DeveloperDesiredVersions.toMap(
+        providerDistributionClient.get.graphqlRequest(administratorQueries.getProviderDeveloperDesiredVersions()).getOrElse {
+      log.error("Can't get provider distribution developer desired versions")
       return false
     })
-    val versionsToUpdate = partnerDesiredVersions.filter { case (serviceName, version) =>
+    val versionsToUpdate = providerDesiredVersions.filter { case (serviceName, version) =>
       val existingVersions = distributionClient.get.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName)).getOrElse {
         log.error(s"Can't get distribution server existing versions of service ${serviceName}")
         return false
@@ -230,9 +151,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       !existingVersions.exists(_.version == version)
     }
     versionsToUpdate.foreach { case (serviceName, version) =>
-      log.info(s"Install partner developer version ${version} of service ${serviceName}")
-      val taskId = distributionClient.get.graphqlRequest(administratorMutations.installPartnerDeveloperVersion(serviceName, version)).getOrElse {
-        log.error(s"Can't install partner developer version ${version} of service ${serviceName}")
+      log.info(s"Install provider developer version ${version} of service ${serviceName}")
+      val taskId = distributionClient.get.graphqlRequest(administratorMutations.installProviderDeveloperVersion(serviceName, version)).getOrElse {
+        log.error(s"Can't install provider developer version ${version} of service ${serviceName}")
         return false
       }
       val source = distributionClient.get.graphqlSubRequest(administratorSubscriptions.subscribeTaskLogs(taskId)).getOrElse {
@@ -249,13 +170,6 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
     log.info("Distribution server is updated successfully")
     true
-  }
-
-  def installBuilderFromSources(): Boolean = {
-    val distributionUrl = makeDistributionUrl()
-    log.info(s"########################### Install builder")
-    val updateSourcesUri = GitRepository.openRepository(new File(".")).map(_.getUrl())
-    installBuilder(Seq(DistributionLink(distributionName, distributionUrl)), updateSourcesUri)
   }
 
   def waitForServerAvailable(waitingTimeoutSec: Int = 10000)
@@ -282,6 +196,13 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     val protocol = if (config.network.ssl.isDefined) "https" else "http"
     val port = config.network.port
     new URL(s"${protocol}://admin:admin@localhost:${port}")
+  }
+
+  def installBuilderFromSources(): Boolean = {
+    val distributionUrl = makeDistributionUrl()
+    log.info(s"########################### Install builder")
+    val updateSourcesUri = GitRepository.openRepository(new File(".")).map(_.getUrl())
+    installBuilder(Seq(DistributionLink(distributionName, distributionUrl)), updateSourcesUri)
   }
 
   def installBuilder(distributionLinks: Seq[DistributionLink], updateSourcesUri: Option[String]): Boolean = {
@@ -327,12 +248,89 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       uploadDeveloperAndClientVersions(versions.mapValues(v => DeveloperDistributionVersion(distributionName, v)), author)
   }
 
-  def generateDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperVersion]): Boolean = {
+  private def installDistributionService(scriptsVersion: ClientDistributionVersion, distributionVersion: ClientDistributionVersion): Boolean = {
+    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory.directory) ||
+      !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory.directory, Common.UpdateSh)) ||
+      !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDirectory.directory)) {
+      return false
+    }
+    distributionDirectory.directory.listFiles().foreach { file =>
+      if (file.getName.endsWith(".sh") && !IoUtils.setExecuteFilePermissions(file)) {
+        return false
+      }
+    }
+    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion) ||
+      !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion)) {
+      return false
+    }
+    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion) ||
+      !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion)) {
+      return false
+    }
+    log.info(s"Make distribution config file")
+    val arguments = Seq(cloudProvider, distributionName, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString)
+    if (!ProcessUtils.runProcess("/bin/sh", ".make_distribution_config.sh" +: arguments, Map.empty,
+      distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
+      log.error(s"Make distribution config file error")
+      return false
+    }
+    true
+  }
+
+  private def generateDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperVersion]): Boolean = {
     versions.foreach { case (serviceName, version) =>
       if (!generateDeveloperAndClientVersions(serviceName, version)) {
         return false
       }
     }
+    true
+  }
+
+  private def uploadDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
+    if (!uploadDeveloperVersions(versions, author)) {
+      return false
+    }
+    if (!uploadClientVersions(versions.mapValues(version => ClientDistributionVersion(version)), author)) {
+      return false
+    }
+    true
+  }
+
+
+  private def uploadDeveloperVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
+    log.info(s"########################### Upload developer images of services")
+    versions.foreach { case (serviceName, version) =>
+      if (!developerBuilder.uploadDeveloperVersion(distributionClient.get, serviceName, version, author)) {
+        log.error(s"Can't upload developer version ${version} of service ${serviceName}")
+        return false
+      }
+    }
+
+    log.info(s"########################### Set developer desired versions")
+    if (!developerBuilder.setDesiredVersions(distributionClient.get, versions.map { case (serviceName, version) =>
+      DeveloperDesiredVersionDelta(serviceName, Some(version)) }.toSeq)) {
+      log.error("Set developer desired versions error")
+      return false
+    }
+    true
+  }
+
+  private def uploadClientVersions(versions: Map[ServiceName, ClientDistributionVersion], author: String): Boolean = {
+    log.info(s"########################### Upload client images of services")
+    versions.foreach { case (serviceName, version) =>
+      if (!clientBuilder.uploadClientVersion(distributionClient.get, serviceName, version, author)) {
+        log.error(s"Can't upload developer version ${version} of service ${serviceName}")
+        return false
+      }
+    }
+
+    log.info(s"########################### Set client desired versions")
+    if (!clientBuilder.setDesiredVersions(distributionClient.get, versions.map { case (serviceName, version) =>
+      ClientDesiredVersionDelta(serviceName, Some(version)) }.toSeq)) {
+      log.error("Set developer desired versions error")
+      return false
+    }
+
     true
   }
 

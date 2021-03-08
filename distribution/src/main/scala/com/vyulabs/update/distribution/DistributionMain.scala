@@ -57,9 +57,9 @@ object DistributionMain extends App {
     TraceAppender.handleLogs("Distribution server", "PROCESS",
       new LogStorekeeper(config.distributionName, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
 
-    config.partnerDistribution.foreach { partnerConfig =>
-      partnerConfig.uploadStateInterval.foreach(uploadStateInterval =>
-        StateUploader(config.distributionName, collections, dir, uploadStateInterval, partnerConfig.distributionUrl).start())
+    config.distributionProviders.foreach { providerConfig =>
+      providerConfig.uploadStateInterval.foreach(uploadStateInterval =>
+        StateUploader(config.distributionName, collections, dir, uploadStateInterval, providerConfig.distributionUrl).start())
     }
 
     val workspace = GraphqlWorkspace(config, collections, dir, taskManager)

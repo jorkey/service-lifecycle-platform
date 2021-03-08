@@ -18,7 +18,7 @@ case class DeveloperVersionInfo(serviceName: ServiceName, distributionName: Dist
 object DeveloperVersionInfo extends DefaultJsonProtocol {
   implicit val serviceVersionInfoJson = jsonFormat4(DeveloperVersionInfo.apply)
 
-  def apply(serviceName: ServiceName, version: DeveloperDistributionVersion, buildInfo: BuildInfo): DeveloperVersionInfo = {
+  def from(serviceName: ServiceName, version: DeveloperDistributionVersion, buildInfo: BuildInfo): DeveloperVersionInfo = {
     new DeveloperVersionInfo(serviceName, version.distributionName, version.version, buildInfo)
   }
 }
