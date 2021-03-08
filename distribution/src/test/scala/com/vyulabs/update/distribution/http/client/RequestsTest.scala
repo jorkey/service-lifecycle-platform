@@ -92,8 +92,8 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
       assertResult(Some(Seq(DeveloperVersionInfo("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
         BuildInfo("author1", Seq("master"), date, Some("comment"))))))(
-        adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", None,
-          Some(DeveloperDistributionVersion.parse("test-1.2.3")))))
+        adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", Some("test"),
+          Some(DeveloperVersion.parse("1.2.3")))))
 
       assert(adminClient.graphqlRequest(administratorMutations.removeDeveloperVersion("service1",
         DeveloperDistributionVersion.parse("test-1.2.3"))).getOrElse(false))
@@ -118,8 +118,8 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
       assertResult(Some(Seq(ClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
         BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))))(
-        adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", None,
-          Some(ClientDistributionVersion.parse("test-1.2.3_1")))))
+        adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", Some("test"),
+          Some(ClientVersion.parse("1.2.3_1")))))
 
       assert(adminClient.graphqlRequest(administratorMutations.removeClientVersion("service1",
         ClientDistributionVersion.parse("test-1.2.3_1"))).getOrElse(false))

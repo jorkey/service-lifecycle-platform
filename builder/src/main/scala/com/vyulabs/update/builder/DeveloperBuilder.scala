@@ -18,7 +18,6 @@ import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
-
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
@@ -211,11 +210,11 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
     }
   }
 
-  def uploadDeveloperInitVersion(distributionClient: SyncDistributionClient[SyncSource],
-                                 serviceName: ServiceName, author: String): Boolean = {
+  def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
+                             serviceName: ServiceName, version: DeveloperDistributionVersion, author: String): Boolean = {
     val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
     ZipUtils.zipAndSend(developerBuildDir(serviceName), file => {
-      uploadDeveloperVersion(distributionClient, serviceName, DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion), buildInfo, file)
+      uploadDeveloperVersion(distributionClient, serviceName, version, buildInfo, file)
     })
   }
 
@@ -238,7 +237,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   private def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(distributionName), Some(version))).map(_.size != 0).getOrElse(false)
+    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(version.distributionName), Some(version.version))).map(_.size != 0).getOrElse(false)
   }
 
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], serviceName: ServiceName,

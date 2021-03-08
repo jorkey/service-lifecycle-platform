@@ -52,7 +52,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     log.info("Get existing versions")
     distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(config.distributionName))) match {
       case Some(versions) if !versions.isEmpty =>
-        val lastVersion = versions.map(_.version).sorted(DeveloperDistributionVersion.ordering).last
+        val lastVersion = versions.map(version => DeveloperDistributionVersion(version.distributionName, version.version))
+          .sorted(DeveloperDistributionVersion.ordering).last
         log.info(s"Last version is ${lastVersion}")
         lastVersion.next()
       case _ =>
@@ -65,7 +66,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     log.info(s"Add developer version info ${versionInfo}")
     for {
       _ <- collections.Developer_VersionsInfo.insert(versionInfo)
-      _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
+      _ <- removeObsoleteVersions(versionInfo.distributionName, versionInfo.serviceName)
     } yield {}
   }
 
@@ -74,11 +75,11 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       versions <- getDeveloperVersionsInfo(serviceName, distributionName = Some(distributionName))
       busyVersions <- getBusyVersions(distributionName, serviceName)
       complete <- {
-        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
+        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > config.versions.maxHistorySize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
-            removeDeveloperVersion(serviceName, version)
+            removeDeveloperVersion(serviceName, DeveloperDistributionVersion(distributionName, version))
           })
         } else {
           Future()
@@ -91,7 +92,8 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     log.info(s"Remove developer version ${version} of service ${serviceName}")
     val filters = Filters.and(
       Filters.eq("serviceName", serviceName),
-      Filters.eq("version", version))
+      Filters.eq("distributionName", version.distributionName))
+      Filters.eq("version", version.version)
     directory.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
       profile <- {
@@ -101,9 +103,9 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   }
 
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
-                               version: Option[DeveloperDistributionVersion] = None)(implicit log: Logger): Future[Seq[DeveloperVersionInfo]] = {
+                               version: Option[DeveloperVersion] = None)(implicit log: Logger): Future[Seq[DeveloperVersionInfo]] = {
     val serviceArg = Filters.eq("serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("version.distributionName", distributionName ) }
+    val distributionArg = distributionName.map { distributionName => Filters.eq("distributionName", distributionName ) }
     val versionArg = version.map { version => Filters.eq("version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     collections.Developer_VersionsInfo.find(filters)
@@ -199,7 +201,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
           case Some(developerDistributionClient) =>
             for {
               versionExists <- getDeveloperVersionsInfo(
-                serviceName, Some(config.distributionName), Some(version)).map(!_.isEmpty)
+                serviceName, Some(version.distributionName), Some(version.version)).map(!_.isEmpty)
               _ <-
                 if (!versionExists) {
                   log.info(s"Download developer version ${version}")

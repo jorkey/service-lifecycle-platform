@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.builder.config.BuilderConfig
-import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
+import com.vyulabs.update.builder.config.{BuilderConfig, DistributionLink}
+import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
@@ -31,7 +31,7 @@ object BuilderMain extends App {
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
     "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> <developerDistributionUrL=?>\n" +
+    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> <partnerDistributionUrL=?>\n" +
     "    buildDeveloperVersion <distributionName=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
     "    buildClientVersion <distributionName=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -59,15 +59,32 @@ object BuilderMain extends App {
       val distributionBuilder = new DistributionBuilder(cloudProvider, startService,
         new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, false, port)
 
-      arguments.getOptionValue("developerDistributionUrl") match {
+      arguments.getOptionValue("partnerDistributionUrl") match {
         case None =>
           if (!distributionBuilder.buildDistributionFromSources()) {
             Utils.error("Build distribution error")
           }
-        case Some(developerDistributionUrl) =>
-          if (!distributionBuilder.buildFromDeveloperDistribution(new URL(developerDistributionUrl), author)) {
+          val developerVersion = DeveloperVersion.initialVersion
+          val developerDistributionVersion = DeveloperDistributionVersion(distributionName, developerVersion)
+          if (!distributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
+              (Common.ScriptsServiceName -> developerVersion),
+              (Common.BuilderServiceName -> developerVersion),
+              (Common.UpdaterServiceName -> developerVersion)), author)) {
             Utils.error("Build distribution error")
           }
+        case Some(partnerDistributionUrl) =>
+          val partnerDistributionURL = new URL(partnerDistributionUrl)
+          val partnerDistributionClient = new SyncDistributionClient(
+            new DistributionClient(new HttpClientImpl(partnerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS))
+          if (!distributionBuilder.buildFromPartnerDistribution(partnerDistributionURL, partnerDistributionClient, author)) {
+            Utils.error("Build distribution error")
+          }
+          if (!distributionBuilder.updateDistributionFromPartner(partnerDistributionClient)) {
+            Utils.error("Build distribution error")
+          }
+      }
+      if (!distributionBuilder.installBuilder(Seq(DistributionLink(distributionName, distributionBuilder.makeDistributionUrl())), None)) {
+        Utils.error("Build distribution error")
       }
     case _ =>
       val arguments = Arguments.parse(args.drop(1), Set.empty)

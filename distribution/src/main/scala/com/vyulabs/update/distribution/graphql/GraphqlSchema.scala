@@ -64,8 +64,8 @@ object GraphqlSchema {
   val OptionDirectoryArg = Argument("directory", OptionInputType(StringType))
   val OptionServiceArg = Argument("service", OptionInputType(StringType))
   val OptionServicesArg = Argument("services", OptionInputType(ListInputType(StringType)))
-  val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperDistributionVersionType))
-  val OptionClientVersionArg = Argument("version", OptionInputType(ClientDistributionVersionType))
+  val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperVersionType))
+  val OptionClientVersionArg = Argument("version", OptionInputType(ClientVersionType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
   val OptionCommentArg = Argument("comment", OptionInputType(StringType))
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
@@ -85,13 +85,6 @@ object GraphqlSchema {
       Field("usersInfo", ListType(UserInfoType),
         arguments = OptionUserArg :: Nil,
         resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg)) }),
-
-      Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
-        arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
-      Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
-        arguments = OptionServicesArg :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,

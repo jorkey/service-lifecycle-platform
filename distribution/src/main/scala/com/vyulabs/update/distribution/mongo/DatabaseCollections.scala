@@ -68,12 +68,14 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
 
   val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo]("developer.versionsInfo", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("serviceName", "version", "_archiveTime"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("serviceName", "distributionName", "version", "_archiveTime"),
+      new IndexOptions().unique(true))
   } yield collection, Sequences)
 
   val Client_VersionsInfo = new SequencedCollection[ClientVersionInfo]("client.versionsInfo", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("serviceName", "version", "_archiveTime"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("serviceName", "distributionName", "version", "_archiveTime"),
+      new IndexOptions().unique(true))
   } yield collection, Sequences)
 
   val Developer_DesiredVersions = new SequencedCollection[DeveloperDesiredVersions]("developer.desiredVersions", for {
