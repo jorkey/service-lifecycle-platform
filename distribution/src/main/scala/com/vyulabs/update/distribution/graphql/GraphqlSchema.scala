@@ -21,7 +21,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends UsersUtils with DistributionClientsUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils
+    extends UsersUtils with DistributionConsumersUtils with DistributionProvidersUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils
 
 case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
 
@@ -102,7 +102,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       Field("distributionClientsInfo", ListType(ClientInfoType),
-        resolve = c => c.ctx.workspace.getDistributionClientsInfo()),
+        resolve = c => c.ctx.workspace.getDistributionConsumersInfo()),
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = DistributionArg :: OptionServicesArg :: Nil,
         resolve = c => { c.ctx.workspace.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
@@ -130,7 +130,7 @@ object GraphqlSchema {
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
       Field("distributionClientConfig", ClientConfigInfoType,
-        resolve = c => { c.ctx.workspace.getDistributionClientConfig(c.ctx.userInfo.name) }),
+        resolve = c => { c.ctx.workspace.getDistributionConsumerConfig(c.ctx.userInfo.name) }),
       Field("versionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),

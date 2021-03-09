@@ -22,17 +22,13 @@ import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Success
 
-trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils with RunBuilderUtils with SprayJsonSupport {
+trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils with RunBuilderUtils with SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
   protected val taskManager: TaskManager
 
   protected implicit val executionContext: ExecutionContext
-
-  val distributionProvidersClients = config.distributionProviders.foldLeft(Map.empty[DistributionName, DistributionClient[AkkaSource]]) { (map, config) =>
-    (map + (config.distributionName -> new DistributionClient(new AkkaHttpClient(config.distributionUrl))))
-  }
 
   def buildDeveloperVersion(serviceName: ServiceName, developerVersion: DeveloperVersion, author: UserName,
                             sourceBranches: Seq[String], comment: Option[String])(implicit log: Logger): TaskId = {
@@ -128,7 +124,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      installProfile <- getDistributionClientInstallProfile(distributionName)
+      installProfile <- getDistributionConsumerInstallProfile(distributionName)
       versions <- Future(desiredVersions.filter(version => installProfile.services.contains(version.serviceName)))
     } yield versions
   }
@@ -136,7 +132,7 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
   def getDeveloperDesiredVersions(distributionName: DistributionName, serviceNames: Set[ServiceName])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      distributionClientConfig <- getDistributionClientConfig(distributionName)
+      distributionClientConfig <- getDistributionConsumerConfig(distributionName)
       developerVersions <- distributionClientConfig.testDistributionMatch match {
         case Some(testDistributionMatch) =>
           for {
@@ -167,69 +163,13 @@ trait DeveloperVersionUtils extends DistributionClientsUtils with StateUtils wit
     } yield developerVersions
   }
 
-  def getProviderDeveloperDesiredVersions(providerDistributionName: DistributionName)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
-    distributionProvidersClients.get(providerDistributionName) match {
-      case Some(developerDistributionClient) =>
-        developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
-      case None =>
-        Promise.apply[Seq[DeveloperDesiredVersion]].failure(
-          new IOException(s"Provider distribution server ${providerDistributionName} is not defined")
-        ).future
-    }
-  }
-
-  def installProviderDeveloperVersion(providerDistributionName: DistributionName, serviceName: ServiceName, version: DeveloperDistributionVersion)
-                                     (implicit log: Logger): TaskId = {
-    val task = taskManager.create(s"Download and install developer version ${version} of service ${serviceName}",
-      (taskId, logger) => {
-        implicit val log = logger
-        val future = distributionProvidersClients.get(providerDistributionName) match {
-          case Some(developerDistributionClient) =>
-            for {
-              versionExists <- getDeveloperVersionsInfo(
-                serviceName, Some(version.distributionName), Some(version.version)).map(!_.isEmpty)
-              _ <-
-                if (!versionExists) {
-                  log.info(s"Download developer version ${version}")
-                  val imageFile = File.createTempFile("version", "image")
-                  for {
-                    _ <- developerDistributionClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
-                      .andThen {
-                        case Success(_) =>
-                          imageFile.renameTo(directory.getDeveloperVersionImageFile(serviceName, version))
-                        case _ =>
-                      }.andThen { case _ => imageFile.delete() }
-                    versionInfo <- developerDistributionClient.graphqlRequest(
-                      distributionQueries.getVersionsInfo(serviceName, None, Some(version))).map(_.headOption)
-                    _ <- versionInfo match {
-                      case Some(versionInfo) =>
-                        addDeveloperVersionInfo(versionInfo)
-                      case None =>
-                        Future()
-                    }
-                  } yield {}
-                } else {
-                  log.info(s"Version ${version} already exists")
-                  Future()
-                }
-            } yield {}
-          case None =>
-            Promise.apply[Unit].failure(
-              new IOException(s"Provider distribution server ${providerDistributionName} is not defined")
-            ).future
-        }
-        (future, None)
-      })
-    task.taskId
-  }
-
   private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Set[DeveloperVersion]] = {
     for {
       desiredVersion <- getDeveloperDesiredVersion(serviceName)
-      clientsInfo <- getDistributionClientsInfo()
+      clientsInfo <- getDistributionConsumersInfo()
       installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distributionName, serviceName))).map(
         _.flatten.map(_.version.original()))
-      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.clientConfig.installProfile))).map(
+      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.config.installProfile))).map(
         _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.version)).flatten)
     } yield {
       (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distributionName == distributionName).map(_.version)

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
+import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo, DistributionConsumerProfile, DistributionProviderInfo}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
@@ -39,9 +39,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[ClientDesiredVersions],
     classOf[InstalledDesiredVersions],
     classOf[InstallInfo],
-    classOf[DistributionClientProfile],
-    classOf[DistributionClientConfig],
-    classOf[DistributionClientInfo],
+    classOf[DistributionConsumerProfile],
+    classOf[DistributionConsumerConfig],
+    classOf[DistributionConsumerInfo],
     classOf[DistributionServiceState],
     classOf[InstanceServiceState],
     classOf[ServiceState],
@@ -66,14 +66,23 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- collection.createIndex(Indexes.ascending("userName", "_archiveTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
-  val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo]("developer.versionsInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.versionsInfo")
-    _ <- collection.createIndex(Indexes.ascending("serviceName", "distributionName", "version", "_archiveTime"),
-      new IndexOptions().unique(true))
+  val Distribution_ProvidersInfo = new SequencedCollection[DistributionProviderInfo]("distribution.providersInfo", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("distribution.providersInfo")
+    _ <- collection.createIndex(Indexes.ascending("distributionName", "_archiveTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
-  val Client_VersionsInfo = new SequencedCollection[ClientVersionInfo]("client.versionsInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("client.versionsInfo")
+  val Distribution_ConsumersInfo = new SequencedCollection[DistributionConsumerInfo]("distribution.consumersInfo", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("distribution.consumersInfo")
+    _ <- collection.createIndex(Indexes.ascending("distributionName", "_archiveTime"), new IndexOptions().unique(true))
+  } yield collection, Sequences)
+
+  val Distribution_ConsumersProfiles = new SequencedCollection[DistributionConsumerProfile]("distribution.consumersProfiles", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("distribution.consumersProfiles")
+    _ <- collection.createIndex(Indexes.ascending("profileName", "_archiveTime"), new IndexOptions().unique(true))
+  } yield collection, Sequences)
+
+  val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo]("developer.versionsInfo", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.versionsInfo")
     _ <- collection.createIndex(Indexes.ascending("serviceName", "distributionName", "version", "_archiveTime"),
       new IndexOptions().unique(true))
   } yield collection, Sequences)
@@ -82,18 +91,14 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     collection <- db.getOrCreateCollection[BsonDocument]("developer.desiredVersions")
   } yield collection, Sequences)
 
+  val Client_VersionsInfo = new SequencedCollection[ClientVersionInfo]("client.versionsInfo", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("client.versionsInfo")
+    _ <- collection.createIndex(Indexes.ascending("serviceName", "distributionName", "version", "_archiveTime"),
+      new IndexOptions().unique(true))
+  } yield collection, Sequences)
+
   val Client_DesiredVersions = new SequencedCollection[ClientDesiredVersions]("client.desiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.desiredVersions")
-  } yield collection, Sequences)
-
-  val Developer_DistributionClientsInfo = new SequencedCollection[DistributionClientInfo]("developer.distributionClientsInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.distributionClientsInfo")
-    _ <- collection.createIndex(Indexes.ascending("distributionName", "_archiveTime"), new IndexOptions().unique(true))
-  } yield collection, Sequences)
-
-  val Developer_DistributionClientsProfiles = new SequencedCollection[DistributionClientProfile]("developer.distributionClientsProfiles", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.distributionClientsProfiles")
-    _ <- collection.createIndex(Indexes.ascending("profileName", "_archiveTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
   val State_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("state.installedDesiredVersions", for {

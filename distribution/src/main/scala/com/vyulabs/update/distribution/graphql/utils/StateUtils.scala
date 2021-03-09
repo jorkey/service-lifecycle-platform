@@ -21,7 +21,7 @@ import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
+trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
@@ -48,7 +48,7 @@ trait StateUtils extends DistributionClientsUtils with SprayJsonSupport {
 
   def setTestedVersions(distributionName: DistributionName, desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     for {
-      clientConfig <- getDistributionClientConfig(distributionName)
+      clientConfig <- getDistributionConsumerConfig(distributionName)
       testedVersions <- getTestedVersions(clientConfig.installProfile)
       result <- {
         val testRecord = TestSignature(distributionName, new Date())

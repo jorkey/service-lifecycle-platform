@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.config.{DistributionConfig, ProviderDistributionConfig}
+import com.vyulabs.update.common.config.{DistributionConfig, DistributionProviderConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
@@ -97,9 +97,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       return false
     }
 
-    val providerDistributionConfig = ProviderDistributionConfig(providerDistributionName, providerDistributionURL, Some(FiniteDuration(30, TimeUnit.SECONDS)))
+    val distributionProviderConfig = DistributionProviderConfig(providerDistributionName, providerDistributionURL, Some(FiniteDuration(30, TimeUnit.SECONDS)))
     val newDistributionConfig = DistributionConfig(config.distributionName, config.title, config.instanceId, config.mongoDb, config.network,
-      config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Seq(providerDistributionConfig))
+      config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Seq(distributionProviderConfig))
     if (!IoUtils.writeJsonToFile(distributionDirectory.getConfigFile(), newDistributionConfig)) {
       log.error(s"Can't write distribution config file ${distributionDirectory.getConfigFile()}")
       return false

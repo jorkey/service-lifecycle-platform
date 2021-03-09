@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
+import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
@@ -22,13 +22,13 @@ class TestedVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val installProfileCollection = collections.Developer_DistributionClientsProfiles
-    val clientInfoCollection = collections.Developer_DistributionClientsInfo
+    val installProfileCollection = collections.Distribution_ConsumersProfiles
+    val clientInfoCollection = collections.Distribution_ConsumersInfo
 
-    result(installProfileCollection.insert(DistributionClientProfile("common", Set("service1", "service2"))))
+    result(installProfileCollection.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
 
-    result(clientInfoCollection.insert(DistributionClientInfo("distribution1", DistributionClientConfig("common", None))))
-    result(clientInfoCollection.insert(DistributionClientInfo("distribution2", DistributionClientConfig("common", Some("distribution1")))))
+    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", DistributionConsumerConfig("common", None))))
+    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution2", DistributionConsumerConfig("common", Some("distribution1")))))
   }
 
   it should "set/get tested versions" in {

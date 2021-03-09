@@ -1,7 +1,7 @@
 package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo}
+import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo}
 import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -35,7 +35,7 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       "{ serviceName, version }")
 
   def getDistributionClientsInfo() =
-    GraphqlQuery[Seq[DistributionClientInfo]]("distributionClientsInfo",
+    GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionClientsInfo",
       subSelection = "{ distributionName, clientConfig { installProfile, testDistributionMatch } }")
 
   def getInstalledDesiredVersions(distributionName: DistributionName, serviceNames: Seq[ServiceName]) =
@@ -61,7 +61,7 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
 
 object DistributionQueriesCoder extends CommonQueriesCoder {
   def getDistributionClientConfig() =
-    GraphqlQuery[DistributionClientConfig]("distributionClientConfig",
+    GraphqlQuery[DistributionConsumerConfig]("distributionClientConfig",
       subSelection =  "{ installProfile, testDistributionMatch }")
 
   def getVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperDistributionVersion] = None) =

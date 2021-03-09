@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.administrator
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionClientConfig, DistributionClientInfo, DistributionClientProfile}
+import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -20,8 +20,8 @@ class UsersTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    result(collections.Developer_DistributionClientsProfiles.insert(DistributionClientProfile("common", Set("service1", "service2"))))
-    result(collections.Developer_DistributionClientsInfo.insert(DistributionClientInfo("client2", DistributionClientConfig("common", None))))
+    result(collections.Distribution_ConsumersProfiles.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
+    result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("client2", DistributionConsumerConfig("common", None))))
   }
 
   it should "add/change password/remove users" in {
