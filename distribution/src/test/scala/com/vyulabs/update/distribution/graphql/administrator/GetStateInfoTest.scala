@@ -4,7 +4,7 @@ import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo}
+import com.vyulabs.update.common.config.{DistributionConsumerInfo}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext}
 import com.vyulabs.update.distribution.mongo.{InstalledDesiredVersions}
@@ -26,7 +26,7 @@ class GetStateInfoTest extends TestEnvironment {
 
   override def beforeAll() = {
     result(collections.Distribution_ConsumersInfo.insert(
-      DistributionConsumerInfo("distribution1", DistributionConsumerConfig("common", Some("test")))))
+      DistributionConsumerInfo("distribution1", "common", Some("test"))))
 
     result(collections.State_InstalledDesiredVersions.insert(
       InstalledDesiredVersions("distribution1", Seq(

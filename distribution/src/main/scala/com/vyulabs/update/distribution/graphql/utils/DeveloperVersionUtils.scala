@@ -4,23 +4,17 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId, UserName}
 import com.vyulabs.update.common.config.DistributionConfig
-import com.vyulabs.update.common.distribution.client.DistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.client.AkkaHttpClient
-import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
-import java.io.{File, IOException}
 import scala.collection.JavaConverters.asJavaIterableConverter
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Success
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils with RunBuilderUtils with SprayJsonSupport {
   protected val directory: DistributionDirectory
@@ -132,11 +126,11 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
   def getDeveloperDesiredVersions(distributionName: DistributionName, serviceNames: Set[ServiceName])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      distributionClientConfig <- getDistributionConsumerConfig(distributionName)
-      developerVersions <- distributionClientConfig.testDistributionMatch match {
+      distributionConsumerInfo <- getDistributionConsumerInfo(distributionName)
+      developerVersions <- distributionConsumerInfo.testDistributionMatch match {
         case Some(testDistributionMatch) =>
           for {
-            testedVersions <- getTestedVersions(distributionClientConfig.installProfile).map(testedVersions => {
+            testedVersions <- getTestedVersions(distributionConsumerInfo.installProfile).map(testedVersions => {
               testedVersions match {
                 case Some(testedVersions) =>
                   val regexp = testDistributionMatch.r
@@ -150,10 +144,10 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
                   if (testCondition) {
                     testedVersions.versions
                   } else {
-                    throw NotFoundException(s"Desired versions for profile ${distributionClientConfig.installProfile} are not tested by clients ${testDistributionMatch}")
+                    throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.installProfile} are not tested by clients ${testDistributionMatch}")
                   }
                 case None =>
-                  throw NotFoundException(s"Desired versions for profile ${distributionClientConfig.installProfile} are not tested by anyone")
+                  throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.installProfile} are not tested by anyone")
               }
             })
           } yield testedVersions
@@ -169,7 +163,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
       clientsInfo <- getDistributionConsumersInfo()
       installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distributionName, serviceName))).map(
         _.flatten.map(_.version.original()))
-      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.config.installProfile))).map(
+      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.installProfile))).map(
         _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.version)).flatten)
     } yield {
       (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distributionName == distributionName).map(_.version)

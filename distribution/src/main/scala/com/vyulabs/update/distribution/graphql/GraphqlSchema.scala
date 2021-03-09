@@ -15,6 +15,7 @@ import sangria.marshalling.sprayJson._
 import sangria.schema.{Field, _}
 import sangria.streaming.akkaStreams._
 
+import java.io.IOException
 import scala.concurrent.ExecutionContext
 
 case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCollections, directory: DistributionDirectory, taskManager: TaskManager)
@@ -33,7 +34,6 @@ object GraphqlSchema {
   val PasswordArg = Argument("password", StringType)
   val UserRoleArg = Argument("role", UserRoleType)
   val DistributionArg = Argument("distribution", StringType)
-  val ProviderDistributionArg = Argument("provider", StringType)
   val InstanceArg = Argument("instance", StringType)
   val ProcessArg = Argument("process", StringType)
   val TaskArg = Argument("task", StringType)
@@ -56,6 +56,8 @@ object GraphqlSchema {
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
+  val UrlArg = Argument("url", UrlType)
+  val ProfileArg = Argument("profile", StringType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -72,6 +74,8 @@ object GraphqlSchema {
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
+  val OptionUpdateStateIntervalArg = Argument("uploadStateInterval", OptionInputType(FiniteDurationType))
+  val OptionTestDistributionMatchArg = Argument("testDistribution", OptionInputType(StringType))
 
   // Queries
 
@@ -120,17 +124,25 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
 
-      Field("providerDeveloperDesiredVersions", ListType(DeveloperDesiredVersionType),
-        arguments = ProviderDistributionArg :: Nil,
-        resolve = c => { c.ctx.workspace.getProviderDeveloperDesiredVersions(c.arg(ProviderDistributionArg)) }),
+      Field("distributionProvidersInfo", ListType(DistributionProviderInfoType),
+        arguments = OptionDistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionProvidersInfo(c.arg(OptionDistributionArg)) }),
+      Field("distributionConsumersInfo", ListType(DistributionConsumerInfoType),
+        arguments = OptionDistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(c.arg(OptionDistributionArg)) }),
+
+      Field("distributionProviderDesiredVersions", ListType(DeveloperDesiredVersionType),
+        arguments = DistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionProviderDesiredVersions(c.arg(DistributionArg)) }),
     )
   )
 
-  def DistributionQueries(implicit log: Logger) = ObjectType(
+  def DistributionQueries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
-      Field("distributionClientConfig", ClientConfigInfoType,
-        resolve = c => { c.ctx.workspace.getDistributionConsumerConfig(c.ctx.userInfo.name) }),
+      Field("distributionConsumersInfo", DistributionConsumerInfoType,
+        resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(Some(c.ctx.userInfo.name))
+          .map(_.headOption.getOrElse(throw new IOException(s"No consumer info for distribution ${c.ctx.userInfo.name}"))) }),
       Field("versionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
@@ -206,9 +218,16 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
           c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
 
-      Field("installProviderDeveloperVersion", StringType,
-        arguments = ProviderDistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
-        resolve = c => { c.ctx.workspace.installProviderDeveloperVersion(c.arg(ProviderDistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
+      Field("addDistributionProvider", BooleanType,
+        arguments = DistributionArg :: UrlArg :: OptionUpdateStateIntervalArg :: Nil,
+        resolve = c => { c.ctx.workspace.addDistributionProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUpdateStateIntervalArg)).map(_ => true) }),
+      Field("installProviderVersion", StringType,
+        arguments = DistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
+        resolve = c => { c.ctx.workspace.installProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
+
+      Field("addDistributionConsumer", BooleanType,
+        arguments = DistributionArg :: ProfileArg :: OptionTestDistributionMatchArg :: Nil,
+        resolve = c => { c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true) }),
 
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,

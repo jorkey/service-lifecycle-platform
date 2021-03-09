@@ -3,8 +3,8 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.config.{DistributionConfig, DistributionProviderConfig}
+import com.vyulabs.update.common.common.Common.{DistributionName, ProfileName, ServiceName}
+import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
@@ -73,7 +73,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def buildFromProviderDistribution(providerDistributionName: DistributionName, providerDistributionURL: URL): Boolean = {
+  def buildFromProviderDistribution(providerDistributionName: DistributionName, providerDistributionURL: URL,
+                                    profileName: ProfileName, testDistributionMatch: Option[String]): Boolean = {
     providerDistributionClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(providerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
 
@@ -91,20 +92,24 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       return false
     }
 
-    log.info(s"########################### Read and modify distribution config")
-    val config = DistributionConfig.readFromFile(distributionDirectory.getConfigFile()).getOrElse {
+    log.info(s"########################### Read distribution config")
+    distributionConfig = Some(DistributionConfig.readFromFile(distributionDirectory.getConfigFile()).getOrElse {
       log.error(s"Can't read distribution config file ${distributionDirectory.getConfigFile()}")
+      return false
+    })
+
+
+    log.info(s"########################### Add distribution provider to distribution server")
+    if (!distributionClient.get.graphqlRequest(administratorMutations.addDistributionProvider(providerDistributionName, providerDistributionURL, None)).getOrElse(false)) {
+      log.error(s"Can't add distribution provider")
       return false
     }
 
-    val distributionProviderConfig = DistributionProviderConfig(providerDistributionName, providerDistributionURL, Some(FiniteDuration(30, TimeUnit.SECONDS)))
-    val newDistributionConfig = DistributionConfig(config.distributionName, config.title, config.instanceId, config.mongoDb, config.network,
-      config.remoteBuilder, config.versions, config.instanceState, config.faultReports, Seq(distributionProviderConfig))
-    if (!IoUtils.writeJsonToFile(distributionDirectory.getConfigFile(), newDistributionConfig)) {
-      log.error(s"Can't write distribution config file ${distributionDirectory.getConfigFile()}")
+    log.info(s"########################### Add distribution consumer to provider distribution server")
+    if (!providerDistributionClient.get.graphqlRequest(administratorMutations.addDistributionConsumer(distributionName, profileName, testDistributionMatch)).getOrElse(false)) {
+      log.error(s"Can't add distribution consumer")
       return false
     }
-    distributionConfig = Some(newDistributionConfig)
 
     log.info(s"########################### Start distribution service")
     distributionClient = startDistributionService()
@@ -152,7 +157,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
     versionsToUpdate.foreach { case (serviceName, version) =>
       log.info(s"Install provider developer version ${version} of service ${serviceName}")
-      val taskId = distributionClient.get.graphqlRequest(administratorMutations.installProviderDeveloperVersion(serviceName, version)).getOrElse {
+      val taskId = distributionClient.get.graphqlRequest(administratorMutations.installProviderVersion(serviceName, version)).getOrElse {
         log.error(s"Can't install provider developer version ${version} of service ${serviceName}")
         return false
       }

@@ -5,13 +5,14 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ProfileName}
-import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo, DistributionConsumerProfile}
+import com.vyulabs.update.common.config.{DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
+import java.io.IOException
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,6 +24,11 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
+  def addDistributionConsumer(distributionName: DistributionName, installProfile: ProfileName, testDistributionMatch: Option[String]): Future[Unit] = {
+    collections.Distribution_ConsumersInfo.update(Filters.eq("distributionName", distributionName),
+      _ => Some(DistributionConsumerInfo(distributionName, installProfile, testDistributionMatch))).map(_ => ())
+  }
+
   def getDistributionConsumersInfo(distributionName: Option[DistributionName] = None)(implicit log: Logger): Future[Seq[DistributionConsumerInfo]] = {
     val distributionArg = distributionName.map(Filters.eq("distributionName", _))
     val args = distributionArg.toSeq
@@ -30,13 +36,14 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
     collections.Distribution_ConsumersInfo.find(filters)
   }
 
-  def getDistributionConsumerConfig(distributionName: DistributionName)(implicit log: Logger): Future[DistributionConsumerConfig] = {
-    getDistributionConsumersInfo(Some(distributionName)).map(_.headOption.map(_.config).getOrElse(throw NotFoundException(s"No distribution consumer ${distributionName} config")))
+  def getDistributionConsumerInfo(distributionName: DistributionName)(implicit log: Logger): Future[DistributionConsumerInfo] = {
+    getDistributionConsumersInfo(Some(distributionName))
+      .map(_.headOption.getOrElse(throw new IOException(s"No distribution ${distributionName} consumer info")))
   }
 
   def getDistributionConsumerInstallProfile(distributionName: DistributionName)(implicit log: Logger): Future[DistributionConsumerProfile] = {
     for {
-      consumerConfig <- getDistributionConsumerConfig(distributionName)
+      consumerConfig <- getDistributionConsumerInfo(distributionName)
       installProfile <- getInstallProfile(consumerConfig.installProfile)
     } yield installProfile
   }

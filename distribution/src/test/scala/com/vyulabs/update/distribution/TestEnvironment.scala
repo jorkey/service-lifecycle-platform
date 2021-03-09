@@ -49,7 +49,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 
   val config = DistributionConfig("test", "Test distribution server", "instance1", mongoDbConfig,
-                                  networkConfig, None, versionsConfig, instanceStateConfig, faultReportsConfig, Seq.empty)
+                                  networkConfig, None, versionsConfig, instanceStateConfig, faultReportsConfig)
 
   val distributionName = config.distributionName
   val instanceId = config.instanceId

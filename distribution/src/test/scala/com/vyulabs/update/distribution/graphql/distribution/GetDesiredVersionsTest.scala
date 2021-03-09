@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo}
+import com.vyulabs.update.common.config.{DistributionConsumerInfo}
 import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DeveloperDesiredVersions, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
@@ -25,7 +25,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   override def beforeAll() = {
     val clientsInfoCollection = collections.Distribution_ConsumersInfo
 
-    result(clientsInfoCollection.insert(DistributionConsumerInfo("distribution1", DistributionConsumerConfig("common", None))))
+    result(clientsInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
 
     result(collections.Developer_DesiredVersions.insert(DeveloperDesiredVersions(Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1)))),

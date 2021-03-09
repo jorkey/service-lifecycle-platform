@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo, DistributionConsumerProfile}
+import com.vyulabs.update.common.config.{DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
@@ -27,8 +27,8 @@ class TestedVersionsTest extends TestEnvironment {
 
     result(installProfileCollection.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
 
-    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", DistributionConsumerConfig("common", None))))
-    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution2", DistributionConsumerConfig("common", Some("distribution1")))))
+    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
+    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution2", "common", Some("distribution1"))))
   }
 
   it should "set/get tested versions" in {

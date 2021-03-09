@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.administrator
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo, DistributionConsumerProfile}
+import com.vyulabs.update.common.config.{DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import com.vyulabs.update.common.info.{UserInfo, UserRole}
@@ -21,7 +21,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
   override def beforeAll() = {
     result(collections.Distribution_ConsumersProfiles.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
-    result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("client2", DistributionConsumerConfig("common", None))))
+    result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("client2", "common", None)))
   }
 
   it should "set/get client desired versions" in {

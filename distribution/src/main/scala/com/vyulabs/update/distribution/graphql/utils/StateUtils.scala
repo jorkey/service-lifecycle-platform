@@ -48,7 +48,7 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
 
   def setTestedVersions(distributionName: DistributionName, desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     for {
-      clientConfig <- getDistributionConsumerConfig(distributionName)
+      clientConfig <- getDistributionConsumerInfo(distributionName)
       testedVersions <- getTestedVersions(clientConfig.installProfile)
       result <- {
         val testRecord = TestSignature(distributionName, new Date())

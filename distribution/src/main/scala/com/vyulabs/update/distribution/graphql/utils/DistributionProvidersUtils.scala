@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId}
-import com.vyulabs.update.common.config.{DistributionProviderConfig, DistributionProviderInfo}
+import com.vyulabs.update.common.config.DistributionProviderInfo
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -20,7 +20,9 @@ import org.bson.BsonDocument
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{File, IOException}
+import java.net.URL
 import scala.collection.JavaConverters.asJavaIterableConverter
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
@@ -36,15 +38,20 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def getProviderDeveloperDesiredVersions(distributionProviderName: DistributionName)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+  def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
+    collections.Distribution_ProvidersInfo.update(Filters.eq("distributionName", distributionName),
+      _ => Some(DistributionProviderInfo(distributionName, distributionUrl, uploadStateInterval))).map(_ => ())
+  }
+
+  def getDistributionProviderDesiredVersions(distributionName: DistributionName)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      distributionProviderClient <- getDistributionProviderClient(distributionProviderName)
+      distributionProviderClient <- getDistributionProviderClient(distributionName)
       desiredVersions <- distributionProviderClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
     } yield desiredVersions
   }
 
-  def installProviderDeveloperVersion(distributionProviderName: DistributionName, serviceName: ServiceName, version: DeveloperDistributionVersion)
-                                     (implicit log: Logger): TaskId = {
+  def installProviderVersion(distributionProviderName: DistributionName, serviceName: ServiceName, version: DeveloperDistributionVersion)
+                            (implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Download and install developer version ${version} of service ${serviceName}",
       (taskId, logger) => {
         implicit val log = logger
@@ -89,13 +96,13 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
     collections.Distribution_ProvidersInfo.find(filters)
   }
 
-  def getDistributionProviderConfig(distributionName: DistributionName)(implicit log: Logger): Future[DistributionProviderConfig] = {
-    getDistributionProvidersInfo(Some(distributionName)).map(_.headOption.map(_.config).getOrElse(throw NotFoundException(s"No distribution provider ${distributionName} config")))
+  def getDistributionProviderInfo(distributionName: DistributionName)(implicit log: Logger): Future[DistributionProviderInfo] = {
+    getDistributionProvidersInfo(Some(distributionName)).map(_.headOption.getOrElse(throw NotFoundException(s"No distribution provider ${distributionName} config")))
   }
 
   private def getDistributionProviderClient(distributionName: DistributionName): Future[DistributionClient[AkkaSource]] = {
     getDistributionProvidersInfo().map(_.find(_.distributionName == distributionName).headOption.map(
-      info => new DistributionClient(new AkkaHttpClient(info.config.distributionUrl))).getOrElse(
+      info => new DistributionClient(new AkkaHttpClient(info.distributionUrl))).getOrElse(
         throw new IOException(s"Distribution provider server ${distributionName} is not defined")))
   }
 }

@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo}
+import com.vyulabs.update.common.config.{DistributionConsumerInfo}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
@@ -24,7 +24,7 @@ class SetStateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override protected def beforeAll(): Unit = {
-    result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("distribution1", DistributionConsumerConfig("common", Some("test")))))
+    result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("distribution1", "common", Some("test"))))
   }
 
   it should "set tested versions" in {

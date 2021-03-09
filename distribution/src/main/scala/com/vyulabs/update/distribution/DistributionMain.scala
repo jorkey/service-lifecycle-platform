@@ -64,8 +64,8 @@ object DistributionMain extends App {
     selfUpdater.start()
 
     workspace.getDistributionProvidersInfo().foreach(_.foreach { providerInfo =>
-      providerInfo.config.uploadStateInterval.foreach(uploadStateInterval =>
-        StateUploader(config.distributionName, collections, dir, uploadStateInterval, providerInfo.config.distributionUrl).start())
+      providerInfo.uploadStateInterval.foreach(uploadStateInterval =>
+        StateUploader(config.distributionName, collections, dir, uploadStateInterval, providerInfo.distributionUrl).start())
     })
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

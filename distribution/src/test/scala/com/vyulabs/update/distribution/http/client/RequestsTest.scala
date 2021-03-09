@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.http.client
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.config.{DistributionConsumerConfig, DistributionConsumerInfo}
+import com.vyulabs.update.common.config.{DistributionConsumerInfo}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder._
@@ -39,7 +39,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     val serviceStatesCollection = collections.State_ServiceStates
     val clientInfoCollection = collections.Distribution_ConsumersInfo
 
-    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", DistributionConsumerConfig("common", None))))
+    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
 
     result(serviceStatesCollection.insert(
       DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
@@ -71,11 +71,11 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     it should "execute some requests" in {
       assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(distributionName, Common.DistributionServiceName))
 
-      assertResult(Some(Seq(DistributionConsumerInfo("distribution1", DistributionConsumerConfig("common", None)))))(
+      assertResult(Some(Seq(DistributionConsumerInfo("distribution1", "common", None))))(
         adminClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
 
-      assertResult(Some(DistributionConsumerConfig("common", None)))(
-        distribClient.graphqlRequest(distributionQueries.getDistributionClientConfig()))
+      assertResult(Some(DistributionConsumerInfo("distribution1", "common", None)))(
+        distribClient.graphqlRequest(distributionQueries.getDistributionConsumerInfo()))
     }
 
     it should "process request errors" in {
