@@ -74,8 +74,8 @@ object GraphqlSchema {
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
-  val OptionUpdateStateIntervalArg = Argument("uploadStateInterval", OptionInputType(FiniteDurationType))
-  val OptionTestDistributionMatchArg = Argument("testDistribution", OptionInputType(StringType))
+  val OptionUploadStateIntervalArg = Argument("uploadStateInterval", OptionInputType(FiniteDurationType))
+  val OptionTestDistributionMatchArg = Argument("testDistributionMatch", OptionInputType(StringType))
 
   // Queries
 
@@ -219,8 +219,11 @@ object GraphqlSchema {
           c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
 
       Field("addDistributionProvider", BooleanType,
-        arguments = DistributionArg :: UrlArg :: OptionUpdateStateIntervalArg :: Nil,
-        resolve = c => { c.ctx.workspace.addDistributionProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUpdateStateIntervalArg)).map(_ => true) }),
+        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
+        resolve = c => { c.ctx.workspace.addDistributionProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
+      Field("removeDistributionProvider", BooleanType,
+        arguments = DistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.removeDistributionProvider(c.arg(DistributionArg)).map(_ => true) }),
       Field("installProviderVersion", StringType,
         arguments = DistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.installProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
@@ -228,6 +231,9 @@ object GraphqlSchema {
       Field("addDistributionConsumer", BooleanType,
         arguments = DistributionArg :: ProfileArg :: OptionTestDistributionMatchArg :: Nil,
         resolve = c => { c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true) }),
+      Field("removeDistributionConsumer", BooleanType,
+        arguments = DistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.removeDistributionConsumer(c.arg(DistributionArg)).map(_ => true) }),
 
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,

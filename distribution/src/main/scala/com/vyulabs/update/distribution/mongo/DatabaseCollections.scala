@@ -9,7 +9,7 @@ import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.BsonDocument
-import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
 
@@ -54,7 +54,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[FaultInfo],
     classOf[UploadStatus],
     classOf[UploadStatusDocument],
-    classOf[ServiceFaultReport]))
+    classOf[ServiceFaultReport],
+    fromCodecs(FiniteDurationCodec, URLCodec)
+  ))
 
   val Sequences = for {
     collection <- db.getOrCreateCollection[SequenceDocument]("sequences")

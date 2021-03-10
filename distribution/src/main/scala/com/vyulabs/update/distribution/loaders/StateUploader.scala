@@ -26,9 +26,8 @@ import scala.util.{Failure, Success}
   * Copyright FanDate, Inc.
   */
 
-class StateUploader(distributionName: DistributionName,
-                    collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration,
-                    client: DistributionClient[AkkaSource])
+class StateUploader(distributionName: DistributionName, collections: DatabaseCollections, distributionDirectory: DistributionDirectory,
+                    uploadInterval: FiniteDuration, client: DistributionClient[AkkaSource])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 

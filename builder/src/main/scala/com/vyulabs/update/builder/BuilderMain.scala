@@ -30,8 +30,10 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?> <providerDistributionName=?> <providerDistributionUrL=?>\n" +
+    "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
+    "      [sourceBranches==?[,?]...] [test=true]\n" +
+    "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
+    "      <providerDistributionName=?> <providerDistributionUrL=?> <profileName=?> [testDistributionMatch=?]\n" +
     "    buildDeveloperVersion <distributionName=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
     "    buildClientVersion <distributionName=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -40,7 +42,7 @@ object BuilderMain extends App {
   val command = args(0)
 
   command match {
-    case "buildDistribution" =>
+    case "buildProviderDistribution" | "buildConsumerDistribution" =>
       val arguments = Arguments.parse(args.drop(1), Set.empty)
 
       val cloudProvider = arguments.getValue("cloudProvider")
@@ -59,26 +61,28 @@ object BuilderMain extends App {
       val distributionBuilder = new DistributionBuilder(cloudProvider, startService,
         new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, false, port)
 
-      arguments.getOptionValue("providerDistributionName") match {
-        case None =>
-          if (!distributionBuilder.buildDistributionFromSources()) {
-            Utils.error("Build distribution error")
-          }
-          val developerVersion = DeveloperVersion.initialVersion
-          if (!distributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
-              (Common.ScriptsServiceName -> developerVersion),
-              (Common.BuilderServiceName -> developerVersion),
-              (Common.UpdaterServiceName -> developerVersion)), author)) {
-            Utils.error("Build distribution error")
-          }
-        case Some(providerDistributionName) =>
-          val providerDistributionURL = new URL(arguments.getValue("providerDistributionUrl"))
-          if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL)) {
-            Utils.error("Build distribution error")
-          }
-          if (!distributionBuilder.updateDistributionFromProvider()) {
-            Utils.error("Build distribution error")
-          }
+      if (command == "buildProviderDistribution") {
+        if (!distributionBuilder.buildDistributionFromSources()) {
+          Utils.error("Build distribution error")
+        }
+        val developerVersion = DeveloperVersion.initialVersion
+        if (!distributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
+          (Common.ScriptsServiceName -> developerVersion),
+          (Common.BuilderServiceName -> developerVersion),
+          (Common.UpdaterServiceName -> developerVersion)), author)) {
+          Utils.error("Build distribution error")
+        }
+      } else {
+        val providerDistributionName = arguments.getValue("providerDistributionName")
+        val providerDistributionURL = new URL(arguments.getValue("providerDistributionUrl"))
+        val profileName = arguments.getValue("profileName")
+        val testDistributionMatch = arguments.getOptionValue("testDistributionMatch")
+        if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL, profileName, testDistributionMatch)) {
+          Utils.error("Build distribution error")
+        }
+        if (!distributionBuilder.updateDistributionFromProvider()) {
+          Utils.error("Build distribution error")
+        }
       }
       if (!distributionBuilder.installBuilder(Seq(DistributionLink(distributionName, distributionBuilder.makeDistributionUrl())), None)) {
         Utils.error("Build distribution error")

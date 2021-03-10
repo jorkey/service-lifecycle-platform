@@ -43,6 +43,10 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
       _ => Some(DistributionProviderInfo(distributionName, distributionUrl, uploadStateInterval))).map(_ => ())
   }
 
+  def removeDistributionProvider(distributionName: DistributionName): Future[Unit] = {
+    collections.Distribution_ProvidersInfo.delete(Filters.eq("distributionName", distributionName)).map(_ => ())
+  }
+
   def getDistributionProviderDesiredVersions(distributionName: DistributionName)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       distributionProviderClient <- getDistributionProviderClient(distributionName)

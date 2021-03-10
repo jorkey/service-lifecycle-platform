@@ -29,6 +29,10 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
       _ => Some(DistributionConsumerInfo(distributionName, installProfile, testDistributionMatch))).map(_ => ())
   }
 
+  def removeDistributionConsumer(distributionName: DistributionName): Future[Unit] = {
+    collections.Distribution_ConsumersInfo.delete(Filters.eq("distributionName", distributionName)).map(_ => ())
+  }
+
   def getDistributionConsumersInfo(distributionName: Option[DistributionName] = None)(implicit log: Logger): Future[Seq[DistributionConsumerInfo]] = {
     val distributionArg = distributionName.map(Filters.eq("distributionName", _))
     val args = distributionArg.toSeq
