@@ -22,7 +22,8 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends UsersUtils with DistributionConsumersUtils with DistributionProvidersUtils with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils
+    extends UsersUtils with ConsumerProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
+      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils
 
 case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
 

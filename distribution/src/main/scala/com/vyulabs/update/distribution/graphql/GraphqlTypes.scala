@@ -1,7 +1,6 @@
 package com.vyulabs.update.distribution.graphql
 
-import com.vyulabs.update.common.config.{DistributionConsumerInfo, DistributionProviderInfo}
-import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date

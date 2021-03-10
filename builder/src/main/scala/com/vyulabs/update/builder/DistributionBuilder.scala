@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionName, ProfileName, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionName, ConsumerProfileName, ServiceName}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
@@ -74,7 +74,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def buildFromProviderDistribution(providerDistributionName: DistributionName, providerDistributionURL: URL,
-                                    profileName: ProfileName, testDistributionMatch: Option[String]): Boolean = {
+                                    profileName: ConsumerProfileName, testDistributionMatch: Option[String]): Boolean = {
     providerDistributionClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(providerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
 

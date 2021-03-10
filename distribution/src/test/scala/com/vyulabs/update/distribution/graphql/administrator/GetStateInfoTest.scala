@@ -4,12 +4,10 @@ import java.util.Date
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerInfo}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext}
-import com.vyulabs.update.distribution.mongo.{InstalledDesiredVersions}
-import com.vyulabs.update.common.info.{ClientDesiredVersion, DirectoryServiceState, DistributionServiceState, ServiceState}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.distribution.graphql.GraphqlContext
+import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
+import com.vyulabs.update.common.info.{ClientDesiredVersion, DirectoryServiceState, DistributionConsumerInfo, DistributionServiceState, ServiceState, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext

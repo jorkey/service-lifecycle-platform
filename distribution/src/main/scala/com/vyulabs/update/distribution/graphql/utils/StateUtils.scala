@@ -49,7 +49,7 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
   def setTestedVersions(distributionName: DistributionName, desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     for {
       clientConfig <- getDistributionConsumerInfo(distributionName)
-      testedVersions <- getTestedVersions(clientConfig.installProfile)
+      testedVersions <- getTestedVersions(clientConfig.consumerProfile)
       result <- {
         val testRecord = TestSignature(distributionName, new Date())
         val testSignatures = testedVersions match {
@@ -58,14 +58,14 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
           case _ =>
             Seq(testRecord)
         }
-        val newTestedVersions = TestedDesiredVersions(clientConfig.installProfile, desiredVersions, testSignatures)
-        val profileArg = Filters.eq("profileName", clientConfig.installProfile)
+        val newTestedVersions = TestedDesiredVersions(clientConfig.consumerProfile, desiredVersions, testSignatures)
+        val profileArg = Filters.eq("profileName", clientConfig.consumerProfile)
         collections.State_TestedVersions.update(profileArg, _ => Some(newTestedVersions)).map(_ => ())
       }
     } yield result
   }
 
-  def getTestedVersions(profileName: ProfileName)(implicit log: Logger): Future[Option[TestedDesiredVersions]] = {
+  def getTestedVersions(profileName: ConsumerProfileName)(implicit log: Logger): Future[Option[TestedDesiredVersions]] = {
     val profileArg = Filters.eq("profileName", profileName)
     collections.State_TestedVersions.find(profileArg).map(_.headOption)
   }

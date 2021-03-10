@@ -4,8 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.config.{DistributionConsumerInfo, DistributionConsumerProfile, DistributionProviderInfo}
-import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.BsonDocument
@@ -78,8 +77,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- collection.createIndex(Indexes.ascending("distributionName", "_archiveTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
-  val Distribution_ConsumersProfiles = new SequencedCollection[DistributionConsumerProfile]("distribution.consumersProfiles", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("distribution.consumersProfiles")
+  val Distribution_ConsumerProfiles = new SequencedCollection[DistributionConsumerProfile]("distribution.consumerProfiles", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("distribution.consumerProfiles")
     _ <- collection.createIndex(Indexes.ascending("profileName", "_archiveTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 

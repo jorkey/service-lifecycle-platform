@@ -5,17 +5,15 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId}
-import com.vyulabs.update.common.config.DistributionProviderInfo
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.DeveloperDesiredVersion
+import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DistributionProviderInfo}
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -34,9 +32,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  protected val taskManager: TaskManager
-
-  implicit val log = LoggerFactory.getLogger(this.getClass)
+  private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
     collections.Distribution_ProvidersInfo.update(Filters.eq("distributionName", distributionName),

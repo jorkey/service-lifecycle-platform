@@ -3,7 +3,6 @@ package com.vyulabs.update.distribution.http.client
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.config.{DistributionConsumerInfo}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder._

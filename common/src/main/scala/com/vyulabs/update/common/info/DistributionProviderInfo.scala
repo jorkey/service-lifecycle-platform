@@ -1,4 +1,4 @@
-package com.vyulabs.update.common.config
+package com.vyulabs.update.common.info
 
 import com.vyulabs.update.common.common.Common.DistributionName
 import com.vyulabs.update.common.utils.JsonFormats._

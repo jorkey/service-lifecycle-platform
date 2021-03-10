@@ -4,9 +4,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionName, ProfileName}
-import com.vyulabs.update.common.config.{DistributionConsumerInfo, DistributionConsumerProfile}
+import com.vyulabs.update.common.common.Common.{ConsumerProfileName, DistributionName}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.{DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
@@ -24,9 +24,9 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addDistributionConsumer(distributionName: DistributionName, installProfile: ProfileName, testDistributionMatch: Option[String]): Future[Unit] = {
+  def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfileName, testDistributionMatch: Option[String]): Future[Unit] = {
     collections.Distribution_ConsumersInfo.update(Filters.eq("distributionName", distributionName),
-      _ => Some(DistributionConsumerInfo(distributionName, installProfile, testDistributionMatch))).map(_ => ())
+      _ => Some(DistributionConsumerInfo(distributionName, consumerProfile, testDistributionMatch))).map(_ => ())
   }
 
   def removeDistributionConsumer(distributionName: DistributionName): Future[Unit] = {
@@ -45,16 +45,16 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
       .map(_.headOption.getOrElse(throw new IOException(s"No distribution ${distributionName} consumer info")))
   }
 
-  def getDistributionConsumerInstallProfile(distributionName: DistributionName)(implicit log: Logger): Future[DistributionConsumerProfile] = {
+  def getDistributionConsumerProfile(distributionName: DistributionName)(implicit log: Logger): Future[DistributionConsumerProfile] = {
     for {
       consumerConfig <- getDistributionConsumerInfo(distributionName)
-      installProfile <- getInstallProfile(consumerConfig.installProfile)
-    } yield installProfile
+      consumerProfile <- getConsumerProfile(consumerConfig.consumerProfile)
+    } yield consumerProfile
   }
 
-  def getInstallProfile(profileName: ProfileName)(implicit log: Logger): Future[DistributionConsumerProfile] = {
+  def getConsumerProfile(profileName: ConsumerProfileName)(implicit log: Logger): Future[DistributionConsumerProfile] = {
     val profileArg = Filters.eq("profileName", profileName)
-    collections.Distribution_ConsumersProfiles.find(profileArg).map(_.headOption
+    collections.Distribution_ConsumerProfiles.find(profileArg).map(_.headOption
       .getOrElse(throw NotFoundException(s"No install profile ${profileName}")))
   }
 }

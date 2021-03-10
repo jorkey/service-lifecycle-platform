@@ -3,7 +3,6 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerInfo}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment

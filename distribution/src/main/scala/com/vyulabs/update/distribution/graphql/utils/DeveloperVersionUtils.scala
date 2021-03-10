@@ -118,8 +118,8 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      installProfile <- getDistributionConsumerInstallProfile(distributionName)
-      versions <- Future(desiredVersions.filter(version => installProfile.services.contains(version.serviceName)))
+      consumerProfile <- getDistributionConsumerProfile(distributionName)
+      versions <- Future(desiredVersions.filter(version => consumerProfile.services.contains(version.serviceName)))
     } yield versions
   }
 
@@ -130,7 +130,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
       developerVersions <- distributionConsumerInfo.testDistributionMatch match {
         case Some(testDistributionMatch) =>
           for {
-            testedVersions <- getTestedVersions(distributionConsumerInfo.installProfile).map(testedVersions => {
+            testedVersions <- getTestedVersions(distributionConsumerInfo.consumerProfile).map(testedVersions => {
               testedVersions match {
                 case Some(testedVersions) =>
                   val regexp = testDistributionMatch.r
@@ -144,10 +144,10 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
                   if (testCondition) {
                     testedVersions.versions
                   } else {
-                    throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.installProfile} are not tested by clients ${testDistributionMatch}")
+                    throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.consumerProfile} are not tested by clients ${testDistributionMatch}")
                   }
                 case None =>
-                  throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.installProfile} are not tested by anyone")
+                  throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.consumerProfile} are not tested by anyone")
               }
             })
           } yield testedVersions
@@ -163,7 +163,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
       clientsInfo <- getDistributionConsumersInfo()
       installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distributionName, serviceName))).map(
         _.flatten.map(_.version.original()))
-      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.installProfile))).map(
+      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.consumerProfile))).map(
         _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.version)).flatten)
     } yield {
       (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distributionName == distributionName).map(_.version)

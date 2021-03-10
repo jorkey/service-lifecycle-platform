@@ -11,7 +11,7 @@ import spray.json._
 
 import scala.concurrent.ExecutionContext
 
-class DistributionProviderTest extends TestEnvironment {
+class DistributionConsumerTest extends TestEnvironment {
   behavior of "Distribution providers"
 
   implicit val system = ActorSystem("Distribution")
@@ -22,61 +22,60 @@ class DistributionProviderTest extends TestEnvironment {
 
   val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
-  it should "add/get distribution providers" in {
+  it should "add/get distribution consumers" in {
     val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
     assertResult((OK,
-      ("""{"data":{"addDistributionProvider":true}}""").parseJson))(
+      ("""{"data":{"addDistributionConsumer":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         mutation {
-          addDistributionProvider (
-            distribution: "provider-distribution",
-            url: "http://provider-distribution.com",
-            uploadStateInterval: "{ \"length\": 30, \"unit\": \"SECONDS\" }"
+          addDistributionConsumer (
+            distribution: "consumer-distribution",
+            profile: "common",
+            testDistributionMatch: "test-distribution"
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionProvidersInfo":[{"distributionName":"provider-distribution","distributionUrl":"http://provider-distribution.com"}]}}""").parseJson))(
+      ("""{"data":{"distributionConsumersInfo":[{"distributionName":"consumer-distribution","consumerProfile":"common"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          distributionProvidersInfo {
+          distributionConsumersInfo {
              distributionName,
-             distributionUrl
+             consumerProfile
           }
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"addDistributionProvider":true}}""").parseJson))(
+      ("""{"data":{"addDistributionConsumer":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         mutation {
-          addDistributionProvider (
-            distribution: "provider-distribution-1",
-            url: "http://provider-distribution-1.com",
-            uploadStateInterval: "{ \"length\": 20, \"unit\": \"SECONDS\" }"
+          addDistributionConsumer (
+            distribution: "consumer-distribution-1",
+            profile: "profile1"
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"removeDistributionProvider":true}}""").parseJson))(
+      ("""{"data":{"removeDistributionConsumer":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         mutation {
-          removeDistributionProvider (
-            distribution: "provider-distribution"
+          removeDistributionConsumer (
+            distribution: "consumer-distribution"
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionProvidersInfo":[{"distributionName":"provider-distribution-1","distributionUrl":"http://provider-distribution-1.com"}]}}""").parseJson))(
+      ("""{"data":{"distributionConsumersInfo":[{"distributionName":"consumer-distribution-1","consumerProfile":"profile1"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          distributionProvidersInfo {
+          distributionConsumersInfo {
              distributionName,
-             distributionUrl
+             consumerProfile
           }
         }
       """)))

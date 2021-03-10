@@ -3,8 +3,7 @@ package com.vyulabs.update.distribution.graphql.administrator
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerInfo}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{DistributionConsumerInfo, UserInfo, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -41,14 +40,14 @@ class GetInfoTest extends TestEnvironment {
 
   it should "get distribution clients info" in {
     assertResult((OK,
-      ("""{"data":{"distributionClientsInfo":[{"distributionName":"distribution1","clientConfig":{"installProfile":"common","testDistributionMatch":"test"}}]}}""").parseJson))(
+      ("""{"data":{"distributionClientsInfo":[{"distributionName":"distribution1","clientConfig":{"consumerProfile":"common","testDistributionMatch":"test"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
         graphql"""
         query {
           distributionClientsInfo {
             distributionName
             clientConfig {
-              installProfile
+              consumerProfile
               testDistributionMatch
             }
           }

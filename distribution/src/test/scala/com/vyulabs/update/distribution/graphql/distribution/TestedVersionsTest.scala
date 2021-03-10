@@ -3,7 +3,6 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.config.{DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
@@ -22,10 +21,10 @@ class TestedVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val installProfileCollection = collections.Distribution_ConsumersProfiles
+    val consumerProfileCollection = collections.Distribution_ConsumerProfiles
     val clientInfoCollection = collections.Distribution_ConsumersInfo
 
-    result(installProfileCollection.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
+    result(consumerProfileCollection.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
 
     result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
     result(clientInfoCollection.insert(DistributionConsumerInfo("distribution2", "common", Some("distribution1"))))

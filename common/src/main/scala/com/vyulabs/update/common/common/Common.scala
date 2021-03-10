@@ -13,7 +13,7 @@ object Common {
   type ProcessId = String
   type TaskId = String
   type ServiceDirectory = String
-  type ProfileName = String
+  type ConsumerProfileName = String
   type FaultId = String
 
   val Pm2DescFileName = "pm2_desc.json"
@@ -43,7 +43,7 @@ object Common {
   val ProfileFileNamePattern = "(profile-)(.*?)(.json)"
   val ProfileFileNameMatch = "profile-x.json"
 
-  val CommonInstallProfile = "common"
+  val CommonConsumerProfile = "common"
 
   val CommonServiceProfile = "common"
 
