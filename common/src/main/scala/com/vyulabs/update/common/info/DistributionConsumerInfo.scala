@@ -9,7 +9,7 @@ object DistributionConsumerInfo extends DefaultJsonProtocol {
   implicit val infoJson = jsonFormat3(DistributionConsumerInfo.apply)
 }
 
-case class DistributionConsumerProfile(profileName: ConsumerProfileName, services: Set[ServiceName])
+case class DistributionConsumerProfile(profileName: ConsumerProfileName, services: Seq[ServiceName])
 
 object DistributionConsumerProfile extends DefaultJsonProtocol {
   implicit val profileJson = jsonFormat2(DistributionConsumerProfile.apply)

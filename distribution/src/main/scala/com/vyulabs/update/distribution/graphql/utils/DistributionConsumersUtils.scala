@@ -44,17 +44,4 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
     getDistributionConsumersInfo(Some(distributionName))
       .map(_.headOption.getOrElse(throw new IOException(s"No distribution ${distributionName} consumer info")))
   }
-
-  def getDistributionConsumerProfile(distributionName: DistributionName)(implicit log: Logger): Future[DistributionConsumerProfile] = {
-    for {
-      consumerConfig <- getDistributionConsumerInfo(distributionName)
-      consumerProfile <- getConsumerProfile(consumerConfig.consumerProfile)
-    } yield consumerProfile
-  }
-
-  def getConsumerProfile(profileName: ConsumerProfileName)(implicit log: Logger): Future[DistributionConsumerProfile] = {
-    val profileArg = Filters.eq("profileName", profileName)
-    collections.Distribution_ConsumerProfiles.find(profileArg).map(_.headOption
-      .getOrElse(throw NotFoundException(s"No install profile ${profileName}")))
-  }
 }

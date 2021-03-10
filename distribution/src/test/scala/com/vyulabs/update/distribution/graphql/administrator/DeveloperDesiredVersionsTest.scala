@@ -19,7 +19,7 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    result(collections.Distribution_ConsumerProfiles.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
+    result(collections.Distribution_ConsumerProfiles.insert(DistributionConsumerProfile("common", Seq("service1", "service2"))))
     result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("client2", "common", None)))
   }
 

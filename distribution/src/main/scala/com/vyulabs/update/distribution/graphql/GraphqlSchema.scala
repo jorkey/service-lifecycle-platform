@@ -22,7 +22,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends UsersUtils with ConsumerProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
+    extends UsersUtils with DistributionConsumerProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils
 
 case class GraphqlContext(userInfo: UserInfo, workspace: GraphqlWorkspace)
@@ -40,7 +40,7 @@ object GraphqlSchema {
   val TaskArg = Argument("task", StringType)
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
-  val ServicesArg = Argument("service", ListInputType(StringType))
+  val ServicesArg = Argument("services", ListInputType(StringType))
   val DeveloperVersionArg = Argument("version", DeveloperVersionType)
   val ClientVersionArg = Argument("version", ClientVersionType)
   val DeveloperDistributionVersionArg = Argument("version", DeveloperDistributionVersionType)
@@ -76,6 +76,7 @@ object GraphqlSchema {
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
+  val OptionConsumerProfileArg = Argument("profile", OptionInputType(StringType))
   val OptionUploadStateIntervalArg = Argument("uploadStateInterval", OptionInputType(FiniteDurationType))
   val OptionTestDistributionMatchArg = Argument("testDistributionMatch", OptionInputType(StringType))
 
@@ -126,12 +127,13 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
 
-      Field("distributionProvidersInfo", ListType(DistributionProviderInfoType),
-        arguments = OptionDistributionArg :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionProvidersInfo(c.arg(OptionDistributionArg)) }),
       Field("distributionConsumersInfo", ListType(DistributionConsumerInfoType),
         arguments = OptionDistributionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(c.arg(OptionDistributionArg)) }),
+
+      Field("distributionConsumerProfiles", ListType(DistributionConsumerProfileType),
+        arguments = OptionConsumerProfileArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionConsumerProfiles(c.arg(OptionConsumerProfileArg)) }),
 
       Field("distributionProviderDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = DistributionArg :: Nil,
@@ -232,10 +234,10 @@ object GraphqlSchema {
 
       Field("addDistributionConsumerProfile", BooleanType,
         arguments = ConsumerProfileArg :: ServicesArg :: Nil,
-        resolve = c => { c.ctx.workspace.addDistributionConsumerProfile(c.arg(ConsumerProfileArg), c.arg(ServicesArg).toSet).map(_ => true) }),
-      Field("removeDistributionConsumerProfile", ListType(DeveloperDesiredVersionType),
-        arguments = ConsumerProfileArg :: ServicesArg :: Nil,
-        resolve = c => { c.ctx.workspace.addDistributionConsumerProfile(c.arg(ConsumerProfileArg), c.arg(ServicesArg).toSet)) }),
+        resolve = c => { c.ctx.workspace.addDistributionConsumerProfile(c.arg(ConsumerProfileArg), c.arg(ServicesArg)).map(_ => true) }),
+      Field("removeDistributionConsumerProfile", BooleanType,
+        arguments = ConsumerProfileArg :: Nil,
+        resolve = c => { c.ctx.workspace.removeDistributionConsumerProfile(c.arg(ConsumerProfileArg)).map(_ => true) }),
 
       Field("addDistributionConsumer", BooleanType,
         arguments = DistributionArg :: ConsumerProfileArg :: OptionTestDistributionMatchArg :: Nil,

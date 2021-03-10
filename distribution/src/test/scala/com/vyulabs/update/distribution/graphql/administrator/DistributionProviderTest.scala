@@ -22,7 +22,7 @@ class DistributionProviderTest extends TestEnvironment {
 
   val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
-  it should "add/get distribution providers" in {
+  it should "add/get/remove distribution providers" in {
     val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
     assertResult((OK,

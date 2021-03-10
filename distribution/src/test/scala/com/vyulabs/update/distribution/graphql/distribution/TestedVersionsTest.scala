@@ -24,7 +24,7 @@ class TestedVersionsTest extends TestEnvironment {
     val consumerProfileCollection = collections.Distribution_ConsumerProfiles
     val clientInfoCollection = collections.Distribution_ConsumersInfo
 
-    result(consumerProfileCollection.insert(DistributionConsumerProfile("common", Set("service1", "service2"))))
+    result(consumerProfileCollection.insert(DistributionConsumerProfile("common", Seq("service1", "service2"))))
 
     result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
     result(clientInfoCollection.insert(DistributionConsumerInfo("distribution2", "common", Some("distribution1"))))

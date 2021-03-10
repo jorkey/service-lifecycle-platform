@@ -16,7 +16,9 @@ import org.slf4j.Logger
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils with RunBuilderUtils with SprayJsonSupport {
+trait DeveloperVersionUtils extends DistributionConsumersUtils with DistributionConsumerProfilesUtils
+    with StateUtils with RunBuilderUtils with SprayJsonSupport {
+
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
@@ -118,7 +120,8 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with StateUtils w
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      consumerProfile <- getDistributionConsumerProfile(distributionName)
+      consumerConfig <- getDistributionConsumerInfo(distributionName)
+      consumerProfile <- getDistributionConsumerProfile(consumerConfig.consumerProfile)
       versions <- Future(desiredVersions.filter(version => consumerProfile.services.contains(version.serviceName)))
     } yield versions
   }

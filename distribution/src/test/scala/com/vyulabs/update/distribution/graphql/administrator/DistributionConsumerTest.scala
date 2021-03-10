@@ -17,17 +17,19 @@ class DistributionConsumerTest extends TestEnvironment {
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => {
-    ex.printStackTrace(); log.error("Uncatched exception", ex)
+    ex.printStackTrace();
+    log.error("Uncatched exception", ex)
   })
 
   val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
-  it should "add/get distribution consumers" in {
+  it should "add/get/remove distribution consumers" in {
     val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
     assertResult((OK,
       ("""{"data":{"addDistributionConsumer":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
         mutation {
           addDistributionConsumer (
             distribution: "consumer-distribution",
@@ -39,7 +41,8 @@ class DistributionConsumerTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"distributionConsumersInfo":[{"distributionName":"consumer-distribution","consumerProfile":"common"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
         query {
           distributionConsumersInfo {
              distributionName,
@@ -50,7 +53,8 @@ class DistributionConsumerTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"addDistributionConsumer":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
         mutation {
           addDistributionConsumer (
             distribution: "consumer-distribution-1",
@@ -61,7 +65,8 @@ class DistributionConsumerTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"removeDistributionConsumer":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
         mutation {
           removeDistributionConsumer (
             distribution: "consumer-distribution"
@@ -71,7 +76,8 @@ class DistributionConsumerTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"distributionConsumersInfo":[{"distributionName":"consumer-distribution-1","consumerProfile":"profile1"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
         query {
           distributionConsumersInfo {
              distributionName,
@@ -79,5 +85,43 @@ class DistributionConsumerTest extends TestEnvironment {
           }
         }
       """)))
+  }
+
+  it should "add/get/remove distribution consumer profiles" in {
+    assertResult((OK,
+      ("""{"data":{"addDistributionConsumerProfile":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+        mutation {
+          addDistributionConsumerProfile (
+            profile: "consumer-distribution",
+            services: [ "service1", "service2", "service3" ]
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"distributionConsumerProfiles":[{"profileName":"consumer-distribution","services":["service1","service2","service3"]}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+        query {
+          distributionConsumerProfiles {
+             profileName,
+             services
+          }
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":{"removeDistributionConsumerProfile":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+        graphql"""
+        mutation {
+          removeDistributionConsumerProfile (
+            profile: "consumer-distribution"
+          )
+        }
+      """)))
+
   }
 }
