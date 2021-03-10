@@ -19,12 +19,12 @@ trait ConsumerProfilesUtils extends DeveloperVersionUtils with SprayJsonSupport 
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addConsumerProfile(profileName: ConsumerProfileName, services: Set[ServiceName]): Future[Unit] = {
+  def addDistributionConsumerProfile(profileName: ConsumerProfileName, services: Set[ServiceName]): Future[Unit] = {
     collections.Distribution_ConsumerProfiles.update(Filters.eq("profileName", profileName),
       _ => Some(DistributionConsumerProfile(profileName, services))).map(_ => ())
   }
 
-  def removeConsumerProfile(profileName: ConsumerProfileName): Future[Unit] = {
+  def removeDistributionConsumerProfile(profileName: ConsumerProfileName): Future[Unit] = {
     collections.Distribution_ConsumerProfiles.delete(Filters.eq("profileName", profileName)).map(_ => ())
   }
 }

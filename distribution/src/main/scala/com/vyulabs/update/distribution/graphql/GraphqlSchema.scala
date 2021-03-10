@@ -40,6 +40,7 @@ object GraphqlSchema {
   val TaskArg = Argument("task", StringType)
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
+  val ServicesArg = Argument("service", ListInputType(StringType))
   val DeveloperVersionArg = Argument("version", DeveloperVersionType)
   val ClientVersionArg = Argument("version", ClientVersionType)
   val DeveloperDistributionVersionArg = Argument("version", DeveloperDistributionVersionType)
@@ -57,8 +58,8 @@ object GraphqlSchema {
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
+  val ConsumerProfileArg = Argument("profile", StringType)
   val UrlArg = Argument("url", UrlType)
-  val ProfileArg = Argument("profile", StringType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -229,9 +230,16 @@ object GraphqlSchema {
         arguments = DistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.installProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
 
+      Field("addDistributionConsumerProfile", BooleanType,
+        arguments = ConsumerProfileArg :: ServicesArg :: Nil,
+        resolve = c => { c.ctx.workspace.addDistributionConsumerProfile(c.arg(ConsumerProfileArg), c.arg(ServicesArg).toSet).map(_ => true) }),
+      Field("removeDistributionConsumerProfile", ListType(DeveloperDesiredVersionType),
+        arguments = ConsumerProfileArg :: ServicesArg :: Nil,
+        resolve = c => { c.ctx.workspace.addDistributionConsumerProfile(c.arg(ConsumerProfileArg), c.arg(ServicesArg).toSet)) }),
+
       Field("addDistributionConsumer", BooleanType,
-        arguments = DistributionArg :: ProfileArg :: OptionTestDistributionMatchArg :: Nil,
-        resolve = c => { c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true) }),
+        arguments = DistributionArg :: ConsumerProfileArg :: OptionTestDistributionMatchArg :: Nil,
+        resolve = c => { c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ConsumerProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true) }),
       Field("removeDistributionConsumer", BooleanType,
         arguments = DistributionArg :: Nil,
         resolve = c => { c.ctx.workspace.removeDistributionConsumer(c.arg(DistributionArg)).map(_ => true) }),
