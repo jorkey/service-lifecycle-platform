@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionName, ConsumerProfileName, ServiceName}
+import com.vyulabs.update.common.common.Common.{ConsumerProfileName, DistributionName, ServiceName}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
@@ -40,6 +40,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private var distributionClient = Option.empty[SyncDistributionClient[SyncSource]]
   private var distributionConfig = Option.empty[DistributionConfig]
 
+  private var providerDistributionName = Option.empty[DistributionName]
   private var providerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
 
   def buildDistributionFromSources(): Boolean = {
@@ -69,6 +70,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def buildFromProviderDistribution(providerDistributionName: DistributionName, providerDistributionURL: URL,
                                     profileName: ConsumerProfileName, testDistributionMatch: Option[String]): Boolean = {
+    this.providerDistributionName = Some(providerDistributionName)
     providerDistributionClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(providerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
 
@@ -135,9 +137,24 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
+  def generateAndUploadInitialVersions(author: String): Boolean = {
+    log.info(s"########################### Generate and upload initial versions")
+    if (!uploadDeveloperAndClientVersions(Map(
+      (Common.DistributionServiceName -> DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion)),
+      (Common.ScriptsServiceName -> DeveloperDistributionVersion(distributionName, DeveloperVersion.initialVersion))), author)) {
+      return false
+    }
+    if (!generateAndUploadDeveloperAndClientVersions(Map(
+      (Common.BuilderServiceName -> DeveloperVersion.initialVersion),
+      (Common.UpdaterServiceName -> DeveloperVersion.initialVersion)), author)) {
+      return false
+    }
+    true
+  }
+
   def updateDistributionFromProvider(): Boolean = {
     val providerDesiredVersions = DeveloperDesiredVersions.toMap(
-        providerDistributionClient.get.graphqlRequest(administratorQueries.getProviderDeveloperDesiredVersions()).getOrElse {
+        distributionClient.get.graphqlRequest(administratorQueries.getDistributionProviderDesiredVersions(this.providerDistributionName.get)).getOrElse {
       log.error("Can't get provider distribution developer desired versions")
       return false
     })
@@ -200,7 +217,12 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     val distributionUrl = makeDistributionUrl()
     log.info(s"########################### Install builder")
     val updateSourcesUri = GitRepository.openRepository(new File(".")).map(_.getUrl())
-    installBuilder(Seq(DistributionLink(distributionName, distributionUrl)), updateSourcesUri)
+    if (installBuilder(Seq(DistributionLink(distributionName, distributionUrl)), updateSourcesUri)) {
+      log.info(s"########################### Builder is installed successfully")
+      true
+    } else {
+      false
+    }
   }
 
   def installBuilder(distributionLinks: Seq[DistributionLink], updateSourcesUri: Option[String]): Boolean = {
@@ -301,7 +323,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   private def uploadDeveloperVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
-    log.info(s"########################### Upload developer images of services")
+    log.info(s"########################### Upload developer images of services ${versions.keySet}")
     versions.foreach { case (serviceName, version) =>
       if (!developerBuilder.uploadDeveloperVersion(distributionClient.get, serviceName, version, author)) {
         log.error(s"Can't upload developer version ${version} of service ${serviceName}")

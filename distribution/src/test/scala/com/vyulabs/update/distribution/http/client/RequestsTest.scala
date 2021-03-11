@@ -74,8 +74,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     }
 
     it should "execute distribution provider requests" in {
-      assert(distribClient.graphqlRequest(
-        administratorMutations.addDistributionProvider("distribution2",
+      assert(adminClient.graphqlRequest(administratorMutations.addDistributionProvider("distribution2",
           new URL("http://localhost/graphql"), None)).getOrElse(false))
 
       assertResult(Some(Seq(DistributionProviderInfo("distribution2", new URL("http://localhost/graphql"), None))))(
@@ -83,7 +82,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     }
 
     it should "execute distribution consumer requests" in {
-      assert(distribClient.graphqlRequest(
+      assert(adminClient.graphqlRequest(
         administratorMutations.addDistributionConsumer("distribution1", "common", None)).getOrElse(false))
 
       assertResult(Some(Seq(DistributionConsumerInfo("distribution1", "common", None))))(

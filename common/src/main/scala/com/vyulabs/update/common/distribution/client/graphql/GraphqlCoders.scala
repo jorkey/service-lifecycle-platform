@@ -20,12 +20,12 @@ trait CommonQueriesCoder {
 object AdministratorQueriesCoder extends CommonQueriesCoder {
   def getDistributionProvidersInfo(distributionName: Option[DistributionName] = None) =
     GraphqlQuery[Seq[DistributionProviderInfo]]("distributionProvidersInfo",
-      Seq(GraphqlArgument("distribution" -> distributionName)),
+      distributionName.map(distributionName => GraphqlArgument("distribution" -> distributionName)).toSeq,
       subSelection = "{ distributionName, distributionUrl, uploadStateInterval }")
 
   def getDistributionConsumersInfo(distributionName: Option[DistributionName] = None) =
     GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionConsumersInfo",
-      Seq(GraphqlArgument("distribution" -> distributionName)),
+      distributionName.map(distributionName => GraphqlArgument("distribution" -> distributionName)).toSeq,
       subSelection = "{ distributionName, consumerProfile, testDistributionMatch }")
 
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperVersion] = None) =
@@ -65,8 +65,8 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
       "{ distributionName, report { faultId, info { date, instanceId, serviceDirectory, serviceName, serviceProfile, state { date, installDate, startDate, version, updateToVersion, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 
-  def getProviderDeveloperDesiredVersions() =
-    GraphqlQuery[Seq[DeveloperDesiredVersion]]("getProviderDeveloperDesiredVersions", Seq.empty)
+  def getDistributionProviderDesiredVersions(distributionName: DistributionName) =
+    GraphqlQuery[Seq[DeveloperDesiredVersion]]("distributionProviderDesiredVersions", Seq(GraphqlArgument("distribution" -> distributionName)))
 }
 
 object DistributionQueriesCoder extends CommonQueriesCoder {
@@ -108,7 +108,7 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
 
   def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distributionName),
-      GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")))
+      GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
 
   def installProviderVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
     GraphqlMutation[String]("installProviderDeveloperVersion",
@@ -116,7 +116,7 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
 
   def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfileName, testDistributionMatch: Option[String]) =
     GraphqlMutation[Boolean]("addDistributionConsumer", Seq(GraphqlArgument("distribution" -> distributionName),
-      GraphqlArgument("profile" -> consumerProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)))
+      GraphqlArgument("profile" -> consumerProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)).filter(_.value != JsNull))
 
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))

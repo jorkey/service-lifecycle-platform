@@ -3,15 +3,14 @@ package com.vyulabs.update.builder
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.process.ChildProcess
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
+
 import java.io.File
 import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
-
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
@@ -57,12 +56,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       developerDistributionName, "Test developer distribution server",
       developerMongoDbName,true, 8000)
     assert(developerDistributionBuilder.buildDistributionFromSources())
-    assert(developerDistributionBuilder.uploadDeveloperAndClientVersions(Map(
-      (Common.DistributionServiceName -> DeveloperDistributionVersion(developerDistributionName, DeveloperVersion.initialVersion)),
-      (Common.ScriptsServiceName -> DeveloperDistributionVersion(developerDistributionName, DeveloperVersion.initialVersion))), "ak"))
-    assert(developerDistributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
-      (Common.BuilderServiceName -> DeveloperVersion.initialVersion),
-      (Common.UpdaterServiceName -> DeveloperVersion.initialVersion)), "ak"))
+    assert(developerDistributionBuilder.generateAndUploadInitialVersions("ak"))
     assert(developerDistributionBuilder.installBuilderFromSources())
 
     log.info("")
@@ -75,6 +69,8 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
 
     assert(clientDistributionBuilder.buildFromProviderDistribution(clientDistributionName, new URL("http://admin:admin@localhost:8000"),
       Common.CommonConsumerProfile, None))
+    assert(clientDistributionBuilder.updateDistributionFromProvider())
+    assert(developerDistributionBuilder.installBuilderFromSources())
   }
 
   def startService(directory: File): Boolean = {
