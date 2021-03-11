@@ -12,14 +12,13 @@ object BuildInfo extends DefaultJsonProtocol {
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)
 }
 
-case class DeveloperVersionInfo(serviceName: ServiceName, distributionName: DistributionName,
-                                version: DeveloperVersion, buildInfo: BuildInfo)
+case class DeveloperVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion, buildInfo: BuildInfo)
 
 object DeveloperVersionInfo extends DefaultJsonProtocol {
-  implicit val serviceVersionInfoJson = jsonFormat4(DeveloperVersionInfo.apply)
+  implicit val serviceVersionInfoJson = jsonFormat3(DeveloperVersionInfo.apply)
 
   def from(serviceName: ServiceName, version: DeveloperDistributionVersion, buildInfo: BuildInfo): DeveloperVersionInfo = {
-    new DeveloperVersionInfo(serviceName, version.distributionName, version.version, buildInfo)
+    new DeveloperVersionInfo(serviceName, version, buildInfo)
   }
 }
 

@@ -44,7 +44,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     log.info(s"Add developer version info ${versionInfo}")
     for {
       _ <- collections.Developer_VersionsInfo.insert(versionInfo)
-      _ <- removeObsoleteVersions(versionInfo.distributionName, versionInfo.serviceName)
+      _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
     } yield {}
   }
 
@@ -53,11 +53,11 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
       versions <- getDeveloperVersionsInfo(serviceName, distributionName = Some(distributionName))
       busyVersions <- getBusyVersions(distributionName, serviceName)
       complete <- {
-        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version))
+        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > config.versions.maxHistorySize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
-            removeDeveloperVersion(serviceName, DeveloperDistributionVersion(distributionName, version))
+            removeDeveloperVersion(serviceName, version)
           })
         } else {
           Future()
@@ -70,8 +70,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     log.info(s"Remove developer version ${version} of service ${serviceName}")
     val filters = Filters.and(
       Filters.eq("serviceName", serviceName),
-      Filters.eq("distributionName", version.distributionName))
-      Filters.eq("version", version.version)
+      Filters.eq("version", version))
     directory.getDeveloperVersionImageFile(serviceName, version).delete()
     for {
       profile <- {
@@ -83,8 +82,8 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
                                version: Option[DeveloperVersion] = None)(implicit log: Logger): Future[Seq[DeveloperVersionInfo]] = {
     val serviceArg = Filters.eq("serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("distributionName", distributionName ) }
-    val versionArg = version.map { version => Filters.eq("version", version) }
+    val distributionArg = distributionName.map { distributionName => Filters.eq("version.distributionName", distributionName ) }
+    val versionArg = version.map { version => Filters.eq("version.version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     collections.Developer_VersionsInfo.find(filters)
   }

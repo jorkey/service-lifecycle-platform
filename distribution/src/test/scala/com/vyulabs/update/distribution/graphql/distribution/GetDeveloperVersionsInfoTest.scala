@@ -13,7 +13,7 @@ import spray.json._
 import java.util.Date
 import scala.concurrent.ExecutionContext
 
-class GetVersionsInfoTest extends TestEnvironment {
+class GetDeveloperVersionsInfoTest extends TestEnvironment {
   behavior of "Get Versions Info Requests"
 
   implicit val system = ActorSystem("Distribution")
@@ -27,12 +27,12 @@ class GetVersionsInfoTest extends TestEnvironment {
       DeveloperVersionInfo.from("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 1))), BuildInfo("author1", Seq.empty, new Date(), None))))
   }
 
-  it should "get version info" in {
+  it should "get developer versions info" in {
     assertResult((OK,
-      ("""{"data":{"versionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         query {
-          versionsInfo (service: "service1", version: "test-1.1.1") {
+          developerVersionsInfo (service: "service1", distribution: "test", version: "1.1.1") {
             version
             buildInfo {
               author

@@ -71,15 +71,15 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(distributionName, Common.DistributionServiceName))
 
       assertResult(Some(Seq(DistributionConsumerInfo("distribution1", "common", None))))(
-        adminClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
+        adminClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
 
       assertResult(Some(DistributionConsumerInfo("distribution1", "common", None)))(
         distribClient.graphqlRequest(distributionQueries.getDistributionConsumerInfo()))
     }
 
     it should "process request errors" in {
-      assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
-      assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionClientsInfo()))
+      assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
+      assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
     }
 
     it should "execute developer version requests" in {

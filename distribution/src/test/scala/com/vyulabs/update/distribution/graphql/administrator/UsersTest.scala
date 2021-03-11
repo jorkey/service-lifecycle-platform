@@ -63,6 +63,22 @@ class UsersTest extends TestEnvironment {
       """)))
   }
 
+  it should "get user info" in {
+    val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+
+    assertResult((OK,
+      ("""{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+        query {
+          userInfo {
+            name
+            role
+          }
+        }
+      """))
+    )
+  }
+
   it should "change own password" in {
     val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 

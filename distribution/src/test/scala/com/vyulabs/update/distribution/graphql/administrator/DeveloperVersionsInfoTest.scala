@@ -33,7 +33,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       ("""{"data":{"developerVersionsInfo":[{"version":"test-1.1.1","buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          developerVersionsInfo (service: "service1", version: "test-1.1.1") {
+          developerVersionsInfo (service: "service1", distribution: "test", version: "1.1.1") {
             version
             buildInfo {
               author

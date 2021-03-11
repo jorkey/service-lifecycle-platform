@@ -74,15 +74,15 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
     log.info(s"Add client version info ${versionInfo}")
     for {
       result <- collections.Client_VersionsInfo.insert(versionInfo).map(_ => ())
-      _ <- removeObsoleteVersions(versionInfo.distributionName, versionInfo.serviceName)
+      _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
     } yield result
   }
 
   def getClientVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
                             version: Option[ClientVersion] = None)(implicit log: Logger): Future[Seq[ClientVersionInfo]] = {
     val serviceArg = Filters.eq("serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("distributionName", distributionName ) }
-    val versionArg = version.map { version => Filters.eq("version", version) }
+    val distributionArg = distributionName.map { distributionName => Filters.eq("version.distributionName", distributionName ) }
+    val versionArg = version.map { version => Filters.eq("version.version", version) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     collections.Client_VersionsInfo.find(filters)
   }
@@ -92,11 +92,11 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
       versions <- getClientVersionsInfo(serviceName, distributionName = Some(distributionName))
       busyVersions <- getBusyVersions(distributionName, serviceName)
       _ <- {
-        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version))
+        val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.version))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > config.versions.maxHistorySize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
-            removeClientVersion(serviceName, ClientDistributionVersion(distributionName, version))
+            removeClientVersion(serviceName, version)
           })
         } else {
           Future()

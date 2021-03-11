@@ -130,11 +130,13 @@ object GraphqlSchema {
       Field("distributionConsumersInfo", ListType(DistributionConsumerInfoType),
         arguments = OptionDistributionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(c.arg(OptionDistributionArg)) }),
-
       Field("distributionConsumerProfiles", ListType(DistributionConsumerProfileType),
         arguments = OptionConsumerProfileArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionConsumerProfiles(c.arg(OptionConsumerProfileArg)) }),
 
+      Field("distributionProvidersInfo", ListType(DistributionProviderInfoType),
+        arguments = OptionDistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionProvidersInfo(c.arg(OptionDistributionArg)) }),
       Field("distributionProviderDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = DistributionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionProviderDesiredVersions(c.arg(DistributionArg)) }),
@@ -144,10 +146,9 @@ object GraphqlSchema {
   def DistributionQueries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Query",
     CommonQueries ++ fields[GraphqlContext, Unit](
-      Field("distributionConsumersInfo", DistributionConsumerInfoType,
-        resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(Some(c.ctx.userInfo.name))
-          .map(_.headOption.getOrElse(throw new IOException(s"No consumer info for distribution ${c.ctx.userInfo.name}"))) }),
-      Field("versionsInfo", ListType(DeveloperVersionInfoType),
+      Field("distributionConsumerInfo", DistributionConsumerInfoType,
+        resolve = c => { c.ctx.workspace.getDistributionConsumerInfo(c.ctx.userInfo.name) }),
+      Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),

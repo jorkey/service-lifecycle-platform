@@ -11,7 +11,7 @@ import spray.json._
 
 import scala.concurrent.ExecutionContext
 
-class GetConfigTest extends TestEnvironment {
+class GetDistributionConsumerInfoTest extends TestEnvironment {
   behavior of "Config Client Request"
 
   implicit val system = ActorSystem("Distribution")
@@ -22,14 +22,14 @@ class GetConfigTest extends TestEnvironment {
     result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("distribution1", "common", Some("test"))))
   }
 
-  it should "get config for client" in {
+  it should "get distribution consumer info" in {
     val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
 
     assertResult((OK,
-      ("""{"data":{"distributionClientConfig":{"consumerProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(
+      ("""{"data":{"distributionConsumerInfo":{"consumerProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         query {
-          distributionClientConfig {
+          distributionConsumerInfo {
             consumerProfile,
             testDistributionMatch
           }

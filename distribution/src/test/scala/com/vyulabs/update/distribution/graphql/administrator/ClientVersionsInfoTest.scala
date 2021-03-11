@@ -25,7 +25,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
 
   val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
 
-  it should "add/get client version info" in {
+  it should "add/get/remove client version info" in {
     addClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.1.1_1"))
     addClientVersionInfo("service1", ClientDistributionVersion.parse("distribution1-2.1.3_1"))
 
@@ -33,7 +33,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
       ("""{"data":{"clientVersionsInfo":[{"version":"test-1.1.1_1","buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
         query {
-          clientVersionsInfo (service: "service1", version: "test-1.1.1_1") {
+          clientVersionsInfo (service: "service1", distribution: "test", version: "1.1.1_1") {
             version
             buildInfo {
               author
@@ -113,7 +113,11 @@ class ClientVersionsInfoTest extends TestEnvironment {
                       })
                   }
                 """,
-        variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson, "buildDate" -> new Date().toJson, "installDate" -> new Date().toJson))))
+        variables = JsObject(
+          "service" -> JsString(serviceName),
+          "version" -> version.toJson,
+          "buildDate" -> new Date().toJson,
+          "installDate" -> new Date().toJson))))
     assert(distributionDir.getClientVersionImageFile(serviceName, version).createNewFile())
   }
 

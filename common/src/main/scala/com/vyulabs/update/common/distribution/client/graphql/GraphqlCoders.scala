@@ -37,9 +37,9 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
 
-  def getDistributionClientsInfo() =
-    GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionClientsInfo",
-      subSelection = "{ distributionName, clientConfig { consumerProfile, testDistributionMatch } }")
+  def getDistributionConsumersInfo() =
+    GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionConsumersInfo",
+      subSelection = "{ distributionName, consumerProfile, testDistributionMatch }")
 
   def getInstalledDesiredVersions(distributionName: DistributionName, serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",
