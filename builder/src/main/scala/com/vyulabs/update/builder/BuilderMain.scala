@@ -67,7 +67,6 @@ object BuilderMain extends App {
         }
         val developerVersion = DeveloperVersion.initialVersion
         if (!distributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
-          (Common.ScriptsServiceName -> developerVersion),
           (Common.BuilderServiceName -> developerVersion),
           (Common.UpdaterServiceName -> developerVersion)), author)) {
           Utils.error("Build distribution error")

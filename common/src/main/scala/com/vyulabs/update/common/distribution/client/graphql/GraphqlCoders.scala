@@ -10,6 +10,7 @@ import spray.json._
 
 import java.net.URL
 import scala.concurrent.duration.FiniteDuration
+import com.vyulabs.update.common.utils.JsonFormats.URLJsonFormat
 
 trait CommonQueriesCoder {
   def getUserInfo() =
@@ -17,6 +18,16 @@ trait CommonQueriesCoder {
 }
 
 object AdministratorQueriesCoder extends CommonQueriesCoder {
+  def getDistributionProvidersInfo(distributionName: Option[DistributionName] = None) =
+    GraphqlQuery[Seq[DistributionProviderInfo]]("distributionProvidersInfo",
+      Seq(GraphqlArgument("distribution" -> distributionName)),
+      subSelection = "{ distributionName, distributionUrl, uploadStateInterval }")
+
+  def getDistributionConsumersInfo(distributionName: Option[DistributionName] = None) =
+    GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionConsumersInfo",
+      Seq(GraphqlArgument("distribution" -> distributionName)),
+      subSelection = "{ distributionName, consumerProfile, testDistributionMatch }")
+
   def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperVersion] = None) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
@@ -36,10 +47,6 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
     GraphqlQuery[Seq[ClientDesiredVersion]]("clientDesiredVersions",
       Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
       "{ serviceName, version }")
-
-  def getDistributionConsumersInfo() =
-    GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionConsumersInfo",
-      subSelection = "{ distributionName, consumerProfile, testDistributionMatch }")
 
   def getInstalledDesiredVersions(distributionName: DistributionName, serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",
@@ -99,6 +106,18 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
   def addUser(userName: UserName, role: UserRole, password: String) =
     GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> userName), GraphqlArgument("role" -> role, "UserRole"), GraphqlArgument("password" -> password)))
 
+  def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
+    GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distributionName),
+      GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")))
+
+  def installProviderVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
+    GraphqlMutation[String]("installProviderDeveloperVersion",
+      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
+
+  def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfileName, testDistributionMatch: Option[String]) =
+    GraphqlMutation[Boolean]("addDistributionConsumer", Seq(GraphqlArgument("distribution" -> distributionName),
+      GraphqlArgument("profile" -> consumerProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)))
+
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
   def addDeveloperVersionInfo(info: DeveloperVersionInfo) =
@@ -120,17 +139,6 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
   def setClientDesiredVersions(versions: Seq[ClientDesiredVersionDelta]) =
     GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionDeltaInput!]")))
 
-  def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
-    GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distributionName),
-      GraphqlArgument("url" -> distributionUrl.toString, "[URL!]"), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")))
-
-  def installProviderVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
-    GraphqlMutation[String]("installProviderDeveloperVersion",
-      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
-
-  def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfileName, testDistributionMatch: Option[String]) =
-    GraphqlMutation[Boolean]("addDistributionConsumer", Seq(GraphqlArgument("distribution" -> distributionName),
-      GraphqlArgument("profile" -> consumerProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)))
 }
 
 object DistributionMutationsCoder extends CommonMutationsCoder {

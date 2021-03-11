@@ -36,9 +36,6 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   override def beforeAll() = {
     val serviceStatesCollection = collections.State_ServiceStates
-    val clientInfoCollection = collections.Distribution_ConsumersInfo
-
-    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
 
     result(serviceStatesCollection.insert(
       DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
@@ -69,17 +66,31 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   def requests[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "execute some requests" in {
       assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(distributionName, Common.DistributionServiceName))
+    }
+
+    it should "process request errors" in {
+      assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
+      assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
+    }
+
+    it should "execute distribution provider requests" in {
+      assert(distribClient.graphqlRequest(
+        administratorMutations.addDistributionProvider("distribution2",
+          new URL("http://localhost/graphql"), None)).getOrElse(false))
+
+      assertResult(Some(Seq(DistributionProviderInfo("distribution2", new URL("http://localhost/graphql"), None))))(
+        adminClient.graphqlRequest(administratorQueries.getDistributionProvidersInfo()))
+    }
+
+    it should "execute distribution consumer requests" in {
+      assert(distribClient.graphqlRequest(
+        administratorMutations.addDistributionConsumer("distribution1", "common", None)).getOrElse(false))
 
       assertResult(Some(Seq(DistributionConsumerInfo("distribution1", "common", None))))(
         adminClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
 
       assertResult(Some(DistributionConsumerInfo("distribution1", "common", None)))(
         distribClient.graphqlRequest(distributionQueries.getDistributionConsumerInfo()))
-    }
-
-    it should "process request errors" in {
-      assertResult(None)(serviceClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
-      assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
     }
 
     it should "execute developer version requests" in {
