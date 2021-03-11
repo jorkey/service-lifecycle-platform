@@ -153,6 +153,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def updateDistributionFromProvider(): Boolean = {
+    log.info(s"########################### Update consumer distribution from provider distribution server")
     val providerDesiredVersions = DeveloperDesiredVersions.toMap(
         distributionClient.get.graphqlRequest(administratorQueries.getDistributionProviderDesiredVersions(this.providerDistributionName.get)).getOrElse {
       log.error("Can't get provider distribution developer desired versions")

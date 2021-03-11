@@ -66,7 +66,9 @@ object AdministratorQueriesCoder extends CommonQueriesCoder {
       "{ distributionName, report { faultId, info { date, instanceId, serviceDirectory, serviceName, serviceProfile, state { date, installDate, startDate, version, updateToVersion, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 
   def getDistributionProviderDesiredVersions(distributionName: DistributionName) =
-    GraphqlQuery[Seq[DeveloperDesiredVersion]]("distributionProviderDesiredVersions", Seq(GraphqlArgument("distribution" -> distributionName)))
+    GraphqlQuery[Seq[DeveloperDesiredVersion]]("distributionProviderDesiredVersions",
+      Seq(GraphqlArgument("distribution" -> distributionName)),
+      "{ serviceName, version }")
 }
 
 object DistributionQueriesCoder extends CommonQueriesCoder {

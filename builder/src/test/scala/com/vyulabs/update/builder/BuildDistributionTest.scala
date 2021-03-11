@@ -21,56 +21,54 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  val developerDistributionName = "test-developer"
-  val developerDistributionDir = Files.createTempDirectory("distrib").toFile
+  val providerDistributionName = "test-provider"
+  val providerDistributionDir = Files.createTempDirectory("distrib").toFile
 
-  val clientDistributionName = "test-client"
-  val clientDistributionDir = Files.createTempDirectory("distrib").toFile
+  val consumerDistributionName = "test-consumer"
+  val consumerDistributionDir = Files.createTempDirectory("distrib").toFile
 
-  val sourceBranch = "graphql"
-
-  val developerMongoDbName = "BuildDistributionTest-developer"
-  val clientMongoDbName = "BuildDistributionTest-client"
+  val providerMongoDbName = "BuildDistributionTest-provider"
+  val consumerMongoDbName = "BuildDistributionTest-consumer"
 
   var processes = Set.empty[ChildProcess]
 
   override protected def beforeAll(): Unit = {
-    Await.result(new MongoDb(developerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
-    Await.result(new MongoDb(clientMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    Await.result(new MongoDb(providerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    Await.result(new MongoDb(consumerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   override protected def afterAll(): Unit = {
     synchronized {
       processes.foreach(_.terminate())
     }
-    Await.result(new MongoDb(developerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
-    Await.result(new MongoDb(clientMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    Await.result(new MongoDb(providerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    Await.result(new MongoDb(consumerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
-  it should "build developer and client distribution" in {
+  it should "build provider and consumer distribution servers" in {
     log.info("")
-    log.info(s"*************************** Build distribution from sources")
+    log.info(s"*************************** Build provider distribution from sources")
     log.info("")
-    val developerDistributionBuilder = new DistributionBuilder(
-      "None", () => startService(developerDistributionDir), new DistributionDirectory(developerDistributionDir),
-      developerDistributionName, "Test developer distribution server",
-      developerMongoDbName,true, 8000)
-    assert(developerDistributionBuilder.buildDistributionFromSources())
-    assert(developerDistributionBuilder.generateAndUploadInitialVersions("ak"))
-    assert(developerDistributionBuilder.installBuilderFromSources())
+    val providerDistributionBuilder = new DistributionBuilder(
+      "None", () => startService(providerDistributionDir), new DistributionDirectory(providerDistributionDir),
+      providerDistributionName, "Test developer distribution server",
+      providerMongoDbName,true, 8000)
+    assert(providerDistributionBuilder.buildDistributionFromSources())
+    assert(providerDistributionBuilder.generateAndUploadInitialVersions("ak"))
+    assert(providerDistributionBuilder.installBuilderFromSources())
 
     log.info("")
-    log.info(s"*************************** Build client distribution from developer distribution")
+    log.info(s"*************************** Build consumer distribution from provider distribution")
     log.info("")
-    val clientDistributionBuilder = new DistributionBuilder(
-      "None", () => startService(clientDistributionDir), new DistributionDirectory(clientDistributionDir),
-      clientDistributionName, "Test client distribution server",
-      clientMongoDbName,true, 8001)
+    val consumerDistributionBuilder = new DistributionBuilder(
+      "None", () => startService(consumerDistributionDir), new DistributionDirectory(consumerDistributionDir),
+      consumerDistributionName, "Test client distribution server",
+      consumerMongoDbName,true, 8001)
 
-    assert(clientDistributionBuilder.buildFromProviderDistribution(clientDistributionName, new URL("http://admin:admin@localhost:8000"),
+    assert(consumerDistributionBuilder.buildFromProviderDistribution(consumerDistributionName, new URL("http://admin:admin@localhost:8000"),
       Common.CommonConsumerProfile, None))
-    assert(clientDistributionBuilder.updateDistributionFromProvider())
-    assert(developerDistributionBuilder.installBuilderFromSources())
+    assert(consumerDistributionBuilder.updateDistributionFromProvider())
+    assert(consumerDistributionBuilder.installBuilderFromSources())
   }
 
   def startService(directory: File): Boolean = {
