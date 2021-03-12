@@ -22,7 +22,7 @@ case class Sequenced[T](sequence: Long, document: T)
 
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]],
-                                       historyExpireDays: Int = 7)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
+                                       historyExpireDays: Int = 7, createIndex: Boolean = true)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   private implicit val log = Logging(system, this.getClass)
 
   private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(BroadcastHub.sink)(Keep.both).run()
@@ -31,11 +31,10 @@ class SequencedCollection[T: ClassTag](val name: String,
   private var modifyInProcess = Option.empty[Future[Int]]
   private var nextSequenceInProcess = Option.empty[Future[Long]]
 
-  for {
-    collection <- collection
-    _ <- collection.createIndex(Indexes.ascending("_archiveTime"),
-      new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS))
-  } yield {}
+  if (createIndex) {
+    collection.map(_.createIndex(Indexes.ascending("_archiveTime"),
+      new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS)))
+  }
 
   def insert(document: T): Future[Long] = {
     insert(Seq(document))
