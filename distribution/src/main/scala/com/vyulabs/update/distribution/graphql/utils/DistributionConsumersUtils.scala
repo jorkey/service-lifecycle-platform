@@ -4,10 +4,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{ConsumerProfileName, DistributionName}
+import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionName}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{DistributionConsumerInfo, DistributionConsumerProfile}
-import com.vyulabs.update.distribution.graphql.NotFoundException
+import com.vyulabs.update.common.info.DistributionConsumerInfo
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
@@ -24,7 +23,7 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfileName, testDistributionMatch: Option[String]): Future[Unit] = {
+  def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]): Future[Unit] = {
     collections.Distribution_ConsumersInfo.update(Filters.eq("distributionName", distributionName),
       _ => Some(DistributionConsumerInfo(distributionName, consumerProfile, testDistributionMatch))).map(_ => ())
   }

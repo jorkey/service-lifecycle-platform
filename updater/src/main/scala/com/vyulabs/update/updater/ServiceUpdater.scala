@@ -50,7 +50,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
         log.info(s"Up to date")
         None
       case None =>
-        log.error(s"No desired version for service")
+        log.error(s"No desired version of service")
         None
     }
   }

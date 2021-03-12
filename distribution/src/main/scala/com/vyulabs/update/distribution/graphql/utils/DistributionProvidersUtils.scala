@@ -61,7 +61,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
             serviceName, Some(version.distributionName), Some(version.version)).map(!_.isEmpty)
           _ <-
             if (!versionExists) {
-              log.info(s"Download developer version ${version}")
+              log.info(s"Download provider version ${version}")
               val imageFile = File.createTempFile("version", "image")
               for {
                 _ <- distributionProviderClient.downloadDeveloperVersionImage(serviceName, version, imageFile)
@@ -71,7 +71,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
                     case _ =>
                   }.andThen { case _ => imageFile.delete() }
                 versionInfo <- distributionProviderClient.graphqlRequest(
-                  distributionQueries.getVersionsInfo(serviceName, None, Some(version))).map(_.headOption)
+                  distributionQueries.getDeveloperVersionsInfo(serviceName, Some(version.distributionName), Some(version.version))).map(_.headOption)
                 _ <- versionInfo match {
                   case Some(versionInfo) =>
                     addDeveloperVersionInfo(versionInfo)

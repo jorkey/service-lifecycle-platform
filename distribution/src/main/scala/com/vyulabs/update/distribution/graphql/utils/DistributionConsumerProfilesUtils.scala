@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{ConsumerProfileName, ServiceName}
+import com.vyulabs.update.common.common.Common.{ConsumerProfile, ServiceName}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.DistributionConsumerProfile
 import com.vyulabs.update.distribution.graphql.NotFoundException
@@ -22,26 +22,26 @@ trait DistributionConsumerProfilesUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addDistributionConsumerProfile(profileName: ConsumerProfileName, services: Seq[ServiceName]): Future[Unit] = {
-    collections.Distribution_ConsumerProfiles.update(Filters.eq("profileName", profileName),
-      _ => Some(DistributionConsumerProfile(profileName, services))).map(_ => ())
+  def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceName]): Future[Unit] = {
+    collections.Distribution_ConsumerProfiles.update(Filters.eq("consumerProfile", consumerProfile),
+      _ => Some(DistributionConsumerProfile(consumerProfile, services))).map(_ => ())
   }
 
-  def getDistributionConsumerProfiles(profileName: Option[ConsumerProfileName]): Future[Seq[DistributionConsumerProfile]] = {
-    val profileArg = profileName.map(Filters.eq("profileName", _))
+  def getDistributionConsumerProfiles(consumerProfile: Option[ConsumerProfile]): Future[Seq[DistributionConsumerProfile]] = {
+    val profileArg = consumerProfile.map(Filters.eq("consumerProfile", _))
     val args = profileArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Distribution_ConsumerProfiles.find(filters)
   }
 
-  def getDistributionConsumerProfile(profileName: ConsumerProfileName): Future[DistributionConsumerProfile] = {
-    val filters = Filters.eq("profileName", profileName)
+  def getDistributionConsumerProfile(consumerProfile: ConsumerProfile): Future[DistributionConsumerProfile] = {
+    val filters = Filters.eq("consumerProfile", consumerProfile)
     collections.Distribution_ConsumerProfiles.find(filters)map(_.headOption.getOrElse {
-      throw NotFoundException(s"No install profile ${profileName}")
+      throw NotFoundException(s"No consumer profile ${consumerProfile}")
     })
   }
 
-  def removeDistributionConsumerProfile(profileName: ConsumerProfileName): Future[Unit] = {
-    collections.Distribution_ConsumerProfiles.delete(Filters.eq("profileName", profileName)).map(_ => ())
+  def removeDistributionConsumerProfile(consumerProfile: ConsumerProfile): Future[Unit] = {
+    collections.Distribution_ConsumerProfiles.delete(Filters.eq("consumerProfile", consumerProfile)).map(_ => ())
   }
 }

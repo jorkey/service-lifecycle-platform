@@ -1,19 +1,18 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.builder.config.{BuilderConfig, DistributionLink}
-import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
+import com.vyulabs.update.builder.config.BuilderConfig
+import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
+import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
+
 import java.io.File
 import java.net.URL
 import java.util.concurrent.TimeUnit
-
-import com.vyulabs.update.common.process.ProcessUtils
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
@@ -33,7 +32,7 @@ object BuilderMain extends App {
     "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
     "      [sourceBranches==?[,?]...] [test=true]\n" +
     "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distributionName=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
-    "      <providerDistributionName=?> <providerDistributionUrL=?> <profileName=?> [testDistributionMatch=?]\n" +
+    "      <providerDistributionName=?> <providerDistributionUrL=?> <consumerProfile=?> [testDistributionMatch=?]\n" +
     "    buildDeveloperVersion <distributionName=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
     "    buildClientVersion <distributionName=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -62,29 +61,22 @@ object BuilderMain extends App {
         new DistributionDirectory(new File(distributionDirectory)), distributionName, distributionTitle, mongoDbName, false, port)
 
       if (command == "buildProviderDistribution") {
-        if (!distributionBuilder.buildDistributionFromSources()) {
-          Utils.error("Build distribution error")
-        }
-        val developerVersion = DeveloperVersion.initialVersion
-        if (!distributionBuilder.generateAndUploadDeveloperAndClientVersions(Map(
-          (Common.BuilderServiceName -> developerVersion),
-          (Common.UpdaterServiceName -> developerVersion)), author)) {
+        if (!distributionBuilder.buildDistributionFromSources() ||
+            !distributionBuilder.generateAndUploadInitialVersions(author) ||
+            !distributionBuilder.addCommonConsumerProfile() ||
+            !distributionBuilder.installBuilderFromSources()) {
           Utils.error("Build distribution error")
         }
       } else {
         val providerDistributionName = arguments.getValue("providerDistributionName")
         val providerDistributionURL = new URL(arguments.getValue("providerDistributionUrl"))
-        val profileName = arguments.getValue("profileName")
+        val consumerProfile = arguments.getValue("consumerProfile")
         val testDistributionMatch = arguments.getOptionValue("testDistributionMatch")
-        if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL, profileName, testDistributionMatch)) {
+        if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL, consumerProfile, testDistributionMatch) ||
+            !distributionBuilder.updateDistributionFromProvider() ||
+            !distributionBuilder.installBuilder(None)) {
           Utils.error("Build distribution error")
         }
-        if (!distributionBuilder.updateDistributionFromProvider()) {
-          Utils.error("Build distribution error")
-        }
-      }
-      if (!distributionBuilder.installBuilder(Seq(DistributionLink(distributionName, distributionBuilder.makeDistributionUrl())), None)) {
-        Utils.error("Build distribution error")
       }
     case _ =>
       val arguments = Arguments.parse(args.drop(1), Set.empty)

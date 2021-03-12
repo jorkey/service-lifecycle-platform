@@ -76,8 +76,8 @@ object DistributionQueriesCoder extends CommonQueriesCoder {
     GraphqlQuery[DistributionConsumerInfo]("distributionConsumerInfo",
       subSelection =  "{ distributionName, consumerProfile, testDistributionMatch }")
 
-  def getVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperDistributionVersion] = None) =
-    GraphqlQuery[Seq[DeveloperVersionInfo]]("versionsInfo",
+  def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperVersion] = None) =
+    GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
       "{ serviceName, version, buildInfo { author, branches, date, comment } }")
 
@@ -111,14 +111,24 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
   def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distributionName),
       GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
+  def removeDistributionProvider(distributionName: DistributionName) =
+    GraphqlMutation[Boolean]("removeDistributionProvider", Seq(GraphqlArgument("distribution" -> distributionName)))
 
-  def installProviderVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
-    GraphqlMutation[String]("installProviderDeveloperVersion",
-      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
+  def installProviderVersion(distributionName: DistributionName, serviceName: ServiceName, version: DeveloperDistributionVersion) =
+    GraphqlMutation[String]("installProviderVersion",
+      Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 
-  def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfileName, testDistributionMatch: Option[String]) =
+  def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceName]) =
+    GraphqlMutation[Boolean]("addDistributionConsumerProfile", Seq(GraphqlArgument("profile" -> consumerProfile),
+      GraphqlArgument("services" -> services, "[String!]")))
+  def removeDistributionConsumerProfile(consumerProfile: ConsumerProfile) =
+    GraphqlMutation[Boolean]("removeDistributionConsumerProfile", Seq(GraphqlArgument("profile" -> consumerProfile)))
+
+  def addDistributionConsumer(distributionName: DistributionName, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]) =
     GraphqlMutation[Boolean]("addDistributionConsumer", Seq(GraphqlArgument("distribution" -> distributionName),
       GraphqlArgument("profile" -> consumerProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)).filter(_.value != JsNull))
+  def removeDistributionConsumer(distributionName: DistributionName) =
+    GraphqlMutation[Boolean]("removeDistributionConsumer", Seq(GraphqlArgument("distribution" -> distributionName)))
 
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))

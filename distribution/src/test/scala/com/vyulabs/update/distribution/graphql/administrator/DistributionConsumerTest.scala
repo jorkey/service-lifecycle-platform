@@ -101,12 +101,12 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionConsumerProfiles":[{"profileName":"consumer-distribution","services":["service1","service2","service3"]}]}}""").parseJson))(
+      ("""{"data":{"distributionConsumerProfiles":[{"consumerProfile":"consumer-distribution","services":["service1","service2","service3"]}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
         graphql"""
         query {
           distributionConsumerProfiles {
-             profileName,
+             consumerProfile,
              services
           }
         }

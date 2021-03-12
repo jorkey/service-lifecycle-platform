@@ -1,10 +1,5 @@
 package com.vyulabs.update.tests
 
-import java.io.File
-import java.net.URL
-import java.nio.file.Files
-import java.util.concurrent.TimeUnit
-
 import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
 import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
 import com.vyulabs.update.common.common.Common
@@ -14,7 +9,7 @@ import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphq
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.info.{ClientDesiredVersionDelta, UserRole}
-import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
+import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.MongoDb
@@ -22,6 +17,10 @@ import com.vyulabs.update.updater.config.UpdaterConfig
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 
+import java.io.File
+import java.net.URL
+import java.nio.file.Files
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.{Failure, Success}
@@ -73,34 +72,35 @@ class SimpleLifecycle {
   }
 
   def makeAndRunDistribution(): Unit = {
-    println()
-    println("************************************** Make and run distribution")
-    println()
-    println("====================================== Setup and start distribution server")
-    println()
     if (!distributionBuilder.buildDistributionFromSources()) {
       sys.error("Can't build distribution server")
     }
+  }
 
+  def initializeDistribution(author: String): Unit = {
     println()
-    println("====================================== Add service user to distribution server")
+    println("########################### Initialize distribution")
     println()
+    println("--------------------------- Add service user to distribution server")
     if (!distributionClient.graphqlRequest(administratorMutations.addUser("service", UserRole.Service, "service")).getOrElse(false)) {
-      sys.error("Can't add service user")
+      sys.error("Can't initialize distribution")
     }
 
+    if (!distributionBuilder.generateAndUploadInitialVersions(author) ||
+        !distributionBuilder.addCommonConsumerProfile() ||
+        !distributionBuilder.installBuilderFromSources()) {
+      sys.error("Can't initialize distribution")
+    }
     println()
-    println(s"************************************** Distribution server is ready")
+    println(s"########################### Distribution server is initialized")
     println()
   }
 
   def installTestService(buggy: Boolean = false): Unit = {
     println()
-    println(s"************************************** Install test service")
+    println(s"########################### Install test service")
     println()
-    println()
-    println(s"====================================== Configure test service in directory ${testServiceSourcesDir}")
-    println()
+    println(s"--------------------------- Configure test service in directory ${testServiceSourcesDir}")
     val buildConfig = BuildConfig(None, Seq(CopyFileConfig("sourceScript.sh", "runScript.sh", None, Some(Map.empty + ("version" -> "%%version%%")))))
     val installCommands = Seq(CommandConfig("chmod", Some(Seq("+x", "runScript.sh")), None, None, None, None))
     val logWriter = LogWriterConfig("log", "test", 1, 10)
@@ -122,14 +122,10 @@ class SimpleLifecycle {
       sys.error(s"Can't write sources config file")
     }
 
-    println()
-    println(s"====================================== Make test service version")
-    println()
+    println(s"--------------------------- Make test service version")
     buildTestServiceVersions(distributionClient, DeveloperVersion.initialVersion)
 
-    println()
-    println(s"====================================== Setup and start updater with test service in directory ${testServiceInstanceDir}")
-    println()
+    println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
       !IoUtils.copyFile(new File("./scripts/.update.sh"), new File(testServiceInstanceDir, ".update.sh"))) {
       sys.error("Copying of updater scripts error")
@@ -147,31 +143,30 @@ class SimpleLifecycle {
     }
     synchronized { processes += process }
     println()
-    println(s"************************************** Test service is installed")
+    println(s"########################### Test service is installed")
     println()
   }
 
   def updateTestService(): Unit = {
     println()
-    println(s"************************************** Fix test service in directory ${testServiceInstanceDir}")
+    println(s"########################### Fix test service in directory ${testServiceInstanceDir}")
     println()
     val fixedScriptContent = "echo \"Executed version %%version%%\"\nsleep 10000\n"
     if (!IoUtils.writeBytesToFile(new File(testServiceSourcesDir, "sourceScript.sh"), fixedScriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }
 
-    println()
-    println(s"====================================== Make fixed test service version")
+    println(s"--------------------------- Make fixed test service version")
     buildTestServiceVersions(distributionClient, DeveloperVersion.initialVersion.next())
 
     println()
-    println(s"************************************** Test service is updated")
+    println(s"########################### Test service is updated")
     println()
   }
 
   def updateDistribution(newVersion: ClientVersion): Unit = {
     println()
-    println(s"************************************** Upload new client version of distribution of version ${newVersion}")
+    println(s"########################### Upload new client version of distribution of version ${newVersion}")
     println()
     val newDistributionVersion = ClientDistributionVersion(distributionName, newVersion)
     if (!clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
@@ -181,9 +176,7 @@ class SimpleLifecycle {
       sys.error("Set distribution desired version error")
     }
 
-    println()
-    println(s"====================================== Wait for distribution server updated")
-    println()
+    println(s"--------------------------- Wait for distribution server updated")
     Thread.sleep(10000)
     distributionBuilder.waitForServerAvailable()
     Thread.sleep(5000)
@@ -196,14 +189,12 @@ class SimpleLifecycle {
     }
 
     println()
-    println(s"************************************** Distribution is updated to version ${newVersion}")
+    println(s"########################### Distribution is updated to version ${newVersion}")
     println()
   }
 
   private def buildTestServiceVersions(distributionClient: SyncDistributionClient[SyncSource], version: DeveloperVersion): Unit = {
-    println()
-    println("====================================== Build developer version of test service")
-    println()
+    println("--------------------------- Build developer version of test service")
     val taskId = distributionClient.graphqlRequest(administratorMutations.buildDeveloperVersion(testServiceName, version)).getOrElse {
       sys.error("Can't execute build developer version task")
     }
@@ -211,9 +202,7 @@ class SimpleLifecycle {
       sys.error("Execution of build developer version task error")
     }
 
-    println()
-    println("====================================== Build client version of test service")
-    println()
+    println("--------------------------- Build client version of test service")
     val taskId1 = distributionClient.graphqlRequest(administratorMutations.buildClientVersion(testServiceName,
       DeveloperDistributionVersion(distributionName, version),
       ClientDistributionVersion(distributionName, ClientVersion(version)))).getOrElse {
@@ -223,9 +212,7 @@ class SimpleLifecycle {
       sys.error("Execution of build client version task error")
     }
 
-    println()
-    println("====================================== Set client desired versions")
-    println()
+    println("--------------------------- Set client desired versions")
     if (!distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(Seq(
         ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion(distributionName, ClientVersion(version))))))).getOrElse(false)) {
       sys.error("Set client desired versions error")

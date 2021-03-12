@@ -27,7 +27,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
       ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2)))))))))
   }
 
-  it should "get desired versions for service" in {
+  it should "get desired versions of service" in {
     val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
 
     assertResult((OK,

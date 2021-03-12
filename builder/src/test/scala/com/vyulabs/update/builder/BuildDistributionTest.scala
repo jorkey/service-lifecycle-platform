@@ -47,7 +47,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
 
   it should "build provider and consumer distribution servers" in {
     log.info("")
-    log.info(s"*************************** Build provider distribution from sources")
+    log.info(s"########################### Build provider distribution from sources")
     log.info("")
     val providerDistributionBuilder = new DistributionBuilder(
       "None", () => startService(providerDistributionDir), new DistributionDirectory(providerDistributionDir),
@@ -55,10 +55,11 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       providerMongoDbName,true, 8000)
     assert(providerDistributionBuilder.buildDistributionFromSources())
     assert(providerDistributionBuilder.generateAndUploadInitialVersions("ak"))
+    assert(providerDistributionBuilder.addCommonConsumerProfile())
     assert(providerDistributionBuilder.installBuilderFromSources())
 
     log.info("")
-    log.info(s"*************************** Build consumer distribution from provider distribution")
+    log.info(s"########################### Build consumer distribution from provider distribution")
     log.info("")
     val consumerDistributionBuilder = new DistributionBuilder(
       "None", () => startService(consumerDistributionDir), new DistributionDirectory(consumerDistributionDir),
@@ -68,7 +69,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     assert(consumerDistributionBuilder.buildFromProviderDistribution(consumerDistributionName, new URL("http://admin:admin@localhost:8000"),
       Common.CommonConsumerProfile, None))
     assert(consumerDistributionBuilder.updateDistributionFromProvider())
-    assert(consumerDistributionBuilder.installBuilderFromSources())
+    assert(consumerDistributionBuilder.installBuilder(None))
   }
 
   def startService(directory: File): Boolean = {

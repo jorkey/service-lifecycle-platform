@@ -13,7 +13,7 @@ object Common {
   type ProcessId = String
   type TaskId = String
   type ServiceDirectory = String
-  type ConsumerProfileName = String
+  type ConsumerProfile = String
   type FaultId = String
 
   val Pm2DescFileName = "pm2_desc.json"

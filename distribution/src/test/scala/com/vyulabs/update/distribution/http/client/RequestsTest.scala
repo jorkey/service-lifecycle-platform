@@ -79,6 +79,16 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
       assertResult(Some(Seq(DistributionProviderInfo("distribution2", new URL("http://localhost/graphql"), None))))(
         adminClient.graphqlRequest(administratorQueries.getDistributionProvidersInfo()))
+
+      assert(adminClient.graphqlRequest(administratorMutations.removeDistributionProvider("distribution2")).getOrElse(false))
+    }
+
+    it should "execute distribution consumer profiles requests" in {
+      assert(adminClient.graphqlRequest(
+        administratorMutations.addDistributionConsumerProfile("common", Seq("service1", "service2"))).getOrElse(false))
+
+      assert(adminClient.graphqlRequest(
+        administratorMutations.removeDistributionConsumerProfile("common")).getOrElse(false))
     }
 
     it should "execute distribution consumer requests" in {
@@ -90,10 +100,18 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
       assertResult(Some(DistributionConsumerInfo("distribution1", "common", None)))(
         distribClient.graphqlRequest(distributionQueries.getDistributionConsumerInfo()))
+
+      assert(adminClient.graphqlRequest(
+        administratorMutations.removeDistributionConsumer("distribution1")).getOrElse(false))
     }
 
     it should "execute developer version requests" in {
       val date = new Date()
+
+      assert(adminClient.graphqlRequest(
+        administratorMutations.addDistributionConsumerProfile("common", Seq("service1"))).getOrElse(false))
+      assert(adminClient.graphqlRequest(
+        administratorMutations.addDistributionConsumer("distribution1", "common", None)).getOrElse(false))
 
       assert(adminClient.graphqlRequest(administratorMutations.addDeveloperVersionInfo(
         DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
@@ -116,6 +134,11 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
       assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(
         distribClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(Seq("service1"))))
+
+      assert(adminClient.graphqlRequest(
+        administratorMutations.removeDistributionConsumer("distribution1")).getOrElse(false))
+      assert(adminClient.graphqlRequest(
+        administratorMutations.removeDistributionConsumerProfile("common")).getOrElse(false))
     }
 
     it should "execute client version requests" in {

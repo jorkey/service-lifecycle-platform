@@ -151,7 +151,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       return false
     }
     val updateConfig = servicesUpdateConfig.services.getOrElse(serviceName, {
-      log.error(s"Can't find update config for service ${serviceName}")
+      log.error(s"Can't find update config of service ${serviceName}")
       return false
     })
 

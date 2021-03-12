@@ -79,7 +79,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
 
   val Distribution_ConsumerProfiles = new SequencedCollection[DistributionConsumerProfile]("distribution.consumerProfiles", for {
     collection <- db.getOrCreateCollection[BsonDocument]("distribution.consumerProfiles")
-    _ <- collection.createIndex(Indexes.ascending("profileName", "_archiveTime"), new IndexOptions().unique(true))
+    _ <- collection.createIndex(Indexes.ascending("consumerProfile", "_archiveTime"), new IndexOptions().unique(true))
   } yield collection, Sequences)
 
   val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo]("developer.versionsInfo", for {
@@ -109,7 +109,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
 
   val State_TestedVersions = new SequencedCollection[TestedDesiredVersions]("state.testedDesiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.testedDesiredVersions")
-    _ <- collection.createIndex(Indexes.ascending("profileName"))
+    _ <- collection.createIndex(Indexes.ascending("consumerProfile"))
   } yield collection, Sequences)
 
   val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {

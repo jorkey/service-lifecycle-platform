@@ -54,7 +54,7 @@ object UpdaterMain extends App { self =>
         set + ProfiledServiceName.parse(record)
       )
 
-      log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} for services ${servicesInstanceNames} -------------------------")
+      log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} of services ${servicesInstanceNames} -------------------------")
 
       val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
 
@@ -166,7 +166,7 @@ object UpdaterMain extends App { self =>
                           log.info(s"Version ${version} of service ${serviceName} is blacklisted.")
                           true
                         } else {
-                          log.info(s"Clear blacklist for service ${serviceName}.")
+                          log.info(s"Clear blacklist of service ${serviceName}.")
                           blacklist -= serviceName
                           false
                         }

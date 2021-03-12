@@ -24,7 +24,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
 
   /*
   def buildClientVersions(serviceNames: Seq[ServiceName], author: String)(implicit log: Logger): TaskId = {
-    taskManager.create(s"Build client versions for services ${serviceNames} by ${author}", (taskId, logger) => {
+    taskManager.create(s"Build client versions of services ${serviceNames} by ${author}", (taskId, logger) => {
       implicit val log = logger
       @volatile var cancels = Seq.empty[() => Unit]
       val future = for {
