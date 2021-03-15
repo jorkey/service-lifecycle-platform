@@ -1,0 +1,7 @@
+query userInfo {
+    userInfo
+    {
+        name
+        role
+    }
+}
