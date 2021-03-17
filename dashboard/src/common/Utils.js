@@ -66,48 +66,6 @@ function getInstalledDesiredVersions(client) {
   });
 }
 
-function getFaults(client, service, limit) {
-  const query = `query Faults($client: String, $service: String, limit: Int) {
-    faults(client: $client, service: $service, limit: $limit)
-  }`;
-  const variables = { client, service, limit }
-  graphqlQuery(query, variables)
-}
-
-function graphqlQuery(query, variables) {
-  const path = '/graphql'
-  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')): undefined
-  const authData = user ? user.authData: undefined
-  const init = {}
-  init.method = 'POST'
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json' }
-  if (authData) {
-    headers.Authorization = 'Basic ' + authData
-  }
-  init.headers = headers
-  init.cache = 'no-cache'
-  init.body = JSON.stringify({query, variables})
-  return fetchRequest(path, init).then(
-    data => {
-      if (data.data) {
-        return data
-      } else {
-        return data.errors.message
-      }
-    },
-    response => {
-      if (response.status === 401) {
-        logout()
-        // eslint-disable-next-line no-restricted-globals
-        location.reload(true)
-      } else {
-        return Promise.reject(response)
-      }
-    })
-}
-
 function fetchRequest(path, init) {
   console.log(`Fetch ${path} ${init}`)
   return fetch(path, init).then(response => {

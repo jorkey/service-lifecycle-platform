@@ -6,15 +6,21 @@ import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.UserName
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
+import com.vyulabs.update.distribution.graphql.AuthenticationException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.BsonDocument
+import org.janjaali.sprayjwt.Jwt
+import org.janjaali.sprayjwt.algorithms.HS256
 import org.slf4j.Logger
 
 import java.io.IOException
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
+import spray.json._
+
+import scala.util.{Failure, Success}
 
 trait UsersUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
@@ -65,6 +71,22 @@ trait UsersUtils extends SprayJsonSupport {
       case None =>
         None
     }).map(_ > 0)
+  }
+
+  def login(userName: String, password: String)(implicit log: Logger): Future[String] = {
+    getUserCredentials(userName).map {
+      case Some(userCredentials) if userCredentials.passwordHash.hash == PasswordHash.generatePasswordHash(password, userCredentials.passwordHash.salt) =>
+        val token = AccessToken(userName, userCredentials.role).toJson
+        Jwt.encode(token, "secret", HS256) match {
+          case Success(value) =>
+            value
+          case Failure(ex) =>
+            log.error("Jwt encoding error", ex)
+            throw AuthenticationException(s"Authentication error: ${ex.toString}")
+        }
+      case _ =>
+        throw AuthenticationException("Authentication error")
+    }
   }
 
   def getUserCredentials(userName: UserName)(implicit log: Logger): Future[Option[UserCredentials]] = {

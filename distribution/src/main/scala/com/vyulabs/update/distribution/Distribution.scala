@@ -11,18 +11,18 @@ import akka.http.scaladsl.model.{ContentType, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, pathPrefix, _}
 import akka.http.scaladsl.server.Route._
 import akka.http.scaladsl.server.directives.Credentials
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, ExceptionHandler, Route, RouteResult}
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
 import com.vyulabs.update.distribution.users.PasswordHash
+import org.janjaali.sprayjwt.Jwt
 import org.slf4j.LoggerFactory
 import sangria.ast.OperationType
 import sangria.parser.QueryParser
-import sangria.renderer.SchemaRenderer
 import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,17 +58,9 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                     rejection
                 })
               } {
-                pathPrefix(graphqlDslPathPrefix) {
+                pathPrefix(graphqlPathPrefix) {
                   seal {
-                    get {
-                      authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
-                        complete(SchemaRenderer.renderSchema(GraphqlSchema.SchemaDefinition(userInfo.role)))
-                      }
-                    }
-                  }
-                } ~ pathPrefix(graphqlPathPrefix) {
-                  seal {
-                    authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
+                    (optionalHeaderValueByName("X-Apollo-Tracing") & optionalAccessToken("secret")) { (tracing, accessToken) ⇒
                       post {
                         entity(as[JsValue]) { requestJson =>
                           val JsObject(fields) = requestJson
@@ -82,14 +74,6 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                           val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
                           executeGraphqlRequest(userInfo, workspace, query, operation, variables)
                         }
-                      }
-                    }
-                  }
-                } ~ pathPrefix(graphqlDslPathPrefix) {
-                  seal {
-                    get {
-                      authenticateBasicAsync(realm = "Distribution", authenticate) { case userInfo =>
-                        complete(SchemaRenderer.renderSchema(GraphqlSchema.SchemaDefinition(userInfo.role)))
                       }
                     }
                   }
@@ -175,7 +159,22 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
     }
   }
 
-  private def executeGraphqlRequest(userInfo: UserInfo, workspace: GraphqlWorkspace,
+  private def optionalAccessToken(secret: String): Directive1[Option[AccessToken]] = {
+    val authTokenRx = "Bearer (.*)".r
+    optionalHeaderValueByName("Authorization").flatMap {
+      case Some(authTokenRx(value)) ⇒
+        Jwt.decode(value, secret) match {
+          case Success(jsonValue) ⇒ provide(Some(jsonValue.convertTo[AccessToken]))
+          case Failure(_) ⇒ complete(StatusCodes.Unauthorized)
+        }
+      case Some(_) ⇒
+        complete(StatusCodes.Unauthorized)
+      case _ ⇒
+        provide(None)
+    }
+  }
+
+  private def executeGraphqlRequest(accessToken: Option[AccessToken], workspace: GraphqlWorkspace,
                                     query: String, operation: Option[String], variables: JsObject): Route = {
     QueryParser.parse(query) match {
       case Success(document) =>

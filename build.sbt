@@ -106,7 +106,8 @@ lazy val akkaDependencies = Seq(
 )
 
 lazy val sprayDependencies = Seq(
-  dependencies.sprayJson
+  dependencies.sprayJson,
+  dependencies.sprayJwt
 )
 
 lazy val mongoDependencies = Seq(
@@ -118,7 +119,8 @@ lazy val mongoDependencies = Seq(
 lazy val sangriaDependencies = Seq(
   dependencies.sangria,
   dependencies.sangriaSprayJson,
-  dependencies.sangriaAkkaStreams
+  dependencies.sangriaAkkaStreams,
+  dependencies.sangriaSlowlog
 )
 
 lazy val dependencies =
@@ -156,13 +158,15 @@ lazy val dependencies =
     val mongoDbScalaBson = "org.mongodb.scala" %% "mongo-scala-bson" % "4.1.1"
     val mongoDbAkka = "com.lightbend.akka" %% "akka-stream-alpakka-mongodb" % "2.0.2"
 
-    // Spray Json
+    // Spray
     val sprayJson = "io.spray" %% "spray-json" % "1.3.5"
+    val sprayJwt = "com.github.janjaali" %% "spray-jwt" % "1.0.0"
 
     // Sangria
     val sangria = "org.sangria-graphql" %% "sangria" % "2.0.0"
     val sangriaSprayJson = "org.sangria-graphql" %% "sangria-spray-json" % "1.0.1"
     val sangriaAkkaStreams = "org.sangria-graphql" %% "sangria-akka-streams" % "1.0.2"
+    val sangriaSlowlog = "org.sangria-graphql" %% "sangria-slowlog" % "2.0.1"
   }
 
 lazy val assemblySettings = Seq(

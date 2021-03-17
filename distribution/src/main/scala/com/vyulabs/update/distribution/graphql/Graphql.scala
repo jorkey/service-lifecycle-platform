@@ -19,6 +19,7 @@ import spray.json.{JsObject, JsValue}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
+case class AuthenticationException(msg: String) extends Exception(msg)
 case class AuthorizationException(msg: String) extends Exception(msg)
 case class NotFoundException(msg: String = "Not found") extends Exception(msg)
 case class InvalidConfigException(msg: String) extends Exception(msg)
@@ -50,7 +51,8 @@ class Graphql() extends SprayJsonSupport {
                             query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty)
                            (implicit executionContext: ExecutionContext): Future[(StatusCode, JsValue)] = {
     Executor.execute(schema = schema, queryAst = query, userContext = context, operationName = operation,
-      variables = variables, exceptionHandler = errorHandler
+      variables = variables, exceptionHandler = errorHandler, middleware = AuthMiddleware :: (if (tracing) SlowLog.apolloTracing :: Nil else Nil),
+
     )
       .map(OK -> _)
       .recover {

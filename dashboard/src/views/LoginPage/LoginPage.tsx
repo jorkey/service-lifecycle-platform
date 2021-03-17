@@ -7,6 +7,7 @@ import Alert from '@material-ui/lab/Alert';
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
+import {useMutation} from "@apollo/client";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -28,15 +29,15 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleUserNameChange = (e) => {
+  const handleUserNameChange = (e: any) => {
     setUserName(e.target.value);
   }
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = (e: any) => {
     setPassword(e.target.value);
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
 
     if (!(userName && password)) {
@@ -69,7 +70,6 @@ const LoginPage = () => {
           item
           lg={2}
           md={3}
-          xm={4}
           xs={5}
         >
           <div className={classes.content}>
@@ -104,7 +104,6 @@ const LoginPage = () => {
                 fullWidth
                 variant='contained'
                 color='primary'
-                className={classes.submit}
               >
                 Sign In
               </Button>

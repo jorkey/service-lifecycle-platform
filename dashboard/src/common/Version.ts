@@ -1,17 +1,17 @@
 
-class Version {
+class DeveloperVersion {
   build: Array<number>
 
   constructor(build: Array<number>) {
     this.build = build;
   }
 
-  static parse(version: string): Version {
+  static parse(version: string): DeveloperVersion {
     const build = version.split('.').map(Number)
-    return new Version(build)
+    return new DeveloperVersion(build)
   }
 
-  next(): Version {
+  next(): DeveloperVersion {
     let build = new Array<number>()
     for (let i=0; i < this.build.length; i++) {
       if (i != this.build.length - 1) {
@@ -20,7 +20,7 @@ class Version {
         build.push(this.build[i] + 1)
       }
     }
-    return new Version(build)
+    return new DeveloperVersion(build)
   }
 
   toString(): String {
@@ -30,11 +30,35 @@ class Version {
   }
 }
 
+class DeveloperDistributionVersion {
+  distributionName: String
+  developerVersion: DeveloperVersion
+
+  constructor(distributionName: String, developerVersion: DeveloperVersion) {
+    this.distributionName = distributionName
+    this.developerVersion = developerVersion
+  }
+
+  static parse(str: string): DeveloperDistributionVersion {
+    const index = str.indexOf('-')
+    if (index == -1) {
+      throw new Error(`Developer version ${str} parse error`)
+    }
+    const distributionName = str.substring(0, index)
+    const body = str.substring(index + 1)
+    return new DeveloperDistributionVersion(distributionName, DeveloperVersion.parse(body))
+  }
+
+  toString(): String {
+    return this.distributionName + '-' + this.developerVersion.toString()
+  }
+}
+
 class ClientVersion {
-  developerVersion: Version
+  developerVersion: DeveloperVersion
   localBuild: number
 
-  constructor(developerVersion: Version, localBuild: number = 0) {
+  constructor(developerVersion: DeveloperVersion, localBuild: number = 0) {
     this.developerVersion = developerVersion
     this.localBuild = localBuild
   }
@@ -43,7 +67,7 @@ class ClientVersion {
     const index = str.indexOf('_')
     const version = (index != -1) ? str.substring(0, index) : str
     const localBuild = (index != -1) ? Number(str.substring(index + 1)) : 0
-    return new ClientVersion(Version.parse(version), localBuild)
+    return new ClientVersion(DeveloperVersion.parse(version), localBuild)
   }
 
   next(): ClientVersion {
@@ -60,39 +84,26 @@ class ClientVersion {
   }
 }
 
-function compare(v1, v2, withLocalBuild) {
-  if (v1 != null && v2 != null) {
-    let [client1, build1, localBuild1] = parseVersion(v1)
-    let [client2, build2, localBuild2] = parseVersion(v2)
+class ClientDistributionVersion {
+  distributionName: String
+  clientVersion: ClientVersion
 
-    if (client1 != client2) {
-      return (client1 > client2) ? 1 : -1
-    }
-
-    for (let i = 0; i < build1.length; ++i) {
-      if (build2.length == i) {
-        return 1
-      }
-
-      if (build1[i] != build2[i]) {
-        return (build1[i] > build2[i]) ? 1 : -1
-      }
-    }
-
-    if (withLocalBuild && localBuild1 != localBuild2) {
-      return (localBuild1 > localBuild2) ? 1 : -1
-    }
+  constructor(distributionName: String, clientVersion: ClientVersion) {
+    this.distributionName = distributionName
+    this.clientVersion = clientVersion
   }
-  return 0
-}
 
-function parseVersion(version) {
-  const index = version.indexOf('-')
-  const client = (index != -1) ? version.substring(0, index) : null
-  const body = (index != -1) ? version.substring(index + 1) : version
-  const index1 = body.indexOf('_')
-  const versionBody = (index1 != -1) ? body.substring(0, index1) : body
-  const build = versionBody.split('.').map(Number)
-  const localBuild = (index1 != -1) ? Number(body.substring(index1 + 1)) : null
-  return [client, build, localBuild]
+  static parse(str: string): ClientDistributionVersion {
+    const index = str.indexOf('-')
+    if (index == -1) {
+      throw new Error(`Client version ${str} parse error`)
+    }
+    const distributionName = str.substring(0, index)
+    const body = str.substring(index + 1)
+    return new ClientDistributionVersion(distributionName, ClientVersion.parse(body))
+  }
+
+  toString(): String {
+    return this.distributionName + '-' + this.clientVersion.toString()
+  }
 }
