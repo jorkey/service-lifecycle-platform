@@ -3,14 +3,14 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, BuildInfo, DeveloperVersionInfo, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
-
 import java.util.Date
+
 import scala.concurrent.ExecutionContext
 
 class GetDeveloperVersionsInfoTest extends TestEnvironment {
@@ -20,7 +20,7 @@ class GetDeveloperVersionsInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
 
   override def beforeAll(): Unit = {
     result(collections.Developer_VersionsInfo.insert(

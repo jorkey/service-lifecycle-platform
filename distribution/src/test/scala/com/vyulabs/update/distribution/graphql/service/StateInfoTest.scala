@@ -3,14 +3,14 @@ package com.vyulabs.update.distribution.graphql.service
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 import com.vyulabs.update.common.utils.JsonFormats._
-
 import java.util.Date
+
 import scala.concurrent.ExecutionContext
 
 class StateInfoTest extends TestEnvironment {
@@ -20,7 +20,7 @@ class StateInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("service", UserRole.Service)), workspace)
 
   it should "set/get own service state" in {
     assertResult((OK,

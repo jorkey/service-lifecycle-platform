@@ -1,13 +1,14 @@
 package com.vyulabs.update.distribution.graphql.administrator
 
 import java.util.Date
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
@@ -23,7 +24,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
   it should "add/get/remove client version info" in {
     addClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.1.1_1"))

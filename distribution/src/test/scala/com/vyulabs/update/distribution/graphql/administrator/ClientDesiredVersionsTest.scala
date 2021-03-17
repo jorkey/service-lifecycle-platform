@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.common.info.{DistributionConsumerInfo, DistributionConsumerProfile, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserInfo, UserRole}
 
 import scala.concurrent.ExecutionContext
 import sangria.macros.LiteralGraphQLStringContext
@@ -24,7 +24,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "set/get client desired versions" in {
-    val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
     assertResult((OK,
       ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(

@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{DistributionConsumerInfo, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, UserInfo, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -23,7 +23,7 @@ class GetDistributionConsumerInfoTest extends TestEnvironment {
   }
 
   it should "get distribution consumer info" in {
-    val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
 
     assertResult((OK,
       ("""{"data":{"distributionConsumerInfo":{"consumerProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(

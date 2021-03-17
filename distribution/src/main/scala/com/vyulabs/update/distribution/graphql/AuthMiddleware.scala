@@ -1,9 +1,10 @@
 package com.vyulabs.update.distribution.graphql
 
+import com.vyulabs.update.common.info.UserRole.UserRole
 import sangria.execution.{FieldTag, MiddlewareBeforeField, MiddlewareQueryContext}
 import sangria.schema.Context
 
-case object Authorized extends FieldTag
+case class Authorized(roles: UserRole*) extends FieldTag
 
 case class AuthException(message: String) extends Exception(message)
 
@@ -22,11 +23,18 @@ object AuthMiddleware extends MiddlewareBeforeField[GraphqlContext] {
    *  if client have not provided valid OAuth token.
    */
   def beforeField(queryVal: QueryVal, mctx: MiddlewareQueryContext[GraphqlContext, _, _], c: Context[GraphqlContext, _]) = {
-    val requiresAuth = c.field.tags.contains(Authorized)
-
-    if (requiresAuth && c.ctx.authToken.isEmpty)
-      throw AuthException("Unauthorized access")
-
+    c.field.tags.find(_.isInstanceOf[Authorized]).map(_.asInstanceOf[Authorized]) match {
+      case Some(authorized) =>
+        c.ctx.accessToken match {
+          case Some(token) =>
+            if ((authorized.roles.toSet -- token.roles).size == authorized.roles.size) {
+              throw AuthException("Unauthorized access")
+            }
+          case None =>
+            throw AuthException("Unauthorized access")
+        }
+      case None =>
+    }
     continue
   }
 }

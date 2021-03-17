@@ -6,14 +6,13 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
 import com.vyulabs.update.common.common.ThreadTimer
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
 import com.vyulabs.update.common.logger.{LogBuffer, LogUploader, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
-
 import java.net.URL
 
 class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
@@ -39,7 +38,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
   appender.addListener(buffer)
   appender.start()
 
-  val graphqlContext = new GraphqlContext(UserInfo("administrator", UserRole.Administrator), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("administrator", UserRole.Administrator)), workspace)
 
   it should "send log records to distribution server" in {
     log.info("log line 1")

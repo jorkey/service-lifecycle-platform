@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.service
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersions, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersion, ClientDesiredVersions, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -28,7 +28,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired versions of service" in {
-    val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("service", UserRole.Service)), workspace)
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(
@@ -43,7 +43,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired version for specified service" in {
-    val graphqlContext = new GraphqlContext(UserInfo("service", UserRole.Service), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("service", UserRole.Service)), workspace)
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"version":"test-1"}]}}""").parseJson))(

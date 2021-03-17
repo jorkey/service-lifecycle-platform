@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.administrator
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -20,10 +20,10 @@ class DistributionProviderTest extends TestEnvironment {
     ex.printStackTrace(); log.error("Uncatched exception", ex)
   })
 
-  val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
   it should "add/get/remove distribution providers" in {
-    val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
     assertResult((OK,
       ("""{"data":{"addDistributionProvider":true}}""").parseJson))(

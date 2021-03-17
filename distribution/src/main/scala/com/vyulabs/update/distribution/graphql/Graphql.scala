@@ -14,6 +14,7 @@ import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError, _}
 import sangria.marshalling.sprayJson._
 import sangria.schema.Schema
+import sangria.slowlog.SlowLog
 import spray.json.{JsObject, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -47,12 +48,13 @@ class Graphql() extends SprayJsonSupport {
     }
   )
 
-  def executeQuery[Context](schema: Schema[Context, Unit], context: Context,
-                            query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty)
-                           (implicit executionContext: ExecutionContext): Future[(StatusCode, JsValue)] = {
+  def executeQuery(schema: Schema[GraphqlContext, Unit], context: GraphqlContext,
+                    query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty,
+                    tracing: Boolean = false)
+                   (implicit executionContext: ExecutionContext): Future[(StatusCode, JsValue)] = {
     Executor.execute(schema = schema, queryAst = query, userContext = context, operationName = operation,
-      variables = variables, exceptionHandler = errorHandler, middleware = AuthMiddleware :: (if (tracing) SlowLog.apolloTracing :: Nil else Nil),
-
+      variables = variables, exceptionHandler = errorHandler,
+      middleware = AuthMiddleware :: (if (tracing) SlowLog.apolloTracing :: Nil else Nil)
     )
       .map(OK -> _)
       .recover {
@@ -61,9 +63,9 @@ class Graphql() extends SprayJsonSupport {
       }
   }
 
-  def executeSubscriptionQuery[Context](schema: Schema[Context, Unit], context: Context,
-                            query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty)
-                           (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): Future[ToResponseMarshallable] = {
+  def executeSubscriptionQuery(schema: Schema[GraphqlContext, Unit], context: GraphqlContext,
+                              query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty)
+                             (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): Future[ToResponseMarshallable] = {
     import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
     import sangria.execution.ExecutionScheme.Stream
     import sangria.streaming.akkaStreams._

@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.distribution
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DeveloperDesiredVersions, DistributionConsumerInfo, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, DeveloperDesiredVersion, DeveloperDesiredVersions, DistributionConsumerInfo, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -32,7 +32,7 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired versions" in {
-    val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(

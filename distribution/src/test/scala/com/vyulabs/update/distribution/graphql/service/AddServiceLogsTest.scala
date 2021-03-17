@@ -23,7 +23,7 @@ class AddServiceLogsTest extends TestEnvironment {
 
   override def dbName = super.dbName + "-service"
 
-  val graphqlContext = new GraphqlContext(UserInfo("service1", UserRole.Service), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("service1", UserRole.Service)), workspace)
 
   val logsCollection = collections.State_ServiceLogs
 

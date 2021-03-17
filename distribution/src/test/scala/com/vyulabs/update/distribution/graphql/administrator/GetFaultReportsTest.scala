@@ -20,7 +20,7 @@ class GetFaultReportsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
   val distribution1 = "distribution1"
   val distribution2 = "distribution2"

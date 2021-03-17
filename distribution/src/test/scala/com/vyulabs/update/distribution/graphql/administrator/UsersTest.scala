@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.administrator
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{DistributionConsumerInfo, DistributionConsumerProfile, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserInfo, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -24,7 +24,7 @@ class UsersTest extends TestEnvironment {
   }
 
   it should "add/change password/remove users" in {
-    val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
     assertResult((OK,
       ("""{"data":{"addUser":true}}""").parseJson))(
@@ -64,7 +64,7 @@ class UsersTest extends TestEnvironment {
   }
 
   it should "get user info" in {
-    val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
     assertResult((OK,
       ("""{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}""").parseJson))(
@@ -80,7 +80,7 @@ class UsersTest extends TestEnvironment {
   }
 
   it should "change own password" in {
-    val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Password verification error","path":["changePassword"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(

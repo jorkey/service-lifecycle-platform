@@ -1,13 +1,14 @@
 package com.vyulabs.update.distribution.graphql.administrator
 
 import java.util.Date
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlContext
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
-import com.vyulabs.update.common.info.{ClientDesiredVersion, DirectoryServiceState, DistributionConsumerInfo, DistributionServiceState, ServiceState, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersion, DirectoryServiceState, DistributionConsumerInfo, DistributionServiceState, ServiceState, UserInfo, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
@@ -43,7 +44,7 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return own service version" in {
-    val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
     assertResult((OK,
       ("""{"data":{"serviceStates":[{"instance":{"service":{"version":"test-1.2.3"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -60,7 +61,7 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return service state" in {
-    val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
     assertResult((OK,
       ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance2","service":{"version":"distribution1-1.1.0"}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
@@ -79,7 +80,7 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return installed versions" in {
-    val graphqlContext = new GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
     assertResult((OK,
       ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.3"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""

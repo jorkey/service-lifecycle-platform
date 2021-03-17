@@ -14,8 +14,14 @@ import org.bson.BsonDocument
 import org.janjaali.sprayjwt.Jwt
 import org.janjaali.sprayjwt.algorithms.HS256
 import org.slf4j.Logger
-
 import java.io.IOException
+import java.math.BigInteger
+import java.security.SecureRandom
+
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directive1
+import akka.http.scaladsl.server.Directives.{complete, optionalHeaderValueByName, provide}
+
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import spray.json._
@@ -28,6 +34,8 @@ trait UsersUtils extends SprayJsonSupport {
   protected implicit val executionContext: ExecutionContext
 
   protected val collections: DatabaseCollections
+
+  private val secret = new BigInteger(50, new SecureRandom()).toString(32)
 
   def addUser(userName: UserName, role: UserRole, password: String)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add user ${userName} with role ${role}")
@@ -77,7 +85,7 @@ trait UsersUtils extends SprayJsonSupport {
     getUserCredentials(userName).map {
       case Some(userCredentials) if userCredentials.passwordHash.hash == PasswordHash.generatePasswordHash(password, userCredentials.passwordHash.salt) =>
         val token = AccessToken(userName, userCredentials.role).toJson
-        Jwt.encode(token, "secret", HS256) match {
+        Jwt.encode(token, secret, HS256) match {
           case Success(value) =>
             value
           case Failure(ex) =>
@@ -86,6 +94,28 @@ trait UsersUtils extends SprayJsonSupport {
         }
       case _ =>
         throw AuthenticationException("Authentication error")
+    }
+  }
+
+  def getOptionalAccessToken(): Directive1[Option[AccessToken]] = {
+    val authTokenRx = "Bearer (.*)".r
+    optionalHeaderValueByName("Authorization").flatMap {
+      case Some(authTokenRx(value)) ⇒
+        Jwt.decode(value, secret) match {
+          case Success(jsonValue) ⇒ provide(Some(jsonValue.convertTo[AccessToken]))
+          case Failure(_) ⇒ complete(StatusCodes.Unauthorized)
+        }
+      case Some(_) ⇒
+        complete(StatusCodes.Unauthorized)
+      case _ ⇒
+        provide(None)
+    }
+  }
+
+  def getAccessToken(): Directive1[AccessToken] = {
+    getOptionalAccessToken().flatMap {
+      case Some(token) => complete(token)
+      case None => complete(StatusCodes.Unauthorized)
     }
   }
 

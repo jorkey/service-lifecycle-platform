@@ -23,7 +23,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
 
   val faultsInfoCollection = collections.State_FaultReportsInfo
   val sequencesCollection = result(collections.Sequences)

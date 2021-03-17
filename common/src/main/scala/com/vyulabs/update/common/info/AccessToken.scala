@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.Common.UserName
 import com.vyulabs.update.common.info.UserRole.UserRole
 import spray.json.DefaultJsonProtocol
 
-case class AccessToken(userName: UserName, role: UserRole)
+case class AccessToken(userName: UserName, roles: Set[UserRole])
 
 object AccessToken extends DefaultJsonProtocol {
   implicit val accessTokenJson = jsonFormat2(AccessToken.apply)

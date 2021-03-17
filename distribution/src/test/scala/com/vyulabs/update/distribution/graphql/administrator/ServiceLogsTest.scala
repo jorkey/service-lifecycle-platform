@@ -27,7 +27,7 @@ class ServiceLogsTest extends TestEnvironment {
 
   override def dbName = super.dbName + "-administrator"
 
-  val graphqlContext = new GraphqlContext(UserInfo("administrator", UserRole.Administrator), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
   it should "add/get service logs" in {
     addServiceLogLine("INFO", "unit1", "line1")

@@ -9,14 +9,14 @@ import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
-import com.vyulabs.update.common.info.{UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json.{JsObject, JsString, _}
-
 import java.io.File
+
 import scala.concurrent.ExecutionContext
 
 class BuildClientVersionTest extends TestEnvironment {
@@ -28,7 +28,7 @@ class BuildClientVersionTest extends TestEnvironment {
     ex.printStackTrace(); log.error("Uncatched exception", ex)
   })
 
-  val graphqlContext = GraphqlContext(UserInfo("admin", UserRole.Administrator), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
 
   val dummyBuilder = new File(builderDirectory, "builder.sh")
   IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes)

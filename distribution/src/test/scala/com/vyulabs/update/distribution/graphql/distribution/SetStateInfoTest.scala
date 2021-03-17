@@ -27,7 +27,7 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set tested versions" in {
-    val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -53,7 +53,7 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set installed desired versions" in {
-    val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
 
     assertResult((OK,
       ("""{"data":{"setInstalledDesiredVersions":true}}""").parseJson))(
@@ -75,7 +75,7 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set services state" in {
-    val graphqlContext = new GraphqlContext(UserInfo("distribution1", UserRole.Distribution), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(
