@@ -32,7 +32,7 @@ class AddServiceLogsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"addServiceLogs":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
           addServiceLogs (
             service: "service1",
@@ -49,11 +49,11 @@ class AddServiceLogsTest extends TestEnvironment {
       """, variables = JsObject("date" -> date.toJson))))
 
     assertResult(Seq(
-      Sequenced(1, new ServiceLogLine("test",
+      Sequenced(1, new ServiceLogLine("distribution1",
         "service1", None, "instance1", "process1", "dir", LogLine(date, "INFO", "none", "line1", None))),
-      Sequenced(2, new ServiceLogLine("test",
+      Sequenced(2, new ServiceLogLine("distribution1",
         "service1", None, "instance1", "process1", "dir", LogLine(date, "DEBUG", "none", "line2", None))),
-      Sequenced(3, new ServiceLogLine("test",
+      Sequenced(3, new ServiceLogLine("distribution1",
         "service1", None, "instance1", "process1", "dir", LogLine(date, "ERROR", "none", "line3", None))))
     )(result(logsCollection.findSequenced()))
   }

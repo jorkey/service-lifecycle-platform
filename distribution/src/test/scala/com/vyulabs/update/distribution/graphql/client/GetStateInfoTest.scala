@@ -1,19 +1,17 @@
-package com.vyulabs.update.distribution.graphql.administrator
-
-import java.util.Date
+package com.vyulabs.update.distribution.graphql.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.GraphqlContext
-import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
-import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersion, DirectoryServiceState, DistributionConsumerInfo, DistributionServiceState, ServiceState, UserInfo, UserRole}
+import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema
+import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import java.util.Date
 import scala.concurrent.ExecutionContext
 
 class GetStateInfoTest extends TestEnvironment {

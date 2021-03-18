@@ -1,15 +1,15 @@
-package com.vyulabs.update.distribution.graphql.administrator
+package com.vyulabs.update.distribution.graphql.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
-import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserInfo, UserRole}
-
-import scala.concurrent.ExecutionContext
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
+
+import scala.concurrent.ExecutionContext
 
 class ClientDesiredVersionsTest extends TestEnvironment {
   behavior of "Client Desired Versions Requests"

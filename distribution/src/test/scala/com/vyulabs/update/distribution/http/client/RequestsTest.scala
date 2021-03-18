@@ -4,6 +4,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
+import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
@@ -113,7 +114,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       assert(adminClient.graphqlRequest(
         administratorMutations.addDistributionConsumer("distribution1", "common", None)).getOrElse(false))
 
-      assert(adminClient.graphqlRequest(administratorMutations.addDeveloperVersionInfo(
+      assert(adminClient.graphqlRequest(builderMutations.addDeveloperVersionInfo(
         DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
           BuildInfo("author1", Seq("master"), date, Some("comment"))))).getOrElse(false))
 
@@ -144,7 +145,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     it should "execute client version requests" in {
       val date = new Date()
 
-      assert(adminClient.graphqlRequest(administratorMutations.addClientVersionInfo(
+      assert(adminClient.graphqlRequest(builderMutations.addClientVersionInfo(
         ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
           BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))).getOrElse(false))
 

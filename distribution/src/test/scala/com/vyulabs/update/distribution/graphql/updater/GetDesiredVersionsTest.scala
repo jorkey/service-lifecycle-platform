@@ -1,9 +1,9 @@
-package com.vyulabs.update.distribution.graphql.service
+package com.vyulabs.update.distribution.graphql.updater
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersion, ClientDesiredVersions, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersion, ClientDesiredVersions, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}

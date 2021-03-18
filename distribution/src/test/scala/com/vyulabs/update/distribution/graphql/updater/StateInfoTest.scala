@@ -1,16 +1,16 @@
-package com.vyulabs.update.distribution.graphql.service
+package com.vyulabs.update.distribution.graphql.updater
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserRole}
+import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
-import com.vyulabs.update.common.utils.JsonFormats._
-import java.util.Date
 
+import java.util.Date
 import scala.concurrent.ExecutionContext
 
 class StateInfoTest extends TestEnvironment {

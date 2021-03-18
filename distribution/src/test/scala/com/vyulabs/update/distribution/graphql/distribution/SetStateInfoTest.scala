@@ -75,11 +75,12 @@ class SetStateInfoTest extends TestEnvironment {
   }
 
   it should "set services state" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", Seq(UserRole.Distribution))), workspace)
+    val distributionContext = GraphqlContext(Some(AccessToken("distribution1", Seq(UserRole.Distribution))), workspace)
+    val adminContext = GraphqlContext(Some(AccessToken("administrator", Seq(UserRole.Administrator))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, distributionContext, graphql"""
         mutation ServicesState($$date: Date!) {
           setServiceStates (
             states: [
@@ -93,7 +94,7 @@ class SetStateInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, distributionContext, graphql"""
         mutation ServicesState($$date: Date!) {
           setServiceStates (
             states: [
@@ -107,7 +108,7 @@ class SetStateInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, adminContext, graphql"""
         query {
           serviceStates (distribution: "distribution1", service: "service1") {
             instance {

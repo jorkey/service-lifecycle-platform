@@ -1,9 +1,9 @@
-package com.vyulabs.update.distribution.graphql.administrator
+package com.vyulabs.update.distribution.graphql.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -33,7 +33,7 @@ class UsersTest extends TestEnvironment {
         mutation {
           addUser (
             user: "distribution2",
-            role: Distribution,
+            roles: [Distribution],
             password: "password1"
           )
         }
@@ -61,22 +61,6 @@ class UsersTest extends TestEnvironment {
           )
         }
       """)))
-  }
-
-  it should "get user info" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-
-    assertResult((OK,
-      ("""{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
-        query {
-          userInfo {
-            name
-            role
-          }
-        }
-      """))
-    )
   }
 
   it should "change own password" in {

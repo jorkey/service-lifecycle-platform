@@ -5,14 +5,12 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
-import com.vyulabs.update.distribution.graphql.GraphqlSchema.fromRolesSet
+import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
 import com.vyulabs.update.distribution.graphql.utils._
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.Logger
-import sangria.execution.FieldTag
 import sangria.marshalling.sprayJson._
 import sangria.schema.{Field, _}
 import sangria.streaming.akkaStreams._
@@ -245,7 +243,7 @@ object GraphqlSchema {
           c.arg(OptionBranchesArg).getOrElse(Seq.empty), c.arg(OptionCommentArg)) }),
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: DeveloperDistributionVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer) :: Nil,
+        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setDeveloperDesiredVersions", BooleanType,
         arguments = DeveloperDesiredVersionDeltasArg :: Nil,
@@ -330,11 +328,11 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.userName, c.arg(ServiceFaultReportInfoArg)).map(_ => true) }),
       Field("runBuilder", StringType,
         arguments = ArgumentsArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.runLocalBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) }))
   )
 

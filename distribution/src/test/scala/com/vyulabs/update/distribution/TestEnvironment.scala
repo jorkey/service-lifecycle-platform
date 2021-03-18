@@ -75,9 +75,9 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distribution = new Distribution(workspace, graphql)
 
   result(for {
-    _ <- collections.Users_Info.insert(ServerUserInfo(adminClientCredentials.username, Seq(adminCredentials.roles.toString), adminCredentials.passwordHash))
-    _ <- collections.Users_Info.insert(ServerUserInfo(distributionClientCredentials.username, Seq(distributionCredentials.roles.toString), distributionCredentials.passwordHash))
-    _ <- collections.Users_Info.insert(ServerUserInfo(updaterClientCredentials.username, Seq(updaterCredentials.roles.toString), updaterCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(adminClientCredentials.username, adminCredentials.roles.map(_.toString), adminCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(distributionClientCredentials.username, distributionCredentials.roles.map(_.toString), distributionCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(updaterClientCredentials.username, updaterCredentials.roles.map(_.toString), updaterCredentials.passwordHash))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))

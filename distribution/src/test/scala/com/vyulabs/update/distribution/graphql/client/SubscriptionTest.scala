@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.administrator
+package com.vyulabs.update.distribution.graphql.client
 
 import akka.NotUsed
 import akka.http.scaladsl.Http
