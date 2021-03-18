@@ -38,7 +38,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
   appender.addListener(buffer)
   appender.start()
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("administrator", UserRole.Administrator)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("administrator", Seq(UserRole.Administrator))), workspace)
 
   it should "send log records to distribution server" in {
     log.info("log line 1")
@@ -57,7 +57,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"ERROR","message":"log line 3"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 4"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             distributionName

@@ -25,17 +25,6 @@ case class AuthorizationException(msg: String) extends Exception(msg)
 case class NotFoundException(msg: String = "Not found") extends Exception(msg)
 case class InvalidConfigException(msg: String) extends Exception(msg)
 
-trait UserContext {
-  val userInfo: UserInfo
-
-  def authorize[T](roles: UserRole*)(fn: () ⇒ T) = {
-    if (!roles.isEmpty && !roles.contains(userInfo.role)) {
-      throw AuthorizationException("You do not have permission to do this operation")
-    }
-    fn()
-  }
-}
-
 class Graphql() extends SprayJsonSupport {
   protected implicit val log = LoggerFactory.getLogger(this.getClass)
 

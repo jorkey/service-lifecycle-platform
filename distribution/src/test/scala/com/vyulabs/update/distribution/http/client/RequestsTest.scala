@@ -5,7 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
-import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder._
+import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -164,7 +164,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
         administratorQueries.getClientDesiredVersions(Seq("service1"))))
 
       assertResult(Some(List(ClientDesiredVersion("service1", ClientDistributionVersion.parse("test-1.2.3_1")))))(
-        serviceClient.graphqlRequest(serviceQueries.getClientDesiredVersions(Seq("service1"))))
+        serviceClient.graphqlRequest(updaterQueries.getClientDesiredVersions(Seq("service1"))))
     }
 
     it should "execute installed versions requests" in {
@@ -180,7 +180,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     }
 
     it should "execute service states requests" in {
-      assert(serviceClient.graphqlRequest(serviceMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
+      assert(serviceClient.graphqlRequest(updaterMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
         ServiceState(stateDate, None, None, Some(ClientDistributionVersion.parse(s"${distributionName}-1.2.1")), None, None, None, None))))).getOrElse(false))
 
       assert(distribClient.graphqlRequest(distributionMutations.setServiceStates(Seq(InstanceServiceState("instance1", "service1", "directory1",
@@ -196,12 +196,12 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     }
 
     it should "execute service log requests" in {
-      assert(serviceClient.graphqlRequest(serviceMutations.addServiceLogs("service1", "instance1", "process1", None, "directory1",
+      assert(serviceClient.graphqlRequest(updaterMutations.addServiceLogs("service1", "instance1", "process1", None, "directory1",
         Seq(LogLine(new Date(), "INFO", "-", "log line", None)))).getOrElse(false))
     }
 
     it should "execute fault report requests" in {
-      assert(serviceClient.graphqlRequest(serviceMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
+      assert(serviceClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "directory", "service1", "common",
         ServiceState(stateDate, None, None, None, None, None, None, None), Seq()), Seq("fault1.info", "core")))).getOrElse(false))
 
       assert(distribClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "directory", "service1", "common",

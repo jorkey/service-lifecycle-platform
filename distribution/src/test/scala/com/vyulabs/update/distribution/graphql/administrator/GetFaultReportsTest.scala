@@ -20,7 +20,7 @@ class GetFaultReportsTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
 
   val distribution1 = "distribution1"
   val distribution2 = "distribution2"
@@ -46,7 +46,7 @@ class GetFaultReportsTest extends TestEnvironment {
   it should "get last fault reports for specified client" in {
     assertResult((OK,
       ("""{"data":{"faultReportsInfo":[{"distributionName":"distribution1","report":{"faultId":"fault3","info":{"serviceName":"serviceB","instanceId":"instance2"},"files":["fault.info","core"]}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           faultReportsInfo (distribution: "distribution1", last: 1) {
             distributionName
@@ -67,7 +67,7 @@ class GetFaultReportsTest extends TestEnvironment {
   it should "get last fault reports for specified service" in {
     assertResult((OK,
       ("""{"data":{"faultReportsInfo":[{"distributionName":"distribution2","report":{"faultId":"fault2","info":{"serviceName":"serviceA","instanceId":"instance1"},"files":["fault.info","core1"]}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           faultReportsInfo (service: "serviceA", last: 1) {
             distributionName
@@ -88,7 +88,7 @@ class GetFaultReportsTest extends TestEnvironment {
   it should "get fault reports for specified service in parameters" in {
     assertResult((OK,
       ("""{"data":{"faultReportsInfo":[{"distributionName":"distribution1","report":{"faultId":"fault3","info":{"serviceName":"serviceB","instanceId":"instance2"},"files":["fault.info","core"]}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition,
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition,
         graphqlContext, graphql"""
           query FaultsQuery($$service: String!) {
             faultReportsInfo (service: $$service) {

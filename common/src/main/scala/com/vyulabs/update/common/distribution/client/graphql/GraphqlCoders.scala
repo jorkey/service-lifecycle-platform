@@ -2,6 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.info.UserRole.UserRole
+import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{DistributionConsumerInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -87,7 +88,14 @@ object DistributionQueriesCoder extends CommonQueriesCoder {
       "{ serviceName, version }")
 }
 
-object ServiceQueriesCoder extends CommonQueriesCoder {
+object BuilderQueriesCoder extends CommonQueriesCoder {
+  def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None, version: Option[DeveloperVersion] = None) =
+    GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
+      Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("distribution" -> distributionName), GraphqlArgument("version" -> version)).filter(_.value != JsNull),
+      "{ serviceName, version, buildInfo { author, branches, date, comment } }")
+}
+
+object UpdaterQueriesCoder extends CommonQueriesCoder {
   def getClientDesiredVersions(serviceNames: Seq[ServiceName]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("clientDesiredVersions",
       Seq(GraphqlArgument("services" -> serviceNames, "[String!]")).filter(_.value != JsArray.empty),
@@ -105,8 +113,8 @@ trait CommonMutationsCoder {
 object CommonMutationsCoder extends CommonMutationsCoder
 
 object AdministratorMutationsCoder extends CommonMutationsCoder {
-  def addUser(userName: UserName, role: UserRole, password: String) =
-    GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> userName), GraphqlArgument("role" -> role, "UserRole"), GraphqlArgument("password" -> password)))
+  def addUser(userName: UserName, roles: Seq[UserRole], password: String) =
+    GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> userName), GraphqlArgument("roles" -> roles, "[UserRole!]"), GraphqlArgument("password" -> password)))
 
   def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distributionName),
@@ -132,16 +140,12 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
 
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
-  def addDeveloperVersionInfo(info: DeveloperVersionInfo) =
-    GraphqlMutation[Boolean]("addDeveloperVersionInfo", Seq(GraphqlArgument("info" -> info, "DeveloperVersionInfoInput")))
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
     GraphqlMutation[Boolean]("removeDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 
   def buildClientVersion(serviceName: ServiceName, developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion) =
     GraphqlMutation[String]("buildClientVersion", Seq(GraphqlArgument("service" -> serviceName),
       GraphqlArgument("developerVersion" -> developerVersion), GraphqlArgument("clientVersion" -> clientVersion)))
-  def addClientVersionInfo(versionInfo: ClientVersionInfo) =
-    GraphqlMutation[Boolean]("addClientVersionInfo", Seq(GraphqlArgument("info" -> versionInfo, "ClientVersionInfoInput")))
   def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion) =
     GraphqlMutation[Boolean]("removeClientVersion",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
@@ -150,7 +154,6 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
     GraphqlMutation[Boolean]("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionDeltaInput!]")))
   def setClientDesiredVersions(versions: Seq[ClientDesiredVersionDelta]) =
     GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionDeltaInput!]")))
-
 }
 
 object DistributionMutationsCoder extends CommonMutationsCoder {
@@ -167,7 +170,21 @@ object DistributionMutationsCoder extends CommonMutationsCoder {
     GraphqlMutation[Boolean]("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
 }
 
-object ServiceMutationsCoder extends CommonMutationsCoder {
+object BuilderMutationsCoder extends CommonMutationsCoder {
+  def addDeveloperVersionInfo(info: DeveloperVersionInfo) =
+    GraphqlMutation[Boolean]("addDeveloperVersionInfo", Seq(GraphqlArgument("info" -> info, "DeveloperVersionInfoInput")))
+
+  def addClientVersionInfo(versionInfo: ClientVersionInfo) =
+    GraphqlMutation[Boolean]("addClientVersionInfo", Seq(GraphqlArgument("info" -> versionInfo, "ClientVersionInfoInput")))
+
+  def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersionDelta]) =
+    GraphqlMutation[Boolean]("setDeveloperDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionDeltaInput!]")))
+
+  def setClientDesiredVersions(versions: Seq[ClientDesiredVersionDelta]) =
+    GraphqlMutation[Boolean]("setClientDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionDeltaInput!]")))
+}
+
+object UpdaterMutationsCoder extends CommonMutationsCoder {
   def setServiceStates(states: Seq[InstanceServiceState]) =
     GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
 
@@ -184,6 +201,12 @@ object AdministratorSubscriptionsCoder {
     GraphqlSubscription[String]("testSubscription")
 }
 
+object BuilderSubscriptionsCoder {
+  def subscribeTaskLogs(taskId: TaskId) =
+    GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> taskId, "String")),
+      "{ sequence, logLine { distributionName, serviceName, taskId, instanceId, processId, directory, line { date, level, unit, message, terminationStatus } } }")
+}
+
 object AdministratorGraphqlCoder {
   val administratorQueries = AdministratorQueriesCoder
   val administratorMutations = AdministratorMutationsCoder
@@ -195,7 +218,13 @@ object DistributionGraphqlCoder {
   val distributionMutations = DistributionMutationsCoder
 }
 
-object ServiceGraphqlCoder {
-  val serviceMutations = ServiceMutationsCoder
-  val serviceQueries = ServiceQueriesCoder
+object BuilderGraphqlCoder {
+  val builderMutations = BuilderMutationsCoder
+  val builderQueries = BuilderQueriesCoder
+  val builderSubscriptions = BuilderSubscriptionsCoder
+}
+
+object UpdaterGraphqlCoder {
+  val updaterMutations = UpdaterMutationsCoder
+  val updaterQueries = UpdaterQueriesCoder
 }

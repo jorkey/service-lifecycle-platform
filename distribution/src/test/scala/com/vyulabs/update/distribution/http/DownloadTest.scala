@@ -27,7 +27,7 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   it should "download client version image" in {
     IoUtils.writeBytesToFile(distributionDir.getClientVersionImageFile("service1", ClientDistributionVersion.parse("test-1.1.1")),
       "qwerty456".getBytes("utf8"))
-    Get("/load/client-version-image/service1/test-1.1.1") ~> addCredentials(serviceClientCredentials) ~> route ~> check {
+    Get("/load/client-version-image/service1/test-1.1.1") ~> addCredentials(updaterClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "qwerty456"
     }
@@ -36,7 +36,7 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   it should "return error when illegal access" in {
     IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
       "qwerty123".getBytes("utf8"))
-    Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(serviceClientCredentials) ~> route ~> check {
+    Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(updaterClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.Forbidden
     }
   }

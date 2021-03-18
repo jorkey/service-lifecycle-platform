@@ -28,11 +28,11 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired versions of service" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("service", UserRole.Service)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("service", Seq(UserRole.Updater))), workspace)
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1"},{"serviceName":"service2","version":"test-2"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName
@@ -43,11 +43,11 @@ class GetDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "get desired version for specified service" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("service", UserRole.Service)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("service", Seq(UserRole.Updater))), workspace)
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"version":"test-1"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions (services: ["service1"]) {
              version

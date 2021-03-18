@@ -23,7 +23,7 @@ class AddServiceLogsTest extends TestEnvironment {
 
   override def dbName = super.dbName + "-distribution"
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", Seq(UserRole.Distribution))), workspace)
 
   val logsCollection = collections.State_ServiceLogs
 
@@ -32,7 +32,7 @@ class AddServiceLogsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"addServiceLogs":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
           addServiceLogs (
             service: "service1",

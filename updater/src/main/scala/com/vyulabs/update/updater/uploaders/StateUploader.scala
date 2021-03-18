@@ -2,7 +2,7 @@ package com.vyulabs.update.updater.uploaders
 
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.InstanceId
-import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.serviceMutations
+import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{DirectoryServiceState, InstanceServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
@@ -57,6 +57,6 @@ class StateUploader(directory: File, instanceId: InstanceId, servicesNames: Set[
     val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
       state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
     val instanceServiceStates = serviceStates.map(state => InstanceServiceState(instanceId, state.serviceName, state.directory, state.state))
-    syncDistributionClient.graphqlRequest(serviceMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
+    syncDistributionClient.graphqlRequest(updaterMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
   }
 }

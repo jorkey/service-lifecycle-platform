@@ -20,12 +20,12 @@ class StateInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("service", UserRole.Service)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("service", Seq(UserRole.Updater))), workspace)
 
   it should "set/get own service state" in {
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         mutation ServicesState($$date: Date!) {
           setServiceStates (
             states: [
@@ -45,7 +45,7 @@ class StateInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"serviceStates":[{"service":{"version":"test-1.2.3"}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         query {
           serviceStates (instance: "instance1", service: "service1", directory: "dir") {
             service  {

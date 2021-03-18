@@ -21,7 +21,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("service", UserRole.Service)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("service", Seq(UserRole.Updater))), workspace)
 
   val faultsInfoCollection = collections.State_FaultReportsInfo
 
@@ -32,7 +32,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         mutation FaultReportInfo($$date: Date!) {
           addFaultReportInfo (
             fault: {

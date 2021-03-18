@@ -24,11 +24,11 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "set/get developer desired versions" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           setDeveloperDesiredVersions (
             versions: [
@@ -41,7 +41,7 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"},{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           developerDesiredVersions {
              serviceName
@@ -52,7 +52,7 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"setDeveloperDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           setDeveloperDesiredVersions (
             versions: [
@@ -64,7 +64,7 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           developerDesiredVersions {
              serviceName

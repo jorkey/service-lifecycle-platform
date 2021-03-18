@@ -24,7 +24,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
 
   it should "add/get/remove client version info" in {
     addClientVersionInfo("service1", ClientDistributionVersion.parse("test-1.1.1_1"))
@@ -32,7 +32,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientVersionsInfo":[{"version":"test-1.1.1_1","buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           clientVersionsInfo (service: "service1", distribution: "test", version: "1.1.1_1") {
             version
@@ -49,7 +49,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientVersionsInfo":[{"version":"distribution1-2.1.3_1","buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           clientVersionsInfo (service: "service1", distribution: "distribution1") {
             version
@@ -79,7 +79,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientVersionsInfo":[{"version":"test-3"},{"version":"test-4"},{"version":"test-5"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           clientVersionsInfo (service: "service1") {
             version
@@ -95,7 +95,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
   def addClientVersionInfo(serviceName: ServiceName, version: ClientDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addClientVersionInfo":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
         graphql"""
                   mutation AddClientVersionInfo($$service: String!, $$version: ClientDistributionVersion!, $$buildDate: Date!, $$installDate: Date!) {
                     addClientVersionInfo (
@@ -125,7 +125,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
   def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeClientVersion":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
         graphql"""
                   mutation RemoveClientVersion($$service: String!, $$version: ClientDistributionVersion!) {
                     removeClientVersion (service: $$service, version: $$version)

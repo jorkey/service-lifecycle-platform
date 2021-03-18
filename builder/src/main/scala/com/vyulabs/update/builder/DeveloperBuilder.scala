@@ -6,7 +6,7 @@ import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.config.InstallConfig._
 import com.vyulabs.update.common.config.UpdateConfig
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperDesiredVersionDelta, DeveloperVersionInfo}
@@ -57,12 +57,6 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
         true
       },
       () => {
-        log.info("Check for version exist")
-        if (doesDeveloperVersionExist(distributionClient, serviceName, newDistributionVersion)) {
-          log.error(s"Version ${newVersion} of service ${serviceName} already exists")
-          return false
-        }
-
         log.info(s"Prepare source directories of service ${serviceName}")
         val sourcesConfig = getSourcesConfig(serviceName)
         val sourceRepositories = prepareSourceDirectories(serviceName, sourceBranches, sourcesConfig).getOrElse {
@@ -226,7 +220,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
       return false
     }
     if (!distributionClient.graphqlRequest(
-        administratorMutations.addDeveloperVersionInfo(DeveloperVersionInfo.from(serviceName, version, buildInfo))).getOrElse(false)) {
+        builderMutations.addDeveloperVersionInfo(DeveloperVersionInfo.from(serviceName, version, buildInfo))).getOrElse(false)) {
       log.error("Adding version info error")
       return false
     }
@@ -234,11 +228,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[DeveloperDesiredVersionDelta]): Boolean = {
-    distributionClient.graphqlRequest(administratorMutations.setDeveloperDesiredVersions(versions)).getOrElse(false)
-  }
-
-  private def doesDeveloperVersionExist(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName, version: DeveloperDistributionVersion): Boolean = {
-    distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName, Some(version.distributionName), Some(version.version))).map(_.size != 0).getOrElse(false)
+    distributionClient.graphqlRequest(builderMutations.setDeveloperDesiredVersions(versions)).getOrElse(false)
   }
 
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], serviceName: ServiceName,

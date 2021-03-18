@@ -20,7 +20,7 @@ class GetDeveloperVersionsInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", Seq(UserRole.Distribution))), workspace)
 
   override def beforeAll(): Unit = {
     result(collections.Developer_VersionsInfo.insert(

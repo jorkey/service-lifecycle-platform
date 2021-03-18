@@ -27,7 +27,7 @@ class ServiceLogsTest extends TestEnvironment {
 
   override def dbName = super.dbName + "-administrator"
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
 
   it should "add/get service logs" in {
     addServiceLogLine("INFO", "unit1", "line1")
@@ -39,7 +39,7 @@ class ServiceLogsTest extends TestEnvironment {
        """{"instanceId":"instance1","distributionName":"test","line":{"level":"INFO","message":"line1"},"serviceName":"service1","directory":"dir"},""" +
        """{"instanceId":"instance1","distributionName":"test","line":{"level":"DEBUG","message":"line2"},"serviceName":"service1","directory":"dir"},""" +
        """{"instanceId":"instance1","distributionName":"test","line":{"level":"ERROR","message":"line3"},"serviceName":"service1","directory":"dir"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             distributionName
@@ -111,7 +111,7 @@ class ServiceLogsTest extends TestEnvironment {
   def addServiceLogLine(level: String, unit: String, message: String): Unit = {
     assertResult((OK,
       ("""{"data":{"addServiceLogs":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         mutation AddServiceLogs($$date: Date!, $$level: String!, $$unit: String!, $$message: String!) {
           addServiceLogs (
             service: "service1",
@@ -127,7 +127,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   def subscribeServiceLogs(from: Long): ToResponseMarshallable = {
-    result(graphql.executeSubscriptionQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+    result(graphql.executeSubscriptionQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         subscription SubscribeServiceLogs($$from: Long!) {
           subscribeServiceLogs (
             distribution: "test",
@@ -152,7 +152,7 @@ class ServiceLogsTest extends TestEnvironment {
   def addTaskLogLine(level: String, unit: String, message: String): Unit = {
     assertResult((OK,
       ("""{"data":{"addServiceLogs":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ServiceSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.UpdaterSchemaDefinition, graphqlContext, graphql"""
         mutation AddServiceLogs($$date: Date!, $$level: String!, $$unit: String!, $$message: String!) {
           addServiceLogs (
             service: "service2",
@@ -169,7 +169,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   def subscribeTaskLogs(from: Long): ToResponseMarshallable = {
-    result(graphql.executeSubscriptionQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+    result(graphql.executeSubscriptionQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         subscription SubscribeTaskLogs($$from: Long!) {
           subscribeTaskLogs (
             task: "task1",

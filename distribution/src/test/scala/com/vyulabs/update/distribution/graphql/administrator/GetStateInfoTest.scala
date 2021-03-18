@@ -44,10 +44,10 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return own service version" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
     assertResult((OK,
       ("""{"data":{"serviceStates":[{"instance":{"service":{"version":"test-1.2.3"}}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query ServicesStateQuery($$directory: String!) {
           serviceStates (distribution: "test", service: "distribution", directory: $$directory) {
             instance  {
@@ -61,10 +61,10 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return service state" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
     assertResult((OK,
       ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance2","service":{"version":"distribution1-1.1.0"}}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           serviceStates (distribution: "distribution1", service: "service1") {
             instance  {
@@ -80,10 +80,10 @@ class GetStateInfoTest extends TestEnvironment {
   }
 
   it should "return installed versions" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
     assertResult((OK,
       ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.3"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           installedDesiredVersions (distribution: "distribution1") {
              serviceName

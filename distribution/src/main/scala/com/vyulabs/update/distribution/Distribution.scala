@@ -6,11 +6,9 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.model.MediaTypes._
 import akka.http.scaladsl.model.StatusCodes.{BadRequest, OK}
-import akka.http.scaladsl.model.headers.HttpChallenge
 import akka.http.scaladsl.model.{ContentType, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, pathPrefix, _}
 import akka.http.scaladsl.server.Route._
-import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -70,15 +68,15 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                 }
               } ~ pathPrefix(loadPathPrefix) {
                 seal {
-                  workspace.getAccessToken() { case token =>
+                  workspace.getAccessToken()(log) { case token =>
                     path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                       get {
-                        authorize(token.role == UserRole.Administrator || token.role == UserRole.Distribution) {
+                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution)) {
                           getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
                             DeveloperDistributionVersion.parse(version)))
                         }
                       } ~ post {
-                        authorize(token.role == UserRole.Administrator) {
+                        authorize(token.hasRole(UserRole.Builder)) {
                           fileUpload(imageField) {
                             case (fileInfo, byteSource) =>
                               val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
@@ -89,11 +87,11 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                       }
                     } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                       get {
-                        authorize(token.role == UserRole.Administrator || token.role == UserRole.Service) {
+                        authorize(token.hasRole(UserRole.Updater)) {
                           getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                         }
                       } ~ post {
-                        authorize(token.role == UserRole.Administrator) {
+                        authorize(token.hasRole(UserRole.Builder)) {
                           fileUpload(imageField) {
                             case (fileInfo, byteSource) =>
                               val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
@@ -104,11 +102,11 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                       }
                     } ~ path(faultReportPath / ".*".r) { faultId =>
                       get {
-                        authorize(token.role == UserRole.Administrator) {
+                        authorize(token.hasRole(UserRole.Developer) || token.hasRole(UserRole.Administrator)) {
                           getFromFile(workspace.directory.getFaultReportFile(faultId))
                         }
                       } ~ post {
-                        authorize(token.role == UserRole.Service || token.role == UserRole.Distribution) {
+                        authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Distribution)) {
                           fileUpload(faultReportPath) {
                             case (fileInfo, byteSource) =>
                               log.info(s"Receive fault report file from client ${workspace.config.distributionName}")
@@ -143,10 +141,10 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
         log.debug(s"Execute graphql query ${query}, operation ${operation}, variables ${variables}")
         document.operationType(operation) match {
           case Some(OperationType.Subscription) =>
-            complete(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition(token.map(_.role)),
+            complete(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition(token.map(_.roles).getOrElse(Seq.empty)),
                 context, document, operation, variables))
           case _ =>
-            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(token.map(_.role)),
+            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(token.map(_.roles).getOrElse(Seq.empty)),
                 context, document, operation, variables).andThen {
               case Success((statusCode, value)) =>
                 log.debug(s"Graphql query terminated with status ${statusCode}, value ${value}")

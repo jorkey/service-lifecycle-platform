@@ -53,13 +53,16 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
 
   val distributionName = config.distributionName
   val instanceId = config.instanceId
+
   val adminClientCredentials = BasicHttpCredentials("admin", "admin")
   val distributionClientCredentials = BasicHttpCredentials("distribution1", "distribution1")
-  val serviceClientCredentials = BasicHttpCredentials("service1", "service1")
+  val builderClientCredentials = BasicHttpCredentials("builder1", "builder1")
+  val updaterClientCredentials = BasicHttpCredentials("service1", "service1")
 
-  val adminCredentials = UserCredentials(UserRole.Administrator, PasswordHash(adminClientCredentials.password))
-  val distributionCredentials = UserCredentials(UserRole.Distribution, PasswordHash(distributionClientCredentials.password))
-  val serviceCredentials = UserCredentials(UserRole.Service, PasswordHash(serviceClientCredentials.password))
+  val adminCredentials = UserCredentials(Seq(UserRole.Administrator), PasswordHash(adminClientCredentials.password))
+  val distributionCredentials = UserCredentials(Seq(UserRole.Distribution), PasswordHash(distributionClientCredentials.password))
+  val builderCredentials = UserCredentials(Seq(UserRole.Builder), PasswordHash(builderClientCredentials.password))
+  val updaterCredentials = UserCredentials(Seq(UserRole.Updater), PasswordHash(updaterClientCredentials.password))
 
   val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), false)
@@ -72,9 +75,9 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distribution = new Distribution(workspace, graphql)
 
   result(for {
-    _ <- collections.Users_Info.insert(ServerUserInfo(adminClientCredentials.username, adminCredentials.role.toString, adminCredentials.passwordHash))
-    _ <- collections.Users_Info.insert(ServerUserInfo(distributionClientCredentials.username, distributionCredentials.role.toString, distributionCredentials.passwordHash))
-    _ <- collections.Users_Info.insert(ServerUserInfo(serviceClientCredentials.username, serviceCredentials.role.toString, serviceCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(adminClientCredentials.username, Seq(adminCredentials.roles.toString), adminCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(distributionClientCredentials.username, Seq(distributionCredentials.roles.toString), distributionCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(updaterClientCredentials.username, Seq(updaterCredentials.roles.toString), updaterCredentials.passwordHash))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))

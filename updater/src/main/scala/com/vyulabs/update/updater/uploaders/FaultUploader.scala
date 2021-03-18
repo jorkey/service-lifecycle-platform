@@ -1,7 +1,7 @@
 package com.vyulabs.update.updater.uploaders
 
 import com.vyulabs.update.common.common.{Common, IdGenerator}
-import com.vyulabs.update.common.distribution.client.graphql.ServiceGraphqlCoder.serviceMutations
+import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.FaultInfo._
 import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName, ServiceFaultReport}
@@ -113,7 +113,7 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
         log.error(s"Can't upload service fault file")
         return false
       }
-      if (!syncDistributionClient.graphqlRequest(serviceMutations.addFaultReportInfo(ServiceFaultReport(faultId, fault.info, reportFiles))).getOrElse(false)) {
+      if (!syncDistributionClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport(faultId, fault.info, reportFiles))).getOrElse(false)) {
         log.error(s"Can't upload service fault info")
         return false
       }

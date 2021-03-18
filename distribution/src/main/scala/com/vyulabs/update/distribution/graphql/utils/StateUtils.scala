@@ -97,8 +97,8 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     collections.State_ServiceStates.find(filters)
   }
 
-  def getInstanceServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
-                      instanceId: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
+  def getInstanceServiceStates(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
+                               instanceId: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
     getServicesState(distributionName, serviceName, instanceId, directory).map(_.map(_.instance))
   }
 

@@ -28,13 +28,13 @@ class BuildClientVersionTest extends TestEnvironment {
     ex.printStackTrace(); log.error("Uncatched exception", ex)
   })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+  val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
 
   val dummyBuilder = new File(builderDirectory, "builder.sh")
   IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes)
 
   it should "build client version" in {
-    val buildResponse = result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           buildClientVersion (service: "service1", developerVersion: "test-1.1.1", clientVersion: "test-1.1.1")
         }
@@ -69,7 +69,7 @@ class BuildClientVersionTest extends TestEnvironment {
   it should "cancel of building developer version" in {
     setSequence("state.serviceLogs", 10)
 
-    val buildResponse = result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           buildDeveloperVersion (service: "service1", version: "1.1.1", branches: ["master", "master"], comment: "Test version")
         }
@@ -92,7 +92,7 @@ class BuildClientVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":15,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
 
-    assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+    assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation CancelTask($$taskId: String!) {
           cancelTask (task: $$taskId)
         }
@@ -141,7 +141,7 @@ class BuildClientVersionTest extends TestEnvironment {
   }
 
   def subscribeTaskLogs(taskId: TaskId): ToResponseMarshallable = {
-    result(graphql.executeSubscriptionQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+    result(graphql.executeSubscriptionQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         subscription SubscribeTaskLogs($$taskId: String!) {
           subscribeTaskLogs (
             task: $$taskId,

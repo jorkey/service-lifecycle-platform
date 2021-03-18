@@ -23,7 +23,7 @@ class GetDistributionConsumerInfoTest extends TestEnvironment {
   }
 
   it should "get distribution consumer info" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", UserRole.Distribution)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", Seq(UserRole.Distribution))), workspace)
 
     assertResult((OK,
       ("""{"data":{"distributionConsumerInfo":{"consumerProfile":"common","testDistributionMatch":"test"}}}""").parseJson))(

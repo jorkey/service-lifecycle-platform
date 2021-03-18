@@ -2,7 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.{builderMutations, builderQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
 import com.vyulabs.update.common.info._
@@ -64,20 +64,20 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
       return false
     }
     val clientVersionInfo = ClientVersionInfo.from(serviceName, version, buildInfo, InstallInfo(author, new Date()))
-    if (!distributionClient.graphqlRequest(administratorMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
+    if (!distributionClient.graphqlRequest(builderMutations.addClientVersionInfo(clientVersionInfo)).getOrElse(false)) {
       return false
     }
     true
   }
 
   def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[ClientDesiredVersionDelta]): Boolean = {
-    distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(versions)).getOrElse(false)
+    distributionClient.graphqlRequest(builderMutations.setClientDesiredVersions(versions)).getOrElse(false)
   }
 
   def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                                version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
     log.info(s"Get developer version ${version} of service ${serviceName} info")
-    val versionInfo = distributionClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(serviceName)).getOrElse(Seq.empty).headOption.getOrElse {
+    val versionInfo = distributionClient.graphqlRequest(builderQueries.getDeveloperVersionsInfo(serviceName)).getOrElse(Seq.empty).headOption.getOrElse {
       log.error(s"Can't get developer version ${version} of service ${serviceName} info")
       return None
     }

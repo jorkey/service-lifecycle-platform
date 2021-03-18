@@ -24,11 +24,11 @@ class ClientDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "set/get client desired versions" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", UserRole.Administrator)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           setClientDesiredVersions (
             versions: [
@@ -41,7 +41,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"},{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName
@@ -52,7 +52,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions (services: ["service1"]) {
              serviceName
@@ -63,7 +63,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         mutation {
           setClientDesiredVersions (
             versions: [
@@ -75,7 +75,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.AdministratorSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName

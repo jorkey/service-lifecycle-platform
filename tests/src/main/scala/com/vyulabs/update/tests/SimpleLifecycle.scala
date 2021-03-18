@@ -82,7 +82,7 @@ class SimpleLifecycle {
     println("########################### Initialize distribution")
     println()
     println("--------------------------- Add service user to distribution server")
-    if (!distributionClient.graphqlRequest(administratorMutations.addUser("service", UserRole.Service, "service")).getOrElse(false)) {
+    if (!distributionClient.graphqlRequest(administratorMutations.addUser("service", Seq(UserRole.Updater), "service")).getOrElse(false)) {
       sys.error("Can't initialize distribution")
     }
 
