@@ -9,21 +9,19 @@ import akka.http.scaladsl.model.StatusCodes.{BadRequest, OK}
 import akka.http.scaladsl.model.{ContentType, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, pathPrefix, _}
 import akka.http.scaladsl.server.Route._
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, ExceptionHandler, Route, RouteResult}
+import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
-import com.vyulabs.update.distribution.users.PasswordHash
-import org.janjaali.sprayjwt.Jwt
 import org.slf4j.LoggerFactory
 import sangria.ast.OperationType
 import sangria.parser.QueryParser
 import spray.json._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
@@ -71,12 +69,12 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                   workspace.getAccessToken()(log) { case token =>
                     path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                       get {
-                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution)) {
+                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution) || token.hasRole(UserRole.Administrator)) {
                           getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
                             DeveloperDistributionVersion.parse(version)))
                         }
                       } ~ post {
-                        authorize(token.hasRole(UserRole.Builder)) {
+                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
                           fileUpload(imageField) {
                             case (fileInfo, byteSource) =>
                               val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
@@ -87,11 +85,11 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                       }
                     } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                       get {
-                        authorize(token.hasRole(UserRole.Updater)) {
+                        authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Administrator)) {
                           getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                         }
                       } ~ post {
-                        authorize(token.hasRole(UserRole.Builder)) {
+                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
                           fileUpload(imageField) {
                             case (fileInfo, byteSource) =>
                               val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)

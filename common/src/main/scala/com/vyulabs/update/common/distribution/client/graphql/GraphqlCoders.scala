@@ -2,16 +2,14 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{DistributionConsumerInfo, _}
-import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
+import com.vyulabs.update.common.utils.JsonFormats.{FiniteDurationFormat, URLJsonFormat}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
 import java.net.URL
 import scala.concurrent.duration.FiniteDuration
-import com.vyulabs.update.common.utils.JsonFormats.URLJsonFormat
 
 trait CommonQueriesCoder {
   def getUserInfo() =
@@ -115,6 +113,8 @@ object CommonMutationsCoder extends CommonMutationsCoder
 object AdministratorMutationsCoder extends CommonMutationsCoder {
   def addUser(userName: UserName, roles: Seq[UserRole], password: String) =
     GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> userName), GraphqlArgument("roles" -> roles, "[UserRole!]"), GraphqlArgument("password" -> password)))
+  def removeUser(userName: UserName) =
+    GraphqlMutation[Boolean]("removeUser", Seq(GraphqlArgument("user" -> userName)))
 
   def addDistributionProvider(distributionName: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distributionName),
@@ -158,7 +158,7 @@ object AdministratorMutationsCoder extends CommonMutationsCoder {
 
 object DistributionMutationsCoder extends CommonMutationsCoder {
   def setTestedVersions(versions: Seq[DeveloperDesiredVersion]) =
-    GraphqlMutation[Boolean]("setTestedVersions", Seq(GraphqlArgument("versions" -> versions)))
+    GraphqlMutation[Boolean]("setTestedVersions", Seq(GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
 
   def setInstalledDesiredVersions(versions: Seq[ClientDesiredVersion]) =
     GraphqlMutation[Boolean]("setInstalledDesiredVersions", Seq(GraphqlArgument("versions" -> versions, "[ClientDesiredVersionInput!]")))

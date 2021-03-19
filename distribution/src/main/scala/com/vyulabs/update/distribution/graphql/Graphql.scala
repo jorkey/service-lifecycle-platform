@@ -7,8 +7,6 @@ import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK}
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.stream.Materializer
-import com.vyulabs.update.common.info.UserInfo
-import com.vyulabs.update.common.info.UserRole.UserRole
 import org.slf4j.LoggerFactory
 import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError, _}
@@ -47,8 +45,12 @@ class Graphql() extends SprayJsonSupport {
     )
       .map(OK -> _)
       .recover {
-        case error: QueryAnalysisError => BadRequest -> error.resolveError
-        case error: ErrorWithResolver => InternalServerError -> error.resolveError
+        case error: QueryAnalysisError =>
+          log.error("Graphql query error", error)
+          BadRequest -> error.resolveError
+        case error: ErrorWithResolver =>
+          log.error("Graphql query error", error)
+          InternalServerError -> error.resolveError
       }
   }
 
@@ -69,8 +71,12 @@ class Graphql() extends SprayJsonSupport {
           })
       }
       .recover {
-        case error: QueryAnalysisError => ToResponseMarshallable(BadRequest -> error.resolveError)
-        case error: ErrorWithResolver => ToResponseMarshallable(InternalServerError -> error.resolveError)
+        case error: QueryAnalysisError =>
+          log.error("Graphql query error", error)
+          ToResponseMarshallable(BadRequest -> error.resolveError)
+        case error: ErrorWithResolver =>
+          log.error("Graphql query error", error)
+          ToResponseMarshallable(InternalServerError -> error.resolveError)
       }
   }
 }

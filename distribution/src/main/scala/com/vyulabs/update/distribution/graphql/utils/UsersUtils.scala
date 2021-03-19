@@ -127,7 +127,7 @@ trait UsersUtils extends SprayJsonSupport {
 
   def getAccessToken()(implicit log: Logger): Directive1[AccessToken] = {
     getOptionalAccessToken().flatMap {
-      case Some(token) => complete(token)
+      case Some(token) => provide(token)
       case None => complete(StatusCodes.Unauthorized)
     }
   }

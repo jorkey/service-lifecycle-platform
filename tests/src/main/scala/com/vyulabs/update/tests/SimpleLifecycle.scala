@@ -8,7 +8,7 @@ import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
-import com.vyulabs.update.common.info.{ClientDesiredVersionDelta, UserRole}
+import com.vyulabs.update.common.info.ClientDesiredVersionDelta
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -81,9 +81,9 @@ class SimpleLifecycle {
     println()
     println("########################### Initialize distribution")
     println()
-    println("--------------------------- Add service user to distribution server")
-    if (!distributionClient.graphqlRequest(administratorMutations.addUser("service", Seq(UserRole.Updater), "service")).getOrElse(false)) {
-      sys.error("Can't initialize distribution")
+
+    if (!distributionBuilder.addDistributionUsers()) {
+      sys.error("Can't create distribution users")
     }
 
     if (!distributionBuilder.generateAndUploadInitialVersions(author) ||

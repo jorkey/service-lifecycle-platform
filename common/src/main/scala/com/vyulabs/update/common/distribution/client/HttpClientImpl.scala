@@ -1,14 +1,14 @@
 package com.vyulabs.update.common.distribution.client
 
-import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import org.slf4j.{Logger, LoggerFactory}
+import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
+import org.slf4j.Logger
 import spray.json.{JsonReader, _}
+
 import java.io._
 import java.net.{HttpURLConnection, URL}
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -165,7 +165,7 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
 
   private def upload(path: String, fieldName: String, destinationFile: String, input: InputStream)
                     (implicit log: Logger): Future[Unit] = {
-    if (log.isDebugEnabled) log.debug(s"Upload by url ${path}")
+    if (log.isDebugEnabled) log.debug(s"Upload by path ${path}")
     val CRLF = "\r\n"
     val boundary = System.currentTimeMillis.toHexString
     Future {
@@ -243,7 +243,7 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
         s"Response message: " +
           s"${ try { connection.getResponseMessage } catch { case _: Exception => "" } }\n" +
         s"Response error: " +
-          new String(if (errorStream != null )
+          new String(if (errorStream != null)
             try { errorStream.readAllBytes() } catch { case _: Exception => Array.empty[Byte] } else Array.empty[Byte], "utf8"))
     }
   }

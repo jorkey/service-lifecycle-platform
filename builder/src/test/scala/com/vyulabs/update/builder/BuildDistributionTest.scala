@@ -54,6 +54,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       providerDistributionName, "Test developer distribution server",
       providerMongoDbName,true, 8000)
     assert(providerDistributionBuilder.buildDistributionFromSources())
+    assert(providerDistributionBuilder.addDistributionUsers())
     assert(providerDistributionBuilder.generateAndUploadInitialVersions("ak"))
     assert(providerDistributionBuilder.addCommonConsumerProfile())
     assert(providerDistributionBuilder.installBuilderFromSources())
