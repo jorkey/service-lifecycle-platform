@@ -350,11 +350,11 @@ object GraphqlSchema {
 
       Field("setDeveloperDesiredVersions", BooleanType,
         arguments = DeveloperDesiredVersionDeltasArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
+        tags = Authorized(UserRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionDeltasArg)).map(_ => true) }),
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionDeltasArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
+        tags = Authorized(UserRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionDeltasArg)).map(_ => true) })
     )
   )
@@ -439,7 +439,7 @@ object GraphqlSchema {
 
   private def fromRolesSet(roles: Seq[UserRole], rolesSet: Set[UserRole]): Boolean = {
     if (!(roles.toSet -- rolesSet).isEmpty) {
-      throw new RuntimeException(s"Incompatible user roles ${roles}")
+      return false
     }
     roles.foreach { role => if (rolesSet.contains(role)) {
       return true

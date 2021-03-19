@@ -56,7 +56,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
 
   val adminClientCredentials = BasicHttpCredentials("admin", "admin")
   val distributionClientCredentials = BasicHttpCredentials("distribution1", "distribution1")
-  val builderClientCredentials = BasicHttpCredentials("builder1", "builder1")
+  val builderClientCredentials = BasicHttpCredentials("builder", "builder")
   val updaterClientCredentials = BasicHttpCredentials("service1", "service1")
 
   val adminCredentials = UserCredentials(Seq(UserRole.Administrator), PasswordHash(adminClientCredentials.password))
@@ -77,6 +77,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   result(for {
     _ <- collections.Users_Info.insert(ServerUserInfo(adminClientCredentials.username, adminCredentials.roles.map(_.toString), adminCredentials.passwordHash))
     _ <- collections.Users_Info.insert(ServerUserInfo(distributionClientCredentials.username, distributionCredentials.roles.map(_.toString), distributionCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(builderClientCredentials.username, builderCredentials.roles.map(_.toString), builderCredentials.passwordHash))
     _ <- collections.Users_Info.insert(ServerUserInfo(updaterClientCredentials.username, updaterCredentials.roles.map(_.toString), updaterCredentials.passwordHash))
   } yield {})
 

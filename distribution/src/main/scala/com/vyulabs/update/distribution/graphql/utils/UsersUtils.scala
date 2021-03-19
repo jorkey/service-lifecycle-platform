@@ -20,7 +20,7 @@ import java.math.BigInteger
 import java.security.SecureRandom
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directive1
-import akka.http.scaladsl.server.Directives.{complete, optionalHeaderValueByName, provide}
+import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
@@ -114,7 +114,7 @@ trait UsersUtils extends SprayJsonSupport {
         val authTokenRx = "(.*):(.*)".r
         new String(Base64.getDecoder.decode(value), "utf8") match {
           case authTokenRx(userName, password) =>
-            complete(login(userName, password))
+            onSuccess(login(userName, password)).flatMap { token => provide(Some(token)) }
           case _ =>
             throw AuthenticationException("Authentication error")
         }

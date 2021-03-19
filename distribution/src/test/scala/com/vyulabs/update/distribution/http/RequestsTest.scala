@@ -25,16 +25,16 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "process graphql post request" in {
-    Post("/graphql", """{ "query": "query { userInfo { name, role } }" }""".parseJson) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/graphql", """{ "query": "query { usersInfo { name, role } }" }""".parseJson) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual """{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}"""
+      responseAs[String] shouldEqual """{"data":{"usersInfo":{"name":"admin","role":"Administrator"}}}"""
     }
   }
 
   it should "process graphql get request" in {
-    Get(s"/graphql?query=" + URLEncoder.encode("""{ userInfo { name, role } }""", "utf8")) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Get(s"/graphql?query=" + URLEncoder.encode("""{ usersInfo { name, role } }""", "utf8")) ~> addCredentials(adminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual """{"data":{"userInfo":{"name":"admin","role":"Administrator"}}}"""
+      responseAs[String] shouldEqual """{"data":{"usersInfo":{"name":"admin","role":"Administrator"}}}"""
     }
   }
 
