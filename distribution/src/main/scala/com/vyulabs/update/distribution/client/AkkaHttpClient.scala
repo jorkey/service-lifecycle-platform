@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.client
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Framing, Source}
@@ -14,12 +14,12 @@ import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json._
+
 import java.io.{File, IOException}
 import java.net.URL
-
 import scala.concurrent.{ExecutionContext, Future}
 
-class AkkaHttpClient(distributionUrl: URL)
+class AkkaHttpClient(val distributionUrl: URL)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
   def graphql[Response](request: GraphqlRequest[Response])
                        (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
@@ -102,19 +102,20 @@ class AkkaHttpClient(distributionUrl: URL)
   }
 
   private def getHttpCredentials(): Option[HttpCredentials] = {
-    if (distributionUrl.getUserInfo != null) {
-      val userInfo = distributionUrl.getUserInfo
-      val index = userInfo.indexOf(':')
-      if (index != -1) {
-        val user = userInfo.substring(0, index)
-        val password = userInfo.substring(index + 1)
-        Some(BasicHttpCredentials(user, password))
-      } else {
-        None
-      }
-    } else {
-      None
-    }
+//    if (distributionUrl.getUserInfo != null) {
+//      val userInfo = distributionUrl.getUserInfo
+//      val index = userInfo.indexOf(':')
+//      if (index != -1) {
+//        val user = userInfo.substring(0, index)
+//        val password = userInfo.substring(index + 1)
+//        Some(BasicHttpCredentials(user, password))
+//      } else {
+//        None
+//      }
+//    } else {
+//      None
+//    }
+    getAccessToken().map(OAuth2BearerToken(_))
   }
 }
 

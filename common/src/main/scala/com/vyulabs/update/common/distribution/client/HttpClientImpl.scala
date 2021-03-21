@@ -19,17 +19,18 @@ trait SyncSource[T] {
   def next(): Option[T]
 }
 
-class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
+class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
                     (implicit executionContext: ExecutionContext) extends HttpClient[SyncSource] {
   def graphql[Response](request: GraphqlRequest[Response])
                        (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
     Future {
       val connection = openConnection(graphqlPathPrefix)
       try {
-        if (distributionUrl.getUserInfo != null) {
-          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
+//        if (distributionUrl.getUserInfo != null) {
+//          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
+//          connection.setRequestProperty("Authorization", "Basic " + encoded)
+//        }
+        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "application/json")
         connection.setRequestMethod("POST")
@@ -62,10 +63,11 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     Future {
       val connection = openConnection(graphqlPathPrefix)
       try {
-        if (distributionUrl.getUserInfo != null) {
-          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
+//        if (distributionUrl.getUserInfo != null) {
+//          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
+//          connection.setRequestProperty("Authorization", "Basic " + encoded)
+//        }
+        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "text/event-stream")
         connection.setRequestMethod("POST")
@@ -150,10 +152,11 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
       val connection = openConnection(path)
       try {
         connection.setRequestMethod("HEAD")
-        if (distributionUrl.getUserInfo != null) {
-          val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
+//        if (distributionUrl.getUserInfo != null) {
+//          val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
+//          connection.setRequestProperty("Authorization", "Basic " + encoded)
+//        }
+        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setConnectTimeout(connectTimeoutMs)
         connection.setReadTimeout(readTimeoutMs)
         processResponse(connection)
@@ -171,10 +174,11 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     Future {
       val connection = openConnection(loadPathPrefix + "/" + path)
       try {
-        if (distributionUrl.getUserInfo != null) {
-          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
+//        if (distributionUrl.getUserInfo != null) {
+//          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
+//          connection.setRequestProperty("Authorization", "Basic " + encoded)
+//        }
+        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setChunkedStreamingMode(0)
         connection.setConnectTimeout(connectTimeoutMs)
         connection.setReadTimeout(readTimeoutMs)
@@ -205,10 +209,11 @@ class HttpClientImpl(distributionUrl: URL, connectTimeoutMs: Int = 1000, readTim
     Future {
       val connection = openConnection(loadPathPrefix + "/" + path)
       try {
-        if (!distributionUrl.getUserInfo.isEmpty) {
-          val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
-          connection.setRequestProperty("Authorization", "Basic " + encoded)
-        }
+//        if (!distributionUrl.getUserInfo.isEmpty) {
+//          val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
+//          connection.setRequestProperty("Authorization", "Basic " + encoded)
+//        }
+        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setConnectTimeout(connectTimeoutMs)
         connection.setReadTimeout(readTimeoutMs)
         val input = connection.getInputStream

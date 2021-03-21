@@ -101,6 +101,10 @@ object UpdaterQueriesCoder extends CommonQueriesCoder {
 }
 
 trait CommonMutationsCoder {
+  def login(userName: UserName, password: String) =
+    GraphqlMutation[String]("login",
+      Seq(GraphqlArgument("user" -> userName), GraphqlArgument("password" -> password)))
+
   def addServiceLogs(serviceName: ServiceName, instanceId: InstanceId, processId: ProcessId, taskId: Option[TaskId],
                      serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
     GraphqlMutation[Boolean]("addServiceLogs",

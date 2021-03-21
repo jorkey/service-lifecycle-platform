@@ -4,10 +4,11 @@ import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlRequest}
 import org.scalatest.Matchers
 import spray.json.JsonReader
-import java.io.{File, IOException}
 
+import java.io.{File, IOException}
 import org.slf4j.Logger
 
+import java.net.URL
 import scala.collection.immutable.Queue
 import scala.concurrent.{Future, Promise}
 
@@ -19,6 +20,7 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
   case class DownloadClientRequest(path: String, file: File) extends ClientRequest[Unit]
   case class ExistsClientRequest(path: String) extends ClientRequest[Unit]
 
+  val distributionUrl: URL = new URL("http://test:test@test")
   var requests = Queue.empty[ClientRequest[_]]
 
   def waitForQuery[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = ""): Promise[Response] = {

@@ -83,7 +83,10 @@ object GraphqlSchema {
 
   def NotLoggedInQueries(implicit log: Logger) = ObjectType(
     "Query",
-    fields[GraphqlContext, Unit]()
+    fields[GraphqlContext, Unit](
+      Field("ping", StringType,
+        resolve = c => { "pong" })
+    )
   )
 
   def ClientQueries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(

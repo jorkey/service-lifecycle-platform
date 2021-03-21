@@ -2,10 +2,11 @@ package com.vyulabs.update.common.distribution.client
 
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import spray.json.JsonReader
-import java.io._
 
+import java.io._
 import org.slf4j.Logger
 
+import java.net.URL
 import scala.concurrent.Future
 
 /**
@@ -13,6 +14,13 @@ import scala.concurrent.Future
   * Copyright FanDate, Inc.
   */
 trait HttpClient[Stream[_]] {
+  val distributionUrl: URL
+
+  private var accessToken = Option.empty[String]
+  protected def getAccessToken() = accessToken
+
+  def setAccessToken(accessToken: String): Unit = this.accessToken = Some(accessToken)
+
   def graphql[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Response]
 
   def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
