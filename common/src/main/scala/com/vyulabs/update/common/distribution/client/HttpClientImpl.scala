@@ -7,8 +7,6 @@ import spray.json.{JsonReader, _}
 
 import java.io._
 import java.net.{HttpURLConnection, URL}
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -30,7 +28,7 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
 //          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
-        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
+        accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "application/json")
         connection.setRequestMethod("POST")
@@ -67,7 +65,7 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
 //          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
-        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
+        accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "text/event-stream")
         connection.setRequestMethod("POST")
@@ -156,7 +154,7 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
 //          val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
-        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
+        accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setConnectTimeout(connectTimeoutMs)
         connection.setReadTimeout(readTimeoutMs)
         processResponse(connection)
@@ -178,7 +176,7 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
 //          val encoded = Base64.getEncoder.encodeToString(distributionUrl.getUserInfo.getBytes(StandardCharsets.UTF_8))
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
-        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
+        accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setChunkedStreamingMode(0)
         connection.setConnectTimeout(connectTimeoutMs)
         connection.setReadTimeout(readTimeoutMs)
@@ -213,7 +211,7 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
 //          val encoded = Base64.getEncoder.encodeToString((distributionUrl.getUserInfo).getBytes(StandardCharsets.UTF_8))
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
-        getAccessToken().foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
+        accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setConnectTimeout(connectTimeoutMs)
         connection.setReadTimeout(readTimeoutMs)
         val input = connection.getInputStream

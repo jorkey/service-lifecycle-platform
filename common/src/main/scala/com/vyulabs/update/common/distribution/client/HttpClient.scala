@@ -16,10 +16,7 @@ import scala.concurrent.Future
 trait HttpClient[Stream[_]] {
   val distributionUrl: URL
 
-  private var accessToken = Option.empty[String]
-  protected def getAccessToken() = accessToken
-
-  def setAccessToken(accessToken: String): Unit = this.accessToken = Some(accessToken)
+  @volatile var accessToken = Option.empty[String]
 
   def graphql[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Response]
 

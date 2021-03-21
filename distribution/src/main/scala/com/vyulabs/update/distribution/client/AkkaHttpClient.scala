@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.client
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpCredentials, OAuth2BearerToken}
+import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
 import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Framing, Source}
@@ -12,7 +12,7 @@ import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
 import spray.json._
 
 import java.io.{File, IOException}
@@ -115,7 +115,7 @@ class AkkaHttpClient(val distributionUrl: URL)
 //    } else {
 //      None
 //    }
-    getAccessToken().map(OAuth2BearerToken(_))
+    accessToken.map(OAuth2BearerToken(_))
   }
 }
 
