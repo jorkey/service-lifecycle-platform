@@ -9,11 +9,11 @@ import com.mongodb.client.model.{Filters, Updates}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.UserRole
+import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.common.AkkaTimer
-import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlWorkspace}
+import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlWorkspace}
 import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
@@ -54,16 +54,6 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val distributionName = config.distributionName
   val instanceId = config.instanceId
 
-  val adminClientCredentials = BasicHttpCredentials("admin", "admin")
-  val distributionClientCredentials = BasicHttpCredentials("distribution1", "distribution1")
-  val builderClientCredentials = BasicHttpCredentials("builder", "builder")
-  val updaterClientCredentials = BasicHttpCredentials("service1", "service1")
-
-  val adminCredentials = UserCredentials(Seq(UserRole.Administrator), PasswordHash(adminClientCredentials.password))
-  val distributionCredentials = UserCredentials(Seq(UserRole.Distribution), PasswordHash(distributionClientCredentials.password))
-  val builderCredentials = UserCredentials(Seq(UserRole.Builder), PasswordHash(builderClientCredentials.password))
-  val updaterCredentials = UserCredentials(Seq(UserRole.Updater), PasswordHash(updaterClientCredentials.password))
-
   val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), false)
   val distributionDir = new DistributionDirectory(distributionDirectory)
@@ -74,11 +64,31 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val workspace = GraphqlWorkspace(config, collections, distributionDir, taskManager)
   val distribution = new Distribution(workspace, graphql)
 
+  val adminHttpCredentials = BasicHttpCredentials("admin", "admin")
+  val developerHttpCredentials = BasicHttpCredentials("developer", "developer")
+  val distributionHttpCredentials = BasicHttpCredentials("distribution", "distribution")
+  val builderHttpCredentials = BasicHttpCredentials("builder", "builder")
+  val updaterHttpCredentials = BasicHttpCredentials("updater", "updater")
+
+  val adminCredentials = UserCredentials(Seq(UserRole.Administrator), PasswordHash(adminHttpCredentials.password))
+  val developerCredentials = UserCredentials(Seq(UserRole.Developer), PasswordHash(developerHttpCredentials.password))
+  val distributionCredentials = UserCredentials(Seq(UserRole.Distribution), PasswordHash(distributionHttpCredentials.password))
+  val builderCredentials = UserCredentials(Seq(UserRole.Builder), PasswordHash(builderHttpCredentials.password))
+  val updaterCredentials = UserCredentials(Seq(UserRole.Updater), PasswordHash(updaterHttpCredentials.password))
+
+  val adminContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
+  val developerContext = GraphqlContext(Some(AccessToken("developer", Seq(UserRole.Developer))), workspace)
+  val distributionContext = GraphqlContext(Some(AccessToken("distribution", Seq(UserRole.Distribution))), workspace)
+  val builderContext = GraphqlContext(Some(AccessToken("builder", Seq(UserRole.Builder))), workspace)
+  val updaterContext = GraphqlContext(Some(AccessToken("updater", Seq(UserRole.Updater))), workspace)
+
   result(for {
-    _ <- collections.Users_Info.insert(ServerUserInfo(adminClientCredentials.username, adminCredentials.roles.map(_.toString), adminCredentials.passwordHash))
-    _ <- collections.Users_Info.insert(ServerUserInfo(distributionClientCredentials.username, distributionCredentials.roles.map(_.toString), distributionCredentials.passwordHash))
-    _ <- collections.Users_Info.insert(ServerUserInfo(builderClientCredentials.username, builderCredentials.roles.map(_.toString), builderCredentials.passwordHash))
-    _ <- collections.Users_Info.insert(ServerUserInfo(updaterClientCredentials.username, updaterCredentials.roles.map(_.toString), updaterCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(adminHttpCredentials.username, adminCredentials.roles.map(_.toString), adminCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(developerHttpCredentials.username, developerCredentials.roles.map(_.toString), developerCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(builderHttpCredentials.username, builderCredentials.roles.map(_.toString), builderCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(distributionHttpCredentials.username, distributionCredentials.roles.map(_.toString), distributionCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(builderHttpCredentials.username, builderCredentials.roles.map(_.toString), builderCredentials.passwordHash))
+    _ <- collections.Users_Info.insert(ServerUserInfo(updaterHttpCredentials.username, updaterCredentials.roles.map(_.toString), updaterCredentials.passwordHash))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(DeveloperVersion(Seq(1, 2, 3)))))

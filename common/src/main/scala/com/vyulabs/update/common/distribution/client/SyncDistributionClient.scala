@@ -14,7 +14,7 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def available(): Boolean = {
-    result(client.available()).isDefined
+    result(client.ping()).isDefined
   }
 
   def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName): Option[ClientDistributionVersion] = {

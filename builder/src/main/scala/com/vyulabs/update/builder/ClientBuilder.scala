@@ -70,10 +70,6 @@ class ClientBuilder(builderDir: File, val distributionName: DistributionName) {
     true
   }
 
-  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[ClientDesiredVersionDelta]): Boolean = {
-    distributionClient.graphqlRequest(builderMutations.setClientDesiredVersions(versions)).getOrElse(false)
-  }
-
   def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
                                version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
     log.info(s"Get developer version ${version} of service ${serviceName} info")

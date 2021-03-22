@@ -9,7 +9,7 @@ import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphq
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.info.{ClientDesiredVersionDelta, DeveloperDesiredVersionDelta, DeveloperDesiredVersions, SequencedServiceLogLine, UserRole}
+import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -269,6 +269,14 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
+  def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersionDelta]): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperDesiredVersions(versions)).getOrElse(false)
+  }
+
+  def setClientDesiredVersions(versions: Seq[ClientDesiredVersionDelta]): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.setClientDesiredVersions(versions)).getOrElse(false)
+  }
+
   private def generateAndUploadDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperVersion], author: String): Boolean = {
     generateDeveloperAndClientVersions(versions) &&
       uploadDeveloperAndClientVersions(versions.mapValues(v => DeveloperDistributionVersion(distributionName, v)), author)
@@ -369,7 +377,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     log.info(s"--------------------------- Set developer desired versions")
-    if (!developerBuilder.setDesiredVersions(developerDistributionClient.get, versions.map { case (serviceName, version) =>
+    if (!setDeveloperDesiredVersions(versions.map { case (serviceName, version) =>
       DeveloperDesiredVersionDelta(serviceName, Some(version)) }.toSeq)) {
       log.error("Set developer desired versions error")
       return false
@@ -387,8 +395,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     log.info(s"--------------------------- Set client desired versions")
-    if (!clientBuilder.setDesiredVersions(builderDistributionClient.get, versions.map { case (serviceName, version) =>
-      ClientDesiredVersionDelta(serviceName, Some(version)) }.toSeq)) {
+    if (!setClientDesiredVersions(versions.map { case (serviceName, version) =>
+        ClientDesiredVersionDelta(serviceName, Some(version)) }.toSeq)) {
       log.error("Set developer desired versions error")
       return false
     }

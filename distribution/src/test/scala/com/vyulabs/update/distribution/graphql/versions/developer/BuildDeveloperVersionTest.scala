@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.client
+package com.vyulabs.update.distribution.graphql.versions.developer
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -9,10 +9,9 @@ import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
-import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json.{JsObject, JsString, _}
 
@@ -28,13 +27,11 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     ex.printStackTrace(); log.error("Uncatched exception", ex)
   })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("developer", Seq(UserRole.Developer))), workspace)
-
   val dummyBuilder = new File(builderDirectory, "builder.sh")
   IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes)
 
   it should "build developer version" in {
-    val buildResponse = result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
           buildDeveloperVersion (service: "service1", version: "1.1.1", branches: ["master", "master"], comment: "Test version")
         }
@@ -69,7 +66,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   it should "cancel of building developer version" in {
     setSequence("state.serviceLogs", 10)
 
-    val buildResponse = result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
           buildDeveloperVersion (service: "service1", version: "1.1.1", branches: ["master", "master"], comment: "Test version")
         }
@@ -92,7 +89,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":15,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
 
-    assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+    assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation CancelTask($$taskId: String!) {
           cancelTask (task: $$taskId)
         }
@@ -104,10 +101,10 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     logInput.expectComplete()
   }
 
-  it should "run builder for remote distribution" in {
+  it should "run builder from remote distribution" in {
     setSequence("state.serviceLogs", 20)
 
-    val buildResponse = result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
         mutation {
           runBuilder (arguments: ["buildDeveloperVersion", "distributionName=test", "service=service1", "version=1.1.1", "author=admin", "sourceBranches=master,master"])
         }
@@ -140,7 +137,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   }
 
   def subscribeTaskLogs(taskId: TaskId): ToResponseMarshallable = {
-    result(graphql.executeSubscriptionQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+    result(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         subscription SubscribeTaskLogs($$taskId: String!) {
           subscribeTaskLogs (
             task: $$taskId,

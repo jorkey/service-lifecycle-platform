@@ -1,11 +1,11 @@
-package com.vyulabs.update.distribution.graphql.client
+package com.vyulabs.update.distribution.graphql.users
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserRole}
+import com.vyulabs.update.common.info.{DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -24,11 +24,9 @@ class UsersTest extends TestEnvironment {
   }
 
   it should "add/change password/remove users" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-
     assertResult((OK,
       ("""{"data":{"addUser":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
           addUser (
@@ -41,7 +39,7 @@ class UsersTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"changeUserPassword":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
           changeUserPassword (
@@ -53,7 +51,7 @@ class UsersTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"removeUser":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
           removeUser (
@@ -64,11 +62,9 @@ class UsersTest extends TestEnvironment {
   }
 
   it should "change own password" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Password verification error","path":["changePassword"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
           changePassword (
@@ -80,11 +76,11 @@ class UsersTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"changePassword":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext,
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
           changePassword (
-            oldPassword: "admin",
+            oldPassword: "developer",
             password: "password2"
           )
         }

@@ -28,10 +28,10 @@ object AuthMiddleware extends MiddlewareBeforeField[GraphqlContext] {
         c.ctx.accessToken match {
           case Some(token) =>
             if ((authorized.roles.toSet -- token.roles).size == authorized.roles.size) {
-              throw AuthException("Unauthorized access")
+              throw AuthException(s"Unauthorized access: query ${mctx.queryAst.toString}, authorized ${authorized}, access token ${token}")
             }
           case None =>
-            throw AuthException("Unauthorized access")
+            throw AuthException("Unauthorized access. No access token")
         }
       case None =>
     }

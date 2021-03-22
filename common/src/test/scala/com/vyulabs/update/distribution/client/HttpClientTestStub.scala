@@ -97,10 +97,4 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
     synchronized { requests = requests.enqueue(request); notify() }
     request.promise.future
   }
-
-  override def exists(path: String)(implicit log: Logger): Future[Unit] = {
-    val request = ExistsClientRequest(path)
-    synchronized { requests = requests.enqueue(request); notify() }
-    request.promise.future
-  }
 }

@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.distribution
+package com.vyulabs.update.distribution.graphql.consumer
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
@@ -35,7 +35,7 @@ class TestedVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext1, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext1, graphql"""
         mutation {
           setTestedVersions (
             versions: [
@@ -50,7 +50,7 @@ class TestedVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.1"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext2, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext2, graphql"""
         query {
           developerDesiredVersions {
             serviceName
@@ -66,7 +66,7 @@ class TestedVersionsTest extends TestEnvironment {
     val graphqlContext = GraphqlContext(Some(AccessToken("distribution2", Seq(UserRole.Distribution))), workspace)
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested by anyone","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
         query {
           developerDesiredVersions {
             serviceName

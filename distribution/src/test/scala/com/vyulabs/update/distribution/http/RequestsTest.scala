@@ -25,33 +25,33 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "process graphql post request" in {
-    Post("/graphql", """{ "query": "query { usersInfo(user:\"admin\") { name, roles } }" }""".parseJson) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/graphql", """{ "query": "query { usersInfo(user:\"admin\") { name, roles } }" }""".parseJson) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual """{"data":{"usersInfo":[{"name":"admin","roles":["Administrator"]}]}}"""
     }
   }
 
   it should "process graphql get request" in {
-    Get(s"/graphql?query=" + URLEncoder.encode("""{ usersInfo(user:"admin") { name, roles } }""", "utf8")) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Get(s"/graphql?query=" + URLEncoder.encode("""{ usersInfo(user:"admin") { name, roles } }""", "utf8")) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual """{"data":{"usersInfo":[{"name":"admin","roles":["Administrator"]}]}}"""
     }
   }
 
   it should "process bad graphql post request" in {
-    Post("/graphql", """{ "query": "{ badRequest }" }""".parseJson) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Post("/graphql", """{ "query": "{ badRequest }" }""".parseJson) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.BadRequest
     }
   }
 
   it should "process bad graphql get request" in {
-    Get(s"/graphql?query=" + URLEncoder.encode("""{ badRequest }""", "utf8")) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Get(s"/graphql?query=" + URLEncoder.encode("""{ badRequest }""", "utf8")) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.BadRequest
     }
   }
 
   it should "process change password request" in {
-    Get(s"/graphql?query=" + URLEncoder.encode("""mutation { changePassword ( oldPassword: "admin", password: "password1" ) }""", "utf8")) ~> addCredentials(adminClientCredentials) ~> route ~> check {
+    Get(s"/graphql?query=" + URLEncoder.encode("""mutation { changePassword ( oldPassword: "admin", password: "password1" ) }""", "utf8")) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
     }
 

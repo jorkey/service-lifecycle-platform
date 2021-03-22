@@ -1,75 +1,93 @@
-package com.vyulabs.update.distribution.graphql.distribution
+package com.vyulabs.update.distribution.graphql.state
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.FaultId
+import com.vyulabs.update.common.common.Common.{FaultId, ServiceName}
 import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import com.vyulabs.update.distribution.mongo.Sequenced
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
-import com.vyulabs.update.common.utils.JsonFormats._
 
 import java.util.Date
 import scala.concurrent.ExecutionContext
 
-class AddFaultReportInfoTest extends TestEnvironment {
+class FaultReportInfoTest extends TestEnvironment {
   behavior of "Fault Report Info Requests"
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("distribution1", Seq(UserRole.Distribution))), workspace)
-
   val faultsInfoCollection = collections.State_FaultReportsInfo
   val sequencesCollection = result(collections.Sequences)
 
   override def dbName = super.dbName + "-distribution"
 
-  it should "add fault report info" in {
-    addFaultReportInfo("fault1", 1, new Date())
+  it should "add/get fault report info" in {
+    addFaultReportInfo("fault1", "service1", 1, new Date())
+    addFaultReportInfo("fault2", "service2", 2, new Date())
+
+    assertResult((OK,
+      ("""{"data":{"faultReportsInfo":[{"distributionName":"distribution","report":{"faultId":"fault2","info":{"serviceName":"service2","instanceId":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
+        adminContext, graphql"""
+          query FaultsQuery($$service: String!) {
+            faultReportsInfo (service: $$service) {
+              distributionName
+              report {
+                faultId
+                info {
+                  serviceName
+                  instanceId
+                }
+                files
+              }
+            }
+          }
+        """, None, variables = JsObject("service" -> JsString("service2")))))
 
     clear()
   }
 
   it should "clear old fault reports when max reports exceed" in {
     val date1 = new Date()
-    addFaultReportInfo("fault1", 1, date1)
+    addFaultReportInfo("fault1", "service1", 1, date1)
     val date2 = new Date()
-    addFaultReportInfo("fault2", 2, date2)
+    addFaultReportInfo("fault2", "service1", 2, date2)
     val date3 = new Date()
-    addFaultReportInfo("fault3", 3, date3)
+    addFaultReportInfo("fault3", "service1", 3, date3)
     val date4 = new Date()
-    addFaultReportInfo("fault4", 4, date4)
+    addFaultReportInfo("fault4", "service1", 4, date4)
 
     checkReportNotExists("fault1")
-    checkReportExists("fault2", 2, date2)
+    checkReportExists("fault2", "service1", 2, date2)
 
     clear()
   }
 
   it should "clear old fault reports when expiration time came" in {
     val date1 = new Date()
-    addFaultReportInfo("fault1", 1, date1)
+    addFaultReportInfo("fault1", "service1", 1, date1)
 
     Thread.sleep(config.faultReports.expirationTimeout.toMillis)
 
     val date2 = new Date()
-    addFaultReportInfo("fault2", 2, date2)
+    addFaultReportInfo("fault2", "service1", 2, date2)
     checkReportNotExists("fault1")
 
     clear()
   }
 
-  def addFaultReportInfo(faultId: FaultId, sequence: Long, date: Date): Unit = {
+  def addFaultReportInfo(faultId: FaultId, serviceName: ServiceName, sequence: Long, date: Date): Unit = {
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.DistributionSchemaDefinition, graphqlContext, graphql"""
-        mutation FaultReportInfo($$date: Date!, $$faultId: String!) {
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
+        mutation FaultReportInfo($$date: Date!, $$faultId: String!, $$service: String!) {
           addFaultReportInfo (
             fault: {
               faultId: $$faultId,
@@ -77,7 +95,7 @@ class AddFaultReportInfoTest extends TestEnvironment {
                 date: $$date,
                 instanceId: "instance1",
                 serviceDirectory: "directory1",
-                serviceName: "service1",
+                serviceName: $$service,
                 serviceProfile: "Common",
                 state: {
                   date: $$date
@@ -94,16 +112,16 @@ class AddFaultReportInfoTest extends TestEnvironment {
             }
           )
         }
-      """, variables = JsObject("date" -> date.toJson, "faultId" -> JsString(faultId)))))
+      """, variables = JsObject("date" -> date.toJson, "faultId" -> JsString(faultId), "service" -> JsString(serviceName)))))
     assert(distributionDir.getFaultReportFile(faultId).createNewFile())
 
-    checkReportExists(faultId, sequence, date)
+    checkReportExists(faultId, serviceName, sequence, date)
   }
 
-  def checkReportExists(faultId: FaultId, sequence: Long, date: Date): Unit = {
+  def checkReportExists(faultId: FaultId, serviceName: ServiceName, sequence: Long, date: Date): Unit = {
     assertResult(Seq(
-      Sequenced(sequence, DistributionFaultReport("distribution1",
-        ServiceFaultReport(faultId, FaultInfo(date, "instance1", "directory1", "service1", "Common", ServiceState(date, None, None, None, None, None, None, None),
+      Sequenced(sequence, DistributionFaultReport("distribution",
+        ServiceFaultReport(faultId, FaultInfo(date, "instance1", "directory1", serviceName, "Common", ServiceState(date, None, None, None, None, None, None, None),
           Seq("line1", "line2")), Seq("core", "log/service.log")))))
     )(result(faultsInfoCollection.findSequenced(Filters.eq("report.faultId", faultId))))
   }

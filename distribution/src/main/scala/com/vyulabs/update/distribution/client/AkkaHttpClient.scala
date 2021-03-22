@@ -97,10 +97,6 @@ class AkkaHttpClient(val distributionUrl: URL)
     } yield result
   }
 
-  override def exists(path: String)(implicit log: Logger): Future[Unit] = {
-    throw new NotImplementedError()
-  }
-
   private def getHttpCredentials(): Option[HttpCredentials] = {
 //    if (distributionUrl.getUserInfo != null) {
 //      val userInfo = distributionUrl.getUserInfo

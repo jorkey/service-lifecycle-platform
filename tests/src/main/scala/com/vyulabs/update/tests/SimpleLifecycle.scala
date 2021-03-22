@@ -172,7 +172,7 @@ class SimpleLifecycle {
     if (!clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
       sys.error(s"Can't write script")
     }
-    if (!clientBuilder.setDesiredVersions(distributionClient, Seq(ClientDesiredVersionDelta(Common.DistributionServiceName, Some(newDistributionVersion))))) {
+    if (!distributionBuilder.setClientDesiredVersions(Seq(ClientDesiredVersionDelta(Common.DistributionServiceName, Some(newDistributionVersion))))) {
       sys.error("Set distribution desired version error")
     }
 

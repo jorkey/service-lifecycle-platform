@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
 import com.vyulabs.update.distribution.graphql.utils._
@@ -81,50 +80,72 @@ object GraphqlSchema {
 
   // Queries
 
-  def NotLoggedInQueries(implicit log: Logger) = ObjectType(
+  def Queries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Query",
     fields[GraphqlContext, Unit](
       Field("ping", StringType,
-        resolve = c => { "pong" })
-    )
-  )
+        resolve = _ => { "pong" }),
 
-  def ClientQueries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
-    "Query",
-    fields[GraphqlContext, Unit](
+      // Users
       Field("usersInfo", ListType(UserInfoType),
         arguments = OptionUserArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg)) }),
 
+      // Developer versions
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
+        resolve = c => {
+          if (c.ctx.accessToken.get.roles.contains(UserRole.Distribution)) {
+            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.userName, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
+          } else {
+            c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
+          }
+        }),
 
+      // Client versions
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionClientVersionArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getClientVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionClientVersionArg)) }),
       Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
-      Field("distributionClientsInfo", ListType(ClientInfoType),
+      // Distribution consumers
+      Field("distributionConsumersInfo", ListType(DistributionConsumerInfoType),
+        arguments = OptionDistributionArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => c.ctx.workspace.getDistributionConsumersInfo()),
+        resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(c.arg(OptionDistributionArg)) }),
+      Field("distributionConsumerProfiles", ListType(DistributionConsumerProfileType),
+        arguments = OptionConsumerProfileArg :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionConsumerProfiles(c.arg(OptionConsumerProfileArg)) }),
+
+      // Distribution providers
+      Field("distributionProvidersInfo", ListType(DistributionProviderInfoType),
+        arguments = OptionDistributionArg :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionProvidersInfo(c.arg(OptionDistributionArg)) }),
+      Field("distributionProviderDesiredVersions", ListType(DeveloperDesiredVersionType),
+        arguments = DistributionArg :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionProviderDesiredVersions(c.arg(DistributionArg)) }),
+
+      // State
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = DistributionArg :: OptionServicesArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceStates", ListType(ClientServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("serviceLogs", ListType(ServiceLogLineType),
         arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromArg :: Nil,
@@ -139,92 +160,23 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
-
-      Field("distributionConsumersInfo", ListType(DistributionConsumerInfoType),
-        arguments = OptionDistributionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(c.arg(OptionDistributionArg)) }),
-      Field("distributionConsumerProfiles", ListType(DistributionConsumerProfileType),
-        arguments = OptionConsumerProfileArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionConsumerProfiles(c.arg(OptionConsumerProfileArg)) }),
-
-      Field("distributionProvidersInfo", ListType(DistributionProviderInfoType),
-        arguments = OptionDistributionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionProvidersInfo(c.arg(OptionDistributionArg)) }),
-      Field("distributionProviderDesiredVersions", ListType(DeveloperDesiredVersionType),
-        arguments = DistributionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionProviderDesiredVersions(c.arg(DistributionArg)) }),
     )
   )
 
-  def DistributionQueries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
-    "Query",
-    fields[GraphqlContext, Unit](
-      Field("distributionConsumerInfo", DistributionConsumerInfoType,
-        tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionConsumerInfo(c.ctx.accessToken.get.userName) }),
-      Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
-        arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
-      Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
-        arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.userName, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) })
-    )
-  )
-
-  def BuilderQueries(implicit log: Logger) = ObjectType(
-    "Query",
-    fields[GraphqlContext, Unit](
-      Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
-        arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
-      Field("clientVersionsInfo", ListType(ClientVersionInfoType),
-        arguments = ServiceArg :: OptionDistributionArg :: OptionClientVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionClientVersionArg)) }),
-    )
-  )
-
-  def UpdaterQueries(implicit log: Logger) = ObjectType(
-    "Query",
-    fields[GraphqlContext, Unit](
-      Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
-        arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Updater) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
-      Field("serviceStates", ListType(InstanceServiceStateType),
-        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        tags = Authorized(UserRole.Updater) :: Nil,
-        resolve = c => { c.ctx.workspace.getInstanceServiceStates(Some(c.ctx.workspace.config.distributionName),
-          c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) })
-    )
-  )
-
-  // Mutations
-
-  def NotLoggedInMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
+  def Mutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Mutation",
     fields[GraphqlContext, Unit](
+      // Own account operations
       Field("login", StringType,
         arguments = UserArg :: PasswordArg :: Nil,
         resolve = c => { c.ctx.workspace.login(c.arg(UserArg), c.arg(PasswordArg))
-          .map(c.ctx.workspace.encodeAccessToken(_)) }))
-  )
-
-  def ClientMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
-    "Mutation",
-    fields[GraphqlContext, Unit](
+          .map(c.ctx.workspace.encodeAccessToken(_)) }),
       Field("changePassword", fieldType = BooleanType,
         arguments = OldPasswordArg :: PasswordArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.changeUserPassword(c.ctx.accessToken.get.userName, c.arg(OldPasswordArg), c.arg(PasswordArg)) }),
 
+      // Users management
       Field("addUser", BooleanType,
         arguments = UserArg :: UserRolesArg :: PasswordArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
@@ -239,11 +191,16 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.changeUserPassword(c.arg(UserArg), c.arg(PasswordArg)) }),
 
+      // Developer versions
       Field("buildDeveloperVersion", StringType,
         arguments = ServiceArg :: DeveloperVersionArg :: OptionBranchesArg :: OptionCommentArg :: Nil,
         tags = Authorized(UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.userName,
           c.arg(OptionBranchesArg).getOrElse(Seq.empty), c.arg(OptionCommentArg)) }),
+      Field("addDeveloperVersionInfo", BooleanType,
+        arguments = DeveloperVersionInfoArg :: Nil,
+        tags = Authorized(UserRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)).map(_ => true) }),
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: DeveloperDistributionVersionArg :: Nil,
         tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
@@ -253,11 +210,16 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionDeltasArg)).map(_ => true) }),
 
+      // Client versions
       Field("buildClientVersion", StringType,
         arguments = ServiceArg :: DeveloperDistributionVersionUniqueArg :: ClientDistributionVersionUniqueArg :: Nil,
         tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildClientVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionUniqueArg),
           c.arg(ClientDistributionVersionUniqueArg), c.ctx.accessToken.get.userName) }),
+      Field("addClientVersionInfo", BooleanType,
+        arguments = ClientVersionInfoArg :: Nil,
+        tags = Authorized(UserRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)).map(_ => true) }),
       Field("removeClientVersion", BooleanType,
         arguments = ServiceArg :: ClientDistributionVersionArg :: Nil,
         tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
@@ -267,6 +229,7 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionDeltasArg)).map(_ => true) }),
 
+      // Distribution providers management
       Field("addDistributionProvider", BooleanType,
         arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
@@ -275,11 +238,8 @@ object GraphqlSchema {
         arguments = DistributionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeDistributionProvider(c.arg(DistributionArg)).map(_ => true) }),
-      Field("installProviderVersion", StringType,
-        arguments = DistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.installProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
 
+      // Distribution consumers management
       Field("addDistributionConsumerProfile", BooleanType,
         arguments = ConsumerProfileArg :: ServicesArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
@@ -288,30 +248,28 @@ object GraphqlSchema {
         arguments = ConsumerProfileArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeDistributionConsumerProfile(c.arg(ConsumerProfileArg)).map(_ => true) }),
-
       Field("addDistributionConsumer", BooleanType,
         arguments = DistributionArg :: ConsumerProfileArg :: OptionTestDistributionMatchArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ConsumerProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true) }),
+        resolve = c => {
+          c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ConsumerProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
+        }),
       Field("removeDistributionConsumer", BooleanType,
         arguments = DistributionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeDistributionConsumer(c.arg(DistributionArg)).map(_ => true) }),
 
-      Field("cancelTask", BooleanType,
-        arguments = TaskArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) })
-    )
-  )
-
-  def DistributionMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
-    "Mutation",
-    fields[GraphqlContext, Unit](
+      // Distribution consumers operations
+      Field("installProviderVersion", StringType,
+        arguments = DistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.installProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(UserRole.Distribution) :: Nil,
         resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.userName, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
+
+      // State
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
         tags = Authorized(UserRole.Distribution) :: Nil,
@@ -319,71 +277,51 @@ object GraphqlSchema {
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
         tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.accessToken.get.userName, c.arg(InstanceServiceStatesArg)).map(_ => true) }),
+        resolve = c => {
+          if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
+            c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distributionName, c.arg(InstanceServiceStatesArg)).map(_ => true)
+          } else {
+            c.ctx.workspace.setServiceStates(c.ctx.accessToken.get.userName, c.arg(InstanceServiceStatesArg)).map(_ => true)
+          }
+        }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
         tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.accessToken.get.userName,
-          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
+        resolve = c => {
+          if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
+            c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
+              c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
+          } else {
+            c.ctx.workspace.addServiceLogs(c.ctx.accessToken.get.userName,
+              c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
+          }
+        }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
         tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.userName, c.arg(ServiceFaultReportInfoArg)).map(_ => true) }),
+        resolve = c => {
+          if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
+            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distributionName, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
+          } else {
+            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.userName, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
+          }
+        }),
+
+      // Run builder remotely
       Field("runBuilder", StringType,
         arguments = ArgumentsArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(UserRole.Distribution) :: Nil,
         resolve = c => { c.ctx.workspace.runLocalBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
+
+      // Cancel tasks
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) }))
-  )
-
-  def BuilderMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
-    "Mutation",
-    fields[GraphqlContext, Unit](
-      Field("addDeveloperVersionInfo", BooleanType,
-        arguments = DeveloperVersionInfoArg :: Nil,
-        tags = Authorized(UserRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)).map(_ => true) }),
-      Field("addClientVersionInfo", BooleanType,
-        arguments = ClientVersionInfoArg :: Nil,
-        tags = Authorized(UserRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)).map(_ => true) }),
-
-      Field("setDeveloperDesiredVersions", BooleanType,
-        arguments = DeveloperDesiredVersionDeltasArg :: Nil,
-        tags = Authorized(UserRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionDeltasArg)).map(_ => true) }),
-      Field("setClientDesiredVersions", BooleanType,
-        arguments = ClientDesiredVersionDeltasArg :: Nil,
-        tags = Authorized(UserRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionDeltasArg)).map(_ => true) })
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
+        resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) })
     )
   )
 
-  def UpdaterMutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
-    "Mutation",
-    fields[GraphqlContext, Unit](
-      Field("setServiceStates", BooleanType,
-        arguments = InstanceServiceStatesArg :: Nil,
-        tags = Authorized(UserRole.Updater) :: Nil,
-        resolve = c => { c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distributionName, c.arg(InstanceServiceStatesArg)).map(_ => true) }),
-      Field("addServiceLogs", BooleanType,
-        arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
-        tags = Authorized(UserRole.Updater) :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
-          c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true) }),
-      Field("addFaultReportInfo", BooleanType,
-        arguments = ServiceFaultReportInfoArg :: Nil,
-        tags = Authorized(UserRole.Updater) :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distributionName, c.arg(ServiceFaultReportInfoArg)).map(_ => true) })
-    )
-  )
-
-  // Subscriptions
-
-  def ClientSubscriptions(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) = ObjectType(
+  def Subscriptions(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeServiceLogs", SequencedServiceLogLineType,
@@ -393,60 +331,13 @@ object GraphqlSchema {
           c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
       Field.subs("subscribeTaskLogs", SequencedServiceLogLineType,
         arguments = TaskArg :: OptionFromArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg))),
       Field.subs("testSubscription", StringType,
         tags = Authorized(UserRole.Developer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))
 
-  def DistributionSubscriptions(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) = ObjectType(
-    "Subscription",
-    fields[GraphqlContext, Unit](
-      Field.subs("subscribeTaskLogs", SequencedServiceLogLineType,
-        arguments = TaskArg :: OptionFromArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg)))
-    ))
-
-  def NotLoggedInSchemaDefinition(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) =
-    Schema(query = NotLoggedInQueries, mutation = Some(NotLoggedInMutations))
-
-  def ClientSchemaDefinition(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) =
-    Schema(query = ClientQueries, mutation = Some(ClientMutations), subscription = Some(ClientSubscriptions))
-
-  def DistributionSchemaDefinition(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) =
-    Schema(query = DistributionQueries, mutation = Some(DistributionMutations), subscription = Some(DistributionSubscriptions))
-
-  def BuilderSchemaDefinition(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) =
-    Schema(query = BuilderQueries, mutation = Some(BuilderMutations), subscription = None)
-
-  def UpdaterSchemaDefinition(implicit executionContext: ExecutionContext, log: Logger) =
-    Schema(query = UpdaterQueries, mutation = Some(UpdaterMutations))
-
-  def SchemaDefinition(userRoles: Seq[UserRole])(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger): Schema[GraphqlContext, Unit] = {
-    if (userRoles.isEmpty) {
-      NotLoggedInSchemaDefinition
-    } else if (fromRolesSet(userRoles, Set(UserRole.Developer, UserRole.Administrator))) {
-      ClientSchemaDefinition
-    } else if (fromRolesSet(userRoles, Set(UserRole.Distribution))) {
-      DistributionSchemaDefinition
-    } else if (fromRolesSet(userRoles, Set(UserRole.Builder))) {
-      BuilderSchemaDefinition
-    } else if (fromRolesSet(userRoles, Set(UserRole.Updater))) {
-      UpdaterSchemaDefinition
-    } else {
-      throw new RuntimeException(s"Invalid user roles ${userRoles} to make graphql schema")
-    }
-  }
-
-  private def fromRolesSet(roles: Seq[UserRole], rolesSet: Set[UserRole]): Boolean = {
-    if (!(roles.toSet -- rolesSet).isEmpty) {
-      return false
-    }
-    roles.foreach { role => if (rolesSet.contains(role)) {
-      return true
-    } }
-    false
-  }
+  def SchemaDefinition(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) =
+    Schema(query = Queries, mutation = Some(Mutations), subscription = Some(Subscriptions))
 }

@@ -25,6 +25,4 @@ trait HttpClient[Stream[_]] {
   def upload(path: String, fieldName: String, file: File)(implicit log: Logger): Future[Unit]
 
   def download(path: String, file: File)(implicit log: Logger): Future[Unit]
-
-  def exists(path: String)(implicit log: Logger): Future[Unit]
 }

@@ -1,11 +1,10 @@
-package com.vyulabs.update.distribution.graphql.client
+package com.vyulabs.update.distribution.graphql.consumer
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -20,14 +19,10 @@ class DistributionProviderTest extends TestEnvironment {
     ex.printStackTrace(); log.error("Uncatched exception", ex)
   })
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-
   it should "add/get/remove distribution providers" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-
     assertResult((OK,
       ("""{"data":{"addDistributionProvider":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
           addDistributionProvider (
             distribution: "provider-distribution",
@@ -39,7 +34,7 @@ class DistributionProviderTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"distributionProvidersInfo":[{"distributionName":"provider-distribution","distributionUrl":"http://provider-distribution.com"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           distributionProvidersInfo {
              distributionName,
@@ -50,7 +45,7 @@ class DistributionProviderTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"addDistributionProvider":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
           addDistributionProvider (
             distribution: "provider-distribution-1",
@@ -62,7 +57,7 @@ class DistributionProviderTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"removeDistributionProvider":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
           removeDistributionProvider (
             distribution: "provider-distribution"
@@ -72,7 +67,7 @@ class DistributionProviderTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"distributionProvidersInfo":[{"distributionName":"provider-distribution-1","distributionUrl":"http://provider-distribution-1.com"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           distributionProvidersInfo {
              distributionName,

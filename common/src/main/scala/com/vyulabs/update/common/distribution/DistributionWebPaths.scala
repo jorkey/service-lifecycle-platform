@@ -11,8 +11,6 @@ object DistributionWebPaths {
   val graphqlPathPrefix = "graphql"
   val uiStaticPathPrefix = "ui"
 
-  val pingPath = "ping"
-
   val loadPathPrefix = "load"
 
   val developerVersionImagePath = "developer-version-image"

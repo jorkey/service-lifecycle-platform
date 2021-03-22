@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.client
+package com.vyulabs.update.distribution.graphql
 
 import akka.NotUsed
 import akka.http.scaladsl.Http
@@ -8,7 +8,6 @@ import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 
 import java.util.Date
@@ -31,7 +30,7 @@ class SubscriptionTest extends TestEnvironment with ScalatestRouteTest {
 
   it should "test subscription" in {
     val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-    val subscribeResponse = result(graphql.executeSubscriptionQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+    val subscribeResponse = result(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
       subscription {
         testSubscription
       }

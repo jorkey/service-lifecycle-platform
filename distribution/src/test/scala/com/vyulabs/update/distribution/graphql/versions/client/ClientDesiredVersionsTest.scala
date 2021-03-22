@@ -1,11 +1,11 @@
-package com.vyulabs.update.distribution.graphql.client
+package com.vyulabs.update.distribution.graphql.versions.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{AccessToken, DistributionConsumerInfo, DistributionConsumerProfile, UserRole}
+import com.vyulabs.update.common.info.{DistributionConsumerInfo, DistributionConsumerProfile}
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -24,11 +24,9 @@ class ClientDesiredVersionsTest extends TestEnvironment {
   }
 
   it should "set/get client desired versions" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-
     assertResult((OK,
       ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
           setClientDesiredVersions (
             versions: [
@@ -41,7 +39,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"},{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName
@@ -52,7 +50,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":"test-1.1.2"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientDesiredVersions (services: ["service1"]) {
              serviceName
@@ -63,7 +61,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"setClientDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
           setClientDesiredVersions (
             versions: [
@@ -75,7 +73,7 @@ class ClientDesiredVersionsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"clientDesiredVersions":[{"serviceName":"service2","version":"test-2.1.4"}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName

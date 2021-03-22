@@ -227,10 +227,6 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
     true
   }
 
-  def setDesiredVersions(distributionClient: SyncDistributionClient[SyncSource], versions: Seq[DeveloperDesiredVersionDelta]): Boolean = {
-    distributionClient.graphqlRequest(builderMutations.setDeveloperDesiredVersions(versions)).getOrElse(false)
-  }
-
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], serviceName: ServiceName,
                                       version: DeveloperDistributionVersion, comment: Option[String]): Boolean = {
     for (repository <- sourceRepositories) {

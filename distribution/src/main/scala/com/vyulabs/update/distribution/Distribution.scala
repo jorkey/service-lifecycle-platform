@@ -36,98 +36,93 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
   }
 
   val route: Route = {
-    get {
-      path(pingPath) {
-        complete("pong")
-      }
-    } ~
-      logRequest(requestLogger _) {
-        logResult(resultLogger _) {
-          handleExceptions(exceptionHandler) {
-            extractRequestContext { ctx =>
-              pathPrefix(graphqlPathPrefix) {
-                seal {
-                  (workspace.getOptionalAccessToken() & optionalHeaderValueByName("X-Apollo-Tracing")) { (token, tracing) =>
-                    post {
-                      entity(as[JsValue]) { requestJson =>
-                        val JsObject(fields) = requestJson
-                        val JsString(query) = fields("query")
-                        val operation = fields.get("operation") collect { case JsString(op) => op }
-                        val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
-                        executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
+    logRequest(requestLogger _) {
+      logResult(resultLogger _) {
+        handleExceptions(exceptionHandler) {
+          extractRequestContext { ctx =>
+            pathPrefix(graphqlPathPrefix) {
+              seal {
+                (workspace.getOptionalAccessToken() & optionalHeaderValueByName("X-Apollo-Tracing")) { (token, tracing) =>
+                  post {
+                    entity(as[JsValue]) { requestJson =>
+                      val JsObject(fields) = requestJson
+                      val JsString(query) = fields("query")
+                      val operation = fields.get("operation") collect { case JsString(op) => op }
+                      val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
+                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
+                    }
+                  } ~ get {
+                    parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
+                      val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
+                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
+                    }
+                  }
+                }
+              }
+            } ~ pathPrefix(loadPathPrefix) {
+              seal {
+                workspace.getAccessToken()(log) { case token =>
+                  path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                    get {
+                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution) || token.hasRole(UserRole.Administrator)) {
+                        getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
+                          DeveloperDistributionVersion.parse(version)))
                       }
-                    } ~ get {
-                      parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
-                        val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
-                        executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
+                    } ~ post {
+                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
+                        fileUpload(imageField) {
+                          case (fileInfo, byteSource) =>
+                            val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete(OK) }
+                        }
+                      }
+                    }
+                  } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
+                    get {
+                      authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Administrator)) {
+                        getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
+                      }
+                    } ~ post {
+                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
+                        fileUpload(imageField) {
+                          case (fileInfo, byteSource) =>
+                            val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete(OK) }
+                        }
+                      }
+                    }
+                  } ~ path(faultReportPath / ".*".r) { faultId =>
+                    get {
+                      authorize(token.hasRole(UserRole.Developer) || token.hasRole(UserRole.Administrator)) {
+                        getFromFile(workspace.directory.getFaultReportFile(faultId))
+                      }
+                    } ~ post {
+                      authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Distribution)) {
+                        fileUpload(faultReportPath) {
+                          case (fileInfo, byteSource) =>
+                            log.info(s"Receive fault report file from client ${workspace.config.distributionName}")
+                            val file = workspace.directory.getFaultReportFile(faultId)
+                            val sink = FileIO.toPath(file.toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete(OK) }
+                        }
                       }
                     }
                   }
                 }
-              } ~ pathPrefix(loadPathPrefix) {
-                seal {
-                  workspace.getAccessToken()(log) { case token =>
-                    path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                      get {
-                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution) || token.hasRole(UserRole.Administrator)) {
-                          getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
-                            DeveloperDistributionVersion.parse(version)))
-                        }
-                      } ~ post {
-                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
-                          fileUpload(imageField) {
-                            case (fileInfo, byteSource) =>
-                              val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
-                              val future = byteSource.runWith(sink)
-                              onSuccess(future) { _ => complete(OK) }
-                          }
-                        }
-                      }
-                    } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
-                      get {
-                        authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Administrator)) {
-                          getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
-                        }
-                      } ~ post {
-                        authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
-                          fileUpload(imageField) {
-                            case (fileInfo, byteSource) =>
-                              val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
-                              val future = byteSource.runWith(sink)
-                              onSuccess(future) { _ => complete(OK) }
-                          }
-                        }
-                      }
-                    } ~ path(faultReportPath / ".*".r) { faultId =>
-                      get {
-                        authorize(token.hasRole(UserRole.Developer) || token.hasRole(UserRole.Administrator)) {
-                          getFromFile(workspace.directory.getFaultReportFile(faultId))
-                        }
-                      } ~ post {
-                        authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Distribution)) {
-                          fileUpload(faultReportPath) {
-                            case (fileInfo, byteSource) =>
-                              log.info(s"Receive fault report file from client ${workspace.config.distributionName}")
-                              val file = workspace.directory.getFaultReportFile(faultId)
-                              val sink = FileIO.toPath(file.toPath)
-                              val future = byteSource.runWith(sink)
-                              onSuccess(future) { _ => complete(OK) }
-                          }
-                        }
-                      }
-                    }
+              } ~ get {
+                getFromResourceDirectory(uiStaticPathPrefix) ~
+                  pathPrefix("") {
+                    getFromResource(uiStaticPathPrefix + "/index.html", ContentType(`text/html`, `UTF-8`))
                   }
-                } ~ get {
-                  getFromResourceDirectory(uiStaticPathPrefix) ~
-                    pathPrefix("") {
-                      getFromResource(uiStaticPathPrefix + "/index.html", ContentType(`text/html`, `UTF-8`))
-                    }
-                }
               }
             }
           }
         }
       }
+    }
   }
 
   private def executeGraphqlRequest(token: Option[AccessToken], workspace: GraphqlWorkspace,
@@ -139,11 +134,9 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
         log.debug(s"Execute graphql query ${query}, operation ${operation}, variables ${variables}")
         document.operationType(operation) match {
           case Some(OperationType.Subscription) =>
-            complete(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition(token.map(_.roles).getOrElse(Seq.empty)),
-                context, document, operation, variables))
+            complete(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, context, document, operation, variables))
           case _ =>
-            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition(token.map(_.roles).getOrElse(Seq.empty)),
-                context, document, operation, variables).andThen {
+            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition, context, document, operation, variables).andThen {
               case Success((statusCode, value)) =>
                 log.debug(s"Graphql query terminated with status ${statusCode}, value ${value}")
               case Failure(ex) =>

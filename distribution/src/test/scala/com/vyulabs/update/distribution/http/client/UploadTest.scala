@@ -28,21 +28,21 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   def httpUpload(): Unit = {
     val adminClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-    val serviceClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val updaterClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(new URL("http://updater:updater@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-    upload(adminClient, serviceClient, distribClient)
+      new DistributionClient(new HttpClientImpl(new URL("http://distribution:distribution@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    upload(adminClient, updaterClient, distribClient)
   }
 
   def akkaHttpUpload(): Unit = {
     val adminClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-    val serviceClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://service1:service1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val updaterClient = new SyncDistributionClient(
+      new DistributionClient(new AkkaHttpClient(new URL("http://updater:updater@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-    upload(adminClient, serviceClient, distribClient)
+    upload(adminClient, updaterClient, distribClient)
   }
 
   override def dbName = super.dbName + "-client"

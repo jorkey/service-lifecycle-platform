@@ -6,11 +6,10 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
 import com.vyulabs.update.common.common.ThreadTimer
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl}
-import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.common.logger.{LogBuffer, LogUploader, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -30,7 +29,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
   var server = Http().newServerAt("0.0.0.0", 8084).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
 
-  val httpClient = new HttpClientImpl(new URL("http://service1:service1@localhost:8084"))
+  val httpClient = new HttpClientImpl(new URL("http://updater:updater@localhost:8084"))
   val distributionClient = new DistributionClient(httpClient)
 
   val sender = new LogUploader("service1", None, "instance1", distributionClient)
@@ -38,8 +37,6 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
 
   appender.addListener(buffer)
   appender.start()
-
-  val adminContext = GraphqlContext(Some(AccessToken("administrator", Seq(UserRole.Administrator))), workspace)
 
   it should "send log records to distribution server" in {
     log.info("log line 1")
@@ -58,7 +55,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"ERROR","message":"log line 3"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 4"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.ClientSchemaDefinition, adminContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             distributionName

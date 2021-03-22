@@ -3,7 +3,7 @@ package com.vyulabs.update.common.distribution.client
 import com.vyulabs.update.common.common.Common.{DistributionName, FaultId, ServiceName}
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
-import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
+import com.vyulabs.update.common.distribution.client.graphql.{GraphqlRequest, LoginCoder, PingCoder}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
@@ -14,8 +14,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DistributionClient[Source[_]](client: HttpClient[Source])
                         (implicit executionContext: ExecutionContext) {
-  def available()(implicit log: Logger): Future[Unit] = {
-    client.exists(pingPath)
+  def ping()(implicit log: Logger): Future[Unit] = {
+    client.graphql(PingCoder.ping()).map(_ => ())
   }
 
   def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName)
@@ -65,7 +65,7 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
         val authTokenRx = "(.*):(.*)".r
         client.distributionUrl.getUserInfo match {
           case authTokenRx(userName, password) =>
-            client.graphql(administratorMutations.login(userName, password))
+            client.graphql(LoginCoder.login(userName, password))
               .map(token => client.accessToken = Some(token))
           case _ =>
             Future.failed(new IOException("No authentication data in the URL for login"))
