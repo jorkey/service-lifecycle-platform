@@ -11,6 +11,7 @@ import org.slf4j.Logger
 import java.net.URL
 import scala.collection.immutable.Queue
 import scala.concurrent.{Future, Promise}
+import scala.reflect.ClassTag
 
 class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
   trait ClientRequest[Response] { val promise = Promise[Response]() }
@@ -23,16 +24,19 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
   val distributionUrl: URL = new URL("http://test:test@test")
   var requests = Queue.empty[ClientRequest[_]]
 
-  def waitForQuery[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = ""): Promise[Response] = {
+  def waitForQuery[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
+                            (implicit log: Logger): Promise[Response] = {
     waitForGraphql[Response]("query", command, arguments, subSelection)
   }
 
-  def waitForMutation(command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = ""): Promise[Boolean] = {
-    waitForGraphql[Boolean]("mutation", command, arguments, subSelection)
+  def waitForMutation[T](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
+                     (implicit log: Logger): Promise[T] = {
+    waitForGraphql[T]("mutation", command, arguments, subSelection)
   }
 
   def waitForGraphql[Response](req: String, command: String,
-                               arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = ""): Promise[Response] = {
+                               arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
+                              (implicit log: Logger): Promise[Response] = {
     val request = waitForRequest[GraphqlClientRequest[Response]]()
     assertResult(req)(request.request.request)
     assertResult(command)(request.request.command)
@@ -41,26 +45,26 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
     request.promise
   }
 
-  def waitForUpload(path: String, fieldName: String): Promise[Unit] = {
+  def waitForUpload(path: String, fieldName: String)(implicit log: Logger): Promise[Unit] = {
     val request = waitForRequest[UploadClientRequest]()
     assertResult(path)(request.path)
     assertResult(fieldName)(request.fieldName)
     request.promise
   }
 
-  def waitForDownload(path: String): Promise[Unit] = {
+  def waitForDownload(path: String)(implicit log: Logger): Promise[Unit] = {
     val request = waitForRequest[DownloadClientRequest]()
     assertResult(path)(request.path)
     request.promise
   }
 
-  def waitForExists(path: String): Promise[Unit] = {
+  def waitForExists(path: String)(implicit log: Logger): Promise[Unit] = {
     val request = waitForRequest[ExistsClientRequest]()
     assertResult(path)(request.path)
     request.promise
   }
 
-  private def waitForRequest[T](): T = {
+  private def waitForRequest[T]()(implicit classTag: ClassTag[T], log: Logger): T = {
     synchronized {
       while (requests.isEmpty) {
         wait(15000)

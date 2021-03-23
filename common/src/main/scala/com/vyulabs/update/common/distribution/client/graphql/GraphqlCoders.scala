@@ -138,18 +138,23 @@ trait ConsumersAdministrationCoder {
     GraphqlMutation[Boolean]("removeDistributionConsumer", Seq(GraphqlArgument("distribution" -> distributionName)))
 }
 
-trait DeveloperVersionsAdministrationCoder {
+trait BuildDeveloperVersionCoder {
   def buildDeveloperVersion(serviceName: ServiceName, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
+}
 
+trait RemoveDeveloperVersionCoder {
   def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion) =
     GraphqlMutation[Boolean]("removeDeveloperVersion", Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
 }
 
-trait ClientVersionsAdministrationCoder {
+trait BuildClientVersionCoder {
   def buildClientVersion(serviceName: ServiceName, developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion) =
     GraphqlMutation[String]("buildClientVersion", Seq(GraphqlArgument("service" -> serviceName),
       GraphqlArgument("developerVersion" -> developerVersion), GraphqlArgument("clientVersion" -> clientVersion)))
+}
+
+trait RemoveClientVersionCoder {
   def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion) =
     GraphqlMutation[Boolean]("removeClientVersion",
       Seq(GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version)))
@@ -195,11 +200,23 @@ trait TestSubscriptionCoder {
 
 // Users
 
+object DeveloperQueriesCoder extends DistributionConsumersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
+  with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
+object DeveloperMutationsCoder extends BuildDeveloperVersionCoder with RemoveDeveloperVersionCoder
+  with BuildClientVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
+object DeveloperSubscriptionsCoder extends SubscribeTaskLogsCoder with TestSubscriptionCoder {}
+
+object DeveloperGraphqlCoder {
+  val developerQueries = DeveloperQueriesCoder
+  val developerMutations = DeveloperMutationsCoder
+  val developerSubscriptions = DeveloperSubscriptionsCoder
+}
+
 object AdministratorQueriesCoder extends DistributionConsumersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
 object AdministratorMutationsCoder extends UsersAdministrationCoder with ConsumersAdministrationCoder
-  with DeveloperVersionsAdministrationCoder with ClientVersionsAdministrationCoder with DesiredVersionsAdministrationCoder {}
-object AdministratorSubscriptionsCoder extends SubscribeTaskLogsCoder with TestSubscriptionCoder {}
+  with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
+object AdministratorSubscriptionsCoder extends SubscribeTaskLogsCoder {}
 
 object AdministratorGraphqlCoder {
   val administratorQueries = AdministratorQueriesCoder

@@ -5,6 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
+import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.developerSubscriptions
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
@@ -72,11 +73,6 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
                           builderClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "execute some requests" in {
       assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(distributionName, Common.DistributionServiceName))
-    }
-
-    it should "process request errors" in {
-      assertResult(None)(updaterClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
-      assertResult(None)(distribClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
     }
 
     it should "execute distribution provider requests" in {
@@ -226,11 +222,11 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   def subRequests(): Unit = {
-    val adminClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val developerClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(new URL("http://developer:developer@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
     it should "execute subscription requests" in {
-      val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription())
+      val source = developerClient.graphqlSubRequest(developerSubscriptions.testSubscription())
       var line = Option.empty[String]
       do {
         line = source.get.next()
@@ -241,10 +237,10 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   def akkaSubRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://developer:developer@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
 
     it should "execute subscription requests" in {
-      val source = adminClient.graphqlSubRequest(administratorSubscriptions.testSubscription()).get
+      val source = adminClient.graphqlSubRequest(developerSubscriptions.testSubscription()).get
       result(source.map(println(_)).run())
     }
   }

@@ -5,7 +5,7 @@ import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.config._
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
+import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
 import com.vyulabs.update.common.info.ClientDesiredVersionDelta
@@ -33,8 +33,8 @@ class SimpleLifecycle {
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
   private val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
-  private val adminDistributionUrl = new URL("http://admin:admin@localhost:8000")
-  private val serviceDistributionUrl = new URL("http://service:service@localhost:8000")
+  private val developerDistributionUrl = new URL("http://developer:developer@localhost:8000")
+  private val updaterDistributionUrl = new URL("http://updater:updater@localhost:8000")
   private val testServiceName = "test"
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
@@ -44,7 +44,7 @@ class SimpleLifecycle {
   private val clientBuilder = new ClientBuilder(builderDir, distributionName)
 
   private val distributionClient = new SyncDistributionClient(
-    new DistributionClient(new HttpClientImpl(adminDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
+    new DistributionClient(new HttpClientImpl(developerDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
   private var processes = Set.empty[ChildProcess]
 
@@ -130,7 +130,7 @@ class SimpleLifecycle {
       !IoUtils.copyFile(new File("./scripts/.update.sh"), new File(testServiceInstanceDir, ".update.sh"))) {
       sys.error("Copying of updater scripts error")
     }
-    val updaterConfig = UpdaterConfig("Test", serviceDistributionUrl)
+    val updaterConfig = UpdaterConfig("Test", updaterDistributionUrl)
     if (!IoUtils.writeJsonToFile(new File(testServiceInstanceDir, Common.UpdaterConfigFileName), updaterConfig)) {
       sys.error(s"Can't write ${Common.UpdaterConfigFileName}")
     }
@@ -180,7 +180,7 @@ class SimpleLifecycle {
     Thread.sleep(10000)
     distributionBuilder.waitForServerAvailable()
     Thread.sleep(5000)
-    val states = distributionClient.graphqlRequest(administratorQueries.getServiceStates(distributionName = Some(distributionName),
+    val states = distributionClient.graphqlRequest(developerQueries.getServiceStates(distributionName = Some(distributionName),
       serviceName = Some(Common.DistributionServiceName))).getOrElse {
       sys.error("Can't get version of distribution server")
     }
@@ -195,7 +195,7 @@ class SimpleLifecycle {
 
   private def buildTestServiceVersions(distributionClient: SyncDistributionClient[SyncSource], version: DeveloperVersion): Unit = {
     println("--------------------------- Build developer version of test service")
-    val taskId = distributionClient.graphqlRequest(administratorMutations.buildDeveloperVersion(testServiceName, version)).getOrElse {
+    val taskId = distributionClient.graphqlRequest(developerMutations.buildDeveloperVersion(testServiceName, version)).getOrElse {
       sys.error("Can't execute build developer version task")
     }
     if (!subscribeTask(distributionClient, taskId)) {
@@ -203,7 +203,7 @@ class SimpleLifecycle {
     }
 
     println("--------------------------- Build client version of test service")
-    val taskId1 = distributionClient.graphqlRequest(administratorMutations.buildClientVersion(testServiceName,
+    val taskId1 = distributionClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
       DeveloperDistributionVersion(distributionName, version),
       ClientDistributionVersion(distributionName, ClientVersion(version)))).getOrElse {
       sys.error("Can't execute build client version task")
@@ -213,14 +213,14 @@ class SimpleLifecycle {
     }
 
     println("--------------------------- Set client desired versions")
-    if (!distributionClient.graphqlRequest(administratorMutations.setClientDesiredVersions(Seq(
+    if (!distributionClient.graphqlRequest(developerMutations.setClientDesiredVersions(Seq(
         ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion(distributionName, ClientVersion(version))))))).getOrElse(false)) {
       sys.error("Set client desired versions error")
     }
   }
 
   private def subscribeTask(distributionClient: SyncDistributionClient[SyncSource], taskId: TaskId): Boolean = {
-    val source = distributionClient.graphqlSubRequest(administratorSubscriptions.subscribeTaskLogs(taskId)).getOrElse {
+    val source = distributionClient.graphqlSubRequest(developerSubscriptions.subscribeTaskLogs(taskId)).getOrElse {
       sys.error("Can't subscribe build developer version task")
     }
     while (true) {

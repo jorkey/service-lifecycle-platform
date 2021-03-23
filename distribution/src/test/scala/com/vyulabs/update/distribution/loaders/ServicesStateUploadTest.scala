@@ -30,6 +30,9 @@ class ServicesStateUploadTest extends TestEnvironment {
   val httpClient = new HttpClientTestStub[AkkaSource]()
   val distributionClient = new DistributionClient(httpClient)
 
+  distributionClient.login()
+  waitForLogin().success("token123")
+
   it should "upload service states" in {
     val uploader = new StateUploader("distribution", collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)
     uploader.start()
@@ -85,6 +88,10 @@ class ServicesStateUploadTest extends TestEnvironment {
 
     uploader.stop()
     clear()
+  }
+
+  def waitForLogin(): Promise[String] = {
+    httpClient.waitForMutation("login", Seq(GraphqlArgument("user" -> "test"), GraphqlArgument("password" -> "test")))
   }
 
   private def waitForSetServiceStates(states: Seq[DistributionServiceState]): Promise[Boolean] = {

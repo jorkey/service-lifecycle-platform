@@ -41,7 +41,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient(new URL("http://updater:updater@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://distribution1:distribution1@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient(new URL("http://distribution:distribution@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     upload(adminClient, updaterClient, distribClient)
   }
 

@@ -34,6 +34,9 @@ class FaultReportsUploadTest extends TestEnvironment {
   val httpClient = new HttpClientTestStub[AkkaSource]()
   val distributionClient = new DistributionClient(httpClient)
 
+  distributionClient.login()
+  waitForLogin().success("token123")
+
   it should "upload fault reports" in {
     val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)
     uploader.start()
@@ -77,6 +80,10 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     result(collections.State_FaultReportsInfo.drop())
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
+  }
+
+  def waitForLogin(): Promise[String] = {
+    httpClient.waitForMutation("login", Seq(GraphqlArgument("user" -> "test"), GraphqlArgument("password" -> "test")))
   }
 
   def waitForFaultReportUpload(faultId: FaultId): Promise[Unit] = {
