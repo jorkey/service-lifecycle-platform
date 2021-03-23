@@ -25,42 +25,48 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   server.bind(route)
 
   def httpDownload(): Unit = {
-    val adminClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val builderClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(new URL("http://builder:builder@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(new URL("http://updater:updater@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(new URL("http://distribution:distribution@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
-    download(adminClient, updaterClient, distribClient)
+    download(builderClient, updaterClient, distribClient)
   }
 
   def akkaHttpDownload(): Unit = {
-    val adminClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val builderClient = new SyncDistributionClient(
+      new DistributionClient(new AkkaHttpClient(new URL("http://builder:builder@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient(new URL("http://updater:updater@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient(new URL("http://distribution:distribution@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
-    download(adminClient, updaterClient, distribClient)
+    download(builderClient, updaterClient, distribClient)
   }
 
   override def dbName = super.dbName + "-client"
 
-  def download[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
+  def download[Source[_]](builderClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "download developer version image" in {
       IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
         "qwerty123".getBytes("utf8"))
-      assert(adminClient.downloadDeveloperVersionImage("service1",
-        DeveloperDistributionVersion.parse("test-1.1.1"), File.createTempFile("load-test", "zip")))
+      val outFile = File.createTempFile("load-test", "zip")
+      assert(builderClient.downloadDeveloperVersionImage("service1",
+        DeveloperDistributionVersion.parse("test-1.1.1"), outFile))
+      assertResult(9)(outFile.length())
+      outFile.delete()
       assert(distribClient.downloadDeveloperVersionImage("service1",
-        DeveloperDistributionVersion.parse("test-1.1.1"), File.createTempFile("load-test", "zip")))
+        DeveloperDistributionVersion.parse("test-1.1.1"), outFile))
+      assertResult(9)(outFile.length())
     }
 
     it should "download client version image" in {
       IoUtils.writeBytesToFile(distributionDir.getClientVersionImageFile("service1", ClientDistributionVersion.parse("test-1.1.1_1")),
         "qwerty456".getBytes("utf8"))
+      val outFile = File.createTempFile("load-test", "zip")
       assert(serviceClient.downloadClientVersionImage("service1",
-        ClientDistributionVersion.parse("test-1.1.1_1"), File.createTempFile("load-test", "zip")))
+        ClientDistributionVersion.parse("test-1.1.1_1"), outFile))
+      assertResult(9)(outFile.length())
     }
   }
 

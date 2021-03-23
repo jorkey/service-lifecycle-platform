@@ -19,6 +19,7 @@
     </appender>
 
     <logger name="akka.event.slf4j.Slf4jLogger" level="ERROR"/>
+    <logger name="com.vyulabs.update.distribution.mongo" level="INFO"/>
     <logger name="org.mongodb" level="ERROR"/>
 
     <root level="DEBUG">

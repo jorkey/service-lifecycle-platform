@@ -26,38 +26,42 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   server.bind(route)
 
   def httpUpload(): Unit = {
-    val adminClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val builderClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(new URL("http://builder:builder@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(new URL("http://updater:updater@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(new URL("http://distribution:distribution@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-    upload(adminClient, updaterClient, distribClient)
+    upload(builderClient, updaterClient, distribClient)
   }
 
   def akkaHttpUpload(): Unit = {
-    val adminClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
+    val builderClient = new SyncDistributionClient(
+      new DistributionClient(new AkkaHttpClient(new URL("http://builder:builder@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient(new URL("http://updater:updater@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient(new URL("http://distribution:distribution@localhost:8083"))), FiniteDuration(15, TimeUnit.SECONDS))
-    upload(adminClient, updaterClient, distribClient)
+    upload(builderClient, updaterClient, distribClient)
   }
 
   override def dbName = super.dbName + "-client"
 
-  def upload[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
+  def upload[Source[_]](builderClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "upload developer version image" in {
       val file = File.createTempFile("load-test", "zip")
       assert(IoUtils.writeBytesToFile(file, "developer version content".getBytes("utf8")))
-      assert(adminClient.uploadDeveloperVersionImage("service1", DeveloperDistributionVersion.parse("test-1.1.1"), file))
+      assert(builderClient.uploadDeveloperVersionImage("service1", DeveloperDistributionVersion.parse("test-1.1.1"), file))
+      assertResult(25)(
+        distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")).length())
     }
 
     it should "upload client version image" in {
       val file = File.createTempFile("load-test", "zip")
       assert(IoUtils.writeBytesToFile(file, "client version content".getBytes("utf8")))
-      assert(adminClient.uploadClientVersionImage("service1", ClientDistributionVersion.parse("test-1.1.1_1"), file))
+      assert(builderClient.uploadClientVersionImage("service1", ClientDistributionVersion.parse("test-1.1.1_1"), file))
+      assertResult(22)(
+        distributionDir.getClientVersionImageFile("service1", ClientDistributionVersion.parse("test-1.1.1_1")).length())
     }
 
     it should "upload fault report" in {
@@ -65,8 +69,12 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
       assert(IoUtils.writeBytesToFile(file, "fault report content".getBytes("utf8")))
 
       assert(serviceClient.uploadFaultReport("fault1", file))
+      assertResult(20)(
+        distributionDir.getFaultReportFile("fault1").length())
 
-      assert(distribClient.uploadFaultReport("fault1", file))
+      assert(distribClient.uploadFaultReport("fault2", file))
+      assertResult(20)(
+        distributionDir.getFaultReportFile("fault2").length())
     }
   }
 

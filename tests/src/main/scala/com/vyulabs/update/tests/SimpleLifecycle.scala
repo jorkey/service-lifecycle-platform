@@ -33,7 +33,8 @@ class SimpleLifecycle {
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
   private val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
-  private val developerDistributionUrl = new URL("http://developer:developer@localhost:8000")
+  private val developerDistributionUrl = new URL("http://installer:installer@localhost:8000")
+  private val builderDistributionUrl = new URL("http://builder:builder@localhost:8000")
   private val updaterDistributionUrl = new URL("http://updater:updater@localhost:8000")
   private val testServiceName = "test"
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
@@ -43,7 +44,9 @@ class SimpleLifecycle {
     new DistributionDirectory(distributionDir), distributionName, "Test distribution server", "test", false, 8000)
   private val clientBuilder = new ClientBuilder(builderDir, distributionName)
 
-  private val distributionClient = new SyncDistributionClient(
+  private val builderClient = new SyncDistributionClient(
+    new DistributionClient(new HttpClientImpl(builderDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
+  private val developerClient = new SyncDistributionClient(
     new DistributionClient(new HttpClientImpl(developerDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
   private var processes = Set.empty[ChildProcess]
@@ -123,7 +126,7 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make test service version")
-    buildTestServiceVersions(distributionClient, DeveloperVersion.initialVersion)
+    buildTestServiceVersions(developerClient, DeveloperVersion.initialVersion)
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
@@ -157,7 +160,7 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make fixed test service version")
-    buildTestServiceVersions(distributionClient, DeveloperVersion.initialVersion.next())
+    buildTestServiceVersions(developerClient, DeveloperVersion.initialVersion.next())
 
     println()
     println(s"########################### Test service is updated")
@@ -169,8 +172,8 @@ class SimpleLifecycle {
     println(s"########################### Upload new client version of distribution of version ${newVersion}")
     println()
     val newDistributionVersion = ClientDistributionVersion(distributionName, newVersion)
-    if (!clientBuilder.uploadClientVersion(distributionClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
-      sys.error(s"Can't write script")
+    if (!clientBuilder.uploadClientVersion(builderClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
+      sys.error(s"Can't write distribution version")
     }
     if (!distributionBuilder.setClientDesiredVersions(Seq(ClientDesiredVersionDelta(Common.DistributionServiceName, Some(newDistributionVersion))))) {
       sys.error("Set distribution desired version error")
@@ -180,7 +183,7 @@ class SimpleLifecycle {
     Thread.sleep(10000)
     distributionBuilder.waitForServerAvailable()
     Thread.sleep(5000)
-    val states = distributionClient.graphqlRequest(developerQueries.getServiceStates(distributionName = Some(distributionName),
+    val states = developerClient.graphqlRequest(developerQueries.getServiceStates(distributionName = Some(distributionName),
       serviceName = Some(Common.DistributionServiceName))).getOrElse {
       sys.error("Can't get version of distribution server")
     }
@@ -193,27 +196,27 @@ class SimpleLifecycle {
     println()
   }
 
-  private def buildTestServiceVersions(distributionClient: SyncDistributionClient[SyncSource], version: DeveloperVersion): Unit = {
+  private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource], version: DeveloperVersion): Unit = {
     println("--------------------------- Build developer version of test service")
-    val taskId = distributionClient.graphqlRequest(developerMutations.buildDeveloperVersion(testServiceName, version)).getOrElse {
+    val taskId = developerClient.graphqlRequest(developerMutations.buildDeveloperVersion(testServiceName, version)).getOrElse {
       sys.error("Can't execute build developer version task")
     }
-    if (!subscribeTask(distributionClient, taskId)) {
+    if (!subscribeTask(developerClient, taskId)) {
       sys.error("Execution of build developer version task error")
     }
 
     println("--------------------------- Build client version of test service")
-    val taskId1 = distributionClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
+    val taskId1 = developerClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
       DeveloperDistributionVersion(distributionName, version),
       ClientDistributionVersion(distributionName, ClientVersion(version)))).getOrElse {
       sys.error("Can't execute build client version task")
     }
-    if (!subscribeTask(distributionClient, taskId1)) {
+    if (!subscribeTask(developerClient, taskId1)) {
       sys.error("Execution of build client version task error")
     }
 
     println("--------------------------- Set client desired versions")
-    if (!distributionClient.graphqlRequest(developerMutations.setClientDesiredVersions(Seq(
+    if (!developerClient.graphqlRequest(developerMutations.setClientDesiredVersions(Seq(
         ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion(distributionName, ClientVersion(version))))))).getOrElse(false)) {
       sys.error("Set client desired versions error")
     }
@@ -227,7 +230,7 @@ class SimpleLifecycle {
       val log = source.next().getOrElse {
         sys.error("Unexpected end of subscription")
       }
-      //println(log.logLine.line.message)
+      println(log.logLine.line.message)
       for (terminationStatus <- log.logLine.line.terminationStatus) {
         println(s"Build developer version termination status is ${terminationStatus}")
         return terminationStatus

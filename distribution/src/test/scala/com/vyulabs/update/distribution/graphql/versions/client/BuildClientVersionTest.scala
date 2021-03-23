@@ -28,7 +28,12 @@ class BuildClientVersionTest extends TestEnvironment {
   })
 
   val dummyBuilder = new File(builderDirectory, "builder.sh")
-  IoUtils.writeBytesToFile(dummyBuilder, "echo \"Builder started\"\nsleep 1\necho \"Builder continued\"\nsleep 1\necho \"Builder finished\"".getBytes)
+  IoUtils.writeBytesToFile(dummyBuilder,
+    ("echo \"2021-03-23 19:12:19.146 INFO Unit1 - Builder started\"\n" +
+      "sleep 1\n" +
+      "echo \"2021-03-23 19:12:20.150 INFO Unit2 - Builder continued\"\n" +
+      "sleep 1\n" +
+      "echo \"2021-03-23 19:12:21.100 INFO Unit3 - Builder finished\"").getBytes)
 
   it should "build client version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
@@ -59,7 +64,9 @@ class BuildClientVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":7,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":9,"logLine":{"line":{"level":"INFO","message":"`Build client version test-1.1.1 of service service1` finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":9,"logLine":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"`Build client version test-1.1.1 of service service1` finished successfully"}}}}}"""))
     logInput.expectComplete()
   }
 
@@ -102,7 +109,7 @@ class BuildClientVersionTest extends TestEnvironment {
     logInput.expectComplete()
   }
 
-  it should "run builder from remote distribution" in {
+  it should "run builder" in {
     setSequence("state.serviceLogs", 20)
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
@@ -133,7 +140,9 @@ class BuildClientVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":27,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":29,"logLine":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":29,"logLine":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":30,"logLine":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}}"""))
     logInput.expectComplete()
   }
 

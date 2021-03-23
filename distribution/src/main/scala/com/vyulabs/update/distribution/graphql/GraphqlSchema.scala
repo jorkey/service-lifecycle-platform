@@ -95,11 +95,11 @@ object GraphqlSchema {
       // Developer versions
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution, UserRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder, UserRole.Distribution) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(UserRole.Distribution)) {
             c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.userName, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
@@ -111,11 +111,11 @@ object GraphqlSchema {
       // Client versions
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
         arguments = ServiceArg :: OptionDistributionArg :: OptionClientVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getClientVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionClientVersionArg)) }),
       Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Updater) :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder, UserRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       // Distribution consumers

@@ -21,6 +21,7 @@ import java.security.SecureRandom
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
+import org.janjaali.sprayjwt.exceptions.InvalidSignatureException
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
@@ -106,9 +107,14 @@ trait UsersUtils extends SprayJsonSupport {
     val basicTokenRx = "Basic (.*)".r
     optionalHeaderValueByName("Authorization").flatMap {
       case Some(bearerTokenRx(value)) ⇒
-        Jwt.decode(value, secret) match {
-          case Success(jsonValue) ⇒ provide(Some(jsonValue.convertTo[AccessToken]))
-          case Failure(_) ⇒ complete(StatusCodes.Unauthorized)
+        try {
+          Jwt.decode(value, secret) match {
+            case Success(jsonValue) ⇒ provide(Some(jsonValue.convertTo[AccessToken]))
+            case Failure(_) ⇒ complete(StatusCodes.Unauthorized)
+          }
+        } catch {
+          case _: InvalidSignatureException =>
+            complete(StatusCodes.Unauthorized)
         }
       case Some(basicTokenRx(value)) ⇒
         val authTokenRx = "(.*):(.*)".r

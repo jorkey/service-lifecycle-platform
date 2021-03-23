@@ -56,12 +56,6 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     }
   }
 
-  def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName)
-                       (implicit log: Logger): Future[Option[ClientDistributionVersion]] = {
-    login().map(_ => client.graphql(administratorQueries.getServiceStates(Some(distributionName), Some(serviceName), None, None))
-      .map(_.headOption.map(_.instance.service.version).flatten)).flatten
-  }
-
   def graphqlRequest[Response](request: GraphqlRequest[Response])
                               (implicit reader: JsonReader[Response], log: Logger): Future[Response]= {
     login().map(_ => client.graphql(request)).flatten

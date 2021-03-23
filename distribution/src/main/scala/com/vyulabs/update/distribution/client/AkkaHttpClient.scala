@@ -40,6 +40,9 @@ class AkkaHttpClient(val distributionUrl: URL)
           case Right(value) => throw new IOException(value)
         }
       } else {
+        if (response.status == StatusCodes.Unauthorized) {
+          accessToken = None
+        }
         throw new IOException(entity.decodeString("utf8"))
       }
     }
@@ -55,17 +58,24 @@ class AkkaHttpClient(val distributionUrl: URL)
     for {
       response <- Http(system).singleRequest(post)
     } yield {
-      response.entity.dataBytes
-        .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 10240))
-        .map(_.decodeString("utf8"))
-        .filter(!_.isEmpty)
-        .map(line => if (line.startsWith("data:")) line.substring(5) else throw new IOException(s"Error data line: ${line}"))
-        .map(line => request.decodeResponse(line.parseJson.asJsObject) match {
-          case Left(response) =>
-            response
-          case Right(error) =>
-            throw new IOException(error)
-        })
+      if (response.status.isSuccess()) {
+        response.entity.dataBytes
+          .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 10240))
+          .map(_.decodeString("utf8"))
+          .filter(!_.isEmpty)
+          .map(line => if (line.startsWith("data:")) line.substring(5) else throw new IOException(s"Error data line: ${line}"))
+          .map(line => request.decodeResponse(line.parseJson.asJsObject) match {
+            case Left(response) =>
+              response
+            case Right(error) =>
+              throw new IOException(error)
+          })
+      } else {
+        if (response.status == StatusCodes.Unauthorized) {
+          accessToken = None
+        }
+        throw new IOException(response.status.toString())
+      }
     }
   }
 
@@ -82,7 +92,10 @@ class AkkaHttpClient(val distributionUrl: URL)
       response <- Http(system).singleRequest(post)
       entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
     } yield {
-      if (response.status != StatusCodes.OK) {
+      if (!response.status.isSuccess()) {
+        if (response.status == StatusCodes.Unauthorized) {
+          accessToken = None
+        }
         throw new IOException(s"Unexpected response from server: ${entity.decodeString("utf8")}")
       }
     }
@@ -93,8 +106,20 @@ class AkkaHttpClient(val distributionUrl: URL)
     getHttpCredentials().foreach(credentials => get = get.addCredentials(credentials))
     for {
       response <- Http(system).singleRequest(get)
-      result <- response.entity.dataBytes.runWith(FileIO.toPath(file.toPath)).map(_ => ())
-    } yield result
+      result <- {
+        if (response.status.isSuccess()) {
+          response.entity.dataBytes.runWith(FileIO.toPath(file.toPath)).map(_ => ())
+        } else {
+          if (response.status == StatusCodes.Unauthorized) {
+            accessToken = None
+          }
+          response.entity.dataBytes.runFold(ByteString())(_ ++ _)
+            .map(entity => throw new IOException(s"Unexpected response from server: ${entity.decodeString("utf8")}"))
+        }
+      }
+    } yield {
+      result
+    }
   }
 
   private def getHttpCredentials(): Option[HttpCredentials] = {

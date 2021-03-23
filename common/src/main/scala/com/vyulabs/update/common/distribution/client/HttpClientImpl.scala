@@ -240,6 +240,9 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
   private def processResponse(connection: HttpURLConnection): Unit = {
     val responseCode = connection.getResponseCode
     if (responseCode != HttpURLConnection.HTTP_OK) {
+      if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
+        accessToken = None
+      }
       val errorStream = connection.getErrorStream()
       throw new IOException(
         s"Request: ${connection.getRequestMethod} ${connection.getURL}\n" +

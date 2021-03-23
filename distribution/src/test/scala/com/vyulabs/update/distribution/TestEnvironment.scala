@@ -96,7 +96,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
-    mongo.close()
+    //mongo.close()
     distributionDir.drop()
     IoUtils.deleteFileRecursively(builderDirectory)
   }

@@ -17,10 +17,6 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.ping()).isDefined
   }
 
-  def getServiceVersion(distributionName: DistributionName, serviceName: ServiceName): Option[ClientDistributionVersion] = {
-    result(client.getServiceVersion(distributionName, serviceName)).flatten
-  }
-
   def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response] = {
     result(client.graphqlRequest(request))
   }

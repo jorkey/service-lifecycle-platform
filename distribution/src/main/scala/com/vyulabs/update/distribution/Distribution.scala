@@ -64,12 +64,12 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                 workspace.getAccessToken()(log) { case token =>
                   path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution) || token.hasRole(UserRole.Administrator)) {
+                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution)) {
                         getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
                           DeveloperDistributionVersion.parse(version)))
                       }
                     } ~ post {
-                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
+                      authorize(token.hasRole(UserRole.Builder)) {
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
@@ -80,11 +80,11 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                     }
                   } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Administrator)) {
+                      authorize(token.hasRole(UserRole.Updater)) {
                         getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                       }
                     } ~ post {
-                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Administrator)) {
+                      authorize(token.hasRole(UserRole.Builder)) {
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)

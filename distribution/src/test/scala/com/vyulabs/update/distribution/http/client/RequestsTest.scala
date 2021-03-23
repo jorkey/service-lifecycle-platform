@@ -71,10 +71,6 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   def requests[Source[_]](adminClient: SyncDistributionClient[Source], updaterClient: SyncDistributionClient[Source],
                           builderClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
-    it should "execute some requests" in {
-      assertResult(Some(ClientDistributionVersion.parse("test-1.2.3")))(adminClient.getServiceVersion(distributionName, Common.DistributionServiceName))
-    }
-
     it should "execute distribution provider requests" in {
       assert(adminClient.graphqlRequest(administratorMutations.addDistributionProvider("distribution2",
           new URL("http://localhost/graphql"), None)).getOrElse(false))

@@ -12,7 +12,7 @@ import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-class LogStorerTest extends TestEnvironment with ScalatestRouteTest {
+class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
   behavior of "Log trace writer"
 
   implicit val timer = new ThreadTimer()
@@ -22,15 +22,13 @@ class LogStorerTest extends TestEnvironment with ScalatestRouteTest {
   val appender = new TraceAppender()
   logger.addAppender(appender)
 
-  val storer = new LogStorekeeper(distributionName, "service1", None, "instance1", collections.State_ServiceLogs)
-  val buffer = new LogBuffer("Test", "PROCESS", storer, 3, 6)
+  val storekeeper = new LogStorekeeper(distributionName, "service1", None, "instance1", collections.State_ServiceLogs)
+  val buffer = new LogBuffer("Test", "PROCESS", storekeeper, 3, 6)
 
   appender.addListener(buffer)
   appender.start()
 
-  val graphqlContext = GraphqlContext(Some(AccessToken("administrator", Seq(UserRole.Administrator))), workspace)
-
-  it should "send log records to distribution server" in {
+  it should "store log records" in {
     log.info("log line 1")
     log.warn("log line 2")
     log.error("log line 3")
@@ -47,7 +45,7 @@ class LogStorerTest extends TestEnvironment with ScalatestRouteTest {
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"ERROR","message":"log line 3"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 4"}},""" +
         """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             distributionName
