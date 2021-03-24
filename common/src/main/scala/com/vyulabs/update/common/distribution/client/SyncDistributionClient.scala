@@ -17,6 +17,10 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.ping()).isDefined
   }
 
+  def login(): Boolean = {
+    result(client.login()).isDefined
+  }
+
   def graphqlRequest[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Response] = {
     result(client.graphqlRequest(request))
   }

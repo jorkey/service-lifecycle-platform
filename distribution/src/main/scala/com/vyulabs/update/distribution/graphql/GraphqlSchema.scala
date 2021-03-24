@@ -250,7 +250,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeDistributionConsumerProfile(c.arg(ConsumerProfileArg)).map(_ => true) }),
       Field("addDistributionConsumer", BooleanType,
         arguments = DistributionArg :: ConsumerProfileArg :: OptionTestDistributionMatchArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
         resolve = c => {
           c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ConsumerProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
         }),

@@ -21,6 +21,7 @@ import java.security.SecureRandom
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
+import com.vyulabs.update.common.config.DistributionConfig
 import org.janjaali.sprayjwt.exceptions.InvalidSignatureException
 
 import scala.collection.JavaConverters.asJavaIterableConverter
@@ -35,9 +36,8 @@ trait UsersUtils extends SprayJsonSupport {
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
 
+  protected val config: DistributionConfig
   protected val collections: DatabaseCollections
-
-  private val secret = new BigInteger(50, new SecureRandom()).toString(32)
 
   def addUser(userName: UserName, roles: Seq[UserRole], password: String)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add user ${userName} with roles ${roles}")
@@ -93,7 +93,7 @@ trait UsersUtils extends SprayJsonSupport {
   }
 
   def encodeAccessToken(token: AccessToken)(implicit log: Logger): String = {
-    Jwt.encode(token.toJson, secret, HS256) match {
+    Jwt.encode(token.toJson, config.jwtSecret, HS256) match {
       case Success(value) =>
         value
       case Failure(ex) =>
@@ -108,7 +108,7 @@ trait UsersUtils extends SprayJsonSupport {
     optionalHeaderValueByName("Authorization").flatMap {
       case Some(bearerTokenRx(value)) ⇒
         try {
-          Jwt.decode(value, secret) match {
+          Jwt.decode(value, config.jwtSecret) match {
             case Success(jsonValue) ⇒ provide(Some(jsonValue.convertTo[AccessToken]))
             case Failure(_) ⇒ complete(StatusCodes.Unauthorized)
           }

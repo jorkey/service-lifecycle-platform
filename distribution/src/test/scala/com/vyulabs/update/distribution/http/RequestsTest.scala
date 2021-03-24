@@ -17,13 +17,6 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   val route = distribution.route
 
-  it should "response to ping" in {
-    Get("/ping") ~> route ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual "pong"
-    }
-  }
-
   it should "process graphql post request" in {
     Post("/graphql", """{ "query": "query { usersInfo(user:\"admin\") { name, roles } }" }""".parseJson) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK

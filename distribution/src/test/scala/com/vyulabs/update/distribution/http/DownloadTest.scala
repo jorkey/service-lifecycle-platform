@@ -18,7 +18,7 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   it should "download developer version image" in {
     IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
       "qwerty123".getBytes("utf8"))
-    Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(adminHttpCredentials) ~> route ~> check {
+    Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(builderHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldEqual "qwerty123"
     }

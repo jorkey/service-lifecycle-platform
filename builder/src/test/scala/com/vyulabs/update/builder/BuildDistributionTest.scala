@@ -67,7 +67,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       consumerDistributionName, "Test client distribution server",
       consumerMongoDbName,true, 8001)
 
-    assert(consumerDistributionBuilder.buildFromProviderDistribution(consumerDistributionName, new URL("http://admin:admin@localhost:8000"),
+    assert(consumerDistributionBuilder.buildFromProviderDistribution(consumerDistributionName, new URL("http://builder:builder@localhost:8000"),
       Common.CommonConsumerProfile, None))
     assert(consumerDistributionBuilder.updateDistributionFromProvider())
     assert(consumerDistributionBuilder.installBuilder(None))

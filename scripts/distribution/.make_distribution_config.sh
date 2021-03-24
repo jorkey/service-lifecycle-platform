@@ -17,6 +17,8 @@ mongoDbName=$4
 mongoDbTemporary=$5
 port=$6
 
+jwtSecret=`openssl rand -base64 32`
+
 if [ "${cloudProvider}" == "Azure" ]; then
   if ! instanceId=`curl --silent -H "Metadata: True" http://169.254.169.254/metadata/instance?api-version=2019-06-01 | jq -rj '.compute.resourceGroupName, ":", .compute.name'`; then
     >&2 echo "Can't get instance Id"
@@ -29,11 +31,12 @@ else
   exit 1
 fi
 
-jq ".distributionName=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port}" >distribution.json <<EOF
+jq ".distributionName=\"${distributionName}\" | .title=\"${distributionTitle}\" | .instanceId=\"${instanceId}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port}" >distribution.json <<EOF
 {
   "distributionName": "undefined",
   "title": "undefined",
   "instanceId": "undefined",
+  "jwtSecret": "undefined",
   "mongoDb" : {
     "connection" : "mongodb://localhost:27017",
     "name": "undefined",

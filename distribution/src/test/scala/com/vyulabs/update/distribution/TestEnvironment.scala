@@ -48,7 +48,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 
-  val config = DistributionConfig("test", "Test distribution server", "instance1", mongoDbConfig,
+  val config = DistributionConfig("test", "Test distribution server", "instance1", "secret", mongoDbConfig,
                                   networkConfig, None, versionsConfig, instanceStateConfig, faultReportsConfig)
 
   val distributionName = config.distributionName
@@ -96,7 +96,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
-    //mongo.close()
+    mongo.close()
     distributionDir.drop()
     IoUtils.deleteFileRecursively(builderDirectory)
   }

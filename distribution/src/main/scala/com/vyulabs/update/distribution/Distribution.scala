@@ -80,7 +80,7 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                     }
                   } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(UserRole.Updater)) {
+                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Updater)) {
                         getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                       }
                     } ~ post {
