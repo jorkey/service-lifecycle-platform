@@ -97,13 +97,14 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           logUploaderBuffer.foreach(_.stop(Some(exitCode==0), None))
         }
         val process = try {
-          Await.result(ChildProcess.start(command, arguments, env, state.currentServiceDirectory, onOutput, onExit), FiniteDuration(10, TimeUnit.SECONDS))
+          Await.result(ChildProcess.start(command, arguments, env, state.currentServiceDirectory), FiniteDuration(10, TimeUnit.SECONDS))
         } catch {
           case e: Exception =>
             logUploaderBuffer.foreach(_.append(LogLine(new Date(), "ERROR", logUnitName, s"Can't start process ${e.getMessage}", None)))
             log.error("Can't start process", e)
             return false
         }
+        process.readOutput(onOutput, onExit)
         logUploaderBuffer.foreach(_.start())
         currentProcess = Some(process)
         lastStartTime = System.currentTimeMillis()

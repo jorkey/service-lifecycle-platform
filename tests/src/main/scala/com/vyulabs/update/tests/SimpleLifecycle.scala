@@ -139,7 +139,8 @@ class SimpleLifecycle {
     }
     val process = Await.result(
       ChildProcess.start("/bin/sh", Seq("./updater.sh", "runServices", s"services=${testServiceName}"),
-        Map.empty, testServiceInstanceDir, lines => lines.foreach(line => println(s"Updater: ${line._1}"))), FiniteDuration(15, TimeUnit.SECONDS))
+        Map.empty, testServiceInstanceDir), FiniteDuration(15, TimeUnit.SECONDS))
+    process.readOutput(lines => lines.foreach(line => println(s"Updater: ${line._1}")))
     process.onTermination().map { status =>
       println(s"Updater is terminated with status ${status}")
       synchronized { processes -= process }

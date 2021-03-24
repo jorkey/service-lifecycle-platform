@@ -57,7 +57,10 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     @volatile var logOutputFuture = Option.empty[Future[Unit]]
     val process = for {
-      process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments, Map.empty, directory.getBuilderDir(),
+      process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments,
+        Map.empty, directory.getBuilderDir())
+    } yield {
+      process.readOutput(
         lines => {
           val logLines = lines.map(line => {
             try {
@@ -72,17 +75,18 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
           })
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
             addServiceLogs(config.distributionName, Common.BuilderServiceName,
-              Some(taskId), config.instanceId, "process.getHandle().pid().toString", directory.getBuilderDir().toString, logLines).map(_ => ())
+              Some(taskId), config.instanceId, process.getHandle().pid().toString, directory.getBuilderDir().toString, logLines).map(_ => ())
           })
         },
         exitCode => {
           logOutputFuture.getOrElse(Future()).flatMap { _ =>
             addServiceLogs(config.distributionName, Common.BuilderServiceName,
-              Some(taskId), config.instanceId, "process.getHandle().pid().toString", directory.getBuilderDir().toString,
+              Some(taskId), config.instanceId, process.getHandle().pid().toString, directory.getBuilderDir().toString,
               Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
           }
         })
-    } yield process
+      process
+    }
     (process.map(_.onTermination().map {
       case 0 => ()
       case error => throw new IOException(s"Builder process terminated with status ${error}")

@@ -28,8 +28,8 @@ class ProcessMonitorTest extends FlatSpec with Matchers {
   IoUtils.writeBytesToFile(script, s"sleep 1\nsh ${script.toString}\nsleep 30".getBytes)
 
   it should "terminate process group when max memory reached" in {
-    val process = result(ChildProcess.start("/bin/sh", Seq(script.toString), onOutput =
-      lines => lines.foreach { case (line, nl) => println(line) }))
+    val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
+    process.readOutput(onOutput = lines => lines.foreach { case (line, nl) => println(line) })
     new ProcessMonitor(process, RestartConditions(maxMemoryMB = Some(10000), false, 100)).start()
     result(process.onTermination())
   }

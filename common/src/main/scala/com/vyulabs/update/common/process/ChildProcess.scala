@@ -11,24 +11,27 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.04.19.
   * Copyright FanDate, Inc.
   */
-class ChildProcess(process: Process, onOutput: Seq[(String, Boolean)] => Unit = _ => (), onExit: Int => Unit = _ => ())
-                  (implicit executionContext: ExecutionContext, log: Logger) {
+class ChildProcess(process: Process)(implicit executionContext: ExecutionContext, log: Logger) {
   private val processTerminateTimeoutMs = 5000
   private val exitCode = Promise[Int]
   private val input = new BufferedReader(new InputStreamReader(process.getInputStream))
 
-  new LinesReaderThread(input, None,
-    lines => {
-      onOutput(lines)
-    },
-    () => {
-      val status = process.waitFor()
-      log.info(s"Process ${process.pid()} is terminated with status ${status}")
-      onExit(status)
-      exitCode.trySuccess(status)
-    },
-    exception => { log.error(s"Read process output error", exception) }
-  ).start()
+  def readOutput(onOutput: Seq[(String, Boolean)] => Unit = _ => (), onExit: Int => Unit = _ => ()) {
+    new LinesReaderThread(input, None,
+      lines => {
+        onOutput(lines)
+      },
+      () => {
+        val status = process.waitFor()
+        log.info(s"Process ${process.pid()} is terminated with status ${status}")
+        onExit(status)
+        exitCode.trySuccess(status)
+      },
+      exception => {
+        log.error(s"Read process output error", exception)
+      }
+    ).start()
+  }
 
   def isAlive(): Boolean = process.isAlive
 
@@ -79,8 +82,7 @@ class ChildProcess(process: Process, onOutput: Seq[(String, Boolean)] => Unit = 
 }
 
 object ChildProcess {
-  def start(command: String, arguments: Seq[String] = Seq.empty, env: Map[String, String] = Map.empty, directory: File = new File("."),
-            onOutput: Seq[(String, Boolean)] => Unit = _ => (), onExit: Int => Unit = _ => ())
+  def start(command: String, arguments: Seq[String] = Seq.empty, env: Map[String, String] = Map.empty, directory: File = new File("."))
            (implicit executionContext: ExecutionContext, log: Logger): Future[ChildProcess] = {
     Future {
       val builder = new ProcessBuilder().command((command +: arguments).asJava)
@@ -95,7 +97,7 @@ object ChildProcess {
       log.debug(s"Environment: ${builder.environment().asScala}")
       val process = builder.start()
       log.info(s"Started process ${process.pid()}")
-      new ChildProcess(process, onOutput, onExit)
+      new ChildProcess(process)
     }
   }
 }
