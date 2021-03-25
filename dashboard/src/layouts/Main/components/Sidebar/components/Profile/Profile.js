@@ -25,7 +25,8 @@ const Profile = props => {
 
   const classes = useStyles();
 
-  const user = JSON.parse(localStorage.getItem('user'))
+  //const token = JSON.parse(atob(localStorage.getItem('token')))
+  //const token = atob(localStorage.getItem('token'))
 
   return (
     <div
@@ -36,9 +37,9 @@ const Profile = props => {
         className={classes.name}
         variant='h4'
       >
-        {user.name}
+        {`user.name`}
       </Typography>
-      <Typography variant='body2'>{user.role}</Typography>
+      <Typography variant='body2'>{`user.role`}</Typography>
     </div>
   );
 };

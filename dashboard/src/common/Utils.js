@@ -29,7 +29,7 @@ function login(user, password) {
 }
 
 function logout() {
-  localStorage.removeItem('user')
+  localStorage.removeItem('token')
 }
 
 function getDistributionInfo() {

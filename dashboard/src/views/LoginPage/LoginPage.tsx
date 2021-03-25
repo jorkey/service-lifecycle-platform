@@ -7,7 +7,7 @@ import Alert from '@material-ui/lab/Alert';
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
-import {useMutation} from "@apollo/client";
+import {useLoginMutation} from "../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -26,8 +26,19 @@ const LoginPage = () => {
 
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+
+  const [loginMutation, { data, loading, error }] =
+    useLoginMutation({
+      variables: { user: userName, password: password },
+      onError(err) {
+        console.log(err);
+      }})
+
+  if (data) {
+    console.log('token ' + data.login)
+    localStorage.setItem('token', data.login)
+    window.location.replace('/')
+  }
 
   const handleUserNameChange = (e: any) => {
     setUserName(e.target.value);
@@ -40,23 +51,9 @@ const LoginPage = () => {
   const handleSubmit = (e: any) => {
     e.preventDefault();
 
-    if (!(userName && password)) {
-      return;
+    if (userName && password) {
+      loginMutation()
     }
-
-    setLoading(true);
-
-    Utils.login(userName, password).then(
-      user => {
-        window.location.replace('/')
-      },
-      response => {
-        const error = (response.status === 401)?'Authorization error':response.status + ': ' + response.statusText;
-        console.log('Login error ' + error)
-        setLoading(false)
-        setError(error.toString())
-      }
-    );
   }
 
   return (
@@ -107,7 +104,7 @@ const LoginPage = () => {
               >
                 Sign In
               </Button>
-              {error && <Alert severity='error'>{error}</Alert>}
+              {error && <Alert severity='error'>{error.message}</Alert>}
             </form>
           </div>
         </Grid>

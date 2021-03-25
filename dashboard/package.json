@@ -65,5 +65,5 @@
     "prettier": "^1.17.1",
     "typescript": "^3.9.9"
   },
-  "proxy": "http://admin:admin@localhost:8000/graphql"
+  "proxy": "http://localhost:8000"
 }

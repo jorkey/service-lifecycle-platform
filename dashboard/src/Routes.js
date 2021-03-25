@@ -18,8 +18,7 @@ import {
 
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   <Route {...rest} render = { props => {
-    console.log('user ' + localStorage.getItem('user'));
-    return localStorage.getItem('user')
+    return localStorage.getItem('token')
       ? <Component {...props} />
       : <Redirect to='/login'/>
   }} />

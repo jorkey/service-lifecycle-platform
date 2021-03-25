@@ -49,12 +49,12 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                       val JsString(query) = fields("query")
                       val operation = fields.get("operation") collect { case JsString(op) => op }
                       val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
-                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
+                      executeGraphqlRequest(token, workspace, query, operation, variables, true /*tracing.isDefined*/)
                     }
                   } ~ get {
                     parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
                       val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
-                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
+                      executeGraphqlRequest(token, workspace, query, operation, variables, true /*tracing.isDefined*/)
                     }
                   }
                 }
@@ -136,7 +136,7 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
           case Some(OperationType.Subscription) =>
             complete(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, context, document, operation, variables))
           case _ =>
-            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition, context, document, operation, variables).andThen {
+            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition, context, document, operation, variables, tracing).andThen {
               case Success((statusCode, value)) =>
                 log.debug(s"Graphql query terminated with status ${statusCode}, value ${value}")
               case Failure(ex) =>

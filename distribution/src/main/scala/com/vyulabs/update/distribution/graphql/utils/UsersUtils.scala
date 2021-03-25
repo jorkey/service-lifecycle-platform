@@ -124,8 +124,6 @@ trait UsersUtils extends SprayJsonSupport {
           case _ =>
             throw AuthenticationException("Authentication error")
         }
-      case Some(_) ⇒
-        complete(StatusCodes.Unauthorized)
       case _ ⇒
         provide(None)
     }
