@@ -12,6 +12,7 @@ import LoginRoutes from './Routes';
 import {ApolloProvider} from "@apollo/client";
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
+import {Scalars} from "./graphql/scalars";
 
 const browserHistory = createBrowserHistory();
 
@@ -28,16 +29,24 @@ const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists
   const token = localStorage.getItem('token');
   // return the headers to the context so httpLink can read them
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : "",
+  if (token) {
+    return {
+      headers: {
+        ...headers,
+        authorization: `Bearer ${token}`
+      }
     }
   }
+  return headers
 });
+
+const resolvers = {
+  DeveloperVersion: Scalars.developerVersionScalar
+};
 
 const client = new ApolloClient({
   link: authLink.concat(httpLink),
+  resolvers: resolvers,
   cache: new InMemoryCache()
 });
 

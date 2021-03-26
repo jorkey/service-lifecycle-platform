@@ -17,6 +17,11 @@ import FormGroup from '@material-ui/core/FormGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
+import {
+  useDeveloperDesiredVersionsQuery,
+  useDistributionConsumersInfoQuery,
+  useDistributionInfoQuery
+} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -39,8 +44,8 @@ const useStyles = makeStyles(theme => ({
   formControlLabel: {
     paddingLeft: '10px'
   },
-  clientSelect: {
-    width: '100px'
+  distributionSelect: {
+    width: '150px'
   },
   onlyAlerts: {
     paddingRight: '2px'
@@ -51,42 +56,49 @@ const Versions = props => {
   const { className, ...rest } = props;
   const classes = useStyles();
 
-  const [client, setClient] = useState()
-  const [clients, setClients] = useState([])
+  const [consumer, setConsumer] = useState()
+  const [consumers, setConsumers] = useState([])
   const [developerVersions, setDeveloperVersions] = useState([])
   const [clientVersions, setClientVersions] = useState(new Map())
   const [instanceVersions, setInstanceVersions] = useState(new Map())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
   React.useEffect(() => {
-    Utils.getClients().then(clients => {
-      setClients(clients)
-      if (clients.length) {
-        setClient(clients[0])
-      }
-    })
-  }, [])
-
-  React.useEffect(() => {
     setDeveloperVersions([])
     setClientVersions(new Map())
     setInstanceVersions(new Map())
-    getClientVersions(client)
-  }, [client]);
+    getConsumerVersions(consumer)
+  }, [consumer]);
 
-  const getClientVersions = (client) => {
-    if (client) {
-      Utils.getDesiredVersions(client).then(versions => {
+  const consumersInfo = useDistributionConsumersInfoQuery();
+
+  if (consumers.length == 0 && consumersInfo.data) {
+    let consumers = new Array()
+    consumersInfo.data.distributionConsumersInfo.forEach(info => consumers.push(info.distributionName))
+    setConsumers(consumers)
+  }
+
+  const developerDesiredVersions = useDeveloperDesiredVersionsQuery();
+
+  if (developerVersions.length == 0 && developerDesiredVersions.data) {
+    developerDesiredVersions.data.developerDesiredVersions.forEach(version => {
+      version.version
+    })
+  }
+
+  const getConsumerVersions = (consumer) => {
+    if (consumer) {
+      Utils.getDesiredVersions(consumer).then(versions => {
         setDeveloperVersions(Object.entries(versions))
-        if (client == 'distribution') {
+        if (consumer == 'distribution') {
           setClientVersions(new Map(Object.entries(versions)))
         }
       })
-      Utils.getInstanceVersions(client).then(versions => {
+      Utils.getInstanceVersions(consumer).then(versions => {
         setInstanceVersions(new Map(Object.entries(versions)))
       })
-      if (client != 'distribution') {
-        Utils.getInstalledDesiredVersions(client).then(versions => {
+      if (consumer != 'distribution') {
+        Utils.getInstalledDesiredVersions(consumer).then(versions => {
           setClientVersions(new Map(Object.entries(versions)))
         })
       }
@@ -104,13 +116,13 @@ const Versions = props => {
             <FormControlLabel
               className={classes.formControlLabel}
               control={<Select
-                className={classes.clientSelect}
+                className={classes.distributionSelect}
                 native
-                onChange={(event) => setClient(event.target.value)}
-                title='Select client'
-                value={client}
+                onChange={(event) => setConsumer(event.target.value)}
+                title='Select distribution'
+                value={consumer}
               >
-                { clients.map( client => <option key={client}>{client}</option> ) }
+                { consumers.map( distribution => <option key={distribution}>{distribution}</option> ) }
               </Select>}
               label='Client'
             />
@@ -126,7 +138,7 @@ const Versions = props => {
             <FormControlLabel
               className={classes.formControlLabel}
               control={<Button
-                onClick={() => getClientVersions(client)}
+                onClick={() => getConsumerVersions(consumer)}
                 title='Refresh'
               >
                 <RefreshIcon/>
@@ -143,7 +155,7 @@ const Versions = props => {
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <VersionsTable
-            client={client}
+            client={consumer}
             clientVersions={clientVersions}
             developerVersions={developerVersions}
             instanceVersions={instanceVersions}

@@ -2,33 +2,29 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directive1
+import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.UserName
+import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
-import com.vyulabs.update.distribution.graphql.AuthenticationException
+import com.vyulabs.update.distribution.graphql.{AuthenticationException, NotFoundException}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.BsonDocument
 import org.janjaali.sprayjwt.Jwt
 import org.janjaali.sprayjwt.algorithms.HS256
-import org.slf4j.Logger
-
-import java.io.IOException
-import java.math.BigInteger
-import java.security.SecureRandom
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directive1
-import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
-import com.vyulabs.update.common.config.DistributionConfig
 import org.janjaali.sprayjwt.exceptions.InvalidSignatureException
-
-import scala.collection.JavaConverters.asJavaIterableConverter
-import scala.concurrent.{ExecutionContext, Future}
+import org.slf4j.Logger
 import spray.json._
 
+import java.io.IOException
 import java.util.Base64
+import scala.collection.JavaConverters.asJavaIterableConverter
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 trait UsersUtils extends SprayJsonSupport {
@@ -83,13 +79,17 @@ trait UsersUtils extends SprayJsonSupport {
     }).map(_ > 0)
   }
 
-  def login(userName: String, password: String)(implicit log: Logger): Future[AccessToken] = {
+  def login(userName: UserName, password: String)(implicit log: Logger): Future[AccessToken] = {
     getUserCredentials(userName).map {
       case Some(userCredentials) if userCredentials.passwordHash.hash == PasswordHash.generatePasswordHash(password, userCredentials.passwordHash.salt) =>
         AccessToken(userName, userCredentials.roles)
       case _ =>
         throw AuthenticationException("Authentication error")
     }
+  }
+
+  def whoAmI(userName: UserName)(implicit log: Logger): Future[UserInfo] = {
+    getUsersInfo(Some(userName)).map(_.headOption.getOrElse(throw NotFoundException()))
   }
 
   def encodeAccessToken(token: AccessToken)(implicit log: Logger): String = {

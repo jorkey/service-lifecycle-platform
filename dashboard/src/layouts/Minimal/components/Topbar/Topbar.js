@@ -7,6 +7,7 @@ import {AppBar, Toolbar, Typography} from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
 import BuildIcon from '@material-ui/icons/Build';
 import {Utils} from '../../../../common';
+import {useDistributionInfoQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -39,11 +40,7 @@ const Topbar = props => {
 
   const classes = useStyles();
 
-  const [distributionInfo, setDistributionInfo] = useState([]);
-
-  useEffect(() => {
-    Utils.getDistributionInfo().then(info => setDistributionInfo(info))
-  }, [])
+  const { loading, error, data } = useDistributionInfoQuery();
 
   return (
     <AppBar
@@ -56,12 +53,12 @@ const Topbar = props => {
         <RouterLink to='/'>
           <Grid className={classes.logo}>
             <BuildIcon/>
-            { distributionInfo.name ? (
+            { data ? (
               <>
                 <Typography className={classes.distributionName}
                             display='inline'
                 >
-                  {distributionInfo.name}
+                  {data.distributionInfo.title}
                 </Typography>
               </>
             ) : null }

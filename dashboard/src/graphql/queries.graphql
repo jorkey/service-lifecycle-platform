@@ -1,0 +1,19 @@
+mutation login($user: String!, $password: String!) {
+    login(user: $user, password: $password)
+}
+
+query whoAmI {
+    whoAmI { name, roles }
+}
+
+query distributionInfo {
+    distributionInfo { distributionName, title }
+}
+
+query distributionConsumersInfo {
+    distributionConsumersInfo { distributionName, consumerProfile }
+}
+
+query developerDesiredVersions {
+    developerDesiredVersions { serviceName, version }
+}

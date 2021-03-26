@@ -105,6 +105,7 @@ object GraphqlTypes {
 
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
 
+  implicit val DistributionInfoType = deriveObjectType[Unit, DistributionInfo]()
   implicit val DeveloperDesiredVersionType = deriveObjectType[Unit, DeveloperDesiredVersion]()
   implicit val ClientDesiredVersionType = deriveObjectType[Unit, ClientDesiredVersion]()
   implicit val BuildVersionInfoType = deriveObjectType[Unit, BuildInfo]()

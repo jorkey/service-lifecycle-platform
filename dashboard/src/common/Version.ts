@@ -108,3 +108,7 @@ class ClientDistributionVersion {
     return this.distributionName + '-' + this.clientVersion.toString()
   }
 }
+
+export const Version = {
+  DeveloperVersion
+}

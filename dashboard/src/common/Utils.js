@@ -1,51 +1,13 @@
 
 export const Utils = {
-  login,
   logout,
-  getDistributionInfo,
-  getClients,
-  getDesiredVersions,
   getInstalledDesiredVersions,
   getInstanceVersions,
   getServiceState
 };
 
-function login(user, password) {
-  const authData = window.btoa(user + ':' + password)
-  const path ='/api/user-info'
-  const init = {}
-  init.method = 'GET'
-  const headers = { 'Content-Type': 'application/json' }
-  headers.Authorization = 'Basic ' + authData
-  init.headers = headers
-  init.cache = 'no-cache'
-  return fetchRequest(path, init).then(user => {
-    if (user) {
-      user.authData = authData
-      localStorage.setItem('user', JSON.stringify(user))
-    }
-    return user
-  });
-}
-
 function logout() {
   localStorage.removeItem('token')
-}
-
-function getDistributionInfo() {
-  return apiGet('distribution-info');
-}
-
-function getClients() {
-  return apiGet('clients-info').then(clients => {
-    return clients.map(client => client.name)
-  });
-}
-
-function getDesiredVersions(client) {
-  return apiGet('desired-versions', client).then(versions => {
-    return versions.desiredVersions
-  });
 }
 
 function getInstanceVersions(client) {

@@ -20,8 +20,8 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends UsersUtils with DistributionConsumerProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
-      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils
+    extends DistributionInfoUtils with DistributionConsumerProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
+      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with UsersUtils
 
 case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)
 
@@ -83,8 +83,19 @@ object GraphqlSchema {
   def Queries(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Query",
     fields[GraphqlContext, Unit](
+      // Check alive
       Field("ping", StringType,
         resolve = _ => { "pong" }),
+
+      // Own account operations
+      Field("whoAmI", UserInfoType,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.userName) }),
+
+      // Distribution server info
+      Field("distributionInfo", DistributionInfoType,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDistributionInfo() }),
 
       // Users
       Field("usersInfo", ListType(UserInfoType),
