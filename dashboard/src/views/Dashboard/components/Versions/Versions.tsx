@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import { Utils } from '../../../../common';
+import { Version } from '../../../../common';
 import {
   Card,
   CardHeader,
@@ -81,7 +82,7 @@ const Versions = props => {
   const developerDesiredVersions = useDeveloperDesiredVersionsQuery();
 
   if (developerVersions.length == 0 && developerDesiredVersions.data) {
-    developerDesiredVersions.data.developerDesiredVersions.forEach(version => {
+    developerDesiredVersions.data.developerDesiredVersions.forEach((version) => {
       version.version
     })
   }
@@ -171,4 +172,4 @@ Versions.propTypes = {
   className: PropTypes.string
 };
 
-export default Versions;
+export default Versions;</DeveloperDistributionVersion>

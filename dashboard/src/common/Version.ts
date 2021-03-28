@@ -110,5 +110,6 @@ class ClientDistributionVersion {
 }
 
 export const Version = {
-  DeveloperVersion
+  DeveloperVersion,
+  DeveloperDistributionVersion
 }
