@@ -8,7 +8,7 @@ import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpCl
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -51,9 +51,9 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
     it should "upload developer version image" in {
       val file = File.createTempFile("load-test", "zip")
       assert(IoUtils.writeBytesToFile(file, "developer version content".getBytes("utf8")))
-      assert(builderClient.uploadDeveloperVersionImage("service1", DeveloperDistributionVersion.parse("test-1.1.1"), file))
+      assert(builderClient.uploadDeveloperVersionImage("service1", DistributionVersion.parse("test-1.1.1"), file))
       assertResult(25)(
-        distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")).length())
+        distributionDir.getDeveloperVersionImageFile("service1", DistributionVersion.parse("test-1.1.1")).length())
     }
 
     it should "upload client version image" in {

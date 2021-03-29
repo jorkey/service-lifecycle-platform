@@ -14,7 +14,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.info.{AccessToken, UserRole}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
 import org.slf4j.LoggerFactory
 import sangria.ast.OperationType
@@ -49,12 +49,12 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                       val JsString(query) = fields("query")
                       val operation = fields.get("operation") collect { case JsString(op) => op }
                       val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
-                      executeGraphqlRequest(token, workspace, query, operation, variables, true /*tracing.isDefined*/)
+                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
                     }
                   } ~ get {
                     parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
                       val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
-                      executeGraphqlRequest(token, workspace, query, operation, variables, true /*tracing.isDefined*/)
+                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
                     }
                   }
                 }
@@ -66,13 +66,13 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                     get {
                       authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution)) {
                         getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
-                          DeveloperDistributionVersion.parse(version)))
+                          DistributionVersion.parse(version)))
                       }
                     } ~ post {
                       authorize(token.hasRole(UserRole.Builder)) {
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
+                            val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DistributionVersion.parse(version)).toPath)
                             val future = byteSource.runWith(sink)
                             onSuccess(future) { _ => complete(OK) }
                         }

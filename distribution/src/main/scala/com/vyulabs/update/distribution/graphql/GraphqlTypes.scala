@@ -4,7 +4,7 @@ import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import sangria.ast.StringValue
 import sangria.macros.derive._
@@ -21,8 +21,7 @@ object GraphqlTypes {
     override def errorMessage: String = "Error during parsing Date"
   }
 
-  implicit val GraphQLDate = ScalarType[Date](
-    "Date",
+  implicit val GraphQLDate = ScalarType[Date]("Date",
     coerceOutput = (date, _) => serializeISO8601Date(date),
     coerceInput = {
       case StringValue(value, _, _, _, _) => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
@@ -31,54 +30,6 @@ object GraphqlTypes {
     coerceUserInput = {
       case value: String => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
       case _ => Left(DateCoerceViolation)
-    })
-
-  case object VersionViolation extends Violation {
-    override def errorMessage: String = "Error during parsing version"
-  }
-
-  implicit val DeveloperVersionType = ScalarType[DeveloperVersion]("DeveloperVersion",
-    coerceOutput = (version, _) => version.toString,
-    coerceInput = {
-      case StringValue(version, _, _ , _ , _) => Right(DeveloperVersion.parse(version))
-      case _ => Left(VersionViolation)
-    },
-    coerceUserInput = {
-      case version: String => Right(DeveloperVersion.parse(version))
-      case _ => Left(VersionViolation)
-    })
-
-  implicit val DeveloperDistributionVersionType = ScalarType[DeveloperDistributionVersion]("DeveloperDistributionVersion",
-    coerceOutput = (version, _) => version.toString,
-    coerceInput = {
-      case StringValue(version, _, _ , _ , _) => Right(DeveloperDistributionVersion.parse(version))
-      case _ => Left(VersionViolation)
-    },
-    coerceUserInput = {
-      case version: String => Right(DeveloperDistributionVersion.parse(version))
-      case _ => Left(VersionViolation)
-    })
-
-  implicit val ClientVersionType = ScalarType[ClientVersion]("ClientVersion",
-    coerceOutput = (version, _) => version.toString,
-    coerceInput = {
-      case StringValue(version, _, _ , _ , _) => Right(ClientVersion.parse(version))
-      case _ => Left(VersionViolation)
-    },
-    coerceUserInput = {
-      case version: String => Right(ClientVersion.parse(version))
-      case _ => Left(VersionViolation)
-    })
-
-  implicit val ClientDistributionVersionType = ScalarType[ClientDistributionVersion]("ClientDistributionVersion",
-    coerceOutput = (version, _) => version.toString,
-    coerceInput = {
-      case StringValue(version, _, _ , _ , _) => Right(ClientDistributionVersion.parse(version))
-      case _ => Left(VersionViolation)
-    },
-    coerceUserInput = {
-      case version: String => Right(ClientDistributionVersion.parse(version))
-      case _ => Left(VersionViolation)
     })
 
   implicit val FiniteDurationType = ScalarType[FiniteDuration]("FiniteDuration",
@@ -103,8 +54,26 @@ object GraphqlTypes {
       case _ => Left(VersionViolation)
     })
 
+  case object VersionViolation extends Violation {
+    override def errorMessage: String = "Error during parsing version"
+  }
+
+  implicit val VersionType = ScalarType[Version]("Version",
+    coerceOutput = (version, _) => version.toString,
+    coerceInput = {
+      case StringValue(version, _, _ , _ , _) => Right(Version.parse(version))
+      case _ => Left(VersionViolation)
+    },
+    coerceUserInput = {
+      case version: String => Right(Version.parse(version))
+      case _ => Left(VersionViolation)
+    })
+
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
 
+  implicit val DistributionVersionType = deriveObjectType[Unit, DistributionVersion]()
+  implicit val ClientVersionType = deriveObjectType[Unit, ClientVersion]()
+  implicit val ClientDistributionVersionType = deriveObjectType[Unit, ClientDistributionVersion]()
   implicit val DistributionInfoType = deriveObjectType[Unit, DistributionInfo]()
   implicit val DeveloperDesiredVersionType = deriveObjectType[Unit, DeveloperDesiredVersion]()
   implicit val ClientDesiredVersionType = deriveObjectType[Unit, ClientDesiredVersion]()
@@ -131,6 +100,9 @@ object GraphqlTypes {
   implicit val DistributionConsumerInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
   implicit val DistributionConsumerProfileType = deriveObjectType[Unit, DistributionConsumerProfile]()
 
+  implicit val DistributionVersionInputType = deriveInputObjectType[DistributionVersion](InputObjectTypeName("DistributionVersionInput"))
+  implicit val ClientVersionInputType = deriveInputObjectType[ClientVersion](InputObjectTypeName("ClientVersionInput"))
+  implicit val ClientDistributionVersionInputType = deriveInputObjectType[ClientDistributionVersion](InputObjectTypeName("ClientDistributionVersionInput"))
   implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
   implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))
   implicit val DeveloperVersionInfoInputType = deriveInputObjectType[DeveloperVersionInfo](InputObjectTypeName("DeveloperVersionInfoInput"))

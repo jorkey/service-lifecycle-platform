@@ -1,31 +1,29 @@
 package com.vyulabs.update.common.version
 
 import com.vyulabs.update.common.common.Common.DistributionName
-import spray.json.{JsString, JsValue, RootJsonFormat}
+import spray.json.DefaultJsonProtocol._
+
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 26.04.19.
   * Copyright FanDate, Inc.
   */
 
-case class ClientDistributionVersion(distributionName: DistributionName, version: ClientVersion) {
-  def original() = DeveloperDistributionVersion(distributionName, version.developerVersion)
+case class ClientDistributionVersion(distributionName: DistributionName, build: ClientVersion) {
+  def original() = DistributionVersion(distributionName, build.build)
 
-  def next() = ClientDistributionVersion(distributionName, version.next())
+  def next() = ClientDistributionVersion(distributionName, build.next())
 
   override def toString: String = {
-    distributionName + "-" + version.toString
+    distributionName + "-" + build.toString
   }
 }
 
 object ClientDistributionVersion {
-  implicit object BuildVersionJsonFormat extends RootJsonFormat[ClientDistributionVersion] {
-    def write(value: ClientDistributionVersion) = JsString(value.toString)
-    def read(value: JsValue) = ClientDistributionVersion.parse(value.asInstanceOf[JsString].value)
-  }
+  implicit val clientDistributionVersionJson = jsonFormat2(ClientDistributionVersion.apply)
 
-  def apply(version: DeveloperDistributionVersion): ClientDistributionVersion =
-    ClientDistributionVersion(version.distributionName, ClientVersion(version.version))
+  def from(version: DistributionVersion): ClientDistributionVersion =
+    ClientDistributionVersion(version.distributionName, ClientVersion(version.build, 0))
 
   def parse(version: String): ClientDistributionVersion = {
     val index = version.lastIndexOf('-')
@@ -41,7 +39,7 @@ object ClientDistributionVersion {
     if (version1.distributionName != version2.distributionName) {
       version1.distributionName.compareTo(version2.distributionName) < 0
     } else {
-      ClientVersion.ordering.lt(version1.version, version2.version)
+      ClientVersion.ordering.lt(version1.build, version2.build)
     }
   })
 }

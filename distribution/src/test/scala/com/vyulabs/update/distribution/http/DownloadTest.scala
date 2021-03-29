@@ -4,7 +4,7 @@ import com.vyulabs.update.distribution.TestEnvironment
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 20.11.20.
@@ -16,7 +16,7 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   val route = distribution.route
 
   it should "download developer version image" in {
-    IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
+    IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DistributionVersion.parse("test-1.1.1")),
       "qwerty123".getBytes("utf8"))
     Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(builderHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
@@ -34,7 +34,7 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   }
 
   it should "return error when illegal access" in {
-    IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
+    IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DistributionVersion.parse("test-1.1.1")),
       "qwerty123".getBytes("utf8"))
     Get("/load/developer-version-image/service1/test-1.1.1") ~> addCredentials(updaterHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.Forbidden

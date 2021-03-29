@@ -15,7 +15,7 @@ import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils.copyFile
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{DistributionVersion, Version}
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -44,10 +44,10 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
-                            author: String, serviceName: ServiceName, newVersion: DeveloperVersion,
+                            author: String, serviceName: ServiceName, newVersion: Version,
                             comment: Option[String], sourceBranches: Seq[String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
-    val newDistributionVersion = DeveloperDistributionVersion(distributionName, newVersion)
+    val newDistributionVersion = DistributionVersion(distributionName, newVersion)
     IoUtils.synchronize[Boolean](new File(developerServiceDir(serviceName), builderLockFile), false,
       (attempt, _) => {
         if (attempt == 1) {
@@ -206,7 +206,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
-                             serviceName: ServiceName, version: DeveloperDistributionVersion, author: String): Boolean = {
+                             serviceName: ServiceName, version: DistributionVersion, author: String): Boolean = {
     val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
     ZipUtils.zipAndSend(developerBuildDir(serviceName), file => {
       uploadDeveloperVersion(distributionClient, serviceName, version, buildInfo, file)
@@ -214,7 +214,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], serviceName: ServiceName,
-                             version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
+                             version: DistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
     if (!distributionClient.uploadDeveloperVersionImage(serviceName, version, imageFile)) {
       log.error("Uploading version image error")
       return false
@@ -228,7 +228,7 @@ class DeveloperBuilder(builderDir: File, distributionName: DistributionName) {
   }
 
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], serviceName: ServiceName,
-                                      version: DeveloperDistributionVersion, comment: Option[String]): Boolean = {
+                                     version: DistributionVersion, comment: Option[String]): Boolean = {
     for (repository <- sourceRepositories) {
       log.info(s"Mark source repository with version ${version}")
       val tag = serviceName + "-" + version.toString

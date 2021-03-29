@@ -6,7 +6,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlArgument
 import com.vyulabs.update.common.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, Version}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.client.HttpClientTestStub
@@ -38,7 +38,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     uploader.start()
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(1, 1, 0)), 0))), None, None, None, None)))
     result(collections.State_ServiceStates.insert(state1))
     waitForSetServiceStates(Seq(state1)).success(true)
 
@@ -47,7 +47,7 @@ class ServicesStateUploadTest extends TestEnvironment {
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(1, 1, 1)), 0))), None, None, None, None)))
     result(collections.State_ServiceStates.insert(state2))
     waitForSetServiceStates(Seq(state2)).success(true)
 
@@ -64,7 +64,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     uploader.start()
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 0))))), None, None, None, None)))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(1, 1, 0)), 0))), None, None, None, None)))
     result(collections.State_ServiceStates.insert(state1))
     waitForSetServiceStates(Seq(state1)).failure(new IOException("upload error"))
 
@@ -73,12 +73,12 @@ class ServicesStateUploadTest extends TestEnvironment {
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(1, 1, 1)), 0))), None, None, None, None)))
     result(collections.State_ServiceStates.insert(state2))
     waitForSetServiceStates(Seq(state1, state2)).success(true)
 
     val state3 = DistributionServiceState("client3", "instance3", DirectoryServiceState("service3", "directory",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))), None, None, None, None)))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(1, 1, 1)), 0))), None, None, None, None)))
     result(collections.State_ServiceStates.insert(state3))
     waitForSetServiceStates(Seq(state3)).success(true)
 

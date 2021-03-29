@@ -38,7 +38,7 @@ class BuildClientVersionTest extends TestEnvironment {
   it should "build client version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
-          buildClientVersion (service: "service1", developerVersion: "test-1.1.1", clientVersion: "test-1.1.1")
+          buildClientVersion (service: "service1", developerVersion: { distributionName: "test", build: "1.1.1" }, clientVersion: { distributionName: "test", build: { build: "1.1.2", clientBuild: 0 } })
         }
       """))
     assertResult(OK)(buildResponse._1)

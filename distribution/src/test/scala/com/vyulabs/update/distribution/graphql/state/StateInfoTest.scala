@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats._
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
@@ -33,8 +33,8 @@ class StateInfoTest extends TestEnvironment {
         mutation {
           setTestedVersions (
             versions: [
-              { serviceName: "service1", version: "test-1.1.2" },
-              { serviceName: "service2", version: "test-2.1.2" }
+              { serviceName: "service1", version: { distributionName: "test", build: "1.1.2" } },
+              { serviceName: "service2", version: { distributionName: "test", build: "2.1.2" } }
             ]
           )
         }
@@ -43,8 +43,8 @@ class StateInfoTest extends TestEnvironment {
     val date = new Date()
 
     assertResult(Seq(TestedDesiredVersions("common", Seq(
-      DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", DeveloperVersion(Seq(1, 1, 2)))),
-      DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", DeveloperVersion(Seq(2, 1, 2))))),
+      DeveloperDesiredVersion("service1", DistributionVersion("test", Version(Seq(1, 1, 2)))),
+      DeveloperDesiredVersion("service2", DistributionVersion("test", Version(Seq(2, 1, 2))))),
       Seq(TestSignature("distribution", date)))))(result(collections.State_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
         v.consumerProfile, v.versions, v.signatures.map(s => TestSignature(s.distributionName, date)))))))
     result(collections.State_TestedVersions.drop())
@@ -57,27 +57,33 @@ class StateInfoTest extends TestEnvironment {
         mutation {
           setInstalledDesiredVersions (
             versions: [
-               { serviceName: "service1", version: "test-1.1.1" },
-               { serviceName: "service2", version: "test-2.1.1" }
+               { serviceName: "service1", version: { distributionName: "test", build: { build: "1.1.1", clientBuild: 0 } } },
+               { serviceName: "service2", version: { distributionName: "test", build: { build: "2.1.1", clientBuild: 0 } } }
             ]
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":"test-1.1.1"},{"serviceName":"service2","version":"test-2.1.1"}]}}""").parseJson))(
+      ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":{"build":"1.1.1","clientBuild":0}}},{"serviceName":"service2","version":{"distributionName":"test","build":{"build":"2.1.1","clientBuild":0}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           installedDesiredVersions (distribution: "distribution") {
              serviceName
-             version
+             version {
+              distributionName
+              build {
+                build
+                clientBuild
+              }
+            }
           }
         }
       """)))
 
     result(collections.State_InstalledDesiredVersions.find().map(assertResult(Seq(InstalledDesiredVersions("distribution", Seq(
-      ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(1, 1, 1))))),
-      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(DeveloperVersion(Seq(2, 1, 1)))))))))(_)))
+      ClientDesiredVersion("service1", ClientDistributionVersion("test", ClientVersion(Version(Seq(1, 1, 1)), 0))),
+      ClientDesiredVersion("service2", ClientDistributionVersion("test", ClientVersion(Version(Seq(2, 1, 1)), 0)))))))(_)))
     result(collections.State_InstalledDesiredVersions.drop())
   }
 
@@ -91,7 +97,7 @@ class StateInfoTest extends TestEnvironment {
           setServiceStates (
             states: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  service: { date: $$date, version: "test-1.2.3" }
+                  service: { date: $$date, version: { distributionName: "test", build: { build: "1.2.3", clientBuild: 0 } } }
               }
             ]
           )
@@ -105,7 +111,7 @@ class StateInfoTest extends TestEnvironment {
           setServiceStates (
             states: [
               { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  service: { date: $$date, version: "test-1.2.4" }
+                  service: { date: $$date, version: { distributionName: "test", build: { build: "1.2.4", clientBuild: 0 } } }
               }
             ]
           )
@@ -113,14 +119,20 @@ class StateInfoTest extends TestEnvironment {
       """, variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance1","service":{"version":"test-1.2.4"}}}]}}""").parseJson))(
+      ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance1","service":{"version":{"distributionName":"test","build":{"build":"1.2.4","clientBuild":0}}}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           serviceStates (distribution: "distribution", service: "service1") {
             instance {
               instanceId
               service {
-                version
+                version {
+                  distributionName
+                  build {
+                    build
+                    clientBuild
+                  }
+                }
               }
             }
           }

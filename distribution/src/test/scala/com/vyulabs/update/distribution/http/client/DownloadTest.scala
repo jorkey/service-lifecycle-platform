@@ -8,7 +8,7 @@ import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpCl
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -48,15 +48,15 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
 
   def download[Source[_]](builderClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "download developer version image" in {
-      IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
+      IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DistributionVersion.parse("test-1.1.1")),
         "qwerty123".getBytes("utf8"))
       val outFile = File.createTempFile("load-test", "zip")
       assert(builderClient.downloadDeveloperVersionImage("service1",
-        DeveloperDistributionVersion.parse("test-1.1.1"), outFile))
+        DistributionVersion.parse("test-1.1.1"), outFile))
       assertResult(9)(outFile.length())
       outFile.delete()
       assert(distribClient.downloadDeveloperVersionImage("service1",
-        DeveloperDistributionVersion.parse("test-1.1.1"), outFile))
+        DistributionVersion.parse("test-1.1.1"), outFile))
       assertResult(9)(outFile.length())
     }
 

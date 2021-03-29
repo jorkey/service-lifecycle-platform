@@ -7,19 +7,15 @@ import spray.json.{JsString, JsValue, RootJsonFormat}
   * Copyright FanDate, Inc.
   */
 
-case class DeveloperVersion(build: Seq[Int]) {
+case class Version(build: Seq[Int]) {
   def isEmpty(): Boolean = {
     build.foreach { v => if (v != 0) return false }
     true
   }
 
-  def original(): DeveloperVersion = {
-    DeveloperVersion(build)
-  }
-
   def next() = {
     val v = build.last + 1
-    DeveloperVersion(build.dropRight(1) :+ v)
+    Version(build.dropRight(1) :+ v)
   }
 
   override def toString: String = {
@@ -27,25 +23,25 @@ case class DeveloperVersion(build: Seq[Int]) {
   }
 }
 
-object DeveloperVersion {
-  val initialVersion = DeveloperVersion(Seq(1, 0, 0))
+object Version {
+  val initialVersion = Version(Seq(1, 0, 0))
 
-  implicit object DeveloperVersionJsonFormat extends RootJsonFormat[DeveloperVersion] {
-    def write(value: DeveloperVersion) = JsString(value.toString)
-    def read(value: JsValue) = DeveloperVersion.parse(value.asInstanceOf[JsString].value)
+  implicit object BuildVersionJsonFormat extends RootJsonFormat[Version] {
+    def write(value: Version) = JsString(value.toString)
+    def read(value: JsValue) = Version.parse(value.asInstanceOf[JsString].value)
   }
 
-  def parse(version: String): DeveloperVersion = {
+  def parse(version: String): Version = {
     val build = version.split("\\.").map(_.toInt)
     if (build.size == 0) {
       throw new IllegalArgumentException(s"Invalid version ${version}")
     }
-    new DeveloperVersion(build)
+    new Version(build)
   }
 
   val empty = apply(Seq(0))
 
-  val ordering: Ordering[DeveloperVersion] = Ordering.fromLessThan[DeveloperVersion]((version1, version2) => {
+  val ordering: Ordering[Version] = Ordering.fromLessThan[Version]((version1, version2) => {
     isLessThan(version1.build, version2.build)
   })
 

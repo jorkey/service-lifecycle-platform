@@ -78,7 +78,7 @@ function getDesiredVersion {
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
-    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version}" "clientDesiredVersions[0].version" ${tmpFile}
+    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version { distributionName, build { build, clientBuild } } }" "clientDesiredVersions[0].version" ${tmpFile}
     version=`cat ${tmpFile}`
     rm -f ${tmpFile}
     if [[ ${version} == "null" ]]; then

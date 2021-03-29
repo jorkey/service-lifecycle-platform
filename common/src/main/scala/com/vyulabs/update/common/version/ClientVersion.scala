@@ -1,50 +1,41 @@
 package com.vyulabs.update.common.version
 
-import spray.json.{JsString, JsValue, RootJsonFormat}
+import spray.json.DefaultJsonProtocol.{jsonFormat2, _}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 26.04.19.
   * Copyright FanDate, Inc.
   */
 
-case class ClientVersion(developerVersion: DeveloperVersion, localBuild: Option[Int] = None) {
+case class ClientVersion(build: Version, clientBuild: Int) {
   def next() = {
-    val v = localBuild match {
-      case Some(localBuild) =>
-        localBuild + 1
-      case None =>
-        1
-    }
-    ClientVersion(developerVersion, Some(v))
+    ClientVersion(build, clientBuild+1)
   }
 
   override def toString: String = {
-    var version = developerVersion.toString
-    for (localBuild <- localBuild) {
-      version += ("_" + localBuild)
+    if (clientBuild != 0) {
+      build.toString + "_" + clientBuild
+    } else {
+      build.toString
     }
-    version
   }
 }
 
 object ClientVersion {
-  implicit object ClientVersionJsonFormat extends RootJsonFormat[ClientVersion] {
-    def write(value: ClientVersion) = JsString(value.toString)
-    def read(value: JsValue) = ClientVersion.parse(value.asInstanceOf[JsString].value)
-  }
+  implicit val clientVersionJson = jsonFormat2(ClientVersion.apply)
 
   def parse(version: String): ClientVersion = {
     val index = version.lastIndexOf('_')
-    val developerVersion = DeveloperVersion.parse(if (index != -1) version.substring(0, index) else version)
-    val localBuild = if (index != -1) Some(version.substring(index + 1).toInt) else None
-    new ClientVersion(developerVersion, localBuild)
+    val developerVersion = Version.parse(if (index != -1) version.substring(0, index) else version)
+    val clientBuild = if (index != -1) version.substring(index + 1).toInt else 0
+    new ClientVersion(developerVersion, clientBuild)
   }
 
   val ordering: Ordering[ClientVersion] = Ordering.fromLessThan[ClientVersion]((version1, version2) => {
-    if (version1.developerVersion != version2.developerVersion) {
-      DeveloperVersion.isLessThan(version1.developerVersion.build, version2.developerVersion.build)
+    if (version1.build != version2.build) {
+      Version.isLessThan(version1.build.build, version2.build.build)
     } else {
-      version1.localBuild.getOrElse(0) < version2.localBuild.getOrElse(0)
+      version1.clientBuild < version2.clientBuild
     }
   })
 }

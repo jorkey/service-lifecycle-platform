@@ -3,7 +3,7 @@ package com.vyulabs.update.common.distribution.server
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
 import org.slf4j.LoggerFactory
 
 import java.io._
@@ -39,7 +39,7 @@ class DistributionDirectory(val directory: File) {
     new File(directory, Common.DistributionConfigFileName)
   }
 
-  def getDeveloperVersionImageFileName(serviceName: ServiceName, version: DeveloperVersion): String = {
+  def getDeveloperVersionImageFileName(serviceName: ServiceName, version: Version): String = {
     serviceName + "-" + version + ".zip"
   }
 
@@ -71,12 +71,12 @@ class DistributionDirectory(val directory: File) {
     dir2
   }
 
-  def getDeveloperVersionImageFile(serviceName: ServiceName, version: DeveloperDistributionVersion): File = {
-    new File(getDeveloperServiceDir(version.distributionName, serviceName), getDeveloperVersionImageFileName(serviceName, version.version))
+  def getDeveloperVersionImageFile(serviceName: ServiceName, version: DistributionVersion): File = {
+    new File(getDeveloperServiceDir(version.distributionName, serviceName), getDeveloperVersionImageFileName(serviceName, version.build))
   }
 
   def getClientVersionImageFile(serviceName: ServiceName, version: ClientDistributionVersion): File = {
-    new File(getClientServiceDir(version.distributionName, serviceName), getClientVersionImageFileName(serviceName, version.version))
+    new File(getClientServiceDir(version.distributionName, serviceName), getClientVersionImageFileName(serviceName, version.build))
   }
 
   def getFaultsDir(): File = {

@@ -11,7 +11,7 @@ import com.vyulabs.update.common.distribution.server.{DistributionDirectory, Set
 import com.vyulabs.update.common.info.ClientDesiredVersionDelta
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
 import com.vyulabs.update.distribution.mongo.MongoDb
 import com.vyulabs.update.updater.config.UpdaterConfig
 import org.slf4j.LoggerFactory
@@ -126,7 +126,7 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make test service version")
-    buildTestServiceVersions(developerClient, DeveloperVersion.initialVersion)
+    buildTestServiceVersions(developerClient, Version.initialVersion)
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
@@ -161,7 +161,7 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make fixed test service version")
-    buildTestServiceVersions(developerClient, DeveloperVersion.initialVersion.next())
+    buildTestServiceVersions(developerClient, Version.initialVersion.next())
 
     println()
     println(s"########################### Test service is updated")
@@ -197,7 +197,7 @@ class SimpleLifecycle {
     println()
   }
 
-  private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource], version: DeveloperVersion): Unit = {
+  private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource], version: Version): Unit = {
     println("--------------------------- Build developer version of test service")
     val taskId = developerClient.graphqlRequest(developerMutations.buildDeveloperVersion(testServiceName, version)).getOrElse {
       sys.error("Can't execute build developer version task")
@@ -208,8 +208,8 @@ class SimpleLifecycle {
 
     println("--------------------------- Build client version of test service")
     val taskId1 = developerClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
-      DeveloperDistributionVersion(distributionName, version),
-      ClientDistributionVersion(distributionName, ClientVersion(version)))).getOrElse {
+      DistributionVersion(distributionName, version),
+      ClientDistributionVersion(distributionName, ClientVersion(version, 0)))).getOrElse {
       sys.error("Can't execute build client version task")
     }
     if (!subscribeTask(developerClient, taskId1)) {
@@ -218,7 +218,7 @@ class SimpleLifecycle {
 
     println("--------------------------- Set client desired versions")
     if (!developerClient.graphqlRequest(developerMutations.setClientDesiredVersions(Seq(
-        ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion(distributionName, ClientVersion(version))))))).getOrElse(false)) {
+        ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion(distributionName, ClientVersion(version, 0))))))).getOrElse(false)) {
       sys.error("Set client desired versions error")
     }
   }
