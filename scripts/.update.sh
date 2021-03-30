@@ -62,6 +62,32 @@ function graphqlQuery() {
   jq -r .data.${subSelection} ${tmpFile} >${outputFile}
 }
 
+## Convert developer version from Json to string
+# input:
+#   $1 - developer version Json
+# output:
+#   stdout - short version string
+function developerVersionToString {
+  local distributionName=`echo $1 | jq -r '.distributionName'`
+  local developerBuild=`echo $1 | jq -r '.developerBuild | join(".")'`
+  echo "${distributionName}-${developerBuild}"
+}
+
+## Convert client version from Json to string
+# input:
+#   $1 - client version Json
+# output:
+#   stdout - short version string
+function clientVersionToString {
+  local developerVersion=`developerVersionToString $1`
+  local clientBuild=`echo $1 | jq -r '.clientBuild'`
+  if [ ${clientBuild} == 0 ]; then
+    echo ${developerVersion}
+  else
+    echo "${developerVersion}_${clientBuild}"
+  fi
+}
+
 ### Get desired version number of service.
 # input:
 #   $1 - service name
@@ -78,7 +104,7 @@ function getDesiredVersion {
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
-    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version { distributionName, build { build, clientBuild } } }" "clientDesiredVersions[0].version" ${tmpFile}
+    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){ version { distributionName, build { developerBuild, clientBuild } } }" "clientDesiredVersions[0].version" ${tmpFile}
     version=`cat ${tmpFile}`
     rm -f ${tmpFile}
     if [[ ${version} == "null" ]]; then
@@ -118,7 +144,7 @@ function downloadVersionImage {
 # output:
 #  stdout - desired version file
 function getServiceDesiredVersionFile {
-  echo ".${1}.desired-version"
+  echo ".${1}.desired-version.json"
 }
 
 ### Get service version file.
@@ -127,7 +153,7 @@ function getServiceDesiredVersionFile {
 # output:
 #  stdout - version file
 function getServiceVersionFile {
-  echo ".${1}.version"
+  echo ".${1}.version.json"
 }
 
 ### Get service version.
@@ -177,8 +203,8 @@ function updateService {
     >&2 echo "Getting desired version of ${service} error"
     exit 1
   fi
-  if [[ ${currentVersion} != ${desiredVersion} ]]; then
-    echo "Download ${service} version ${desiredVersion}"
+  if [[ "${currentVersion}" != "${desiredVersion}" ]]; then
+    echo "Download ${service} version `clientVersionToString ${desiredVersion}`"
     downloadVersionImage ${service} ${desiredVersion} ${outputFile}
     setCurrentVersion ${service} ${desiredVersion}
   fi
@@ -243,22 +269,22 @@ function runService {
       >&2 echo "Getting current version of ${serviceToRun} error"
       exit 1
     fi
-    local buildVersion=`echo ${currentVersion} | sed -e 's/_.*//'`
+    local developerVersion=`developerVersionToString ${currentVersion}`
 
     if [ -f install.json ]; then
       if ! query=`jq -r '.runService.query' install.json`; then
         >&2 echo "runService.query is not defined in the install.json"
       fi
-      if ! args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${buildVersion}/`; then
+      if ! args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${developerVersion}/`; then
         >&2 echo "runService.args is not defined in the install.json"
       fi
     else
-      if [ ! -f ${serviceToRun}-${buildVersion}.jar ]; then
-        >&2 echo "No <${serviceToRun}-${buildVersion}>.jar in the build"
+      if [ ! -f ${serviceToRun}-${developerVersion}.jar ]; then
+        >&2 echo "No <${serviceToRun}-${developerVersion}>.jar in the build"
         exit 1
       fi
       query="/usr/bin/java"
-      args="-jar ${serviceToRun}-${buildVersion}.jar"
+      args="-jar ${serviceToRun}-${developerVersion}.jar"
     fi
 
     if tty -s; then

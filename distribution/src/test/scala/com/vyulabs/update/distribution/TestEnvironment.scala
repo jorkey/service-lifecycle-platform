@@ -11,7 +11,7 @@ import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, Version}
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlWorkspace}
 import com.vyulabs.update.distribution.logger.LogStorekeeper
@@ -91,7 +91,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
     _ <- collections.Users_Info.insert(ServerUserInfo(updaterHttpCredentials.username, updaterCredentials.roles.map(_.toString), updaterCredentials.passwordHash))
   } yield {})
 
-  IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, ClientVersion(Version(Seq(1, 2, 3)), 0)))
+  IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0))
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 

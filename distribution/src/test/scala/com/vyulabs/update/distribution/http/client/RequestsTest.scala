@@ -9,7 +9,7 @@ import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphql
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
+import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import spray.json.DefaultJsonProtocol._
@@ -41,7 +41,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
     result(serviceStatesCollection.insert(
       DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
         ServiceState(date = stateDate, None, None, version =
-          Some(ClientDistributionVersion(distributionName, ClientVersion(Version(Seq(1, 2, 3)), 0))), None, None, None, None)))))
+          Some(ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0)), None, None, None, None)))))
   }
 
   def httpRequests(): Unit = {
@@ -108,25 +108,25 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
         administratorMutations.addDistributionConsumer("distribution", "common", None)).getOrElse(false))
 
       assert(builderClient.graphqlRequest(builderMutations.addDeveloperVersionInfo(
-        DeveloperVersionInfo.from("service1", DistributionVersion.parse("test-1.2.3"),
+        DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
           BuildInfo("author1", Seq("master"), date, Some("comment"))))).getOrElse(false))
 
-      assertResult(Some(Seq(DeveloperVersionInfo.from("service1", DistributionVersion.parse("test-1.2.3"),
+      assertResult(Some(Seq(DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
         BuildInfo("author1", Seq("master"), date, Some("comment"))))))(
         adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", Some("test"),
-          Some(Version.parse("1.2.3")))))
+          Some(DeveloperVersion(Build.parse("1.2.3"))))))
 
       assert(adminClient.graphqlRequest(administratorMutations.removeDeveloperVersion("service1",
-        DistributionVersion.parse("test-1.2.3"))).getOrElse(false))
+        DeveloperDistributionVersion.parse("test-1.2.3"))).getOrElse(false))
 
       assert(adminClient.graphqlRequest(
-        administratorMutations.setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta("service1", Some(DistributionVersion.parse("test-1.2.3"))))))
+        administratorMutations.setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta("service1", Some(DeveloperDistributionVersion.parse("test-1.2.3"))))))
         .getOrElse(false))
 
-      assertResult(Some(Seq(DeveloperDesiredVersion("service1", DistributionVersion.parse("test-1.2.3")))))(adminClient.graphqlRequest(
+      assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(adminClient.graphqlRequest(
         administratorQueries.getDeveloperDesiredVersions(Seq("service1"))))
 
-      assertResult(Some(Seq(DeveloperDesiredVersion("service1", DistributionVersion.parse("test-1.2.3")))))(
+      assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(
         distribClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(Seq("service1"))))
 
       assert(adminClient.graphqlRequest(
@@ -173,7 +173,7 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
       assert(adminClient.graphqlRequest(
         administratorMutations.addDistributionConsumer("distribution", "common", None)).getOrElse(false))
       assert(
-        distribClient.graphqlRequest(distributionMutations.setTestedVersions(Seq(DeveloperDesiredVersion("service1", DistributionVersion.parse("test-1.2.3"))))).getOrElse(false))
+        distribClient.graphqlRequest(distributionMutations.setTestedVersions(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3"))))).getOrElse(false))
     }
 
     it should "execute service states requests" in {

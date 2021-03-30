@@ -8,7 +8,7 @@ import com.vyulabs.update.common.logger.{LogBuffer, LogReceiver}
 import com.vyulabs.update.common.logs.LogWriter
 import com.vyulabs.update.common.process.{ChildProcess, ProcessMonitor}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
-import com.vyulabs.update.common.version.{DistributionVersion, Version}
+import com.vyulabs.update.common.version.{DeveloperDistributionVersion, Build}
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import org.slf4j.Logger
 
@@ -148,7 +148,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
       for (logDirectory <- config.logWriter.map(_.directory).map(new File(state.currentServiceDirectory, _))) {
         log.info(s"Save log files to history directory")
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
-          val dirName = state.getVersion().getOrElse(DistributionVersion("???", Version.empty)).toString + s"-${Utils.serializeISO8601Date(new Date())}" +
+          val dirName = state.getVersion().getOrElse(DeveloperDistributionVersion("???", Build.empty)).toString + s"-${Utils.serializeISO8601Date(new Date())}" +
             (if (failed) "-failed" else "")
           val saveDir = new File(state.logHistoryDirectory, s"${dirName}.log")
           if (!saveDir.exists() || IoUtils.deleteFileRecursively(saveDir)) {

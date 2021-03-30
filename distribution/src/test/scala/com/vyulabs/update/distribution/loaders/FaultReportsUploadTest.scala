@@ -8,7 +8,7 @@ import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlArgument
 import com.vyulabs.update.common.info.{DistributionFaultReport, FaultInfo, ServiceFaultReport, ServiceState}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, Version}
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.client.HttpClientTestStub
@@ -42,7 +42,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     uploader.start()
 
     val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(1)), 0))), None, None, None, None), Seq()), Seq("file1")))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()), Seq("file1")))
     result(collections.State_FaultReportsInfo.insert(report))
     waitForFaultReportUpload("fault1").success()
     waitForAddServiceFaultReportInfo(report).success(true)
@@ -59,7 +59,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     uploader.start()
 
     val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "directory", "service1", "profile1",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(1)), 0))), None, None, None, None), Seq()), Seq("file1")))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()), Seq("file1")))
     result(collections.State_FaultReportsInfo.insert(report1))
     waitForFaultReportUpload( "fault1").failure(new IOException("upload error"))
 
@@ -71,7 +71,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     waitForAddServiceFaultReportInfo(report1).success(true)
 
     val report2 = DistributionFaultReport(distributionName, ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "directory", "service2", "profile2",
-      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", ClientVersion(Version(Seq(2)), 0))), None, None, None, None), Seq()), Seq("file2")))
+      ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()), Seq("file2")))
     result(collections.State_FaultReportsInfo.insert(report2))
     waitForFaultReportUpload( "fault2").success()
     waitForAddServiceFaultReportInfo(report2).success(true)

@@ -5,7 +5,7 @@ import com.vyulabs.update.common.config.{LogWriterConfig, RunServiceConfig}
 import com.vyulabs.update.common.info.{FaultInfo, LogLine, ProfiledServiceName}
 import com.vyulabs.update.common.logger.{LogReceiver, PrefixedLogger}
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion, Version}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, Build}
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -107,7 +107,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   def makeServiceRunner(scriptContent: String, logUploader: Option[LogReceiver]): (ServiceStateController, ServiceRunner) = {
     val directory = Files.createTempDirectory("test").toFile
     val stateController = new ServiceStateController(directory, serviceName, () => ())
-    stateController.setVersion(ClientDistributionVersion.from(DistributionVersion("test-distribution", Version.initialVersion)))
+    stateController.setVersion(ClientDistributionVersion.from(DeveloperDistributionVersion("test-distribution", Build.initialBuild), 0))
 
     val scriptFile = new File(stateController.currentServiceDirectory, "script.sh")
     if (!IoUtils.writeBytesToFile(scriptFile, scriptContent.getBytes("utf8"))) {

@@ -190,18 +190,7 @@ object IoUtils {
   def readServiceVersion(serviceName: ServiceName, directory: File)(implicit log: Logger): Option[ClientDistributionVersion] = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
     if (versionMarkFile.exists()) {
-      val bytes = readFileToBytes(versionMarkFile).getOrElse {
-        return None
-      }
-      val str = new String(bytes, "utf8").trim
-      try {
-        val version = ClientDistributionVersion.parse(str)
-        Some(version)
-      } catch {
-        case ex: Exception =>
-          log.error(s"Can't parse ${str}", ex)
-          None
-      }
+      readFileToJson[ClientDistributionVersion](versionMarkFile)
     } else {
       None
     }
@@ -219,13 +208,13 @@ object IoUtils {
   def writeDesiredServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)
                                  (implicit log: Logger): Boolean = {
     val desiredVersionMarkFile = new File(directory, Common.DesiredVersionMarkFile.format(serviceName))
-    writeBytesToFile(desiredVersionMarkFile, version.toString.getBytes("utf8"))
+    writeJsonToFile(desiredVersionMarkFile, version)
   }
 
   def writeServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)
                          (implicit log: Logger): Boolean = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
-    writeBytesToFile(versionMarkFile, version.toString.getBytes("utf8"))
+    writeJsonToFile(versionMarkFile, version)
   }
 
   def macroExpansion(inputFile: File, outputFile: File, args: Map[String, String])(implicit log: Logger): Boolean = {

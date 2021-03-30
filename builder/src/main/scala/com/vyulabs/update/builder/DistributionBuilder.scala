@@ -12,7 +12,7 @@ import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
+import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
@@ -36,7 +36,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private val developerBuilder = new DeveloperBuilder(distributionDirectory.getBuilderDir(), distributionName)
   private val clientBuilder = new ClientBuilder(distributionDirectory.getBuilderDir(), distributionName)
 
-  private val initialClientVersion = ClientDistributionVersion.from(DistributionVersion(distributionName, Version.initialVersion))
+  private val initialClientVersion = ClientDistributionVersion.from(DeveloperDistributionVersion(distributionName, Build.initialBuild), 0)
 
   private var adminDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
   private var developerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
@@ -52,8 +52,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info(s"########################### Generate initial versions of services")
     log.info("")
     if (!generateDeveloperAndClientVersions(Map(
-        (Common.DistributionServiceName -> Version.initialVersion),
-        (Common.ScriptsServiceName -> Version.initialVersion)))) {
+        (Common.DistributionServiceName -> DeveloperVersion(Build.initialBuild)),
+        (Common.ScriptsServiceName -> DeveloperVersion(Build.initialBuild))))) {
       log.error("Can't generate initial versions")
       return false
     }
@@ -137,13 +137,13 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   def generateAndUploadInitialVersions(author: String): Boolean = {
     log.info(s"--------------------------- Generate and upload initial versions")
     if (!uploadDeveloperAndClientVersions(Map(
-      (Common.DistributionServiceName -> DistributionVersion(distributionName, Version.initialVersion)),
-      (Common.ScriptsServiceName -> DistributionVersion(distributionName, Version.initialVersion))), author)) {
+      (Common.DistributionServiceName -> DeveloperDistributionVersion(distributionName, Build.initialBuild)),
+      (Common.ScriptsServiceName -> DeveloperDistributionVersion(distributionName, Build.initialBuild))), author)) {
       return false
     }
     if (!generateAndUploadDeveloperAndClientVersions(Map(
-      (Common.BuilderServiceName -> Version.initialVersion),
-      (Common.UpdaterServiceName -> Version.initialVersion)), author)) {
+      (Common.BuilderServiceName -> DeveloperVersion(Build.initialBuild)),
+      (Common.UpdaterServiceName -> DeveloperVersion(Build.initialBuild))), author)) {
       return false
     }
     true
@@ -277,16 +277,16 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     adminDistributionClient.get.graphqlRequest(administratorMutations.setClientDesiredVersions(versions)).getOrElse(false)
   }
 
-  private def generateAndUploadDeveloperAndClientVersions(versions: Map[ServiceName, Version], author: String): Boolean = {
+  private def generateAndUploadDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperVersion], author: String): Boolean = {
     generateDeveloperAndClientVersions(versions) &&
-      uploadDeveloperAndClientVersions(versions.mapValues(v => DistributionVersion(distributionName, v)), author)
+      uploadDeveloperAndClientVersions(versions.mapValues(v => DeveloperDistributionVersion.from(distributionName, v)), author)
   }
 
-  private def uploadDeveloperAndClientVersions(versions: Map[ServiceName, DistributionVersion], author: String): Boolean = {
+  private def uploadDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
     if (!uploadDeveloperVersions(versions, author)) {
       return false
     }
-    if (!uploadClientVersions(versions.mapValues(version => ClientDistributionVersion.from(version)), author)) {
+    if (!uploadClientVersions(versions.mapValues(version => ClientDistributionVersion.from(version, 0)), author)) {
       return false
     }
     true
@@ -358,7 +358,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
   }
 
-  private def generateDeveloperAndClientVersions(versions: Map[ServiceName, Version]): Boolean = {
+  private def generateDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperVersion]): Boolean = {
     versions.foreach { case (serviceName, version) =>
       if (!generateDeveloperAndClientVersions(serviceName, version)) {
         return false
@@ -367,7 +367,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def uploadDeveloperVersions(versions: Map[ServiceName, DistributionVersion], author: String): Boolean = {
+  private def uploadDeveloperVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
     log.info(s"--------------------------- Upload developer images of services ${versions.keySet}")
     versions.foreach { case (serviceName, version) =>
       if (!developerBuilder.uploadDeveloperVersion(builderDistributionClient.get, serviceName, version, author)) {
@@ -404,8 +404,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def generateDeveloperAndClientVersions(serviceName: ServiceName, developerVersion: Version): Boolean = {
-    val developerDistributionVersion = DistributionVersion(distributionName, developerVersion)
+  private def generateDeveloperAndClientVersions(serviceName: ServiceName, developerVersion: DeveloperVersion): Boolean = {
+    val developerDistributionVersion = DeveloperDistributionVersion.from(distributionName, developerVersion)
     log.info(s"--------------------------- Generate version ${developerDistributionVersion} of service ${serviceName}")
     log.info(s"Generate developer version of service ${serviceName}")
     val arguments = Map.empty + ("version" -> developerDistributionVersion.toString)
@@ -444,7 +444,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       return None
     }
 
-    val clientVersion = ClientDistributionVersion(developerVersion.distributionName, ClientVersion(developerVersion.build, 0))
+    val clientVersion = ClientDistributionVersion(developerVersion.distributionName, developerVersion.build, 0)
     log.info(s"--------------------------- Generate client version ${clientVersion} of service ${serviceName}")
     if (!clientBuilder.generateClientVersion(serviceName, Map.empty)) {
       log.error(s"Can't generate client version of service ${serviceName}")

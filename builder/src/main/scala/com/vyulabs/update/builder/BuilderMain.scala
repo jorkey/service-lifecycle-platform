@@ -7,7 +7,7 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.Utils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion, Version}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 
 import java.io.File
@@ -95,7 +95,7 @@ object BuilderMain extends App {
         case "buildDeveloperVersion" =>
           val author = arguments.getValue("author")
           val serviceName = arguments.getValue("service")
-          val version = Version.parse(arguments.getValue("version"))
+          val version = DeveloperVersion.parse(arguments.getValue("version"))
           val comment: Option[String] = arguments.getOptionValue("comment")
           val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
           val developerBuilder = new DeveloperBuilder(new File("."), distributionName)
@@ -105,7 +105,7 @@ object BuilderMain extends App {
         case "buildClientVersion" =>
           val author = arguments.getValue("author")
           val serviceName = arguments.getValue("service")
-          val developerVersion = DistributionVersion.parse(arguments.getValue("developerVersion"))
+          val developerVersion = DeveloperDistributionVersion.parse(arguments.getValue("developerVersion"))
           val clientVersion = ClientDistributionVersion.parse(arguments.getValue("clientVersion"))
           val buildArguments = Map("distribDirectoryUrl" -> distributionUrl.toString, "version" -> clientVersion.toString)
           val clientBuilder = new ClientBuilder(new File("."), distributionName)

@@ -1,7 +1,7 @@
 package com.vyulabs.update.common.utils
 
 import com.vyulabs.update.common.common.Common.ServiceName
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.helpers.SubstituteLogger
 import org.slf4j.{Logger, LoggerFactory}
 import java.io.{File, IOException}
@@ -90,7 +90,7 @@ object Utils {
     }
   }
 
-  def getManifestBuildVersion(product: String)(implicit log: Logger): Option[DistributionVersion] = {
+  def getManifestBuildVersion(product: String)(implicit log: Logger): Option[DeveloperDistributionVersion] = {
     try {
       val resources = getClass().getClassLoader().getResources("META-INF/MANIFEST.MF")
       while (resources.hasMoreElements()) {
@@ -102,7 +102,7 @@ object Utils {
           if (title == product) {
             val versionKey = new Attributes.Name("Implementation-Version")
             val version = attrs.getValue(versionKey)
-            return Some(DistributionVersion.parse(version))
+            return Some(DeveloperDistributionVersion.parse(version))
           }
         }
       }

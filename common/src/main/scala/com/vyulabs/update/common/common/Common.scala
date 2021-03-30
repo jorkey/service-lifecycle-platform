@@ -29,8 +29,8 @@ object Common {
 
   val ServiceZipName = ".%s.zip"
 
-  val DesiredVersionMarkFile = ".%s.desired-version"
-  val VersionMarkFile = ".%s.version"
+  val DesiredVersionMarkFile = ".%s.desired-version.json"
+  val VersionMarkFile = ".%s.version.json"
 
   val DistributionConfigFileName = "distribution.json"
   val UpdateConfigFileName = "update.json"

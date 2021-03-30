@@ -20,12 +20,12 @@ trait TestedVersionsUtils extends ClientVersionUtils {
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions()).map(DeveloperDesiredVersions.toMap(_))
       result <- {
         if (!clientDesiredVersions.filter(_._2.distributionName == config.distributionName)
-          .mapValues(_.original()).equals(developerDesiredVersions)) {
+          .mapValues(_.original).equals(developerDesiredVersions)) {
           log.error("Client versions are different from developer versions:")
           clientDesiredVersions foreach {
             case (serviceName, clientVersion) =>
               developerDesiredVersions.get(serviceName) match {
-                case Some(developerVersion) if developerVersion != clientVersion.original() =>
+                case Some(developerVersion) if developerVersion != clientVersion.original =>
                   log.info(s"  service ${serviceName} version ${clientVersion} != ${developerVersion}")
                 case _ =>
               }
@@ -45,7 +45,7 @@ trait TestedVersionsUtils extends ClientVersionUtils {
           Future(false)
         } else {
           developerDistributionClient.graphqlRequest(distributionMutations.setTestedVersions(
-            DeveloperDesiredVersions.fromMap(clientDesiredVersions.mapValues(_.original()))))
+            DeveloperDesiredVersions.fromMap(clientDesiredVersions.mapValues(_.original))))
         }
       }
     } yield result

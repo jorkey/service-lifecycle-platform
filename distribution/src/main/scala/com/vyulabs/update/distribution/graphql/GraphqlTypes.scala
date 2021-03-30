@@ -4,7 +4,7 @@ import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import sangria.ast.StringValue
 import sangria.macros.derive._
@@ -58,20 +58,10 @@ object GraphqlTypes {
     override def errorMessage: String = "Error during parsing version"
   }
 
-  implicit val VersionType = ScalarType[Version]("Version",
-    coerceOutput = (version, _) => version.toString,
-    coerceInput = {
-      case StringValue(version, _, _ , _ , _) => Right(Version.parse(version))
-      case _ => Left(VersionViolation)
-    },
-    coerceUserInput = {
-      case version: String => Right(Version.parse(version))
-      case _ => Left(VersionViolation)
-    })
-
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
 
-  implicit val DistributionVersionType = deriveObjectType[Unit, DistributionVersion]()
+  implicit val DeveloperVersionType = deriveObjectType[Unit, DeveloperVersion]()
+  implicit val DistributionVersionType = deriveObjectType[Unit, DeveloperDistributionVersion]()
   implicit val ClientVersionType = deriveObjectType[Unit, ClientVersion]()
   implicit val ClientDistributionVersionType = deriveObjectType[Unit, ClientDistributionVersion]()
   implicit val DistributionInfoType = deriveObjectType[Unit, DistributionInfo]()
@@ -100,8 +90,9 @@ object GraphqlTypes {
   implicit val DistributionConsumerInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
   implicit val DistributionConsumerProfileType = deriveObjectType[Unit, DistributionConsumerProfile]()
 
-  implicit val DistributionVersionInputType = deriveInputObjectType[DistributionVersion](InputObjectTypeName("DistributionVersionInput"))
+  implicit val DeveloperVersionInputType = deriveInputObjectType[DeveloperVersion](InputObjectTypeName("DeveloperVersionInput"))
   implicit val ClientVersionInputType = deriveInputObjectType[ClientVersion](InputObjectTypeName("ClientVersionInput"))
+  implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersionInput"))
   implicit val ClientDistributionVersionInputType = deriveInputObjectType[ClientDistributionVersion](InputObjectTypeName("ClientDistributionVersionInput"))
   implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
   implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))

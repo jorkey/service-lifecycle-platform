@@ -7,7 +7,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.distribution.DistributionWebPaths.imageField
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 20.11.20.
@@ -23,7 +23,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
       status shouldEqual StatusCodes.OK
     }
 
-    checkVersionFileContent(distributionDir.getDeveloperVersionImageFile("service1", DistributionVersion.parse("test-1.1.1")))
+    checkVersionFileContent(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")))
   }
 
   it should "upload client version image" in {

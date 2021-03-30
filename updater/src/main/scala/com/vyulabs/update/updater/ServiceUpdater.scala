@@ -85,7 +85,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
       log.info(s"Install service")
       var args = Map.empty[String, String]
       args += ("profile" -> profiledServiceName.profile)
-      args += ("version" -> newVersion.original().toString)
+      args += ("version" -> newVersion.original.toString)
       args += ("PATH" -> System.getenv("PATH"))
 
       val installConfig = InstallConfig.read(state.newServiceDirectory).getOrElse {
@@ -145,7 +145,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
       log.info(s"Post install service")
       var args = Map.empty[String, String]
       args += ("profile" -> profiledServiceName.profile)
-      args += ("version" -> newVersion.original().toString)
+      args += ("version" -> newVersion.original.toString)
       args += ("PATH" -> System.getenv("PATH"))
 
       for (command <- installConfig.postInstallCommands.getOrElse(Seq.empty)) {
@@ -189,7 +189,7 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
 
           var parameters = Map.empty[String, String]
           parameters += ("profile" -> profiledServiceName.profile)
-          parameters += ("version" -> newVersion.original().toString)
+          parameters += ("version" -> newVersion.original.toString)
 
           val logUploader = if (runService.uploadLogs.getOrElse(false))
             Some(new LogUploader(profiledServiceName.name, None, instanceId, distributionClient)) else None

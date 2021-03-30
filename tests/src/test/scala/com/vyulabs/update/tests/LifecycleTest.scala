@@ -1,6 +1,6 @@
 package com.vyulabs.update.tests
 
-import com.vyulabs.update.common.version.{ClientVersion, Version}
+import com.vyulabs.update.common.version.{ClientVersion, Build}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
@@ -17,6 +17,6 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     lifecycle.initializeDistribution("ak")
     lifecycle.installTestService(true)
     lifecycle.updateTestService()
-    lifecycle.updateDistribution(ClientVersion(Version.initialVersion, 1))
+    lifecycle.updateDistribution(ClientVersion(Build.initialBuild, 1))
   }
 }

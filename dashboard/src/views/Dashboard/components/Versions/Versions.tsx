@@ -18,6 +18,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
+  DistributionVersion,
   useDeveloperDesiredVersionsQuery,
   useDistributionConsumersInfoQuery,
   useDistributionInfoQuery
@@ -84,7 +85,9 @@ const Versions = props => {
     developerDesiredVersions.data.developerDesiredVersions.forEach((version) => {
       let service = version.serviceName
       let v = new DeveloperDistributionVersion('', null)
-      let version1/*:DeveloperDistributionVersion*/ = version.version
+      let version1: { __typename?: "DistributionVersion" } & Pick<DistributionVersion, "distributionName" | "build"> = version.version
+      let version2: string = null
+      let k = version1 == version2
     })
   }
 

@@ -9,7 +9,7 @@ import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DistributionProviderInfo}
-import com.vyulabs.update.common.version.DistributionVersion
+import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.graphql.NotFoundException
@@ -50,7 +50,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
     } yield desiredVersions
   }
 
-  def installProviderVersion(distributionProviderName: DistributionName, serviceName: ServiceName, version: DistributionVersion)
+  def installProviderVersion(distributionProviderName: DistributionName, serviceName: ServiceName, version: DeveloperDistributionVersion)
                             (implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Download and install developer version ${version} of service ${serviceName}",
       (taskId, logger) => {
@@ -58,7 +58,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
         val future = for {
           distributionProviderClient <- getDistributionProviderClient(distributionProviderName)
           versionExists <- getDeveloperVersionsInfo(
-            serviceName, Some(version.distributionName), Some(version.build)).map(!_.isEmpty)
+            serviceName, Some(version.distributionName), Some(version.developerVersion)).map(!_.isEmpty)
           _ <-
             if (!versionExists) {
               log.info(s"Download provider version ${version}")
@@ -71,7 +71,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
                     case _ =>
                   }.andThen { case _ => imageFile.delete() }
                 versionInfo <- distributionProviderClient.graphqlRequest(
-                  distributionQueries.getDeveloperVersionsInfo(serviceName, Some(version.distributionName), Some(version.build))).map(_.headOption)
+                  distributionQueries.getDeveloperVersionsInfo(serviceName, Some(version.distributionName), Some(version.developerVersion))).map(_.headOption)
                 _ <- versionInfo match {
                   case Some(versionInfo) =>
                     addDeveloperVersionInfo(versionInfo)

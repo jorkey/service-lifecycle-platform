@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.version.{DistributionVersion, Version}
+import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
@@ -39,8 +39,8 @@ class TestedVersionsTest extends TestEnvironment {
         mutation {
           setTestedVersions (
             versions: [
-               { serviceName: "service1", version: { distributionName: "test", build: "1.1.1" } },
-               { serviceName: "service2", version: { distributionName: "test", build: "2.1.1" } }
+               { serviceName: "service1", version: { distributionName: "test", build: [1,1,1] } },
+               { serviceName: "service2", version: { distributionName: "test", build: [2,1,1] } }
             ]
           )
         }
@@ -49,15 +49,12 @@ class TestedVersionsTest extends TestEnvironment {
     val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2", Seq(UserRole.Distribution))), workspace)
 
     assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":"1.1.1"}},{"serviceName":"service2","version":{"distributionName":"test","build":"2.1.1"}}]}}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":[1,1,1]}},{"serviceName":"service2","version":{"distributionName":"test","build":[2,1,1]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext2, graphql"""
         query {
           developerDesiredVersions {
             serviceName
-            version {
-               distributionName
-               build
-             }
+            version { distributionName, build }
           }
         }
       """)))
@@ -73,10 +70,7 @@ class TestedVersionsTest extends TestEnvironment {
         query {
           developerDesiredVersions {
             serviceName
-            version {
-               distributionName
-               build
-             }
+            version { distributionName, build }
           }
         }
       """)))
@@ -85,7 +79,7 @@ class TestedVersionsTest extends TestEnvironment {
   it should "return error if client required preliminary testing has personal desired versions" in {
     result(collections.State_TestedVersions.insert(
       TestedDesiredVersions("common", Seq(
-        DeveloperDesiredVersion("service1", DistributionVersion("test", Version(Seq(1, 1, 0))))),
+        DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 0)))),
         Seq(TestSignature("test-client", new Date())))))
     result(collections.Client_DesiredVersions.drop())
   }

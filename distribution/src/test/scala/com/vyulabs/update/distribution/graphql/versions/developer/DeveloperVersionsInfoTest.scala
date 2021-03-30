@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.ServiceName
 import com.vyulabs.update.common.utils.JsonFormats._
-import com.vyulabs.update.common.version.{DistributionVersion, Version}
+import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
@@ -22,14 +22,14 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   it should "add/get/remove developer version info" in {
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(1, 1, 1))))
-    addDeveloperVersionInfo("service1", DistributionVersion("distribution1", Version(Seq(2, 1, 3))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(1, 1, 1)))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("distribution1", Seq(2, 1, 3)))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":"1.1.1"},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":[1,1,1]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
-          developerVersionsInfo (service: "service1", distribution: "test", version: "1.1.1") {
+          developerVersionsInfo (service: "service1", distribution: "test", version: { build: [1,1,1] }) {
             version { distributionName, build }
             buildInfo { author }
           }
@@ -38,7 +38,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     )))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"distribution1","build":"2.1.3"},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"distribution1","build":[2,1,3]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerVersionsInfo (service: "service1", distribution: "distribution1") {
@@ -49,16 +49,16 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       """
       )))
 
-    removeDeveloperVersion("service1", DistributionVersion("test", Version(Seq(1, 1, 1))))
-    removeDeveloperVersion("service1", DistributionVersion("distribution1", Version(Seq(2, 1, 3))))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 1)))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("distribution1", Seq(2, 1, 3)))
   }
 
   it should "get developer versions info" in {
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(1, 1, 1))))
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(1, 1, 2))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(1, 1, 1)))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2)))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":"1.1.1"},"buildInfo":{"author":"author1"}},{"version":{"distributionName":"test","build":"1.1.2"},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":[1,1,1]},"buildInfo":{"author":"author1"}},{"version":{"distributionName":"test","build":[1,1,2]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerVersionsInfo (service: "service1") {
@@ -69,16 +69,16 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       """))
     )
 
-    removeDeveloperVersion("service1", DistributionVersion("test", Version(Seq(1, 1, 1))))
-    removeDeveloperVersion("service1", DistributionVersion("test", Version(Seq(1, 1, 2))))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 1)))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2)))
   }
 
   it should "remove obsolete developer versions" in {
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(1))))
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(2))))
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(3))))
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(4))))
-    addDeveloperVersionInfo("service1", DistributionVersion("test", Version(Seq(5))))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(1)))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(2)))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(3)))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(4)))
+    addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(5)))
 
     assertResult((OK,
       ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":"3"}},{"version":{"distributionName":"test","build":"4"}},{"version":{"distributionName":"test","build":"5"}}]}}""").parseJson))(
@@ -90,17 +90,17 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
         }
       """)))
 
-    removeDeveloperVersion("service1", DistributionVersion("test", Version(Seq(3))))
-    removeDeveloperVersion("service1", DistributionVersion("test", Version(Seq(4))))
-    removeDeveloperVersion("service1", DistributionVersion("test", Version(Seq(5))))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(3)))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(4)))
+    removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(5)))
   }
 
-  def addDeveloperVersionInfo(serviceName: ServiceName, version: DistributionVersion): Unit = {
+  def addDeveloperVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addDeveloperVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, builderContext,
         graphql"""
-                  mutation AddDeveloperVersionInfo($$service: String!, $$version: DistributionVersionInput!, $$date: Date!) {
+                  mutation AddDeveloperVersionInfo($$service: String!, $$version: DeveloperDistributionVersionInput!, $$date: Date!) {
                     addDeveloperVersionInfo (
                       info: {
                         serviceName: $$service,
@@ -120,12 +120,12 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     assert(distributionDir.getDeveloperVersionImageFile(serviceName, version).createNewFile())
   }
 
-  def removeDeveloperVersion(serviceName: ServiceName, version: DistributionVersion): Unit = {
+  def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeDeveloperVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
-                  mutation RemoveDeveloperVersion($$service: String!, $$version: DistributionVersionInput!) {
+                  mutation RemoveDeveloperVersion($$service: String!, $$version: DeveloperDistributionVersionInput!) {
                     removeDeveloperVersion (service: $$service, version: $$version)
                   }
                 """,

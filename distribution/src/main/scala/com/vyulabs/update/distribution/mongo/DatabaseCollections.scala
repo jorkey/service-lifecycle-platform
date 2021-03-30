@@ -5,7 +5,7 @@ import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DistributionVersion, Version}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
 import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
@@ -27,8 +27,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[PasswordHash],
     classOf[ClientVersion],
     classOf[ClientDistributionVersion],
-    classOf[Version],
-    classOf[DistributionVersion],
+    classOf[DeveloperVersion],
+    classOf[DeveloperDistributionVersion],
     classOf[BuildInfo],
     classOf[ClientVersionInfo],
     classOf[DeveloperDesiredVersion],

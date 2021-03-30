@@ -2,7 +2,7 @@ package com.vyulabs.update.common.distribution.client
 
 import com.vyulabs.update.common.common.Common.{DistributionName, FaultId, ServiceName}
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.JsonReader
 
@@ -29,7 +29,7 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.graphqlSubRequest(request))
   }
 
-  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DistributionVersion, file: File): Boolean = {
+  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
     result(client.downloadDeveloperVersionImage(serviceName, version, file)).isDefined
   }
 
@@ -37,7 +37,7 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.downloadClientVersionImage(serviceName, version, file)).isDefined
   }
 
-  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DistributionVersion, file: File): Boolean = {
+  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
     result(client.uploadDeveloperVersionImage(serviceName, version, file)).isDefined
   }
 

@@ -30,43 +30,31 @@ class ClientDesiredVersionsTest extends TestEnvironment {
         mutation {
           setClientDesiredVersions (
             versions: [
-               { serviceName: "service1", version: { distributionName: "test", build: { build: "1.1.2", clientBuild: 0 } } },
-               { serviceName: "service2", version: { distributionName: "test", build: { build: "2.1.4", clientBuild: 0 } } }
+               { serviceName: "service1", version: { distributionName: "test", developerBuild: [1,1,2], clientBuild: 0 } },
+               { serviceName: "service2", version: { distributionName: "test", developerBuild: [2,1,4], clientBuild: 0 } }
             ]
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":{"build":"1.1.2","clientBuild":0}}},{"serviceName":"service2","version":{"distributionName":"test","build":{"build":"2.1.4","clientBuild":0}}}]}}""").parseJson))(
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","developerBuild":[1,1,2],"clientBuild":0}},{"serviceName":"service2","version":{"distributionName":"test","developerBuild":[2,1,4],"clientBuild":0}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName
-             version {
-               distributionName
-               build {
-                 build
-                 clientBuild
-               }
-             }
+             version { distributionName, developerBuild, clientBuild }
           }
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":{"build":"1.1.2","clientBuild":0}}}]}}""").parseJson))(
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","developerBuild":[1,1,2],"clientBuild":0}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientDesiredVersions (services: ["service1"]) {
              serviceName
-             version {
-               distributionName
-               build {
-                 build
-                 clientBuild
-               }
-             }
+             version { distributionName, developerBuild, clientBuild }
           }
         }
       """)))
@@ -84,18 +72,12 @@ class ClientDesiredVersionsTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service2","version":{"distributionName":"test","build":{"build":"2.1.4","clientBuild":0}}}]}}""").parseJson))(
+      ("""{"data":{"clientDesiredVersions":[{"serviceName":"service2","version":{"distributionName":"test","developerBuild":[2,1,4],"clientBuild":0}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientDesiredVersions {
              serviceName
-             version {
-               distributionName
-               build {
-                 build
-                 clientBuild
-               }
-             }
+             version { distributionName, developerBuild, clientBuild }
           }
         }
       """)))

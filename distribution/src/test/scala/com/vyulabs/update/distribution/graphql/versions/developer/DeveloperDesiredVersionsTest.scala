@@ -30,23 +30,20 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
         mutation {
           setDeveloperDesiredVersions (
             versions: [
-               { serviceName: "service1", version: { distributionName: "test", build: "1.1.2" } },
-               { serviceName: "service2", version: { distributionName: "test", build: "2.1.4" } }
+               { serviceName: "service1", version: { distributionName: "test", build: [ 1, 1, 2 ] } },
+               { serviceName: "service2", version: { distributionName: "test", build: [ 2, 1, 4 ] } }
             ]
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":"1.1.2"}},{"serviceName":"service2","version":{"distributionName":"test","build":"2.1.4"}}]}}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":[1,1,2]}},{"serviceName":"service2","version":{"distributionName":"test","build":[2,1,4]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerDesiredVersions {
              serviceName
-             version {
-               distributionName
-               build
-             }
+             version { distributionName, build }
           }
         }
       """)))
@@ -64,15 +61,12 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":"1.1.2"}}]}}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":[1,1,2]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerDesiredVersions {
              serviceName
-             version {
-               distributionName
-               build
-             }
+             version { distributionName, build }
           }
         }
       """)))

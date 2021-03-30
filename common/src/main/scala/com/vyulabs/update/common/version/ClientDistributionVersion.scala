@@ -9,21 +9,30 @@ import spray.json.DefaultJsonProtocol._
   * Copyright FanDate, Inc.
   */
 
-case class ClientDistributionVersion(distributionName: DistributionName, build: ClientVersion) {
-  def original() = DistributionVersion(distributionName, build.build)
+case class ClientDistributionVersion(distributionName: DistributionName, developerBuild: Seq[Int], clientBuild: Int) {
+  def clientVersion = ClientVersion(developerBuild, clientBuild)
 
-  def next() = ClientDistributionVersion(distributionName, build.next())
+  def original = DeveloperDistributionVersion(distributionName, developerBuild)
+
+  def next = ClientDistributionVersion(distributionName, developerBuild, clientBuild + 1)
 
   override def toString: String = {
-    distributionName + "-" + build.toString
+    distributionName + "-" + clientVersion.toString
   }
 }
 
 object ClientDistributionVersion {
-  implicit val clientDistributionVersionJson = jsonFormat2(ClientDistributionVersion.apply)
+  implicit val clientDistributionVersionJson = jsonFormat3(ClientDistributionVersion.apply)
 
-  def from(version: DistributionVersion): ClientDistributionVersion =
-    ClientDistributionVersion(version.distributionName, ClientVersion(version.build, 0))
+  def from(distributionName: DistributionName, version: ClientVersion): ClientDistributionVersion = {
+    ClientDistributionVersion(distributionName, version.developerBuild, version.clientBuild)
+  }
+
+  def from(distributionName: DistributionName, version: DeveloperVersion, clientBuild: Int): ClientDistributionVersion =
+    ClientDistributionVersion(distributionName, version.build, clientBuild)
+
+  def from(version: DeveloperDistributionVersion, clientBuild: Int): ClientDistributionVersion =
+    ClientDistributionVersion(version.distributionName, version.build, clientBuild)
 
   def parse(version: String): ClientDistributionVersion = {
     val index = version.lastIndexOf('-')
@@ -32,14 +41,14 @@ object ClientDistributionVersion {
     }
     val distributionName = version.substring(0, index)
     val body = if (index != -1) version.substring(index + 1) else version
-    new ClientDistributionVersion(distributionName, ClientVersion.parse(body))
+    ClientDistributionVersion.from(distributionName, ClientVersion.parse(body))
   }
 
   val ordering: Ordering[ClientDistributionVersion] = Ordering.fromLessThan[ClientDistributionVersion]((version1, version2) => {
     if (version1.distributionName != version2.distributionName) {
       version1.distributionName.compareTo(version2.distributionName) < 0
     } else {
-      ClientVersion.ordering.lt(version1.build, version2.build)
+      ClientVersion.ordering.lt(version1.clientVersion, version2.clientVersion)
     }
   })
 }

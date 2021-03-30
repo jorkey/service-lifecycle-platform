@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.Common.{DistributionName, FaultId, Servi
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlRequest, LoginCoder, PingCoder}
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DistributionVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 import spray.json.JsonReader
@@ -66,7 +66,7 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     login().map(_ => client.graphqlSub(request)).flatten
   }
 
-  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DistributionVersion, file: File)
+  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File)
                                    (implicit log: Logger): Future[Unit] = {
     login().map(_ => client.download(developerVersionImagePath + "/" + serviceName + "/" + version.toString, file)).flatten
   }
@@ -76,7 +76,7 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     login().map(_ => client.download(clientVersionImagePath + "/" + serviceName + "/" + version.toString, file)).flatten
   }
 
-  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DistributionVersion, file: File)
+  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File)
                                  (implicit log: Logger): Future[Unit] = {
     login().map(_ => client.upload(developerVersionImagePath + "/" + serviceName + "/" + version.toString, imageField, file)).flatten
   }

@@ -15,5 +15,5 @@ query distributionConsumersInfo {
 }
 
 query developerDesiredVersions {
-    developerDesiredVersions { serviceName, version }
+    developerDesiredVersions { serviceName, version { distributionName, build } }
 }
