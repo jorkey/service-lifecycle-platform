@@ -123,7 +123,7 @@ trait ConsumersAdministrationCoder {
 
   def installProviderVersion(distributionName: DistributionName, serviceName: ServiceName, version: DeveloperDistributionVersion) =
     GraphqlMutation[String]("installProviderVersion",
-      Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version, "DistributionVersionInput")))
+      Seq(GraphqlArgument("distribution" -> distributionName), GraphqlArgument("service" -> serviceName), GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput")))
 
   def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceName]) =
     GraphqlMutation[Boolean]("addDistributionConsumerProfile", Seq(GraphqlArgument("profile" -> consumerProfile),
