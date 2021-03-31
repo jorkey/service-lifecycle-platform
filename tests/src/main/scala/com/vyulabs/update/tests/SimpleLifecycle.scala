@@ -78,6 +78,7 @@ class SimpleLifecycle {
     if (!distributionBuilder.buildDistributionFromSources()) {
       sys.error("Can't build distribution server")
     }
+    Thread.sleep(5000)
   }
 
   def initializeDistribution(author: String): Unit = {

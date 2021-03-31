@@ -81,7 +81,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(5)))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":"3"}},{"version":{"distributionName":"test","build":"4"}},{"version":{"distributionName":"test","build":"5"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":[3]}},{"version":{"distributionName":"test","build":[4]}},{"version":{"distributionName":"test","build":[5]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerVersionsInfo (service: "service1") {

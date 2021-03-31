@@ -64,20 +64,20 @@ function graphqlQuery() {
 
 ## Convert developer version from Json to string
 # input:
-#   stdin - developer version Json
+#   $1 - developer version Json
 # output:
 #   stdout - short version string
 function developerVersionToString {
-  jq -r '"\(.distributionName)-\((.developerBuild | join("."))|tostring)"'
+  echo $1 | jq -r '"\(.distributionName)-\((.developerBuild | join("."))|tostring)"'
 }
 
 ## Convert client version from Json to string
 # input:
-#   stdin - client version Json
+#   $1 - client version Json
 # output:
 #   stdout - short version string
 function clientVersionToString {
-  jq -r '"\(.distributionName)-\((.developerBuild | join("."))|tostring)_\(.clientBuild)"'
+  echo $1 | jq -r '"\(.distributionName)-\((.developerBuild | join("."))|tostring)_\(.clientBuild)"'
 }
 
 ### Get desired version number of service.
@@ -90,14 +90,14 @@ function getDesiredVersion {
   local service=$1
   local storedDesiredVersionFile=`getServiceDesiredVersionFile $1`
   if [ -f ${storedDesiredVersionFile} ]; then
-    cat ${storedDesiredVersionFile}
+    jq -c . ${storedDesiredVersionFile}
   elif [[ -z ${distribDirectoryUrl} ]]; then
     >&2 echo "Variable distribDirectoryUrl is not defined"
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
     graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version{distributionName,developerBuild,clientBuild}}" "clientDesiredVersions[0].version" ${tmpFile}
-    version=`cat ${tmpFile}`
+    version=`jq -c . ${tmpFile}`
     rm -f ${tmpFile}
     if [[ ${version} == "null" ]]; then
       >&2 echo "Client desired version is not defined for service ${service}"
@@ -118,7 +118,7 @@ function getDesiredVersion {
 function downloadVersionImage {
   set -e
   local service=$1
-  local version=`echo ${2} | clientVersionToString`
+  local version=`clientVersionToString $2`
   local outputFile=$3
   if [[ -z ${distribDirectoryUrl} ]]; then
     >&2 echo "Variable distribDirectoryUrl is not defined"
@@ -157,7 +157,7 @@ function getCurrentVersion {
   set -e
   local storedDesiredVersionFile=`getServiceVersionFile $1`
   if [ -f ${storedDesiredVersionFile} ]; then
-    cat ${storedDesiredVersionFile}
+    jq -c . ${storedDesiredVersionFile}
   else
     echo
   fi
@@ -196,7 +196,7 @@ function updateService {
     exit 1
   fi
   if [[ "${currentVersion}" != "${desiredVersion}" ]]; then
-    echo "Download ${service} version `echo ${desiredVersion} | clientVersionToString`"
+    echo "Download ${service} version `clientVersionToString ${desiredVersion}`"
     downloadVersionImage ${service} ${desiredVersion} ${outputFile}
     setCurrentVersion ${service} ${desiredVersion}
   fi
@@ -261,7 +261,7 @@ function runService {
       >&2 echo "Getting current version of ${serviceToRun} error"
       exit 1
     fi
-    local developerVersion=`echo ${currentVersion} | developerVersionToString`
+    local developerVersion=`developerVersionToString ${currentVersion}`
 
     if [ -f install.json ]; then
       if ! query=`jq -r '.runService.query' install.json`; then

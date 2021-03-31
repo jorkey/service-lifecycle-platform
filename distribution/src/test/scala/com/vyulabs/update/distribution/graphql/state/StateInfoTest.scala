@@ -57,15 +57,15 @@ class StateInfoTest extends TestEnvironment {
         mutation {
           setInstalledDesiredVersions (
             versions: [
-               { serviceName: "service1", version: { distributionName: "test", build: [1,1,1], clientBuild: 0 } },
-               { serviceName: "service2", version: { distributionName: "test", build: [2,1,1], clientBuild: 0 } }
+               { serviceName: "service1", version: { distributionName: "test", developerBuild: [1,1,1], clientBuild: 0 } },
+               { serviceName: "service2", version: { distributionName: "test", developerBuild: [2,1,1], clientBuild: 0 } }
             ]
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","developerBuild":[1,1,1],"clientBuild":0}},{"serviceName":"service2","version":{"distributionName":"test","developerBuild":[2,1,1],"clientBuild":0}}}]}}""").parseJson))(
+      ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","developerBuild":[1,1,1],"clientBuild":0}},{"serviceName":"service2","version":{"distributionName":"test","developerBuild":[2,1,1],"clientBuild":0}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           installedDesiredVersions (distribution: "distribution") {
