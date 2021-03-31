@@ -154,7 +154,7 @@ object GraphqlSchema {
         arguments = DistributionArg :: OptionServicesArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
-      Field("serviceStates", ListType(ClientServiceStateType),
+      Field("serviceStates", ListType(DistributionServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),

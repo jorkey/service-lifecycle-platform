@@ -17,3 +17,19 @@ query distributionConsumersInfo {
 query developerDesiredVersions {
     developerDesiredVersions { serviceName, version { distributionName, build } }
 }
+
+query clientDesiredVersions {
+    clientDesiredVersions { serviceName, version { distributionName, developerBuild, clientBuild } }
+}
+
+query installedDesiredVersions ($distribution: String!) {
+    installedDesiredVersions(distribution: $distribution) {
+        serviceName, version { distributionName, developerBuild, clientBuild }
+    }
+}
+
+query serviceStates ($distribution: String!) {
+    serviceStates(distribution: $distribution) {
+        distributionName instance { instanceId, serviceName, directory, service { date, installDate, startDate, version { distributionName, developerBuild, clientBuild }, updateToVersion { distributionName, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+    }
+}

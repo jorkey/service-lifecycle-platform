@@ -79,7 +79,7 @@ object GraphqlTypes {
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
   implicit val DirectoryServiceStateType = deriveObjectType[Unit, DirectoryServiceState]()
   implicit val InstanceServiceStateType = deriveObjectType[Unit, InstanceServiceState]()
-  implicit val ClientServiceStateType = deriveObjectType[Unit, DistributionServiceState]()
+  implicit val DistributionServiceStateType = deriveObjectType[Unit, DistributionServiceState]()
   implicit val LogLineType = deriveObjectType[Unit, LogLine]()
   implicit val ServiceLogLineType = deriveObjectType[Unit, ServiceLogLine]()
   implicit val SequencedServiceLogLineType = deriveObjectType[Unit, SequencedServiceLogLine]()

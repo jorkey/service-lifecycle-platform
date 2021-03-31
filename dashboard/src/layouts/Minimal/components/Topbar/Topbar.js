@@ -42,6 +42,10 @@ const Topbar = props => {
 
   const { loading, error, data } = useDistributionInfoQuery();
 
+  if (data) {
+    localStorage.setItem('distributionName', data.distributionInfo.distributionName)
+  }
+
   return (
     <AppBar
       {...rest}

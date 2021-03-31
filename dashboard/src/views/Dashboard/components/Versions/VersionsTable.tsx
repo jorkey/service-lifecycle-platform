@@ -4,6 +4,7 @@ import React from 'react';
 import {makeStyles} from '@material-ui/styles';
 import Typography from '@material-ui/core/Typography';
 import {Info} from './ServiceState';
+import {ClientDesiredVersion, DeveloperDesiredVersion} from "../../../../generated/graphql";
 
 // eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
@@ -151,7 +152,14 @@ export const ServiceVersions = props => {
   return rows
 }
 
-export const VersionsTable = props => {
+interface Props {
+  userName: string;
+  developerVersions: Array<DeveloperDesiredVersion>
+  clientVersions: Array<ClientDesiredVersion>
+
+}
+
+export const VersionsTable: React.FC<Props> = props => {
   const {client, developerVersions, clientVersions, instanceVersions, onlyAlerts} = props;
   const classes = useStyles();
 

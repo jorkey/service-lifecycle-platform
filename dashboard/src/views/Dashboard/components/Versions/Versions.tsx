@@ -18,10 +18,18 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
-  DistributionVersion,
+  ClientDesiredVersion,
+  DeveloperDesiredVersion,
+  DistributionConsumerInfo,
+  DistributionServiceState,
+  useClientDesiredVersionsLazyQuery,
+  useClientDesiredVersionsQuery,
   useDeveloperDesiredVersionsQuery,
   useDistributionConsumersInfoQuery,
-  useDistributionInfoQuery
+  useDistributionInfoQuery,
+  useInstalledDesiredVersionsLazyQuery,
+  useInstalledDesiredVersionsQuery,
+  useServiceStatesLazyQuery
 } from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
@@ -58,55 +66,44 @@ const Versions = props => {
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState()
-  const [consumers, setConsumers] = useState([])
-  const [developerVersions, setDeveloperVersions] = useState([])
-  const [clientVersions, setClientVersions] = useState(new Map())
-  const [instanceVersions, setInstanceVersions] = useState(new Map())
+  const [consumers, setConsumers] = useState(new Array<DistributionConsumerInfo>())
+  const [clientVersions, setClientVersions] = useState(new Array<ClientDesiredVersion>())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
   React.useEffect(() => {
-    setDeveloperVersions([])
-    setClientVersions(new Map())
-    setInstanceVersions(new Map())
-    getConsumerVersions(consumer)
+    setClientVersions(new Array<ClientDesiredVersion>())
+    getVersions(consumer)
   }, [consumer]);
 
-  const consumersInfo = useDistributionConsumersInfoQuery();
-
+  const consumersInfo = useDistributionConsumersInfoQuery()
   if (consumers.length == 0 && consumersInfo.data) {
-    let consumers = new Array()
-    consumersInfo.data.distributionConsumersInfo.forEach(info => consumers.push(info.distributionName))
-    setConsumers(consumers)
+    setConsumers(consumersInfo.data.distributionConsumersInfo)
   }
 
-  const developerDesiredVersions = useDeveloperDesiredVersionsQuery();
+  const developerDesiredVersions = useDeveloperDesiredVersionsQuery()
 
-  if (developerVersions.length == 0 && developerDesiredVersions.data) {
-    developerDesiredVersions.data.developerDesiredVersions.forEach((version) => {
-      let service = version.serviceName
-      let v = new DeveloperDistributionVersion('', null)
-      let version1: { __typename?: "DistributionVersion" } & Pick<DistributionVersion, "distributionName" | "build"> = version.version
-      let version2: string = null
-      let k = version1 == version2
-    })
+  const [getClientDesiredVersions, clientDesiredVersions] = useClientDesiredVersionsLazyQuery()
+  if (clientDesiredVersions.data) {
+    setClientVersions(clientDesiredVersions.data.clientDesiredVersions)
   }
 
-  const getConsumerVersions = (consumer) => {
-    if (consumer) {
-      Utils.getDesiredVersions(consumer).then(versions => {
-        setDeveloperVersions(Object.entries(versions))
-        if (consumer == 'distribution') {
-          setClientVersions(new Map(Object.entries(versions)))
-        }
-      })
-      Utils.getInstanceVersions(consumer).then(versions => {
-        setInstanceVersions(new Map(Object.entries(versions)))
-      })
-      if (consumer != 'distribution') {
-        Utils.getInstalledDesiredVersions(consumer).then(versions => {
-          setClientVersions(new Map(Object.entries(versions)))
-        })
-      }
+  const [getInstalledDesiredVersions, installedDesiredVersions] = useInstalledDesiredVersionsLazyQuery()
+  if (installedDesiredVersions.data) {
+    setClientVersions(installedDesiredVersions.data.installedDesiredVersions)
+  }
+
+  const [getServiceStates, serviceStates] = useServiceStatesLazyQuery()
+  if (clientVersions.length == 0 && installedDesiredVersions.data) {
+    setClientVersions(installedDesiredVersions.data.installedDesiredVersions)
+  }
+
+  const getVersions = (consumerDistributionName:string) => {
+    if (consumerDistributionName) {
+      getInstalledDesiredVersions({ variables: { distribution: consumerDistributionName} })
+      getServiceStates({ variables: { distribution: consumerDistributionName} })
+    } else {
+      getClientDesiredVersions()
+      getServiceStates({ variables: { distribution: localStorage.getItem('distributionName') } })
     }
   }
 
@@ -163,7 +160,7 @@ const Versions = props => {
             client={consumer}
             clientVersions={clientVersions}
             developerVersions={developerVersions}
-            instanceVersions={instanceVersions}
+            instanceVersions={serviceStates}
             onlyAlerts={onlyAlerts}
           />
         </div>
