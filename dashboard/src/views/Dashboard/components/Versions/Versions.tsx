@@ -23,7 +23,7 @@ import {
   DistributionConsumerInfo,
   DistributionServiceState,
   useClientDesiredVersionsLazyQuery,
-  useClientDesiredVersionsQuery,
+  useClientDesiredVersionsQuery, useDeveloperDesiredVersionsLazyQuery,
   useDeveloperDesiredVersionsQuery,
   useDistributionConsumersInfoQuery,
   useDistributionInfoQuery,
@@ -65,8 +65,7 @@ const Versions = props => {
   const { className, ...rest } = props;
   const classes = useStyles();
 
-  const [consumer, setConsumer] = useState()
-  const [consumers, setConsumers] = useState(new Array<DistributionConsumerInfo>())
+  const [consumer, setConsumer] = useState<string>()
   const [clientVersions, setClientVersions] = useState(new Array<ClientDesiredVersion>())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
@@ -76,34 +75,29 @@ const Versions = props => {
   }, [consumer]);
 
   const consumersInfo = useDistributionConsumersInfoQuery()
-  if (consumers.length == 0 && consumersInfo.data) {
-    setConsumers(consumersInfo.data.distributionConsumersInfo)
-  }
 
-  const developerDesiredVersions = useDeveloperDesiredVersionsQuery()
+  const [ getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery()
 
   const [getClientDesiredVersions, clientDesiredVersions] = useClientDesiredVersionsLazyQuery()
-  if (clientDesiredVersions.data) {
+  if (!consumer && clientDesiredVersions.data) {
     setClientVersions(clientDesiredVersions.data.clientDesiredVersions)
   }
 
   const [getInstalledDesiredVersions, installedDesiredVersions] = useInstalledDesiredVersionsLazyQuery()
-  if (installedDesiredVersions.data) {
+  if (consumer && installedDesiredVersions.data) {
     setClientVersions(installedDesiredVersions.data.installedDesiredVersions)
   }
 
   const [getServiceStates, serviceStates] = useServiceStatesLazyQuery()
-  if (clientVersions.length == 0 && installedDesiredVersions.data) {
-    setClientVersions(installedDesiredVersions.data.installedDesiredVersions)
-  }
 
-  const getVersions = (consumerDistributionName:string) => {
-    if (consumerDistributionName) {
-      getInstalledDesiredVersions({ variables: { distribution: consumerDistributionName} })
-      getServiceStates({ variables: { distribution: consumerDistributionName} })
+  const getVersions = (consumer:string|undefined) => {
+    getDeveloperDesiredVersions()
+    if (consumer) {
+      getInstalledDesiredVersions({ variables: { distribution: consumer} })
+      getServiceStates({ variables: { distribution: consumer} })
     } else {
       getClientDesiredVersions()
-      getServiceStates({ variables: { distribution: localStorage.getItem('distributionName') } })
+      getServiceStates({ variables: { distribution: Utils.getDistributionName() } })
     }
   }
 
@@ -120,13 +114,14 @@ const Versions = props => {
               control={<Select
                 className={classes.distributionSelect}
                 native
-                onChange={(event) => setConsumer(event.target.value)}
-                title='Select distribution'
+                onChange={(event) => setConsumer(event.target.value as string)}
+                title='Select consumer'
                 value={consumer}
               >
-                { consumers.map( distribution => <option key={distribution}>{distribution}</option> ) }
+                { consumersInfo.data?.distributionConsumersInfo.map(consumer =>
+                    <option key={consumer.distributionName}>{consumer.distributionName}</option>) }
               </Select>}
-              label='Client'
+              label='Consumer'
             />
             <FormControlLabel
               className={classes.formControlLabel}
@@ -140,7 +135,7 @@ const Versions = props => {
             <FormControlLabel
               className={classes.formControlLabel}
               control={<Button
-                onClick={() => getConsumerVersions(consumer)}
+                onClick={() => getVersions(consumer)}
                 title='Refresh'
               >
                 <RefreshIcon/>
