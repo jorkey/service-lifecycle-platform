@@ -1,6 +1,6 @@
 import {Version} from '../../../../common';
 import {Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
-import React from 'react';
+import React, {VoidFunctionComponent} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import Typography from '@material-ui/core/Typography';
 import {Info} from './ServiceState';
@@ -53,15 +53,31 @@ interface ServiceVersionsProps {
 export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
   const { distributionName, serviceName, developerVersion, clientVersion, serviceStates, onlyAlerts } = props;
   const classes = useStyles();
-  let versionIndex = versions.length, version = undefined
-  let directories = [], directoryIndex = 0, directory = undefined
-  let instances = [], instanceIndex = 0, instance = undefined
+  let versionsTree = new Array<[ClientDistributionVersion, Array<[string, Array<InstanceServiceState>]>]>()
+  serviceStates.forEach(state => {
+    if (state.service.version) {
+      let versionNode = versionsTree.find(node => node[0] == state.service.version)
+      if (!versionNode) {
+        versionNode = [state.service.version, new Array<[string, Array<InstanceServiceState>]>()]
+        versionsTree.push(versionNode)
+      }
+      let directoriesNode = versionNode[1]
+      let directoryNode = directoriesNode.find(node => node[0] == state.directory)
+      if (!directoryNode) {
+        directoryNode = [state.directory, new Array<InstanceServiceState>()]
+        directoriesNode.push(directoryNode)
+      }
+      directoryNode[1].push(state)
+    } })
+  let versionIndex = versionsTree.length, version:ClientDistributionVersion|undefined = undefined
+  let directories = new Array<[string, Array<InstanceServiceState>]>(), directoryIndex = 0, directory:string|undefined = undefined
+  let states = new Array<InstanceServiceState>(), stateIndex = 0, state:InstanceServiceState|undefined = undefined
   let rows = []
   let rowsStack = []
   let alertService = false
   for (let rowNum=0, versionRowNum=0; ; rowNum++, versionRowNum++) {
-    instanceIndex--
-    if (instanceIndex < 0) {
+    stateIndex--
+    if (stateIndex < 0) {
       directoryIndex--
       if (directoryIndex < 0) {
         versionIndex--
@@ -76,9 +92,9 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
           break
         }
         if (versionIndex >= 0) {
-          const [ver, dirs] = versions[versionIndex]
-          version = ver
-          directories = Object.entries(dirs)
+          const node = versionsTree[versionIndex]
+          version = node[0]
+          directories = node[1]
         } else {
           version = undefined
           directories = []
@@ -87,28 +103,28 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
         versionRowNum = 0
       }
       if (directoryIndex >= 0) {
-        const [dir, inst] = directories[directoryIndex]
-        directory = dir
-        instances = Object.entries(inst)
+        const node = directories[directoryIndex]
+        directory = node[0]
+        states = node[1]
       } else {
         directory = undefined
-        instances = []
+        states = []
       }
-      instanceIndex = instances.length - 1
+      stateIndex = states.length - 1
     }
-    if (instanceIndex >= 0) {
-      [, instance] = instances[instanceIndex]
+    if (stateIndex >= 0) {
+      state = states[stateIndex]
     } else {
-      instance = undefined
+      state = undefined
     }
-    let clientVersionAlarm = clientVersion && Version.compare(clientVersion, developerVersion, false)
-    let workingVersionAlarm = version && clientVersion && Version.compare(version, clientVersion, true)
+    let clientVersionAlarm = clientVersion != undefined && Version.contains(clientVersion, developerVersion)
+    let workingVersionAlarm = version != undefined && clientVersion != undefined && version == clientVersion
     alertService = alertService || clientVersionAlarm || workingVersionAlarm
     rowsStack.push(<TableRow
       hover
       key={serviceName + '-' + rowNum}
     >
-      {(versionIndex <= 0 && directoryIndex <= 0 && instanceIndex <= 0) ? (
+      {(versionIndex <= 0 && directoryIndex <= 0 && stateIndex <= 0) ? (
         <>
           <TableCell
             className={classes.serviceColumn}
@@ -127,7 +143,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
         : null
       }
       {version ?
-        (directoryIndex == 0 && instanceIndex == 0) ? (
+        (directoryIndex == 0 && stateIndex == 0) ? (
           <TableCell
             className={!workingVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
             rowSpan={versionRowNum + 1}
@@ -138,24 +154,24 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
         : <TableCell className={classes.versionColumn}/>
       }
       {directory ?
-        instanceIndex == 0 ? (
+        stateIndex == 0 ? (
           <TableCell
             className={classes.directoryColumn}
-            rowSpan={instances.length}
+            rowSpan={states.length}
           >{directory}</TableCell>)
           : null
         : <TableCell className={classes.directoryColumn}/>}
-      {instance ?
+      {state ?
         <TableCell className={classes.instancesColumn}>
-          <Typography>{instance}</Typography>
+          <Typography>{state}</Typography>
         </TableCell> : <TableCell className={classes.instancesColumn}/>}
-      {instance ?
+      {state ?
         <TableCell className={classes.infoColumn}>
           <Info
             alert={workingVersionAlarm}
             client={distributionName}
             directory={directory}
-            instance={instance}
+            instance={state}
             service={serviceName}
           />
         </TableCell> : <TableCell className={classes.infoColumn}/>}
@@ -173,8 +189,8 @@ interface VersionsTableProps {
 }
 
 export const VersionsTable: React.FC<VersionsTableProps> = props => {
-  const {distributionName, developerVersions, clientVersions, serviceStates, onlyAlerts} = props;
-  const classes = useStyles();
+  const {distributionName, developerVersions, clientVersions, serviceStates, onlyAlerts} = props
+  const classes = useStyles()
 
   return (<Table stickyHeader>
     <TableHead>

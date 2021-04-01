@@ -1,3 +1,4 @@
+import {ClientDistributionVersion, DeveloperDistributionVersion} from "../generated/graphql";
 
 export class Version {
   build: Array<number>
@@ -9,6 +10,11 @@ export class Version {
   static parse(version: string): Version {
     const build = version.split('.').map(Number)
     return new Version(build)
+  }
+
+  static contains(clientVersion: ClientDistributionVersion, developerVersion: DeveloperDistributionVersion): boolean {
+    return clientVersion.distributionName == developerVersion.distributionName &&
+      clientVersion.developerBuild == developerVersion.build
   }
 
   next(): Version {
