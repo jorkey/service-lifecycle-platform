@@ -180,7 +180,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
 interface VersionsTableProps {
   distributionName: string;
   developerVersions: Array<DeveloperDesiredVersion>
-  clientVersions: Array<ClientDesiredVersion>
+  clientVersions: Array<ClientDesiredVersion>|undefined
   serviceStates: Array<InstanceServiceState>|undefined
   onlyAlerts: Boolean
 }
@@ -207,7 +207,7 @@ export const VersionsTable: React.FC<VersionsTableProps> = props => {
           distributionName={distributionName}
           serviceName={desiredVersion.serviceName}
           developerVersion={desiredVersion.version}
-          clientVersion={clientVersions.find(version => version.serviceName == desiredVersion.serviceName)?.version}
+          clientVersion={clientVersions?.find(version => version.serviceName == desiredVersion.serviceName)?.version}
           serviceStates={serviceStates?.filter(state => state.serviceName == desiredVersion.serviceName)}
           onlyAlerts={onlyAlerts}
           key={desiredVersion.serviceName}

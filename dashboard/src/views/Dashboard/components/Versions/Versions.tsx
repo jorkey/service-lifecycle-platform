@@ -24,6 +24,7 @@ import {
   useInstalledDesiredVersionsLazyQuery,
   useServiceStatesLazyQuery
 } from "../../../../generated/graphql";
+import * as Apollo from "@apollo/client";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -63,32 +64,18 @@ const Versions: React.FC<VersionsProps> = props => {
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
-  const [developerVersions, setDeveloperVersions] = useState(new Array<DeveloperDesiredVersion>())
-  const [clientVersions, setClientVersions] = useState(new Array<ClientDesiredVersion>())
+  // const [developerVersions, setDeveloperVersions] = useState(new Array<DeveloperDesiredVersion>())
+  // const [clientVersions, setClientVersions] = useState(new Array<ClientDesiredVersion>())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
   React.useEffect(() => {
-    setClientVersions(new Array<ClientDesiredVersion>())
     getVersions(consumer)
   }, [consumer]);
 
   const consumersInfo = useDistributionConsumersInfoQuery()
-
-  const [ getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery()
-  if (developerDesiredVersions.data) {
-    setDeveloperVersions(developerDesiredVersions.data.developerDesiredVersions)
-  }
-
+  const [getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery()
   const [getClientDesiredVersions, clientDesiredVersions] = useClientDesiredVersionsLazyQuery()
-  if (!consumer && clientDesiredVersions.data) {
-    setClientVersions(clientDesiredVersions.data.clientDesiredVersions)
-  }
-
   const [getInstalledDesiredVersions, installedDesiredVersions] = useInstalledDesiredVersionsLazyQuery()
-  if (consumer && installedDesiredVersions.data) {
-    setClientVersions(installedDesiredVersions.data.installedDesiredVersions)
-  }
-
   const [getServiceStates, serviceStates] = useServiceStatesLazyQuery()
 
   const getVersions = (consumer:string|undefined) => {
@@ -153,13 +140,15 @@ const Versions: React.FC<VersionsProps> = props => {
       <Divider />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <VersionsTable
-            distributionName={consumer?consumer:Utils.getDistributionName()}
-            clientVersions={clientVersions}
-            developerVersions={developerVersions}
-            serviceStates={serviceStates.data?.serviceStates.map(state => state.instance)}
-            onlyAlerts={onlyAlerts}
-          />
+          { developerDesiredVersions.data ?
+            <VersionsTable
+              distributionName={consumer?consumer:Utils.getDistributionName()}
+              developerVersions={developerDesiredVersions.data.developerDesiredVersions}
+              clientVersions={consumer ? installedDesiredVersions.data?.installedDesiredVersions : clientDesiredVersions.data?.clientDesiredVersions}
+              serviceStates={serviceStates.data?.serviceStates.map(state => state.instance)}
+              onlyAlerts={onlyAlerts}
+            />
+          : null }
         </div>
       </CardContent>
     </Card>
