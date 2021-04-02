@@ -30,6 +30,10 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
+interface InfoProps {
+  
+}
+
 export const Info = (props) => {
   const { client, instance, directory, service, alert } = props
   const classes = useStyles()
