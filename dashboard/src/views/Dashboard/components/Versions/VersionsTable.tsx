@@ -1,6 +1,6 @@
 import {Version} from '../../../../common';
 import {Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
-import React, {VoidFunctionComponent} from 'react';
+import React, {FunctionComponent, VoidFunctionComponent} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import Typography from '@material-ui/core/Typography';
 import {Info} from './ServiceState';
@@ -8,7 +8,7 @@ import {
   ClientDesiredVersion, ClientDistributionVersion,
   DeveloperDesiredVersion,
   DeveloperDistributionVersion,
-  InstanceServiceState
+  InstanceServiceState, ServiceState
 } from "../../../../generated/graphql";
 
 // eslint-disable-next-line no-unused-vars
@@ -46,7 +46,7 @@ interface ServiceVersionsProps {
   serviceName: string
   developerVersion: DeveloperDistributionVersion
   clientVersion: ClientDistributionVersion|undefined
-  serviceStates: Array<InstanceServiceState>
+  serviceStates: Array<InstanceServiceState>|undefined
   onlyAlerts: Boolean
 }
 
@@ -54,7 +54,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
   const { distributionName, serviceName, developerVersion, clientVersion, serviceStates, onlyAlerts } = props;
   const classes = useStyles();
   let versionsTree = new Array<[ClientDistributionVersion, Array<[string, Array<InstanceServiceState>]>]>()
-  serviceStates.forEach(state => {
+  serviceStates?.forEach(state => {
     if (state.service.version) {
       let versionNode = versionsTree.find(node => node[0] == state.service.version)
       if (!versionNode) {
@@ -71,7 +71,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
     } })
   let versionIndex = versionsTree.length, version:ClientDistributionVersion|undefined = undefined
   let directories = new Array<[string, Array<InstanceServiceState>]>(), directoryIndex = 0, directory:string|undefined = undefined
-  let states = new Array<InstanceServiceState>(), stateIndex = 0, state:InstanceServiceState|undefined = undefined
+  let states = new Array<InstanceServiceState>(), stateIndex = 0, state:ServiceState|undefined = undefined
   let rows = []
   let rowsStack = []
   let alertService = false
@@ -113,7 +113,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
       stateIndex = states.length - 1
     }
     if (stateIndex >= 0) {
-      state = states[stateIndex]
+      state = states[stateIndex].service
     } else {
       state = undefined
     }
@@ -169,22 +169,19 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
         <TableCell className={classes.infoColumn}>
           <Info
             alert={workingVersionAlarm}
-            client={distributionName}
-            directory={directory}
-            instance={state}
-            service={serviceName}
+            serviceState={state}
           />
         </TableCell> : <TableCell className={classes.infoColumn}/>}
     </TableRow>)
   }
-  return rows
+  return (<>(rows)</>)
 }
 
 interface VersionsTableProps {
   distributionName: string;
   developerVersions: Array<DeveloperDesiredVersion>
   clientVersions: Array<ClientDesiredVersion>
-  serviceStates: Array<InstanceServiceState>
+  serviceStates: Array<InstanceServiceState>|undefined
   onlyAlerts: Boolean
 }
 
@@ -211,7 +208,7 @@ export const VersionsTable: React.FC<VersionsTableProps> = props => {
           serviceName={desiredVersion.serviceName}
           developerVersion={desiredVersion.version}
           clientVersion={clientVersions.find(version => version.serviceName == desiredVersion.serviceName)?.version}
-          serviceStates={serviceStates.filter(state => state.serviceName == desiredVersion.serviceName)}
+          serviceStates={serviceStates?.filter(state => state.serviceName == desiredVersion.serviceName)}
           onlyAlerts={onlyAlerts}
           key={desiredVersion.serviceName}
         />) }

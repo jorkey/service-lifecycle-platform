@@ -12,7 +12,7 @@ import LoginRoutes from './Routes';
 import {ApolloProvider} from "@apollo/client";
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import {Scalars} from "./graphql/scalars";
+//import {Scalars} from "./graphql/scalars";
 
 const browserHistory = createBrowserHistory();
 
@@ -41,7 +41,7 @@ const authLink = setContext((_, { headers }) => {
 });
 
 const resolvers = {
-  DeveloperVersion: Scalars.developerVersionScalar
+//  DeveloperVersion: Scalars.developerVersionScalar
 };
 
 const client = new ApolloClient({

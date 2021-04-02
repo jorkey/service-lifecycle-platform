@@ -1,12 +1,12 @@
 import React, {useState} from 'react';
 import Popover from '@material-ui/core/Popover';
 import {makeStyles} from '@material-ui/styles';
-import {Utils} from '../../../../common';
 import {Table, TableBody} from '@material-ui/core';
 import TableCell from '@material-ui/core/TableCell';
 import InfoIcon from '@material-ui/icons/Info';
 import AlertIcon from '@material-ui/icons/Error';
 import TableRow from '@material-ui/core/TableRow';
+import {ServiceState} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   infoIcon: {
@@ -31,14 +31,15 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface InfoProps {
-  
+  alert: boolean
+  serviceState: ServiceState
 }
 
-export const Info = (props) => {
-  const { client, instance, directory, service, alert } = props
+export const Info: React.FC<InfoProps> = (props) => {
+  const { alert, serviceState } = props
   const classes = useStyles()
 
-  const [anchor, setAnchor] = React.useState()
+  const [anchor, setAnchor] = React.useState<Element>()
 
   return (
     <>
@@ -46,41 +47,34 @@ export const Info = (props) => {
         <AlertIcon
           className={classes.alertIcon}
           onMouseEnter={(event) => setAnchor(event.currentTarget)}
-          onMouseLeave={() => setAnchor(null)}
+          onMouseLeave={() => setAnchor(undefined)}
         /> :
         <InfoIcon
           className={classes.infoIcon}
           onMouseEnter={(event) => setAnchor(event.currentTarget)}
-          onMouseLeave={() => setAnchor(null)}
+          onMouseLeave={() => setAnchor(undefined)}
         />}
-      <ServiceState anchor={anchor} client={client} instance={instance} directory={directory} service={service}/>
+      <ServiceStatePopup anchor={anchor} state={serviceState}/>
     </>)
 }
 
-export const ServiceState = (props) => {
-  const {anchor, client, instance, directory, service} = props
+interface ServiceStateProps {
+  anchor: Element|undefined
+  state: ServiceState
+}
+
+export const ServiceStatePopup: React.FC<ServiceStateProps> = (props) => {
+  const {anchor, state} = props
   const classes = useStyles()
 
-  const [state, setState] = useState([])
-  const open = Boolean(anchor)
-
-  if (open) {
-    if (state.length == 0) {
-      Utils.getServiceState(client, instance, directory, service).then(state => {
-        setState(state)
-      })
-    }
-  } else if (state.length != 0) {
-    setState([])
-  }
-
-  return state && (state.installDate || state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
+  return anchor && state &&
+      (state.installDate || state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
     id='mouse-over-popover'
     className={classes.statePopover}
-    classes={{
-      paper: classes.paper,
-    }}
-    open={open}
+    // classes={{
+    //   paper: classes.paper,
+    // }}
+    open={Boolean(anchor)}
     anchorEl={anchor}
     anchorOrigin={{
       vertical: 'bottom',

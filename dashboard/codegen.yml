@@ -1,11 +1,10 @@
 overwrite: true
 schema: "http://localhost:8000/graphql"
 config:
-  scalars:
-    URL: "string"
-    Date: "../common#DateTime"
-    FiniteDuration: "../common#FiniteDuration"
-    Version: "../common#Version"
+#  scalars:
+#    URL: "string"
+#    Date: "../common#DateTime"
+#    FiniteDuration: "../common#FiniteDuration"
 documents: "**/*.graphql"
 generates:
   src/generated/graphql.tsx:

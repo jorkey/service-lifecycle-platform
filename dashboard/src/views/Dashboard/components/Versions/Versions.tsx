@@ -1,8 +1,7 @@
 import React, {useRef, useState} from 'react';
 import clsx from 'clsx';
-import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
-import {DeveloperDistributionVersion, Utils} from '../../../../common';
+import {Utils} from '../../../../common';
 import {
   Card,
   CardHeader,
@@ -18,17 +17,11 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
-  ClientDesiredVersion,
-  DeveloperDesiredVersion,
-  DistributionConsumerInfo,
-  DistributionServiceState,
+  ClientDesiredVersion, DeveloperDesiredVersion,
   useClientDesiredVersionsLazyQuery,
-  useClientDesiredVersionsQuery, useDeveloperDesiredVersionsLazyQuery,
-  useDeveloperDesiredVersionsQuery,
+  useDeveloperDesiredVersionsLazyQuery,
   useDistributionConsumersInfoQuery,
-  useDistributionInfoQuery,
   useInstalledDesiredVersionsLazyQuery,
-  useInstalledDesiredVersionsQuery,
   useServiceStatesLazyQuery
 } from "../../../../generated/graphql";
 
@@ -44,9 +37,9 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     alignItems: 'center'
   },
-  status: {
-    marginRight: theme.spacing(1)
-  },
+  // status: {
+  //   marginRight: theme.spacing(1)
+  // },
   actions: {
     justifyContent: 'flex-end'
   },
@@ -61,11 +54,16 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Versions = props => {
+interface VersionsProps {
+  className: string
+}
+
+const Versions: React.FC<VersionsProps> = props => {
   const { className, ...rest } = props;
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
+  const [developerVersions, setDeveloperVersions] = useState(new Array<DeveloperDesiredVersion>())
   const [clientVersions, setClientVersions] = useState(new Array<ClientDesiredVersion>())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
@@ -77,6 +75,9 @@ const Versions = props => {
   const consumersInfo = useDistributionConsumersInfoQuery()
 
   const [ getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery()
+  if (developerDesiredVersions.data) {
+    setDeveloperVersions(developerDesiredVersions.data.developerDesiredVersions)
+  }
 
   const [getClientDesiredVersions, clientDesiredVersions] = useClientDesiredVersionsLazyQuery()
   if (!consumer && clientDesiredVersions.data) {
@@ -134,6 +135,7 @@ const Versions = props => {
             />
             <FormControlLabel
               className={classes.formControlLabel}
+              label={null}
               control={<Button
                 onClick={() => getVersions(consumer)}
                 title='Refresh'
@@ -152,20 +154,16 @@ const Versions = props => {
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <VersionsTable
-            client={consumer}
+            distributionName={consumer?consumer:Utils.getDistributionName()}
             clientVersions={clientVersions}
             developerVersions={developerVersions}
-            instanceVersions={serviceStates}
+            serviceStates={serviceStates.data?.serviceStates.map(state => state.instance)}
             onlyAlerts={onlyAlerts}
           />
         </div>
       </CardContent>
     </Card>
-  );
-};
-
-Versions.propTypes = {
-  className: PropTypes.string
-};
+  )
+}
 
 export default Versions;
