@@ -1,15 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
-import {AppBar, Toolbar, Badge, Hidden, IconButton, Typography, Button} from '@material-ui/core';
+import {AppBar, Toolbar, Hidden, IconButton, Typography} from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
 import BuildIcon from '@material-ui/icons/Build';
 import Grid from '@material-ui/core/Grid';
-import {Utils} from '../../../../common/Utils';
-import {useDistributionInfoQuery, useWhoAmIQuery} from "../../../../generated/graphql";
+import {useDistributionInfoQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -48,7 +47,7 @@ const Topbar = props => {
 
   const classes = useStyles();
 
-  const { loading, error, data } = useDistributionInfoQuery();
+  const { data } = useDistributionInfoQuery();
 
   return (
     <AppBar

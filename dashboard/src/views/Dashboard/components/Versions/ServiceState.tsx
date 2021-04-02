@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import Popover from '@material-ui/core/Popover';
 import {makeStyles} from '@material-ui/styles';
 import {Table, TableBody} from '@material-ui/core';
@@ -7,6 +7,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import AlertIcon from '@material-ui/icons/Error';
 import TableRow from '@material-ui/core/TableRow';
 import {ServiceState} from "../../../../generated/graphql";
+import {Version} from "../../../../common";
 
 const useStyles = makeStyles(theme => ({
   infoIcon: {
@@ -93,7 +94,7 @@ export const ServiceStatePopup: React.FC<ServiceStateProps> = (props) => {
         {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
           <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
         {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
-          <TableCell className={classes.stateColumn}>{state.updateToVersion}</TableCell></TableRow>):null}
+          <TableCell className={classes.stateColumn}>{Version.clientDistributionVersionToString(state.updateToVersion)}</TableCell></TableRow>):null}
         {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>{state.updateError.critical?'Critical Update Error':'Update Error'}</TableCell>
           <TableCell className={classes.stateColumn}>{state.updateError.error}</TableCell></TableRow>):null}
         {state.failuresCount?(<TableRow><TableCell className={classes.stateColumn}>Failures Count</TableCell>

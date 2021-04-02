@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {Utils} from '../../../../common';
@@ -17,14 +17,12 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
-  ClientDesiredVersion, DeveloperDesiredVersion,
   useClientDesiredVersionsLazyQuery,
   useDeveloperDesiredVersionsLazyQuery,
   useDistributionConsumersInfoQuery,
   useInstalledDesiredVersionsLazyQuery,
   useServiceStatesLazyQuery
 } from "../../../../generated/graphql";
-import * as Apollo from "@apollo/client";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -64,12 +62,10 @@ const Versions: React.FC<VersionsProps> = props => {
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
-  // const [developerVersions, setDeveloperVersions] = useState(new Array<DeveloperDesiredVersion>())
-  // const [clientVersions, setClientVersions] = useState(new Array<ClientDesiredVersion>())
   const [onlyAlerts, setOnlyAlerts] = useState(false)
 
   React.useEffect(() => {
-    getVersions(consumer)
+      getVersions(consumer)
   }, [consumer]);
 
   const consumersInfo = useDistributionConsumersInfoQuery()
@@ -142,7 +138,6 @@ const Versions: React.FC<VersionsProps> = props => {
         <div className={classes.inner}>
           { developerDesiredVersions.data ?
             <VersionsTable
-              distributionName={consumer?consumer:Utils.getDistributionName()}
               developerVersions={developerDesiredVersions.data.developerDesiredVersions}
               clientVersions={consumer ? installedDesiredVersions.data?.installedDesiredVersions : clientDesiredVersions.data?.clientDesiredVersions}
               serviceStates={serviceStates.data?.serviceStates.map(state => state.instance)}

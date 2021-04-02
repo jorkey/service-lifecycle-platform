@@ -26,7 +26,7 @@ const Profile = props => {
 
   const classes = useStyles();
 
-  const { loading, error, data } = useWhoAmIQuery();
+  const { data } = useWhoAmIQuery();
 
   let name = '';
   let roles = '';
@@ -34,7 +34,7 @@ const Profile = props => {
   if (data) {
     name = data.whoAmI.name
     data.whoAmI.roles.forEach(role => {
-      if (roles.length != 0) {
+      if (roles.length !== 0) {
         roles += ', '
       }
       roles += role
