@@ -15,18 +15,17 @@ const useStyles = makeStyles(() => ({
 }));
 
 interface MinimalProps {
-  distributionInfo: DistributionInfo,
   children: any
 }
 
 const Minimal: React.FC<MinimalProps> = props => {
-  const { distributionInfo, children, ...rest } = props;
+  const { children, ...rest } = props;
 
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
-      <Topbar distributionInfo={distributionInfo} {...rest}/>
+      <Topbar {...rest}/>
       <main className={classes.content}>{children}</main>
     </div>
   );

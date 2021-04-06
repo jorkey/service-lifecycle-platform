@@ -37,17 +37,14 @@ const useStyles = makeStyles(() => ({
 
 interface TopbarProps {
   // className: string,
-  distributionInfo: DistributionInfo
 }
 
 const Topbar: React.FC<TopbarProps> = props => {
-  const { /*className,*/ distributionInfo, ...rest } = props;
-
   const classes = useStyles();
 
   return (
     <AppBar
-      {...rest}
+      {...props}
       // className={clsx(classes.root, className)}
       color='primary'
       position='fixed'
@@ -59,7 +56,7 @@ const Topbar: React.FC<TopbarProps> = props => {
               <Typography className={classes.distributionTitle}
                           display='inline'
               >
-                {distributionInfo.title}
+                {localStorage.getItem('distributionTitle')}
               </Typography>
           </Grid>
         </RouterLink>

@@ -42,11 +42,21 @@ const authLink = setContext((_, { headers }) => {
   return headers
 });
 
-// eslint-disable-next-line no-unused-vars
 const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
-  if (networkError && (networkError as ServerError).statusCode == 401) {
-    Utils.logout()
-    window.location.replace('/')
+  if (graphQLErrors) {
+    graphQLErrors.forEach(({message, locations, path}) =>
+      console.log(
+        `GraphQL error: Message: ${message}, Location: ${locations}, Path: ${path}`,
+      ),
+    )
+  }
+
+  if (networkError) {
+    console.log(`Network error: ${networkError}`);
+    if ((networkError as ServerError).statusCode == 401) {
+      Utils.logout()
+      window.location.replace('/')
+    }
   }
 });
 

@@ -87,15 +87,14 @@ object GraphqlSchema {
       Field("ping", StringType,
         resolve = _ => { "pong" }),
 
+      // Distribution server info
+      Field("distributionInfo", DistributionInfoType,
+        resolve = c => { c.ctx.workspace.getDistributionInfo() }),
+
       // Own account operations
       Field("whoAmI", UserInfoType,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.userName) }),
-
-      // Distribution server info
-      Field("distributionInfo", DistributionInfoType,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionInfo() }),
 
       // Users
       Field("usersInfo", ListType(UserInfoType),

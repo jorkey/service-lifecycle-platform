@@ -30,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = props => {
           item
           xs={12}
         >
-          <Versions distributionName={props.distributionTitle}/>
+          <Versions/>
         </Grid>
       </Grid>
     </div>

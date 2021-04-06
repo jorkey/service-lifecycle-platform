@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component, ComponentType} from 'react';
 
 import { RouteWithLayout } from './components';
 import { Main as MainLayout, Minimal as MinimalLayout } from './layouts';
@@ -16,10 +16,10 @@ import {
 import {DistributionInfo, useDistributionInfoQuery} from "./generated/graphql";
 
 // @ts-ignore
-export const LoginSwitchRoute = ({ component: Component, distributionInfo, ...rest }) => (
+export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   <Route {...rest} render = { props => {
     return localStorage.getItem('token')
-      ? <Component distributionName={distributionInfo} {...props}/>
+      ? <Component {...props} />
       : <Redirect to='/login'/>
   }} />
 )
@@ -29,7 +29,6 @@ interface RoutesProps {
 }
 
 const Routes: React.FC<RoutesProps> = props => {
-  const { distributionInfo, ...rest } = props;
   return (
     <Switch>
       <Redirect
@@ -42,48 +41,42 @@ const Routes: React.FC<RoutesProps> = props => {
         layout={MainLayout}
         path='/dashboard'
         exact
-        distributionInfo={distributionInfo}
-        {...rest}
+        {...props}
       />
       <RouteWithLayout
         component={ServicesView}
         layout={MainLayout}
         path='/services'
-        distributionInfo={distributionInfo}
         exact
-        {...rest}
+        {...props}
       />
       <RouteWithLayout
         component={ClientsView}
         layout={MainLayout}
         path='/clients'
         exact
-        distributionInfo={distributionInfo}
-        {...rest}
+        {...props}
       />
       <RouteWithLayout
         component={LoggingView}
         layout={MainLayout}
         path='/logging'
         exact
-        distributionInfo={distributionInfo}
-        {...rest}
+        {...props}
       />
       <RouteWithLayout
         component={FailuresView}
         layout={MainLayout}
         path='/failures'
         exact
-        distributionInfo={distributionInfo}
-        {...rest}
+        {...props}
       />
       <RouteWithLayout
         component={NotFoundView}
         layout={MinimalLayout}
         path='/not-found'
         exact
-        distributionInfo={distributionInfo}
-        {...rest}
+        {...props}
       />
       <Redirect to='/not-found'/>
     </Switch>
@@ -93,21 +86,20 @@ const Routes: React.FC<RoutesProps> = props => {
 const LoginRoutes = () => {
   const { data } = useDistributionInfoQuery()
 
-  // @ts-ignore
   if (data && data.distributionInfo) {
+    localStorage.setItem('distributionName', data.distributionInfo.distributionName)
+    localStorage.setItem('distributionTitle', data.distributionInfo.title)
     return (
       <Switch>
         <RouteWithLayout
           component={LoginPageView}
           path='/login'
           layout={MinimalLayout}
-          distributionInfo={data.distributionInfo}
           exact
         />
         <LoginSwitchRoute
           path='/'
           component={Routes}
-          distributionInfo={data.distributionInfo}
         />
       </Switch>)
   } else {

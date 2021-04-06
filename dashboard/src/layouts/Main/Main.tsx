@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import PropTypes, {ReactNodeLike} from 'prop-types';
 import clsx from 'clsx';
 import { makeStyles, useTheme } from '@material-ui/styles';
 import { useMediaQuery } from '@material-ui/core';
@@ -10,6 +10,7 @@ const useStyles = makeStyles(theme => ({
   root: {
     paddingTop: 56,
     height: '100%',
+    // @ts-ignore
     [theme.breakpoints.up('sm')]: {
       paddingTop: 64
     }
@@ -22,11 +23,16 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Main = props => {
+interface MainProps {
+  children: ReactNodeLike
+}
+
+const Main: React.FC<MainProps> = props => {
   const { children, ...rest } = props;
 
   const classes = useStyles();
   const theme = useTheme();
+  // @ts-ignore
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'), {
     defaultMatches: true
   });
@@ -61,10 +67,6 @@ const Main = props => {
       </main>
     </div>
   );
-};
-
-Main.propTypes = {
-  children: PropTypes.node
 };
 
 export default Main;

@@ -43,22 +43,19 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface TopbarProps {
-  className: string,
-  onSidebarOpen: any,
-  distributionInfo: DistributionInfo
+  // className: string,
+  onSidebarOpen: () => void,
 }
 
 const Topbar: React.FC<TopbarProps> = props => {
-  const { className, onSidebarOpen, distributionInfo, ...rest } = props;
+  const { /*className, */onSidebarOpen, ...rest } = props;
 
   const classes = useStyles();
-
-  console.log("topbar ======================= " + distributionInfo)
 
   return (
     <AppBar
       {...rest}
-      className={clsx(classes.root, className)}
+      // className={clsx(classes.root, className)}
     >
       <Toolbar>
         <RouterLink to='/'>
@@ -67,7 +64,7 @@ const Topbar: React.FC<TopbarProps> = props => {
             <Typography className={classes.distributionTitle}
               display='inline'
             >
-              {distributionInfo.title}
+              {localStorage.getItem('distributionTitle')}
             </Typography>
           </Grid>
         </RouterLink>

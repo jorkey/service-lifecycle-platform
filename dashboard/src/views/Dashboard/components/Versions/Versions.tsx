@@ -55,11 +55,9 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface VersionsProps {
-  distributionName: string
 }
 
 const Versions: React.FC<VersionsProps> = props => {
-  const { distributionName, ...rest } = props;
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
@@ -82,13 +80,13 @@ const Versions: React.FC<VersionsProps> = props => {
       getServiceStates({ variables: { distribution: consumer} })
     } else {
       getClientDesiredVersions()
-      getServiceStates({ variables: { distribution: distributionName } })
+      getServiceStates({ variables: { distribution: localStorage.getItem('distributionName')! } })
     }
   }
 
   return (
     <Card
-      {...rest}
+      {...props}
       className={clsx(classes.root)}
     >
       <CardHeader
@@ -104,7 +102,7 @@ const Versions: React.FC<VersionsProps> = props => {
                 value={consumer}
               >
                 { consumersInfo.data?.distributionConsumersInfo.map(consumer =>
-                    <option key={consumer.distributionTitle}>{consumer.distributionTitle}</option>) }
+                    <option key={consumer.distributionName}>{consumer.distributionName}</option>) }
               </Select>}
               label='Consumer'
             />
