@@ -9,9 +9,11 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import './assets/scss/index.scss';
 import validators from './common/validators';
 import LoginRoutes from './Routes';
-import {ApolloProvider} from "@apollo/client";
+import {ApolloProvider, ServerError, ServerParseError} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
+import {onError} from '@apollo/client/link/error';
+import {Utils} from './common';
 //import {Scalars} from "./graphql/scalars";
 
 const browserHistory = createBrowserHistory();
@@ -40,12 +42,20 @@ const authLink = setContext((_, { headers }) => {
   return headers
 });
 
+// eslint-disable-next-line no-unused-vars
+const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
+  if (networkError && (networkError as ServerError).statusCode == 401) {
+    Utils.logout()
+    window.location.replace('/')
+  }
+});
+
 const resolvers = {
 //  DeveloperVersion: Scalars.developerVersionScalar
 };
 
 const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: errorLink.concat(authLink).concat(httpLink),
   resolvers: resolvers,
   cache: new InMemoryCache()
 });

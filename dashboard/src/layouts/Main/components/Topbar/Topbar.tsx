@@ -8,7 +8,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
 import BuildIcon from '@material-ui/icons/Build';
 import Grid from '@material-ui/core/Grid';
-import {useDistributionInfoQuery} from "../../../../generated/graphql";
+import {DistributionInfo, useDistributionInfoQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -17,14 +17,14 @@ const useStyles = makeStyles(theme => ({
   flexGrow: {
     flexGrow: 1
   },
-  signOutButton: {
-    marginLeft: theme.spacing(1)
-  },
+  // signOutButton: {
+  //   marginLeft: theme.spacing(1)
+  // },
   logo: {
     color: 'white',
     display: 'flex'
   },
-  distributionName: {
+  distributionTitle: {
     paddingLeft: 10,
     color: 'white',
     fontWeight: 400,
@@ -42,12 +42,18 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Topbar = props => {
-  const { className, onSidebarOpen, ...rest } = props;
+interface TopbarProps {
+  className: string,
+  onSidebarOpen: any,
+  distributionInfo: DistributionInfo
+}
+
+const Topbar: React.FC<TopbarProps> = props => {
+  const { className, onSidebarOpen, distributionInfo, ...rest } = props;
 
   const classes = useStyles();
 
-  const { data } = useDistributionInfoQuery();
+  console.log("topbar ======================= " + distributionInfo)
 
   return (
     <AppBar
@@ -58,21 +64,17 @@ const Topbar = props => {
         <RouterLink to='/'>
           <Grid className={classes.logo}>
             <BuildIcon/>
-            { data ? (
-              <>
-                <Typography className={classes.distributionName}
-                  display='inline'
-                >
-                  {data.distributionInfo.title}
-                </Typography>
-              </>
-            ) : null }
+            <Typography className={classes.distributionTitle}
+              display='inline'
+            >
+              {distributionInfo.title}
+            </Typography>
           </Grid>
         </RouterLink>
         <div className={classes.flexGrow} />
         <Hidden mdDown>
           <IconButton title='Logout'
-            className={classes.signOutButton}
+            // className={classes.signOutButton}
             color='inherit'
             href='/login'
           >
@@ -90,11 +92,6 @@ const Topbar = props => {
       </Toolbar>
     </AppBar>
   );
-};
-
-Topbar.propTypes = {
-  className: PropTypes.string,
-  onSidebarOpen: PropTypes.func
 };
 
 export default Topbar;

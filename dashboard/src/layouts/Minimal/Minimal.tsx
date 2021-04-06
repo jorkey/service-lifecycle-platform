@@ -1,8 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 
 import { Topbar } from './components';
+import {DistributionInfo} from "../../generated/graphql";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -14,22 +14,22 @@ const useStyles = makeStyles(() => ({
   }
 }));
 
-const Minimal = props => {
-  const { children } = props;
+interface MinimalProps {
+  distributionInfo: DistributionInfo,
+  children: any
+}
+
+const Minimal: React.FC<MinimalProps> = props => {
+  const { distributionInfo, children, ...rest } = props;
 
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
-      <Topbar />
+      <Topbar distributionInfo={distributionInfo} {...rest}/>
       <main className={classes.content}>{children}</main>
     </div>
   );
-};
-
-Minimal.propTypes = {
-  children: PropTypes.node,
-  className: PropTypes.string
 };
 
 export default Minimal;

@@ -7,7 +7,7 @@ import {AppBar, Toolbar, Typography} from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
 import BuildIcon from '@material-ui/icons/Build';
 import {Utils} from '../../../../common';
-import {useDistributionInfoQuery} from "../../../../generated/graphql";
+import {DistributionInfo, useDistributionInfoQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -17,7 +17,7 @@ const useStyles = makeStyles(() => ({
     color: 'white',
     display: 'flex'
   },
-  distributionName: {
+  distributionTitle: {
     paddingLeft: 10,
     color: 'white',
     fontWeight: 400,
@@ -35,21 +35,20 @@ const useStyles = makeStyles(() => ({
   }
 }));
 
-const Topbar = props => {
-  const { className, ...rest } = props;
+interface TopbarProps {
+  // className: string,
+  distributionInfo: DistributionInfo
+}
+
+const Topbar: React.FC<TopbarProps> = props => {
+  const { /*className,*/ distributionInfo, ...rest } = props;
 
   const classes = useStyles();
-
-  const { data } = useDistributionInfoQuery();
-
-  if (data) {
-    Utils.setDistributionName(data.distributionInfo.distributionName)
-  }
 
   return (
     <AppBar
       {...rest}
-      className={clsx(classes.root, className)}
+      // className={clsx(classes.root, className)}
       color='primary'
       position='fixed'
     >
@@ -57,24 +56,16 @@ const Topbar = props => {
         <RouterLink to='/'>
           <Grid className={classes.logo}>
             <BuildIcon/>
-            { data ? (
-              <>
-                <Typography className={classes.distributionName}
-                            display='inline'
-                >
-                  {data.distributionInfo.title}
-                </Typography>
-              </>
-            ) : null }
+              <Typography className={classes.distributionTitle}
+                          display='inline'
+              >
+                {distributionInfo.title}
+              </Typography>
           </Grid>
         </RouterLink>
       </Toolbar>
     </AppBar>
   );
-};
-
-Topbar.propTypes = {
-  className: PropTypes.string
 };
 
 export default Topbar;

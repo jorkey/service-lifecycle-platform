@@ -5,6 +5,8 @@ import { Grid } from '@material-ui/core';
 import {
   Versions,
 } from './components';
+import {useDistributionInfoQuery} from "../../generated/graphql";
+import {Utils} from "../../common";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -12,7 +14,11 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Dashboard = () => {
+interface DashboardProps {
+  distributionTitle: string
+}
+
+const Dashboard: React.FC<DashboardProps> = props => {
   const classes = useStyles();
 
   return (
@@ -24,7 +30,7 @@ const Dashboard = () => {
           item
           xs={12}
         >
-          <Versions />
+          <Versions distributionName={props.distributionTitle}/>
         </Grid>
       </Grid>
     </div>

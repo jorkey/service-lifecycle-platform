@@ -23,7 +23,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const Main = props => {
-  const { children } = props;
+  const { children, ...rest } = props;
 
   const classes = useStyles();
   const theme = useTheme();
@@ -50,7 +50,7 @@ const Main = props => {
         [classes.shiftContent]: isDesktop
       })}
     >
-      <Topbar onSidebarOpen={handleSidebarOpen} />
+      <Topbar onSidebarOpen={handleSidebarOpen} {...rest}/>
       <Sidebar
         onClose={handleSidebarClose}
         open={shouldOpenSidebar}

@@ -17,6 +17,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
+  DistributionInfo,
   useClientDesiredVersionsLazyQuery,
   useDeveloperDesiredVersionsLazyQuery,
   useDistributionConsumersInfoQuery,
@@ -54,11 +55,11 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface VersionsProps {
-  className: string
+  distributionName: string
 }
 
 const Versions: React.FC<VersionsProps> = props => {
-  const { className, ...rest } = props;
+  const { distributionName, ...rest } = props;
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
@@ -81,14 +82,14 @@ const Versions: React.FC<VersionsProps> = props => {
       getServiceStates({ variables: { distribution: consumer} })
     } else {
       getClientDesiredVersions()
-      getServiceStates({ variables: { distribution: Utils.getDistributionName() } })
+      getServiceStates({ variables: { distribution: distributionName } })
     }
   }
 
   return (
     <Card
       {...rest}
-      className={clsx(classes.root, className)}
+      className={clsx(classes.root)}
     >
       <CardHeader
         action={
@@ -103,7 +104,7 @@ const Versions: React.FC<VersionsProps> = props => {
                 value={consumer}
               >
                 { consumersInfo.data?.distributionConsumersInfo.map(consumer =>
-                    <option key={consumer.distributionName}>{consumer.distributionName}</option>) }
+                    <option key={consumer.distributionTitle}>{consumer.distributionTitle}</option>) }
               </Select>}
               label='Consumer'
             />
