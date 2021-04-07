@@ -1,7 +1,5 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
-import { DistributionInfo } from '../../generated/graphql';
-import {Minimal} from "../../layouts";
 
 interface RouteWithLayoutProps {
   layout: any,

@@ -28,7 +28,8 @@ export class Version {
   }
 
   static clientDistributionVersionToString(version: ClientDistributionVersion): string {
-    return `${version.distributionName}-${Version.buildToString(version.developerBuild)}_${version.clientBuild}`
+    return (version.clientBuild === 0)?`${version.distributionName}-${Version.buildToString(version.developerBuild)}`:
+      `${version.distributionName}-${Version.buildToString(version.developerBuild)}_${version.clientBuild}`
   }
 
   next(): Version {

@@ -5,8 +5,6 @@ import { Grid } from '@material-ui/core';
 import {
   Versions,
 } from './components';
-import {useDistributionInfoQuery} from "../../generated/graphql";
-import {Utils} from "../../common";
 
 const useStyles = makeStyles(theme => ({
   root: {

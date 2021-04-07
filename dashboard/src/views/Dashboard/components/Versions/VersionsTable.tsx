@@ -8,7 +8,7 @@ import {
   ClientDesiredVersion, ClientDistributionVersion,
   DeveloperDesiredVersion,
   DeveloperDistributionVersion,
-  InstanceServiceState, ServiceState
+  InstanceServiceState
 } from "../../../../generated/graphql";
 
 // eslint-disable-next-line no-unused-vars
@@ -70,7 +70,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
     } })
   let versionIndex = versionsTree.length, version:ClientDistributionVersion|undefined = undefined
   let directories = new Array<[string, Array<InstanceServiceState>]>(), directoryIndex = 0, directory:string|undefined = undefined
-  let states = new Array<InstanceServiceState>(), stateIndex = 0, state:ServiceState|undefined = undefined
+  let states = new Array<InstanceServiceState>(), stateIndex = 0, state:InstanceServiceState|undefined = undefined
   let rows = []
   let rowsStack = []
   let alertService = false
@@ -112,7 +112,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
       stateIndex = states.length - 1
     }
     if (stateIndex >= 0) {
-      state = states[stateIndex].service
+      state = states[stateIndex]
     } else {
       state = undefined
     }
@@ -147,7 +147,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
             className={!workingVersionAlarm ? classes.versionColumn : classes.alarmVersionColumn}
             rowSpan={versionRowNum + 1}
           >
-            {version}
+            {Version.clientDistributionVersionToString(version)}
           </TableCell>)
           : null
         : <TableCell className={classes.versionColumn}/>
@@ -162,13 +162,13 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
         : <TableCell className={classes.directoryColumn}/>}
       {state ?
         <TableCell className={classes.instancesColumn}>
-          <Typography>{state}</Typography>
+          <Typography>{state.instanceId}</Typography>
         </TableCell> : <TableCell className={classes.instancesColumn}/>}
       {state ?
         <TableCell className={classes.infoColumn}>
           <Info
             alert={workingVersionAlarm}
-            serviceState={state}
+            serviceState={state.service}
           />
         </TableCell> : <TableCell className={classes.infoColumn}/>}
     </TableRow>)

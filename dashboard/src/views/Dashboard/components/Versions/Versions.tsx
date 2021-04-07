@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
-import {Utils} from '../../../../common';
 import {
   Card,
   CardHeader,
@@ -17,7 +16,6 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
-  DistributionInfo,
   useClientDesiredVersionsLazyQuery,
   useDeveloperDesiredVersionsLazyQuery,
   useDistributionConsumersInfoQuery,

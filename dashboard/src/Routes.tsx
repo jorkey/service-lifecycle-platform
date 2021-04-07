@@ -1,4 +1,4 @@
-import React, {Component, ComponentType} from 'react';
+import React from 'react';
 
 import { RouteWithLayout } from './components';
 import { Main as MainLayout, Minimal as MinimalLayout } from './layouts';
@@ -98,8 +98,8 @@ const LoginRoutes = () => {
           exact
         />
         <LoginSwitchRoute
-          path='/'
           component={Routes}
+          path='/'
         />
       </Switch>)
   } else {

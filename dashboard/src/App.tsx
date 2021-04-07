@@ -9,12 +9,11 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import './assets/scss/index.scss';
 import validators from './common/validators';
 import LoginRoutes from './Routes';
-import {ApolloProvider, ServerError, ServerParseError} from '@apollo/client';
+import {ApolloProvider, ServerError} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import {onError} from '@apollo/client/link/error';
 import {Utils} from './common';
-//import {Scalars} from "./graphql/scalars";
 
 const browserHistory = createBrowserHistory();
 
@@ -53,7 +52,7 @@ const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
 
   if (networkError) {
     console.log(`Network error: ${networkError}`);
-    if ((networkError as ServerError).statusCode == 401) {
+    if ((networkError as ServerError).statusCode === 401) {
       Utils.logout()
       window.location.replace('/')
     }

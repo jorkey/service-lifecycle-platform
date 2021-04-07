@@ -27,21 +27,23 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
                  (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val checkUpdateTimeout = FiniteDuration(5, TimeUnit.SECONDS)
+  private val updatePeriod = FiniteDuration(5, TimeUnit.SECONDS)
 
   private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
   private val distributionVersion = IoUtils.readServiceVersion(Common.DistributionServiceName, new File("."))
 
   def start(): Unit = {
-    stateUtils.setSelfServiceStates(Seq(
-      DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")),
-      DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
-    ))
-    system.scheduler.scheduleOnce(checkUpdateTimeout)(maybeUpdate())
+    update()
   }
 
-  def maybeUpdate(): Unit = {
+  private def update(): Unit = {
     (for {
+      _ <- {
+        stateUtils.setSelfServiceStates(Seq(
+          DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")),
+          DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
+        ))
+      }
       desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(ClientDesiredVersions(Seq.empty)))
       distributionNewVersion <- Future(Utils.isServiceNeedUpdate(Common.DistributionServiceName,
         distributionVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.DistributionServiceName)))
@@ -73,11 +75,11 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
     }).onComplete {
       case Success(continue) =>
         if (continue) {
-          system.scheduler.scheduleOnce(checkUpdateTimeout)(maybeUpdate())
+          system.scheduler.scheduleOnce(updatePeriod)(update())
         }
       case Failure(ex) =>
         log.error("Self update error", ex)
-        system.scheduler.scheduleOnce(checkUpdateTimeout)(maybeUpdate())
+        system.scheduler.scheduleOnce(updatePeriod)(update())
     }
   }
 

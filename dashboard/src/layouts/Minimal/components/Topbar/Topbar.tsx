@@ -1,13 +1,9 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import clsx from 'clsx';
-import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import {AppBar, Toolbar, Typography} from '@material-ui/core';
 import Grid from '@material-ui/core/Grid';
 import BuildIcon from '@material-ui/icons/Build';
-import {Utils} from '../../../../common';
-import {DistributionInfo, useDistributionInfoQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(() => ({
   root: {
