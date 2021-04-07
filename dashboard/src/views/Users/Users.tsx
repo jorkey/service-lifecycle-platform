@@ -1,10 +1,8 @@
 import React from 'react';
+
 import { makeStyles } from '@material-ui/core/styles';
 import { Grid } from '@material-ui/core';
-
-import {
-  Versions,
-} from './components';
+import UsersManager from "./components/Users/UsersManager";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -12,10 +10,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface DashboardProps {
-}
-
-const Dashboard: React.FC<DashboardProps> = props => {
+const Users = () => {
   const classes = useStyles();
 
   return (
@@ -27,11 +22,11 @@ const Dashboard: React.FC<DashboardProps> = props => {
           item
           xs={12}
         >
-          <Versions/>
+          <UsersManager/>
         </Grid>
       </Grid>
     </div>
   );
 };
 
-export default Dashboard;
+export default Users;

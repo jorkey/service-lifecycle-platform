@@ -51,8 +51,8 @@ const Sidebar = props => {
       icon: <BubbleChartIcon />
     },
     {
-      title: 'Clients',
-      href: '/clients',
+      title: 'Users',
+      href: '/users',
       icon: <PeopleIcon />
     },
     {

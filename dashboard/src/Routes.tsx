@@ -8,7 +8,7 @@ import {
   LoginPage as LoginPageView,
   Dashboard as DashboardView,
   Services as ServicesView,
-  Clients as ClientsView,
+  Users as UsersView,
   Logging as LoggingView,
   Failures as FailuresView,
   NotFound as NotFoundView
@@ -51,9 +51,9 @@ const Routes: React.FC<RoutesProps> = props => {
         {...props}
       />
       <RouteWithLayout
-        component={ClientsView}
+        component={UsersView}
         layout={MainLayout}
-        path='/clients'
+        path='/users'
         exact
         {...props}
       />

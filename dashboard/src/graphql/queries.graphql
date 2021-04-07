@@ -3,11 +3,15 @@ mutation login($user: String!, $password: String!) {
 }
 
 query whoAmI {
-    whoAmI { name, roles }
+    whoAmI { userName, roles }
 }
 
 query distributionInfo {
     distributionInfo { distributionName, title }
+}
+
+query usersInfo {
+    usersInfo { userName, roles }
 }
 
 query distributionConsumersInfo {
