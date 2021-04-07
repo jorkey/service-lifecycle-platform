@@ -26,20 +26,11 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     alignItems: 'center'
   },
-  // status: {
-  //   marginRight: theme.spacing(1)
-  // },
   actions: {
     justifyContent: 'flex-end'
   },
   formControlLabel: {
     paddingLeft: '10px'
-  },
-  distributionSelect: {
-    width: '150px'
-  },
-  onlyAlerts: {
-    paddingRight: '2px'
   }
 }));
 
