@@ -187,8 +187,8 @@ object IoUtils {
     }
   }
 
-  def readServiceVersion(serviceName: ServiceName, directory: File)(implicit log: Logger): Option[ClientDistributionVersion] = {
-    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
+  def readServiceVersion(service: ServiceName, directory: File)(implicit log: Logger): Option[ClientDistributionVersion] = {
+    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(service))
     if (versionMarkFile.exists()) {
       readFileToJson[ClientDistributionVersion](versionMarkFile)
     } else {
@@ -196,8 +196,8 @@ object IoUtils {
     }
   }
 
-  def getServiceInstallTime(serviceName: ServiceName, directory: File)(implicit log: Logger): Option[Date] = {
-    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
+  def getServiceInstallTime(service: ServiceName, directory: File)(implicit log: Logger): Option[Date] = {
+    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(service))
     if (versionMarkFile.exists()) {
       Some(new Date(versionMarkFile.lastModified()))
     } else {
@@ -205,15 +205,15 @@ object IoUtils {
     }
   }
 
-  def writeDesiredServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)
+  def writeDesiredServiceVersion(directory: File, service: ServiceName, version: ClientDistributionVersion)
                                  (implicit log: Logger): Boolean = {
-    val desiredVersionMarkFile = new File(directory, Common.DesiredVersionMarkFile.format(serviceName))
+    val desiredVersionMarkFile = new File(directory, Common.DesiredVersionMarkFile.format(service))
     writeJsonToFile(desiredVersionMarkFile, version)
   }
 
-  def writeServiceVersion(directory: File, serviceName: ServiceName, version: ClientDistributionVersion)
+  def writeServiceVersion(directory: File, service: ServiceName, version: ClientDistributionVersion)
                          (implicit log: Logger): Boolean = {
-    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(serviceName))
+    val versionMarkFile = new File(directory, Common.VersionMarkFile.format(service))
     writeJsonToFile(versionMarkFile, version)
   }
 

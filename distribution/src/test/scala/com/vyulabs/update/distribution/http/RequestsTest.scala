@@ -18,16 +18,16 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
   val route = distribution.route
 
   it should "process graphql post request" in {
-    Post("/graphql", """{ "query": "query { usersInfo(user:\"admin\") { userName, roles } }" }""".parseJson) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
+    Post("/graphql", """{ "query": "query { usersInfo(user:\"admin\") { user, roles } }" }""".parseJson) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual """{"data":{"usersInfo":[{"userName":"admin","roles":["Administrator"]}]}}"""
+      responseAs[String] shouldEqual """{"data":{"usersInfo":[{"user":"admin","roles":["Administrator"]}]}}"""
     }
   }
 
   it should "process graphql get request" in {
-    Get(s"/graphql?query=" + URLEncoder.encode("""{ usersInfo(user:"admin") { userName, roles } }""", "utf8")) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
+    Get(s"/graphql?query=" + URLEncoder.encode("""{ usersInfo(user:"admin") { user, roles } }""", "utf8")) ~> addCredentials(adminHttpCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual """{"data":{"usersInfo":[{"userName":"admin","roles":["Administrator"]}]}}"""
+      responseAs[String] shouldEqual """{"data":{"usersInfo":[{"user":"admin","roles":["Administrator"]}]}}"""
     }
   }
 
@@ -50,9 +50,9 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
     val newAdminClientCredentials = BasicHttpCredentials("admin", "password1")
 
-    Post("/graphql", """{ "query": "query { usersInfo(user:\"admin\") { userName, roles } }" }""".parseJson) ~> addCredentials(newAdminClientCredentials) ~> route ~> check {
+    Post("/graphql", """{ "query": "query { usersInfo(user:\"admin\") { user, roles } }" }""".parseJson) ~> addCredentials(newAdminClientCredentials) ~> route ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldEqual """{"data":{"usersInfo":[{"userName":"admin","roles":["Administrator"]}]}}"""
+      responseAs[String] shouldEqual """{"data":{"usersInfo":[{"user":"admin","roles":["Administrator"]}]}}"""
     }
   }
 }

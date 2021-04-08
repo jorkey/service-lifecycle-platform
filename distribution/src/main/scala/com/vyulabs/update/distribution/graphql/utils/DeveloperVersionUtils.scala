@@ -26,13 +26,13 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
 
   protected implicit val executionContext: ExecutionContext
 
-  def buildDeveloperVersion(serviceName: ServiceName, developerVersion: DeveloperVersion, author: UserName,
+  def buildDeveloperVersion(service: ServiceName, developerVersion: DeveloperVersion, author: UserName,
                             sourceBranches: Seq[String], comment: Option[String])(implicit log: Logger): TaskId = {
-    val task = taskManager.create(s"Build developer version ${developerVersion} of service ${serviceName}",
+    val task = taskManager.create(s"Build developer version ${developerVersion} of service ${service}",
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
-          s"distributionName=${config.distributionName}", s"service=${serviceName}", s"version=${developerVersion.toString}", s"author=${author}",
+          s"distribution=${config.distribution}", s"service=${service}", s"version=${developerVersion.toString}", s"author=${author}",
           s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
           comment.map(comment => s"comment=${comment}")
         runBuilder(taskId, arguments)
@@ -44,20 +44,20 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     log.info(s"Add developer version info ${versionInfo}")
     for {
       _ <- collections.Developer_VersionsInfo.insert(versionInfo)
-      _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
+      _ <- removeObsoleteVersions(versionInfo.version.distribution, versionInfo.service)
     } yield {}
   }
 
-  private def removeObsoleteVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Unit] = {
+  private def removeObsoleteVersions(distribution: DistributionName, service: ServiceName)(implicit log: Logger): Future[Unit] = {
     for {
-      versions <- getDeveloperVersionsInfo(serviceName, distributionName = Some(distributionName))
-      busyVersions <- getBusyVersions(distributionName, serviceName)
+      versions <- getDeveloperVersionsInfo(service, distribution = Some(distribution))
+      busyVersions <- getBusyVersions(distribution, service)
       complete <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.developerVersion))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > config.versions.maxHistorySize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
-            removeDeveloperVersion(serviceName, version)
+            removeDeveloperVersion(service, version)
           })
         } else {
           Future()
@@ -66,12 +66,12 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     } yield {}
   }
 
-  def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion)(implicit log: Logger): Future[Boolean] = {
-    log.info(s"Remove developer version ${version} of service ${serviceName}")
+  def removeDeveloperVersion(service: ServiceName, version: DeveloperDistributionVersion)(implicit log: Logger): Future[Boolean] = {
+    log.info(s"Remove developer version ${version} of service ${service}")
     val filters = Filters.and(
-      Filters.eq("serviceName", serviceName),
+      Filters.eq("service", service),
       Filters.eq("version", version))
-    directory.getDeveloperVersionImageFile(serviceName, version).delete()
+    directory.getDeveloperVersionImageFile(service, version).delete()
     for {
       profile <- {
         collections.Developer_VersionsInfo.delete(filters).map(_ > 0)
@@ -79,10 +79,10 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     } yield profile
   }
 
-  def getDeveloperVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
+  def getDeveloperVersionsInfo(service: ServiceName, distribution: Option[DistributionName] = None,
                                version: Option[DeveloperVersion] = None)(implicit log: Logger): Future[Seq[DeveloperVersionInfo]] = {
-    val serviceArg = Filters.eq("serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("version.distributionName", distributionName ) }
+    val serviceArg = Filters.eq("service", service)
+    val distributionArg = distribution.map { distribution => Filters.eq("version.distribution", distribution ) }
     val versionArg = version.map { version => Filters.eq("version.build", version.build) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
     collections.Developer_VersionsInfo.find(filters)
@@ -96,39 +96,39 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
         deltas.foldLeft(desiredVersionsMap) {
           (map, entry) => entry.version match {
             case Some(version) =>
-              map + (entry.serviceName -> version)
+              map + (entry.service -> version)
             case None =>
-              map - entry.serviceName
+              map - entry.service
           }}
       Some(DeveloperDesiredVersions(DeveloperDesiredVersions.fromMap(newVersions)))
     }).map(_ => ())
   }
 
-  def getDeveloperDesiredVersions(serviceNames: Set[ServiceName])(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+  def getDeveloperDesiredVersions(services: Set[ServiceName])(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       profile <- collections.Developer_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[DeveloperDesiredVersion])
-        .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)))
+        .filter(v => services.isEmpty || services.contains(v.service)))
     } yield profile
   }
 
-  def getDeveloperDesiredVersion(serviceName: ServiceName)(implicit log: Logger): Future[Option[DeveloperDistributionVersion]] = {
-    getDeveloperDesiredVersions(Set(serviceName)).map(_.headOption.map(_.version))
+  def getDeveloperDesiredVersion(service: ServiceName)(implicit log: Logger): Future[Option[DeveloperDistributionVersion]] = {
+    getDeveloperDesiredVersions(Set(service)).map(_.headOption.map(_.version))
   }
 
-  def filterDesiredVersionsByProfile(distributionName: DistributionName, future: Future[Seq[DeveloperDesiredVersion]])(implicit log: Logger)
+  def filterDesiredVersionsByProfile(distribution: DistributionName, future: Future[Seq[DeveloperDesiredVersion]])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      consumerConfig <- getDistributionConsumerInfo(distributionName)
+      consumerConfig <- getDistributionConsumerInfo(distribution)
       consumerProfile <- getDistributionConsumerProfile(consumerConfig.consumerProfile)
-      versions <- Future(desiredVersions.filter(version => consumerProfile.services.contains(version.serviceName)))
+      versions <- Future(desiredVersions.filter(version => consumerProfile.services.contains(version.service)))
     } yield versions
   }
 
-  def getDeveloperDesiredVersions(distributionName: DistributionName, serviceNames: Set[ServiceName])(implicit log: Logger)
+  def getDeveloperDesiredVersions(distribution: DistributionName, services: Set[ServiceName])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      distributionConsumerInfo <- getDistributionConsumerInfo(distributionName)
+      distributionConsumerInfo <- getDistributionConsumerInfo(distribution)
       developerVersions <- distributionConsumerInfo.testDistributionMatch match {
         case Some(testDistributionMatch) =>
           for {
@@ -137,7 +137,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
                 case Some(testedVersions) =>
                   val regexp = testDistributionMatch.r
                   val testCondition = testedVersions.signatures.exists(signature =>
-                    signature.distributionName match {
+                    signature.distribution match {
                       case regexp() =>
                         true
                       case _ =>
@@ -154,21 +154,21 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
             })
           } yield testedVersions
         case None =>
-          getDeveloperDesiredVersions(serviceNames)
+          getDeveloperDesiredVersions(services)
       }
     } yield developerVersions
   }
 
-  private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Set[DeveloperVersion]] = {
+  private def getBusyVersions(distribution: DistributionName, service: ServiceName)(implicit log: Logger): Future[Set[DeveloperVersion]] = {
     for {
-      desiredVersion <- getDeveloperDesiredVersion(serviceName)
+      desiredVersion <- getDeveloperDesiredVersion(service)
       clientsInfo <- getDistributionConsumersInfo()
-      installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distributionName, serviceName))).map(
+      installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distribution, service))).map(
         _.flatten.map(_.version.original))
       testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.consumerProfile))).map(
-        _.flatten.map(_.versions.find(_.serviceName == serviceName).map(_.version)).flatten)
+        _.flatten.map(_.versions.find(_.service == service).map(_.version)).flatten)
     } yield {
-      (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distributionName == distributionName).map(_.developerVersion)
+      (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)
     }
   }
 }

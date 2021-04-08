@@ -26,7 +26,7 @@ import scala.util.{Failure, Success}
   * Copyright FanDate, Inc.
   */
 
-class StateUploader(distributionName: DistributionName, collections: DatabaseCollections, distributionDirectory: DistributionDirectory,
+class StateUploader(distribution: DistributionName, collections: DatabaseCollections, distributionDirectory: DistributionDirectory,
                     uploadInterval: FiniteDuration, client: DistributionClient[AkkaSource])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -110,7 +110,7 @@ class StateUploader(distributionName: DistributionName, collections: DatabaseCol
       newReports <- Future(newReportsDocuments)
     } yield {
       if (!newReports.isEmpty) {
-        Future.sequence(newReports.filter(_.document.distributionName == distributionName).map(report => {
+        Future.sequence(newReports.filter(_.document.distribution == distribution).map(report => {
           val file = distributionDirectory.getFaultReportFile(report.document.report.faultId)
           val infoUpload = for {
             _ <- client.uploadFaultReport(report.document.report.faultId, file)
@@ -157,9 +157,9 @@ class StateUploader(distributionName: DistributionName, collections: DatabaseCol
 }
 
 object StateUploader {
-  def apply(distributionName: DistributionName,
+  def apply(distribution: DistributionName,
             collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration, distributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
-    new StateUploader(distributionName, collections, distributionDirectory, uploadInterval, new DistributionClient(new AkkaHttpClient(distributionUrl)))
+    new StateUploader(distribution, collections, distributionDirectory, uploadInterval, new DistributionClient(new AkkaHttpClient(distributionUrl)))
   }
 }

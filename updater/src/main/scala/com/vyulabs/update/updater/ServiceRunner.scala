@@ -25,7 +25,7 @@ import scala.concurrent.{Await, ExecutionContext}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 17.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], instanceId: InstanceId,
+class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], instance: InstanceId,
                     profiledServiceName: ProfiledServiceName, state: ServiceStateController,
                     logUploader: Option[LogReceiver], faultUploader: FaultUploader)
                    (implicit log: Logger, timer: Timer, executionContext: ExecutionContext) {
@@ -192,8 +192,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
       } else {
         None
       }
-      val info = FaultInfo(new Date(), instanceId,
-        new java.io.File(".").getCanonicalPath(), profiledServiceName.name, profiledServiceName.profile, state.getState(), logTail)
+      val info = FaultInfo(new Date(), instance, profiledServiceName.name, new java.io.File(".").getCanonicalPath(), profiledServiceName.profile, state.getState(), logTail)
       faultUploader.addFaultReport(info, reportFilesTmpDir)
       val restartOnFault = config.restartOnFault.getOrElse(true)
       if (restartOnFault && !stopping) {

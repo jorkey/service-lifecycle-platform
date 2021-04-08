@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LogStorekeeper(distributionName: DistributionName, serviceName: ServiceName,
-                     taskId: Option[TaskId], instanceId: InstanceId,
+class LogStorekeeper(distribution: DistributionName, service: ServiceName,
+                     taskId: Option[TaskId], instance: InstanceId,
                      collection: SequencedCollection[ServiceLogLine])
                     (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -22,7 +22,7 @@ class LogStorekeeper(distributionName: DistributionName, serviceName: ServiceNam
   override def receiveLogLines(logs: Seq[LogLine]): Future[Unit] = {
     logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
       collection.insert(logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => {
-        seq :+ ServiceLogLine(distributionName, serviceName, taskId, instanceId, processId, directory, line)
+        seq :+ ServiceLogLine(distribution, service, taskId, instance, processId, directory, line)
       })).map(_ => ())
     })
     logOutputFuture.get

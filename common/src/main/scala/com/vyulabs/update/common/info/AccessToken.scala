@@ -5,7 +5,7 @@ import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.UserRole.UserRole
 import spray.json.DefaultJsonProtocol
 
-case class AccessToken(userName: UserName, roles: Seq[UserRole]) {
+case class AccessToken(user: UserName, roles: Seq[UserRole]) {
   def hasRole(role: UserRole): Boolean = roles.exists(_ == role)
 }
 

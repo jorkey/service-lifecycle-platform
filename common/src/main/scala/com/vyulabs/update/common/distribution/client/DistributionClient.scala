@@ -29,8 +29,8 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
             case None =>
               val authTokenRx = "(.*):(.*)".r
               client.distributionUrl.getUserInfo match {
-                case authTokenRx(userName, password) =>
-                  val future = client.graphql(LoginCoder.login(userName, password))
+                case authTokenRx(user, password) =>
+                  val future = client.graphql(LoginCoder.login(user, password))
                     .andThen { case result =>
                       synchronized {
                         loginInProcess = None
@@ -66,24 +66,24 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     login().map(_ => client.graphqlSub(request)).flatten
   }
 
-  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File)
+  def downloadDeveloperVersionImage(service: ServiceName, version: DeveloperDistributionVersion, file: File)
                                    (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.download(developerVersionImagePath + "/" + serviceName + "/" + version.toString, file)).flatten
+    login().map(_ => client.download(developerVersionImagePath + "/" + service + "/" + version.toString, file)).flatten
   }
 
-  def downloadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File)
+  def downloadClientVersionImage(service: ServiceName, version: ClientDistributionVersion, file: File)
                                 (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.download(clientVersionImagePath + "/" + serviceName + "/" + version.toString, file)).flatten
+    login().map(_ => client.download(clientVersionImagePath + "/" + service + "/" + version.toString, file)).flatten
   }
 
-  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File)
+  def uploadDeveloperVersionImage(service: ServiceName, version: DeveloperDistributionVersion, file: File)
                                  (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.upload(developerVersionImagePath + "/" + serviceName + "/" + version.toString, imageField, file)).flatten
+    login().map(_ => client.upload(developerVersionImagePath + "/" + service + "/" + version.toString, imageField, file)).flatten
   }
 
-  def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File)
+  def uploadClientVersionImage(service: ServiceName, version: ClientDistributionVersion, file: File)
                               (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.upload(clientVersionImagePath + "/" + serviceName + "/" + version.toString, imageField, file)).flatten
+    login().map(_ => client.upload(clientVersionImagePath + "/" + service + "/" + version.toString, imageField, file)).flatten
   }
 
   def uploadFaultReport(faultId: FaultId, faultReportFile: File)

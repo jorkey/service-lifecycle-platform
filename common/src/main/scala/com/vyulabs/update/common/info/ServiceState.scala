@@ -24,20 +24,20 @@ object ServiceState extends DefaultJsonProtocol {
   implicit val stateJson = jsonFormat8(ServiceState.apply)
 }
 
-case class DirectoryServiceState(serviceName: ServiceName, directory: ServiceDirectory, state: ServiceState)
+case class DirectoryServiceState(service: ServiceName, directory: ServiceDirectory, state: ServiceState)
 
 object DirectoryServiceState extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat3(DirectoryServiceState.apply)
 
-  def getServiceInstanceState(serviceName: ServiceName, directory: File)(implicit log: Logger): DirectoryServiceState = {
-    val ownState = ServiceState(date = new Date(), installDate = IoUtils.getServiceInstallTime(serviceName, directory),
-      startDate = None, version = IoUtils.readServiceVersion(serviceName, directory),
+  def getServiceInstanceState(service: ServiceName, directory: File)(implicit log: Logger): DirectoryServiceState = {
+    val ownState = ServiceState(date = new Date(), installDate = IoUtils.getServiceInstallTime(service, directory),
+      startDate = None, version = IoUtils.readServiceVersion(service, directory),
       updateToVersion = None, updateError = None, failuresCount = None, lastExitCode = None)
-    DirectoryServiceState(serviceName, directory.getCanonicalPath(), ownState)
+    DirectoryServiceState(service, directory.getCanonicalPath(), ownState)
   }
 }
 
-case class InstanceServiceState(instanceId: InstanceId, serviceName: ServiceName, directory: ServiceDirectory, service: ServiceState)
+case class InstanceServiceState(instance: InstanceId, service: ServiceName, directory: ServiceDirectory, state: ServiceState)
 
 object InstanceServiceState extends DefaultJsonProtocol {
   implicit val instanceServiceStateJson = jsonFormat4(InstanceServiceState.apply)

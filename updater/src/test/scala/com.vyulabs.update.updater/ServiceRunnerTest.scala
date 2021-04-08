@@ -23,7 +23,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   behavior of "Service runner tests"
 
-  val serviceName = ProfiledServiceName("test-service")
+  val service = ProfiledServiceName("test-service")
 
   val faultUploaderStub = new FaultUploader {
     override def addFaultReport(info: FaultInfo, reportFilesTmpDir: Option[File]): Unit = {}
@@ -106,7 +106,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   def makeServiceRunner(scriptContent: String, logUploader: Option[LogReceiver]): (ServiceStateController, ServiceRunner) = {
     val directory = Files.createTempDirectory("test").toFile
-    val stateController = new ServiceStateController(directory, serviceName, () => ())
+    val stateController = new ServiceStateController(directory, service, () => ())
     stateController.setVersion(ClientDistributionVersion.from(DeveloperDistributionVersion("test-distribution", Build.initialBuild), 0))
 
     val scriptFile = new File(stateController.currentServiceDirectory, "script.sh")
@@ -121,8 +121,8 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val runServiceConfig = RunServiceConfig("/bin/sh", Some(Seq("-c", "./script.sh")),
       None, Some(logWriter), Some(logUploader.isDefined), Some("script.sh"), None, None)
 
-    implicit val serviceLogger = new PrefixedLogger(s"Service ${serviceName.toString}: ", log)
-    val serviceRunner = new ServiceRunner(runServiceConfig, Map.empty, "none", serviceName, stateController, logUploader, faultUploaderStub)
+    implicit val serviceLogger = new PrefixedLogger(s"Service ${service.toString}: ", log)
+    val serviceRunner = new ServiceRunner(runServiceConfig, Map.empty, "none", service, stateController, logUploader, faultUploaderStub)
 
     (stateController, serviceRunner)
   }

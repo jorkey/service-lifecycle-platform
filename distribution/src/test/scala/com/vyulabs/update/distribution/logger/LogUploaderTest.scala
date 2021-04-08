@@ -49,18 +49,18 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
 
     assertResult((OK,
       ("""{"data":{"serviceLogs":[""" +
-        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"`Test` started"}},""" +
-        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 1"}},""" +
-        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 2"}},""" +
-        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"ERROR","message":"log line 3"}},""" +
-        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"WARN","message":"log line 4"}},""" +
-        """{"distributionName":"test","serviceName":"service1","instanceId":"instance1","line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
+        """{"distribution":"test","service":"service1","instance":"instance1","line":{"level":"INFO","message":"`Test` started"}},""" +
+        """{"distribution":"test","service":"service1","instance":"instance1","line":{"level":"INFO","message":"log line 1"}},""" +
+        """{"distribution":"test","service":"service1","instance":"instance1","line":{"level":"WARN","message":"log line 2"}},""" +
+        """{"distribution":"test","service":"service1","instance":"instance1","line":{"level":"ERROR","message":"log line 3"}},""" +
+        """{"distribution":"test","service":"service1","instance":"instance1","line":{"level":"WARN","message":"log line 4"}},""" +
+        """{"distribution":"test","service":"service1","instance":"instance1","line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
-            distributionName
-            serviceName
-            instanceId
+            distribution
+            service
+            instance
             line {
               level
               message

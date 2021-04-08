@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
-class StateUploader(directory: File, instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
+class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[ProfiledServiceName],
                     distributionClient: DistributionClient[SyncSource])(implicit executionContext: ExecutionContext, log: Logger) extends Thread { self =>
   private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
 
@@ -56,7 +56,7 @@ class StateUploader(directory: File, instanceId: InstanceId, servicesNames: Set[
     val scriptsState = DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
     val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
       state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
-    val instanceServiceStates = serviceStates.map(state => InstanceServiceState(instanceId, state.serviceName, state.directory, state.state))
+    val instanceServiceStates = serviceStates.map(state => InstanceServiceState(instance, state.service, state.directory, state.state))
     syncDistributionClient.graphqlRequest(updaterMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
   }
 }

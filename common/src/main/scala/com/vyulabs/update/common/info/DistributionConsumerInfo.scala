@@ -3,7 +3,7 @@ package com.vyulabs.update.common.info
 import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionName, ServiceName}
 import spray.json.DefaultJsonProtocol
 
-case class DistributionConsumerInfo(distributionName: DistributionName, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String])
+case class DistributionConsumerInfo(distribution: DistributionName, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String])
 
 object DistributionConsumerInfo extends DefaultJsonProtocol {
   implicit val infoJson = jsonFormat3(DistributionConsumerInfo.apply)

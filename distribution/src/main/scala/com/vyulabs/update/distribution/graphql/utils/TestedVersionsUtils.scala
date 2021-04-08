@@ -19,27 +19,27 @@ trait TestedVersionsUtils extends ClientVersionUtils {
       clientDesiredVersions <- getClientDesiredVersions().map(ClientDesiredVersions.toMap(_))
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions()).map(DeveloperDesiredVersions.toMap(_))
       result <- {
-        if (!clientDesiredVersions.filter(_._2.distributionName == config.distributionName)
+        if (!clientDesiredVersions.filter(_._2.distribution == config.distribution)
           .mapValues(_.original).equals(developerDesiredVersions)) {
           log.error("Client versions are different from developer versions:")
           clientDesiredVersions foreach {
-            case (serviceName, clientVersion) =>
-              developerDesiredVersions.get(serviceName) match {
+            case (service, clientVersion) =>
+              developerDesiredVersions.get(service) match {
                 case Some(developerVersion) if developerVersion != clientVersion.original =>
-                  log.info(s"  service ${serviceName} version ${clientVersion} != ${developerVersion}")
+                  log.info(s"  service ${service} version ${clientVersion} != ${developerVersion}")
                 case _ =>
               }
           }
           developerDesiredVersions foreach {
-            case (serviceName, developerVersion) =>
-              if (!clientDesiredVersions.get(serviceName).isDefined) {
-                log.info(s"  service ${serviceName} version ${developerVersion} is not installed")
+            case (service, developerVersion) =>
+              if (!clientDesiredVersions.get(service).isDefined) {
+                log.info(s"  service ${service} version ${developerVersion} is not installed")
               }
           }
           clientDesiredVersions foreach {
-            case (serviceName, _) =>
-              if (!developerDesiredVersions.get(serviceName).isDefined) {
-                log.info(s"  service ${serviceName} is not the developer service")
+            case (service, _) =>
+              if (!developerDesiredVersions.get(service).isDefined) {
+                log.info(s"  service ${service} is not the developer service")
               }
           }
           Future(false)

@@ -29,10 +29,10 @@ class SimpleLifecycle {
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val distributionName = "test-distribution"
+  private val distribution = "test-distribution"
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
-  private val settingsDirectory = new SettingsDirectory(builderDir, distributionName)
+  private val settingsDirectory = new SettingsDirectory(builderDir, distribution)
   private val developerDistributionUrl = new URL("http://installer:installer@localhost:8000")
   private val builderDistributionUrl = new URL("http://builder:builder@localhost:8000")
   private val updaterDistributionUrl = new URL("http://updater:updater@localhost:8000")
@@ -41,8 +41,8 @@ class SimpleLifecycle {
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
   private val distributionBuilder = new DistributionBuilder("None", startDistribution,
-    new DistributionDirectory(distributionDir), distributionName, "Test distribution server", "test", false, 8000)
-  private val clientBuilder = new ClientBuilder(builderDir, distributionName)
+    new DistributionDirectory(distributionDir), distribution, "Test distribution server", "test", false, 8000)
+  private val clientBuilder = new ClientBuilder(builderDir, distribution)
 
   private val builderClient = new SyncDistributionClient(
     new DistributionClient(new HttpClientImpl(builderDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
@@ -173,7 +173,7 @@ class SimpleLifecycle {
     println()
     println(s"########################### Upload new client version of distribution of version ${newVersion}")
     println()
-    val newDistributionVersion = ClientDistributionVersion.from(distributionName, newVersion)
+    val newDistributionVersion = ClientDistributionVersion.from(distribution, newVersion)
     if (!clientBuilder.uploadClientVersion(builderClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
       sys.error(s"Can't write distribution version")
     }
@@ -185,12 +185,12 @@ class SimpleLifecycle {
     Thread.sleep(10000)
     distributionBuilder.waitForServerAvailable()
     Thread.sleep(5000)
-    val states = developerClient.graphqlRequest(developerQueries.getServiceStates(distributionName = Some(distributionName),
-      serviceName = Some(Common.DistributionServiceName))).getOrElse {
+    val states = developerClient.graphqlRequest(developerQueries.getServiceStates(distribution = Some(distribution),
+      service = Some(Common.DistributionServiceName))).getOrElse {
       sys.error("Can't get version of distribution server")
     }
-    if (Some(newDistributionVersion) != states.head.instance.service.version) {
-      sys.error(s"Distribution server version ${states.head.instance.service.version} is not equals expected ${newDistributionVersion}")
+    if (Some(newDistributionVersion) != states.head.instance.state.version) {
+      sys.error(s"Distribution server version ${states.head.instance.state.version} is not equals expected ${newDistributionVersion}")
     }
 
     println()
@@ -209,8 +209,8 @@ class SimpleLifecycle {
 
     println("--------------------------- Build client version of test service")
     val taskId1 = developerClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
-        DeveloperDistributionVersion.from(distributionName, version),
-        ClientDistributionVersion.from(distributionName, version, 0))).getOrElse {
+        DeveloperDistributionVersion.from(distribution, version),
+        ClientDistributionVersion.from(distribution, version, 0))).getOrElse {
       sys.error("Can't execute build client version task")
     }
     if (!subscribeTask(developerClient, taskId1)) {
@@ -219,7 +219,7 @@ class SimpleLifecycle {
 
     println("--------------------------- Set client desired versions")
     if (!developerClient.graphqlRequest(developerMutations.setClientDesiredVersions(Seq(
-        ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion.from(distributionName, version, 0)))))).getOrElse(false)) {
+        ClientDesiredVersionDelta(testServiceName, Some(ClientDistributionVersion.from(distribution, version, 0)))))).getOrElse(false)) {
       sys.error("Set client desired versions error")
     }
   }

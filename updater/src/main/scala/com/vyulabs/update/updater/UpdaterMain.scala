@@ -44,7 +44,7 @@ object UpdaterMain extends App { self =>
   val distributionClient = new DistributionClient(new HttpClientImpl(config.clientDistributionUrl))
 
   TraceAppender.handleLogs("Updater", "PROCESS",
-    new LogUploader[SyncSource](Common.DistributionServiceName, None, config.instanceId, distributionClient))
+    new LogUploader[SyncSource](Common.DistributionServiceName, None, config.instance, distributionClient))
 
   command match {
     case "runServices" =>
@@ -58,7 +58,7 @@ object UpdaterMain extends App { self =>
 
       val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
 
-      val instanceState = new StateUploader(new File("."), config.instanceId, servicesInstanceNames + updaterServiceName, distributionClient)
+      val instanceState = new StateUploader(new File("."), config.instance, servicesInstanceNames + updaterServiceName, distributionClient)
 
       instanceState.start()
 
@@ -68,7 +68,7 @@ object UpdaterMain extends App { self =>
 
         val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ProfiledServiceName, ServiceUpdater])((updaters, service) => {
           implicit val serviceLogger = new PrefixedLogger(s"Service ${service.toString}: ", log)
-          updaters + (service -> new ServiceUpdater(config.instanceId, service, instanceState.getServiceStateController(service).get, distributionClient))
+          updaters + (service -> new ServiceUpdater(config.instance, service, instanceState.getServiceStateController(service).get, distributionClient))
         })
 
         var lastUpdateTime = 0L
@@ -159,15 +159,15 @@ object UpdaterMain extends App { self =>
                   selfUpdater.needUpdate(Common.ScriptsServiceName,
                       desiredVersionsMap.get(Common.ScriptsServiceName)).foreach(version =>
                     needUpdate += (ProfiledServiceName(Common.ScriptsServiceName) -> version))
-                  val toUpdate = needUpdate.filterNot { case (serviceName, version) =>
-                    blacklist.get(serviceName) match {
+                  val toUpdate = needUpdate.filterNot { case (service, version) =>
+                    blacklist.get(service) match {
                       case Some(errorVersion) =>
                         if (errorVersion == version) {
-                          log.info(s"Version ${version} of service ${serviceName} is blacklisted.")
+                          log.info(s"Version ${version} of service ${service} is blacklisted.")
                           true
                         } else {
-                          log.info(s"Clear blacklist of service ${serviceName}.")
-                          blacklist -= serviceName
+                          log.info(s"Clear blacklist of service ${service}.")
+                          blacklist -= service
                           false
                         }
                       case None =>

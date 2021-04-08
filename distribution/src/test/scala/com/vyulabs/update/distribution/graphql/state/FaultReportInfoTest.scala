@@ -33,17 +33,17 @@ class FaultReportInfoTest extends TestEnvironment {
     addFaultReportInfo("fault2", "service2", 2, new Date())
 
     assertResult((OK,
-      ("""{"data":{"faultReportsInfo":[{"distributionName":"distribution","report":{"faultId":"fault2","info":{"serviceName":"service2","instanceId":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
+      ("""{"data":{"faultReportsInfo":[{"distribution":"distribution","report":{"faultId":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
         adminContext, graphql"""
           query FaultsQuery($$service: String!) {
             faultReportsInfo (service: $$service) {
-              distributionName
+              distribution
               report {
                 faultId
                 info {
-                  serviceName
-                  instanceId
+                  service
+                  instance
                 }
                 files
               }
@@ -83,7 +83,7 @@ class FaultReportInfoTest extends TestEnvironment {
     clear()
   }
 
-  def addFaultReportInfo(faultId: FaultId, serviceName: ServiceName, sequence: Long, date: Date): Unit = {
+  def addFaultReportInfo(faultId: FaultId, service: ServiceName, sequence: Long, date: Date): Unit = {
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
@@ -93,9 +93,9 @@ class FaultReportInfoTest extends TestEnvironment {
               faultId: $$faultId,
               info: {
                 date: $$date,
-                instanceId: "instance1",
+                instance: "instance1",
                 serviceDirectory: "directory1",
-                serviceName: $$service,
+                service: $$service,
                 serviceProfile: "Common",
                 state: {
                   date: $$date
@@ -112,17 +112,16 @@ class FaultReportInfoTest extends TestEnvironment {
             }
           )
         }
-      """, variables = JsObject("date" -> date.toJson, "faultId" -> JsString(faultId), "service" -> JsString(serviceName)))))
+      """, variables = JsObject("date" -> date.toJson, "faultId" -> JsString(faultId), "service" -> JsString(service)))))
     assert(distributionDir.getFaultReportFile(faultId).createNewFile())
 
-    checkReportExists(faultId, serviceName, sequence, date)
+    checkReportExists(faultId, service, sequence, date)
   }
 
-  def checkReportExists(faultId: FaultId, serviceName: ServiceName, sequence: Long, date: Date): Unit = {
+  def checkReportExists(faultId: FaultId, service: ServiceName, sequence: Long, date: Date): Unit = {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("distribution",
-        ServiceFaultReport(faultId, FaultInfo(date, "instance1", "directory1", serviceName, "Common", ServiceState(date, None, None, None, None, None, None, None),
-          Seq("line1", "line2")), Seq("core", "log/service.log")))))
+        ServiceFaultReport(faultId, FaultInfo(date, "instance1", service, "directory1", "Common", ServiceState(date, None, None, None, None, None, None, None), Seq("line1", "line2")), Seq("core", "log/service.log")))))
     )(result(faultsInfoCollection.findSequenced(Filters.eq("report.faultId", faultId))))
   }
 

@@ -33,8 +33,8 @@ class StateInfoTest extends TestEnvironment {
         mutation {
           setTestedVersions (
             versions: [
-              { serviceName: "service1", version: { distributionName: "test", build: [1,1,2] } },
-              { serviceName: "service2", version: { distributionName: "test", build: [2,1,2] } }
+              { service: "service1", version: { distribution: "test", build: [1,1,2] } },
+              { service: "service2", version: { distribution: "test", build: [2,1,2] } }
             ]
           )
         }
@@ -46,7 +46,7 @@ class StateInfoTest extends TestEnvironment {
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2))),
       DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", Seq(2, 1, 2)))),
       Seq(TestSignature("distribution", date)))))(result(collections.State_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
-        v.consumerProfile, v.versions, v.signatures.map(s => TestSignature(s.distributionName, date)))))))
+        v.consumerProfile, v.versions, v.signatures.map(s => TestSignature(s.distribution, date)))))))
     result(collections.State_TestedVersions.drop())
   }
 
@@ -57,20 +57,20 @@ class StateInfoTest extends TestEnvironment {
         mutation {
           setInstalledDesiredVersions (
             versions: [
-               { serviceName: "service1", version: { distributionName: "test", developerBuild: [1,1,1], clientBuild: 0 } },
-               { serviceName: "service2", version: { distributionName: "test", developerBuild: [2,1,1], clientBuild: 0 } }
+               { service: "service1", version: { distribution: "test", developerBuild: [1,1,1], clientBuild: 0 } },
+               { service: "service2", version: { distribution: "test", developerBuild: [2,1,1], clientBuild: 0 } }
             ]
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"installedDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","developerBuild":[1,1,1],"clientBuild":0}},{"serviceName":"service2","version":{"distributionName":"test","developerBuild":[2,1,1],"clientBuild":0}}]}}""").parseJson))(
+      ("""{"data":{"installedDesiredVersions":[{"service":"service1","version":{"distribution":"test","developerBuild":[1,1,1],"clientBuild":0}},{"service":"service2","version":{"distribution":"test","developerBuild":[2,1,1],"clientBuild":0}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           installedDesiredVersions (distribution: "distribution") {
-            serviceName
-            version { distributionName, developerBuild, clientBuild }
+            service
+            version { distribution, developerBuild, clientBuild }
           }
         }
       """)))
@@ -90,8 +90,8 @@ class StateInfoTest extends TestEnvironment {
         mutation ServicesState($$date: Date!) {
           setServiceStates (
             states: [
-              { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  service: { date: $$date, version: { distributionName: "test", developerBuild: [1,2,3], clientBuild: 0 } }
+              { instance: "instance1", service: "service1", directory: "dir",
+                  state: { date: $$date, version: { distribution: "test", developerBuild: [1,2,3], clientBuild: 0 } }
               }
             ]
           )
@@ -104,8 +104,8 @@ class StateInfoTest extends TestEnvironment {
         mutation ServicesState($$date: Date!) {
           setServiceStates (
             states: [
-              { instanceId: "instance1", serviceName: "service1", directory: "dir",
-                  service: { date: $$date, version: { distributionName: "test", developerBuild: [1,2,4], clientBuild: 0 } }
+              { instance: "instance1", service: "service1", directory: "dir",
+                  state: { date: $$date, version: { distribution: "test", developerBuild: [1,2,4], clientBuild: 0 } }
               }
             ]
           )
@@ -113,14 +113,14 @@ class StateInfoTest extends TestEnvironment {
       """, variables = JsObject("date" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"serviceStates":[{"instance":{"instanceId":"instance1","service":{"version":{"distributionName":"test","developerBuild":[1,2,4],"clientBuild":0}}}}]}}""").parseJson))(
+      ("""{"data":{"serviceStates":[{"instance":{"instance":"instance1","state":{"version":{"distribution":"test","developerBuild":[1,2,4],"clientBuild":0}}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           serviceStates (distribution: "distribution", service: "service1") {
             instance {
-              instanceId
-              service {
-                version { distributionName, developerBuild, clientBuild }
+              instance
+              state {
+                version { distribution, developerBuild, clientBuild }
               }
             }
           }

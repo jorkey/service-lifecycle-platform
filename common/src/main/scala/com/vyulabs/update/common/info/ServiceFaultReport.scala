@@ -9,7 +9,7 @@ object ServiceFaultReport extends DefaultJsonProtocol {
   implicit val serviceFaultInfoJson = jsonFormat3(ServiceFaultReport.apply)
 }
 
-case class DistributionFaultReport(distributionName: DistributionName, report: ServiceFaultReport)
+case class DistributionFaultReport(distribution: DistributionName, report: ServiceFaultReport)
 
 object DistributionFaultReport extends DefaultJsonProtocol {
   implicit val distributionFaultInfoJson = jsonFormat2(DistributionFaultReport.apply)

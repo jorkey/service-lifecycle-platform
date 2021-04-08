@@ -19,12 +19,12 @@ object ProfiledServiceName {
     def read(value: JsValue) = ProfiledServiceName.parse(value.asInstanceOf[JsString].value)
   }
 
-  def apply(serviceName: ServiceName): ProfiledServiceName = {
-    ProfiledServiceName(serviceName, CommonServiceProfile)
+  def apply(service: ServiceName): ProfiledServiceName = {
+    ProfiledServiceName(service, CommonServiceProfile)
   }
 
-  def apply(serviceName: ServiceName, serviceProfile: ServiceProfile): ProfiledServiceName = {
-    new ProfiledServiceName(serviceName, serviceProfile)
+  def apply(service: ServiceName, serviceProfile: ServiceProfile): ProfiledServiceName = {
+    new ProfiledServiceName(service, serviceProfile)
   }
 
   def parse(name: String): ProfiledServiceName = {

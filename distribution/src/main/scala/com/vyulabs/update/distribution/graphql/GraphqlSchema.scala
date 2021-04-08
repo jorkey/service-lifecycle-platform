@@ -97,7 +97,7 @@ object GraphqlSchema {
       // Own account operations
       Field("whoAmI", UserInfoType,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.userName) }),
+        resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.user) }),
 
       // Users
       Field("usersInfo", ListType(UserInfoType),
@@ -115,7 +115,7 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder, UserRole.Distribution) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(UserRole.Distribution)) {
-            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.userName, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
+            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.user, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           } else {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           }
@@ -187,7 +187,7 @@ object GraphqlSchema {
       Field("changePassword", fieldType = BooleanType,
         arguments = OldPasswordArg :: PasswordArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeUser(c.ctx.accessToken.get.userName,
+        resolve = c => { c.ctx.workspace.changeUser(c.ctx.accessToken.get.user,
           Some(c.arg(OldPasswordArg)), Some(c.arg(PasswordArg)), None, None) }),
 
       // Users management
@@ -210,7 +210,7 @@ object GraphqlSchema {
       Field("buildDeveloperVersion", StringType,
         arguments = ServiceArg :: DeveloperVersionArg :: OptionBranchesArg :: OptionCommentArg :: Nil,
         tags = Authorized(UserRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.userName,
+        resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.user,
           c.arg(OptionBranchesArg).getOrElse(Seq.empty), c.arg(OptionCommentArg)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
@@ -230,7 +230,7 @@ object GraphqlSchema {
         arguments = ServiceArg :: DeveloperDistributionVersionUniqueArg :: ClientDistributionVersionUniqueArg :: Nil,
         tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildClientVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionUniqueArg),
-          c.arg(ClientDistributionVersionUniqueArg), c.ctx.accessToken.get.userName) }),
+          c.arg(ClientDistributionVersionUniqueArg), c.ctx.accessToken.get.user) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         tags = Authorized(UserRole.Builder) :: Nil,
@@ -282,21 +282,21 @@ object GraphqlSchema {
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.userName, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.user, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
 
       // State
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
         tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.accessToken.get.userName, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.accessToken.get.user, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
         tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
-            c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distributionName, c.arg(InstanceServiceStatesArg)).map(_ => true)
+            c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distribution, c.arg(InstanceServiceStatesArg)).map(_ => true)
           } else {
-            c.ctx.workspace.setServiceStates(c.ctx.accessToken.get.userName, c.arg(InstanceServiceStatesArg)).map(_ => true)
+            c.ctx.workspace.setServiceStates(c.ctx.accessToken.get.user, c.arg(InstanceServiceStatesArg)).map(_ => true)
           }
         }),
       Field("addServiceLogs", BooleanType,
@@ -304,10 +304,10 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
-            c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distributionName,
+            c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distribution,
               c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
           } else {
-            c.ctx.workspace.addServiceLogs(c.ctx.accessToken.get.userName,
+            c.ctx.workspace.addServiceLogs(c.ctx.accessToken.get.user,
               c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
           }
         }),
@@ -316,9 +316,9 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
-            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distributionName, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
+            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distribution, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
           } else {
-            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.userName, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
+            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.user, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
           }
         }),
 

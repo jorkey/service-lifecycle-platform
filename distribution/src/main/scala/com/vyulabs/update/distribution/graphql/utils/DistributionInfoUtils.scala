@@ -16,6 +16,6 @@ trait DistributionInfoUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
 
   def getDistributionInfo(): DistributionInfo = {
-    DistributionInfo(config.distributionName, config.title)
+    DistributionInfo(config.distribution, config.title)
   }
 }

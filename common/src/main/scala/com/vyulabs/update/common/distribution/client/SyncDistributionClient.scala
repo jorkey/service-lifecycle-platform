@@ -29,20 +29,20 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.graphqlSubRequest(request))
   }
 
-  def downloadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
-    result(client.downloadDeveloperVersionImage(serviceName, version, file)).isDefined
+  def downloadDeveloperVersionImage(service: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
+    result(client.downloadDeveloperVersionImage(service, version, file)).isDefined
   }
 
-  def downloadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Boolean = {
-    result(client.downloadClientVersionImage(serviceName, version, file)).isDefined
+  def downloadClientVersionImage(service: ServiceName, version: ClientDistributionVersion, file: File): Boolean = {
+    result(client.downloadClientVersionImage(service, version, file)).isDefined
   }
 
-  def uploadDeveloperVersionImage(serviceName: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
-    result(client.uploadDeveloperVersionImage(serviceName, version, file)).isDefined
+  def uploadDeveloperVersionImage(service: ServiceName, version: DeveloperDistributionVersion, file: File): Boolean = {
+    result(client.uploadDeveloperVersionImage(service, version, file)).isDefined
   }
 
-  def uploadClientVersionImage(serviceName: ServiceName, version: ClientDistributionVersion, file: File): Boolean = {
-    result(client.uploadClientVersionImage(serviceName, version, file)).isDefined
+  def uploadClientVersionImage(service: ServiceName, version: ClientDistributionVersion, file: File): Boolean = {
+    result(client.uploadClientVersionImage(service, version, file)).isDefined
   }
 
   def uploadFaultReport(faultId: FaultId, faultReportFile: File): Boolean = {

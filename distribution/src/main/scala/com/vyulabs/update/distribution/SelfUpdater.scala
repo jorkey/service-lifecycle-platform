@@ -53,10 +53,10 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
       val servicesToUpdate = distributionNewVersion.map((Common.DistributionServiceName, _)) ++ scriptsNewVersion.map((Common.ScriptsServiceName, _))
       if (!servicesToUpdate.isEmpty) {
         servicesToUpdate.foreach {
-          case (serviceName, version) =>
-            log.info(s"Begin service ${serviceName} update to version ${version}")
-            if (!beginServiceUpdate(serviceName, version)) {
-              log.error(s"Can't begin service ${serviceName} update")
+          case (service, version) =>
+            log.info(s"Begin service ${service} update to version ${version}")
+            if (!beginServiceUpdate(service, version)) {
+              log.error(s"Can't begin service ${service} update")
               return
             }
         }
@@ -83,18 +83,18 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
     }
   }
 
-  private def beginServiceUpdate(serviceName: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
-    log.info(s"Downloading ${serviceName} of version ${toVersion}")
-    if (!IoUtils.copyFile(directory.getClientVersionImageFile(serviceName, toVersion), new File(Common.ServiceZipName.format(serviceName)))) {
-      log.error(s"Downloading ${serviceName} error")
+  private def beginServiceUpdate(service: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
+    log.info(s"Downloading ${service} of version ${toVersion}")
+    if (!IoUtils.copyFile(directory.getClientVersionImageFile(service, toVersion), new File(Common.ServiceZipName.format(service)))) {
+      log.error(s"Downloading ${service} error")
       return false
     }
-    if (!IoUtils.writeDesiredServiceVersion(new File("."), serviceName, toVersion)) {
-      log.error(s"Set ${serviceName} desired version error")
+    if (!IoUtils.writeDesiredServiceVersion(new File("."), service, toVersion)) {
+      log.error(s"Set ${service} desired version error")
       return false
     }
-    if (!IoUtils.writeServiceVersion(new File("."), serviceName, toVersion)) {
-      log.error(s"Set ${serviceName} version error")
+    if (!IoUtils.writeServiceVersion(new File("."), service, toVersion)) {
+      log.error(s"Set ${service} version error")
       return false
     }
     true

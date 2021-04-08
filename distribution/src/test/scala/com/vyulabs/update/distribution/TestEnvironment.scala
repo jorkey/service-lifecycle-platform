@@ -51,14 +51,14 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val config = DistributionConfig("test", "Test distribution server", "instance1", "secret", mongoDbConfig,
                                   networkConfig, None, versionsConfig, instanceStateConfig, faultReportsConfig)
 
-  val distributionName = config.distributionName
-  val instanceId = config.instanceId
+  val distributionName = config.distribution
+  val instance = config.instance
 
   val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), false)
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(taskId => new LogStorekeeper(distributionName, Common.DistributionServiceName, Some(taskId),
-    instanceId, collections.State_ServiceLogs))
+    instance, collections.State_ServiceLogs))
 
   val graphql = new Graphql()
   val workspace = GraphqlWorkspace(config, collections, distributionDir, taskManager)

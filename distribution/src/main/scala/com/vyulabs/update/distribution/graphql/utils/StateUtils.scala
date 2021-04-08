@@ -31,27 +31,27 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  def setInstalledDesiredVersions(distributionName: DistributionName, desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Unit] = {
-    val clientArg = Filters.eq("distributionName", distributionName)
-    collections.State_InstalledDesiredVersions.update(clientArg, _ => Some(InstalledDesiredVersions(distributionName, desiredVersions))).map(_ => ())
+  def setInstalledDesiredVersions(distribution: DistributionName, desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Unit] = {
+    val clientArg = Filters.eq("distribution", distribution)
+    collections.State_InstalledDesiredVersions.update(clientArg, _ => Some(InstalledDesiredVersions(distribution, desiredVersions))).map(_ => ())
   }
 
-  def getInstalledDesiredVersions(distributionName: DistributionName, serviceNames: Set[ServiceName] = Set.empty)(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
-    val clientArg = Filters.eq("distributionName", distributionName)
+  def getInstalledDesiredVersions(distribution: DistributionName, services: Set[ServiceName] = Set.empty)(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
+    val clientArg = Filters.eq("distribution", distribution)
     collections.State_InstalledDesiredVersions.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))
-      .map(_.filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)).sortBy(_.serviceName))
+      .map(_.filter(v => services.isEmpty || services.contains(v.service)).sortBy(_.service))
   }
 
-  def getInstalledDesiredVersion(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Option[ClientDesiredVersion]] = {
-    getInstalledDesiredVersions(distributionName, Set(serviceName)).map(_.headOption)
+  def getInstalledDesiredVersion(distribution: DistributionName, service: ServiceName)(implicit log: Logger): Future[Option[ClientDesiredVersion]] = {
+    getInstalledDesiredVersions(distribution, Set(service)).map(_.headOption)
   }
 
-  def setTestedVersions(distributionName: DistributionName, desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
+  def setTestedVersions(distribution: DistributionName, desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     for {
-      clientConfig <- getDistributionConsumerInfo(distributionName)
+      clientConfig <- getDistributionConsumerInfo(distribution)
       testedVersions <- getTestedVersions(clientConfig.consumerProfile)
       result <- {
-        val testRecord = TestSignature(distributionName, new Date())
+        val testRecord = TestSignature(distribution, new Date())
         val testSignatures = testedVersions match {
           case Some(testedVersions) if testedVersions.versions.equals(desiredVersions) =>
             testedVersions.signatures :+ testRecord
@@ -71,50 +71,50 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
   }
 
   def setSelfServiceStates(states: Seq[DirectoryServiceState])(implicit log: Logger): Future[Unit] = {
-    setServiceStates(config.distributionName, states.map(state => InstanceServiceState(config.instanceId, state.serviceName, state.directory, state.state)))
+    setServiceStates(config.distribution, states.map(state => InstanceServiceState(config.instance, state.service, state.directory, state.state)))
   }
 
-  def setServiceStates(distributionName: DistributionName, instanceStates: Seq[InstanceServiceState])(implicit log: Logger): Future[Unit] = {
-    val documents = instanceStates.foldLeft(Seq.empty[DistributionServiceState])((seq, state) => seq :+ DistributionServiceState(distributionName, state))
+  def setServiceStates(distribution: DistributionName, instanceStates: Seq[InstanceServiceState])(implicit log: Logger): Future[Unit] = {
+    val documents = instanceStates.foldLeft(Seq.empty[DistributionServiceState])((seq, state) => seq :+ DistributionServiceState(distribution, state))
     Future.sequence(documents.map(doc => {
       val filters = Filters.and(
-        Filters.eq("distributionName", distributionName),
-        Filters.eq("instance.serviceName", doc.instance.serviceName),
-        Filters.eq("instance.instanceId", doc.instance.instanceId),
+        Filters.eq("distribution", distribution),
+        Filters.eq("instance.service", doc.instance.service),
+        Filters.eq("instance.instance", doc.instance.instance),
         Filters.eq("instance.directory", doc.instance.directory))
       collections.State_ServiceStates.update(filters, _ => Some(doc))
     })).map(_ => ())
   }
 
-  def getServicesState(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
-                       instanceId: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[DistributionServiceState]] = {
-    val distributionArg = distributionName.map { distribution => Filters.eq("distributionName", distribution) }
-    val serviceArg = serviceName.map { service => Filters.eq("instance.serviceName", service) }
-    val instanceIdArg = instanceId.map { instanceId => Filters.eq("instance.instanceId", instanceId) }
+  def getServicesState(distribution: Option[DistributionName], service: Option[ServiceName],
+                       instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[DistributionServiceState]] = {
+    val distributionArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
+    val serviceArg = service.map { service => Filters.eq("instance.service", service) }
+    val instanceArg = instance.map { instance => Filters.eq("instance.instance", instance) }
     val directoryArg = directory.map { directory => Filters.eq("instance.directory", directory) }
-    val args = distributionArg ++ serviceArg ++ instanceIdArg ++ directoryArg
+    val args = distributionArg ++ serviceArg ++ instanceArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.State_ServiceStates.find(filters)
   }
 
-  def getInstanceServiceStates(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
-                               instanceId: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
-    getServicesState(distributionName, serviceName, instanceId, directory).map(_.map(_.instance))
+  def getInstanceServiceStates(distribution: Option[DistributionName], service: Option[ServiceName],
+                               instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
+    getServicesState(distribution, service, instance, directory).map(_.map(_.instance))
   }
 
-  def addServiceLogs(distributionName: DistributionName, serviceName: ServiceName, taskId: Option[TaskId],
-                     instanceId: InstanceId, processId: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
+  def addServiceLogs(distribution: DistributionName, service: ServiceName, taskId: Option[TaskId],
+                     instance: InstanceId, processId: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
     val documents = logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
-      ServiceLogLine(distributionName, serviceName, taskId, instanceId, processId, directory, line) })
+      ServiceLogLine(distribution, service, taskId, instance, processId, directory, line) })
     collections.State_ServiceLogs.insert(documents).map(_ => ())
   }
 
-  def getServiceLogs(distributionName: DistributionName, serviceName: ServiceName, instanceId: InstanceId,
+  def getServiceLogs(distribution: DistributionName, service: ServiceName, instance: InstanceId,
                      processId: ProcessId, directory: ServiceDirectory, fromSequence: Option[Long])
                     (implicit log: Logger): Future[Seq[Sequenced[ServiceLogLine]]] = {
-    val distributionArg = Filters.eq("distributionName", distributionName)
-    val serviceArg = Filters.eq("serviceName", serviceName)
-    val instanceArg = Filters.eq("instanceId", instanceId)
+    val distributionArg = Filters.eq("distribution", distribution)
+    val serviceArg = Filters.eq("service", service)
+    val instanceArg = Filters.eq("instance", instance)
     val processArg = Filters.eq("processId", processId)
     val directoryArg = Filters.eq("directory", directory)
     val sequenceArg = fromSequence.map(sequence => Filters.gte("_id", sequence))
@@ -130,20 +130,20 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     collections.State_ServiceLogs.findSequenced(filters)
   }
 
-  def subscribeServiceLogs(distributionName: DistributionName, serviceName: ServiceName,
-                           instanceId: InstanceId, processId: ProcessId, directory: ServiceDirectory,
+  def subscribeServiceLogs(distribution: DistributionName, service: ServiceName,
+                           instance: InstanceId, processId: ProcessId, directory: ServiceDirectory,
                            fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
-    val distributionArg = Filters.eq("distributionName", distributionName)
-    val serviceArg = Filters.eq("serviceName", serviceName)
-    val instanceArg = Filters.eq("instanceId", instanceId)
+    val distributionArg = Filters.eq("distribution", distribution)
+    val serviceArg = Filters.eq("service", service)
+    val instanceArg = Filters.eq("instance", instance)
     val processArg = Filters.eq("processId", processId)
     val directoryArg = Filters.eq("directory", directory)
     val args = Seq(distributionArg, serviceArg, instanceArg, processArg, directoryArg)
     val filters = Filters.and(args.asJava)
     val source = collections.State_ServiceLogs.subscribe(filters, fromSequence)
-      .filter(_.document.distributionName == distributionName)
-      .filter(_.document.serviceName == serviceName)
-      .filter(_.document.instanceId == instanceId)
+      .filter(_.document.distribution == distribution)
+      .filter(_.document.service == service)
+      .filter(_.document.instance == instance)
       .filter(_.document.processId == processId)
       .filter(_.document.directory == directory)
       .via(NippleFlow.takeWhile(!_.document.line.terminationStatus.isDefined))
@@ -167,18 +167,18 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line")).mapMaterializedValue(_ => NotUsed).take(5)
   }
 
-  def addServiceFaultReportInfo(distributionName: DistributionName, report: ServiceFaultReport)(implicit log: Logger): Future[Unit] = {
+  def addServiceFaultReportInfo(distribution: DistributionName, report: ServiceFaultReport)(implicit log: Logger): Future[Unit] = {
     for {
-      result <- collections.State_FaultReportsInfo.insert(DistributionFaultReport(distributionName, report)).map(_ => ())
+      result <- collections.State_FaultReportsInfo.insert(DistributionFaultReport(distribution, report)).map(_ => ())
       _ <- clearOldReports()
     } yield result
   }
 
-  def getDistributionFaultReportsInfo(distributionName: Option[DistributionName], serviceName: Option[ServiceName],
+  def getDistributionFaultReportsInfo(distribution: Option[DistributionName], service: Option[ServiceName],
                                       last: Option[Int])(implicit log: Logger)
       : Future[Seq[DistributionFaultReport]] = {
-    val clientArg = distributionName.map { client => Filters.eq("distributionName", client) }
-    val serviceArg = serviceName.map { service => Filters.eq("report.info.serviceName", service) }
+    val clientArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
+    val serviceArg = service.map { service => Filters.eq("report.info.service", service) }
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb

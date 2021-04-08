@@ -23,28 +23,28 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
   protected implicit val executionContext: ExecutionContext
 
   /*
-  def buildClientVersions(serviceNames: Seq[ServiceName], author: String)(implicit log: Logger): TaskId = {
-    taskManager.create(s"Build client versions of services ${serviceNames} by ${author}", (taskId, logger) => {
+  def buildClientVersions(services: Seq[ServiceName], author: String)(implicit log: Logger): TaskId = {
+    taskManager.create(s"Build client versions of services ${services} by ${author}", (taskId, logger) => {
       implicit val log = logger
       @volatile var cancels = Seq.empty[() => Unit]
       val future = for {
-        developerDesiredVersions <- getDeveloperDesiredVersions(serviceNames.toSet).map(DeveloperDesiredVersions.toMap(_))
+        developerDesiredVersions <- getDeveloperDesiredVersions(services.toSet).map(DeveloperDesiredVersions.toMap(_))
         clientDesiredVersions <- {
           Future.sequence(developerDesiredVersions.map {
-            case (serviceName, developerVersion) =>
+            case (service, developerVersion) =>
               for {
-                existingVersions <- getClientVersionsInfo(serviceName).map(_.map(_.version)
+                existingVersions <- getClientVersionsInfo(service).map(_.map(_.version)
                   .filter(_.original() == developerVersion))
                 result <- {
                   val clientVersion =
                     if (!existingVersions.isEmpty) {
                       existingVersions.sorted(ClientDistributionVersion.ordering).last.next()
                     } else {
-                      ClientDistributionVersion(config.distributionName, ClientVersion(developerVersion.version))
+                      ClientDistributionVersion(config.distribution, ClientVersion(developerVersion.version))
                     }
-                  val task = buildClientVersion(serviceName, developerVersion, clientVersion, author)
+                  val task = buildClientVersion(service, developerVersion, clientVersion, author)
                   cancels ++= task.cancel
-                  task.future.map(_ => (serviceName -> clientVersion))
+                  task.future.map(_ => (service -> clientVersion))
                 }
               } yield result
           }).map(_.foldLeft(Map.empty[ServiceName, ClientDistributionVersion])((map, entry) => map + entry))
@@ -55,14 +55,14 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
     }).taskId
   }*/
 
-  def buildClientVersion(serviceName: ServiceName,
+  def buildClientVersion(service: ServiceName,
                          developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String)
                         (implicit log: Logger): TaskId = {
-    val task = taskManager.create(s"Build client version ${developerVersion} of service ${serviceName}",
+    val task = taskManager.create(s"Build client version ${developerVersion} of service ${service}",
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildClientVersion",
-          s"distributionName=${config.distributionName}", s"service=${serviceName}",
+          s"distribution=${config.distribution}", s"service=${service}",
           s"developerVersion=${developerVersion.toString}", s"clientVersion=${clientVersion.toString}",
           s"author=${author}")
         runBuilder(taskId, arguments)
@@ -74,14 +74,14 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
     log.info(s"Add client version info ${versionInfo}")
     for {
       result <- collections.Client_VersionsInfo.insert(versionInfo).map(_ => ())
-      _ <- removeObsoleteVersions(versionInfo.version.distributionName, versionInfo.serviceName)
+      _ <- removeObsoleteVersions(versionInfo.version.distribution, versionInfo.service)
     } yield result
   }
 
-  def getClientVersionsInfo(serviceName: ServiceName, distributionName: Option[DistributionName] = None,
+  def getClientVersionsInfo(service: ServiceName, distribution: Option[DistributionName] = None,
                             version: Option[ClientVersion] = None)(implicit log: Logger): Future[Seq[ClientVersionInfo]] = {
-    val serviceArg = Filters.eq("serviceName", serviceName)
-    val distributionArg = distributionName.map { distributionName => Filters.eq("version.distributionName", distributionName ) }
+    val serviceArg = Filters.eq("service", service)
+    val distributionArg = distribution.map { distribution => Filters.eq("version.distribution", distribution ) }
     val versionArg = version.map { version => Filters.and(
       Filters.eq("version.developerBuild", version.developerBuild),
       Filters.eq("version.clientBuild", version.clientBuild)) }
@@ -89,16 +89,16 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
     collections.Client_VersionsInfo.find(filters)
   }
 
-  private def removeObsoleteVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Unit] = {
+  private def removeObsoleteVersions(distribution: DistributionName, service: ServiceName)(implicit log: Logger): Future[Unit] = {
     for {
-      versions <- getClientVersionsInfo(serviceName, distributionName = Some(distributionName))
-      busyVersions <- getBusyVersions(distributionName, serviceName)
+      versions <- getClientVersionsInfo(service, distribution = Some(distribution))
+      busyVersions <- getBusyVersions(distribution, service)
       _ <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.clientVersion))
           .sortBy(_.buildInfo.date.getTime).map(_.version)
         if (notUsedVersions.size > config.versions.maxHistorySize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
-            removeClientVersion(serviceName, version)
+            removeClientVersion(service, version)
           })
         } else {
           Future()
@@ -107,12 +107,12 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
     } yield {}
   }
 
-  def removeClientVersion(serviceName: ServiceName, version: ClientDistributionVersion)(implicit log: Logger): Future[Boolean] = {
-    log.info(s"Remove client version ${version} of service ${serviceName}")
+  def removeClientVersion(service: ServiceName, version: ClientDistributionVersion)(implicit log: Logger): Future[Boolean] = {
+    log.info(s"Remove client version ${version} of service ${service}")
     val filters = Filters.and(
-      Filters.eq("serviceName", serviceName),
+      Filters.eq("service", service),
       Filters.eq("version", version))
-    directory.getClientVersionImageFile(serviceName, version).delete()
+    directory.getClientVersionImageFile(service, version).delete()
     collections.Client_VersionsInfo.delete(filters).map(_ > 0)
   }
 
@@ -124,30 +124,30 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
         deltas.foldLeft(desiredVersionsMap) {
           (map, entry) => entry.version match {
             case Some(version) =>
-              map + (entry.serviceName -> version)
+              map + (entry.service -> version)
             case None =>
-              map - entry.serviceName
+              map - entry.service
           }}
       Some(ClientDesiredVersions(ClientDesiredVersions.fromMap(newVersions)))
     }).map(_ => ())
   }
 
-  def getClientDesiredVersions(serviceNames: Set[ServiceName] = Set.empty)
+  def getClientDesiredVersions(services: Set[ServiceName] = Set.empty)
                               (implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
     collections.Client_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[ClientDesiredVersion])
-      .filter(v => serviceNames.isEmpty || serviceNames.contains(v.serviceName)).sortBy(_.serviceName))
+      .filter(v => services.isEmpty || services.contains(v.service)).sortBy(_.service))
   }
 
-  def getClientDesiredVersion(serviceName: ServiceName)(implicit log: Logger): Future[Option[ClientDistributionVersion]] = {
-    getClientDesiredVersions(Set(serviceName)).map(_.headOption.map(_.version))
+  def getClientDesiredVersion(service: ServiceName)(implicit log: Logger): Future[Option[ClientDistributionVersion]] = {
+    getClientDesiredVersions(Set(service)).map(_.headOption.map(_.version))
   }
 
-  def getDistributionClientDesiredVersions(distributionName: DistributionName)(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
-    val filters = Filters.eq("distributionName", distributionName)
+  def getDistributionClientDesiredVersions(distribution: DistributionName)(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
+    val filters = Filters.eq("distribution", distribution)
     collections.Client_DesiredVersions.find(filters).map(_.map(_.versions).headOption.getOrElse(Seq.empty[ClientDesiredVersion]))
   }
 
-  private def getBusyVersions(distributionName: DistributionName, serviceName: ServiceName)(implicit log: Logger): Future[Set[ClientVersion]] = {
-    getClientDesiredVersion(serviceName).map(_.toSet.filter(_.distributionName == distributionName).map(_.clientVersion))
+  private def getBusyVersions(distribution: DistributionName, service: ServiceName)(implicit log: Logger): Future[Set[ClientVersion]] = {
+    getClientDesiredVersion(service).map(_.toSet.filter(_.distribution == distribution).map(_.clientVersion))
   }
 }

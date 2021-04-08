@@ -20,7 +20,7 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServiceName,
+class ServiceUpdater(instance: InstanceId, profiledServiceName: ProfiledServiceName,
                      state: ServiceStateController, distributionClient: DistributionClient[SyncSource])
                     (implicit timer: Timer, executionContext: ExecutionContext, log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
@@ -192,9 +192,9 @@ class ServiceUpdater(instanceId: InstanceId, profiledServiceName: ProfiledServic
           parameters += ("version" -> newVersion.original.toString)
 
           val logUploader = if (runService.uploadLogs.getOrElse(false))
-            Some(new LogUploader(profiledServiceName.name, None, instanceId, distributionClient)) else None
+            Some(new LogUploader(profiledServiceName.name, None, instance, distributionClient)) else None
 
-          val runner = new ServiceRunner(runService, parameters, instanceId, profiledServiceName, state, logUploader, faultUploader)
+          val runner = new ServiceRunner(runService, parameters, instance, profiledServiceName, state, logUploader, faultUploader)
           if (!runner.startService()) {
             log.error(s"Can't start service")
             return false

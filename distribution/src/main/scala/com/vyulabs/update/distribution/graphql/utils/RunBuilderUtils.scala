@@ -74,14 +74,14 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
             }
           })
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            addServiceLogs(config.distributionName, Common.BuilderServiceName,
-              Some(taskId), config.instanceId, process.getHandle().pid().toString, directory.getBuilderDir().toString, logLines).map(_ => ())
+            addServiceLogs(config.distribution, Common.BuilderServiceName,
+              Some(taskId), config.instance, process.getHandle().pid().toString, directory.getBuilderDir().toString, logLines).map(_ => ())
           })
         },
         exitCode => {
           logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            addServiceLogs(config.distributionName, Common.BuilderServiceName,
-              Some(taskId), config.instanceId, process.getHandle().pid().toString, directory.getBuilderDir().toString,
+            addServiceLogs(config.distribution, Common.BuilderServiceName,
+              Some(taskId), config.instance, process.getHandle().pid().toString, directory.getBuilderDir().toString,
               Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
           }
         })
@@ -111,8 +111,8 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
           }
         }
         logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-          addServiceLogs(config.distributionName, Common.DistributionServiceName,
-            Some(taskId), config.instanceId, 0.toString, "", Seq(line.logLine.line)).map(_ => ())
+          addServiceLogs(config.distribution, Common.DistributionServiceName,
+            Some(taskId), config.instance, 0.toString, "", Seq(line.logLine.line)).map(_ => ())
         })
       }).run()
     }

@@ -35,27 +35,27 @@ trait UsersUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def addUser(userName: UserName, password: String,
+  def addUser(user: UserName, password: String,
               roles: Seq[UserRole], human: Option[HumanInfo])(implicit log: Logger): Future[Unit] = {
-    log.info(s"Add user ${userName} with roles ${roles}")
+    log.info(s"Add user ${user} with roles ${roles}")
     for {
       result <- {
-        val document = ServerUserInfo(userName, PasswordHash(password), roles.map(_.toString), human)
+        val document = ServerUserInfo(user, PasswordHash(password), roles.map(_.toString), human)
         collections.Users_Info.insert(document).map(_ => ())
       }
     } yield result
   }
 
-  def removeUser(userName: UserName)(implicit log: Logger): Future[Boolean] = {
-    log.info(s"Remove user ${userName}")
-    val filters = Filters.eq("userName", userName)
+  def removeUser(user: UserName)(implicit log: Logger): Future[Boolean] = {
+    log.info(s"Remove user ${user}")
+    val filters = Filters.eq("user", user)
     collections.Users_Info.delete(filters).map(_ > 0)
   }
 
-  def changeUser(userName: UserName, oldPassword: Option[String], password: Option[String],
+  def changeUser(user: UserName, oldPassword: Option[String], password: Option[String],
                  roles: Option[Seq[UserRole]], humanInfo: Option[HumanInfo])(implicit log: Logger): Future[Boolean] = {
-    log.info(s"Change user ${userName}")
-    val filters = Filters.eq("userName", userName)
+    log.info(s"Change user ${user}")
+    val filters = Filters.eq("user", user)
     collections.Users_Info.update(filters, r => r match {
       case Some(r) =>
         for (oldPassword <- oldPassword) {
@@ -63,7 +63,7 @@ trait UsersUtils extends SprayJsonSupport {
             throw new IOException(s"Password verification error")
           }
         }
-        Some(ServerUserInfo(r.userName,
+        Some(ServerUserInfo(r.user,
           password.map(PasswordHash(_)).getOrElse(r.passwordHash),
           roles.map(_.map(_.toString)).getOrElse(r.roles),
           if (humanInfo.isDefined) humanInfo else r.human))
@@ -72,17 +72,17 @@ trait UsersUtils extends SprayJsonSupport {
     }).map(_ > 0)
   }
 
-  def login(userName: UserName, password: String)(implicit log: Logger): Future[AccessToken] = {
-    getUserCredentials(userName).map {
+  def login(user: UserName, password: String)(implicit log: Logger): Future[AccessToken] = {
+    getUserCredentials(user).map {
       case Some(userCredentials) if userCredentials.passwordHash.hash == PasswordHash.generatePasswordHash(password, userCredentials.passwordHash.salt) =>
-        AccessToken(userName, userCredentials.roles)
+        AccessToken(user, userCredentials.roles)
       case _ =>
         throw AuthenticationException("Authentication error")
     }
   }
 
-  def whoAmI(userName: UserName)(implicit log: Logger): Future[UserInfo] = {
-    getUsersInfo(Some(userName)).map(_.headOption.getOrElse(throw NotFoundException()))
+  def whoAmI(user: UserName)(implicit log: Logger): Future[UserInfo] = {
+    getUsersInfo(Some(user)).map(_.headOption.getOrElse(throw NotFoundException()))
   }
 
   def encodeAccessToken(token: AccessToken)(implicit log: Logger): String = {
@@ -112,8 +112,8 @@ trait UsersUtils extends SprayJsonSupport {
       case Some(basicTokenRx(value)) ⇒
         val authTokenRx = "(.*):(.*)".r
         new String(Base64.getDecoder.decode(value), "utf8") match {
-          case authTokenRx(userName, password) =>
-            onSuccess(login(userName, password)).flatMap { token => provide(Some(token)) }
+          case authTokenRx(user, password) =>
+            onSuccess(login(user, password)).flatMap { token => provide(Some(token)) }
           case _ =>
             throw AuthenticationException("Authentication error")
         }
@@ -129,17 +129,17 @@ trait UsersUtils extends SprayJsonSupport {
     }
   }
 
-  def getUserCredentials(userName: UserName)(implicit log: Logger): Future[Option[UserCredentials]] = {
-    val filters = Filters.eq("userName", userName)
+  def getUserCredentials(user: UserName)(implicit log: Logger): Future[Option[UserCredentials]] = {
+    val filters = Filters.eq("user", user)
     collections.Users_Info.find(filters).map(_.map(info => UserCredentials(
       info.roles.map(UserRole.withName(_)), info.passwordHash)).headOption)
   }
 
-  def getUsersInfo(userName: Option[UserName] = None)(implicit log: Logger): Future[Seq[UserInfo]] = {
-    val clientArg = userName.map(Filters.eq("userName", _))
+  def getUsersInfo(user: Option[UserName] = None)(implicit log: Logger): Future[Seq[UserInfo]] = {
+    val clientArg = user.map(Filters.eq("user", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.userName,
+    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.user,
       info.roles.map(UserRole.withName(_)), info.human)))
   }
 }

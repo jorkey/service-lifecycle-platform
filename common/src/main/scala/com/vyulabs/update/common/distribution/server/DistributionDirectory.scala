@@ -39,12 +39,12 @@ class DistributionDirectory(val directory: File) {
     new File(directory, Common.DistributionConfigFileName)
   }
 
-  def getDeveloperVersionImageFileName(serviceName: ServiceName, version: DeveloperVersion): String = {
-    serviceName + "-" + version + ".zip"
+  def getDeveloperVersionImageFileName(service: ServiceName, version: DeveloperVersion): String = {
+    service + "-" + version + ".zip"
   }
 
-  def getClientVersionImageFileName(serviceName: ServiceName, version: ClientVersion): String = {
-    serviceName + "-" + version + ".zip"
+  def getClientVersionImageFileName(service: ServiceName, version: ClientVersion): String = {
+    service + "-" + version + ".zip"
   }
 
   def getFaultReportFileName(faultId: String): String = {
@@ -55,28 +55,28 @@ class DistributionDirectory(val directory: File) {
     IoUtils.deleteFileRecursively(directory)
   }
 
-  def getDeveloperServiceDir(distributionName: DistributionName, serviceName: ServiceName): File = {
-    val dir1 = new File(developerServicesDir, distributionName)
+  def getDeveloperServiceDir(distribution: DistributionName, service: ServiceName): File = {
+    val dir1 = new File(developerServicesDir, distribution)
     if (!dir1.exists()) dir1.mkdir()
-    val dir2 = new File(dir1, serviceName)
+    val dir2 = new File(dir1, service)
     if (!dir2.exists()) dir2.mkdir()
     dir2
   }
 
-  def getClientServiceDir(distributionName: DistributionName, serviceName: ServiceName): File = {
-    val dir1 = new File(clientServicesDir, distributionName)
+  def getClientServiceDir(distribution: DistributionName, service: ServiceName): File = {
+    val dir1 = new File(clientServicesDir, distribution)
     if (!dir1.exists()) dir1.mkdir()
-    val dir2 = new File(dir1, serviceName)
+    val dir2 = new File(dir1, service)
     if (!dir2.exists()) dir2.mkdir()
     dir2
   }
 
-  def getDeveloperVersionImageFile(serviceName: ServiceName, version: DeveloperDistributionVersion): File = {
-    new File(getDeveloperServiceDir(version.distributionName, serviceName), getDeveloperVersionImageFileName(serviceName, version.developerVersion))
+  def getDeveloperVersionImageFile(service: ServiceName, version: DeveloperDistributionVersion): File = {
+    new File(getDeveloperServiceDir(version.distribution, service), getDeveloperVersionImageFileName(service, version.developerVersion))
   }
 
-  def getClientVersionImageFile(serviceName: ServiceName, version: ClientDistributionVersion): File = {
-    new File(getClientServiceDir(version.distributionName, serviceName), getClientVersionImageFileName(serviceName, version.clientVersion))
+  def getClientVersionImageFile(service: ServiceName, version: ClientDistributionVersion): File = {
+    new File(getClientServiceDir(version.distribution, service), getClientVersionImageFileName(service, version.clientVersion))
   }
 
   def getFaultsDir(): File = {

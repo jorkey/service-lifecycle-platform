@@ -9,8 +9,8 @@ import java.io.File
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.01.20.
   * Copyright FanDate, Inc.
   */
-class SettingsDirectory(builderDirectory: File, distributionName: DistributionName) {
-  private val settingsDirectory = new File(builderDirectory, s"settings.${distributionName}")
+class SettingsDirectory(builderDirectory: File, distribution: DistributionName) {
+  private val settingsDirectory = new File(builderDirectory, s"settings.${distribution}")
   private val servicesDir = new File(settingsDirectory, "services")
 
   private val serviceSettingsDirName = "settings"
@@ -23,19 +23,19 @@ class SettingsDirectory(builderDirectory: File, distributionName: DistributionNa
     new File(settingsDirectory, "sources.json")
   }
 
-  def getServiceDir(serviceName: ServiceName): File = {
-    new File(servicesDir, serviceName)
+  def getServiceDir(service: ServiceName): File = {
+    new File(servicesDir, service)
   }
 
-  def getServiceInstallConfigFile(serviceName: ServiceName): File = {
-    new File(getServiceDir(serviceName), Common.InstallConfigFileName)
+  def getServiceInstallConfigFile(service: ServiceName): File = {
+    new File(getServiceDir(service), Common.InstallConfigFileName)
   }
 
-  def getServiceSettingsDir(serviceName: ServiceName): File = {
-    new File(getServiceDir(serviceName), serviceSettingsDirName)
+  def getServiceSettingsDir(service: ServiceName): File = {
+    new File(getServiceDir(service), serviceSettingsDirName)
   }
 
-  def getServicePrivateDir(serviceName: ServiceName): File = {
-    new File(getServiceDir(serviceName), servicePrivateDirName)
+  def getServicePrivateDir(service: ServiceName): File = {
+    new File(getServiceDir(service), servicePrivateDirName)
   }
 }

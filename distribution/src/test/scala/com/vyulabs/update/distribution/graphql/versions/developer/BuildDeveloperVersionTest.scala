@@ -53,7 +53,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":1,"logLine":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=developer, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -90,7 +90,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=developer, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -114,7 +114,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
         mutation {
-          runBuilder (arguments: ["buildDeveloperVersion", "distributionName=test", "service=service1", "version=1.1.1", "author=admin", "sourceBranches=master,master"])
+          runBuilder (arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin", "sourceBranches=master,master"])
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -129,7 +129,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"logLine":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` started"}}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distributionName=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDirectory}"}}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(

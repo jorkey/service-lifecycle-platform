@@ -26,11 +26,11 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("distribution1", Seq(2, 1, 3)))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":[1,1,1]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distribution":"test","build":[1,1,1]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerVersionsInfo (service: "service1", distribution: "test", version: { build: [1,1,1] }) {
-            version { distributionName, build }
+            version { distribution, build }
             buildInfo { author }
           }
         }
@@ -38,11 +38,11 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     )))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"distribution1","build":[2,1,3]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distribution":"distribution1","build":[2,1,3]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerVersionsInfo (service: "service1", distribution: "distribution1") {
-            version { distributionName, build }
+            version { distribution, build }
             buildInfo { author }
           }
         }
@@ -58,11 +58,11 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2)))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":[1,1,1]},"buildInfo":{"author":"author1"}},{"version":{"distributionName":"test","build":[1,1,2]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distribution":"test","build":[1,1,1]},"buildInfo":{"author":"author1"}},{"version":{"distribution":"test","build":[1,1,2]},"buildInfo":{"author":"author1"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerVersionsInfo (service: "service1") {
-            version { distributionName, build }
+            version { distribution, build }
             buildInfo { author }
           }
         }
@@ -81,11 +81,11 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(5)))
 
     assertResult((OK,
-      ("""{"data":{"developerVersionsInfo":[{"version":{"distributionName":"test","build":[3]}},{"version":{"distributionName":"test","build":[4]}},{"version":{"distributionName":"test","build":[5]}}]}}""").parseJson))(
+      ("""{"data":{"developerVersionsInfo":[{"version":{"distribution":"test","build":[3]}},{"version":{"distribution":"test","build":[4]}},{"version":{"distribution":"test","build":[5]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           developerVersionsInfo (service: "service1") {
-            version  { distributionName, build }
+            version  { distribution, build }
           }
         }
       """)))
@@ -95,7 +95,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(5)))
   }
 
-  def addDeveloperVersionInfo(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
+  def addDeveloperVersionInfo(service: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addDeveloperVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, builderContext,
@@ -103,7 +103,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
                   mutation AddDeveloperVersionInfo($$service: String!, $$version: DeveloperDistributionVersionInput!, $$date: Date!) {
                     addDeveloperVersionInfo (
                       info: {
-                        serviceName: $$service,
+                        service: $$service,
                         version: $$version,
                         buildInfo: {
                           author: "author1",
@@ -114,13 +114,13 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
                   }
                 """,
         variables = JsObject(
-          "service" -> JsString(serviceName),
+          "service" -> JsString(service),
           "version" -> version.toJson,
           "date" -> new Date().toJson))))
-    assert(distributionDir.getDeveloperVersionImageFile(serviceName, version).createNewFile())
+    assert(distributionDir.getDeveloperVersionImageFile(service, version).createNewFile())
   }
 
-  def removeDeveloperVersion(serviceName: ServiceName, version: DeveloperDistributionVersion): Unit = {
+  def removeDeveloperVersion(service: ServiceName, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeDeveloperVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
@@ -129,7 +129,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
                     removeDeveloperVersion (service: $$service, version: $$version)
                   }
                 """,
-        variables = JsObject("service" -> JsString(serviceName), "version" -> version.toJson))))
-    assert(!distributionDir.getDeveloperVersionImageFile(serviceName, version).exists())
+        variables = JsObject("service" -> JsString(service), "version" -> version.toJson))))
+    assert(!distributionDir.getDeveloperVersionImageFile(service, version).exists())
   }
 }

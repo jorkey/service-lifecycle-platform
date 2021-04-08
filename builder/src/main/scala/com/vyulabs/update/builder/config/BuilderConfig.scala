@@ -9,13 +9,13 @@ import spray.json._
 import java.io.File
 import java.net.URL
 
-case class DistributionLink(distributionName: DistributionName, distributionUrl: URL)
+case class DistributionLink(distribution: DistributionName, distributionUrl: URL)
 
 object DistributionLink extends DefaultJsonProtocol {
   implicit val distributionLinkJson = jsonFormat2(DistributionLink.apply)
 }
 
-case class BuilderConfig(instanceId: InstanceId, distributionLinks: Seq[DistributionLink])
+case class BuilderConfig(instance: InstanceId, distributionLinks: Seq[DistributionLink])
 
 object BuilderConfig extends DefaultJsonProtocol {
   implicit val builderConfigJson = jsonFormat2(BuilderConfig.apply)

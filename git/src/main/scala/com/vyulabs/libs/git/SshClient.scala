@@ -11,7 +11,7 @@ import scala.util.control.Breaks._
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
   * Copyright FanDate, Inc.
   */
-class SshClient(host: String, userName: String, port: Int = 22)(implicit log: org.slf4j.Logger) {
+class SshClient(host: String, user: String, port: Int = 22)(implicit log: org.slf4j.Logger) {
   private val sch = new JSch()
 
   private val home = System.getenv("HOME")
@@ -20,7 +20,7 @@ class SshClient(host: String, userName: String, port: Int = 22)(implicit log: or
   sch.setConfigRepository(config)
   sch.addIdentity(s"${home}/.ssh/id_rsa")
 
-  private val session = sch.getSession(userName, host, port)
+  private val session = sch.getSession(user, host, port)
 
   private val sessionConfig = new Properties
   sessionConfig.put("StrictHostKeyChecking", "no")
@@ -270,7 +270,7 @@ class SshClient(host: String, userName: String, port: Int = 22)(implicit log: or
 }
 
 object SshClient {
-  def apply(host: String, userName: String = "", port: Int = 22)(implicit log: org.slf4j.Logger): SshClient = {
-    new SshClient(host, userName, port)
+  def apply(host: String, user: String = "", port: Int = 22)(implicit log: org.slf4j.Logger): SshClient = {
+    new SshClient(host, user, port)
   }
 }

@@ -39,8 +39,8 @@ class TestedVersionsTest extends TestEnvironment {
         mutation {
           setTestedVersions (
             versions: [
-               { serviceName: "service1", version: { distributionName: "test", build: [1,1,1] } },
-               { serviceName: "service2", version: { distributionName: "test", build: [2,1,1] } }
+               { service: "service1", version: { distribution: "test", build: [1,1,1] } },
+               { service: "service2", version: { distribution: "test", build: [2,1,1] } }
             ]
           )
         }
@@ -49,12 +49,12 @@ class TestedVersionsTest extends TestEnvironment {
     val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2", Seq(UserRole.Distribution))), workspace)
 
     assertResult((OK,
-      ("""{"data":{"developerDesiredVersions":[{"serviceName":"service1","version":{"distributionName":"test","build":[1,1,1]}},{"serviceName":"service2","version":{"distributionName":"test","build":[2,1,1]}}]}}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[{"service":"service1","version":{"distribution":"test","build":[1,1,1]}},{"service":"service2","version":{"distribution":"test","build":[2,1,1]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext2, graphql"""
         query {
           developerDesiredVersions {
-            serviceName
-            version { distributionName, build }
+            service
+            version { distribution, build }
           }
         }
       """)))
@@ -69,8 +69,8 @@ class TestedVersionsTest extends TestEnvironment {
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
         query {
           developerDesiredVersions {
-            serviceName
-            version { distributionName, build }
+            service
+            version { distribution, build }
           }
         }
       """)))

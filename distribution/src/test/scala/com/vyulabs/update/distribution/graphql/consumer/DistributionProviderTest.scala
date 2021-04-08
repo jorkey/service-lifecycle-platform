@@ -33,11 +33,11 @@ class DistributionProviderTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionProvidersInfo":[{"distributionName":"provider-distribution","distributionUrl":"http://provider-distribution.com"}]}}""").parseJson))(
+      ("""{"data":{"distributionProvidersInfo":[{"distribution":"provider-distribution","distributionUrl":"http://provider-distribution.com"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           distributionProvidersInfo {
-             distributionName,
+             distribution,
              distributionUrl
           }
         }
@@ -66,11 +66,11 @@ class DistributionProviderTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionProvidersInfo":[{"distributionName":"provider-distribution-1","distributionUrl":"http://provider-distribution-1.com"}]}}""").parseJson))(
+      ("""{"data":{"distributionProvidersInfo":[{"distribution":"provider-distribution-1","distributionUrl":"http://provider-distribution-1.com"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           distributionProvidersInfo {
-             distributionName,
+             distribution,
              distributionUrl
           }
         }

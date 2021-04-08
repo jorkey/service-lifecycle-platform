@@ -9,7 +9,7 @@ import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LogUploader[Source[_]](serviceName: ServiceName, taskId: Option[TaskId], instanceId: InstanceId, client: DistributionClient[Source])
+class LogUploader[Source[_]](service: ServiceName, taskId: Option[TaskId], instance: InstanceId, client: DistributionClient[Source])
                             (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = NOPLogger.NOP_LOGGER
 
@@ -20,6 +20,6 @@ class LogUploader[Source[_]](serviceName: ServiceName, taskId: Option[TaskId], i
 
   override def receiveLogLines(lines: Seq[LogLine]): Future[Unit] = {
     client.graphqlRequest(
-      coder.addServiceLogs(serviceName, instanceId, processId.toString, taskId, directory, lines)).map(_ => ())
+      coder.addServiceLogs(service, instance, processId.toString, taskId, directory, lines)).map(_ => ())
   }
 }

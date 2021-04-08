@@ -11,7 +11,7 @@ object HumanInfo extends DefaultJsonProtocol {
   implicit val humanInfoJson = jsonFormat3(HumanInfo.apply)
 }
 
-case class UserInfo(userName: UserName, roles: Seq[UserRole], human: Option[HumanInfo])
+case class UserInfo(user: UserName, roles: Seq[UserRole], human: Option[HumanInfo])
 
 object UserInfo extends DefaultJsonProtocol {
   implicit val userInfoJson = jsonFormat3(UserInfo.apply)

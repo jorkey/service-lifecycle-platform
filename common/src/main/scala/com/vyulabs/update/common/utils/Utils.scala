@@ -69,20 +69,20 @@ object Utils {
     }
   }
 
-  def isServiceNeedUpdate(serviceName: ServiceName,
+  def isServiceNeedUpdate(service: ServiceName,
                           ownVersion: Option[ClientDistributionVersion], desiredVersion: Option[ClientDistributionVersion])
                          (implicit log: Logger) : Option[ClientDistributionVersion] = {
     ownVersion match {
       case Some(version) =>
         desiredVersion match {
           case Some(desiredVersion) if version != desiredVersion =>
-            log.info(s"Service ${serviceName} is obsolete. Own version ${version} desired version ${desiredVersion}")
+            log.info(s"Service ${service} is obsolete. Own version ${version} desired version ${desiredVersion}")
             Some(desiredVersion)
           case Some(_) =>
-            log.debug(s"Service ${serviceName} is up to date")
+            log.debug(s"Service ${service} is up to date")
             None
           case None =>
-            log.warn(s"No desired version for ${serviceName}")
+            log.warn(s"No desired version for ${service}")
             None
         }
       case None =>

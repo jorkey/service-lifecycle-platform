@@ -102,7 +102,7 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                       authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Distribution)) {
                         fileUpload(faultReportPath) {
                           case (fileInfo, byteSource) =>
-                            log.info(s"Receive fault report file from client ${workspace.config.distributionName}")
+                            log.info(s"Receive fault report file from client ${workspace.config.distribution}")
                             val file = workspace.directory.getFaultReportFile(faultId)
                             val sink = FileIO.toPath(file.toPath)
                             val future = byteSource.runWith(sink)

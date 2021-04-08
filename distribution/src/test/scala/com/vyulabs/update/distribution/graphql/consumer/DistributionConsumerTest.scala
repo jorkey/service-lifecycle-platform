@@ -35,12 +35,12 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionConsumersInfo":[{"distributionName":"consumer-distribution","consumerProfile":"common"}]}}""").parseJson))(
+      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution","consumerProfile":"common"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         query {
           distributionConsumersInfo {
-             distributionName,
+             distribution,
              consumerProfile
           }
         }
@@ -70,12 +70,12 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionConsumersInfo":[{"distributionName":"consumer-distribution-1","consumerProfile":"profile1"}]}}""").parseJson))(
+      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution-1","consumerProfile":"profile1"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         query {
           distributionConsumersInfo {
-             distributionName,
+             distribution,
              consumerProfile
           }
         }

@@ -82,8 +82,8 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
         log.error(s"Can't create directory ${serviceDir}")
         return false
       }
-      val profiledServiceName = ProfiledServiceName(fault.info.serviceName, fault.info.serviceProfile)
-      val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(DeveloperDistributionVersion("???", Build.empty))}_${fault.info.instanceId}_${Utils.serializeISO8601Date(fault.info.date)}_fault.zip"
+      val profiledServiceName = ProfiledServiceName(fault.info.service, fault.info.serviceProfile)
+      val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(DeveloperDistributionVersion("???", Build.empty))}_${fault.info.instance}_${Utils.serializeISO8601Date(fault.info.date)}_fault.zip"
       val archiveFile = new File(serviceDir, archivedFileName)
       val tmpDirectory = Files.createTempDirectory(s"fault-${profiledServiceName}").toFile
       val faultInfoFile = new File(tmpDirectory, Common.FaultInfoFileName)

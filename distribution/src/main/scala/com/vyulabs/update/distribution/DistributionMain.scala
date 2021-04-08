@@ -49,13 +49,13 @@ object DistributionMain extends App {
 
     val collections = new DatabaseCollections(mongoDb, config.instanceState.expirationTimeout, true)
     val dir = new DistributionDirectory(new File("."))
-    val taskManager = new TaskManager(taskId => new LogStorekeeper(config.distributionName, Common.DistributionServiceName, Some(taskId),
-      config.instanceId, collections.State_ServiceLogs))
+    val taskManager = new TaskManager(taskId => new LogStorekeeper(config.distribution, Common.DistributionServiceName, Some(taskId),
+      config.instance, collections.State_ServiceLogs))
 
     Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
 
     TraceAppender.handleLogs("Distribution server", "PROCESS",
-      new LogStorekeeper(config.distributionName, Common.DistributionServiceName, None, config.instanceId, collections.State_ServiceLogs))
+      new LogStorekeeper(config.distribution, Common.DistributionServiceName, None, config.instance, collections.State_ServiceLogs))
 
     val workspace = GraphqlWorkspace(config, collections, dir, taskManager)
     val distribution = new Distribution(workspace, graphql)
@@ -65,7 +65,7 @@ object DistributionMain extends App {
 
     workspace.getDistributionProvidersInfo().foreach(_.foreach { providerInfo =>
       providerInfo.uploadStateInterval.foreach(uploadStateInterval =>
-        StateUploader(config.distributionName, collections, dir, uploadStateInterval, providerInfo.distributionUrl).start())
+        StateUploader(config.distribution, collections, dir, uploadStateInterval, providerInfo.distributionUrl).start())
     })
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

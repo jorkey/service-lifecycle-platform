@@ -25,33 +25,33 @@ class SelfUpdater(state: ServiceStateController, distributionClient: Distributio
 
   state.serviceStarted()
 
-  def needUpdate(serviceName: ServiceName, desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
-    Utils.isServiceNeedUpdate(serviceName, getVersion(serviceName), desiredVersion)
+  def needUpdate(service: ServiceName, desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
+    Utils.isServiceNeedUpdate(service, getVersion(service), desiredVersion)
   }
 
   def stop(): Unit = {
     state.serviceStopped()
   }
 
-  def beginServiceUpdate(serviceName: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
-    log.info(s"Service ${serviceName} is obsolete. Own version ${getVersion(serviceName)} desired version ${toVersion}")
+  def beginServiceUpdate(service: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
+    log.info(s"Service ${service} is obsolete. Own version ${getVersion(service)} desired version ${toVersion}")
     state.beginUpdateToVersion(toVersion)
-    log.info(s"Downloading ${serviceName} of version ${toVersion}")
-    if (!syncDistributionClient.downloadClientVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
-      state.updateError(false, s"Downloading ${serviceName} error")
+    log.info(s"Downloading ${service} of version ${toVersion}")
+    if (!syncDistributionClient.downloadClientVersionImage(service, toVersion, new File(Common.ServiceZipName.format(service)))) {
+      state.updateError(false, s"Downloading ${service} error")
       return false
     }
-    if (!IoUtils.writeServiceVersion(new File("."), serviceName, toVersion)) {
-      state.updateError(true, s"Set ${serviceName} version error")
+    if (!IoUtils.writeServiceVersion(new File("."), service, toVersion)) {
+      state.updateError(true, s"Set ${service} version error")
       return false
     }
     true
   }
 
-  private def getVersion(serviceName: ServiceName): Option[ClientDistributionVersion] = {
-    if (serviceName == Common.UpdaterServiceName) {
+  private def getVersion(service: ServiceName): Option[ClientDistributionVersion] = {
+    if (service == Common.UpdaterServiceName) {
       updaterVersion
-    } else if (serviceName == Common.ScriptsServiceName) {
+    } else if (service == Common.ScriptsServiceName) {
       scriptsVersion
     } else {
       None

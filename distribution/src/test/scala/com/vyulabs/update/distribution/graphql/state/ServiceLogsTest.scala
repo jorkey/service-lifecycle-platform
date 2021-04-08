@@ -33,15 +33,15 @@ class ServiceLogsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"serviceLogs":[""" +
-       """{"instanceId":"instance1","distributionName":"test","line":{"level":"INFO","message":"line1"},"serviceName":"service1","directory":"dir"},""" +
-       """{"instanceId":"instance1","distributionName":"test","line":{"level":"DEBUG","message":"line2"},"serviceName":"service1","directory":"dir"},""" +
-       """{"instanceId":"instance1","distributionName":"test","line":{"level":"ERROR","message":"line3"},"serviceName":"service1","directory":"dir"}]}}""").parseJson))(
+       """{"instance":"instance1","distribution":"test","line":{"level":"INFO","message":"line1"},"service":"service1","directory":"dir"},""" +
+       """{"instance":"instance1","distribution":"test","line":{"level":"DEBUG","message":"line2"},"service":"service1","directory":"dir"},""" +
+       """{"instance":"instance1","distribution":"test","line":{"level":"ERROR","message":"line3"},"service":"service1","directory":"dir"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
-            distributionName
-            serviceName
-            instanceId
+            distribution
+            service
+            instance
             directory
             line {
               level

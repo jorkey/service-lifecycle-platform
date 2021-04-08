@@ -47,16 +47,16 @@ object FaultReportsConfig {
   implicit val faultReportsConfigJson = jsonFormat2(FaultReportsConfig.apply)
 }
 
-case class DistributionConfig(distributionName: DistributionName, title: String, instanceId: InstanceId, jwtSecret: String,
+case class DistributionConfig(distribution: DistributionName, title: String, instance: InstanceId, jwtSecret: String,
                               mongoDb: MongoDbConfig, network: NetworkConfig, remoteBuilder: Option[RemoteBuilderConfig],
                               versions: VersionsConfig, instanceState: InstanceStateConfig, faultReports: FaultReportsConfig)
 
 object DistributionConfig {
-  implicit val distributionConfigJson = jsonFormat10((name: DistributionName, title: String, instanceId: InstanceId, jwtSecret: String,
+  implicit val distributionConfigJson = jsonFormat10((name: DistributionName, title: String, instance: InstanceId, jwtSecret: String,
                                                       mongoDb: MongoDbConfig, network: NetworkConfig, builder: Option[RemoteBuilderConfig],
                                                       versions: VersionsConfig, instanceState: InstanceStateConfig,
                                                       faultReports: FaultReportsConfig) =>
-    DistributionConfig.apply(name, title, instanceId, jwtSecret, mongoDb, network, builder,
+    DistributionConfig.apply(name, title, instance, jwtSecret, mongoDb, network, builder,
       versions, instanceState, faultReports))
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {
