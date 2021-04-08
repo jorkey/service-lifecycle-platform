@@ -38,11 +38,11 @@ class UsersTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"changeUserPassword":true}}""").parseJson))(
+      ("""{"data":{"changeUser":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          changeUserPassword (
+          changeUser (
             user: "distribution2",
             password: "password2"
           )

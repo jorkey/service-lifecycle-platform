@@ -60,6 +60,9 @@ object GraphqlSchema {
   val UrlArg = Argument("url", UrlType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
+  val OptionPasswordArg = Argument("password", OptionInputType(StringType))
+  val OptionUserRolesArg = Argument("roles", OptionInputType(ListInputType(UserRoleType)))
+  val OptionHumanInfoArg = Argument("human", OptionInputType(HumanInfoInputType))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
   val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
@@ -184,22 +187,24 @@ object GraphqlSchema {
       Field("changePassword", fieldType = BooleanType,
         arguments = OldPasswordArg :: PasswordArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeUserPassword(c.ctx.accessToken.get.userName, c.arg(OldPasswordArg), c.arg(PasswordArg)) }),
+        resolve = c => { c.ctx.workspace.changeUser(c.ctx.accessToken.get.userName,
+          Some(c.arg(OldPasswordArg)), Some(c.arg(PasswordArg)), None, None) }),
 
       // Users management
       Field("addUser", BooleanType,
-        arguments = UserArg :: UserRolesArg :: PasswordArg :: Nil,
+        arguments = UserArg :: PasswordArg :: UserRolesArg :: OptionHumanInfoArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg),
-          c.arg(UserRolesArg), c.arg(PasswordArg)).map(_ => true) }),
+          c.arg(PasswordArg), c.arg(UserRolesArg), c.arg(OptionHumanInfoArg)).map(_ => true) }),
       Field("removeUser", BooleanType,
         arguments = UserArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeUser(c.arg(UserArg)) }),
-      Field("changeUserPassword", BooleanType,
-        arguments = UserArg :: PasswordArg :: Nil,
+      Field("changeUser", BooleanType,
+        arguments = UserArg :: OptionPasswordArg :: OptionUserRolesArg :: OptionHumanInfoArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeUserPassword(c.arg(UserArg), c.arg(PasswordArg)) }),
+        resolve = c => { c.ctx.workspace.changeUser(c.arg(UserArg), None, c.arg(OptionPasswordArg),
+          c.arg(OptionUserRolesArg), c.arg(OptionHumanInfoArg)) }),
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,

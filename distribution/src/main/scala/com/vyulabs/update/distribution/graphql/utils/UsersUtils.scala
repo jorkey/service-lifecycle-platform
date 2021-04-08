@@ -10,7 +10,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.UserName
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, HumanInfo, UserInfo, UserRole}
 import com.vyulabs.update.distribution.graphql.{AuthenticationException, NotFoundException}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
@@ -35,11 +35,12 @@ trait UsersUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def addUser(userName: UserName, roles: Seq[UserRole], password: String)(implicit log: Logger): Future[Unit] = {
+  def addUser(userName: UserName, password: String,
+              roles: Seq[UserRole], human: Option[HumanInfo])(implicit log: Logger): Future[Unit] = {
     log.info(s"Add user ${userName} with roles ${roles}")
     for {
       result <- {
-        val document = ServerUserInfo(userName, roles.map(_.toString), PasswordHash(password))
+        val document = ServerUserInfo(userName, PasswordHash(password), roles.map(_.toString), human)
         collections.Users_Info.insert(document).map(_ => ())
       }
     } yield result
@@ -51,29 +52,21 @@ trait UsersUtils extends SprayJsonSupport {
     collections.Users_Info.delete(filters).map(_ > 0)
   }
 
-  def changeUserPassword(userName: UserName, oldPassword: String, password: String)(implicit log: Logger): Future[Boolean] = {
-    for {
-      credentials <- getUserCredentials(userName)
-      result <- credentials match {
-        case Some(credentials) =>
-          if (credentials.passwordHash.hash == PasswordHash.generatePasswordHash(oldPassword, credentials.passwordHash.salt)) {
-            changeUserPassword(userName, password)
-          } else {
-            Future.failed(new IOException(s"Password verification error"))
-          }
-        case None =>
-          Future.failed(new IOException(s"Password verification error"))
-      }
-    } yield result
-  }
-
-  def changeUserPassword(userName: UserName, password: String)(implicit log: Logger): Future[Boolean] = {
-    log.info(s"Change user ${userName} password")
+  def changeUser(userName: UserName, oldPassword: Option[String], password: Option[String],
+                 roles: Option[Seq[UserRole]], humanInfo: Option[HumanInfo])(implicit log: Logger): Future[Boolean] = {
+    log.info(s"Change user ${userName}")
     val filters = Filters.eq("userName", userName)
-    val hash = PasswordHash(password)
     collections.Users_Info.update(filters, r => r match {
       case Some(r) =>
-        Some(ServerUserInfo(r.userName, r.roles, hash))
+        for (oldPassword <- oldPassword) {
+          if (r.passwordHash.hash != PasswordHash.generatePasswordHash(oldPassword, r.passwordHash.salt)) {
+            throw new IOException(s"Password verification error")
+          }
+        }
+        Some(ServerUserInfo(r.userName,
+          password.map(PasswordHash(_)).getOrElse(r.passwordHash),
+          roles.map(_.map(_.toString)).getOrElse(r.roles),
+          if (humanInfo.isDefined) humanInfo else r.human))
       case None =>
         None
     }).map(_ > 0)
@@ -147,6 +140,6 @@ trait UsersUtils extends SprayJsonSupport {
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.userName,
-      info.roles.map(UserRole.withName(_)))))
+      info.roles.map(UserRole.withName(_)), info.human)))
   }
 }
