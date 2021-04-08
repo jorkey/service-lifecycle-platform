@@ -61,13 +61,39 @@ class UsersTest extends TestEnvironment {
       """)))
   }
 
-  it should "change own password" in {
+  it should "change self password" in {
     assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"Password verification error","path":["changePassword"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      ("""{"data":null,"errors":[{"message":"You can change only self account","path":["changeUser"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
-          changePassword (
+          changeUser (
+            user: "admin",
+            oldPassword: "password",
+            password: "password2"
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":null,"errors":[{"message":"Old password is not specified","path":["changeUser"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
+        graphql"""
+        mutation {
+          changeUser (
+            user: "developer",
+            password: "password2"
+          )
+        }
+      """)))
+
+    assertResult((OK,
+      ("""{"data":null,"errors":[{"message":"Password verification error","path":["changeUser"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
+        graphql"""
+        mutation {
+          changeUser (
+            user: "developer",
             oldPassword: "bad password",
             password: "password2"
           )
@@ -75,15 +101,31 @@ class UsersTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"changePassword":true}}""").parseJson))(
+      ("""{"data":{"changeUser":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
-          changePassword (
+          changeUser (
+            user: "developer",
             oldPassword: "developer",
             password: "password2"
           )
         }
       """)))
+  }
+
+  it should "change user password by administrator" in {
+    assertResult((OK,
+      ("""{"data":{"changeUser":true}}""").parseJson))(
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
+        graphql"""
+        mutation {
+          changeUser (
+            user: "developer",
+            password: "password3"
+          )
+        }
+      """)))
+
   }
 }

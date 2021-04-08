@@ -60,6 +60,7 @@ object GraphqlSchema {
   val UrlArg = Argument("url", UrlType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
+  val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
   val OptionUserRolesArg = Argument("roles", OptionInputType(ListInputType(UserRoleType)))
   val OptionHumanInfoArg = Argument("human", OptionInputType(HumanInfoInputType))
@@ -179,16 +180,11 @@ object GraphqlSchema {
   def Mutations(implicit executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Mutation",
     fields[GraphqlContext, Unit](
-      // Own account operations
+      // Login
       Field("login", StringType,
         arguments = UserArg :: PasswordArg :: Nil,
         resolve = c => { c.ctx.workspace.login(c.arg(UserArg), c.arg(PasswordArg))
           .map(c.ctx.workspace.encodeAccessToken(_)) }),
-      Field("changePassword", fieldType = BooleanType,
-        arguments = OldPasswordArg :: PasswordArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeUser(c.ctx.accessToken.get.user,
-          Some(c.arg(OldPasswordArg)), Some(c.arg(PasswordArg)), None, None) }),
 
       // Users management
       Field("addUser", BooleanType,
@@ -201,10 +197,20 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeUser(c.arg(UserArg)) }),
       Field("changeUser", BooleanType,
-        arguments = UserArg :: OptionPasswordArg :: OptionUserRolesArg :: OptionHumanInfoArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeUser(c.arg(UserArg), None, c.arg(OptionPasswordArg),
-          c.arg(OptionUserRolesArg), c.arg(OptionHumanInfoArg)) }),
+        arguments = UserArg :: OptionOldPasswordArg :: OptionPasswordArg :: OptionUserRolesArg :: OptionHumanInfoArg :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => {
+          val token = c.ctx.accessToken.get
+          if (!token.hasRole(UserRole.Administrator)) {
+            if (token.user != c.arg(UserArg)) {
+              throw AuthorizationException(s"You can change only self account")
+            }
+            if (!c.arg(OptionOldPasswordArg).isDefined) {
+              throw AuthorizationException(s"Old password is not specified")
+            }
+          }
+          c.ctx.workspace.changeUser(c.arg(UserArg), c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionUserRolesArg), c.arg(OptionHumanInfoArg))
+        }),
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,
