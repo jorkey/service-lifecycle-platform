@@ -35,10 +35,10 @@ const UsersTable: React.FC<UsersTableProps> = props => {
       <TableBody>
         {[...usersInfo].sort().map(userInfo =>
           (<TableRow hover
-                     selected={userInfo.userName==selected}
-                     onClick={(event) => setSelected(userInfo.userName)}
-                     key={userInfo.userName}>
-            <TableCell className={classes.nameColumn}>{userInfo.userName}</TableCell>
+                     selected={userInfo.user===selected}
+                     onClick={(event) => setSelected(userInfo.user)}
+                     key={userInfo.user}>
+            <TableCell className={classes.nameColumn}>{userInfo.user}</TableCell>
             <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
           </TableRow>)
         )}

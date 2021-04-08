@@ -3,37 +3,37 @@ mutation login($user: String!, $password: String!) {
 }
 
 query whoAmI {
-    whoAmI { userName, roles }
+    whoAmI { user, roles }
 }
 
 query distributionInfo {
-    distributionInfo { distributionName, title }
+    distributionInfo { distribution, title }
 }
 
 query usersInfo {
-    usersInfo { userName, roles }
+    usersInfo { user, roles }
 }
 
 query distributionConsumersInfo {
-    distributionConsumersInfo { distributionName, consumerProfile }
+    distributionConsumersInfo { distribution, consumerProfile }
 }
 
 query developerDesiredVersions {
-    developerDesiredVersions { serviceName, version { distributionName, build } }
+    developerDesiredVersions { service, version { distribution, build } }
 }
 
 query clientDesiredVersions {
-    clientDesiredVersions { serviceName, version { distributionName, developerBuild, clientBuild } }
+    clientDesiredVersions { service, version { distribution, developerBuild, clientBuild } }
 }
 
 query installedDesiredVersions ($distribution: String!) {
     installedDesiredVersions(distribution: $distribution) {
-        serviceName, version { distributionName, developerBuild, clientBuild }
+        service, version { distribution, developerBuild, clientBuild }
     }
 }
 
 query serviceStates ($distribution: String!) {
     serviceStates(distribution: $distribution) {
-        distributionName instance { instanceId, serviceName, directory, service { date, installDate, startDate, version { distributionName, developerBuild, clientBuild }, updateToVersion { distributionName, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+        distribution instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }

@@ -42,7 +42,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface ServiceVersionsProps {
-  serviceName: string
+  service: string
   developerVersion: DeveloperDistributionVersion
   clientVersion: ClientDistributionVersion|undefined
   serviceStates: Array<InstanceServiceState>|undefined
@@ -50,14 +50,14 @@ interface ServiceVersionsProps {
 }
 
 export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
-  const { serviceName, developerVersion, clientVersion, serviceStates, onlyAlerts } = props;
+  const { service, developerVersion, clientVersion, serviceStates, onlyAlerts } = props;
   const classes = useStyles();
   let versionsTree = new Array<[ClientDistributionVersion, Array<[string, Array<InstanceServiceState>]>]>()
   serviceStates?.forEach(state => {
-    if (state.service.version) {
-      let versionNode = versionsTree.find(node => node[0] === state.service.version)
+    if (state.state.version) {
+      let versionNode = versionsTree.find(node => node[0] === state.state.version)
       if (!versionNode) {
-        versionNode = [state.service.version, new Array<[string, Array<InstanceServiceState>]>()]
+        versionNode = [state.state.version, new Array<[string, Array<InstanceServiceState>]>()]
         versionsTree.push(versionNode)
       }
       let directoriesNode = versionNode[1]
@@ -121,14 +121,14 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
     alertService = alertService || clientVersionAlarm || workingVersionAlarm
     rowsStack.push(<TableRow
       hover
-      key={serviceName + '-' + rowNum}
+      key={service + '-' + rowNum}
     >
       {(versionIndex <= 0 && directoryIndex <= 0 && stateIndex <= 0) ? (
         <>
           <TableCell
             className={classes.serviceColumn}
             rowSpan={rowNum + 1}
-          >{serviceName}</TableCell>
+          >{service}</TableCell>
           <TableCell
             className={classes.versionColumn}
             rowSpan={rowNum + 1}
@@ -162,13 +162,13 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
         : <TableCell className={classes.directoryColumn}/>}
       {state ?
         <TableCell className={classes.instancesColumn}>
-          <Typography>{state.instanceId}</Typography>
+          <Typography>{state.instance}</Typography>
         </TableCell> : <TableCell className={classes.instancesColumn}/>}
       {state ?
         <TableCell className={classes.infoColumn}>
           <Info
             alert={workingVersionAlarm}
-            serviceState={state.service}
+            serviceState={state.state}
           />
         </TableCell> : <TableCell className={classes.infoColumn}/>}
     </TableRow>)
@@ -202,12 +202,12 @@ export const VersionsTable: React.FC<VersionsTableProps> = props => {
     <TableBody>
       { [...developerVersions].sort().map(desiredVersion =>
         <ServiceVersions
-          serviceName={desiredVersion.serviceName}
+          service={desiredVersion.service}
           developerVersion={desiredVersion.version}
-          clientVersion={clientVersions?.find(version => version.serviceName === desiredVersion.serviceName)?.version}
-          serviceStates={serviceStates?.filter(state => state.serviceName === desiredVersion.serviceName)}
+          clientVersion={clientVersions?.find(version => version.service === desiredVersion.service)?.version}
+          serviceStates={serviceStates?.filter(state => state.service === desiredVersion.service)}
           onlyAlerts={onlyAlerts}
-          key={desiredVersion.serviceName}
+          key={desiredVersion.service}
         />) }
     </TableBody>
   </Table>)

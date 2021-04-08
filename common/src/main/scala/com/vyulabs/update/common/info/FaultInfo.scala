@@ -11,5 +11,6 @@ case class FaultInfo(date: Date, instance: InstanceId,
                      state: ServiceState, logTail: Seq[String])
 
 object FaultInfo extends DefaultJsonProtocol {
-  implicit val faultInfoJson = jsonFormat7((date: Date, instance: InstanceId, serviceDirectory: ServiceDirectory, service: ServiceName, serviceProfile: ServiceProfile, state: ServiceState, logTail: Seq[String]) => FaultInfo.apply(date, instance, service, serviceDirectory, serviceProfile, state, logTail))
+  implicit val faultInfoJson = jsonFormat7((date: Date, instance: InstanceId, service: ServiceName, serviceDirectory: ServiceDirectory, serviceProfile: ServiceProfile, state: ServiceState, logTail: Seq[String]) =>
+    FaultInfo.apply(date, instance, service, serviceDirectory, serviceProfile, state, logTail))
 }

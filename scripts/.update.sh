@@ -68,7 +68,7 @@ function graphqlQuery() {
 # output:
 #   stdout - short version string
 function developerVersionToString {
-  echo $1 | jq -r '"\(.distributionName)-\((.developerBuild | join("."))|tostring)"'
+  echo $1 | jq -r '"\(.distribution)-\((.developerBuild | join("."))|tostring)"'
 }
 
 ## Convert client version from Json to string
@@ -77,7 +77,7 @@ function developerVersionToString {
 # output:
 #   stdout - short version string
 function clientVersionToString {
-  echo $1 | jq -r '"\(.distributionName)-\((.developerBuild | join("."))|tostring)_\(.clientBuild)"'
+  echo $1 | jq -r '"\(.distribution)-\((.developerBuild | join("."))|tostring)_\(.clientBuild)"'
 }
 
 ### Get desired version number of service.
@@ -96,7 +96,7 @@ function getDesiredVersion {
     exit 1
   elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
     local tmpFile=`mktemp`
-    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version{distributionName,developerBuild,clientBuild}}" "clientDesiredVersions[0].version" ${tmpFile}
+    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version{distribution,developerBuild,clientBuild}}" "clientDesiredVersions[0].version" ${tmpFile}
     version=`jq -c . ${tmpFile}`
     rm -f ${tmpFile}
     if [[ ${version} == "null" ]]; then

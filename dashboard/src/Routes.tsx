@@ -87,7 +87,7 @@ const LoginRoutes = () => {
   const { data } = useDistributionInfoQuery()
 
   if (data && data.distributionInfo) {
-    localStorage.setItem('distributionName', data.distributionInfo.distributionName)
+    localStorage.setItem('distribution', data.distributionInfo.distribution)
     localStorage.setItem('distributionTitle', data.distributionInfo.title)
     return (
       <Switch>

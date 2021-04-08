@@ -13,7 +13,7 @@ export class Version {
   }
 
   static contains(clientVersion: ClientDistributionVersion, developerVersion: DeveloperDistributionVersion): boolean {
-    return clientVersion.distributionName === developerVersion.distributionName &&
+    return clientVersion.distribution === developerVersion.distribution &&
       clientVersion.developerBuild === developerVersion.build
   }
 
@@ -24,12 +24,12 @@ export class Version {
   }
 
   static developerDistributionVersionToString(version: DeveloperDistributionVersion): string {
-    return `${version.distributionName}-${Version.buildToString(version.build)}`
+    return `${version.distribution}-${Version.buildToString(version.build)}`
   }
 
   static clientDistributionVersionToString(version: ClientDistributionVersion): string {
-    return (version.clientBuild === 0)?`${version.distributionName}-${Version.buildToString(version.developerBuild)}`:
-      `${version.distributionName}-${Version.buildToString(version.developerBuild)}_${version.clientBuild}`
+    return (version.clientBuild === 0)?`${version.distribution}-${Version.buildToString(version.developerBuild)}`:
+      `${version.distribution}-${Version.buildToString(version.developerBuild)}_${version.clientBuild}`
   }
 
   next(): Version {

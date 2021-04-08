@@ -24,12 +24,12 @@ const LoginPage = () => {
 
   useEffect(() => Utils.logout(), []);
 
-  const [userName, setUserName] = useState('');
+  const [user, setuser] = useState('');
   const [password, setPassword] = useState('');
 
   const [loginMutation, { data, loading, error }] =
     useLoginMutation({
-      variables: { user: userName, password: password },
+      variables: { user: user, password: password },
       onError(err) {
         console.log(err);
       }})
@@ -40,8 +40,8 @@ const LoginPage = () => {
     window.location.replace('/')
   }
 
-  const handleUserNameChange = (e: any) => {
-    setUserName(e.target.value);
+  const handleuserChange = (e: any) => {
+    setuser(e.target.value);
   }
 
   const handlePasswordChange = (e: any) => {
@@ -51,7 +51,7 @@ const LoginPage = () => {
   const handleSubmit = (e: any) => {
     e.preventDefault();
 
-    if (userName && password) {
+    if (user && password) {
       loginMutation()
     }
   }
@@ -76,12 +76,12 @@ const LoginPage = () => {
                 margin='normal'
                 required
                 fullWidth
-                id='username'
+                id='user'
                 label='User Name'
-                name='username'
+                name='user'
                 autoComplete='email'
                 autoFocus
-                onChange={handleUserNameChange}
+                onChange={handleuserChange}
               />
               <TextField
                 variant='outlined'

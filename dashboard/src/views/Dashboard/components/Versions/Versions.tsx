@@ -78,7 +78,7 @@ const Versions: React.FC<VersionsProps> = props => {
       getServiceStates({ variables: { distribution: consumer} })
     } else {
       getClientDesiredVersions()
-      getServiceStates({ variables: { distribution: localStorage.getItem('distributionName')! } })
+      getServiceStates({ variables: { distribution: localStorage.getItem('distribution')! } })
     }
   }
 
@@ -100,7 +100,7 @@ const Versions: React.FC<VersionsProps> = props => {
                 value={consumer}
               >
                 { consumersInfo.data?.distributionConsumersInfo.map(consumer =>
-                    <option key={consumer.distributionName}>{consumer.distributionName}</option>) }
+                    <option key={consumer.distribution}>{consumer.distribution}</option>) }
               </Select>}
               label='Consumer'
             />
