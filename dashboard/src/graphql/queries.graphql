@@ -37,3 +37,7 @@ query serviceStates ($distribution: String!) {
         distribution instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }
+
+mutation changeUser ($user: String!, $oldPassword: String, $password: String, $roles: [UserRole!], $human: HumanInfoInput) {
+    changeUser (user: $user, oldPassword: $oldPassword, password: $password, roles: $roles, human: $human)
+}

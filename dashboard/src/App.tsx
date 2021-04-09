@@ -13,7 +13,6 @@ import {ApolloProvider, ServerError} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import {onError} from '@apollo/client/link/error';
-import {Utils} from './common';
 
 const browserHistory = createBrowserHistory();
 
@@ -53,7 +52,7 @@ const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
   if (networkError) {
     console.log(`Network error: ${networkError}`);
     if ((networkError as ServerError).statusCode === 401) {
-      Utils.logout()
+      localStorage.removeItem('token')
       window.location.replace('/')
     }
   }

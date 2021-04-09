@@ -11,8 +11,9 @@ import {
 import AddIcon from '@material-ui/icons/Add';
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
-import { useUsersInfoQuery} from "../../../../generated/graphql";
-import UsersTable from "./UsersTable";
+import {useUsersInfoQuery} from '../../../../generated/graphql';
+import UsersTable from './UsersTable';
+import EditIcon from "@material-ui/icons/Edit";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -51,7 +52,9 @@ const UsersManager = () => {
               control={<Button
                 onClick={() => {}}
               >
-                <AddIcon/>
+                <AddIcon
+                  //onClick={(event) => setAnchor(event.currentTarget)}
+                />
               </Button>
               }
             />

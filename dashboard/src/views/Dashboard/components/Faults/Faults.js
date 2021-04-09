@@ -1,8 +1,7 @@
-import React, {useRef, useState} from 'react';
+import React, {useState} from 'react';
 import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
-import { Utils } from '../../../../common';
 import {
   Card,
   CardHeader,

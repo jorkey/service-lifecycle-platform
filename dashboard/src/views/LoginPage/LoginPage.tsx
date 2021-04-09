@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import { Utils } from '../../common';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
@@ -19,12 +18,15 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const LoginPage = () => {
+interface LoginPageProps {
+}
+
+const LoginPage: React.FC<LoginPageProps> = () => {
   const classes = useStyles();
 
-  useEffect(() => Utils.logout(), []);
+  useEffect(() => localStorage.removeItem('token'), []);
 
-  const [user, setuser] = useState('');
+  const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
 
   const [loginMutation, { data, loading, error }] =
@@ -40,8 +42,8 @@ const LoginPage = () => {
     window.location.replace('/')
   }
 
-  const handleuserChange = (e: any) => {
-    setuser(e.target.value);
+  const handleUserChange = (e: any) => {
+    setUser(e.target.value);
   }
 
   const handlePasswordChange = (e: any) => {
@@ -81,7 +83,7 @@ const LoginPage = () => {
                 name='user'
                 autoComplete='email'
                 autoFocus
-                onChange={handleuserChange}
+                onChange={handleUserChange}
               />
               <TextField
                 variant='outlined'
