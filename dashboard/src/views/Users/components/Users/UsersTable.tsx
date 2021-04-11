@@ -10,18 +10,13 @@ import {ServiceStatePopup} from "../../../Dashboard/components/Versions/ServiceS
 
 // eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
-  userNameColumn: {
+  userColumn: {
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
-  firstNameColumn: {
+  nameColumn: {
     width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  lastNameColumn: {
-    width: '400px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -76,9 +71,8 @@ const UsersTable: React.FC<UsersTableProps> = props => {
     <Table stickyHeader>
       <TableHead>
         <TableRow>
-          <TableCell className={classes.userNameColumn}>User Name</TableCell>
-          <TableCell className={classes.firstNameColumn}>First Name</TableCell>
-          <TableCell className={classes.lastNameColumn}>Last Name</TableCell>
+          <TableCell className={classes.userColumn}>User</TableCell>
+          <TableCell className={classes.nameColumn}>Last Name</TableCell>
           <TableCell className={classes.rolesColumn}>Roles</TableCell>
           <TableCell className={classes.emailColumn}>E-Mail</TableCell>
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
@@ -90,9 +84,8 @@ const UsersTable: React.FC<UsersTableProps> = props => {
                      selected={userInfo.user===selected}
                      onClick={(event) => setSelected(userInfo.user)}
                      key={userInfo.user}>
-            <TableCell className={classes.userNameColumn}>{userInfo.user}</TableCell>
-            <TableCell className={classes.firstNameColumn}>{userInfo.human?.firstName}</TableCell>
-            <TableCell className={classes.lastNameColumn}>{userInfo.human?.lastName}</TableCell>
+            <TableCell className={classes.userColumn}>{userInfo.user}</TableCell>
+            <TableCell className={classes.nameColumn}>{userInfo.human?.name}</TableCell>
             <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
             <TableCell className={classes.emailColumn}>{userInfo.human?.email}</TableCell>
             <TableCell className={classes.actionsColumn}><Actions userInfo={userInfo}/></TableCell>

@@ -5,10 +5,10 @@ import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.UserRole.UserRole
 import spray.json.DefaultJsonProtocol
 
-case class HumanInfo(firstName: String, lastName: String, email: String)
+case class HumanInfo(name: String, email: String)
 
 object HumanInfo extends DefaultJsonProtocol {
-  implicit val humanInfoJson = jsonFormat3(HumanInfo.apply)
+  implicit val humanInfoJson = jsonFormat2(HumanInfo.apply)
 }
 
 case class UserInfo(user: UserName, roles: Seq[UserRole], human: Option[HumanInfo])
