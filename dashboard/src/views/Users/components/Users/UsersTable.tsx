@@ -1,4 +1,4 @@
-import {IconButton, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
+import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
 import React from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../generated/graphql';
@@ -50,12 +50,16 @@ const Actions: React.FC<ActionsProps> = (props) => {
 
   return (
     <>
-      <IconButton onClick={() => editing(userInfo)} >
-        <EditIcon/>
-      </IconButton>
-      <IconButton onClick={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}>
-        <DeleteIcon/>
-      </IconButton>
+      <Link href='edit'>
+        <IconButton title='Edit' onClick={() => editing(userInfo)} >
+          <EditIcon/>
+        </IconButton>
+      </Link>
+      <Link href='delete'>
+        <IconButton title='Delete' onClick={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}>
+          <DeleteIcon/>
+        </IconButton>
+      </Link>
     </>)
 }
 
@@ -75,7 +79,7 @@ const UsersTable: React.FC<UsersTableProps> = props => {
       <TableHead>
         <TableRow>
           <TableCell className={classes.userColumn}>User</TableCell>
-          <TableCell className={classes.nameColumn}>Last Name</TableCell>
+          <TableCell className={classes.nameColumn}>Name</TableCell>
           <TableCell className={classes.rolesColumn}>Roles</TableCell>
           <TableCell className={classes.emailColumn}>E-Mail</TableCell>
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
