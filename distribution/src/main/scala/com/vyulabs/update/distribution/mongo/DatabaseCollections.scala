@@ -144,8 +144,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
       adminRecords <- Users_Info.find(filters)
     } yield {
       if (adminRecords.isEmpty) {
-        Users_Info.insert(ServerUserInfo("admin", PasswordHash("admin"),
-          Seq(UserRole.Administrator.toString), None))
+        Users_Info.insert(ServerUserInfo("admin", "Administrator", PasswordHash("admin"),
+          Seq(UserRole.Administrator.toString), None, Seq.empty))
       } else {
         Future()
       }

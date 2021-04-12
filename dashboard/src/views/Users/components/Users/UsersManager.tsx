@@ -6,14 +6,12 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider,
+  Divider, IconButton,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
-import {useUsersInfoQuery} from '../../../../generated/graphql';
 import UsersTable from './UsersTable';
-import EditIcon from "@material-ui/icons/Edit";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -37,7 +35,6 @@ const useStyles = makeStyles(theme => ({
 
 const UsersManager = () => {
   const classes = useStyles()
-  const usersInfo = useUsersInfoQuery()
 
   return (
     <Card
@@ -49,13 +46,13 @@ const UsersManager = () => {
             <FormControlLabel
               className={classes.formControlLabel}
               label=''
-              control={<Button
-                onClick={() => {}}
-              >
-                <AddIcon
-                  //onClick={(event) => setAnchor(event.currentTarget)}
-                />
-              </Button>
+              control={
+                <Button
+                  startIcon={<AddIcon/>}
+                  onClick={() => {}}
+                >
+                  Add New User
+                </Button>
               }
             />
           </FormGroup>
@@ -65,7 +62,7 @@ const UsersManager = () => {
       <Divider />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          { usersInfo.data?(<UsersTable usersInfo={usersInfo.data.usersInfo}/>):null }
+          <UsersTable userEditing={userInfo => {}}/>
         </div>
       </CardContent>
     </Card>

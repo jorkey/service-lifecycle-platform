@@ -74,7 +74,6 @@ object GraphqlTypes {
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
   implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersions]()
   implicit val ClientInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
-  implicit val HumanInfoType = deriveObjectType[Unit, HumanInfo]()
   implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
@@ -91,7 +90,6 @@ object GraphqlTypes {
   implicit val DistributionConsumerInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
   implicit val DistributionConsumerProfileType = deriveObjectType[Unit, DistributionConsumerProfile]()
 
-  implicit val HumanInfoInputType = deriveInputObjectType[HumanInfo](InputObjectTypeName("HumanInfoInput"))
   implicit val DeveloperVersionInputType = deriveInputObjectType[DeveloperVersion](InputObjectTypeName("DeveloperVersionInput"))
   implicit val ClientVersionInputType = deriveInputObjectType[ClientVersion](InputObjectTypeName("ClientVersionInput"))
   implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersionInput"))

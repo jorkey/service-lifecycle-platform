@@ -10,7 +10,7 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.UserName
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.info.{AccessToken, HumanInfo, UserInfo, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
 import com.vyulabs.update.distribution.graphql.{AuthenticationException, NotFoundException}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
@@ -35,12 +35,12 @@ trait UsersUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def addUser(user: UserName, password: String,
-              roles: Seq[UserRole], human: Option[HumanInfo])(implicit log: Logger): Future[Unit] = {
+  def addUser(user: UserName, name: String, password: String,
+              roles: Seq[UserRole], email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Unit] = {
     log.info(s"Add user ${user} with roles ${roles}")
     for {
       result <- {
-        val document = ServerUserInfo(user, PasswordHash(password), roles.map(_.toString), human)
+        val document = ServerUserInfo(user, name, PasswordHash(password), roles.map(_.toString), email, notifications.getOrElse(Seq.empty))
         collections.Users_Info.insert(document).map(_ => ())
       }
     } yield result
@@ -52,8 +52,8 @@ trait UsersUtils extends SprayJsonSupport {
     collections.Users_Info.delete(filters).map(_ > 0)
   }
 
-  def changeUser(user: UserName, oldPassword: Option[String], password: Option[String],
-                 roles: Option[Seq[UserRole]], humanInfo: Option[HumanInfo])(implicit log: Logger): Future[Boolean] = {
+  def changeUser(user: UserName, name: Option[String], oldPassword: Option[String], password: Option[String],
+                 roles: Option[Seq[UserRole]], email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Boolean] = {
     log.info(s"Change user ${user}")
     val filters = Filters.eq("user", user)
     collections.Users_Info.update(filters, r => r match {
@@ -64,9 +64,12 @@ trait UsersUtils extends SprayJsonSupport {
           }
         }
         Some(ServerUserInfo(r.user,
+          if (name.isDefined) name.get else r.name,
           password.map(PasswordHash(_)).getOrElse(r.passwordHash),
           roles.map(_.map(_.toString)).getOrElse(r.roles),
-          if (humanInfo.isDefined) humanInfo else r.human))
+          if (email.isDefined) (if (email.get.isEmpty) None else email) else r.email,
+          notifications.map(_.map(_.toString)).getOrElse(r.notifications),
+        ))
       case None =>
         None
     }).map(_ > 0)
@@ -139,7 +142,7 @@ trait UsersUtils extends SprayJsonSupport {
     val clientArg = user.map(Filters.eq("user", _))
     val args = clientArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.user,
-      info.roles.map(UserRole.withName(_)), info.human)))
+    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.user, info.name,
+      info.roles.map(UserRole.withName(_)), info.email, info.notifications)))
   }
 }

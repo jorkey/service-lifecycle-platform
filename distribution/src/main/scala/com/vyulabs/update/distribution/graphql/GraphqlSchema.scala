@@ -29,6 +29,7 @@ object GraphqlSchema {
   // Arguments
 
   val UserArg = Argument("user", StringType)
+  val NameArg = Argument("name", StringType)
   val OldPasswordArg = Argument("oldPassword", StringType)
   val PasswordArg = Argument("password", StringType)
   val UserRolesArg = Argument("roles", ListInputType(UserRoleType))
@@ -60,10 +61,12 @@ object GraphqlSchema {
   val UrlArg = Argument("url", UrlType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
+  val OptionNameArg = Argument("name", OptionInputType(StringType))
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
   val OptionUserRolesArg = Argument("roles", OptionInputType(ListInputType(UserRoleType)))
-  val OptionHumanInfoArg = Argument("human", OptionInputType(HumanInfoInputType))
+  val OptionEmailArg = Argument("email", OptionInputType(StringType))
+  val OptionNotificationsArg = Argument("notifications", OptionInputType(ListInputType(StringType)))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
   val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
@@ -188,16 +191,16 @@ object GraphqlSchema {
 
       // Users management
       Field("addUser", BooleanType,
-        arguments = UserArg :: PasswordArg :: UserRolesArg :: OptionHumanInfoArg :: Nil,
+        arguments = UserArg :: NameArg :: PasswordArg :: UserRolesArg :: OptionEmailArg :: OptionNotificationsArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg),
-          c.arg(PasswordArg), c.arg(UserRolesArg), c.arg(OptionHumanInfoArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(NameArg),
+          c.arg(PasswordArg), c.arg(UserRolesArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg)).map(_ => true) }),
       Field("removeUser", BooleanType,
         arguments = UserArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeUser(c.arg(UserArg)) }),
       Field("changeUser", BooleanType,
-        arguments = UserArg :: OptionOldPasswordArg :: OptionPasswordArg :: OptionUserRolesArg :: OptionHumanInfoArg :: Nil,
+        arguments = UserArg :: OptionNameArg :: OptionOldPasswordArg :: OptionPasswordArg :: OptionUserRolesArg :: OptionEmailArg :: OptionNotificationsArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => {
           val token = c.ctx.accessToken.get
@@ -209,7 +212,8 @@ object GraphqlSchema {
               throw AuthorizationException(s"Old password is not specified")
             }
           }
-          c.ctx.workspace.changeUser(c.arg(UserArg), c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionUserRolesArg), c.arg(OptionHumanInfoArg))
+          c.ctx.workspace.changeUser(c.arg(UserArg), c.arg(OptionNameArg),
+            c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionUserRolesArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg))
         }),
 
       // Developer versions

@@ -1,12 +1,9 @@
-import {Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
+import {IconButton, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
 import React from 'react';
 import {makeStyles} from '@material-ui/styles';
-import { UserInfo } from "../../../../generated/graphql";
+import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../generated/graphql';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
-import AlertIcon from "@material-ui/icons/Error";
-import InfoIcon from "@material-ui/icons/Info";
-import {ServiceStatePopup} from "../../../Dashboard/components/Versions/ServiceState";
 
 // eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
@@ -29,43 +26,49 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: '16px'
   },
   actionsColumn: {
-    width: '100px',
+    width: '150px',
     padding: '4px',
-    paddingLeft: '16px'
+    paddingRight: '40px',
+    textAlign: 'right'
   }
 }));
 
 interface ActionsProps {
-  userInfo: UserInfo
+  userInfo: UserInfo,
+  editing: (userInfo: UserInfo) => void,
+  removing: (promise: Promise<void>) => void
 }
 
 const Actions: React.FC<ActionsProps> = (props) => {
-  const { userInfo } = props
-  const classes = useStyles()
+  const { userInfo, editing, removing } = props
+  // const classes = useStyles()
+
+  const [removeUser] = useRemoveUserMutation({
+    variables: { user: userInfo.user },
+    onError(err) { console.log(err) }
+  })
 
   return (
     <>
-      <EditIcon
-        // className={classes.alertIcon}
-        // onMouseEnter={(event) => setAnchor(event.currentTarget)}
-        // onMouseLeave={() => setAnchor(undefined)}
-      /> :
-      <DeleteIcon
-        // className={classes.infoIcon}
-        // onMouseEnter={(event) => setAnchor(event.currentTarget)}
-        // onMouseLeave={() => setAnchor(undefined)}
-      />
+      <IconButton onClick={() => editing(userInfo)} >
+        <EditIcon/>
+      </IconButton>
+      <IconButton onClick={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}>
+        <DeleteIcon/>
+      </IconButton>
     </>)
 }
 
 interface UsersTableProps {
-  usersInfo: Array<UserInfo>
+  userEditing: (userInfo: UserInfo) => void
 }
 
 const UsersTable: React.FC<UsersTableProps> = props => {
-  const { usersInfo } = props
   const classes = useStyles()
+  const { userEditing } = props
   const [selected, setSelected] = React.useState('')
+
+  const { data, refetch } = useUsersInfoQuery()
 
   return (
     <Table stickyHeader>
@@ -78,20 +81,27 @@ const UsersTable: React.FC<UsersTableProps> = props => {
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
         </TableRow>
       </TableHead>
-      <TableBody>
-        {[...usersInfo].sort().map(userInfo =>
-          (<TableRow hover
-                     selected={userInfo.user===selected}
-                     onClick={(event) => setSelected(userInfo.user)}
-                     key={userInfo.user}>
-            <TableCell className={classes.userColumn}>{userInfo.user}</TableCell>
-            <TableCell className={classes.nameColumn}>{userInfo.human?.name}</TableCell>
-            <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
-            <TableCell className={classes.emailColumn}>{userInfo.human?.email}</TableCell>
-            <TableCell className={classes.actionsColumn}><Actions userInfo={userInfo}/></TableCell>
-          </TableRow>)
-        )}
-      </TableBody>
+      { data ?
+        <TableBody>
+          {[...data.usersInfo].sort().map(userInfo =>
+            (<TableRow
+              hover
+              key={userInfo.user}
+              onClick={() => setSelected(userInfo.user)}
+              selected={userInfo.user===selected}
+            >
+              <TableCell className={classes.userColumn}>{userInfo.user}</TableCell>
+              <TableCell className={classes.nameColumn}>{userInfo.name}</TableCell>
+              <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
+              <TableCell className={classes.emailColumn}>{userInfo.email}</TableCell>
+              <TableCell className={classes.actionsColumn}><Actions
+                editing={ userInfo => userEditing(userInfo) }
+                removing={ promise => promise.then(() => refetch()) }
+                userInfo={ userInfo }
+              /></TableCell>
+            </TableRow>)
+          )}
+        </TableBody> : null }
     </Table>)
 }
 

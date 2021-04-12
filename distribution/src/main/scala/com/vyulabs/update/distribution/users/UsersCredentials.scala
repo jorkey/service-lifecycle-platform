@@ -2,7 +2,6 @@ package com.vyulabs.update.distribution.users
 
 import com.typesafe.config.Config
 import com.vyulabs.update.common.common.Common.UserName
-import com.vyulabs.update.common.info.HumanInfo
 import com.vyulabs.update.common.info.UserRole.UserRole
 import spray.json._
 
@@ -45,5 +44,5 @@ object PasswordHash extends DefaultJsonProtocol {
 case class UserCredentials(roles: Seq[UserRole], var passwordHash: PasswordHash)
 
 // We can't use enumeration role because mongodb does not have codec for enumerations.
-case class ServerUserInfo(user: UserName, passwordHash: PasswordHash,
-                          roles: Seq[String], human: Option[HumanInfo])
+case class ServerUserInfo(user: UserName, name: String, passwordHash: PasswordHash,
+                          roles: Seq[String], email: Option[String], notifications: Seq[String])

@@ -5,7 +5,7 @@ import TextField from '@material-ui/core/TextField';
 import Alert from '@material-ui/lab/Alert';
 
 import { makeStyles } from '@material-ui/core/styles';
-import {Card, CardContent, CardHeader, Divider} from '@material-ui/core';
+import {Box, Card, CardContent, CardHeader, Divider} from '@material-ui/core';
 import {useChangeUserMutation, UserInfo} from '../../../../generated/graphql';
 import clsx from 'clsx';
 
@@ -25,24 +25,89 @@ interface UserEditorProps {
 }
 
 const UserEditor: React.FC<UserEditorProps> = props => {
+  const { byAdmin, userInfo } = props
   const classes = useStyles()
 
-  const [user, setUser] = useState(props.userInfo?.user);
+  const [user, setUser] = useState(userInfo?.user);
+  const [name, setName] = useState(userInfo?.name);
+  const [email, setEmail] = useState(userInfo?.email);
   const [oldPassword, setOldPassword] = useState('');
   const [password, setPassword] = useState('');
-  const [roles, setRoles] = useState(props.userInfo?.roles);
-  const [human, setHuman] = useState(props.userInfo?.human);
+  const [roles, setRoles] = useState(userInfo?.roles);
 
-  const [changeUser, { loading, error }] =
+  const [changeUser] =
     useChangeUserMutation({
       onError(err) { console.log(err) }
     })
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    if (user) {
-      changeUser({variables: {user: user, oldPassword: oldPassword, password: password, roles: roles, human: human}} )
+    if (user && name) {
+      changeUser({variables: { user: user, name: name,
+          oldPassword: oldPassword, password: password, roles: roles, email: email }} )
     }
+  }
+
+  const UserCard = () => {
+    return (
+      <Card>
+        <CardContent className={classes.content}>
+          <TextField
+            autoFocus
+            fullWidth
+            label="User"
+            margin="normal"
+            onChange={(e: any) => setUser(e.target.value)}
+            required
+            variant="outlined"
+          />
+        </CardContent>
+        <CardContent className={classes.content}>
+          <TextField
+            fullWidth
+            label="Name"
+            margin="normal"
+            onChange={(e: any) => setName(e.target.value)}
+            required
+            variant="outlined"
+          />
+        </CardContent>
+        <CardContent className={classes.content}>
+          <TextField
+            fullWidth
+            label="E-Mail"
+            autoComplete="email"
+            margin="normal"
+            onChange={(e: any) => setEmail(e.target.value)}
+            required
+            variant="outlined"
+          />
+        </CardContent>
+      </Card>)
+  }
+
+  const PasswordCard = () => {
+    return (
+      <Card>
+        <CardContent className={classes.content}>
+          <TextField
+            fullWidth
+            label="Old Password"
+            margin="normal"
+            onChange={(e: any) => setOldPassword(e.target.value)}
+            required
+            variant="outlined"
+          /> : null
+          <TextField
+            fullWidth
+            label="Password"
+            margin="normal"
+            onChange={(e: any) => setPassword(e.target.value)}
+            required
+            variant="outlined"
+          />
+        </CardContent>
+      </Card>)
   }
 
   return (
@@ -54,60 +119,18 @@ const UserEditor: React.FC<UserEditorProps> = props => {
       />
       <Divider />
       <CardContent className={classes.content}>
-        <form
-          name="form"
-          onSubmit={handleSubmit}
-        >
-          <TextField
-            autoComplete="email"
-            autoFocus={props.userInfo != undefined}
-            defaultValue={props.userInfo}
-            disabled={props.userInfo != undefined}
-            fullWidth
-            id="user"
-            label="User Name"
-            margin="normal"
-            name="user"
-            onChange={(e: any) => setUser(e.target.value)}
-            required
-            variant="outlined"
-          />
-          { (!props.byAdmin && props.userInfo) ?
-            <TextField
-              fullWidth
-              id="oldPassword"
-              label="Old Password"
-              margin="normal"
-              name="oldPassword"
-              onChange={(e: any) => setOldPassword(e.target.value)}
-              required
-              type="password"
-              variant="outlined"
-            /> : null
-          }
-          <TextField
-            fullWidth
-            id="password"
-            label="Password"
-            margin="normal"
-            name="password"
-            onChange={(e: any) => setPassword(e.target.value)}
-            required
-            type="password"
-            variant="outlined"
-          />
-          <Button
-            color="primary"
-            disabled={loading}
-            fullWidth
-            type="submit"
-            variant="contained"
-          >
-            Sign In
-          </Button>
-          {error && <Alert severity="error">{error.message}</Alert>}
-        </form>
+        <UserCard/>
+        <PasswordCard/>
       </CardContent>
+      <Divider/>
+      <Box>
+        <Button
+          color="primary"
+          variant="contained"
+        >
+          Save details
+        </Button>
+      </Box>
     </Card>
   );
 }

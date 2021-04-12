@@ -83,12 +83,11 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val updaterContext = GraphqlContext(Some(AccessToken("updater", Seq(UserRole.Updater))), workspace)
 
   result(for {
-    _ <- collections.Users_Info.insert(ServerUserInfo(adminHttpCredentials.username, adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None))
-    _ <- collections.Users_Info.insert(ServerUserInfo(developerHttpCredentials.username, developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None))
-    _ <- collections.Users_Info.insert(ServerUserInfo(builderHttpCredentials.username, builderCredentials.passwordHash, builderCredentials.roles.map(_.toString), None))
-    _ <- collections.Users_Info.insert(ServerUserInfo(distributionHttpCredentials.username, distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString), None))
-    _ <- collections.Users_Info.insert(ServerUserInfo(builderHttpCredentials.username, builderCredentials.passwordHash, builderCredentials.roles.map(_.toString), None))
-    _ <- collections.Users_Info.insert(ServerUserInfo(updaterHttpCredentials.username, updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString), None))
+    _ <- collections.Users_Info.insert(ServerUserInfo(adminHttpCredentials.username, "Test Administrator", adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None, Seq.empty))
+    _ <- collections.Users_Info.insert(ServerUserInfo(developerHttpCredentials.username, "Test Developer", developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None, Seq.empty))
+    _ <- collections.Users_Info.insert(ServerUserInfo(builderHttpCredentials.username, "Test Builder", builderCredentials.passwordHash, builderCredentials.roles.map(_.toString), None, Seq.empty))
+    _ <- collections.Users_Info.insert(ServerUserInfo(distributionHttpCredentials.username, "Test Distribution", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString), None, Seq.empty))
+    _ <- collections.Users_Info.insert(ServerUserInfo(updaterHttpCredentials.username, "Test Updater", updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString), None, Seq.empty))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0))

@@ -1,6 +1,10 @@
+# Login
+
 mutation login($user: String!, $password: String!) {
     login(user: $user, password: $password)
 }
+
+# Info
 
 query whoAmI {
     whoAmI { user, roles }
@@ -10,13 +14,13 @@ query distributionInfo {
     distributionInfo { distribution, title }
 }
 
-query usersInfo {
-    usersInfo { user, roles }
-}
+# Consumers
 
 query distributionConsumersInfo {
     distributionConsumersInfo { distribution, consumerProfile }
 }
+
+# Versions
 
 query developerDesiredVersions {
     developerDesiredVersions { service, version { distribution, build } }
@@ -32,12 +36,28 @@ query installedDesiredVersions ($distribution: String!) {
     }
 }
 
+# States
+
 query serviceStates ($distribution: String!) {
     serviceStates(distribution: $distribution) {
         distribution instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }
 
-mutation changeUser ($user: String!, $oldPassword: String, $password: String, $roles: [UserRole!], $human: HumanInfoInput) {
-    changeUser (user: $user, oldPassword: $oldPassword, password: $password, roles: $roles, human: $human)
+# Users
+
+query usersInfo {
+    usersInfo { user, name, roles, email, notifications }
+}
+
+mutation addUser ($user: String!, $name: String!, $password: String!, $roles: [UserRole!], $email: String, $notifications: [String!]) {
+    changeUser (user: $user, name: $name, password: $password, roles: $roles, email: $email, notifications: $notifications)
+}
+
+mutation changeUser ($user: String!, $name: String!, $oldPassword: String, $password: String, $roles: [UserRole!], $email: String, $notifications: [String!]) {
+    changeUser (user: $user, name: $name, oldPassword: $oldPassword, password: $password, roles: $roles, email: $email, notifications: $notifications)
+}
+
+mutation removeUser ($user: String!) {
+    removeUser (user: $user)
 }
