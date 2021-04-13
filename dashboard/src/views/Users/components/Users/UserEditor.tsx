@@ -2,11 +2,15 @@ import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import Alert from '@material-ui/lab/Alert';
+import { RouteComponentProps } from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Box, Card, CardContent, CardHeader, Divider} from '@material-ui/core';
-import {useChangeUserMutation, UserInfo} from '../../../../generated/graphql';
+import {
+  useChangeUserMutation,
+  UserRole,
+  useUserInfoLazyQuery, useWhoAmIQuery
+} from '../../../../generated/graphql';
 import clsx from 'clsx';
 
 const useStyles = makeStyles(theme => ({
@@ -19,21 +23,35 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface UserEditorProps {
-  byAdmin: boolean,
-  userInfo: UserInfo|undefined
+interface UserRouteParams {
+  user: string|undefined
 }
 
-const UserEditor: React.FC<UserEditorProps> = props => {
-  const { byAdmin, userInfo } = props
+const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
+  const whoAmI = useWhoAmIQuery()
+  const [getUserInfo, userInfo] = useUserInfoLazyQuery()
+
   const classes = useStyles()
 
-  const [user, setUser] = useState(userInfo?.user);
-  const [name, setName] = useState(userInfo?.name);
-  const [email, setEmail] = useState(userInfo?.email);
+  const [user, setUser] = useState('');
+  const [name, setName] = useState('');
+  const [roles, setRoles] = useState(new Array<UserRole>());
   const [oldPassword, setOldPassword] = useState('');
   const [password, setPassword] = useState('');
-  const [roles, setRoles] = useState(userInfo?.roles);
+  const [email, setEmail] = useState<string|null>();
+
+  if (props.match.params.user) {
+    getUserInfo({ variables: { user: props.match.params.user } })
+  }
+  if (userInfo) {
+    const info = userInfo.data?.usersInfo[0]
+    if (info) {
+      setUser(info.user)
+      setName(info.name)
+      setRoles(info.roles)
+      setEmail(info.email)
+    }
+  }
 
   const [changeUser] =
     useChangeUserMutation({
@@ -57,7 +75,9 @@ const UserEditor: React.FC<UserEditorProps> = props => {
             fullWidth
             label="User"
             margin="normal"
+            value={user}
             onChange={(e: any) => setUser(e.target.value)}
+            error={!user}
             required
             variant="outlined"
           />
@@ -67,7 +87,9 @@ const UserEditor: React.FC<UserEditorProps> = props => {
             fullWidth
             label="Name"
             margin="normal"
+            value={name}
             onChange={(e: any) => setName(e.target.value)}
+            error={!user}
             required
             variant="outlined"
           />
@@ -78,8 +100,8 @@ const UserEditor: React.FC<UserEditorProps> = props => {
             label="E-Mail"
             autoComplete="email"
             margin="normal"
+            value={email}
             onChange={(e: any) => setEmail(e.target.value)}
-            required
             variant="outlined"
           />
         </CardContent>
@@ -90,17 +112,29 @@ const UserEditor: React.FC<UserEditorProps> = props => {
     return (
       <Card>
         <CardContent className={classes.content}>
-          <TextField
-            fullWidth
-            label="Old Password"
-            margin="normal"
-            onChange={(e: any) => setOldPassword(e.target.value)}
-            required
-            variant="outlined"
-          /> : null
+          { (whoAmI.data && !whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator)) ?
+            <TextField
+              fullWidth
+              label="Old Password"
+              type="password"
+              margin="normal"
+              onChange={(e: any) => setOldPassword(e.target.value)}
+              required
+              variant="outlined"
+            /> : null }
           <TextField
             fullWidth
             label="Password"
+            type="password"
+            margin="normal"
+            onChange={(e: any) => setPassword(e.target.value)}
+            required
+            variant="outlined"
+          />
+          <TextField
+            fullWidth
+            label="Confirm Password"
+            type="password"
             margin="normal"
             onChange={(e: any) => setPassword(e.target.value)}
             required
@@ -115,7 +149,7 @@ const UserEditor: React.FC<UserEditorProps> = props => {
       className={clsx(classes.root)}
     >
       <CardHeader
-        title={props.userInfo?`User ${props.userInfo.user}`:'New user'}
+        title='User'
       />
       <Divider />
       <CardContent className={classes.content}>

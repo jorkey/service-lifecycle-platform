@@ -50,6 +50,10 @@ query usersInfo {
     usersInfo { user, name, roles, email, notifications }
 }
 
+query userInfo ($user: String!) {
+    usersInfo ( user: $user ) { user, name, roles, email, notifications }
+}
+
 mutation addUser ($user: String!, $name: String!, $password: String!, $roles: [UserRole!], $email: String, $notifications: [String!]) {
     changeUser (user: $user, name: $name, password: $password, roles: $roles, email: $email, notifications: $notifications)
 }

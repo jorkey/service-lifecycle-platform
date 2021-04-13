@@ -1,8 +1,10 @@
 import React from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
-import { Grid } from '@material-ui/core';
+import {Grid} from '@material-ui/core';
 import UsersManager from "./components/Users/UsersManager";
+import UserEditor from "./components/Users/UserEditor";
+import {Route, Switch, useRouteMatch} from "react-router-dom";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -12,6 +14,7 @@ const useStyles = makeStyles(theme => ({
 
 const Users = () => {
   const classes = useStyles();
+  const match = useRouteMatch();
 
   return (
     <div className={classes.root}>
@@ -22,7 +25,14 @@ const Users = () => {
           item
           xs={12}
         >
-          <UsersManager/>
+          <Switch>
+            <Route exact path={`${match.url}/users`}>
+              <UsersManager/>
+            </Route>
+            <Route exact path={`${match.url}/users/:user`}
+              component={UserEditor}>
+            </Route>
+          </Switch>
         </Grid>
       </Grid>
     </div>

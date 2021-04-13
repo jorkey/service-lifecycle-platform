@@ -4,6 +4,7 @@ import {makeStyles} from '@material-ui/styles';
 import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../generated/graphql';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
+import {useRouteMatch} from "react-router-dom";
 
 // eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
@@ -35,12 +36,12 @@ const useStyles = makeStyles(theme => ({
 
 interface ActionsProps {
   userInfo: UserInfo,
-  editing: (userInfo: UserInfo) => void,
   removing: (promise: Promise<void>) => void
 }
 
 const Actions: React.FC<ActionsProps> = (props) => {
-  const { userInfo, editing, removing } = props
+  const { userInfo, removing } = props
+  const routeMatch = useRouteMatch();
   // const classes = useStyles()
 
   const [removeUser] = useRemoveUserMutation({
@@ -50,27 +51,23 @@ const Actions: React.FC<ActionsProps> = (props) => {
 
   return (
     <>
-      <Link href='edit'>
-        <IconButton title='Edit' onClick={() => editing(userInfo)} >
+      <Link href={`${routeMatch}/${userInfo.user}`}>
+        <IconButton title='Edit'>
           <EditIcon/>
         </IconButton>
       </Link>
-      <Link href='delete'>
-        <IconButton title='Delete' onClick={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}>
-          <DeleteIcon/>
-        </IconButton>
-      </Link>
+      <IconButton title='Delete' onClick={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}>
+        <DeleteIcon/>
+      </IconButton>
     </>)
 }
 
 interface UsersTableProps {
-  userEditing: (userInfo: UserInfo) => void
 }
 
-const UsersTable: React.FC<UsersTableProps> = props => {
+const UsersTable: React.FC<UsersTableProps> = () => {
   const classes = useStyles()
-  const { userEditing } = props
-  const [selected, setSelected] = React.useState('')
+  const [ selected, setSelected ] = React.useState('')
 
   const { data, refetch } = useUsersInfoQuery()
 
@@ -99,7 +96,6 @@ const UsersTable: React.FC<UsersTableProps> = props => {
               <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
               <TableCell className={classes.emailColumn}>{userInfo.email}</TableCell>
               <TableCell className={classes.actionsColumn}><Actions
-                editing={ userInfo => userEditing(userInfo) }
                 removing={ promise => promise.then(() => refetch()) }
                 userInfo={ userInfo }
               /></TableCell>

@@ -62,7 +62,7 @@ const UsersManager = () => {
       <Divider />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <UsersTable userEditing={userInfo => {}}/>
+          <UsersTable/>
         </div>
       </CardContent>
     </Card>
