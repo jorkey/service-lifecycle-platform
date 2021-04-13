@@ -26,10 +26,10 @@ const Users = () => {
           xs={12}
         >
           <Switch>
-            <Route exact path={`${match.url}/users`}>
+            <Route exact path={`${match.url}`}>
               <UsersManager/>
             </Route>
-            <Route exact path={`${match.url}/users/:user`}
+            <Route exact path={`${match.url}/:user`}
               component={UserEditor}>
             </Route>
           </Switch>
