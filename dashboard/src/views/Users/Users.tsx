@@ -14,7 +14,9 @@ const useStyles = makeStyles(theme => ({
 
 const Users = () => {
   const classes = useStyles();
-  const match = useRouteMatch();
+  const routeMatch = useRouteMatch();
+
+  console.warn('users href ' + `${routeMatch.url}`)
 
   return (
     <div className={classes.root}>
@@ -26,10 +28,10 @@ const Users = () => {
           xs={12}
         >
           <Switch>
-            <Route exact path={`${match.url}`}>
+            <Route exact path={`${routeMatch.url}`}>
               <UsersManager/>
             </Route>
-            <Route exact path={`${match.url}/:user`}
+            <Route exact path={`${routeMatch.url}/:user`}
               component={UserEditor}>
             </Route>
           </Switch>

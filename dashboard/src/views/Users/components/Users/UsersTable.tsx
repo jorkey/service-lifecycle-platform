@@ -51,7 +51,7 @@ const Actions: React.FC<ActionsProps> = (props) => {
 
   return (
     <>
-      <Link href={`${routeMatch}/${userInfo.user}`}>
+      <Link href={`${routeMatch.url}/${userInfo.user}`}>
         <IconButton title='Edit'>
           <EditIcon/>
         </IconButton>

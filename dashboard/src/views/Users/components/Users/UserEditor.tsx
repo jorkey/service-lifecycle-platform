@@ -24,7 +24,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface UserRouteParams {
-  user: string|undefined
+  user?: string
 }
 
 const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
@@ -33,17 +33,17 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
 
   const classes = useStyles()
 
-  const [user, setUser] = useState('');
-  const [name, setName] = useState('');
+  const [user, setUser] = useState<string|null>();
+  const [name, setName] = useState<string|null>();
   const [roles, setRoles] = useState(new Array<UserRole>());
-  const [oldPassword, setOldPassword] = useState('');
-  const [password, setPassword] = useState('');
+  const [oldPassword, setOldPassword] = useState<string|null>();
+  const [password, setPassword] = useState<string|null>();
   const [email, setEmail] = useState<string|null>();
 
-  if (props.match.params.user) {
+  if (props.match.params.user && !userInfo) {
     getUserInfo({ variables: { user: props.match.params.user } })
   }
-  if (userInfo) {
+  if (userInfo && !user) {
     const info = userInfo.data?.usersInfo[0]
     if (info) {
       setUser(info.user)
@@ -68,50 +68,50 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
 
   const UserCard = () => {
     return (
-      <Card>
-        <CardContent className={classes.content}>
-          <TextField
-            autoFocus
-            fullWidth
-            label="User"
-            margin="normal"
-            value={user}
-            onChange={(e: any) => setUser(e.target.value)}
-            error={!user}
-            required
-            variant="outlined"
-          />
-        </CardContent>
-        <CardContent className={classes.content}>
-          <TextField
-            fullWidth
-            label="Name"
-            margin="normal"
-            value={name}
-            onChange={(e: any) => setName(e.target.value)}
-            error={!user}
-            required
-            variant="outlined"
-          />
-        </CardContent>
-        <CardContent className={classes.content}>
-          <TextField
-            fullWidth
-            label="E-Mail"
-            autoComplete="email"
-            margin="normal"
-            value={email}
-            onChange={(e: any) => setEmail(e.target.value)}
-            variant="outlined"
-          />
-        </CardContent>
-      </Card>)
+      <form {...props}>
+        <Card>
+          <CardHeader title='User'/>
+          <CardContent>
+            <TextField
+              autoFocus
+              fullWidth
+              label="User"
+              margin="normal"
+              value={user}
+              onChange={(e: any) => setUser(e.target.value)}
+              error={!user}
+              required
+              variant="outlined"
+            />
+            <TextField
+              fullWidth
+              label="Name"
+              margin="normal"
+              value={name}
+              onChange={(e: any) => setName(e.target.value)}
+              error={!user}
+              required
+              variant="outlined"
+            />
+            <TextField
+              fullWidth
+              label="E-Mail"
+              autoComplete="email"
+              margin="normal"
+              value={email}
+              onChange={(e: any) => setEmail(e.target.value)}
+              variant="outlined"
+            />
+          </CardContent>
+        </Card>
+      </form>)
   }
 
   const PasswordCard = () => {
     return (
       <Card>
-        <CardContent className={classes.content}>
+        <CardHeader title='Password'/>
+        <CardContent>
           { (whoAmI.data && !whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator)) ?
             <TextField
               fullWidth
@@ -148,15 +148,15 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
     <Card
       className={clsx(classes.root)}
     >
-      <CardHeader
-        title='User'
-      />
+      {/*<CardHeader title='User'/>*/}
+      {/*<Divider />*/}
+      {/*<CardContent className={classes.content}>*/}
       <Divider />
-      <CardContent className={classes.content}>
-        <UserCard/>
-        <PasswordCard/>
-      </CardContent>
-      <Divider/>
+      {UserCard()}
+      <Divider />
+      {PasswordCard()}
+      {/*</CardContent>*/}
+      {/*<Divider/>*/}
       <Box>
         <Button
           color="primary"

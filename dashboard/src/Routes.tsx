@@ -54,7 +54,6 @@ const Routes: React.FC<RoutesProps> = props => {
         component={UsersView}
         layout={MainLayout}
         path='/users'
-        exact
         {...props}
       />
       <RouteWithLayout

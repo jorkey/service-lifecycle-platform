@@ -5,7 +5,7 @@ interface RouteWithLayoutProps {
   layout: any,
   component: any,
   path: string,
-  exact: boolean
+  exact?: boolean
 }
 
 const RouteWithLayout: React.FC<RouteWithLayoutProps> = props => {
