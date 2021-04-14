@@ -5,7 +5,7 @@ import TextField from '@material-ui/core/TextField';
 import { RouteComponentProps } from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
-import {Box, Card, CardContent, CardHeader, Divider} from '@material-ui/core';
+import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel} from '@material-ui/core';
 import {
   useChangeUserMutation,
   UserRole,
@@ -33,23 +33,34 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
 
   const classes = useStyles()
 
-  const [user, setUser] = useState<string|null>();
-  const [name, setName] = useState<string|null>();
+  const [user, setUser] = useState('');
+  const [name, setName] = useState('');
   const [roles, setRoles] = useState(new Array<UserRole>());
-  const [oldPassword, setOldPassword] = useState<string|null>();
-  const [password, setPassword] = useState<string|null>();
-  const [email, setEmail] = useState<string|null>();
+  const [oldPassword, setOldPassword] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
 
-  if (props.match.params.user && !userInfo) {
-    getUserInfo({ variables: { user: props.match.params.user } })
-  }
-  if (userInfo && !user) {
-    const info = userInfo.data?.usersInfo[0]
-    if (info) {
-      setUser(info.user)
-      setName(info.name)
-      setRoles(info.roles)
-      setEmail(info.email)
+  const [initialized, setInitialized] = useState(false);
+
+  const userToEdit = props.match.params.user
+
+  if (!initialized) {
+    if (userToEdit) {
+      if (!userInfo.data && !userInfo.loading) {
+        getUserInfo({variables: {user: userToEdit}})
+      }
+      if (userInfo.data) {
+        const info = userInfo.data.usersInfo[0]
+        if (info) {
+          setUser(info.user)
+          setName(info.name)
+          setRoles(info.roles)
+          if (info.email) setEmail(info.email)
+        }
+        setInitialized(true)
+      }
+    } else {
+      setInitialized(true)
     }
   }
 
@@ -68,43 +79,42 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
 
   const UserCard = () => {
     return (
-      <form {...props}>
-        <Card>
-          <CardHeader title='User'/>
-          <CardContent>
-            <TextField
-              autoFocus
-              fullWidth
-              label="User"
-              margin="normal"
-              value={user}
-              onChange={(e: any) => setUser(e.target.value)}
-              error={!user}
-              required
-              variant="outlined"
-            />
-            <TextField
-              fullWidth
-              label="Name"
-              margin="normal"
-              value={name}
-              onChange={(e: any) => setName(e.target.value)}
-              error={!user}
-              required
-              variant="outlined"
-            />
-            <TextField
-              fullWidth
-              label="E-Mail"
-              autoComplete="email"
-              margin="normal"
-              value={email}
-              onChange={(e: any) => setEmail(e.target.value)}
-              variant="outlined"
-            />
-          </CardContent>
-        </Card>
-      </form>)
+      <Card>
+        <CardHeader title='User'/>
+        <CardContent>
+          <TextField
+            autoFocus
+            fullWidth
+            label="User"
+            margin="normal"
+            value={user}
+            onChange={(e: any) => setUser(e.target.value)}
+            error={!user}
+            disabled={userToEdit !== undefined}
+            required
+            variant="outlined"
+          />
+          <TextField
+            fullWidth
+            label="Name"
+            margin="normal"
+            value={name}
+            onChange={(e: any) => setName(e.target.value)}
+            error={!user}
+            required
+            variant="outlined"
+          />
+          <TextField
+            fullWidth
+            label="E-Mail"
+            autoComplete="email"
+            margin="normal"
+            value={email}
+            onChange={(e: any) => setEmail(e.target.value)}
+            variant="outlined"
+          />
+        </CardContent>
+      </Card>)
   }
 
   const PasswordCard = () => {
@@ -144,28 +154,57 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
       </Card>)
   }
 
+  const RolesCard = () => {
+    return (<Card>
+      <CardHeader title='Roles'/>
+      <CardContent>
+        <FormControlLabel
+          control={(
+            <Checkbox
+              color="primary"
+              checked={roles.find(role => role == UserRole.Developer) != undefined}
+            />
+          )}
+          label="Developer"
+        />
+      </CardContent>
+      <CardContent>
+        <FormControlLabel
+          control={(
+            <Checkbox
+              color="primary"
+              checked={roles.find(role => role == UserRole.Administrator) != undefined}
+            />
+          )}
+          label="Administrator"
+        />
+      </CardContent>
+    </Card>)
+  }
+
   return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      {/*<CardHeader title='User'/>*/}
-      {/*<Divider />*/}
-      {/*<CardContent className={classes.content}>*/}
-      <Divider />
-      {UserCard()}
-      <Divider />
-      {PasswordCard()}
-      {/*</CardContent>*/}
-      {/*<Divider/>*/}
-      <Box>
-        <Button
-          color="primary"
-          variant="contained"
-        >
-          Save details
-        </Button>
-      </Box>
-    </Card>
+    initialized ? (
+      <Card
+        className={clsx(classes.root)}
+      >
+        {/*<CardHeader title='User'/>*/}
+        {/*<Divider />*/}
+        {/*<CardContent className={classes.content}>*/}
+        <Divider />
+        {UserCard()}
+        <Divider />
+        {RolesCard()}
+        <Divider />
+        {PasswordCard()}
+        <Box>
+          <Button
+            color="primary"
+            variant="contained"
+          >
+            Save details
+          </Button>
+        </Box>
+      </Card>) : null
   );
 }
 
