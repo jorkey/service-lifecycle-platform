@@ -42,7 +42,6 @@ interface ActionsProps {
 const Actions: React.FC<ActionsProps> = (props) => {
   const { userInfo, removing } = props
   const routeMatch = useRouteMatch();
-  // const classes = useStyles()
 
   const [removeUser] = useRemoveUserMutation({
     variables: { user: userInfo.user },
@@ -51,7 +50,7 @@ const Actions: React.FC<ActionsProps> = (props) => {
 
   return (
     <>
-      <Link href={`${routeMatch.url}/${userInfo.user}`}>
+      <Link href={`${routeMatch.url}/edit/${userInfo.user}`}>
         <IconButton title='Edit'>
           <EditIcon/>
         </IconButton>

@@ -31,7 +31,10 @@ const Users = () => {
             <Route exact path={`${routeMatch.url}`}>
               <UsersManager/>
             </Route>
-            <Route exact path={`${routeMatch.url}/:user`}
+            <Route exact path={`${routeMatch.url}/new/:type`}
+              component={UserEditor}>
+            </Route>
+            <Route exact path={`${routeMatch.url}/edit/:user`}
               component={UserEditor}>
             </Route>
           </Switch>

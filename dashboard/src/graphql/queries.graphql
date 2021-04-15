@@ -51,7 +51,7 @@ query usersInfo ($human: Boolean!) {
 }
 
 query userInfo ($user: String!) {
-    usersInfo (user: $user) { user, name, roles, email, notifications }
+    usersInfo (user: $user) { user, human, name, roles, email, notifications }
 }
 
 mutation addUser ($user: String!, $human: Boolean!, $name: String!, $password: String!, $roles: [UserRole!]!, $email: String, $notifications: [String!]) {

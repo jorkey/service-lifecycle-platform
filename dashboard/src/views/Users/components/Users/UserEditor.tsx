@@ -5,7 +5,7 @@ import TextField from '@material-ui/core/TextField';
 import { RouteComponentProps } from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
-import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel} from '@material-ui/core';
+import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
 import {
   useChangeUserMutation,
   UserRole,
@@ -24,7 +24,8 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface UserRouteParams {
-  user?: string
+  user?: string,
+  type?: string
 }
 
 const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
@@ -34,6 +35,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const classes = useStyles()
 
   const [user, setUser] = useState('');
+  const [human, setHuman] = useState(true);
   const [name, setName] = useState('');
   const [roles, setRoles] = useState(new Array<UserRole>());
   const [oldPassword, setOldPassword] = useState('');
@@ -53,6 +55,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
         const info = userInfo.data.usersInfo[0]
         if (info) {
           setUser(info.user)
+          setHuman(info.human)
           setName(info.name)
           setRoles(info.roles)
           if (info.email) setEmail(info.email)
@@ -60,6 +63,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
         setInitialized(true)
       }
     } else {
+      setHuman(props.match.params.type == 'human')
       setInitialized(true)
     }
   }
@@ -80,7 +84,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const UserCard = () => {
     return (
       <Card>
-        <CardHeader title='User'/>
+        <CardHeader title={userToEdit?'User':(human?'New User':'New Service User')}/>
         <CardContent>
           <TextField
             autoFocus
@@ -158,26 +162,59 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
     return (<Card>
       <CardHeader title='Roles'/>
       <CardContent>
-        <FormControlLabel
-          control={(
-            <Checkbox
-              color="primary"
-              checked={roles.find(role => role == UserRole.Developer) != undefined}
-            />
-          )}
-          label="Developer"
-        />
-      </CardContent>
-      <CardContent>
-        <FormControlLabel
-          control={(
-            <Checkbox
-              color="primary"
-              checked={roles.find(role => role == UserRole.Administrator) != undefined}
-            />
-          )}
-          label="Administrator"
-        />
+        <FormGroup row>
+          { human ? (
+            <>
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    color="primary"
+                    checked={roles.find(role => role == UserRole.Developer) != undefined}
+                  />
+                )}
+                label="Developer"
+              />
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    color="primary"
+                    checked={roles.find(role => role == UserRole.Administrator) != undefined}
+                  />
+                )}
+                label="Administrator"
+              />
+            </> ) : (
+            <>
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    color="primary"
+                    checked={roles.find(role => role == UserRole.Distribution) != undefined}
+                  />
+                )}
+                label="Distribution"
+              />
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    color="primary"
+                    checked={roles.find(role => role == UserRole.Builder) != undefined}
+                  />
+                )}
+                label="Builder"
+              />
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    color="primary"
+                    checked={roles.find(role => role == UserRole.Updater) != undefined}
+                  />
+                )}
+                label="Updater"
+              />
+            </>
+          ) }
+        </FormGroup>
       </CardContent>
     </Card>)
   }

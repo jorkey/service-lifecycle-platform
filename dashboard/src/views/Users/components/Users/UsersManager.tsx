@@ -6,13 +6,11 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, IconButton, Select, Box,
+  Divider, IconButton, Select, Box, Link,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import FormGroup from '@material-ui/core/FormGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
 import UsersTable from './UsersTable';
-import {type} from "os";
+import {useRouteMatch} from "react-router-dom";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -33,7 +31,8 @@ const useStyles = makeStyles(theme => ({
 
 const UsersManager = () => {
   const classes = useStyles()
-  const [usersType, setUsersType] = useState('people')
+  const [people, setPeople] = useState(true)
+  const routeMatch = useRouteMatch();
 
   return (
     <Card
@@ -48,22 +47,24 @@ const UsersManager = () => {
                 className={classes.formControl}
                 native
                 title='Type'
-                value={usersType}
+                value={people?'people':'services'}
                 onChange={(event) =>
-                  setUsersType(event.target.value as string)}
+                  setPeople(event.target.value === 'people')}
               >
                 <option value='people'>People</option>
                 <option value='services'>Services</option>
             </Select>
-            <Button
-              color="primary"
-              variant="contained"
-              className={classes.formControl}
-              startIcon={<AddIcon/>}
-              onClick={() => {}}
-            >
-              Add New
-            </Button>
+            <Link href={`${routeMatch.url}/new/${people?'human':'service'}`}>
+              <Button
+                color="primary"
+                variant="contained"
+                className={classes.formControl}
+                startIcon={<AddIcon/>}
+                onClick={() => {}}
+              >
+                Add New
+              </Button>
+            </Link>
           </Box>
         }
         title={'Users'}
@@ -71,7 +72,7 @@ const UsersManager = () => {
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <UsersTable people={usersType=='people'}/>
+          <UsersTable people={people}/>
         </div>
       </CardContent>
     </Card>
