@@ -1,9 +1,9 @@
 package com.vyulabs.update.common.info
 
-import com.vyulabs.update.common.common.Common.{CommonServiceProfile, ServiceName, ServiceProfile}
+import com.vyulabs.update.common.common.Common.{CommonServiceProfile, ServiceId, ServiceProfile}
 import spray.json.{JsString, JsValue, RootJsonFormat}
 
-case class ProfiledServiceName(name: ServiceName, profile: ServiceProfile) {
+case class ProfiledServiceName(name: ServiceId, profile: ServiceProfile) {
   override def toString: String = {
     if (profile != CommonServiceProfile) {
       name + "-" + profile
@@ -19,11 +19,11 @@ object ProfiledServiceName {
     def read(value: JsValue) = ProfiledServiceName.parse(value.asInstanceOf[JsString].value)
   }
 
-  def apply(service: ServiceName): ProfiledServiceName = {
+  def apply(service: ServiceId): ProfiledServiceName = {
     ProfiledServiceName(service, CommonServiceProfile)
   }
 
-  def apply(service: ServiceName, serviceProfile: ServiceProfile): ProfiledServiceName = {
+  def apply(service: ServiceId, serviceProfile: ServiceProfile): ProfiledServiceName = {
     new ProfiledServiceName(service, serviceProfile)
   }
 

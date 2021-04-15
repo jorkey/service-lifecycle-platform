@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{FaultId, ServiceName}
+import com.vyulabs.update.common.common.Common.{FaultId, ServiceId}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.distribution.TestEnvironment
@@ -83,7 +83,7 @@ class FaultReportInfoTest extends TestEnvironment {
     clear()
   }
 
-  def addFaultReportInfo(faultId: FaultId, service: ServiceName, sequence: Long, date: Date): Unit = {
+  def addFaultReportInfo(faultId: FaultId, service: ServiceId, sequence: Long, date: Date): Unit = {
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
@@ -118,7 +118,7 @@ class FaultReportInfoTest extends TestEnvironment {
     checkReportExists(faultId, service, sequence, date)
   }
 
-  def checkReportExists(faultId: FaultId, service: ServiceName, sequence: Long, date: Date): Unit = {
+  def checkReportExists(faultId: FaultId, service: ServiceId, sequence: Long, date: Date): Unit = {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("distribution",
         ServiceFaultReport(faultId, FaultInfo(date, "instance1", service, "directory1", "Common", ServiceState(date, None, None, None, None, None, None, None), Seq("line1", "line2")), Seq("core", "log/service.log")))))

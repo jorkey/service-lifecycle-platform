@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.{builderMutations, builderQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.SettingsDirectory
@@ -21,7 +21,7 @@ import java.util.Date
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class ClientBuilder(builderDir: File, val distribution: DistributionName) {
+class ClientBuilder(builderDir: File, val distribution: DistributionId) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val clientDir = makeDir(new File(builderDir, "client"))
@@ -29,12 +29,12 @@ class ClientBuilder(builderDir: File, val distribution: DistributionName) {
 
   private val settingsDirectory = new SettingsDirectory(builderDir, distribution)
 
-  def clientServiceDir(service: ServiceName) = makeDir(new File(servicesDir, service))
-  def clientBuildDir(service: ServiceName) = makeDir(new File(clientServiceDir(service), "build"))
+  def clientServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
+  def clientBuildDir(service: ServiceId) = makeDir(new File(clientServiceDir(service), "build"))
 
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
-  def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceName,
+  def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                          developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion,
                          author: String, arguments: Map[String, String])(implicit log: Logger): Boolean = {
     val versionInfo = downloadDeveloperVersion(distributionClient, service, developerVersion).getOrElse {
@@ -52,13 +52,13 @@ class ClientBuilder(builderDir: File, val distribution: DistributionName) {
       author, versionInfo.buildInfo)
   }
 
-  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceName,
+  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                           version: ClientDistributionVersion, author: String): Boolean = {
     val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
     uploadClientVersion(distributionClient, service, version, author, buildInfo)
   }
 
-  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceName,
+  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                           version: ClientDistributionVersion, author: String, buildInfo: BuildInfo)(implicit log: Logger): Boolean = {
     if (!ZipUtils.zipAndSend(clientBuildDir(service), file => distributionClient.uploadClientVersionImage(service, version, file))) {
       return false
@@ -70,7 +70,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionName) {
     true
   }
 
-  def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceName,
+  def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                                version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
     log.info(s"Get developer version ${version} of service ${service} info")
     val versionInfo = distributionClient.graphqlRequest(builderQueries.getDeveloperVersionsInfo(service)).getOrElse(Seq.empty).headOption.getOrElse {
@@ -89,7 +89,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionName) {
     Some(versionInfo)
   }
 
-  def generateClientVersion(service: ServiceName, arguments: Map[String, String])(implicit log: Logger): Boolean = {
+  def generateClientVersion(service: ServiceId, arguments: Map[String, String])(implicit log: Logger): Boolean = {
     if (!mergeInstallConfigFile(service)) {
       return false
     }
@@ -113,7 +113,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionName) {
     true
   }
 
-  def makeClientVersionImage(service: ServiceName): Option[File] = {
+  def makeClientVersionImage(service: ServiceId): Option[File] = {
     val directory = clientBuildDir(service)
     val file = Files.createTempFile(s"${service}-version", "zip").toFile
     file.deleteOnExit()
@@ -124,7 +124,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionName) {
     }
   }
 
-  private def mergeInstallConfigFile(service: ServiceName)(implicit log: Logger): Boolean = {
+  private def mergeInstallConfigFile(service: ServiceId)(implicit log: Logger): Boolean = {
     val buildConfigFile = new File(clientBuildDir(service), Common.InstallConfigFileName)
     val clientConfigFile = settingsDirectory.getServiceInstallConfigFile(service)
     if (clientConfigFile.exists()) {
@@ -142,7 +142,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionName) {
     }
   }
 
-  private def mergeSettings(service: ServiceName, buildDirectory: File, localDirectory: File,
+  private def mergeSettings(service: ServiceId, buildDirectory: File, localDirectory: File,
                             arguments: Map[String, String], subPath: String = "")(implicit log: Logger): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {
       if (localFile.isDirectory) {

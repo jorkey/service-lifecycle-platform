@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{ConsumerProfile, ServiceName}
+import com.vyulabs.update.common.common.Common.{ConsumerProfile, ServiceId}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.DistributionConsumerProfile
 import com.vyulabs.update.distribution.graphql.NotFoundException
@@ -22,7 +22,7 @@ trait DistributionConsumerProfilesUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceName]): Future[Unit] = {
+  def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceId]): Future[Unit] = {
     collections.Distribution_ConsumerProfiles.update(Filters.eq("consumerProfile", consumerProfile),
       _ => Some(DistributionConsumerProfile(consumerProfile, services))).map(_ => ())
   }

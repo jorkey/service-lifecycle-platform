@@ -5,10 +5,10 @@ package com.vyulabs.update.common.common
   * Copyright FanDate, Inc.
   */
 object Common {
-  type DistributionName = String
-  type ServiceName = String
+  type DistributionId = String
+  type ServiceId = String
   type ServiceProfile = String
-  type UserName = String
+  type UserId = String
   type InstanceId = String
   type ProcessId = String
   type TaskId = String
@@ -50,7 +50,7 @@ object Common {
   val BuilderSh = "builder.sh"
   val UpdateSh = ".update.sh"
 
-  def isUpdateService(service: ServiceName): Boolean = {
+  def isUpdateService(service: ServiceId): Boolean = {
     service == ScriptsServiceName ||
     service == DistributionServiceName ||
     service == BuilderServiceName ||

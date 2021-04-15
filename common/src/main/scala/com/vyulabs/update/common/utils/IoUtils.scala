@@ -2,7 +2,7 @@ package com.vyulabs.update.common.utils
 
 import com.typesafe.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
@@ -187,7 +187,7 @@ object IoUtils {
     }
   }
 
-  def readServiceVersion(service: ServiceName, directory: File)(implicit log: Logger): Option[ClientDistributionVersion] = {
+  def readServiceVersion(service: ServiceId, directory: File)(implicit log: Logger): Option[ClientDistributionVersion] = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(service))
     if (versionMarkFile.exists()) {
       readFileToJson[ClientDistributionVersion](versionMarkFile)
@@ -196,7 +196,7 @@ object IoUtils {
     }
   }
 
-  def getServiceInstallTime(service: ServiceName, directory: File)(implicit log: Logger): Option[Date] = {
+  def getServiceInstallTime(service: ServiceId, directory: File)(implicit log: Logger): Option[Date] = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(service))
     if (versionMarkFile.exists()) {
       Some(new Date(versionMarkFile.lastModified()))
@@ -205,13 +205,13 @@ object IoUtils {
     }
   }
 
-  def writeDesiredServiceVersion(directory: File, service: ServiceName, version: ClientDistributionVersion)
+  def writeDesiredServiceVersion(directory: File, service: ServiceId, version: ClientDistributionVersion)
                                  (implicit log: Logger): Boolean = {
     val desiredVersionMarkFile = new File(directory, Common.DesiredVersionMarkFile.format(service))
     writeJsonToFile(desiredVersionMarkFile, version)
   }
 
-  def writeServiceVersion(directory: File, service: ServiceName, version: ClientDistributionVersion)
+  def writeServiceVersion(directory: File, service: ServiceId, version: ClientDistributionVersion)
                          (implicit log: Logger): Boolean = {
     val versionMarkFile = new File(directory, Common.VersionMarkFile.format(service))
     writeJsonToFile(versionMarkFile, version)

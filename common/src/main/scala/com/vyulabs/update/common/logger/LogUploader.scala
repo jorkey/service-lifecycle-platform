@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.logger
 
-import com.vyulabs.update.common.common.Common.{InstanceId, ServiceName, TaskId}
+import com.vyulabs.update.common.common.Common.{InstanceId, ServiceId, TaskId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.AddServiceLogsCoder
 import com.vyulabs.update.common.info.LogLine
@@ -9,7 +9,7 @@ import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LogUploader[Source[_]](service: ServiceName, taskId: Option[TaskId], instance: InstanceId, client: DistributionClient[Source])
+class LogUploader[Source[_]](service: ServiceId, taskId: Option[TaskId], instance: InstanceId, client: DistributionClient[Source])
                             (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = NOPLogger.NOP_LOGGER
 

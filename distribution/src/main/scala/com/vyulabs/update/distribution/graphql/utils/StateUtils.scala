@@ -31,22 +31,22 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  def setInstalledDesiredVersions(distribution: DistributionName, desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Unit] = {
+  def setInstalledDesiredVersions(distribution: DistributionId, desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Unit] = {
     val clientArg = Filters.eq("distribution", distribution)
     collections.State_InstalledDesiredVersions.update(clientArg, _ => Some(InstalledDesiredVersions(distribution, desiredVersions))).map(_ => ())
   }
 
-  def getInstalledDesiredVersions(distribution: DistributionName, services: Set[ServiceName] = Set.empty)(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
+  def getInstalledDesiredVersions(distribution: DistributionId, services: Set[ServiceId] = Set.empty)(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
     val clientArg = Filters.eq("distribution", distribution)
     collections.State_InstalledDesiredVersions.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))
       .map(_.filter(v => services.isEmpty || services.contains(v.service)).sortBy(_.service))
   }
 
-  def getInstalledDesiredVersion(distribution: DistributionName, service: ServiceName)(implicit log: Logger): Future[Option[ClientDesiredVersion]] = {
+  def getInstalledDesiredVersion(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Option[ClientDesiredVersion]] = {
     getInstalledDesiredVersions(distribution, Set(service)).map(_.headOption)
   }
 
-  def setTestedVersions(distribution: DistributionName, desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
+  def setTestedVersions(distribution: DistributionId, desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     for {
       clientConfig <- getDistributionConsumerInfo(distribution)
       testedVersions <- getTestedVersions(clientConfig.consumerProfile)
@@ -74,7 +74,7 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     setServiceStates(config.distribution, states.map(state => InstanceServiceState(config.instance, state.service, state.directory, state.state)))
   }
 
-  def setServiceStates(distribution: DistributionName, instanceStates: Seq[InstanceServiceState])(implicit log: Logger): Future[Unit] = {
+  def setServiceStates(distribution: DistributionId, instanceStates: Seq[InstanceServiceState])(implicit log: Logger): Future[Unit] = {
     val documents = instanceStates.foldLeft(Seq.empty[DistributionServiceState])((seq, state) => seq :+ DistributionServiceState(distribution, state))
     Future.sequence(documents.map(doc => {
       val filters = Filters.and(
@@ -86,7 +86,7 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     })).map(_ => ())
   }
 
-  def getServicesState(distribution: Option[DistributionName], service: Option[ServiceName],
+  def getServicesState(distribution: Option[DistributionId], service: Option[ServiceId],
                        instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[DistributionServiceState]] = {
     val distributionArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
     val serviceArg = service.map { service => Filters.eq("instance.service", service) }
@@ -97,19 +97,19 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     collections.State_ServiceStates.find(filters)
   }
 
-  def getInstanceServiceStates(distribution: Option[DistributionName], service: Option[ServiceName],
+  def getInstanceServiceStates(distribution: Option[DistributionId], service: Option[ServiceId],
                                instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
     getServicesState(distribution, service, instance, directory).map(_.map(_.instance))
   }
 
-  def addServiceLogs(distribution: DistributionName, service: ServiceName, taskId: Option[TaskId],
+  def addServiceLogs(distribution: DistributionId, service: ServiceId, taskId: Option[TaskId],
                      instance: InstanceId, processId: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
     val documents = logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
       ServiceLogLine(distribution, service, taskId, instance, processId, directory, line) })
     collections.State_ServiceLogs.insert(documents).map(_ => ())
   }
 
-  def getServiceLogs(distribution: DistributionName, service: ServiceName, instance: InstanceId,
+  def getServiceLogs(distribution: DistributionId, service: ServiceId, instance: InstanceId,
                      processId: ProcessId, directory: ServiceDirectory, fromSequence: Option[Long])
                     (implicit log: Logger): Future[Seq[Sequenced[ServiceLogLine]]] = {
     val distributionArg = Filters.eq("distribution", distribution)
@@ -130,7 +130,7 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     collections.State_ServiceLogs.findSequenced(filters)
   }
 
-  def subscribeServiceLogs(distribution: DistributionName, service: ServiceName,
+  def subscribeServiceLogs(distribution: DistributionId, service: ServiceId,
                            instance: InstanceId, processId: ProcessId, directory: ServiceDirectory,
                            fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
     val distributionArg = Filters.eq("distribution", distribution)
@@ -167,14 +167,14 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line")).mapMaterializedValue(_ => NotUsed).take(5)
   }
 
-  def addServiceFaultReportInfo(distribution: DistributionName, report: ServiceFaultReport)(implicit log: Logger): Future[Unit] = {
+  def addServiceFaultReportInfo(distribution: DistributionId, report: ServiceFaultReport)(implicit log: Logger): Future[Unit] = {
     for {
       result <- collections.State_FaultReportsInfo.insert(DistributionFaultReport(distribution, report)).map(_ => ())
       _ <- clearOldReports()
     } yield result
   }
 
-  def getDistributionFaultReportsInfo(distribution: Option[DistributionName], service: Option[ServiceName],
+  def getDistributionFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId],
                                       last: Option[Int])(implicit log: Logger)
       : Future[Seq[DistributionFaultReport]] = {
     val clientArg = distribution.map { distribution => Filters.eq("distribution", distribution) }

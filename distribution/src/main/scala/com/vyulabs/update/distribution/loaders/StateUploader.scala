@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts, Updates}
-import com.vyulabs.update.common.common.Common.DistributionName
+import com.vyulabs.update.common.common.Common.DistributionId
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -26,7 +26,7 @@ import scala.util.{Failure, Success}
   * Copyright FanDate, Inc.
   */
 
-class StateUploader(distribution: DistributionName, collections: DatabaseCollections, distributionDirectory: DistributionDirectory,
+class StateUploader(distribution: DistributionId, collections: DatabaseCollections, distributionDirectory: DistributionDirectory,
                     uploadInterval: FiniteDuration, client: DistributionClient[AkkaSource])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
@@ -157,7 +157,7 @@ class StateUploader(distribution: DistributionName, collections: DatabaseCollect
 }
 
 object StateUploader {
-  def apply(distribution: DistributionName,
+  def apply(distribution: DistributionId,
             collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration, distributionUrl: URL)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
     new StateUploader(distribution, collections, distributionDirectory, uploadInterval, new DistributionClient(new AkkaHttpClient(distributionUrl)))

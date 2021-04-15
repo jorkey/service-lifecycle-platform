@@ -29,6 +29,7 @@ object GraphqlSchema {
   // Arguments
 
   val UserArg = Argument("user", StringType)
+  val HumanArg = Argument("human", BooleanType)
   val NameArg = Argument("name", StringType)
   val OldPasswordArg = Argument("oldPassword", StringType)
   val PasswordArg = Argument("password", StringType)
@@ -61,6 +62,7 @@ object GraphqlSchema {
   val UrlArg = Argument("url", UrlType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
+  val OptionHumanArg = Argument("human", OptionInputType(BooleanType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
@@ -105,9 +107,9 @@ object GraphqlSchema {
 
       // Users
       Field("usersInfo", ListType(UserInfoType),
-        arguments = OptionUserArg :: Nil,
+        arguments = OptionUserArg :: OptionHumanArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg)) }),
+        resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg), c.arg(OptionHumanArg)) }),
 
       // Developer versions
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
@@ -191,9 +193,10 @@ object GraphqlSchema {
 
       // Users management
       Field("addUser", BooleanType,
-        arguments = UserArg :: NameArg :: PasswordArg :: UserRolesArg :: OptionEmailArg :: OptionNotificationsArg :: Nil,
+        arguments = UserArg :: HumanArg :: NameArg :: PasswordArg :: UserRolesArg ::
+          OptionEmailArg :: OptionNotificationsArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(NameArg),
+        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(HumanArg), c.arg(NameArg),
           c.arg(PasswordArg), c.arg(UserRolesArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg)).map(_ => true) }),
       Field("removeUser", BooleanType,
         arguments = UserArg :: Nil,

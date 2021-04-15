@@ -18,64 +18,64 @@ object PingCoder {
 }
 
 trait DistributionConsumersCoder {
-  def getDistributionProvidersInfo(distribution: Option[DistributionName] = None) =
+  def getDistributionProvidersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionProviderInfo]]("distributionProvidersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
       subSelection = "{ distribution, distributionUrl, uploadStateInterval }")
 
-  def getDistributionConsumersInfo(distribution: Option[DistributionName] = None) =
+  def getDistributionConsumersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionConsumersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
       subSelection = "{ distribution, consumerProfile, testDistributionMatch }")
 
-  def getDistributionProviderDesiredVersions(distribution: DistributionName) =
+  def getDistributionProviderDesiredVersions(distribution: DistributionId) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("distributionProviderDesiredVersions",
       Seq(GraphqlArgument("distribution" -> distribution)),
       "{ service, version { distribution, build } }")
 }
 
 trait DeveloperVersionsInfoCoder {
-  def getDeveloperVersionsInfo(service: ServiceName, distribution: Option[DistributionName] = None, version: Option[DeveloperVersion] = None) =
+  def getDeveloperVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[DeveloperVersion] = None) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "DeveloperVersionInput")).filter(_.value != JsNull),
       "{ service, version { distribution, build }, buildInfo { author, branches, date, comment } }")
 }
 
 trait ClientVersionsInfoCoder {
-  def getClientVersionsInfo(service: ServiceName, distribution: Option[DistributionName] = None, version: Option[ClientVersion] = None) =
+  def getClientVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[ClientVersion] = None) =
     GraphqlQuery[Seq[ClientVersionInfo]]("clientVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "ClientVersionInput")).filter(_.value != JsNull),
       "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, branches, date, comment }, installInfo { user,  date} }")
 
-  def getInstalledDesiredVersions(distribution: DistributionName, services: Seq[ServiceName]) =
+  def getInstalledDesiredVersions(distribution: DistributionId, services: Seq[ServiceId]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("services" -> services, "[String!]")).filter(_.value != JsArray.empty),
       "{ service, version { distribution, developerBuild, clientBuild } }")
 }
 
 trait DeveloperDesiredVersionsCoder {
-  def getDeveloperDesiredVersions(services: Seq[ServiceName] = Seq.empty) =
+  def getDeveloperDesiredVersions(services: Seq[ServiceId] = Seq.empty) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("developerDesiredVersions",
       Seq(GraphqlArgument("services" -> services, "[String!]")).filter(_.value != JsArray.empty),
       "{ service, version { distribution, build } }")
 }
 
 trait ClientDesiredVersionsCoder {
-  def getClientDesiredVersions(services: Seq[ServiceName] = Seq.empty) =
+  def getClientDesiredVersions(services: Seq[ServiceId] = Seq.empty) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("clientDesiredVersions",
       Seq(GraphqlArgument("services" -> services, "[String!]")).filter(_.value != JsArray.empty),
       "{ service, version { distribution, developerBuild, clientBuild } }")
 }
 
 trait StateCoder {
-  def getServiceStates(distribution: Option[DistributionName] = None, service: Option[ServiceName] = None, instance: Option[InstanceId] = None, directory: Option[ServiceDirectory] = None) =
+  def getServiceStates(distribution: Option[DistributionId] = None, service: Option[ServiceId] = None, instance: Option[InstanceId] = None, directory: Option[ServiceDirectory] = None) =
     GraphqlQuery[Seq[DistributionServiceState]]("serviceStates",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service),
         GraphqlArgument("instance" -> instance), GraphqlArgument("directory" -> directory)).filter(_.value != JsNull),
       "{ distribution instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } } }"
     )
 
-  def getFaultReportsInfo(distribution: Option[DistributionName], service: Option[ServiceName], last: Option[Int]) =
+  def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], last: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faultReportsInfo",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
       "{ distribution, report { faultId, info { date, instance, service, serviceDirectory, serviceProfile, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
@@ -84,13 +84,13 @@ trait StateCoder {
 // Mutations
 
 object LoginCoder {
-  def login(user: UserName, password: String) =
+  def login(user: UserId, password: String) =
     GraphqlMutation[String]("login",
       Seq(GraphqlArgument("user" -> user), GraphqlArgument("password" -> password)))
 }
 
 trait AddServiceLogsCoder {
-  def addServiceLogs(service: ServiceName, instance: InstanceId, processId: ProcessId, taskId: Option[TaskId],
+  def addServiceLogs(service: ServiceId, instance: InstanceId, processId: ProcessId, taskId: Option[TaskId],
                      serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
     GraphqlMutation[Boolean]("addServiceLogs",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("instance" -> instance), GraphqlArgument("process" -> processId),
@@ -108,49 +108,51 @@ trait AddFaultReportInfoCoder {
 }
 
 trait UsersAdministrationCoder {
-  def addUser(user: UserName, roles: Seq[UserRole], password: String) =
-    GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> user), GraphqlArgument("roles" -> roles, "[UserRole!]"), GraphqlArgument("password" -> password)))
-  def removeUser(user: UserName) =
+  def addUser(user: UserId, human: Boolean, name: String, password: String, roles: Seq[UserRole]) =
+    GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> user),
+      GraphqlArgument("human" -> human), GraphqlArgument("name" -> name),
+      GraphqlArgument("password" -> password), GraphqlArgument("roles" -> roles, "[UserRole!]")))
+  def removeUser(user: UserId) =
     GraphqlMutation[Boolean]("removeUser", Seq(GraphqlArgument("user" -> user)))
 }
 
 trait ConsumersAdministrationCoder {
-  def addDistributionProvider(distribution: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
+  def addDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
-  def removeDistributionProvider(distribution: DistributionName) =
+  def removeDistributionProvider(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeDistributionProvider", Seq(GraphqlArgument("distribution" -> distribution)))
 
-  def installProviderVersion(distribution: DistributionName, service: ServiceName, version: DeveloperDistributionVersion) =
+  def installProviderVersion(distribution: DistributionId, service: ServiceId, version: DeveloperDistributionVersion) =
     GraphqlMutation[String]("installProviderVersion",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput")))
 
-  def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceName]) =
+  def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceId]) =
     GraphqlMutation[Boolean]("addDistributionConsumerProfile", Seq(GraphqlArgument("profile" -> consumerProfile),
       GraphqlArgument("services" -> services, "[String!]")))
   def removeDistributionConsumerProfile(consumerProfile: ConsumerProfile) =
     GraphqlMutation[Boolean]("removeDistributionConsumerProfile", Seq(GraphqlArgument("profile" -> consumerProfile)))
 
-  def addDistributionConsumer(distribution: DistributionName, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]) =
+  def addDistributionConsumer(distribution: DistributionId, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]) =
     GraphqlMutation[Boolean]("addDistributionConsumer", Seq(GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("profile" -> consumerProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)).filter(_.value != JsNull))
-  def removeDistributionConsumer(distribution: DistributionName) =
+  def removeDistributionConsumer(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeDistributionConsumer", Seq(GraphqlArgument("distribution" -> distribution)))
 }
 
 trait BuildDeveloperVersionCoder {
-  def buildDeveloperVersion(service: ServiceName, version: DeveloperVersion) =
+  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> service), GraphqlArgument("version" -> version, "DeveloperVersionInput")))
 }
 
 trait RemoveDeveloperVersionCoder {
-  def removeDeveloperVersion(service: ServiceName, version: DeveloperDistributionVersion) =
+  def removeDeveloperVersion(service: ServiceId, version: DeveloperDistributionVersion) =
     GraphqlMutation[Boolean]("removeDeveloperVersion", Seq(GraphqlArgument("service" -> service),
       GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput")))
 }
 
 trait BuildClientVersionCoder {
-  def buildClientVersion(service: ServiceName, developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion) =
+  def buildClientVersion(service: ServiceId, developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion) =
     GraphqlMutation[String]("buildClientVersion", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("developerVersion" -> developerVersion, "DeveloperDistributionVersionInput"),
@@ -158,7 +160,7 @@ trait BuildClientVersionCoder {
 }
 
 trait RemoveClientVersionCoder {
-  def removeClientVersion(service: ServiceName, version: ClientDistributionVersion) =
+  def removeClientVersion(service: ServiceId, version: ClientDistributionVersion) =
     GraphqlMutation[Boolean]("removeClientVersion",
       Seq(GraphqlArgument("service" -> service),
         GraphqlArgument("version" -> version, "ClientDistributionVersionInput")))

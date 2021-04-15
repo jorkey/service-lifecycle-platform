@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.InstallConfig._
 import com.vyulabs.update.common.config.UpdateConfig
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
@@ -23,7 +23,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.Date
 
-class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
+class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val builderLockFile = "builder.lock"
@@ -33,18 +33,18 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
 
   private val settingsDirectory = new SettingsDirectory(builderDir, distribution)
 
-  def developerServiceDir(service: ServiceName) = makeDir(new File(servicesDir, service))
-  def developerBuildDir(service: ServiceName) = makeDir(new File(developerServiceDir(service), "build"))
-  def developerSourceDir(service: ServiceName) = makeDir(new File(developerServiceDir(service), "source"))
+  def developerServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
+  def developerBuildDir(service: ServiceId) = makeDir(new File(developerServiceDir(service), "build"))
+  def developerSourceDir(service: ServiceId) = makeDir(new File(developerServiceDir(service), "source"))
 
-  def getBuildDirectory(service: ServiceName, subDirectory: Option[String]): File = {
+  def getBuildDirectory(service: ServiceId, subDirectory: Option[String]): File = {
     subDirectory.map(subDirectory => new File(developerSourceDir(service), subDirectory)).getOrElse {
       developerSourceDir(service)
     }
   }
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
-                            author: String, service: ServiceName, newVersion: DeveloperVersion,
+                            author: String, service: ServiceId, newVersion: DeveloperVersion,
                             comment: Option[String], sourceBranches: Seq[String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     val newDistributionVersion = DeveloperDistributionVersion.from(distribution, newVersion)
@@ -93,7 +93,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
       }).getOrElse(false)
   }
 
-  def getSourcesConfig(service: ServiceName): Seq[SourceConfig] = {
+  def getSourcesConfig(service: ServiceId): Seq[SourceConfig] = {
     val sourcesConfig = SourcesConfig.fromFile(settingsDirectory.getSourcesFile()).getOrElse {
       log.error("Can't get config of sources")
       return Seq.empty
@@ -104,7 +104,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
     }
   }
 
-  def prepareSourceDirectories(service: ServiceName, sourceBranches: Seq[String],
+  def prepareSourceDirectories(service: ServiceId, sourceBranches: Seq[String],
                                sourcesConfig: Seq[SourceConfig]): Option[Seq[GitRepository]] = {
     var gitRepositories = Seq.empty[GitRepository]
     val sourceBranchIt = sourceBranches.iterator
@@ -131,7 +131,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
     Some(gitRepositories)
   }
 
-  def generateDeveloperVersion(service: ServiceName, sourceDirectory: File, arguments: Map[String, String])
+  def generateDeveloperVersion(service: ServiceId, sourceDirectory: File, arguments: Map[String, String])
                               (implicit log: Logger): Boolean = {
     val directory = developerBuildDir(service)
 
@@ -194,7 +194,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
     true
   }
 
-  def makeDeveloperVersionImage(service: ServiceName): Option[File] = {
+  def makeDeveloperVersionImage(service: ServiceId): Option[File] = {
     val directory = developerBuildDir(service)
     val file = Files.createTempFile(s"${service}-version", "zip").toFile
     file.deleteOnExit()
@@ -206,14 +206,14 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
   }
 
   def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
-                             service: ServiceName, version: DeveloperDistributionVersion, author: String): Boolean = {
+                             service: ServiceId, version: DeveloperDistributionVersion, author: String): Boolean = {
     val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
     ZipUtils.zipAndSend(developerBuildDir(service), file => {
       uploadDeveloperVersion(distributionClient, service, version, buildInfo, file)
     })
   }
 
-  def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceName,
+  def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                              version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
     if (!distributionClient.uploadDeveloperVersionImage(service, version, imageFile)) {
       log.error("Uploading version image error")
@@ -227,7 +227,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionName) {
     true
   }
 
-  private def markSourceRepositories(sourceRepositories: Seq[GitRepository], service: ServiceName,
+  private def markSourceRepositories(sourceRepositories: Seq[GitRepository], service: ServiceId,
                                      version: DeveloperDistributionVersion, comment: Option[String]): Boolean = {
     for (repository <- sourceRepositories) {
       log.info(s"Mark source repository with version ${version}")

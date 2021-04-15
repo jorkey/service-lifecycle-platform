@@ -64,7 +64,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
 
   val Users_Info = new SequencedCollection[ServerUserInfo]("usersInfo", for {
     collection <- db.getOrCreateCollection[BsonDocument]("usersInfo")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("user", "_archiveTime"), new IndexOptions().unique(true)) else Future()
+    _ <- if (createIndices) {
+      collection.createIndex(Indexes.ascending("user", "_archiveTime"), new IndexOptions().unique(true))
+      collection.createIndex(Indexes.ascending("human"))
+    } else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Distribution_ProvidersInfo = new SequencedCollection[DistributionProviderInfo]("distribution.providersInfo", for {
@@ -144,7 +147,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
       adminRecords <- Users_Info.find(filters)
     } yield {
       if (adminRecords.isEmpty) {
-        Users_Info.insert(ServerUserInfo("admin", "Administrator", PasswordHash("admin"),
+        Users_Info.insert(ServerUserInfo("admin", true, "Administrator", PasswordHash("admin"),
           Seq(UserRole.Administrator.toString), None, Seq.empty))
       } else {
         Future()

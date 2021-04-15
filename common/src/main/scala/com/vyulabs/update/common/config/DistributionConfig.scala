@@ -1,7 +1,7 @@
 package com.vyulabs.update.common.config
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId}
+import com.vyulabs.update.common.common.Common.{DistributionId, InstanceId}
 import com.vyulabs.update.common.utils.IoUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
@@ -47,12 +47,12 @@ object FaultReportsConfig {
   implicit val faultReportsConfigJson = jsonFormat2(FaultReportsConfig.apply)
 }
 
-case class DistributionConfig(distribution: DistributionName, title: String, instance: InstanceId, jwtSecret: String,
+case class DistributionConfig(distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
                               mongoDb: MongoDbConfig, network: NetworkConfig, remoteBuilder: Option[RemoteBuilderConfig],
                               versions: VersionsConfig, instanceState: InstanceStateConfig, faultReports: FaultReportsConfig)
 
 object DistributionConfig {
-  implicit val distributionConfigJson = jsonFormat10((name: DistributionName, title: String, instance: InstanceId, jwtSecret: String,
+  implicit val distributionConfigJson = jsonFormat10((name: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
                                                       mongoDb: MongoDbConfig, network: NetworkConfig, builder: Option[RemoteBuilderConfig],
                                                       versions: VersionsConfig, instanceState: InstanceStateConfig,
                                                       faultReports: FaultReportsConfig) =>

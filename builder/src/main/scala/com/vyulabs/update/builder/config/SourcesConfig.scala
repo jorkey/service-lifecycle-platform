@@ -1,6 +1,6 @@
 package com.vyulabs.update.builder.config
 
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.utils.IoUtils
 import org.slf4j.Logger
 import spray.json._
@@ -19,7 +19,7 @@ object SourceConfig extends DefaultJsonProtocol {
   implicit val repositoryConfigJson = jsonFormat2(SourceConfig.apply)
 }
 
-case class SourcesConfig(sources: Map[ServiceName, Seq[SourceConfig]])
+case class SourcesConfig(sources: Map[ServiceId, Seq[SourceConfig]])
 
 object SourcesConfig extends DefaultJsonProtocol {
   import SourceConfig._

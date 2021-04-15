@@ -1,7 +1,7 @@
 package com.vyulabs.update.common.distribution.server
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
@@ -39,11 +39,11 @@ class DistributionDirectory(val directory: File) {
     new File(directory, Common.DistributionConfigFileName)
   }
 
-  def getDeveloperVersionImageFileName(service: ServiceName, version: DeveloperVersion): String = {
+  def getDeveloperVersionImageFileName(service: ServiceId, version: DeveloperVersion): String = {
     service + "-" + version + ".zip"
   }
 
-  def getClientVersionImageFileName(service: ServiceName, version: ClientVersion): String = {
+  def getClientVersionImageFileName(service: ServiceId, version: ClientVersion): String = {
     service + "-" + version + ".zip"
   }
 
@@ -55,7 +55,7 @@ class DistributionDirectory(val directory: File) {
     IoUtils.deleteFileRecursively(directory)
   }
 
-  def getDeveloperServiceDir(distribution: DistributionName, service: ServiceName): File = {
+  def getDeveloperServiceDir(distribution: DistributionId, service: ServiceId): File = {
     val dir1 = new File(developerServicesDir, distribution)
     if (!dir1.exists()) dir1.mkdir()
     val dir2 = new File(dir1, service)
@@ -63,7 +63,7 @@ class DistributionDirectory(val directory: File) {
     dir2
   }
 
-  def getClientServiceDir(distribution: DistributionName, service: ServiceName): File = {
+  def getClientServiceDir(distribution: DistributionId, service: ServiceId): File = {
     val dir1 = new File(clientServicesDir, distribution)
     if (!dir1.exists()) dir1.mkdir()
     val dir2 = new File(dir1, service)
@@ -71,11 +71,11 @@ class DistributionDirectory(val directory: File) {
     dir2
   }
 
-  def getDeveloperVersionImageFile(service: ServiceName, version: DeveloperDistributionVersion): File = {
+  def getDeveloperVersionImageFile(service: ServiceId, version: DeveloperDistributionVersion): File = {
     new File(getDeveloperServiceDir(version.distribution, service), getDeveloperVersionImageFileName(service, version.developerVersion))
   }
 
-  def getClientVersionImageFile(service: ServiceName, version: ClientDistributionVersion): File = {
+  def getClientVersionImageFile(service: ServiceId, version: ClientDistributionVersion): File = {
     new File(getClientServiceDir(version.distribution, service), getClientVersionImageFileName(service, version.clientVersion))
   }
 

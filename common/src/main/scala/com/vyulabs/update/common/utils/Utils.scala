@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.utils
 
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.helpers.SubstituteLogger
 import org.slf4j.{Logger, LoggerFactory}
@@ -69,7 +69,7 @@ object Utils {
     }
   }
 
-  def isServiceNeedUpdate(service: ServiceName,
+  def isServiceNeedUpdate(service: ServiceId,
                           ownVersion: Option[ClientDistributionVersion], desiredVersion: Option[ClientDistributionVersion])
                          (implicit log: Logger) : Option[ClientDistributionVersion] = {
     ownVersion match {

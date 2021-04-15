@@ -1,7 +1,7 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
@@ -25,7 +25,7 @@ class SelfUpdater(state: ServiceStateController, distributionClient: Distributio
 
   state.serviceStarted()
 
-  def needUpdate(service: ServiceName, desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
+  def needUpdate(service: ServiceId, desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
     Utils.isServiceNeedUpdate(service, getVersion(service), desiredVersion)
   }
 
@@ -33,7 +33,7 @@ class SelfUpdater(state: ServiceStateController, distributionClient: Distributio
     state.serviceStopped()
   }
 
-  def beginServiceUpdate(service: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
+  def beginServiceUpdate(service: ServiceId, toVersion: ClientDistributionVersion): Boolean = {
     log.info(s"Service ${service} is obsolete. Own version ${getVersion(service)} desired version ${toVersion}")
     state.beginUpdateToVersion(toVersion)
     log.info(s"Downloading ${service} of version ${toVersion}")
@@ -48,7 +48,7 @@ class SelfUpdater(state: ServiceStateController, distributionClient: Distributio
     true
   }
 
-  private def getVersion(service: ServiceName): Option[ClientDistributionVersion] = {
+  private def getVersion(service: ServiceId): Option[ClientDistributionVersion] = {
     if (service == Common.UpdaterServiceName) {
       updaterVersion
     } else if (service == Common.ScriptsServiceName) {

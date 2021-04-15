@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionName, ServiceName, TaskId}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -34,23 +34,23 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def addDistributionProvider(distribution: DistributionName, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
+  def addDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
     collections.Distribution_ProvidersInfo.update(Filters.eq("distribution", distribution),
       _ => Some(DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval))).map(_ => ())
   }
 
-  def removeDistributionProvider(distribution: DistributionName): Future[Unit] = {
+  def removeDistributionProvider(distribution: DistributionId): Future[Unit] = {
     collections.Distribution_ProvidersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
   }
 
-  def getDistributionProviderDesiredVersions(distribution: DistributionName)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+  def getDistributionProviderDesiredVersions(distribution: DistributionId)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       distributionProviderClient <- getDistributionProviderClient(distribution)
       desiredVersions <- distributionProviderClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
     } yield desiredVersions
   }
 
-  def installProviderVersion(distributionProvider: DistributionName, service: ServiceName, version: DeveloperDistributionVersion)
+  def installProviderVersion(distributionProvider: DistributionId, service: ServiceId, version: DeveloperDistributionVersion)
                             (implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Download and install developer version ${version} of service ${service}",
       (taskId, logger) => {
@@ -89,18 +89,18 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
     task.taskId
   }
 
-  def getDistributionProvidersInfo(distribution: Option[DistributionName] = None)(implicit log: Logger): Future[Seq[DistributionProviderInfo]] = {
+  def getDistributionProvidersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionProviderInfo]] = {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val args = distributionArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Distribution_ProvidersInfo.find(filters)
   }
 
-  def getDistributionProviderInfo(distribution: DistributionName)(implicit log: Logger): Future[DistributionProviderInfo] = {
+  def getDistributionProviderInfo(distribution: DistributionId)(implicit log: Logger): Future[DistributionProviderInfo] = {
     getDistributionProvidersInfo(Some(distribution)).map(_.headOption.getOrElse(throw NotFoundException(s"No distribution provider ${distribution} config")))
   }
 
-  private def getDistributionProviderClient(distribution: DistributionName): Future[DistributionClient[AkkaSource]] = {
+  private def getDistributionProviderClient(distribution: DistributionId): Future[DistributionClient[AkkaSource]] = {
     getDistributionProvidersInfo().map(_.find(_.distribution == distribution).headOption.map(
       info => new DistributionClient(new AkkaHttpClient(info.distributionUrl))).getOrElse(
         throw new IOException(s"Distribution provider server ${distribution} is not defined")))

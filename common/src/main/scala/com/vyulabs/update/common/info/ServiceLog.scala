@@ -12,7 +12,7 @@ object LogLine extends DefaultJsonProtocol {
   implicit val logLineJson = jsonFormat5(LogLine.apply)
 }
 
-case class ServiceLogLine(distribution: DistributionName, service: ServiceName,
+case class ServiceLogLine(distribution: DistributionId, service: ServiceId,
                           taskId: Option[TaskId], instance: InstanceId, processId: ProcessId, directory: ServiceDirectory, line: LogLine)
 
 object ServiceLogLine extends DefaultJsonProtocol {

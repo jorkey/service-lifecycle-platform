@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.versions.client
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
@@ -79,7 +79,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
     removeClientVersion("service1", ClientDistributionVersion.parse("test-5"))
   }
 
-  def addClientVersionInfo(service: ServiceName, version: ClientDistributionVersion): Unit = {
+  def addClientVersionInfo(service: ServiceId, version: ClientDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addClientVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, builderContext,
@@ -109,7 +109,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
     assert(distributionDir.getClientVersionImageFile(service, version).createNewFile())
   }
 
-  def removeClientVersion(service: ServiceName, version: ClientDistributionVersion): Unit = {
+  def removeClientVersion(service: ServiceId, version: ClientDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeClientVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,

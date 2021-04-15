@@ -46,19 +46,19 @@ query serviceStates ($distribution: String!) {
 
 # Users
 
-query usersInfo {
-    usersInfo { user, name, roles, email, notifications }
+query usersInfo ($human: Boolean!) {
+    usersInfo (human: $human) { user, human, name, roles, email, notifications }
 }
 
 query userInfo ($user: String!) {
-    usersInfo ( user: $user ) { user, name, roles, email, notifications }
+    usersInfo (user: $user) { user, name, roles, email, notifications }
 }
 
-mutation addUser ($user: String!, $name: String!, $password: String!, $roles: [UserRole!], $email: String, $notifications: [String!]) {
-    changeUser (user: $user, name: $name, password: $password, roles: $roles, email: $email, notifications: $notifications)
+mutation addUser ($user: String!, $human: Boolean!, $name: String!, $password: String!, $roles: [UserRole!]!, $email: String, $notifications: [String!]) {
+    addUser (user: $user, human: $human, name: $name, password: $password, roles: $roles, email: $email, notifications: $notifications)
 }
 
-mutation changeUser ($user: String!, $name: String!, $oldPassword: String, $password: String, $roles: [UserRole!], $email: String, $notifications: [String!]) {
+mutation changeUser ($user: String!, $name: String, $oldPassword: String, $password: String, $roles: [UserRole!], $email: String, $notifications: [String!]) {
     changeUser (user: $user, name: $name, oldPassword: $oldPassword, password: $password, roles: $roles, email: $email, notifications: $notifications)
 }
 

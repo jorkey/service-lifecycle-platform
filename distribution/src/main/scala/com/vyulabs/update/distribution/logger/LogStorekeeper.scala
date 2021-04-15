@@ -1,6 +1,6 @@
 package com.vyulabs.update.distribution.logger
 
-import com.vyulabs.update.common.common.Common.{DistributionName, InstanceId, ServiceName, TaskId}
+import com.vyulabs.update.common.common.Common.{DistributionId, InstanceId, ServiceId, TaskId}
 import com.vyulabs.update.common.info.{LogLine, ServiceLogLine}
 import com.vyulabs.update.common.logger.LogReceiver
 import com.vyulabs.update.distribution.mongo.SequencedCollection
@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LogStorekeeper(distribution: DistributionName, service: ServiceName,
+class LogStorekeeper(distribution: DistributionId, service: ServiceId,
                      taskId: Option[TaskId], instance: InstanceId,
                      collection: SequencedCollection[ServiceLogLine])
                     (implicit executionContext: ExecutionContext) extends LogReceiver {

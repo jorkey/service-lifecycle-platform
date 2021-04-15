@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{ClientDesiredVersions, DirectoryServiceState}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
@@ -83,7 +83,7 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
     }
   }
 
-  private def beginServiceUpdate(service: ServiceName, toVersion: ClientDistributionVersion): Boolean = {
+  private def beginServiceUpdate(service: ServiceId, toVersion: ClientDistributionVersion): Boolean = {
     log.info(s"Downloading ${service} of version ${toVersion}")
     if (!IoUtils.copyFile(directory.getClientVersionImageFile(service, toVersion), new File(Common.ServiceZipName.format(service)))) {
       log.error(s"Downloading ${service} error")

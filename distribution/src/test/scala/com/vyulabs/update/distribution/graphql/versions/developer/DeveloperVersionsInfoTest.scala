@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.versions.developer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
@@ -95,7 +95,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     removeDeveloperVersion("service1", DeveloperDistributionVersion("test", Seq(5)))
   }
 
-  def addDeveloperVersionInfo(service: ServiceName, version: DeveloperDistributionVersion): Unit = {
+  def addDeveloperVersionInfo(service: ServiceId, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"addDeveloperVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, builderContext,
@@ -120,7 +120,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
     assert(distributionDir.getDeveloperVersionImageFile(service, version).createNewFile())
   }
 
-  def removeDeveloperVersion(service: ServiceName, version: DeveloperDistributionVersion): Unit = {
+  def removeDeveloperVersion(service: ServiceId, version: DeveloperDistributionVersion): Unit = {
     assertResult((OK,
       (s"""{"data":{"removeDeveloperVersion":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,

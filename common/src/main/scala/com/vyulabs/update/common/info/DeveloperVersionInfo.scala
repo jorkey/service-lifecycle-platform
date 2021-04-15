@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.info
 
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import spray.json.DefaultJsonProtocol
@@ -13,12 +13,12 @@ object BuildInfo extends DefaultJsonProtocol {
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)
 }
 
-case class DeveloperVersionInfo(service: ServiceName, version: DeveloperDistributionVersion, buildInfo: BuildInfo)
+case class DeveloperVersionInfo(service: ServiceId, version: DeveloperDistributionVersion, buildInfo: BuildInfo)
 
 object DeveloperVersionInfo extends DefaultJsonProtocol {
   implicit val serviceVersionInfoJson = jsonFormat3(DeveloperVersionInfo.apply)
 
-  def from(service: ServiceName, version: DeveloperDistributionVersion, buildInfo: BuildInfo): DeveloperVersionInfo = {
+  def from(service: ServiceId, version: DeveloperDistributionVersion, buildInfo: BuildInfo): DeveloperVersionInfo = {
     new DeveloperVersionInfo(service, version, buildInfo)
   }
 }

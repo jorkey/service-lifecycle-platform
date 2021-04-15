@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionName, ServiceName, UserName}
+import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionId, ServiceId, UserId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
@@ -44,7 +44,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   private var distributionConfig = Option.empty[DistributionConfig]
 
-  private var providerDistributionName = Option.empty[DistributionName]
+  private var providerDistributionName = Option.empty[DistributionId]
   private var providerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
 
   def buildDistributionFromSources(): Boolean = {
@@ -74,7 +74,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def addDistributionUsers(): Boolean = {
     log.info(s"--------------------------- Add distribution users")
-    if (!addUser("installer", UserRole.Developer) || !addUser("builder", UserRole.Builder) || !addUser("service", UserRole.Updater)) {
+    if (!addServiceUser("installer", "Temporary install user", UserRole.Developer) ||
+        !addServiceUser("builder", "Builder service user", UserRole.Builder) ||
+        !addServiceUser("service", "Updater service user", UserRole.Updater)) {
       return false
     }
     true
@@ -88,7 +90,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def buildFromProviderDistribution(providerDistributionName: DistributionName, providerDistributionURL: URL,
+  def buildFromProviderDistribution(providerDistributionName: DistributionId, providerDistributionURL: URL,
                                     consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]): Boolean = {
     this.providerDistributionName = Some(providerDistributionName)
     providerDistributionClient = Some(new SyncDistributionClient(
@@ -256,7 +258,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
     for (updateSourcesUri <- updateSourcesUri) {
       log.info(s"--------------------------- Create sources config")
-      val sourcesConfig = Map.empty[ServiceName, Seq[SourceConfig]] +
+      val sourcesConfig = Map.empty[ServiceId, Seq[SourceConfig]] +
         (Common.ScriptsServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
         (Common.BuilderServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
         (Common.UpdaterServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
@@ -277,12 +279,12 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     adminDistributionClient.get.graphqlRequest(administratorMutations.setClientDesiredVersions(versions)).getOrElse(false)
   }
 
-  private def generateAndUploadDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperVersion], author: String): Boolean = {
+  private def generateAndUploadDeveloperAndClientVersions(versions: Map[ServiceId, DeveloperVersion], author: String): Boolean = {
     generateDeveloperAndClientVersions(versions) &&
       uploadDeveloperAndClientVersions(versions.mapValues(v => DeveloperDistributionVersion.from(distribution, v)), author)
   }
 
-  private def uploadDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
+  private def uploadDeveloperAndClientVersions(versions: Map[ServiceId, DeveloperDistributionVersion], author: String): Boolean = {
     if (!uploadDeveloperVersions(versions, author)) {
       return false
     }
@@ -336,8 +338,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def addUser(user: UserName, role: UserRole): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.addUser(user, Seq(role), user)).getOrElse {
+  private def addServiceUser(user: UserId, name: String, role: UserRole): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addUser(user, false,
+        name, user, Seq(role))).getOrElse {
       return false
     }
     role match {
@@ -352,13 +355,13 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def removeUser(user: UserName): Boolean = {
+  private def removeUser(user: UserId): Boolean = {
     adminDistributionClient.get.graphqlRequest(administratorMutations.removeUser(user)).getOrElse {
       return false
     }
   }
 
-  private def generateDeveloperAndClientVersions(versions: Map[ServiceName, DeveloperVersion]): Boolean = {
+  private def generateDeveloperAndClientVersions(versions: Map[ServiceId, DeveloperVersion]): Boolean = {
     versions.foreach { case (service, version) =>
       if (!generateDeveloperAndClientVersions(service, version)) {
         return false
@@ -367,7 +370,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def uploadDeveloperVersions(versions: Map[ServiceName, DeveloperDistributionVersion], author: String): Boolean = {
+  private def uploadDeveloperVersions(versions: Map[ServiceId, DeveloperDistributionVersion], author: String): Boolean = {
     log.info(s"--------------------------- Upload developer images of services ${versions.keySet}")
     versions.foreach { case (service, version) =>
       if (!developerBuilder.uploadDeveloperVersion(builderDistributionClient.get, service, version, author)) {
@@ -385,7 +388,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def uploadClientVersions(versions: Map[ServiceName, ClientDistributionVersion], author: String): Boolean = {
+  private def uploadClientVersions(versions: Map[ServiceId, ClientDistributionVersion], author: String): Boolean = {
     log.info(s"--------------------------- Upload client images of services")
     versions.foreach { case (service, version) =>
       if (!clientBuilder.uploadClientVersion(builderDistributionClient.get, service, version, author)) {
@@ -404,7 +407,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def generateDeveloperAndClientVersions(service: ServiceName, developerVersion: DeveloperVersion): Boolean = {
+  private def generateDeveloperAndClientVersions(service: ServiceId, developerVersion: DeveloperVersion): Boolean = {
     val developerDistributionVersion = DeveloperDistributionVersion.from(distribution, developerVersion)
     log.info(s"--------------------------- Generate version ${developerDistributionVersion} of service ${service}")
     log.info(s"Generate developer version of service ${service}")
@@ -429,7 +432,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   private def downloadAndGenerateClientVersion(developerDistributionClient: SyncDistributionClient[SyncSource],
-                                               service: ServiceName): Option[ClientDistributionVersion] = {
+                                               service: ServiceId): Option[ClientDistributionVersion] = {
     log.info(s"--------------------------- Get developer desired version of service ${service}")
     val desiredVersion = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions(Seq(service))).getOrElse(Seq.empty).headOption.getOrElse {
       log.error(s"Can't get developer desired version of service ${service}")
@@ -454,7 +457,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     Some(clientVersion)
   }
 
-  private def makeDistributionUrl(user: UserName): URL = {
+  private def makeDistributionUrl(user: UserId): URL = {
     val config = distributionConfig.getOrElse {
       sys.error("No distribution config")
     }

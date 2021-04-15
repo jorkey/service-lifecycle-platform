@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.version
 
-import com.vyulabs.update.common.common.Common.DistributionName
+import com.vyulabs.update.common.common.Common.DistributionId
 import spray.json.DefaultJsonProtocol._
 
 /**
@@ -8,7 +8,7 @@ import spray.json.DefaultJsonProtocol._
   * Copyright FanDate, Inc.
   */
 
-case class DeveloperDistributionVersion(distribution: DistributionName, build: Seq[Int]) {
+case class DeveloperDistributionVersion(distribution: DistributionId, build: Seq[Int]) {
   def developerVersion = DeveloperVersion(build)
 
   def isEmpty = developerVersion.isEmpty
@@ -31,7 +31,7 @@ object DeveloperDistributionVersion {
     }
   })
 
-  def from(distribution: DistributionName, version: DeveloperVersion): DeveloperDistributionVersion = {
+  def from(distribution: DistributionId, version: DeveloperVersion): DeveloperDistributionVersion = {
     DeveloperDistributionVersion(distribution, version.build)
   }
 

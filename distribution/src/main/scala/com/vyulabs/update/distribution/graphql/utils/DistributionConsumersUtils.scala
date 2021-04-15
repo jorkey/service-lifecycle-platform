@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionName}
+import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionId}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.DistributionConsumerInfo
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
@@ -23,23 +23,23 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addDistributionConsumer(distribution: DistributionName, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]): Future[Unit] = {
+  def addDistributionConsumer(distribution: DistributionId, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]): Future[Unit] = {
     collections.Distribution_ConsumersInfo.update(Filters.eq("distribution", distribution),
       _ => Some(DistributionConsumerInfo(distribution, consumerProfile, testDistributionMatch))).map(_ => ())
   }
 
-  def removeDistributionConsumer(distribution: DistributionName): Future[Unit] = {
+  def removeDistributionConsumer(distribution: DistributionId): Future[Unit] = {
     collections.Distribution_ConsumersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
   }
 
-  def getDistributionConsumersInfo(distribution: Option[DistributionName] = None)(implicit log: Logger): Future[Seq[DistributionConsumerInfo]] = {
+  def getDistributionConsumersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionConsumerInfo]] = {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val args = distributionArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Distribution_ConsumersInfo.find(filters)
   }
 
-  def getDistributionConsumerInfo(distribution: DistributionName)(implicit log: Logger): Future[DistributionConsumerInfo] = {
+  def getDistributionConsumerInfo(distribution: DistributionId)(implicit log: Logger): Future[DistributionConsumerInfo] = {
     getDistributionConsumersInfo(Some(distribution))
       .map(_.headOption.getOrElse(throw new IOException(s"No distribution ${distribution} consumer info")))
   }

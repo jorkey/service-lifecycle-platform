@@ -3,7 +3,7 @@ package com.vyulabs.update.common.config
 import java.io.File
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.ServiceName
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.utils.IoUtils
 
 import org.slf4j.Logger
@@ -11,7 +11,7 @@ import spray.json._
 
 case class BuildConfig(buildCommands: Option[Seq[CommandConfig]], copyFiles: Seq[CopyFileConfig])
 case class ServiceUpdateConfig(build: BuildConfig, install: Option[InstallConfig])
-case class UpdateConfig(services: Map[ServiceName, ServiceUpdateConfig])
+case class UpdateConfig(services: Map[ServiceId, ServiceUpdateConfig])
 
 object UpdateConfig extends DefaultJsonProtocol {
   import InstallConfig._
@@ -22,7 +22,7 @@ object UpdateConfig extends DefaultJsonProtocol {
   implicit val serviceUpdateConfigJson = jsonFormat2(ServiceUpdateConfig.apply)
 
   implicit object UpdateConfigFormat extends RootJsonFormat[UpdateConfig] {
-    case class ServiceUpdateConfigJ(service: ServiceName, build: BuildConfig, install: Option[InstallConfig])
+    case class ServiceUpdateConfigJ(service: ServiceId, build: BuildConfig, install: Option[InstallConfig])
     case class UpdateConfigJ(update: Seq[ServiceUpdateConfigJ])
 
     implicit val serviceUpdateConfigJson = jsonFormat3(ServiceUpdateConfigJ.apply)
@@ -30,7 +30,7 @@ object UpdateConfig extends DefaultJsonProtocol {
 
     override def read(json: JsValue): UpdateConfig = {
       val services = json.convertTo[UpdateConfigJ].update
-        .foldLeft(Map.empty[ServiceName, ServiceUpdateConfig])((m, v) => m + (v.service -> ServiceUpdateConfig(v.build, v.install)))
+        .foldLeft(Map.empty[ServiceId, ServiceUpdateConfig])((m, v) => m + (v.service -> ServiceUpdateConfig(v.build, v.install)))
       UpdateConfig(services)
     }
 

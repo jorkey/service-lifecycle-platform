@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.UserName
+import com.vyulabs.update.common.common.Common.UserId
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{AccessToken, UserInfo, UserRole}
@@ -35,24 +35,24 @@ trait UsersUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def addUser(user: UserName, name: String, password: String,
+  def addUser(user: UserId, human: Boolean, name: String, password: String,
               roles: Seq[UserRole], email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Unit] = {
     log.info(s"Add user ${user} with roles ${roles}")
     for {
       result <- {
-        val document = ServerUserInfo(user, name, PasswordHash(password), roles.map(_.toString), email, notifications.getOrElse(Seq.empty))
+        val document = ServerUserInfo(user, human, name, PasswordHash(password), roles.map(_.toString), email, notifications.getOrElse(Seq.empty))
         collections.Users_Info.insert(document).map(_ => ())
       }
     } yield result
   }
 
-  def removeUser(user: UserName)(implicit log: Logger): Future[Boolean] = {
+  def removeUser(user: UserId)(implicit log: Logger): Future[Boolean] = {
     log.info(s"Remove user ${user}")
     val filters = Filters.eq("user", user)
     collections.Users_Info.delete(filters).map(_ > 0)
   }
 
-  def changeUser(user: UserName, name: Option[String], oldPassword: Option[String], password: Option[String],
+  def changeUser(user: UserId, name: Option[String], oldPassword: Option[String], password: Option[String],
                  roles: Option[Seq[UserRole]], email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Boolean] = {
     log.info(s"Change user ${user}")
     val filters = Filters.eq("user", user)
@@ -63,7 +63,7 @@ trait UsersUtils extends SprayJsonSupport {
             throw new IOException(s"Password verification error")
           }
         }
-        Some(ServerUserInfo(r.user,
+        Some(ServerUserInfo(r.user, r.human,
           if (name.isDefined) name.get else r.name,
           password.map(PasswordHash(_)).getOrElse(r.passwordHash),
           roles.map(_.map(_.toString)).getOrElse(r.roles),
@@ -75,7 +75,7 @@ trait UsersUtils extends SprayJsonSupport {
     }).map(_ > 0)
   }
 
-  def login(user: UserName, password: String)(implicit log: Logger): Future[AccessToken] = {
+  def login(user: UserId, password: String)(implicit log: Logger): Future[AccessToken] = {
     getUserCredentials(user).map {
       case Some(userCredentials) if userCredentials.passwordHash.hash == PasswordHash.generatePasswordHash(password, userCredentials.passwordHash.salt) =>
         AccessToken(user, userCredentials.roles)
@@ -84,7 +84,7 @@ trait UsersUtils extends SprayJsonSupport {
     }
   }
 
-  def whoAmI(user: UserName)(implicit log: Logger): Future[UserInfo] = {
+  def whoAmI(user: UserId)(implicit log: Logger): Future[UserInfo] = {
     getUsersInfo(Some(user)).map(_.headOption.getOrElse(throw NotFoundException()))
   }
 
@@ -132,17 +132,18 @@ trait UsersUtils extends SprayJsonSupport {
     }
   }
 
-  def getUserCredentials(user: UserName)(implicit log: Logger): Future[Option[UserCredentials]] = {
+  def getUserCredentials(user: UserId)(implicit log: Logger): Future[Option[UserCredentials]] = {
     val filters = Filters.eq("user", user)
     collections.Users_Info.find(filters).map(_.map(info => UserCredentials(
       info.roles.map(UserRole.withName(_)), info.passwordHash)).headOption)
   }
 
-  def getUsersInfo(user: Option[UserName] = None)(implicit log: Logger): Future[Seq[UserInfo]] = {
-    val clientArg = user.map(Filters.eq("user", _))
-    val args = clientArg.toSeq
+  def getUsersInfo(user: Option[UserId] = None, human: Option[Boolean] = None)(implicit log: Logger): Future[Seq[UserInfo]] = {
+    val userArg = user.map(Filters.eq("user", _))
+    val humanArg = human.map(Filters.eq("human", _))
+    val args = userArg.toSeq ++ humanArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.user, info.name,
-      info.roles.map(UserRole.withName(_)), info.email, info.notifications)))
+    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.user, info.human,
+      info.name, info.roles.map(UserRole.withName(_)), info.email, info.notifications)))
   }
 }

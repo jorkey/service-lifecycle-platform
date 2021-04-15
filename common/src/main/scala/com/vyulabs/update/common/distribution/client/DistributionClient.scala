@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.distribution.client
 
-import com.vyulabs.update.common.common.Common.{DistributionName, FaultId, ServiceName}
+import com.vyulabs.update.common.common.Common.{DistributionId, FaultId, ServiceId}
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlRequest, LoginCoder, PingCoder}
@@ -66,22 +66,22 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     login().map(_ => client.graphqlSub(request)).flatten
   }
 
-  def downloadDeveloperVersionImage(service: ServiceName, version: DeveloperDistributionVersion, file: File)
+  def downloadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File)
                                    (implicit log: Logger): Future[Unit] = {
     login().map(_ => client.download(developerVersionImagePath + "/" + service + "/" + version.toString, file)).flatten
   }
 
-  def downloadClientVersionImage(service: ServiceName, version: ClientDistributionVersion, file: File)
+  def downloadClientVersionImage(service: ServiceId, version: ClientDistributionVersion, file: File)
                                 (implicit log: Logger): Future[Unit] = {
     login().map(_ => client.download(clientVersionImagePath + "/" + service + "/" + version.toString, file)).flatten
   }
 
-  def uploadDeveloperVersionImage(service: ServiceName, version: DeveloperDistributionVersion, file: File)
+  def uploadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File)
                                  (implicit log: Logger): Future[Unit] = {
     login().map(_ => client.upload(developerVersionImagePath + "/" + service + "/" + version.toString, imageField, file)).flatten
   }
 
-  def uploadClientVersionImage(service: ServiceName, version: ClientDistributionVersion, file: File)
+  def uploadClientVersionImage(service: ServiceId, version: ClientDistributionVersion, file: File)
                               (implicit log: Logger): Future[Unit] = {
     login().map(_ => client.upload(clientVersionImagePath + "/" + service + "/" + version.toString, imageField, file)).flatten
   }

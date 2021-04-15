@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.version
 
-import com.vyulabs.update.common.common.Common.DistributionName
+import com.vyulabs.update.common.common.Common.DistributionId
 import spray.json.DefaultJsonProtocol._
 
 
@@ -9,7 +9,7 @@ import spray.json.DefaultJsonProtocol._
   * Copyright FanDate, Inc.
   */
 
-case class ClientDistributionVersion(distribution: DistributionName, developerBuild: Seq[Int], clientBuild: Int) {
+case class ClientDistributionVersion(distribution: DistributionId, developerBuild: Seq[Int], clientBuild: Int) {
   def clientVersion = ClientVersion(developerBuild, clientBuild)
 
   def original = DeveloperDistributionVersion(distribution, developerBuild)
@@ -24,11 +24,11 @@ case class ClientDistributionVersion(distribution: DistributionName, developerBu
 object ClientDistributionVersion {
   implicit val clientDistributionVersionJson = jsonFormat3(ClientDistributionVersion.apply)
 
-  def from(distribution: DistributionName, version: ClientVersion): ClientDistributionVersion = {
+  def from(distribution: DistributionId, version: ClientVersion): ClientDistributionVersion = {
     ClientDistributionVersion(distribution, version.developerBuild, version.clientBuild)
   }
 
-  def from(distribution: DistributionName, version: DeveloperVersion, clientBuild: Int): ClientDistributionVersion =
+  def from(distribution: DistributionId, version: DeveloperVersion, clientBuild: Int): ClientDistributionVersion =
     ClientDistributionVersion(distribution, version.build, clientBuild)
 
   def from(version: DeveloperDistributionVersion, clientBuild: Int): ClientDistributionVersion =
