@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
@@ -6,12 +6,13 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, IconButton,
+  Divider, IconButton, Select, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import UsersTable from './UsersTable';
+import {type} from "os";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -21,20 +22,18 @@ const useStyles = makeStyles(theme => ({
   inner: {
     minWidth: 800
   },
-  statusContainer: {
-    display: 'flex',
-    alignItems: 'center'
-  },
   actions: {
+    display: 'flex',
     justifyContent: 'flex-end'
   },
-  formControlLabel: {
-    paddingLeft: '10px'
+  formControl: {
+    marginLeft: '50px'
   }
 }));
 
 const UsersManager = () => {
   const classes = useStyles()
+  const [usersType, setUsersType] = useState('people')
 
   return (
     <Card
@@ -42,27 +41,37 @@ const UsersManager = () => {
     >
       <CardHeader
         action={
-          <FormGroup row>
-            <FormControlLabel
-              className={classes.formControlLabel}
-              label=''
-              control={
-                <Button
-                  startIcon={<AddIcon/>}
-                  onClick={() => {}}
-                >
-                  Add New User
-                </Button>
-              }
-            />
-          </FormGroup>
+          <Box
+            className={classes.actions}
+          >
+            <Select
+                className={classes.formControl}
+                native
+                title='Type'
+                value={usersType}
+                onChange={(event) =>
+                  setUsersType(event.target.value as string)}
+              >
+                <option value='people'>People</option>
+                <option value='services'>Services</option>
+            </Select>
+            <Button
+              color="primary"
+              variant="contained"
+              className={classes.formControl}
+              startIcon={<AddIcon/>}
+              onClick={() => {}}
+            >
+              Add New
+            </Button>
+          </Box>
         }
         title={'Users'}
       />
-      <Divider />
+      <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <UsersTable/>
+          <UsersTable people={usersType=='people'}/>
         </div>
       </CardContent>
     </Card>

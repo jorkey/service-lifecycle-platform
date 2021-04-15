@@ -35,7 +35,7 @@ const useStyles = makeStyles(theme => ({
   actions: {
     justifyContent: 'flex-end'
   },
-  formControlLabel: {
+  formControl: {
     paddingLeft: '10px'
   },
   clientSelect: {
@@ -100,7 +100,7 @@ const Faults = props => {
         action={
           <FormGroup row>
             <FormControlLabel
-              className={classes.formControlLabel}
+              className={classes.formControl}
               control={<Select
                 className={classes.clientSelect}
                 native
@@ -113,7 +113,7 @@ const Faults = props => {
               label='Client'
             />
             <FormControlLabel
-              className={classes.formControlLabel}
+              className={classes.formControl}
               control={<Checkbox
                 checked={onlyAlerts}
                 className={classes.onlyAlerts}
@@ -122,7 +122,7 @@ const Faults = props => {
               label='Only Alerts'
             />
             <FormControlLabel
-              className={classes.formControlLabel}
+              className={classes.formControl}
               control={<Button
                 onClick={() => getClientVersions(client)}
                 title='Refresh'

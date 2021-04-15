@@ -41,7 +41,7 @@ const useStyles = makeStyles(theme => ({
   actions: {
     justifyContent: 'flex-end'
   },
-  formControlLabel: {
+  formControl: {
     paddingLeft: '10px'
   },
   distributionSelect: {
@@ -91,7 +91,7 @@ const Versions: React.FC<VersionsProps> = props => {
         action={
           <FormGroup row>
             <FormControlLabel
-              className={classes.formControlLabel}
+              className={classes.formControl}
               control={<Select
                 className={classes.distributionSelect}
                 native
@@ -105,7 +105,7 @@ const Versions: React.FC<VersionsProps> = props => {
               label='Consumer'
             />
             <FormControlLabel
-              className={classes.formControlLabel}
+              className={classes.formControl}
               control={<Checkbox
                 checked={onlyAlerts}
                 className={classes.onlyAlerts}
@@ -114,7 +114,7 @@ const Versions: React.FC<VersionsProps> = props => {
               label='Only Alerts'
             />
             <FormControlLabel
-              className={classes.formControlLabel}
+              className={classes.formControl}
               label={null}
               control={<Button
                 onClick={() => getVersions(consumer)}
