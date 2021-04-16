@@ -15,6 +15,12 @@ const useStyles = makeStyles(theme => ({
   content: {
     paddingTop: 150,
     textAlign: 'center'
+  },
+  signIn: {
+    marginTop: 20
+  },
+  alert: {
+    marginTop: 20
   }
 }));
 
@@ -97,7 +103,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
                 autoComplete='current-password'
                 onChange={handlePasswordChange}
               />
-              <Button
+              <Button className={classes.signIn}
                 disabled={loading}
                 type='submit'
                 fullWidth
@@ -106,7 +112,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
               >
                 Sign In
               </Button>
-              {error && <Alert severity='error'>{error.message}</Alert>}
+              {error && <Alert className={classes.alert} severity='error'>{error.message}</Alert>}
             </form>
           </div>
         </Grid>

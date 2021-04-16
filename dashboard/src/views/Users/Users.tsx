@@ -16,8 +16,6 @@ const Users = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
-  console.warn('users href ' + `${routeMatch.url}`)
-
   return (
     <div className={classes.root}>
       <Grid

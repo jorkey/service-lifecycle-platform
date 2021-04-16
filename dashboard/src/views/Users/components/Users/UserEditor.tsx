@@ -7,19 +7,33 @@ import { RouteComponentProps } from "react-router-dom"
 import { makeStyles } from '@material-ui/core/styles';
 import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
 import {
+  useAddUserMutation,
   useChangeUserMutation,
   UserRole,
   useUserInfoLazyQuery, useWhoAmIQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
+import Alert from "@material-ui/lab/Alert";
+import {GraphQLError} from "graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
     padding: theme.spacing(4)
   },
-  content: {
-    paddingTop: 150,
-    textAlign: 'center'
+  card: {
+    marginTop: 25
+  },
+  controls: {
+    marginTop: 25,
+    display: 'flex',
+    justifyContent: 'flex-end',
+    p: 2
+  },
+  control: {
+    marginLeft: '25px'
+  },
+  alert: {
+    marginTop: 25
   }
 }));
 
@@ -40,13 +54,17 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const [roles, setRoles] = useState(new Array<UserRole>());
   const [oldPassword, setOldPassword] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
 
   const [initialized, setInitialized] = useState(false);
+  const [error, setError] = useState('');
 
   const userToEdit = props.match.params.user
+  const [byAdmin, setByAdmin] = useState(false);
 
-  if (!initialized) {
+  if (!initialized && whoAmI.data) {
+    setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator) != undefined)
     if (userToEdit) {
       if (!userInfo.data && !userInfo.loading) {
         getUserInfo({variables: {user: userToEdit}})
@@ -68,22 +86,51 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
     }
   }
 
+  const [addUser] =
+    useAddUserMutation({
+      onError(err) { console.log(err) }
+    })
+
   const [changeUser] =
     useChangeUserMutation({
       onError(err) { console.log(err) }
     })
 
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-    if (user && name) {
-      changeUser({variables: { user: user, name: name,
-          oldPassword: oldPassword, password: password, roles: roles, email: email }} )
+  const submit = () => {
+    if (!user) {
+      setError('User is empty')
+    } else if (!name) {
+      setError('Name is empty')
+    } else if (roles.length == 0) {
+      setError('Choose Roles')
+    } else if (!userToEdit && !password) {
+      setError('Enter password')
+    } else if (!byAdmin && password && !oldPassword) {
+      setError('Old password is empty')
+    } else if (password && password != confirmPassword) {
+      setError('Enter same password twice')
+    } else {
+      if (userToEdit) {
+        changeUser({variables: { user: user, name: name,
+          oldPassword: oldPassword, password: password, roles: roles, email: email }} ).then( (result) =>
+        { if (result.errors) setGraphqlError(result.errors); else window.location.href = '/users' } )
+      } else {
+        addUser({variables: { user: user, human: human, name: name,
+          password: password, roles: roles, email: email }}).then( (result) =>
+        { if (result.errors) setGraphqlError(result.errors); else window.location.href = '/users' } )
+      }
     }
+  }
+
+  const setGraphqlError = (error: ReadonlyArray<GraphQLError>) => {
+    let msg = ''
+    error.forEach( error => { if (msg) msg += '\n'; msg += error.message } )
+    setError(msg)
   }
 
   const UserCard = () => {
     return (
-      <Card>
+      <Card className={classes.card}>
         <CardHeader title={userToEdit?'User':(human?'New User':'New Service User')}/>
         <CardContent>
           <TextField
@@ -123,7 +170,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
 
   const PasswordCard = () => {
     return (
-      <Card>
+      <Card className={classes.card}>
         <CardHeader title='Password'/>
         <CardContent>
           { (whoAmI.data && !whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator)) ?
@@ -145,21 +192,38 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
             required
             variant="outlined"
           />
-          <TextField
+          { password ? <TextField
             fullWidth
             label="Confirm Password"
             type="password"
             margin="normal"
-            onChange={(e: any) => setPassword(e.target.value)}
+            onChange={(e: any) => setConfirmPassword(e.target.value)}
+            helperText={password != confirmPassword ? 'Must be same as password' : ''}
+            error={password != confirmPassword}
             required
             variant="outlined"
-          />
+          /> : null }
         </CardContent>
       </Card>)
   }
 
+  const checkRole = (role: UserRole, checked: boolean) => {
+    if (checked) {
+      setRoles(previousRoles => {
+        if (previousRoles.find(r => r == role)) return previousRoles
+        const roles = [...previousRoles]
+        roles.push(role)
+        return roles
+      })
+    } else {
+      setRoles(previousRoles => {
+        return previousRoles.filter(r => r != role)
+      })
+    }
+  }
+
   const RolesCard = () => {
-    return (<Card>
+    return (<Card className={classes.card}>
       <CardHeader title='Roles'/>
       <CardContent>
         <FormGroup row>
@@ -170,6 +234,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
                   <Checkbox
                     color="primary"
                     checked={roles.find(role => role == UserRole.Developer) != undefined}
+                    onChange={ event => checkRole(UserRole.Developer, event.target.checked) }
                   />
                 )}
                 label="Developer"
@@ -179,6 +244,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
                   <Checkbox
                     color="primary"
                     checked={roles.find(role => role == UserRole.Administrator) != undefined}
+                    onChange={ event => checkRole(UserRole.Administrator, event.target.checked) }
                   />
                 )}
                 label="Administrator"
@@ -190,6 +256,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
                   <Checkbox
                     color="primary"
                     checked={roles.find(role => role == UserRole.Distribution) != undefined}
+                    onChange={ event => checkRole(UserRole.Distribution, event.target.checked) }
                   />
                 )}
                 label="Distribution"
@@ -199,6 +266,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
                   <Checkbox
                     color="primary"
                     checked={roles.find(role => role == UserRole.Builder) != undefined}
+                    onChange={ event => checkRole(UserRole.Builder, event.target.checked) }
                   />
                 )}
                 label="Builder"
@@ -208,6 +276,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
                   <Checkbox
                     color="primary"
                     checked={roles.find(role => role == UserRole.Updater) != undefined}
+                    onChange={ event => checkRole(UserRole.Updater, event.target.checked) }
                   />
                 )}
                 label="Updater"
@@ -224,21 +293,26 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
       <Card
         className={clsx(classes.root)}
       >
-        {/*<CardHeader title='User'/>*/}
-        {/*<Divider />*/}
-        {/*<CardContent className={classes.content}>*/}
-        <Divider />
         {UserCard()}
         <Divider />
         {RolesCard()}
         <Divider />
         {PasswordCard()}
-        <Box>
-          <Button
+        {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
+        <Box className={classes.controls}>
+          <Button className={classes.control}
             color="primary"
             variant="contained"
+            href='/users'
           >
-            Save details
+            Cancel
+          </Button>
+          <Button className={classes.control}
+            color="primary"
+            variant="contained"
+            onClick={() => submit()}
+          >
+            {!userToEdit?'Add New User':'Save'}
           </Button>
         </Box>
       </Card>) : null

@@ -20,11 +20,11 @@ const useStyles = makeStyles(theme => ({
   inner: {
     minWidth: 800
   },
-  actions: {
+  controls: {
     display: 'flex',
     justifyContent: 'flex-end'
   },
-  formControl: {
+  control: {
     marginLeft: '50px'
   }
 }));
@@ -41,10 +41,10 @@ const UsersManager = () => {
       <CardHeader
         action={
           <Box
-            className={classes.actions}
+            className={classes.controls}
           >
             <Select
-                className={classes.formControl}
+                className={classes.control}
                 native
                 title='Type'
                 value={people?'people':'services'}
@@ -58,7 +58,7 @@ const UsersManager = () => {
               <Button
                 color="primary"
                 variant="contained"
-                className={classes.formControl}
+                className={classes.control}
                 startIcon={<AddIcon/>}
                 onClick={() => {}}
               >
