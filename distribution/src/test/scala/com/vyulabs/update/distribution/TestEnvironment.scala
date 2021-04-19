@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAfterAll {
+abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec with Matchers with BeforeAndAfterAll {
   private implicit val system = ActorSystem("Distribution")
   private implicit val materializer: Materializer = ActorMaterializer()
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
@@ -55,7 +55,7 @@ abstract class TestEnvironment() extends FlatSpec with Matchers with BeforeAndAf
   val instance = config.instance
 
   val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), false)
+  val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), createIndices)
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(taskId => new LogStorekeeper(distributionName, Common.DistributionServiceName, Some(taskId),
     instance, collections.State_ServiceLogs))

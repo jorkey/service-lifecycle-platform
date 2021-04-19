@@ -10,11 +10,10 @@ import {
   useAddUserMutation,
   useChangeUserMutation,
   UserRole,
-  useUserInfoLazyQuery, useWhoAmIQuery
+  useUserInfoLazyQuery, useUsersInfoQuery, useUsersListLazyQuery, useUsersListQuery, useWhoAmIQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
-import {GraphQLError} from "graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -44,6 +43,7 @@ interface UserRouteParams {
 
 const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const whoAmI = useWhoAmIQuery()
+  const {data: usersList} = useUsersListQuery()
   const [getUserInfo, userInfo] = useUserInfoLazyQuery()
 
   const classes = useStyles()
@@ -58,16 +58,15 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const [email, setEmail] = useState('');
 
   const [initialized, setInitialized] = useState(false);
-  const [error, setError] = useState('');
 
-  const userToEdit = props.match.params.user
+  const editUser = props.match.params.user
   const [byAdmin, setByAdmin] = useState(false);
 
   if (!initialized && whoAmI.data) {
     setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator) != undefined)
-    if (userToEdit) {
+    if (editUser) {
       if (!userInfo.data && !userInfo.loading) {
-        getUserInfo({variables: {user: userToEdit}})
+        getUserInfo({variables: {user: editUser}})
       }
       if (userInfo.data) {
         const info = userInfo.data.usersInfo[0]
@@ -86,52 +85,46 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
     }
   }
 
-  const [addUser] =
+  const [addUser, { data: addUserData, error: addUserError }] =
     useAddUserMutation({
       onError(err) { console.log(err) }
     })
 
-  const [changeUser] =
+  const [changeUser, { data: changeUserData, error: changeUserError }] =
     useChangeUserMutation({
       onError(err) { console.log(err) }
     })
 
+  if (addUserData || changeUserData) {
+    window.location.href = '/users'
+  }
+
+  const validate: () => boolean = () => {
+    return  !!user && !!name && roles.length != 0 &&
+            (!!editUser || !doesUserExist(user)) &&
+            (!!editUser || !!password) &&
+            (byAdmin || !!oldPassword) &&
+            (!password || password == confirmPassword)
+  }
+
   const submit = () => {
-    if (!user) {
-      setError('User is empty')
-    } else if (!name) {
-      setError('Name is empty')
-    } else if (roles.length == 0) {
-      setError('Choose Roles')
-    } else if (!userToEdit && !password) {
-      setError('Enter password')
-    } else if (!byAdmin && password && !oldPassword) {
-      setError('Old password is empty')
-    } else if (password && password != confirmPassword) {
-      setError('Enter same password twice')
-    } else {
-      if (userToEdit) {
-        changeUser({variables: { user: user, name: name,
-          oldPassword: oldPassword, password: password, roles: roles, email: email }} ).then( (result) =>
-        { if (result.errors) setGraphqlError(result.errors); else window.location.href = '/users' } )
+    if (validate()) {
+      if (editUser) {
+        changeUser({variables: { user: user, name: name, oldPassword: oldPassword, password: password, roles: roles, email: email }} )
       } else {
-        addUser({variables: { user: user, human: human, name: name,
-          password: password, roles: roles, email: email }}).then( (result) =>
-        { if (result.errors) setGraphqlError(result.errors); else window.location.href = '/users' } )
+        addUser({variables: { user: user, human: human, name: name, password: password, roles: roles, email: email }})
       }
     }
   }
 
-  const setGraphqlError = (error: ReadonlyArray<GraphQLError>) => {
-    let msg = ''
-    error.forEach( error => { if (msg) msg += '\n'; msg += error.message } )
-    setError(msg)
+  const doesUserExist: (user: string) => boolean = (user) => {
+    return usersList?!!usersList.usersInfo.find(info => info.user == user):false
   }
 
   const UserCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={userToEdit?'User':(human?'New User':'New Service User')}/>
+        <CardHeader title={editUser?'User':(human?'New User':'New Service User')}/>
         <CardContent>
           <TextField
             autoFocus
@@ -139,9 +132,10 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
             label="User"
             margin="normal"
             value={user}
+            helperText={doesUserExist(user) ? 'User already exists': ''}
+            error={!user || doesUserExist(user)}
             onChange={(e: any) => setUser(e.target.value)}
-            error={!user}
-            disabled={userToEdit !== undefined}
+            disabled={editUser !== undefined}
             required
             variant="outlined"
           />
@@ -288,6 +282,8 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
     </Card>)
   }
 
+  const error = addUserError?addUserError.message:changeUserError?changeUserError.message:''
+
   return (
     initialized ? (
       <Card
@@ -310,9 +306,10 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
           <Button className={classes.control}
             color="primary"
             variant="contained"
+            disabled={!validate()}
             onClick={() => submit()}
           >
-            {!userToEdit?'Add New User':'Save'}
+            {!editUser?'Add New User':'Save'}
           </Button>
         </Box>
       </Card>) : null

@@ -23,7 +23,7 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.11.20.
   * Copyright FanDate, Inc.
   */
-class RequestsTest extends TestEnvironment with ScalatestRouteTest {
+class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
   behavior of "Own distribution client graphql requests"
 
   val route = distribution.route
@@ -70,6 +70,14 @@ class RequestsTest extends TestEnvironment with ScalatestRouteTest {
 
   def requests[Source[_]](adminClient: SyncDistributionClient[Source], updaterClient: SyncDistributionClient[Source],
                           builderClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
+    it should "execute add/remove user requests" in {
+      assert(adminClient.graphqlRequest(administratorMutations.addUser("user1", true, "user1", "user1", Seq(UserRole.Developer))).getOrElse(false))
+
+      assert(!adminClient.graphqlRequest(administratorMutations.addUser("user1", true, "user1", "user1", Seq(UserRole.Developer))).getOrElse(false))
+
+      assert(adminClient.graphqlRequest(administratorMutations.removeUser("user1")).getOrElse(false))
+    }
+
     it should "execute distribution provider requests" in {
       assert(adminClient.graphqlRequest(administratorMutations.addDistributionProvider("distribution2",
           new URL("http://localhost/graphql"), None)).getOrElse(false))

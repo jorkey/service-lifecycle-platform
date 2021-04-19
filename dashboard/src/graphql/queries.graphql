@@ -50,6 +50,10 @@ query usersInfo ($human: Boolean!) {
     usersInfo (human: $human) { user, human, name, roles, email, notifications }
 }
 
+query usersList {
+    usersInfo { user }
+}
+
 query userInfo ($user: String!) {
     usersInfo (user: $user) { user, human, name, roles, email, notifications }
 }
