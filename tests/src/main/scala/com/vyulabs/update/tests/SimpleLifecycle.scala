@@ -33,9 +33,9 @@ class SimpleLifecycle {
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
   private val settingsDirectory = new SettingsDirectory(builderDir, distribution)
-  private val developerDistributionUrl = new URL("http://installer:installer@localhost:8000")
-  private val builderDistributionUrl = new URL("http://builder:builder@localhost:8000")
-  private val updaterDistributionUrl = new URL("http://updater:updater@localhost:8000")
+  private val developerDistributionUrl = new URL(s"http://${Common.InstallerServiceName}:${Common.InstallerServiceName}@localhost:8000")
+  private val builderDistributionUrl = new URL(s"http://${Common.BuilderServiceName}:${Common.BuilderServiceName}@localhost:8000")
+  private val updaterDistributionUrl = new URL(s"http://${Common.UpdaterServiceName}:${Common.UpdaterServiceName}@localhost:8000")
   private val testServiceName = "test"
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile

@@ -74,9 +74,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def addDistributionUsers(): Boolean = {
     log.info(s"--------------------------- Add distribution users")
-    if (!addServiceUser("installer", "Temporary install user", UserRole.Developer) ||
-        !addServiceUser("builder", "Builder service user", UserRole.Builder) ||
-        !addServiceUser("service", "Updater service user", UserRole.Updater)) {
+    if (!addServiceUser(Common.InstallerServiceName, "Temporary install user", UserRole.Developer) ||
+        !addServiceUser(Common.BuilderServiceName, "Builder service user", UserRole.Builder) ||
+        !addServiceUser(Common.UpdaterServiceName, "Updater service user", UserRole.Updater)) {
       return false
     }
     true
@@ -84,7 +84,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def removeTemporaryDistributionUsers(): Boolean = {
     log.info(s"--------------------------- Remove temporary distribution users")
-    if (!removeUser("installer")) {
+    if (!removeUser(Common.InstallerServiceName)) {
       return false
     }
     true

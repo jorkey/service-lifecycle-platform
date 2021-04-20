@@ -201,7 +201,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         if (period < 1000) {
           Thread.sleep(1000 - period)
         }
-        if (!startService()) {
+        if (!stopService() || !startService()) {
           log.error("Can't restart service")
         }
       } else {
