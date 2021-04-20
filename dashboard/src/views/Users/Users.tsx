@@ -30,10 +30,10 @@ const Users = () => {
               <UsersManager/>
             </Route>
             <Route exact path={`${routeMatch.url}/new/:type`}
-              component={UserEditor}>
+              render={(props) => <UserEditor fromUrl={routeMatch.url} {...props} /> }>
             </Route>
             <Route exact path={`${routeMatch.url}/edit/:user`}
-              component={UserEditor}>
+              render={(props) => <UserEditor fromUrl={routeMatch.url} {...props} /> }>
             </Route>
           </Switch>
         </Grid>

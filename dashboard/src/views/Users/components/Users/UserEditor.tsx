@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import { RouteComponentProps } from "react-router-dom"
+import {RouteComponentProps, useRouteMatch} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
@@ -41,7 +41,11 @@ interface UserRouteParams {
   type?: string
 }
 
-const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
+interface UserEditorParams extends RouteComponentProps<UserRouteParams> {
+  fromUrl: string
+}
+
+const UserEditor: React.FC<UserEditorParams> = props => {
   const whoAmI = useWhoAmIQuery()
   const {data: usersList} = useUsersListQuery()
   const [getUserInfo, userInfo] = useUserInfoLazyQuery()
@@ -52,7 +56,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const [human, setHuman] = useState(true);
   const [name, setName] = useState('');
   const [roles, setRoles] = useState(new Array<UserRole>());
-  const [oldPassword, setOldPassword] = useState('');
+  const [oldPassword, setOldPassword] = useState<string>();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
@@ -63,7 +67,6 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const [byAdmin, setByAdmin] = useState(false);
 
   if (!initialized && whoAmI.data) {
-    setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator) != undefined)
     if (editUser) {
       if (!userInfo.data && !userInfo.loading) {
         getUserInfo({variables: {user: editUser}})
@@ -77,10 +80,12 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
           setRoles(info.roles)
           if (info.email) setEmail(info.email)
         }
+        setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator) != undefined)
         setInitialized(true)
       }
     } else {
       setHuman(props.match.params.type == 'human')
+      setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator) != undefined)
       setInitialized(true)
     }
   }
@@ -96,7 +101,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
     })
 
   if (addUserData || changeUserData) {
-    window.location.href = '/users'
+    window.location.href = props.fromUrl
   }
 
   const validate: () => boolean = () => {
@@ -124,7 +129,7 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
   const UserCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={editUser?'User':(human?'New User':'New Service User')}/>
+        <CardHeader title={editUser?'Edit User':(human?'New User':'New Service User')}/>
         <CardContent>
           <TextField
             autoFocus
@@ -132,8 +137,8 @@ const UserEditor: React.FC<RouteComponentProps<UserRouteParams>> = props => {
             label="User"
             margin="normal"
             value={user}
-            helperText={doesUserExist(user) ? 'User already exists': ''}
-            error={!user || doesUserExist(user)}
+            helperText={!editUser && doesUserExist(user) ? 'User already exists': ''}
+            error={!user || (!editUser && doesUserExist(user))}
             onChange={(e: any) => setUser(e.target.value)}
             disabled={editUser !== undefined}
             required

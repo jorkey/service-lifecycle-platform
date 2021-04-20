@@ -62,7 +62,7 @@ const Actions: React.FC<ActionsProps> = (props) => {
         <DeleteIcon/>
       </IconButton>
       <ConfirmDialog
-        message={`Do you want to delete user ${userInfo.user}?`}
+        message={`Do you want to delete user '${userInfo.user}' (${userInfo.name})?`}
         open={deleteConfirm}
         close={() => { setDeleteConfirm(false) }}
         onConfirm={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}
