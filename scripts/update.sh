@@ -209,7 +209,11 @@ function runService {
         exit 1
       fi
       command="/usr/bin/java"
-      args="-jar ${serviceToRun}-${buildVersion}.jar"
+      if [ ${serviceToRun} == "updater" ]; then
+        args="-jar -Xms500m -Xmx500m ${serviceToRun}-${buildVersion}.jar"
+      else
+        args="-jar ${serviceToRun}-${buildVersion}.jar"
+      fi
     fi
 
     if tty -s; then
