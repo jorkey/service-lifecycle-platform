@@ -1,10 +1,11 @@
 import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
-import React from 'react';
+import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../generated/graphql';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {useRouteMatch} from "react-router-dom";
+import ConfirmDialog from "../../../../common/ConfirmDialog";
 
 // eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
@@ -41,6 +42,8 @@ interface ActionsProps {
 
 const Actions: React.FC<ActionsProps> = (props) => {
   const { userInfo, removing } = props
+  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
+
   const routeMatch = useRouteMatch();
 
   const [removeUser] = useRemoveUserMutation({
@@ -55,9 +58,15 @@ const Actions: React.FC<ActionsProps> = (props) => {
           <EditIcon/>
         </IconButton>
       </Link>
-      <IconButton title='Delete' onClick={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}>
+      <IconButton title='Delete' onClick={() => setDeleteConfirm(true)}>
         <DeleteIcon/>
       </IconButton>
+      <ConfirmDialog
+        message={`Do you want to delete user ${userInfo.user}?`}
+        open={deleteConfirm}
+        close={() => { setDeleteConfirm(false) }}
+        onConfirm={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}
+      />
     </>)
 }
 

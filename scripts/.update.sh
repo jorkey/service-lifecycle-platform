@@ -264,8 +264,8 @@ function runService {
     local developerVersion=`developerVersionToString ${currentVersion}`
 
     if [ -f install.json ]; then
-      if ! query=`jq -r '.runService.query' install.json`; then
-        >&2 echo "runService.query is not defined in the install.json"
+      if ! command=`jq -r '.runService.command' install.json`; then
+        >&2 echo "runService.command is not defined in the install.json"
       fi
       if ! args=`jq -r '.runService.args | join(" ")' install.json | sed -e s/%%version%%/${developerVersion}/`; then
         >&2 echo "runService.args is not defined in the install.json"
@@ -275,14 +275,18 @@ function runService {
         >&2 echo "No <${serviceToRun}-${developerVersion}>.jar in the build"
         exit 1
       fi
-      query="/usr/bin/java"
-      args="-jar ${serviceToRun}-${developerVersion}.jar"
+      command="/usr/bin/java"
+      if [ ${serviceToRun} == "updater" ]; then
+        args="-jar -Xms500m -Xmx500m ${serviceToRun}-${developerVersion}.jar"
+      else
+        args="-jar ${serviceToRun}-${developerVersion}.jar"
+      fi
     fi
 
     if tty -s; then
       set +e
-      echo "Run ${query} ${args} $@"
-      ${query} ${args} "$@"
+      echo "Run ${command} ${args} $@"
+      ${command} ${args} "$@"
       local status=$?
       set -e
     else
@@ -293,8 +297,8 @@ function runService {
       }
       trap trapKill TERM INT
       set +e
-      echo "Run service ${query} ${args} $@"
-      ${query} ${args} "$@" &
+      echo "Run service ${command} ${args} $@"
+      ${command} ${args} "$@" &
       child=$!
       wait ${child}
 #      trap - TERM INT

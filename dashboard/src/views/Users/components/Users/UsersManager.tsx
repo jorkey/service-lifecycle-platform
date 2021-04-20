@@ -62,7 +62,7 @@ const UsersManager = () => {
                 startIcon={<AddIcon/>}
                 onClick={() => {}}
               >
-                Add New
+                Add New {people?'Human':'Service'}
               </Button>
             </Link>
           </Box>
