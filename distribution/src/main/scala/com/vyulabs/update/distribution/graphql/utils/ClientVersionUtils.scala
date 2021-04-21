@@ -73,7 +73,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add client version info ${versionInfo}")
     for {
-      result <- collections.Client_VersionsInfo.insert(versionInfo).map(_ => ())
+      result <- collections.Client_Versions.insert(versionInfo).map(_ => ())
       _ <- removeObsoleteVersions(versionInfo.version.distribution, versionInfo.service)
     } yield result
   }
@@ -86,7 +86,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
       Filters.eq("version.developerBuild", version.developerBuild),
       Filters.eq("version.clientBuild", version.clientBuild)) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
-    collections.Client_VersionsInfo.find(filters)
+    collections.Client_Versions.find(filters)
   }
 
   private def removeObsoleteVersions(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Unit] = {
@@ -113,7 +113,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
       Filters.eq("service", service),
       Filters.eq("version", version))
     directory.getClientVersionImageFile(service, version).delete()
-    collections.Client_VersionsInfo.delete(filters).map(_ > 0)
+    collections.Client_Versions.delete(filters).map(_ > 0)
   }
 
   def setClientDesiredVersions(deltas: Seq[ClientDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {

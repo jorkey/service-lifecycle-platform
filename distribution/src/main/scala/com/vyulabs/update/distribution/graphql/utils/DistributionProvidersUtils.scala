@@ -8,7 +8,7 @@ import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskI
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DistributionProviderInfo}
+import com.vyulabs.update.common.info.{DeveloperDesiredVersionDelta, DeveloperDesiredVersion, DistributionProviderInfo}
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
@@ -35,12 +35,12 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def addDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
-    collections.Distribution_ProvidersInfo.update(Filters.eq("distribution", distribution),
+    collections.Client_ProvidersInfo.update(Filters.eq("distribution", distribution),
       _ => Some(DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval))).map(_ => ())
   }
 
   def removeDistributionProvider(distribution: DistributionId): Future[Unit] = {
-    collections.Distribution_ProvidersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
+    collections.Client_ProvidersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
   }
 
   def getDistributionProviderDesiredVersions(distribution: DistributionId)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
@@ -78,6 +78,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
                   case None =>
                     Future()
                 }
+                _ <- setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service, Some(version))))
               } yield {}
             } else {
               log.info(s"Version ${version} already exists")
@@ -93,7 +94,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val args = distributionArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Distribution_ProvidersInfo.find(filters)
+    collections.Client_ProvidersInfo.find(filters)
   }
 
   def getDistributionProviderInfo(distribution: DistributionId)(implicit log: Logger): Future[DistributionProviderInfo] = {

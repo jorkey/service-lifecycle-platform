@@ -19,8 +19,8 @@ class ClientDesiredVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    result(collections.Distribution_ConsumerProfiles.insert(DistributionConsumerProfile("common", Seq("service1", "service2"))))
-    result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("client2", "common", None)))
+    result(collections.Developer_Profiles.insert(DistributionConsumerProfile("common", Seq("service1", "service2"))))
+    result(collections.Developer_ConsumersInfo.insert(DistributionConsumerInfo("client2", "common", None)))
   }
 
   it should "set/get client desired versions" in {

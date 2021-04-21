@@ -24,19 +24,19 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def addDistributionConsumer(distribution: DistributionId, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]): Future[Unit] = {
-    collections.Distribution_ConsumersInfo.update(Filters.eq("distribution", distribution),
+    collections.Developer_ConsumersInfo.update(Filters.eq("distribution", distribution),
       _ => Some(DistributionConsumerInfo(distribution, consumerProfile, testDistributionMatch))).map(_ => ())
   }
 
   def removeDistributionConsumer(distribution: DistributionId): Future[Unit] = {
-    collections.Distribution_ConsumersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
+    collections.Developer_ConsumersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
   }
 
   def getDistributionConsumersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionConsumerInfo]] = {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val args = distributionArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Distribution_ConsumersInfo.find(filters)
+    collections.Developer_ConsumersInfo.find(filters)
   }
 
   def getDistributionConsumerInfo(distribution: DistributionId)(implicit log: Logger): Future[DistributionConsumerInfo] = {

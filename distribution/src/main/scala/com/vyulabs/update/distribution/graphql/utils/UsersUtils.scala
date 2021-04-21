@@ -41,7 +41,7 @@ trait UsersUtils extends SprayJsonSupport {
     for {
       result <- {
         val document = ServerUserInfo(user, human, name, PasswordHash(password), roles.map(_.toString), email, notifications.getOrElse(Seq.empty))
-        collections.Users_Info.insert(document).map(_ => ())
+        collections.Users.insert(document).map(_ => ())
       }
     } yield result
   }
@@ -49,14 +49,14 @@ trait UsersUtils extends SprayJsonSupport {
   def removeUser(user: UserId)(implicit log: Logger): Future[Boolean] = {
     log.info(s"Remove user ${user}")
     val filters = Filters.eq("user", user)
-    collections.Users_Info.delete(filters).map(_ > 0)
+    collections.Users.delete(filters).map(_ > 0)
   }
 
   def changeUser(user: UserId, name: Option[String], oldPassword: Option[String], password: Option[String],
                  roles: Option[Seq[UserRole]], email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Boolean] = {
     log.info(s"Change user ${user}")
     val filters = Filters.eq("user", user)
-    collections.Users_Info.update(filters, r => r match {
+    collections.Users.update(filters, r => r match {
       case Some(r) =>
         for (oldPassword <- oldPassword) {
           if (r.passwordHash.hash != PasswordHash.generatePasswordHash(oldPassword, r.passwordHash.salt)) {
@@ -134,7 +134,7 @@ trait UsersUtils extends SprayJsonSupport {
 
   def getUserCredentials(user: UserId)(implicit log: Logger): Future[Option[UserCredentials]] = {
     val filters = Filters.eq("user", user)
-    collections.Users_Info.find(filters).map(_.map(info => UserCredentials(
+    collections.Users.find(filters).map(_.map(info => UserCredentials(
       info.roles.map(UserRole.withName(_)), info.passwordHash)).headOption)
   }
 
@@ -143,7 +143,7 @@ trait UsersUtils extends SprayJsonSupport {
     val humanArg = human.map(Filters.eq("human", _))
     val args = userArg.toSeq ++ humanArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Users_Info.find(filters).map(_.map(info => UserInfo(info.user, info.human,
+    collections.Users.find(filters).map(_.map(info => UserInfo(info.user, info.human,
       info.name, info.roles.map(UserRole.withName(_)), info.email, info.notifications)))
   }
 }

@@ -58,35 +58,20 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   ))
 
   val Sequences = for {
-    collection <- db.getOrCreateCollection[SequenceDocument]("sequences")
+    collection <- db.getOrCreateCollection[SequenceDocument]("collection.sequences")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("name"), new IndexOptions().unique(true)) else Future()
   } yield collection
 
-  val Users_Info = new SequencedCollection[ServerUserInfo]("usersInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("usersInfo")
+  val Users = new SequencedCollection[ServerUserInfo]("users", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("users")
     _ <- if (createIndices) {
       collection.createIndex(Indexes.ascending("user", "_archiveTime"), new IndexOptions().unique(true))
       collection.createIndex(Indexes.ascending("human"))
     } else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Distribution_ProvidersInfo = new SequencedCollection[DistributionProviderInfo]("distribution.providersInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("distribution.providersInfo")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
-  } yield collection, Sequences, createIndex = createIndices)
-
-  val Distribution_ConsumersInfo = new SequencedCollection[DistributionConsumerInfo]("distribution.consumersInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("distribution.consumersInfo")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
-  } yield collection, Sequences, createIndex = createIndices)
-
-  val Distribution_ConsumerProfiles = new SequencedCollection[DistributionConsumerProfile]("distribution.consumerProfiles", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("distribution.consumerProfiles")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerProfile", "_archiveTime"), new IndexOptions().unique(true)) else Future()
-  } yield collection, Sequences, createIndex = createIndices)
-
-  val Developer_VersionsInfo = new SequencedCollection[DeveloperVersionInfo]("developer.versionsInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.versionsInfo")
+  val Developer_Versions = new SequencedCollection[DeveloperVersionInfo]("developer.versions", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.versions")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "version", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
@@ -95,14 +80,29 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     collection <- db.getOrCreateCollection[BsonDocument]("developer.desiredVersions")
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Client_VersionsInfo = new SequencedCollection[ClientVersionInfo]("client.versionsInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("client.versionsInfo")
+  val Developer_Profiles = new SequencedCollection[DistributionConsumerProfile]("developer.profiles", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.profiles")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerProfile", "_archiveTime"), new IndexOptions().unique(true)) else Future()
+  } yield collection, Sequences, createIndex = createIndices)
+
+  val Developer_ConsumersInfo = new SequencedCollection[DistributionConsumerInfo]("developer.consumers", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.consumers")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
+  } yield collection, Sequences, createIndex = createIndices)
+
+  val Client_Versions = new SequencedCollection[ClientVersionInfo]("client.versions", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("client.versions")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "version", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Client_DesiredVersions = new SequencedCollection[ClientDesiredVersions]("client.desiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.desiredVersions")
+  } yield collection, Sequences, createIndex = createIndices)
+
+  val Client_ProvidersInfo = new SequencedCollection[DistributionProviderInfo]("client.providers", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("client.providers")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val State_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("state.installedDesiredVersions", for {
@@ -144,10 +144,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
     val filters = Filters.eq("user", "admin")
     for {
-      adminRecords <- Users_Info.find(filters)
+      adminRecords <- Users.find(filters)
     } yield {
       if (adminRecords.isEmpty) {
-        Users_Info.insert(ServerUserInfo("admin", true, "Administrator", PasswordHash("admin"),
+        Users.insert(ServerUserInfo("admin", true, "Administrator", PasswordHash("admin"),
           Seq(UserRole.Administrator.toString), None, Seq.empty))
       } else {
         Future()

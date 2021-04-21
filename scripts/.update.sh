@@ -277,7 +277,7 @@ function runService {
       fi
       command="/usr/bin/java"
       if [ ${serviceToRun} == "updater" ]; then
-        args="-jar -Xms500m -Xmx500m ${serviceToRun}-${developerVersion}.jar"
+        args="-jar -Xms64m -Xmx64m ${serviceToRun}-${developerVersion}.jar"
       else
         args="-jar ${serviceToRun}-${developerVersion}.jar"
       fi

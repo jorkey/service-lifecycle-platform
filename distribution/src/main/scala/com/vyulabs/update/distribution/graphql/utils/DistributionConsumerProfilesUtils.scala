@@ -23,7 +23,7 @@ trait DistributionConsumerProfilesUtils extends SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceId]): Future[Unit] = {
-    collections.Distribution_ConsumerProfiles.update(Filters.eq("consumerProfile", consumerProfile),
+    collections.Developer_Profiles.update(Filters.eq("consumerProfile", consumerProfile),
       _ => Some(DistributionConsumerProfile(consumerProfile, services))).map(_ => ())
   }
 
@@ -31,17 +31,17 @@ trait DistributionConsumerProfilesUtils extends SprayJsonSupport {
     val profileArg = consumerProfile.map(Filters.eq("consumerProfile", _))
     val args = profileArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Distribution_ConsumerProfiles.find(filters)
+    collections.Developer_Profiles.find(filters)
   }
 
   def getDistributionConsumerProfile(consumerProfile: ConsumerProfile): Future[DistributionConsumerProfile] = {
     val filters = Filters.eq("consumerProfile", consumerProfile)
-    collections.Distribution_ConsumerProfiles.find(filters)map(_.headOption.getOrElse {
+    collections.Developer_Profiles.find(filters)map(_.headOption.getOrElse {
       throw NotFoundException(s"No consumer profile ${consumerProfile}")
     })
   }
 
   def removeDistributionConsumerProfile(consumerProfile: ConsumerProfile): Future[Unit] = {
-    collections.Distribution_ConsumerProfiles.delete(Filters.eq("consumerProfile", consumerProfile)).map(_ => ())
+    collections.Developer_Profiles.delete(Filters.eq("consumerProfile", consumerProfile)).map(_ => ())
   }
 }

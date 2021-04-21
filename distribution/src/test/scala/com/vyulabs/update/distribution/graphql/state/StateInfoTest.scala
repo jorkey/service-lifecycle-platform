@@ -23,7 +23,7 @@ class StateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override protected def beforeAll(): Unit = {
-    result(collections.Distribution_ConsumersInfo.insert(DistributionConsumerInfo("distribution", "common", Some("test"))))
+    result(collections.Developer_ConsumersInfo.insert(DistributionConsumerInfo("distribution", "common", Some("test"))))
   }
 
   it should "set tested versions" in {

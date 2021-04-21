@@ -43,7 +43,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
     log.info(s"Add developer version info ${versionInfo}")
     for {
-      _ <- collections.Developer_VersionsInfo.insert(versionInfo)
+      _ <- collections.Developer_Versions.insert(versionInfo)
       _ <- removeObsoleteVersions(versionInfo.version.distribution, versionInfo.service)
     } yield {}
   }
@@ -74,7 +74,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     directory.getDeveloperVersionImageFile(service, version).delete()
     for {
       profile <- {
-        collections.Developer_VersionsInfo.delete(filters).map(_ > 0)
+        collections.Developer_Versions.delete(filters).map(_ > 0)
       }
     } yield profile
   }
@@ -85,7 +85,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     val distributionArg = distribution.map { distribution => Filters.eq("version.distribution", distribution ) }
     val versionArg = version.map { version => Filters.eq("version.build", version.build) }
     val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
-    collections.Developer_VersionsInfo.find(filters)
+    collections.Developer_Versions.find(filters)
   }
 
   def setDeveloperDesiredVersions(deltas: Seq[DeveloperDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
