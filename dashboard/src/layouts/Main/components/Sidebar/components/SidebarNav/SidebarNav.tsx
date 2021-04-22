@@ -1,13 +1,12 @@
-/* eslint-disable react/no-multi-comp */
-/* eslint-disable react/display-name */
 import React, { forwardRef } from 'react';
 import { NavLink as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
-import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import { List, ListItem, Button, colors } from '@material-ui/core';
+import {PageTitle, SinglePage} from "../../Sidebar";
+import {instanceOf} from "prop-types";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme: any) => ({
   root: {},
   item: {
     display: 'flex',
@@ -40,7 +39,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const CustomRouterLink = forwardRef((props, ref) => (
+const CustomRouterLink = forwardRef((props: any, ref: any) => (
   <div
     ref={ref}
     style={{ flexGrow: 1 }}
@@ -49,8 +48,13 @@ const CustomRouterLink = forwardRef((props, ref) => (
   </div>
 ));
 
-const SidebarNav = props => {
-  const { pages, className, ...rest } = props;
+interface SidebarNavProps {
+  pages: Array<SinglePage|PageTitle>,
+  className: string
+}
+
+const SidebarNav: React.FC<SidebarNavProps> = props => {
+  const { pages, className } = props;
 
   const classes = useStyles();
 
@@ -75,7 +79,6 @@ const SidebarNav = props => {
 
   return (
     <List
-      {...rest}
       className={clsx(classes.root, className)}
     >
       {pages.map(page => (
@@ -97,11 +100,6 @@ const SidebarNav = props => {
       ))}
     </List>
   );
-};
-
-SidebarNav.propTypes = {
-  className: PropTypes.string,
-  pages: PropTypes.array.isRequired
 };
 
 export default SidebarNav;

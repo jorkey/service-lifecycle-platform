@@ -1,8 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
-import PropTypes from 'prop-types';
+import PropTypes, {instanceOf} from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
-import { Divider, Drawer } from '@material-ui/core';
+import {Divider, Drawer} from '@material-ui/core';
 import DashboardIcon from '@material-ui/icons/Dashboard';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import PeopleIcon from '@material-ui/icons/People';
@@ -11,7 +11,7 @@ import ErrorIcon from '@material-ui/icons/Error';
 
 import { Profile, SidebarNav } from './components';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme?: any) => ({
   drawer: {
     width: 240,
     [theme.breakpoints.up('lg')]: {
@@ -34,12 +34,29 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Sidebar = props => {
+export interface Page {
+  title: string,
+  href: string
+}
+
+export interface BarItem {
+  title: string,
+  icon: React.ReactElement
+}
+
+export interface SinglePage extends BarItem, Page {
+}
+
+export interface PageTitle extends BarItem {
+  pages: Array<Page>
+}
+
+const Sidebar = (props:any) => {
   const { open, variant, onClose, className, ...rest } = props;
 
   const classes = useStyles();
 
-  const pages = [
+  const pages: Array<SinglePage|PageTitle> = [
     {
       title: 'Dashboard',
       href: '/dashboard',
@@ -52,8 +69,17 @@ const Sidebar = props => {
     },
     {
       title: 'Users',
-      href: '/users',
-      icon: <PeopleIcon />
+      icon: <PeopleIcon />,
+      pages: [
+        {
+          title: 'People',
+          href: '/users/people',
+        },
+        {
+          title: 'Services',
+          href: '/users/services',
+        }
+      ]
     },
     {
       title: 'Logging',
