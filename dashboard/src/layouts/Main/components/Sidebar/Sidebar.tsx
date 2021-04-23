@@ -45,9 +45,11 @@ export interface BarItem {
 }
 
 export interface SinglePage extends BarItem, Page {
+  kind: 'single'
 }
 
 export interface PageTitle extends BarItem {
+  kind: 'title'
   pages: Array<Page>
 }
 
@@ -58,16 +60,19 @@ const Sidebar = (props:any) => {
 
   const pages: Array<SinglePage|PageTitle> = [
     {
+      kind: 'single',
       title: 'Dashboard',
       href: '/dashboard',
       icon: <DashboardIcon />
     },
     {
+      kind: 'single',
       title: 'Services',
       href: '/services',
       icon: <BubbleChartIcon />
     },
     {
+      kind: 'title',
       title: 'Users',
       icon: <PeopleIcon />,
       pages: [
@@ -82,11 +87,13 @@ const Sidebar = (props:any) => {
       ]
     },
     {
+      kind: 'single',
       title: 'Logging',
       href: '/logging',
       icon: <ListIcon />
     },
     {
+      kind: 'single',
       title: 'Failures',
       href: '/failures',
       icon: <ErrorIcon />

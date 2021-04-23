@@ -10,7 +10,7 @@ import {
   useAddUserMutation,
   useChangeUserMutation,
   UserRole,
-  useUserInfoLazyQuery, useUsersInfoQuery, useUsersListLazyQuery, useUsersListQuery, useWhoAmIQuery
+  useUserInfoLazyQuery, useUsersListQuery, useWhoAmIQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";

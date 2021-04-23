@@ -2,14 +2,20 @@ import React, { forwardRef } from 'react';
 import { NavLink as RouterLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
-import { List, ListItem, Button, colors } from '@material-ui/core';
+import {List, ListItem, Button, colors, ListItemIcon, ListItemText, Collapse} from '@material-ui/core';
 import {PageTitle, SinglePage} from "../../Sidebar";
-import {instanceOf} from "prop-types";
+import {ExpandLess, ExpandMore} from "@material-ui/icons";
 
 const useStyles = makeStyles((theme: any) => ({
   root: {},
   item: {
     display: 'flex',
+    paddingLeft: 0,
+    paddingTop: 0,
+    paddingBottom: 0
+  },
+  nestedItem: {
+    paddingLeft: theme.spacing(8),
     paddingTop: 0,
     paddingBottom: 0
   },
@@ -31,12 +37,12 @@ const useStyles = makeStyles((theme: any) => ({
     marginRight: theme.spacing(1)
   },
   active: {
-    color: theme.palette.primary.main,
-    fontWeight: theme.typography.fontWeightMedium,
-    '& $icon': {
-      color: theme.palette.primary.main
-    }
-  }
+    // color: theme.palette.primary.main,
+    // fontWeight: theme.typography.fontWeightMedium,
+    // '& $icon': {
+    //   color: theme.palette.primary.main
+    // }
+  },
 }));
 
 const CustomRouterLink = forwardRef((props: any, ref: any) => (
@@ -55,51 +61,55 @@ interface SidebarNavProps {
 
 const SidebarNav: React.FC<SidebarNavProps> = props => {
   const { pages, className } = props;
+  const [ openIndex, setOpenIndex ] = React.useState(new Map<number, boolean>());
 
   const classes = useStyles();
 
-  // TODO implement expand lists
-  // <ListItem button onClick={handleClick}>
-  //   <ListItemIcon>
-  //     <InboxIcon />
-  //   </ListItemIcon>
-  //   <ListItemText primary="Inbox" />
-  //   {open ? <ExpandLess /> : <ExpandMore />}
-  // </ListItem>
-  // <Collapse in={open} timeout="auto" unmountOnExit>
-  //   <List component="div" disablePadding>
-  //     <ListItem button className={classes.nested}>
-  //       <ListItemIcon>
-  //         <StarBorder />
-  //       </ListItemIcon>
-  //       <ListItemText primary="Starred" />
-  //     </ListItem>
-  //   </List>
-  // </Collapse>
-
   return (
-    <List
-      className={clsx(classes.root, className)}
-    >
-      {pages.map(page => (
-        <ListItem
-          className={classes.item}
-          disableGutters
-          key={page.title}
-        >
-          <Button
-            activeClassName={classes.active}
-            className={classes.button}
-            component={CustomRouterLink}
-            to={page.href}
+    <List className={clsx(classes.root, className)} >
+      {pages.map((page, index) => (
+        <div key={index}>
+          <ListItem
+            button
+            className={classes.item}
+            disableGutters
           >
-            <div className={classes.icon}>{page.icon}</div>
-            {page.title}
-          </Button>
-        </ListItem>
+            <Button
+              // activeClassName={classes.active}
+              className={classes.button}
+              component={CustomRouterLink}
+              // to={(page.kind == 'single')?page.href:undefined}
+              to={'qwe'}
+              onClick={(page.kind == 'title')?() => {
+                const opened = !openIndex.get(index)
+                setOpenIndex(new Map(openIndex.set(index, opened)))
+              }:undefined}
+            >
+              <ListItemIcon className={classes.icon}>{page.icon}</ListItemIcon>
+              <ListItemText primary={page.title} />
+              { (page.kind == 'title')?openIndex.get(index) ? <ExpandLess /> : <ExpandMore />:null }
+            </Button>
+          </ListItem>
+          {(page.kind == 'title')?<Collapse in={openIndex.get(index)} timeout="auto" unmountOnExit>
+            <List component="div">
+              {page.pages.map((page, index) =>
+                (<ListItem button className={classes.nestedItem} key={index}>
+                  <Button
+                    activeClassName={classes.active}
+                    className={classes.button}
+                    component={CustomRouterLink}
+                    to={page.href}
+                  >
+                    {page.title}
+                  </Button>
+                </ListItem>))
+              }
+            </List>
+          </Collapse>:null}
+        </div>
       ))}
     </List>
   );
-};
+}
 
 export default SidebarNav;

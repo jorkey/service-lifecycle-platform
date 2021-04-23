@@ -25,7 +25,8 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'flex-end'
   },
   control: {
-    marginLeft: '50px'
+    marginLeft: '50px',
+    textTransform: 'none'
   }
 }));
 
