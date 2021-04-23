@@ -35,7 +35,7 @@ interface UsersManagerRouteParams {
 }
 
 const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = props => {
-  const usersType = props.match.params.type
+  const userType = props.match.params.type
 
   const classes = useStyles()
   const routeMatch = useRouteMatch();
@@ -62,12 +62,12 @@ const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = pro
             </Link>
           </Box>
         }
-        title={usersType == 'people'? 'People' : 'Service Users'}
+        title={userType == 'human'? 'People' : 'Service Users'}
       />
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <UsersTable usersType={usersType}/>
+          <UsersTable userType={userType}/>
         </div>
       </CardContent>
     </Card>

@@ -71,13 +71,13 @@ const Actions: React.FC<ActionsProps> = (props) => {
 }
 
 interface UsersTableProps {
-  usersType: string
+  userType: string
 }
 
 const UsersTable: React.FC<UsersTableProps> = props => {
-  const { usersType } = props
+  const { userType } = props
   const [ selected, setSelected ] = React.useState('')
-  const { data, refetch } = useUsersInfoQuery({ variables: { human: usersType == 'people' } })
+  const { data, refetch } = useUsersInfoQuery({ variables: { human: userType == 'human' } })
 
   const classes = useStyles()
 
@@ -88,13 +88,15 @@ const UsersTable: React.FC<UsersTableProps> = props => {
           <TableCell className={classes.userColumn}>User</TableCell>
           <TableCell className={classes.nameColumn}>Name</TableCell>
           <TableCell className={classes.rolesColumn}>Roles</TableCell>
-          { usersType == 'people' ? <TableCell className={classes.emailColumn}>E-Mail</TableCell> : null }
+          { userType == 'human' ? <TableCell className={classes.emailColumn}>E-Mail</TableCell> : null }
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
         </TableRow>
       </TableHead>
       { data ?
         <TableBody>
-          {[...data.usersInfo].sort().map(userInfo =>
+          {[...data.usersInfo]
+              .sort((u1,u2) =>  (u1.user > u2.user ? 1 : -1))
+              .map(userInfo =>
             (<TableRow
               hover
               key={userInfo.user}
@@ -104,7 +106,7 @@ const UsersTable: React.FC<UsersTableProps> = props => {
               <TableCell className={classes.userColumn}>{userInfo.user}</TableCell>
               <TableCell className={classes.nameColumn}>{userInfo.name}</TableCell>
               <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
-              { usersType == 'people' ? <TableCell className={classes.emailColumn}>{userInfo.email}</TableCell> : null }
+              { userType == 'human' ? <TableCell className={classes.emailColumn}>{userInfo.email}</TableCell> : null }
               <TableCell className={classes.actionsColumn}><Actions
                 removing={ promise => promise.then(() => refetch()) }
                 userInfo={ userInfo }

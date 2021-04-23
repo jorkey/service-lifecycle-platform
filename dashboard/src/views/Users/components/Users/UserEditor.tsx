@@ -304,7 +304,7 @@ const UserEditor: React.FC<UserEditorParams> = props => {
           <Button className={classes.control}
             color="primary"
             variant="contained"
-            href='/users'
+            href={props.fromUrl + '/' + props.match.params.type}
           >
             Cancel
           </Button>

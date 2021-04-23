@@ -78,11 +78,11 @@ const Sidebar = (props:any) => {
       pages: [
         {
           title: 'People',
-          href: '/users/people',
+          href: '/users/human',
         },
         {
           title: 'Services',
-          href: '/users/services',
+          href: '/users/service',
         }
       ]
     },
