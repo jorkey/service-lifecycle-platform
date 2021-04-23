@@ -15,7 +15,7 @@ const useStyles = makeStyles((theme: any) => ({
     paddingBottom: 0
   },
   nestedItem: {
-    paddingLeft: theme.spacing(8),
+    paddingLeft: theme.spacing(10),
     paddingTop: 0,
     paddingBottom: 0
   },
@@ -37,11 +37,11 @@ const useStyles = makeStyles((theme: any) => ({
     marginRight: theme.spacing(1)
   },
   active: {
-    // color: theme.palette.primary.main,
-    // fontWeight: theme.typography.fontWeightMedium,
-    // '& $icon': {
-    //   color: theme.palette.primary.main
-    // }
+    color: theme.palette.primary.main,
+    fontWeight: theme.typography.fontWeightMedium,
+    '& $icon': {
+      color: theme.palette.primary.main
+    }
   },
 }));
 
@@ -74,21 +74,28 @@ const SidebarNav: React.FC<SidebarNavProps> = props => {
             className={classes.item}
             disableGutters
           >
-            <Button
-              // activeClassName={classes.active}
-              className={classes.button}
-              component={CustomRouterLink}
-              // to={(page.kind == 'single')?page.href:undefined}
-              to={'qwe'}
-              onClick={(page.kind == 'title')?() => {
-                const opened = !openIndex.get(index)
-                setOpenIndex(new Map(openIndex.set(index, opened)))
-              }:undefined}
-            >
-              <ListItemIcon className={classes.icon}>{page.icon}</ListItemIcon>
-              <ListItemText primary={page.title} />
-              { (page.kind == 'title')?openIndex.get(index) ? <ExpandLess /> : <ExpandMore />:null }
-            </Button>
+            {(page.kind == 'single') ?
+              (<Button
+                activeClassName={classes.active}
+                className={classes.button}
+                component={CustomRouterLink}
+                to={page.href}
+              >
+                <ListItemIcon className={classes.icon}>{page.icon}</ListItemIcon>
+                {page.title}
+              </Button>) :
+              (<Button
+                className={classes.button}
+                onClick={() => {
+                  const opened = !openIndex.get(index)
+                  setOpenIndex(new Map(openIndex.set(index, opened)))
+                }}
+              >
+                <ListItemIcon className={classes.icon}>{page.icon}</ListItemIcon>
+                {page.title}
+                {openIndex.get(index) ? <ExpandLess/> : <ExpandMore/>}
+              </Button>)
+            }
           </ListItem>
           {(page.kind == 'title')?<Collapse in={openIndex.get(index)} timeout="auto" unmountOnExit>
             <List component="div">

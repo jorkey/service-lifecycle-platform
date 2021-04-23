@@ -37,8 +37,8 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface UserRouteParams {
-  user?: string,
-  type?: string
+  type: string,
+  user?: string
 }
 
 interface UserEditorParams extends RouteComponentProps<UserRouteParams> {
@@ -101,7 +101,7 @@ const UserEditor: React.FC<UserEditorParams> = props => {
     })
 
   if (addUserData || changeUserData) {
-    window.location.href = props.fromUrl
+    window.location.href = props.fromUrl + '/' + props.match.params.type
   }
 
   const validate: () => boolean = () => {

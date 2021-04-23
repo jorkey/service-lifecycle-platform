@@ -6,13 +6,13 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, IconButton, Select, Box, Link,
+  Divider, Box, Link,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import UsersTable from './UsersTable';
-import {useRouteMatch} from "react-router-dom";
+import {RouteComponentProps, useRouteMatch} from "react-router-dom";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme:any) => ({
   root: {},
   content: {
     padding: 0
@@ -30,9 +30,14 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const UsersManager = () => {
+interface UsersManagerRouteParams {
+  type: string
+}
+
+const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = props => {
+  const usersType = props.match.params.type
+
   const classes = useStyles()
-  const [people, setPeople] = useState(true)
   const routeMatch = useRouteMatch();
 
   return (
@@ -44,18 +49,7 @@ const UsersManager = () => {
           <Box
             className={classes.controls}
           >
-            <Select
-                className={classes.control}
-                native
-                title='Type'
-                value={people?'people':'services'}
-                onChange={(event) =>
-                  setPeople(event.target.value === 'people')}
-              >
-                <option value='people'>People</option>
-                <option value='services'>Services</option>
-            </Select>
-            <Link href={`${routeMatch.url}/new/${people?'human':'service'}`}>
+            <Link href={`${routeMatch.url}/new`}>
               <Button
                 color="primary"
                 variant="contained"
@@ -63,17 +57,17 @@ const UsersManager = () => {
                 startIcon={<AddIcon/>}
                 onClick={() => {}}
               >
-                Add New {people?'Human':'Service'}
+                Add New
               </Button>
             </Link>
           </Box>
         }
-        title={'Users'}
+        title={usersType == 'people'? 'People' : 'Service Users'}
       />
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <UsersTable people={people}/>
+          <UsersTable usersType={usersType}/>
         </div>
       </CardContent>
     </Card>

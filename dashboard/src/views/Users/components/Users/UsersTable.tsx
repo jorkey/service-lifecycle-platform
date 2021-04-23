@@ -71,13 +71,13 @@ const Actions: React.FC<ActionsProps> = (props) => {
 }
 
 interface UsersTableProps {
-  people: boolean
+  usersType: string
 }
 
 const UsersTable: React.FC<UsersTableProps> = props => {
-  const { people } = props
+  const { usersType } = props
   const [ selected, setSelected ] = React.useState('')
-  const { data, refetch } = useUsersInfoQuery({ variables: { human: people } })
+  const { data, refetch } = useUsersInfoQuery({ variables: { human: usersType == 'people' } })
 
   const classes = useStyles()
 
@@ -88,7 +88,7 @@ const UsersTable: React.FC<UsersTableProps> = props => {
           <TableCell className={classes.userColumn}>User</TableCell>
           <TableCell className={classes.nameColumn}>Name</TableCell>
           <TableCell className={classes.rolesColumn}>Roles</TableCell>
-          { people ? <TableCell className={classes.emailColumn}>E-Mail</TableCell> : null }
+          { usersType == 'people' ? <TableCell className={classes.emailColumn}>E-Mail</TableCell> : null }
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
         </TableRow>
       </TableHead>
@@ -104,7 +104,7 @@ const UsersTable: React.FC<UsersTableProps> = props => {
               <TableCell className={classes.userColumn}>{userInfo.user}</TableCell>
               <TableCell className={classes.nameColumn}>{userInfo.name}</TableCell>
               <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
-              { people ? <TableCell className={classes.emailColumn}>{userInfo.email}</TableCell> : null }
+              { usersType == 'people' ? <TableCell className={classes.emailColumn}>{userInfo.email}</TableCell> : null }
               <TableCell className={classes.actionsColumn}><Actions
                 removing={ promise => promise.then(() => refetch()) }
                 userInfo={ userInfo }
