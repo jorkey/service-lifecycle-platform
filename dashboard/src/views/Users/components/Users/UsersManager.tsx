@@ -11,6 +11,7 @@ import {
 import AddIcon from '@material-ui/icons/Add';
 import UsersTable from './UsersTable';
 import {RouteComponentProps, useRouteMatch} from "react-router-dom";
+import { NavLink as RouterLink } from 'react-router-dom';
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -49,17 +50,16 @@ const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = pro
           <Box
             className={classes.controls}
           >
-            <Link href={`${routeMatch.url}/new`}>
-              <Button
-                color="primary"
-                variant="contained"
-                className={classes.control}
-                startIcon={<AddIcon/>}
-                onClick={() => {}}
-              >
-                Add New
-              </Button>
-            </Link>
+            <Button
+              color="primary"
+              variant="contained"
+              className={classes.control}
+              startIcon={<AddIcon/>}
+              component={RouterLink}
+              to={`${routeMatch.url}/new`}
+            >
+              Add New
+            </Button>
           </Box>
         }
         title={userType == 'human'? 'People' : 'Service Users'}
