@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import {RouteComponentProps, useRouteMatch} from "react-router-dom"
+import {NavLink as RouterLink, RouteComponentProps, useRouteMatch, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
@@ -66,6 +66,8 @@ const UserEditor: React.FC<UserEditorParams> = props => {
   const editUser = props.match.params.user
   const [byAdmin, setByAdmin] = useState(false);
 
+  const history = useHistory()
+
   if (!initialized && whoAmI.data) {
     if (editUser) {
       if (!userInfo.data && !userInfo.loading) {
@@ -101,7 +103,7 @@ const UserEditor: React.FC<UserEditorParams> = props => {
     })
 
   if (addUserData || changeUserData) {
-    window.location.href = props.fromUrl + '/' + props.match.params.type
+    history.push(props.fromUrl + '/' + props.match.params.type)
   }
 
   const validate: () => boolean = () => {
@@ -304,7 +306,8 @@ const UserEditor: React.FC<UserEditorParams> = props => {
           <Button className={classes.control}
             color="primary"
             variant="contained"
-            href={props.fromUrl + '/' + props.match.params.type}
+            component={RouterLink}
+            to={props.fromUrl + '/' + props.match.params.type}
           >
             Cancel
           </Button>

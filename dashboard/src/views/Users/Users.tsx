@@ -26,7 +26,8 @@ const Users = () => {
           xs={12}
         >
           <Switch>
-            <Route exact path={`${routeMatch.url}/:type`} component={UsersManager}/>
+            <Route exact path={`${routeMatch.url}/:type`}
+              component={UsersManager}/>
             <Route exact path={`${routeMatch.url}/:type/new`}
               render={(props) => <UserEditor fromUrl={routeMatch.url} {...props} /> }>
             </Route>

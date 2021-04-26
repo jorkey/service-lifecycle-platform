@@ -77,7 +77,7 @@ interface UsersTableProps {
 const UsersTable: React.FC<UsersTableProps> = props => {
   const { userType } = props
   const [ selected, setSelected ] = React.useState('')
-  const { data, refetch } = useUsersInfoQuery({ variables: { human: userType == 'human' } })
+  const { data, refetch } = useUsersInfoQuery({ variables: { human: userType == 'human' }, fetchPolicy: 'no-cache' })
 
   const classes = useStyles()
 
