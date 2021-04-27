@@ -24,13 +24,23 @@ class ProcessMonitorTest extends FlatSpec with Matchers {
 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
-  val script = File.createTempFile("test1", ".sh"); script.deleteOnExit()
-  IoUtils.writeBytesToFile(script, s"sleep 1\nsh ${script.toString}\nsleep 30".getBytes)
-
   it should "terminate process group when max memory reached" in {
+    val script = File.createTempFile("test1", ".sh"); script.deleteOnExit()
+    IoUtils.writeBytesToFile(script, s"sleep 1\nsh ${script.toString}\nsleep 30".getBytes)
+
     val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
     process.readOutput(onOutput = lines => lines.foreach { case (line, nl) => println(line) })
-    new ProcessMonitor(process, RestartConditions(maxMemoryMB = Some(10000), false, 100)).start()
+    new ProcessMonitor(process, RestartConditions(maxMemoryMB = Some(10000), None, false, 100)).start()
+    result(process.onTermination())
+  }
+
+  it should "terminate process group when max CPU percents reached" in {
+    val script = File.createTempFile("test2", ".sh"); script.deleteOnExit()
+    IoUtils.writeBytesToFile(script, "for ((;;)) do echo \"test\" >/dev/null; done".getBytes)
+
+    val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
+    process.readOutput(onOutput = lines => lines.foreach { case (line, nl) => println(line) })
+    new ProcessMonitor(process, RestartConditions(None, Some(50), false, 100)).start()
     result(process.onTermination())
   }
 }

@@ -18,6 +18,7 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
   private val isUnix = osName.startsWith("Linux") || osName.startsWith("Mac")
 
   private var cancelable = Option.empty[Cancelable]
+  private var lastCpuTime = Option.empty[Long]
 
   def start() = {
     cancelable match {
@@ -35,28 +36,36 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
 
   private def checkTask() = {
     if (process.isAlive()) {
-      val pid = process.getHandle().pid()
       for (maxMemorySize <- conditions.maxMemory) {
-        val memorySize = process.getProcessDescendants().foldLeft(0L)((sum, proc) => sum + getProcessMemorySize(proc.pid).getOrElse(0L))
+        val memorySize = getProcessMemorySize(process.getHandle().toHandle).getOrElse(0L) +
+          process.getProcessDescendants().foldLeft(0L)((sum, proc) => sum + getProcessMemorySize(proc).getOrElse(0L))
         if (memorySize > maxMemorySize) {
-          stop()
           log.error(s"Process memory size ${memorySize} > ${maxMemorySize}. Kill process group.")
-          if (conditions.makeCore && isUnix) {
-            val command = s"kill -SIGQUIT -- -${pid}"
-            log.info(s"Execute ${command}")
-            Runtime.getRuntime.exec(command, null, new File("."))
-          } else {
-            process.terminate()
+          stop()
+          killProcessGroup()
+        }
+      }
+      for (maxCpuPercents <- conditions.maxCpuPercents) {
+        for (cpuTime <- getProcessCPU(process.getHandle().toHandle)) {
+          for (lastCpuTime <- lastCpuTime) {
+            val percents = (cpuTime - lastCpuTime)*100/conditions.checkTimeoutMs
+            println(s"${percents}%")
+            if (percents >= maxCpuPercents) {
+              log.error(s"Process utilize ${percents}% of CPU time. That is more that maximum ${maxCpuPercents}%. Kill process group.")
+              stop()
+              killProcessGroup()
+            }
           }
+          lastCpuTime = Some(cpuTime)
         }
       }
     }
   }
 
-  private def getProcessMemorySize(pid: Long): Option[Long] = {
+  private def getProcessMemorySize(handle: ProcessHandle): Option[Long] = {
     if (isUnix) {
       try {
-        val proc = Runtime.getRuntime.exec(s"ps -o vsz= -p ${pid}", null, new File("."))
+        val proc = Runtime.getRuntime.exec(s"ps -o vsz= -p ${handle.pid()}", null, new File("."))
         val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, ProcessUtils.Logging.None).getOrElse {
           log.error(s"Get 'ps' output error")
           return None
@@ -80,6 +89,25 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
       }
     } else {
       None
+    }
+  }
+
+  private def getProcessCPU(handle: ProcessHandle): Option[Long] = {
+    val duration = handle.info().totalCpuDuration()
+    if (duration.isPresent) {
+      Some(duration.get().toMillis)
+    } else {
+      None
+    }
+  }
+
+  private def killProcessGroup(): Unit = {
+    if (conditions.makeCore && isUnix) {
+      val command = s"kill -SIGQUIT -- -${process.getHandle().pid()}"
+      log.info(s"Execute ${command}")
+      Runtime.getRuntime.exec(command, null, new File("."))
+    } else {
+      process.terminate()
     }
   }
 }
