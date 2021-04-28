@@ -33,11 +33,11 @@ class MonitorThread(state: ServiceStateController,
               for (lastCpuTime <- lastCpuTime) {
                 val percents = (cpuTime - lastCpuTime)*100/(maxCpu.durationSec*1000)
                 if (percents >= maxCpu.percents) {
-                  log.error(s"Process ${process.toHandle.pid()} utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
+                  log.error(s"Process ${process.toHandle.pid()} CPU utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
                   stop()
                   killProcessGroup()
                 } else {
-                  log.debug(s"Process ${process.toHandle.pid()} utilize ${percents}%")
+                  log.debug(s"Process ${process.toHandle.pid()} CPU utilize ${percents}%")
                 }
               }
               lastCpuTime = Some(cpuTime)
