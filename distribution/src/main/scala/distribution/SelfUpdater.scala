@@ -24,7 +24,9 @@ class SelfUpdater(dir: DistributionDirectory)
     extends Thread with DeveloperDistributionWebPaths { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
+  private val distributionVersion = IOUtils.readServiceVersion(Common.DistributionServiceName, new File("."))
   private val scriptsVersion = IOUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
+
   private var stopping = false
 
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => log.error("Uncatched exception", ex))
@@ -63,7 +65,7 @@ class SelfUpdater(dir: DistributionDirectory)
             return
         }
         val distributionNeedUpdate = Utils.isServiceNeedUpdate(Common.DistributionServiceName,
-          Utils.getManifestBuildVersion(Common.DistributionServiceName),
+          distributionVersion,
           desiredVersions.get(Common.DistributionServiceName)).isDefined
         val scriptsNeedUpdate = Utils.isServiceNeedUpdate(Common.ScriptsServiceName,
           scriptsVersion,

@@ -326,8 +326,10 @@ object GitRepository {
         val walk = SubmoduleWalk.forIndex(git.getRepository)
         while (walk.next) {
           val submoduleRepository = walk.getRepository
-          Git.wrap(submoduleRepository).pull().call()
-          submoduleRepository.close
+          if (submoduleRepository != null) {
+            Git.wrap(submoduleRepository).pull().call()
+            submoduleRepository.close
+          }
         }
         git.pull().call()
         toClose = None

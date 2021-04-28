@@ -2,7 +2,6 @@ package com.vyulabs.update.utils
 
 import java.io._
 import java.util.Date
-
 import com.typesafe.config._
 import com.vyulabs.update.common.Common
 import com.vyulabs.update.common.Common.ServiceName
@@ -320,9 +319,11 @@ object IOUtils {
   def maybeFreeSpace(dir: File, maxCapacity: Long, except: Set[File])(implicit log: Logger): Unit = {
     val used = getUsedSpace(dir)
     if (used > maxCapacity) {
+      log.info(s"Directory ${dir} takes ${used} of space that is large than limit ${maxCapacity} - delete old files")
       val files = dir.listFiles().filterNot(except.contains(_))
       if (files.length > 1) {
         val oldestFile = files.sortBy(_.lastModified()).head
+        log.info(s"Delete ${oldestFile}")
         if (!deleteFileRecursively(oldestFile)) {
           log.error(s"Can't delete ${oldestFile}")
         } else {

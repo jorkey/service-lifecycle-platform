@@ -126,15 +126,6 @@ trait VersionUtils extends GetUtils with PutUtils with DistributionWebPaths with
     }
   }
 
-  def getVersion(): Route = {
-    Utils.getManifestBuildVersion(Common.DistributionServiceName) match {
-      case Some(version) =>
-        complete(version.toString)
-      case None =>
-        complete((InternalServerError, s"Version is not defined in manifest"))
-    }
-  }
-
   def getServiceVersion(serviceName: ServiceName, directory: File): Route = {
     IOUtils.readServiceVersion(serviceName, directory) match {
       case Some(version) =>

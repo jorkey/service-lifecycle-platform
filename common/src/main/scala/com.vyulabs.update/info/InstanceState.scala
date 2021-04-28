@@ -94,7 +94,7 @@ object ServicesState extends DefaultJsonProtocol {
   }
 
   def getOwnInstanceState(serviceName: ServiceName, startDate: Date)(implicit log: Logger): ServicesState = {
-    val ownState = ServiceState(version = Utils.getManifestBuildVersion(serviceName),
+    val ownState = ServiceState(version = IOUtils.readServiceVersion(serviceName, new File(".")),
       installDate = IOUtils.getServiceInstallTime(serviceName, new File(".")),
       startDate = Some(startDate))
     val directoryState = Map.empty + (serviceName -> ownState)
