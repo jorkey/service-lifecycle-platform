@@ -1,7 +1,7 @@
 package com.vyulabs.update.process
 
 import com.vyulabs.update.common.common.ThreadTimer
-import com.vyulabs.update.common.config.RestartConditions
+import com.vyulabs.update.common.config.{MaxCpu, RestartConditions}
 import com.vyulabs.update.common.process.{ChildProcess, ProcessMonitor}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import org.scalatest.{FlatSpec, Matchers}
@@ -40,7 +40,7 @@ class ProcessMonitorTest extends FlatSpec with Matchers {
 
     val process = result(ChildProcess.start("/bin/sh", Seq(script.toString)))
     process.readOutput(onOutput = lines => lines.foreach { case (line, nl) => println(line) })
-    new ProcessMonitor(process, RestartConditions(None, Some(50), false, 100)).start()
+    new ProcessMonitor(process, RestartConditions(None, Some(MaxCpu(50, 2000)), false, 100)).start()
     result(process.onTermination())
   }
 }

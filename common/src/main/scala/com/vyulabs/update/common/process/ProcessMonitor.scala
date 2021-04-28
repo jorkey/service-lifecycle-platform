@@ -18,6 +18,8 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
   private val isUnix = osName.startsWith("Linux") || osName.startsWith("Mac")
 
   private var cancelable = Option.empty[Cancelable]
+
+  private var lastCpuMeasure = Option.empty[Long]
   private var lastCpuTime = Option.empty[Long]
 
   def start() = {
@@ -36,6 +38,25 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
 
   private def checkTask() = {
     if (process.isAlive()) {
+      for (maxCpu <- conditions.maxCpu) {
+        if (lastCpuMeasure.isEmpty || System.currentTimeMillis() >= lastCpuMeasure.get + maxCpu.duration) {
+          println(s"check ${System.currentTimeMillis()}")
+          for (cpuTime <- getProcessCPU(process.getHandle().toHandle)) {
+            println(s"cpuTime ${cpuTime}")
+            for (lastCpuTime <- lastCpuTime) {
+              val percents = (cpuTime - lastCpuTime)*100/maxCpu.duration
+              println(s"percents ${percents}")
+              if (percents >= maxCpu.percents) {
+                log.error(s"Process utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
+                stop()
+                killProcessGroup()
+              }
+            }
+            lastCpuTime = Some(cpuTime)
+          }
+          lastCpuMeasure = Some(System.currentTimeMillis())
+        }
+      }
       for (maxMemorySize <- conditions.maxMemory) {
         val memorySize = getProcessMemorySize(process.getHandle().toHandle).getOrElse(0L) +
           process.getProcessDescendants().foldLeft(0L)((sum, proc) => sum + getProcessMemorySize(proc).getOrElse(0L))
@@ -43,20 +64,6 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
           log.error(s"Process memory size ${memorySize} > ${maxMemorySize}. Kill process group.")
           stop()
           killProcessGroup()
-        }
-      }
-      for (maxCpuPercents <- conditions.maxCpuPercents) {
-        for (cpuTime <- getProcessCPU(process.getHandle().toHandle)) {
-          for (lastCpuTime <- lastCpuTime) {
-            val percents = (cpuTime - lastCpuTime)*100/conditions.checkTimeoutMs
-            println(s"${percents}%")
-            if (percents >= maxCpuPercents) {
-              log.error(s"Process utilize ${percents}% of CPU time. That is more that maximum ${maxCpuPercents}%. Kill process group.")
-              stop()
-              killProcessGroup()
-            }
-          }
-          lastCpuTime = Some(cpuTime)
         }
       }
     }
