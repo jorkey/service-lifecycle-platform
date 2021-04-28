@@ -40,16 +40,15 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
     if (process.isAlive()) {
       for (maxCpu <- conditions.maxCpu) {
         if (lastCpuMeasure.isEmpty || System.currentTimeMillis() >= lastCpuMeasure.get + maxCpu.duration) {
-          println(s"check ${System.currentTimeMillis()}")
           for (cpuTime <- getProcessCPU(process.getHandle().toHandle)) {
-            println(s"cpuTime ${cpuTime}")
             for (lastCpuTime <- lastCpuTime) {
               val percents = (cpuTime - lastCpuTime)*100/maxCpu.duration
-              println(s"percents ${percents}")
               if (percents >= maxCpu.percents) {
-                log.error(s"Process utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
+                log.error(s"Process ${process.getHandle().pid()} utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
                 stop()
                 killProcessGroup()
+              } else {
+                log.debug(s"Process ${process.getHandle().pid()} utilize ${percents}%")
               }
             }
             lastCpuTime = Some(cpuTime)
@@ -100,12 +99,63 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
   }
 
   private def getProcessCPU(handle: ProcessHandle): Option[Long] = {
-    val duration = handle.info().totalCpuDuration()
-    if (duration.isPresent) {
-      Some(duration.get().toMillis)
+    if (isUnix) {
+      try {
+        val proc = Runtime.getRuntime.exec(s"ps -o time= -p ${handle.pid()}", null, new File("."))
+        val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, ProcessUtils.Logging.None).getOrElse {
+          log.error(s"Get 'ps' output error")
+          return None
+        }
+        try {
+          val value = stdOutput.trim
+          if (!value.isEmpty) {
+            // Parse format [DD-]hh:mm:ss[.ms]
+            val index1 = value.lastIndexOf('.')
+            val millis = if (index1 != -1) value.substring(index1+1).toInt*10 else 0
+            val index2 = value.lastIndexOf(':', if (index1 != -1) index1-1 else value.length-1)
+            if (index2 == -1) {
+              throw new IOException()
+            }
+            val seconds = value.substring(index2+1, if (index1 != -1) index1 else value.length).toInt
+            val index3 = value.lastIndexOf(':', index2-1)
+            val minutes = value.substring(index3+1, index2).toInt
+            var hours, days = 0
+            if (index3 != -1) {
+              val index4 = value.lastIndexOf('-', index3-1)
+              hours = value.substring(index4+1, index3).toInt
+              if (index4 != -1) {
+                days = value.substring(0, index4).toInt
+              }
+            }
+            val time = FiniteDuration(days, TimeUnit.DAYS).toMillis +
+              FiniteDuration(hours, TimeUnit.HOURS).toMillis +
+              FiniteDuration(minutes, TimeUnit.MINUTES).toMillis +
+              FiniteDuration(seconds, TimeUnit.SECONDS).toMillis +
+              millis
+            Some(time)
+          } else {
+            None
+          }
+        } catch {
+          case ex: Exception =>
+            log.error(s"Parse 'ps' output error", ex)
+            None
+        }
+      } catch {
+        case ex: IOException =>
+          log.error("Process creation error", ex)
+          None
+      }
     } else {
       None
     }
+
+//    val duration = handle.info().totalCpuDuration()
+//    if (duration.isPresent) {
+//      Some(duration.get().toMillis)
+//    } else {
+//      None
+//    }
   }
 
   private def killProcessGroup(): Unit = {
