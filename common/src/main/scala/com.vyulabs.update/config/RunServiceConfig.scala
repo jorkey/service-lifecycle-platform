@@ -2,7 +2,7 @@ package com.vyulabs.update.config
 
 import spray.json.DefaultJsonProtocol
 
-case class MaxCpu(percents: Int, duration: Int)
+case class MaxCpu(percents: Int, durationSec: Int)
 
 object MaxCpu extends DefaultJsonProtocol {
   implicit val maxCpuJson = jsonFormat2(MaxCpu.apply)

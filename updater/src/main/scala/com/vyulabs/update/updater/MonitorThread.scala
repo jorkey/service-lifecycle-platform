@@ -28,10 +28,10 @@ class MonitorThread(state: ServiceStateController,
       while (process.isAlive) {
         val pid = process.pid()
         for (maxCpu <- restartConditions.maxCpu) {
-          if (lastCpuMeasure.isEmpty || System.currentTimeMillis() >= lastCpuMeasure.get + maxCpu.duration) {
+          if (lastCpuMeasure.isEmpty || System.currentTimeMillis() >= lastCpuMeasure.get + maxCpu.durationSec*1000) {
             for (cpuTime <- getProcessCPU(process.toHandle)) {
               for (lastCpuTime <- lastCpuTime) {
-                val percents = (cpuTime - lastCpuTime)*100/maxCpu.duration
+                val percents = (cpuTime - lastCpuTime)*100/(maxCpu.durationSec*1000)
                 if (percents >= maxCpu.percents) {
                   log.error(s"Process ${process.toHandle.pid()} utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
                   stop()
