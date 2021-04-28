@@ -2,7 +2,7 @@ package com.vyulabs.update.config
 
 import spray.json.DefaultJsonProtocol
 
-case class RestartConditionsConfig(maxMemoryMB: Option[Long]) {
+case class RestartConditionsConfig(maxMemoryMB: Option[Long], maxCpuPercents: Option[Int]) {
   def maxMemory = maxMemoryMB.map(_ * 1024 *1024)
 }
 
@@ -14,6 +14,6 @@ object RunServiceConfig extends DefaultJsonProtocol {
   import LogWriterConfig._
   import LogUploaderConfig._
 
-  implicit val restartConditionsConfigJson = jsonFormat1(RestartConditionsConfig.apply)
+  implicit val restartConditionsConfigJson = jsonFormat2(RestartConditionsConfig.apply)
   implicit val runServiceConfigJson = jsonFormat8(RunServiceConfig.apply)
 }
