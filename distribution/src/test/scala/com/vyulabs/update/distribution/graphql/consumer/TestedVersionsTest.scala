@@ -21,10 +21,10 @@ class TestedVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val consumerProfileCollection = collections.Developer_Profiles
+    val servicesProfileCollection = collections.Developer_ServiceProfiles
     val clientInfoCollection = collections.Developer_ConsumersInfo
 
-    result(consumerProfileCollection.insert(DistributionConsumerProfile("common", Seq("service1", "service2"))))
+    result(servicesProfileCollection.insert(ServicesProfile("common", Seq("service1", "service2"))))
 
     result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
     result(clientInfoCollection.insert(DistributionConsumerInfo("distribution2", "common", Some("distribution1"))))

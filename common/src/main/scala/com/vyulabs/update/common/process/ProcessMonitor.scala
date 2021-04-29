@@ -39,16 +39,16 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
   private def checkTask() = {
     if (process.isAlive()) {
       for (maxCpu <- conditions.maxCpu) {
-        if (lastCpuMeasure.isEmpty || System.currentTimeMillis() >= lastCpuMeasure.get + maxCpu.duration) {
+        if (lastCpuMeasure.isEmpty || System.currentTimeMillis() >= lastCpuMeasure.get + maxCpu.durationSec*1000) {
           for (cpuTime <- getProcessCPU(process.getHandle().toHandle)) {
             for (lastCpuTime <- lastCpuTime) {
-              val percents = (cpuTime - lastCpuTime)*100/maxCpu.duration
+              val percents = (cpuTime - lastCpuTime)*100/(maxCpu.durationSec*1000)
               if (percents >= maxCpu.percents) {
-                log.error(s"Process ${process.getHandle().pid()} utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
+                log.error(s"Process ${process.getHandle().pid()} CPU utilize ${percents}% >= ${maxCpu.percents}% during ${maxCpu.durationSec} sec. Kill process group.")
                 stop()
                 killProcessGroup()
               } else {
-                log.debug(s"Process ${process.getHandle().pid()} utilize ${percents}%")
+                log.debug(s"Process ${process.getHandle().pid()} CPU utilize ${percents}% during ${maxCpu.durationSec} sec")
               }
             }
             lastCpuTime = Some(cpuTime)

@@ -32,7 +32,7 @@ object BuilderMain extends App {
     "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
     "      [sourceBranches==?[,?]...] [test=true]\n" +
     "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
-    "      <providerDistributionName=?> <providerDistributionUrL=?> <consumerProfile=?> [testDistributionMatch=?]\n" +
+    "      <providerDistributionName=?> <providerDistributionUrL=?> <servicesProfile=?> [testDistributionMatch=?]\n" +
     "    buildDeveloperVersion <distribution=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
     "    buildClientVersion <distribution=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -64,7 +64,7 @@ object BuilderMain extends App {
         if (!distributionBuilder.buildDistributionFromSources() ||
             !distributionBuilder.addDistributionUsers() ||
             !distributionBuilder.generateAndUploadInitialVersions(author) ||
-            !distributionBuilder.addCommonConsumerProfile() ||
+            !distributionBuilder.addCommonServicesProfile() ||
             !distributionBuilder.installBuilderFromSources() ||
             !distributionBuilder.removeTemporaryDistributionUsers()) {
           Utils.error("Build distribution error")
@@ -72,9 +72,9 @@ object BuilderMain extends App {
       } else {
         val providerDistributionName = arguments.getValue("providerDistributionName")
         val providerDistributionURL = new URL(arguments.getValue("providerDistributionUrl"))
-        val consumerProfile = arguments.getValue("consumerProfile")
+        val servicesProfile = arguments.getValue("servicesProfile")
         val testDistributionMatch = arguments.getOptionValue("testDistributionMatch")
-        if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL, consumerProfile, testDistributionMatch) ||
+        if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL, servicesProfile, testDistributionMatch) ||
             !distributionBuilder.updateDistributionFromProvider() ||
             !distributionBuilder.installBuilder(None)) {
           Utils.error("Build distribution error")

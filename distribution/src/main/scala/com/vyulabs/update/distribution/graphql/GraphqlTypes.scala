@@ -60,6 +60,7 @@ object GraphqlTypes {
 
   implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
 
+  implicit val ServicesProfileType = deriveObjectType[Unit, ServicesProfile]()
   implicit val DeveloperVersionType = deriveObjectType[Unit, DeveloperVersion]()
   implicit val DistributionVersionType = deriveObjectType[Unit, DeveloperDistributionVersion]()
   implicit val ClientVersionType = deriveObjectType[Unit, ClientVersion]()
@@ -88,7 +89,6 @@ object GraphqlTypes {
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
   implicit val DistributionProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
   implicit val DistributionConsumerInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
-  implicit val DistributionConsumerProfileType = deriveObjectType[Unit, DistributionConsumerProfile]()
 
   implicit val DeveloperVersionInputType = deriveInputObjectType[DeveloperVersion](InputObjectTypeName("DeveloperVersionInput"))
   implicit val ClientVersionInputType = deriveInputObjectType[ClientVersion](InputObjectTypeName("ClientVersionInput"))

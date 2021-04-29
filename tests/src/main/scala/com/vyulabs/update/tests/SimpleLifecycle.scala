@@ -91,7 +91,7 @@ class SimpleLifecycle {
     }
 
     if (!distributionBuilder.generateAndUploadInitialVersions(author) ||
-        !distributionBuilder.addCommonConsumerProfile() ||
+        !distributionBuilder.addCommonServicesProfile() ||
         !distributionBuilder.installBuilderFromSources()) {
       sys.error("Can't initialize distribution")
     }

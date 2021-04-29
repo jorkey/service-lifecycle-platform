@@ -7,14 +7,14 @@ package com.vyulabs.update.common.common
 object Common {
   type DistributionId = String
   type ServiceId = String
-  type ServiceProfile = String
   type UserId = String
   type InstanceId = String
   type ProcessId = String
   type TaskId = String
+  type ServicesProfileId = String
   type ServiceDirectory = String
-  type ConsumerProfile = String
   type FaultId = String
+  type ServiceInstanceProfile = String
 
   val Pm2DescFileName = "pm2_desc.json"
 

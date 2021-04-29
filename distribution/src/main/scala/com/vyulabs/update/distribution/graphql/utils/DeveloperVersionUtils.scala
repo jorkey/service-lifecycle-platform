@@ -16,7 +16,7 @@ import org.slf4j.Logger
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait DeveloperVersionUtils extends DistributionConsumersUtils with DistributionConsumerProfilesUtils
+trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfilesUtils
     with StateUtils with RunBuilderUtils with SprayJsonSupport {
 
   protected val directory: DistributionDirectory
@@ -120,8 +120,8 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
     for {
       desiredVersions <- future
       consumerConfig <- getDistributionConsumerInfo(distribution)
-      consumerProfile <- getDistributionConsumerProfile(consumerConfig.consumerProfile)
-      versions <- Future(desiredVersions.filter(version => consumerProfile.services.contains(version.service)))
+      servicesProfile <- getServicesProfile(consumerConfig.servicesProfile)
+      versions <- Future(desiredVersions.filter(version => servicesProfile.services.contains(version.service)))
     } yield versions
   }
 
@@ -132,7 +132,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
       developerVersions <- distributionConsumerInfo.testDistributionMatch match {
         case Some(testDistributionMatch) =>
           for {
-            testedVersions <- getTestedVersions(distributionConsumerInfo.consumerProfile).map(testedVersions => {
+            testedVersions <- getTestedVersions(distributionConsumerInfo.servicesProfile).map(testedVersions => {
               testedVersions match {
                 case Some(testedVersions) =>
                   val regexp = testDistributionMatch.r
@@ -146,10 +146,10 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
                   if (testCondition) {
                     testedVersions.versions
                   } else {
-                    throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.consumerProfile} are not tested by clients ${testDistributionMatch}")
+                    throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.servicesProfile} are not tested by clients ${testDistributionMatch}")
                   }
                 case None =>
-                  throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.consumerProfile} are not tested by anyone")
+                  throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.servicesProfile} are not tested by anyone")
               }
             })
           } yield testedVersions
@@ -165,7 +165,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with Distribution
       clientsInfo <- getDistributionConsumersInfo()
       installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distribution, service))).map(
         _.flatten.map(_.version.original))
-      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.consumerProfile))).map(
+      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.servicesProfile))).map(
         _.flatten.map(_.versions.find(_.service == service).map(_.version)).flatten)
     } yield {
       (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)

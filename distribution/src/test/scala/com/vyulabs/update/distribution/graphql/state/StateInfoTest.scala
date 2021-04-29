@@ -46,7 +46,7 @@ class StateInfoTest extends TestEnvironment {
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2))),
       DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", Seq(2, 1, 2)))),
       Seq(TestSignature("distribution", date)))))(result(collections.State_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
-        v.consumerProfile, v.versions, v.signatures.map(s => TestSignature(s.distribution, date)))))))
+        v.servicesProfile, v.versions, v.signatures.map(s => TestSignature(s.distribution, date)))))))
     result(collections.State_TestedVersions.drop())
   }
 

@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.versions.developer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{DistributionConsumerInfo, DistributionConsumerProfile}
+import com.vyulabs.update.common.info.{DistributionConsumerInfo, ServicesProfile}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
@@ -19,7 +19,7 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    result(collections.Developer_Profiles.insert(DistributionConsumerProfile("common", Seq("service1", "service2"))))
+    result(collections.Developer_ServiceProfiles.insert(ServicesProfile("common", Seq("service1", "service2"))))
     result(collections.Developer_ConsumersInfo.insert(DistributionConsumerInfo("client2", "common", None)))
   }
 

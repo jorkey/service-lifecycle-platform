@@ -9,7 +9,7 @@ import {
   Divider, Box, Link,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import UsersTable from './UsersTable';
+import ProfilesTable from './ProfilesTable';
 import {RouteComponentProps, useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
 
@@ -31,13 +31,7 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-interface UsersManagerRouteParams {
-  type: string
-}
-
-const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = props => {
-  const userType = props.match.params.type
-
+const ProfilesManager = () => {
   const classes = useStyles()
   const routeMatch = useRouteMatch();
 
@@ -62,16 +56,16 @@ const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = pro
             </Button>
           </Box>
         }
-        title={userType == 'human'? 'People' : 'Service Profiles'}
+        title={'Service Profiles'}
       />
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <UsersTable userType={userType}/>
+          <ProfilesTable/>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-export default UsersManager
+export default ProfilesManager

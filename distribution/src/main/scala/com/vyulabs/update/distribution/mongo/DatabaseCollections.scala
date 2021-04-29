@@ -39,7 +39,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[InstalledDesiredVersions],
     classOf[InstallInfo],
     classOf[DistributionProviderInfo],
-    classOf[DistributionConsumerProfile],
+    classOf[ServicesProfile],
     classOf[DistributionConsumerInfo],
     classOf[DistributionServiceState],
     classOf[InstanceServiceState],
@@ -80,9 +80,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     collection <- db.getOrCreateCollection[BsonDocument]("developer.desiredVersions")
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Developer_Profiles = new SequencedCollection[DistributionConsumerProfile]("developer.profiles", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.profiles")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerProfile", "_archiveTime"), new IndexOptions().unique(true)) else Future()
+  val Developer_ServiceProfiles = new SequencedCollection[ServicesProfile]("developer.serviceProfiles", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.serviceProfiles")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("profile", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Developer_ConsumersInfo = new SequencedCollection[DistributionConsumerInfo]("developer.consumers", for {
@@ -112,7 +112,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
 
   val State_TestedVersions = new SequencedCollection[TestedDesiredVersions]("state.testedDesiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.testedDesiredVersions")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerProfile")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("servicesProfile")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {

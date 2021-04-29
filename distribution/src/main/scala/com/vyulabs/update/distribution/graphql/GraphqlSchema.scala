@@ -20,7 +20,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends DistributionInfoUtils with DistributionConsumerProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
+    extends DistributionInfoUtils with ServiceProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with UsersUtils
 
 case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)
@@ -41,6 +41,7 @@ object GraphqlSchema {
   val DirectoryArg = Argument("directory", StringType)
   val ServiceArg = Argument("service", StringType)
   val ServicesArg = Argument("services", ListInputType(StringType))
+  val ProfileArg = Argument("profile", StringType)
   val DeveloperVersionArg = Argument("version", DeveloperVersionInputType)
   val ClientVersionArg = Argument("version", ClientVersionInputType)
   val DeveloperDistributionVersionArg = Argument("version", DeveloperDistributionVersionInputType)
@@ -58,7 +59,6 @@ object GraphqlSchema {
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
-  val ConsumerProfileArg = Argument("profile", StringType)
   val UrlArg = Argument("url", UrlType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
@@ -70,6 +70,7 @@ object GraphqlSchema {
   val OptionEmailArg = Argument("email", OptionInputType(StringType))
   val OptionNotificationsArg = Argument("notifications", OptionInputType(ListInputType(StringType)))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
+  val OptionProfileArg = Argument("profile", OptionInputType(StringType))
   val OptionDistributionArg = Argument("distribution", OptionInputType(StringType))
   val OptionInstanceArg = Argument("instance", OptionInputType(StringType))
   val OptionProcessArg = Argument("process", OptionInputType(StringType))
@@ -83,7 +84,6 @@ object GraphqlSchema {
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
-  val OptionConsumerProfileArg = Argument("profile", OptionInputType(StringType))
   val OptionUploadStateIntervalArg = Argument("uploadStateInterval", OptionInputType(FiniteDurationType))
   val OptionTestDistributionMatchArg = Argument("testDistributionMatch", OptionInputType(StringType))
 
@@ -110,6 +110,12 @@ object GraphqlSchema {
         arguments = OptionUserArg :: OptionHumanArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg), c.arg(OptionHumanArg)) }),
+
+      // Profiles
+      Field("serviceProfiles", ListType(ServicesProfileType),
+        arguments = OptionProfileArg :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getServiceProfiles(c.arg(OptionProfileArg)) }),
 
       // Developer versions
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
@@ -142,10 +148,6 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(c.arg(OptionDistributionArg)) }),
-      Field("distributionConsumerProfiles", ListType(DistributionConsumerProfileType),
-        arguments = OptionConsumerProfileArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionConsumerProfiles(c.arg(OptionConsumerProfileArg)) }),
 
       // Distribution providers
       Field("distributionProvidersInfo", ListType(DistributionProviderInfoType),
@@ -219,6 +221,20 @@ object GraphqlSchema {
             c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionUserRolesArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg))
         }),
 
+      // Profiles
+      Field("addServicesProfile", BooleanType,
+        arguments = ProfileArg :: ServicesArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.addServicesProfile(c.arg(ProfileArg), c.arg(ServicesArg)).map(_ => true) }),
+      Field("changeServicesProfile", BooleanType,
+        arguments = ProfileArg :: ServicesArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.changeServicesProfile(c.arg(ProfileArg), c.arg(ServicesArg)).map(_ => true) }),
+      Field("removeServicesProfile", BooleanType,
+        arguments = ProfileArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.removeServicesProfile(c.arg(ProfileArg)).map(_ => true) }),
+
       // Developer versions
       Field("buildDeveloperVersion", StringType,
         arguments = ServiceArg :: DeveloperVersionArg :: OptionBranchesArg :: OptionCommentArg :: Nil,
@@ -268,19 +284,11 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeDistributionProvider(c.arg(DistributionArg)).map(_ => true) }),
 
       // Distribution consumers management
-      Field("addDistributionConsumerProfile", BooleanType,
-        arguments = ConsumerProfileArg :: ServicesArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addDistributionConsumerProfile(c.arg(ConsumerProfileArg), c.arg(ServicesArg)).map(_ => true) }),
-      Field("removeDistributionConsumerProfile", BooleanType,
-        arguments = ConsumerProfileArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeDistributionConsumerProfile(c.arg(ConsumerProfileArg)).map(_ => true) }),
       Field("addDistributionConsumer", BooleanType,
-        arguments = DistributionArg :: ConsumerProfileArg :: OptionTestDistributionMatchArg :: Nil,
+        arguments = DistributionArg :: ProfileArg :: OptionTestDistributionMatchArg :: Nil,
         tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
         resolve = c => {
-          c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ConsumerProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
+          c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
         }),
       Field("removeDistributionConsumer", BooleanType,
         arguments = DistributionArg :: Nil,

@@ -90,10 +90,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
     it should "execute distribution consumer profiles requests" in {
       assert(adminClient.graphqlRequest(
-        administratorMutations.addDistributionConsumerProfile("common", Seq("service1", "service2"))).getOrElse(false))
+        administratorMutations.addServicesProfile("common", Seq("service1", "service2"))).getOrElse(false))
 
       assert(adminClient.graphqlRequest(
-        administratorMutations.removeDistributionConsumerProfile("common")).getOrElse(false))
+        administratorMutations.removeServicesProfile("common")).getOrElse(false))
     }
 
     it should "execute distribution consumer requests" in {
@@ -111,7 +111,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
       val date = new Date()
 
       assert(adminClient.graphqlRequest(
-        administratorMutations.addDistributionConsumerProfile("common", Seq("service1"))).getOrElse(false))
+        administratorMutations.addServicesProfile("common", Seq("service1"))).getOrElse(false))
       assert(adminClient.graphqlRequest(
         administratorMutations.addDistributionConsumer("distribution", "common", None)).getOrElse(false))
 
@@ -140,7 +140,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
       assert(adminClient.graphqlRequest(
         administratorMutations.removeDistributionConsumer("distribution")).getOrElse(false))
       assert(adminClient.graphqlRequest(
-        administratorMutations.removeDistributionConsumerProfile("common")).getOrElse(false))
+        administratorMutations.removeServicesProfile("common")).getOrElse(false))
     }
 
     it should "execute client version requests" in {

@@ -26,7 +26,7 @@ trait DistributionConsumersCoder {
   def getDistributionConsumersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionConsumerInfo]]("distributionConsumersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
-      subSelection = "{ distribution, consumerProfile, testDistributionMatch }")
+      subSelection = "{ distribution, servicesProfile, testDistributionMatch }")
 
   def getDistributionProviderDesiredVersions(distribution: DistributionId) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("distributionProviderDesiredVersions",
@@ -117,6 +117,12 @@ trait UsersAdministrationCoder {
 }
 
 trait ConsumersAdministrationCoder {
+  def addServicesProfile(servicesProfile: ServicesProfileId, services: Seq[ServiceId]) =
+    GraphqlMutation[Boolean]("addServicesProfile", Seq(GraphqlArgument("profile" -> servicesProfile),
+      GraphqlArgument("services" -> services, "[String!]")))
+  def removeServicesProfile(servicesProfile: ServicesProfileId) =
+    GraphqlMutation[Boolean]("removeServicesProfile", Seq(GraphqlArgument("profile" -> servicesProfile)))
+
   def addDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addDistributionProvider", Seq(GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
@@ -127,15 +133,9 @@ trait ConsumersAdministrationCoder {
     GraphqlMutation[String]("installProviderVersion",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput")))
 
-  def addDistributionConsumerProfile(consumerProfile: ConsumerProfile, services: Seq[ServiceId]) =
-    GraphqlMutation[Boolean]("addDistributionConsumerProfile", Seq(GraphqlArgument("profile" -> consumerProfile),
-      GraphqlArgument("services" -> services, "[String!]")))
-  def removeDistributionConsumerProfile(consumerProfile: ConsumerProfile) =
-    GraphqlMutation[Boolean]("removeDistributionConsumerProfile", Seq(GraphqlArgument("profile" -> consumerProfile)))
-
-  def addDistributionConsumer(distribution: DistributionId, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]) =
+  def addDistributionConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]) =
     GraphqlMutation[Boolean]("addDistributionConsumer", Seq(GraphqlArgument("distribution" -> distribution),
-      GraphqlArgument("profile" -> consumerProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)).filter(_.value != JsNull))
+      GraphqlArgument("profile" -> servicesProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)).filter(_.value != JsNull))
   def removeDistributionConsumer(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeDistributionConsumer", Seq(GraphqlArgument("distribution" -> distribution)))
 }

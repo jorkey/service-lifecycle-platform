@@ -35,13 +35,13 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution","consumerProfile":"common"}]}}""").parseJson))(
+      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution","servicesProfile":"common"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         query {
           distributionConsumersInfo {
              distribution,
-             consumerProfile
+             servicesProfile
           }
         }
       """)))
@@ -70,53 +70,15 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution-1","consumerProfile":"profile1"}]}}""").parseJson))(
+      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution-1","servicesProfile":"profile1"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         query {
           distributionConsumersInfo {
              distribution,
-             consumerProfile
+             servicesProfile
           }
         }
       """)))
-  }
-
-  it should "add/get/remove distribution consumer profiles" in {
-    assertResult((OK,
-      ("""{"data":{"addDistributionConsumerProfile":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
-        graphql"""
-        mutation {
-          addDistributionConsumerProfile (
-            profile: "consumer-distribution",
-            services: [ "service1", "service2", "service3" ]
-          )
-        }
-      """)))
-
-    assertResult((OK,
-      ("""{"data":{"distributionConsumerProfiles":[{"consumerProfile":"consumer-distribution","services":["service1","service2","service3"]}]}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
-        graphql"""
-        query {
-          distributionConsumerProfiles {
-             consumerProfile,
-             services
-          }
-        }
-      """)))
-
-    assertResult((OK,
-      ("""{"data":{"removeDistributionConsumerProfile":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
-        graphql"""
-        mutation {
-          removeDistributionConsumerProfile (
-            profile: "consumer-distribution"
-          )
-        }
-      """)))
-
   }
 }

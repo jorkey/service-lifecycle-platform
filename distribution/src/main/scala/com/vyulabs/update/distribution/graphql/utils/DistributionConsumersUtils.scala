@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionId}
+import com.vyulabs.update.common.common.Common.{ServicesProfileId, DistributionId}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.DistributionConsumerInfo
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
@@ -23,9 +23,9 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addDistributionConsumer(distribution: DistributionId, consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]): Future[Unit] = {
+  def addDistributionConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Future[Unit] = {
     collections.Developer_ConsumersInfo.update(Filters.eq("distribution", distribution),
-      _ => Some(DistributionConsumerInfo(distribution, consumerProfile, testDistributionMatch))).map(_ => ())
+      _ => Some(DistributionConsumerInfo(distribution, servicesProfile, testDistributionMatch))).map(_ => ())
   }
 
   def removeDistributionConsumer(distribution: DistributionId): Future[Unit] = {

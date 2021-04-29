@@ -17,7 +17,7 @@ query distributionInfo {
 # Consumers
 
 query distributionConsumersInfo {
-    distributionConsumersInfo { distribution, consumerProfile }
+    distributionConsumersInfo { distribution, servicesProfile }
 }
 
 # Versions
@@ -44,7 +44,7 @@ query serviceStates ($distribution: String!) {
     }
 }
 
-# Users
+# Profiles
 
 query usersInfo ($human: Boolean!) {
     usersInfo (human: $human) { user, human, name, roles, email, notifications }
@@ -68,4 +68,26 @@ mutation changeUser ($user: String!, $name: String, $oldPassword: String, $passw
 
 mutation removeUser ($user: String!) {
     removeUser (user: $user)
+}
+
+# Profiles
+
+query serviceProfiles {
+    serviceProfiles { profile }
+}
+
+query profileServices ($profile: String!) {
+    serviceProfiles (profile: $profile) { services }
+}
+
+mutation addServicesProfile ($profile: String!, $services: [String!]!) {
+    addServicesProfile (profile: $profile, services: $services)
+}
+
+mutation changeServicesProfile ($profile: String!, $services: [String!]!) {
+    changeServicesProfile (profile: $profile, services: $services)
+}
+
+mutation removeServicesProfile ($profile: String!) {
+    removeServicesProfile (profile: $profile)
 }

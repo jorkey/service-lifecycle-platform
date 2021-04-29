@@ -56,7 +56,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     assert(providerDistributionBuilder.buildDistributionFromSources())
     assert(providerDistributionBuilder.addDistributionUsers())
     assert(providerDistributionBuilder.generateAndUploadInitialVersions("ak"))
-    assert(providerDistributionBuilder.addCommonConsumerProfile())
+    assert(providerDistributionBuilder.addCommonServicesProfile())
     assert(providerDistributionBuilder.installBuilderFromSources())
 
     log.info("")

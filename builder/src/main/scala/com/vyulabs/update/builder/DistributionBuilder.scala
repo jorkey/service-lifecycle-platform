@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{ConsumerProfile, DistributionId, ServiceId, UserId}
+import com.vyulabs.update.common.common.Common.{ServicesProfileId, DistributionId, ServiceId, UserId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
@@ -91,7 +91,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def buildFromProviderDistribution(providerDistributionName: DistributionId, providerDistributionURL: URL,
-                                    consumerProfile: ConsumerProfile, testDistributionMatch: Option[String]): Boolean = {
+                                    servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Boolean = {
     this.providerDistributionName = Some(providerDistributionName)
     providerDistributionClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(providerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
@@ -125,7 +125,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Add distribution consumer to provider distribution server")
     log.info("")
-    if (!providerDistributionClient.get.graphqlRequest(administratorMutations.addDistributionConsumer(distribution, consumerProfile, testDistributionMatch)).getOrElse(false)) {
+    if (!providerDistributionClient.get.graphqlRequest(administratorMutations.addDistributionConsumer(distribution, servicesProfile, testDistributionMatch)).getOrElse(false)) {
       log.error(s"Can't add distribution consumer")
       return false
     }
@@ -151,10 +151,10 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def addCommonConsumerProfile(): Boolean = {
-    log.info(s"--------------------------- Add common consumer profile")
+  def addCommonServicesProfile(): Boolean = {
+    log.info(s"--------------------------- Add common services profile")
     adminDistributionClient.get.graphqlRequest(
-      administratorMutations.addDistributionConsumerProfile(Common.CommonConsumerProfile, Seq(Common.DistributionServiceName,
+      administratorMutations.addServicesProfile(Common.CommonConsumerProfile, Seq(Common.DistributionServiceName,
         Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName))).getOrElse(false)
   }
 
