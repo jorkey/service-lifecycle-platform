@@ -9,12 +9,11 @@ import {
   Dashboard as DashboardView,
   Profiles as ProfilesView,
   Users as UsersView,
-  Services as ServicesView,
   Logging as LoggingView,
   Failures as FailuresView,
   NotFound as NotFoundView
 } from './views';
-import {DistributionInfo, useDistributionInfoQuery} from "./generated/graphql";
+import {DistributionInfo, useDistributionInfoQuery} from './generated/graphql';
 
 // @ts-ignore
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
@@ -54,13 +53,6 @@ const Routes: React.FC<RoutesProps> = props => {
         component={ProfilesView}
         layout={MainLayout}
         path='/profiles'
-        {...props}
-      />
-      <RouteWithLayout
-        component={ServicesView}
-        layout={MainLayout}
-        path='/services'
-        exact
         {...props}
       />
       <RouteWithLayout

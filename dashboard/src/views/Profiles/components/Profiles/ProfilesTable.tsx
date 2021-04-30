@@ -73,7 +73,7 @@ const ProfilesTable = () => {
     <Table stickyHeader>
       <TableHead>
         <TableRow>
-          <TableCell className={classes.profileColumn}>Service</TableCell>
+          <TableCell className={classes.profileColumn}>Profile</TableCell>
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
         </TableRow>
       </TableHead>

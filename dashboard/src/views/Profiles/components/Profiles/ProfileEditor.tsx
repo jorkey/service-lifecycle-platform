@@ -5,7 +5,18 @@ import TextField from '@material-ui/core/TextField';
 import {NavLink as RouterLink, RouteComponentProps, useHistory} from 'react-router-dom'
 
 import { makeStyles } from '@material-ui/core/styles';
-import {Box, Card, CardContent, CardHeader, Divider} from '@material-ui/core';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider, Grid, IconButton, Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
+} from '@material-ui/core';
 import {
   useAddServicesProfileMutation,
   useChangeServicesProfileMutation,
@@ -14,6 +25,10 @@ import {
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
+import DeleteIcon from '@material-ui/icons/Delete';
+import AddIcon from '@material-ui/icons/Add';
+import EditIcon from '@material-ui/icons/Edit';
+import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -21,6 +36,20 @@ const useStyles = makeStyles(theme => ({
   },
   card: {
     marginTop: 25
+  },
+  servicesTable: {
+    marginTop: 20
+  },
+  serviceColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingLeft: '16px'
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
   },
   controls: {
     marginTop: 25,
@@ -37,7 +66,8 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface UserRouteParams {
-  profile?: string
+  profile?: string,
+  sourceProfile?: string
 }
 
 interface UserEditorParams extends RouteComponentProps<UserRouteParams> {
@@ -56,6 +86,7 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
   const [initialized, setInitialized] = useState(false);
 
   const editProfile = props.match.params.profile
+  const sourceProfile = props.match.params.sourceProfile
 
   const history = useHistory()
 
@@ -66,6 +97,7 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
       }
       if (profileServices.data) {
         setServices(profileServices.data.serviceProfiles[0].services)
+        setProfile(editProfile)
         setInitialized(true)
       }
     } else {
@@ -105,25 +137,122 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
     return profiles?!!profiles.serviceProfiles.find(p => p.profile == profile):false
   }
 
-  const UserCard = () => {
+  const ServicesTable = () => {
+    const [editMode, setEditMode] = useState(-1);
+
+    return (
+      <Table
+        className={classes.servicesTable}
+        stickyHeader
+      >
+        <TableHead>
+          <TableRow>
+            <TableCell className={classes.serviceColumn}>Service</TableCell>
+            <TableCell className={classes.actionsColumn}>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        { services ?
+          <TableBody>
+            {[...services]
+              .sort((s1,s2) => (s1 > s2 ? 1 : -1))
+              .map((service, index) =>
+                (<TableRow
+                  hover
+                  key={service}
+                >
+                  <TableCell className={classes.serviceColumn}>
+                    {editMode == index ? (
+                      <Input
+                        value={service}
+                        onChange={() => {  }}
+                      />
+                    ) : (service) }
+                  </TableCell>
+                  <TableCell className={classes.actionsColumn}>
+                    <IconButton
+                      onClick={() => setEditMode(index)}
+                      title="Edit"
+                    >
+                      <EditIcon/>
+                    </IconButton>
+                    <IconButton
+                      onClick={() => setServices(services.filter(s => s != service) )}
+                      title="Delete"
+                    >
+                      { sourceProfile ? <ArrowForwardIcon/> : <DeleteIcon/> }
+                    </IconButton>
+                  </TableCell>
+                </TableRow>)
+              )}
+          </TableBody> : null }
+      </Table>)
+  }
+
+  const ServicesProfile = () => {
+    return (<>
+      <TextField
+        autoFocus
+        disabled={editProfile !== undefined}
+        error={!profile || (!editProfile && doesProfileExist(profile))}
+        fullWidth
+        helperText={!editProfile && doesProfileExist(profile) ? 'Profile already exists': ''}
+        label="Profile"
+        margin="normal"
+        onChange={(e: any) => setProfile(e.target.value)}
+        required
+        value={profile}
+        variant="outlined"
+      />
+      <ServicesTable/>
+    </>)
+  }
+
+  const ProfileCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={editProfile?'Edit Service Profile':'New Services Profile'}/>
-        <CardContent>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Profile"
-            margin="normal"
-            value={profile}
-            helperText={!editProfile && doesProfileExist(profile) ? 'Profile already exists': ''}
-            error={!profile || (!editProfile && doesProfileExist(profile))}
-            onChange={(e: any) => setProfile(e.target.value)}
-            disabled={editProfile !== undefined}
-            required
-            variant="outlined"
-          />
-        </CardContent>
+        <CardHeader
+          action={
+            !sourceProfile?
+              (<Box
+                className={classes.controls}
+              >
+                <Button
+                  className={classes.control}
+                  color="primary"
+                  onClick={() => setServices([...services, ''])}
+                  startIcon={<AddIcon/>}
+                  variant="contained"
+                >
+                  Add New Service
+                </Button>
+              </Box>):null
+          }
+          title={editProfile?'Edit Service Profile':'New Services Profile'}
+        />
+        { sourceProfile ? (
+          <CardContent>
+            <Grid
+              container
+              spacing={3}
+            >
+              <Grid
+                item
+                xs={6}
+              >
+                <ServicesProfile/>
+              </Grid>
+              <Grid
+                item
+                xs={6}
+              >
+                <ServicesProfile/>
+              </Grid>
+            </Grid>
+          </CardContent>) : (
+          <CardContent>
+            <ServicesProfile/>
+          </CardContent>
+        )}
       </Card>)
   }
 
@@ -134,23 +263,28 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
       <Card
         className={clsx(classes.root)}
       >
-        {UserCard()}
+        <ProfileCard />
         <Divider />
-        {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
+        {error && <Alert
+          className={classes.alert}
+          severity="error"
+        >{error}</Alert>}
         <Box className={classes.controls}>
-          <Button className={classes.control}
+          <Button
+            className={classes.control}
             color="primary"
-            variant="contained"
             component={RouterLink}
             to={props.fromUrl}
+            variant="contained"
           >
             Cancel
           </Button>
-          <Button className={classes.control}
+          <Button
+            className={classes.control}
             color="primary"
-            variant="contained"
             disabled={!validate()}
             onClick={() => submit()}
+            variant="contained"
           >
             {!editProfile?'Add New User':'Save'}
           </Button>
