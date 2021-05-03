@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
 import {NavLink as RouterLink, RouteComponentProps, useHistory} from 'react-router-dom'
 
 import { makeStyles } from '@material-ui/core/styles';
@@ -10,12 +9,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider, Grid, IconButton, Input,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow
+  Divider, Grid,
 } from '@material-ui/core';
 import {
   useAddServicesProfileMutation,
@@ -25,10 +19,9 @@ import {
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
-import DeleteIcon from '@material-ui/icons/Delete';
 import AddIcon from '@material-ui/icons/Add';
-import EditIcon from '@material-ui/icons/Edit';
-import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
+import ServicesProfile from "./ServicesProfile";
+import {ServiceProfileType} from "./ServicesTable";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -36,20 +29,6 @@ const useStyles = makeStyles(theme => ({
   },
   card: {
     marginTop: 25
-  },
-  servicesTable: {
-    marginTop: 20
-  },
-  serviceColumn: {
-    width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  actionsColumn: {
-    width: '200px',
-    padding: '4px',
-    paddingRight: '40px',
-    textAlign: 'right'
   },
   controls: {
     marginTop: 25,
@@ -96,7 +75,8 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
         getProfileServices({variables: {profile: editProfile}})
       }
       if (profileServices.data) {
-        setServices(profileServices.data.serviceProfiles[0].services)
+        setServices([...profileServices.data.serviceProfiles[0].services]
+          .sort((s1,s2) => (s1 > s2 ? 1 : -1)))
         setProfile(editProfile)
         setInitialized(true)
       }
@@ -137,76 +117,6 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
     return profiles?!!profiles.serviceProfiles.find(p => p.profile == profile):false
   }
 
-  const ServicesTable = () => {
-    const [editMode, setEditMode] = useState(-1);
-
-    return (
-      <Table
-        className={classes.servicesTable}
-        stickyHeader
-      >
-        <TableHead>
-          <TableRow>
-            <TableCell className={classes.serviceColumn}>Service</TableCell>
-            <TableCell className={classes.actionsColumn}>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        { services ?
-          <TableBody>
-            {[...services]
-              .sort((s1,s2) => (s1 > s2 ? 1 : -1))
-              .map((service, index) =>
-                (<TableRow
-                  hover
-                  key={service}
-                >
-                  <TableCell className={classes.serviceColumn}>
-                    {editMode == index ? (
-                      <Input
-                        value={service}
-                        onChange={() => {  }}
-                      />
-                    ) : (service) }
-                  </TableCell>
-                  <TableCell className={classes.actionsColumn}>
-                    <IconButton
-                      onClick={() => setEditMode(index)}
-                      title="Edit"
-                    >
-                      <EditIcon/>
-                    </IconButton>
-                    <IconButton
-                      onClick={() => setServices(services.filter(s => s != service) )}
-                      title="Delete"
-                    >
-                      { sourceProfile ? <ArrowForwardIcon/> : <DeleteIcon/> }
-                    </IconButton>
-                  </TableCell>
-                </TableRow>)
-              )}
-          </TableBody> : null }
-      </Table>)
-  }
-
-  const ServicesProfile = () => {
-    return (<>
-      <TextField
-        autoFocus
-        disabled={editProfile !== undefined}
-        error={!profile || (!editProfile && doesProfileExist(profile))}
-        fullWidth
-        helperText={!editProfile && doesProfileExist(profile) ? 'Profile already exists': ''}
-        label="Profile"
-        margin="normal"
-        onChange={(e: any) => setProfile(e.target.value)}
-        required
-        value={profile}
-        variant="outlined"
-      />
-      <ServicesTable/>
-    </>)
-  }
-
   const ProfileCard = () => {
     return (
       <Card className={classes.card}>
@@ -219,7 +129,7 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
                 <Button
                   className={classes.control}
                   color="primary"
-                  onClick={() => setServices([...services, ''])}
+                  // onClick={() => setRows([...rows, ''])}
                   startIcon={<AddIcon/>}
                   variant="contained"
                 >
@@ -239,18 +149,18 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
                 item
                 xs={6}
               >
-                <ServicesProfile/>
+                <ServicesProfile profileType={ServiceProfileType.Alone} newProfile={false}/>
               </Grid>
               <Grid
                 item
                 xs={6}
               >
-                <ServicesProfile/>
+                <ServicesProfile profileType={ServiceProfileType.Alone} newProfile={false}/>
               </Grid>
             </Grid>
           </CardContent>) : (
           <CardContent>
-            <ServicesProfile/>
+            <ServicesProfile profileType={ServiceProfileType.Alone} newProfile={false} getServices={services}/>
           </CardContent>
         )}
       </Card>)
