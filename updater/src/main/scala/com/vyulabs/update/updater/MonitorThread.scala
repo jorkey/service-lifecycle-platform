@@ -20,25 +20,28 @@ class MonitorThread(state: ServiceStateController,
 
   private val checkTimeoutMs = 5000
 
+  private var lastCpuMeasure = Option.empty[Long]
   private var lastCpuTime = Option.empty[Long]
 
   override def run(): Unit = {
     try {
       while (process.isAlive) {
         val pid = process.pid()
-        for (maxCpuPercents <- restartConditions.maxCpuPercents) {
-          for (cpuTime <- getProcessCPU(process.toHandle)) {
-            for (lastCpuTime <- lastCpuTime) {
-              val percents = (cpuTime - lastCpuTime)*100/checkTimeoutMs
-              if (percents >= maxCpuPercents) {
-                log.error(s"Process ${process.toHandle.pid()} utilize ${percents}% of CPU time. That is >= maximum ${maxCpuPercents}%. Kill process group.")
-                killProcessGroup()
-                return
-              } else {
-                log.debug(s"Process ${process.toHandle.pid()} utilize ${percents}% of CPU time")
+        for (maxCpu <- restartConditions.maxCpu) {
+          if (lastCpuMeasure.isEmpty || System.currentTimeMillis() >= lastCpuMeasure.get + maxCpu.durationSec*1000) {
+            for (cpuTime <- getProcessCPU(process.toHandle)) {
+              for (lastCpuTime <- lastCpuTime) {
+                val percents = (cpuTime - lastCpuTime)*100/(maxCpu.durationSec*1000)
+                if (percents >= maxCpu.percents) {
+                  log.error(s"Process ${process.toHandle.pid()} CPU utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
+                  killProcessGroup()
+                } else {
+                  log.debug(s"Process ${process.toHandle.pid()} CPU utilize ${percents}%")
+                }
               }
+              lastCpuTime = Some(cpuTime)
             }
-            lastCpuTime = Some(cpuTime)
+            lastCpuMeasure = Some(System.currentTimeMillis())
           }
         }
         for (maxMemorySize <- restartConditions.maxMemory) {
