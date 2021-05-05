@@ -34,7 +34,7 @@ class MonitorThread(state: ServiceStateController,
                 val percents = (cpuTime - lastCpuTime)*100/(maxCpu.durationSec*1000)
                 if (percents >= maxCpu.percents) {
                   log.error(s"Process ${process.toHandle.pid()} CPU utilize ${percents}% >= ${maxCpu.percents}%. Kill process group.")
-                  killProcessGroup()
+                  killProcessGroup(KillCause.CpuLimit)
                 } else {
                   log.debug(s"Process ${process.toHandle.pid()} CPU utilize ${percents}%")
                 }
@@ -48,7 +48,7 @@ class MonitorThread(state: ServiceStateController,
           for (memorySize <- getProcessMemorySize(pid)) {
             if (memorySize > maxMemorySize) {
               state.error(s"Process memory size ${memorySize} > ${maxMemorySize}. Kill it.")
-              killProcessGroup()
+              killProcessGroup(KillCause.MemoryLimit)
               return
             }
           }
@@ -144,9 +144,21 @@ class MonitorThread(state: ServiceStateController,
     }
   }
 
-  private def killProcessGroup(): Unit = {
+  object KillCause extends Enumeration {
+    type Cause = Value
+    val CpuLimit = Value
+    val MemoryLimit = Value
+  }
+
+  private def killProcessGroup(cause: KillCause.Cause): Unit = {
     if (isUnix) {
-      Runtime.getRuntime.exec(s"kill -SIGQUIT ${process.pid()}", null, new File("."))
+      val signal = cause match {
+        case KillCause.CpuLimit => "SIGXCPU"
+        case KillCause.MemoryLimit => "SIGQUIT"
+      }
+      val command = s"kill -${signal} -- ${process.pid()}"
+      log.info(s"Execute ${command}")
+      Runtime.getRuntime.exec(command, null, new File("."))
     } else {
       process.destroyForcibly()
     }
