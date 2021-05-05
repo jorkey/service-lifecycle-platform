@@ -46,7 +46,7 @@ const useStyles = makeStyles(theme => ({
 
 interface ProfileRouteParams {
   profile?: string,
-  sourceProfile?: string
+  patternProfile?: string
 }
 
 interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
@@ -56,16 +56,18 @@ interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
 const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   const {data: profiles} = useServiceProfilesQuery()
   const [getProfileServices, profileServices] = useProfileServicesLazyQuery()
+  const [getPatternProfileServices, patternProfileServices] = useProfileServicesLazyQuery()
 
   const classes = useStyles()
 
   const [profile, setProfile] = useState('');
   const [services, setServices] = useState(new Array<string>());
+  const [patternServices, setPatternServices] = useState(new Array<string>());
 
   const [initialized, setInitialized] = useState(false);
 
   const editProfile = props.match.params.profile
-  const sourceProfile = props.match.params.sourceProfile
+  const patternProfile = props.match.params.patternProfile
 
   const history = useHistory()
 
@@ -74,14 +76,27 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
       if (!profileServices.data && !profileServices.loading) {
         getProfileServices({variables: {profile: editProfile}})
       }
-      if (profileServices.data) {
-        setServices([...profileServices.data.serviceProfiles[0].services]
-          .sort((s1,s2) => (s1 > s2 ? 1 : -1)))
+      if (patternProfile) {
+        getPatternProfileServices({variables: {profile: patternProfile}})
+      }
+      if (profileServices.data && (!patternProfile || patternProfileServices.data)) {
+        setServices(profileServices.data.serviceProfiles[0].services)
+        if (patternProfileServices.data) {
+          setPatternServices(patternProfileServices.data.serviceProfiles[0].services)
+        }
         setProfile(editProfile)
         setInitialized(true)
       }
     } else {
-      setInitialized(true)
+      if (patternProfile) {
+        getPatternProfileServices({variables: {profile: patternProfile}})
+        if (patternProfileServices.data) {
+          setPatternServices(patternProfileServices.data.serviceProfiles[0].services)
+          setInitialized(true)
+        }
+      } else {
+        setInitialized(true)
+      }
     }
   }
 
@@ -122,7 +137,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
       <Card className={classes.card}>
         <CardHeader
           action={
-            !sourceProfile?
+            !patternProfile?
               (<Box
                 className={classes.controls}
               >
@@ -139,7 +154,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
           }
           title={editProfile?'Edit Service Profile':'New Services Profile'}
         />
-        { sourceProfile ? (
+        { patternProfile ? (
           <CardContent>
             <Grid
               container
@@ -149,7 +164,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Alone}
+                <ServicesProfile profileType={ServiceProfileType.Projection}
                                  getProfile={() => profile}
                                  doesProfileExist={profile => doesProfileExist(profile)}
                                  getServices={() => services}/>
@@ -158,8 +173,9 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Alone}
-                                 getProfile={() => sourceProfile}/>
+                <ServicesProfile profileType={ServiceProfileType.Pattern}
+                                 getProfile={() => patternProfile}
+                                 getServices={() => patternServices}/>
               </Grid>
             </Grid>
           </CardContent>) : (

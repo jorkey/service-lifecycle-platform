@@ -2,6 +2,7 @@ package com.vyulabs.update.common.process
 
 import com.vyulabs.update.common.common.{Cancelable, Timer}
 import com.vyulabs.update.common.config.RestartConditions
+import com.vyulabs.update.common.info.UserRole.Value
 import org.slf4j.Logger
 
 import java.io.{File, IOException}
@@ -46,7 +47,7 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
               if (percents >= maxCpu.percents) {
                 log.error(s"Process ${process.getHandle().pid()} CPU utilize ${percents}% >= ${maxCpu.percents}% during ${maxCpu.durationSec} sec. Kill process group.")
                 stop()
-                killProcessGroup()
+                killProcessGroup(KillCause.CpuLimit)
               } else {
                 log.debug(s"Process ${process.getHandle().pid()} CPU utilize ${percents}% during ${maxCpu.durationSec} sec")
               }
@@ -62,7 +63,7 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
         if (memorySize > maxMemorySize) {
           log.error(s"Process memory size ${memorySize} > ${maxMemorySize}. Kill process group.")
           stop()
-          killProcessGroup()
+          killProcessGroup(KillCause.MemoryLimit)
         }
       }
     }
@@ -158,9 +159,19 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
 //    }
   }
 
-  private def killProcessGroup(): Unit = {
+  object KillCause extends Enumeration {
+    type Cause = Value
+    val CpuLimit = Value
+    val MemoryLimit = Value
+  }
+
+  private def killProcessGroup(cause: KillCause.Cause): Unit = {
     if (conditions.makeCore && isUnix) {
-      val command = s"kill -SIGQUIT -- -${process.getHandle().pid()}"
+      val signal = cause match {
+        case KillCause.CpuLimit => "SIGXCPU"
+        case KillCause.MemoryLimit => "SIGQUIT"
+      }
+      val command = s"kill -${signal} -- ${process.getHandle().pid()}"
       log.info(s"Execute ${command}")
       Runtime.getRuntime.exec(command, null, new File("."))
     } else {
