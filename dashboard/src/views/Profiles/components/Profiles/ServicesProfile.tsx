@@ -1,19 +1,20 @@
 import TextField from "@material-ui/core/TextField";
-import React from "react";
+import React, {useState} from "react";
 import {ServicesTable, ServiceProfileType} from "./ServicesTable";
 
 interface ServicesProfileParams {
   profileType: ServiceProfileType,
-  newProfile: boolean,
   getProfile?: () => string | undefined,
   setProfile?: (profile: string) => void,
   doesProfileExist?: (profile: string) => boolean,
-  getServices?: Array<string>,
+  getServices?: () => Array<string>,
   setServices?: (services: Array<string>) => void
 }
 
 const ServicesProfile = (params: ServicesProfileParams) => {
-  const { profileType, newProfile, getProfile, setProfile, doesProfileExist, getServices, setServices } = params
+  const { profileType, getProfile, setProfile, doesProfileExist, getServices, setServices } = params
+
+  const newProfile = useState(!getProfile?.())
 
   const profile = getProfile?.()
 
@@ -31,7 +32,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
       value={getProfile}
       variant="outlined"
     />
-    <ServicesTable profileType={profileType} initialServices={getServices} setServices={setServices}/>
+    <ServicesTable profileType={profileType} getServices={getServices} setServices={setServices}/>
   </>)
 }
 

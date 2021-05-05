@@ -44,16 +44,16 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface UserRouteParams {
+interface ProfileRouteParams {
   profile?: string,
   sourceProfile?: string
 }
 
-interface UserEditorParams extends RouteComponentProps<UserRouteParams> {
+interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
   fromUrl: string
 }
 
-const ProfileEditor: React.FC<UserEditorParams> = props => {
+const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   const {data: profiles} = useServiceProfilesQuery()
   const [getProfileServices, profileServices] = useProfileServicesLazyQuery()
 
@@ -129,7 +129,7 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
                 <Button
                   className={classes.control}
                   color="primary"
-                  // onClick={() => setRows([...rows, ''])}
+                  onClick={() => setServices([...services, ''])}
                   startIcon={<AddIcon/>}
                   variant="contained"
                 >
@@ -149,18 +149,25 @@ const ProfileEditor: React.FC<UserEditorParams> = props => {
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Alone} newProfile={false}/>
+                <ServicesProfile profileType={ServiceProfileType.Alone}
+                                 getProfile={() => profile}
+                                 doesProfileExist={profile => doesProfileExist(profile)}
+                                 getServices={() => services}/>
               </Grid>
               <Grid
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Alone} newProfile={false}/>
+                <ServicesProfile profileType={ServiceProfileType.Alone}
+                                 getProfile={() => sourceProfile}/>
               </Grid>
             </Grid>
           </CardContent>) : (
           <CardContent>
-            <ServicesProfile profileType={ServiceProfileType.Alone} newProfile={false} getServices={services}/>
+            <ServicesProfile profileType={ServiceProfileType.Alone}
+                             getProfile={() => profile}
+                             doesProfileExist={profile => doesProfileExist(profile)}
+                             getServices={() => services}/>
           </CardContent>
         )}
       </Card>)

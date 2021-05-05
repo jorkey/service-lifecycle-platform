@@ -51,7 +51,7 @@ interface CustomTableCellParams {
   onChange: any
 }
 
-const CustomTableCell = (params: CustomTableCellParams) => {
+const CustomTableRow = (params: CustomTableCellParams) => {
   const { row, onChange } = params
   const classes = useStyles();
   return (
@@ -59,7 +59,6 @@ const CustomTableCell = (params: CustomTableCellParams) => {
       {row.isEditMode ? (
         <Input
           value={row.service}
-          // name={name}
           onChange={e => onChange(e, row)}
         />
       ) : (
@@ -71,13 +70,13 @@ const CustomTableCell = (params: CustomTableCellParams) => {
 
 interface ServicesTableParams {
   profileType: ServiceProfileType
-  initialServices?: Array<string>
+  getServices?: () => Array<string>
   setServices?: (services: Array<string>) => any
 }
 
 export const ServicesTable = (props: ServicesTableParams) => {
-  const { profileType, initialServices, setServices } = props;
-  const [rows, setRows] = useState(initialServices?.map((service, index) => {
+  const { profileType, getServices: getServices, setServices } = props;
+  const [rows, setRows] = useState(getServices?.().map((service, index) => {
     return { id: index, service: service, isEditMode: false };
   }));
   const [previous, setPrevious] = useState<Row>();
@@ -110,6 +109,21 @@ export const ServicesTable = (props: ServicesTableParams) => {
     setRows(newRows);
   };
 
+  // const onRevert = (id:any) => {
+  //   const newRows = rows?.map(row => {
+  //     if (row.id === id) {
+  //       return previous[id] ? previous[id] : row;
+  //     }
+  //     return row;
+  //   });
+  //   setRows(newRows);
+  //   setPrevious(state => {
+  //     delete state[id];
+  //     return state;
+  //   });
+  //   onToggleEditMode(id);
+  // };
+
   return (
     <Table
       className={classes.servicesTable}
@@ -128,7 +142,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
               hover
               key={row.id}
             >
-              <CustomTableCell key={row.id} row={row} classes={classes} onChange={onChange}/>
+              <CustomTableRow key={row.id} row={row} classes={classes} onChange={onChange}/>
               <TableCell className={classes.actionsColumn}>
                 {row.isEditMode ? (
                   <>
