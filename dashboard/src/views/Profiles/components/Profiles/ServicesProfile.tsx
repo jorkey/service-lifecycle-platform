@@ -4,17 +4,17 @@ import {ServicesTable, ServiceProfileType} from "./ServicesTable";
 
 interface ServicesProfileParams {
   profileType: ServiceProfileType,
-  getProfile: () => string | undefined,
+  getProfile?: () => string | undefined,
   setProfile?: (profile: string) => void,
   doesProfileExist?: (profile: string) => boolean,
-  getServices: () => Array<string>,
+  getServices?: () => Array<string>,
   setServices?: (services: Array<string>) => void
 }
 
 const ServicesProfile = (params: ServicesProfileParams) => {
   const { profileType, getProfile, setProfile, doesProfileExist, getServices, setServices } = params
 
-  const [ newProfile ] = useState(!(getProfile?.()))
+  const newProfile = useState(!getProfile?.())
 
   const profile = getProfile?.()
 
@@ -29,7 +29,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
       margin="normal"
       onChange={(e: any) => setProfile?.(e.target.value)}
       required
-      value={profile}
+      value={getProfile}
       variant="outlined"
     />
     <ServicesTable profileType={profileType} getServices={getServices} setServices={setServices}/>
