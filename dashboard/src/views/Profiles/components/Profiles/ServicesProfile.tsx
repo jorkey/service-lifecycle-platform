@@ -32,7 +32,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
       value={profile}
       variant="outlined"
     />
-    <ServicesTable profileType={profileType} getServices={getServices} setServices={setServices}/>
+    <ServicesTable profileType={profileType} getServices={getServices} setServices={setServices} newService={true}/>
   </>)
 }
 

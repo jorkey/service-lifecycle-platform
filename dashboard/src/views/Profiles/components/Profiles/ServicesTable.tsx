@@ -1,12 +1,17 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import {DataGrid, GridCellParams, GridColDef, GridRowId} from '@material-ui/data-grid';
+import {DataGrid, GridCellParams, GridColDef, GridRowId, useGridApiRef} from '@material-ui/data-grid';
 import {Pagination} from "@material-ui/lab";
 import {Button, IconButton} from "@material-ui/core";
 import DeleteIcon from '@material-ui/icons/Delete';
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
+    root: {
+      '&.MuiDataGrid-root .MuiDataGrid-cell:focus-within': {
+        outline: 'none',
+      },
+    },
     color: "black",
     marginTop: 20,
     height: 400,
@@ -33,10 +38,12 @@ interface ServicesTableParams {
   profileType: ServiceProfileType
   getServices: () => Array<string>
   setServices?: (services: Array<string>) => any
+  newService: boolean
 }
 
 export const ServicesTable = (props: ServicesTableParams) => {
-  const { profileType, getServices, setServices } = props;
+  const { profileType, getServices, setServices, newService } = props;
+  const apiRef = useGridApiRef();
   const classes = useStyles();
 
   const columns: GridColDef[] = [
@@ -46,28 +53,20 @@ export const ServicesTable = (props: ServicesTableParams) => {
       flex: 200,
       disableClickEventBubbling: true,
       editable: true
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      disableClickEventBubbling: true,
-      renderCell: (params: GridCellParams) => (
-        <strong>
-          <IconButton title='Delete' onClick={() => {}}>
-            <DeleteIcon/>
-          </IconButton>
-        </strong>
-      ),
     }]
 
   const rows = getServices?.().map ((service, index) => {
-    return { id: index, service: service }; }
+    return { id: index, service: service, new: false }; }
   )
+  if (newService) {
+    rows.push({ id: rows.length, service: '', new: true })
+  }
 
   const [selectionModel, setSelectionModel] = React.useState<GridRowId[]>([]);
 
   return (
-    <DataGrid rows={rows} columns={columns}
+    <DataGrid apiRef={apiRef}
+              rows={rows} columns={columns}
               className={classes.servicesTable}
               disableSelectionOnClick={true}
               disableColumnSelector={true}
