@@ -4,6 +4,6 @@ object RunDistributionMain extends App {
   val lifecycle = new SimpleLifecycle()
   lifecycle.makeAndRunDistribution()
   lifecycle.initializeDistribution("ak")
-  //lif§ecycle.in stallTestService()
+  //lifecycle.in stallTestService()
   synchronized { wait() }
 }
