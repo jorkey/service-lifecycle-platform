@@ -7,7 +7,7 @@ interface ServicesProfileParams {
   getProfile?: () => string | undefined,
   setProfile?: (profile: string) => void,
   doesProfileExist?: (profile: string) => boolean,
-  getServices?: () => Array<string>,
+  getServices: () => Array<string>,
   setServices?: (services: Array<string>) => void
 }
 

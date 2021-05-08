@@ -159,7 +159,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 xs={6}
               >
                 <ServicesProfile profileType={ServiceProfileType.Alone}
-                                 getProfile={() => sourceProfile}/>
+                                 getProfile={() => sourceProfile}
+                                 getServices={() => []}/>
               </Grid>
             </Grid>
           </CardContent>) : (
