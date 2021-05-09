@@ -61,6 +61,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   const [profile, setProfile] = useState('');
   const [services, setServices] = useState(new Array<string>());
+  const [changed, setChanged] = useState(false);
 
   const [initialized, setInitialized] = useState(false);
 
@@ -100,7 +101,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   }
 
   const validate: () => boolean = () => {
-    return !!profile && !doesProfileExist(profile) && services.length != 0
+    return !!profile && (!!editProfile || !doesProfileExist(profile)) && services.length != 0
   }
 
   const submit = () => {
@@ -149,16 +150,17 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Alone}
+                <ServicesProfile profileType={ServiceProfileType.Projection}
                                  getProfile={() => profile}
                                  doesProfileExist={profile => doesProfileExist(profile)}
-                                 getServices={() => services}/>
+                                 getServices={() => services}
+                                 setServices={services => {setServices(services); setChanged(true)}}/>
               </Grid>
               <Grid
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Alone}
+                <ServicesProfile profileType={ServiceProfileType.Pattern}
                                  getProfile={() => sourceProfile}
                                  getServices={() => []}/>
               </Grid>
@@ -169,7 +171,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                              getProfile={() => profile}
                              doesProfileExist={profile => doesProfileExist(profile)}
                              getServices={() => services}
-                             setServices={ services => setServices(services) }/>
+                             setServices={services => { setServices(services); setChanged(true)}}/>
           </CardContent>
         )}
       </Card>)
@@ -201,11 +203,11 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
           <Button
             className={classes.control}
             color="primary"
-            disabled={!validate()}
+            disabled={!changed || !validate()}
             onClick={() => submit()}
             variant="contained"
           >
-            {!editProfile?'Add New User':'Save'}
+            {!editProfile?'Add New Profile':'Save'}
           </Button>
         </Box>
       </Card>) : null

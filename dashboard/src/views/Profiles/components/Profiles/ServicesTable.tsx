@@ -38,7 +38,7 @@ interface ServicesTableParams {
 export const ServicesTable = (props: ServicesTableParams) => {
   const { profileType, getServices: getServices, setServices } = props;
 
-  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
+  const [ deleteConfirm, setDeleteConfirm ] = useState(-1)
 
   const classes = useStyles();
 
@@ -63,14 +63,15 @@ export const ServicesTable = (props: ServicesTableParams) => {
           (index == row)?newValue:value))
       }}
       onRowRemove={ (row) => {
-        setServices?.(getServices().filter((value, index) => index != row))
+        setDeleteConfirm(row)
       }}
     />
-    {/*<ConfirmDialog*/}
-    {/*  message={`Do you want to delete service '${userInfo.user}' (${userInfo.name})?`}*/}
-    {/*  open={deleteConfirm}*/}
-    {/*  close={() => { setDeleteConfirm(false) }}*/}
-    {/*  onConfirm={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}*/}
-    {/*/>*/}
+    { deleteConfirm != -1 ? (
+      <ConfirmDialog
+        message={`Do you want to delete service '${getServices()[deleteConfirm]}'?`}
+        open={true}
+        close={() => { setDeleteConfirm(-1) }}
+        onConfirm={() => setServices?.(getServices().filter((value, index) => index != deleteConfirm))}
+      />) : null }
   </>)
 }
