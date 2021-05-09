@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import EditTable, {EditColumnParams} from "../../../../common/EditTable";
+import ConfirmDialog from "../../../../common/ConfirmDialog";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -36,6 +37,9 @@ interface ServicesTableParams {
 
 export const ServicesTable = (props: ServicesTableParams) => {
   const { profileType, getServices: getServices, setServices } = props;
+
+  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
+
   const classes = useStyles();
 
   const columns: Array<EditColumnParams> = [
@@ -49,17 +53,24 @@ export const ServicesTable = (props: ServicesTableParams) => {
 
   const rows = getServices().map(service => { return { service: service }})
 
-  return (
+  return (<>
     <EditTable
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
       onRowChange={ (row, column, newValue) => {
         setServices?.(getServices().map((value, index) =>
-          (index == row)?newValue:value)) }}
+          (index == row)?newValue:value))
+      }}
       onRowRemove={ (row) => {
         setServices?.(getServices().filter((value, index) => index != row))
       }}
     />
-  )
+    {/*<ConfirmDialog*/}
+    {/*  message={`Do you want to delete service '${userInfo.user}' (${userInfo.name})?`}*/}
+    {/*  open={deleteConfirm}*/}
+    {/*  close={() => { setDeleteConfirm(false) }}*/}
+    {/*  onConfirm={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}*/}
+    {/*/>*/}
+  </>)
 }

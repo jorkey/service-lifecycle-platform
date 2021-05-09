@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import {IconButton, Input, Table, TableBody, TableCell, TableHead, TableRow} from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles(theme => ({
   actionsColumn: {
@@ -16,7 +17,6 @@ export interface EditColumnParams {
   headerName: string,
   className: string,
   editable?: boolean,
-  onChange?: (row: number, value: string) => void,
   validate?: (value: string) => boolean
 }
 
@@ -29,37 +29,49 @@ interface EditTableRowParams {
 }
 
 const EditTableRow = (params: EditTableRowParams) => {
-  const { columns, rowNum, values, onRemove } = params
+  const { columns, rowNum, values, onChange, onRemove } = params
+
   const [editColumn, setEditColumn] = useState(-1)
+  const [editValue, setEditValue] = useState('')
+
   const classes = useStyles()
 
   const valuesColumns = columns.map((column, index) =>
-    (<TableCell className={column.className}
-               onDoubleClick={() => {
-                 if (column.editable && editColumn != index) {
-                   setEditColumn(index)
-                 }
-               }}
-               onBlur={() => setEditColumn(-1)}
+    (<TableCell key={index} className={column.className}
+                onClick={() => {
+                  if (column.editable && editColumn != index) {
+                    setEditColumn(index)
+                    setEditValue(values[column.name])
+                  }
+                }}
+                onBlur={() => {
+                  onChange?.(column.name, editValue)
+                  setEditColumn(-1)
+                }}
     >
-      {editColumn == index ? (
+      {editColumn === index ? (
         <Input
-          value={values[column.name]}
-          onChange={e => column.onChange?.(rowNum, e.target.value)}
+          value={editValue}
+          autoFocus={true}
+          onChange={e => {
+            setEditValue(e.target.value)
+          }}
         />
       ) : (
         values[column.name]
       )}
     </TableCell>))
-  return (<>
-      {[...valuesColumns, (<TableCell className={classes.actionsColumn}>
+  return (<TableRow>
+      {[...valuesColumns, (<TableCell key={valuesColumns.length} className={classes.actionsColumn}>
              <IconButton
                onClick={() => onRemove()}
                title="Delete"
-             />
+             >
+                <DeleteIcon/>
+             </IconButton>
            </TableCell>
          )]}
-    </>)
+    </TableRow>)
 }
 
 interface EditTableParams {
@@ -71,7 +83,8 @@ interface EditTableParams {
 }
 
 export const EditTable = (props: EditTableParams) => {
-  const { className, columns, rows, onRowChange, onRowRemove } = props;
+  const { className, columns, rows, onRowChange, onRowRemove } = props
+  const classes = useStyles()
 
   return (
     <Table
@@ -80,15 +93,16 @@ export const EditTable = (props: EditTableParams) => {
     >
       <TableHead>
         <TableRow>
-          { columns.map(column =>
-            <TableCell className={column.className}>{column.name}</TableCell>) }
+          { columns.map((column, index) =>
+            <TableCell key={index} className={column.className}>{column.headerName}</TableCell>) }
+          <TableCell key={columns.length} className={classes.actionsColumn}>Actions</TableCell>
         </TableRow>
       </TableHead>
       { <TableBody>
-          { rows.map((row, index) =>
-            (<EditTableRow columns={columns} rowNum={index} values={row}
-                           onChange={(column, value) => onRowChange(row, column, value) }
-                           onRemove={() => onRowRemove(row) }/>)) }
+          { rows.map((row, index) => {
+            return (<EditTableRow key={index} columns={columns} rowNum={index} values={row}
+                           onChange={(column, value) => onRowChange(index, column, value) }
+                           onRemove={() => onRowRemove(index) }/>) })}
         </TableBody> }
     </Table>)
 }

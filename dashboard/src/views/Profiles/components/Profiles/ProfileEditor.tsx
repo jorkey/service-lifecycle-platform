@@ -168,7 +168,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
             <ServicesProfile profileType={ServiceProfileType.Alone}
                              getProfile={() => profile}
                              doesProfileExist={profile => doesProfileExist(profile)}
-                             getServices={() => services}/>
+                             getServices={() => services}
+                             setServices={ services => setServices(services) }/>
           </CardContent>
         )}
       </Card>)

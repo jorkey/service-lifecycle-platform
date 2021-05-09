@@ -14,7 +14,7 @@ interface ServicesProfileParams {
 const ServicesProfile = (params: ServicesProfileParams) => {
   const { profileType, getProfile, setProfile, doesProfileExist, getServices, setServices } = params
 
-  const newProfile = useState(!getProfile?.())
+  const [ newProfile ] = useState(!(getProfile?.()))
 
   const profile = getProfile?.()
 
@@ -29,7 +29,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
       margin="normal"
       onChange={(e: any) => setProfile?.(e.target.value)}
       required
-      value={getProfile}
+      value={getProfile?.()?getProfile():''}
       variant="outlined"
     />
     <ServicesTable profileType={profileType} getServices={getServices} setServices={setServices}/>
