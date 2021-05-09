@@ -61,6 +61,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   const [profile, setProfile] = useState('');
   const [services, setServices] = useState(new Array<string>());
+  const [editColumn, setEditColumn] = useState<{row?: number, column?: string}>(
+    { row: undefined, column: undefined });
   const [changed, setChanged] = useState(false);
 
   const [initialized, setInitialized] = useState(false);
@@ -154,7 +156,10 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                                  getProfile={() => profile}
                                  doesProfileExist={profile => doesProfileExist(profile)}
                                  getServices={() => services}
-                                 setServices={services => {setServices(services); setChanged(true)}}/>
+                                 setServices={services => {setServices(services); setChanged(true)}}
+                                 editColumn={editColumn}
+                                 setEditColumn={(row, column) => setEditColumn({row, column})}
+                />
               </Grid>
               <Grid
                 item
@@ -162,7 +167,10 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
               >
                 <ServicesProfile profileType={ServiceProfileType.Pattern}
                                  getProfile={() => sourceProfile}
-                                 getServices={() => []}/>
+                                 getServices={() => []}
+                                 editColumn={{row: undefined, column: undefined}}
+                                 setEditColumn={() => {}}
+                />
               </Grid>
             </Grid>
           </CardContent>) : (
@@ -171,7 +179,10 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                              getProfile={() => profile}
                              doesProfileExist={profile => doesProfileExist(profile)}
                              getServices={() => services}
-                             setServices={services => { setServices(services); setChanged(true)}}/>
+                             setServices={services => { setServices(services); setChanged(true)}}
+                             editColumn={editColumn}
+                             setEditColumn={(row, column) => setEditColumn({row, column})}
+            />
           </CardContent>
         )}
       </Card>)

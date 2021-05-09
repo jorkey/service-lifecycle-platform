@@ -9,10 +9,14 @@ interface ServicesProfileParams {
   doesProfileExist?: (profile: string) => boolean,
   getServices: () => Array<string>,
   setServices?: (services: Array<string>) => void
+  editColumn: {row?: number, column?: string}
+  setEditColumn: (row?: number, column?: string) => void
 }
 
 const ServicesProfile = (params: ServicesProfileParams) => {
-  const { profileType, getProfile, setProfile, doesProfileExist, getServices, setServices } = params
+  const { profileType, getProfile, setProfile, doesProfileExist,
+    getServices, setServices,
+    editColumn, setEditColumn } = params
 
   const [ newProfile ] = useState(!(getProfile?.()))
 
@@ -32,7 +36,12 @@ const ServicesProfile = (params: ServicesProfileParams) => {
       value={getProfile?.()?getProfile():''}
       variant="outlined"
     />
-    <ServicesTable profileType={profileType} getServices={getServices} setServices={setServices}/>
+    <ServicesTable profileType={profileType}
+                   getServices={getServices}
+                   setServices={setServices}
+                   editColumn={editColumn}
+                   setEditColumn={setEditColumn}
+    />
   </>)
 }
 

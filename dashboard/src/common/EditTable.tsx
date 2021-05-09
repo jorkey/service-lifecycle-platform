@@ -24,14 +24,15 @@ interface EditTableRowParams {
   columns: Array<EditColumnParams>,
   rowNum: number,
   values: any,
+  editColumn: string | undefined,
+  setEditColumn: (column: string | undefined) => void,
   onChange: (column: string, value: string) => void,
   onRemove: () => void
 }
 
 const EditTableRow = (params: EditTableRowParams) => {
-  const { columns, rowNum, values, onChange, onRemove } = params
+  const { columns, rowNum, values, editColumn, setEditColumn, onChange, onRemove } = params
 
-  const [editColumn, setEditColumn] = useState(-1)
   const [editValue, setEditValue] = useState('')
 
   const classes = useStyles()
@@ -39,17 +40,17 @@ const EditTableRow = (params: EditTableRowParams) => {
   const valuesColumns = columns.map((column, index) =>
     (<TableCell key={index} className={column.className}
                 onClick={() => {
-                  if (column.editable && editColumn != index) {
-                    setEditColumn(index)
+                  if (column.editable && editColumn && editColumn != column.name) {
+                    setEditColumn(column.name)
                     setEditValue(values[column.name])
                   }
                 }}
                 onBlur={() => {
                   onChange?.(column.name, editValue)
-                  setEditColumn(-1)
+                  setEditColumn(undefined)
                 }}
     >
-      {editColumn === index ? (
+      {editColumn === column.name ? (
         <Input
           value={editValue}
           autoFocus={true}
@@ -78,12 +79,14 @@ interface EditTableParams {
   className: string,
   columns: Array<EditColumnParams>,
   rows: Array<any>,
+  editColumn: {row?: number, column?: string},
+  setEditColumn: (row?: number, column?: string) => void,
   onRowChange: (row: number, column: string, value: string) => void,
   onRowRemove: (row: number) => void
 }
 
 export const EditTable = (props: EditTableParams) => {
-  const { className, columns, rows, onRowChange, onRowRemove } = props
+  const { className, columns, rows, editColumn, setEditColumn, onRowChange, onRowRemove } = props
   const classes = useStyles()
 
   return (
@@ -101,6 +104,8 @@ export const EditTable = (props: EditTableParams) => {
       { <TableBody>
           { rows.map((row, index) => {
             return (<EditTableRow key={index} columns={columns} rowNum={index} values={row}
+                           editColumn={(editColumn.row == index)?editColumn.column:undefined}
+                           setEditColumn={column => setEditColumn(index, column)}
                            onChange={(column, value) => onRowChange(index, column, value) }
                            onRemove={() => onRowRemove(index) }/>) })}
         </TableBody> }

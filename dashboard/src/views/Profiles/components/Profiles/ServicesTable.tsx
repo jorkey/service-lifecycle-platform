@@ -33,10 +33,12 @@ interface ServicesTableParams {
   profileType: ServiceProfileType
   getServices: () => Array<string>
   setServices?: (services: Array<string>) => any
+  editColumn: {row?: number, column?: string}
+  setEditColumn: (row?: number, column?: string) => void
 }
 
 export const ServicesTable = (props: ServicesTableParams) => {
-  const { profileType, getServices: getServices, setServices } = props;
+  const { profileType, getServices: getServices, setServices, editColumn, setEditColumn } = props;
 
   const [ deleteConfirm, setDeleteConfirm ] = useState(-1)
 
@@ -58,6 +60,8 @@ export const ServicesTable = (props: ServicesTableParams) => {
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
+      editColumn={editColumn}
+      setEditColumn={ () => {} }
       onRowChange={ (row, column, newValue) => {
         setServices?.(getServices().map((value, index) =>
           (index == row)?newValue:value))
