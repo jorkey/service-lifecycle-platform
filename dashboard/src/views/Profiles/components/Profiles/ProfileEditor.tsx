@@ -155,7 +155,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 <ServicesProfile profileType={ServiceProfileType.Projection}
                                  getProfile={() => profile}
                                  doesProfileExist={profile => doesProfileExist(profile)}
-                                 getServices={() => Array.from(services)}
+                                 getServices={() => services}
                 />
               </Grid>
               <Grid
@@ -177,11 +177,14 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                              addService={addService}
                              onServiceAdded={
                                service => {
-                                 setServices([...services, service].sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                                 setServices([...services, service].sort((s1,s2) => (s1 > s2 ? 1 : -1)))
+                                 setAddService(false)
                                  setChanged(true)
                                }
                              }
-                             onServiceAddCancelled={() => setAddService(false)}
+                             onServiceAddCancelled={() => {
+                               setAddService(false)
+                             }}
                              onServiceChange={
                                (oldService, newService) => {
                                  const newServices = services.filter(s => s != oldService)

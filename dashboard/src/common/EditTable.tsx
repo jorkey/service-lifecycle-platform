@@ -71,8 +71,6 @@ const EditTableRow = (params: EditTableRowParams) => {
       )}
     </TableCell>))
 
-  console.log('add row ' + addRow)
-
   return (<TableRow>
       {[...valuesColumns, (
         <TableCell key={valuesColumns.length} className={classes.actionsColumn}>
