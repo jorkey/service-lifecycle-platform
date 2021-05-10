@@ -61,11 +61,11 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   const [profile, setProfile] = useState('');
   const [services, setServices] = useState(new Array<string>());
-  const [editColumn, setEditColumn] = useState<{row?: number, column?: string}>(
-    { row: undefined, column: undefined });
   const [changed, setChanged] = useState(false);
 
   const [initialized, setInitialized] = useState(false);
+
+  const [addService, setAddService] = useState(false);
 
   const editProfile = props.match.params.profile
   const sourceProfile = props.match.params.sourceProfile
@@ -132,7 +132,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 <Button
                   className={classes.control}
                   color="primary"
-                  onClick={() => setServices([...services, ''])}
+                  onClick={() => setAddService(true)}
                   startIcon={<AddIcon/>}
                   variant="contained"
                 >
@@ -155,10 +155,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 <ServicesProfile profileType={ServiceProfileType.Projection}
                                  getProfile={() => profile}
                                  doesProfileExist={profile => doesProfileExist(profile)}
-                                 getServices={() => services}
-                                 setServices={services => {setServices(services); setChanged(true)}}
-                                 editColumn={editColumn}
-                                 setEditColumn={(row, column) => setEditColumn({row, column})}
+                                 getServices={() => Array.from(services)}
                 />
               </Grid>
               <Grid
@@ -168,8 +165,6 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 <ServicesProfile profileType={ServiceProfileType.Pattern}
                                  getProfile={() => sourceProfile}
                                  getServices={() => []}
-                                 editColumn={{row: undefined, column: undefined}}
-                                 setEditColumn={() => {}}
                 />
               </Grid>
             </Grid>
@@ -179,9 +174,27 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                              getProfile={() => profile}
                              doesProfileExist={profile => doesProfileExist(profile)}
                              getServices={() => services}
-                             setServices={services => { setServices(services); setChanged(true)}}
-                             editColumn={editColumn}
-                             setEditColumn={(row, column) => setEditColumn({row, column})}
+                             addService={addService}
+                             onServiceAdded={
+                               service => {
+                                 setServices([...services, service].sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                                 setChanged(true)
+                               }
+                             }
+                             onServiceAddCancelled={() => setAddService(false)}
+                             onServiceChange={
+                               (oldService, newService) => {
+                                 const newServices = services.filter(s => s != oldService)
+                                 setServices([...newServices, newService].sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                                 setChanged(true)}
+                             }
+                             onServiceRemove={
+                               service => {
+                                 const newServices = services.filter(s => s != service)
+                                 setServices(newServices.sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                                 setChanged(true)
+                               }
+                             }
             />
           </CardContent>
         )}

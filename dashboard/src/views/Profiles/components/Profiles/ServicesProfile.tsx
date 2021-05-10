@@ -7,16 +7,17 @@ interface ServicesProfileParams {
   getProfile?: () => string | undefined,
   setProfile?: (profile: string) => void,
   doesProfileExist?: (profile: string) => boolean,
-  getServices: () => Array<string>,
-  setServices?: (services: Array<string>) => void
-  editColumn: {row?: number, column?: string}
-  setEditColumn: (row?: number, column?: string) => void
+  getServices: () => Array<string>
+  addService?: boolean
+  onServiceAdded?: (service: string) => void
+  onServiceAddCancelled?: () => void
+  onServiceChange?: (oldServiceName: string, newServiceName: string) => void
+  onServiceRemove?: (service: string) => void
 }
 
 const ServicesProfile = (params: ServicesProfileParams) => {
-  const { profileType, getProfile, setProfile, doesProfileExist,
-    getServices, setServices,
-    editColumn, setEditColumn } = params
+  const { profileType, getProfile, setProfile, doesProfileExist, getServices, addService,
+    onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = params
 
   const [ newProfile ] = useState(!(getProfile?.()))
 
@@ -38,9 +39,11 @@ const ServicesProfile = (params: ServicesProfileParams) => {
     />
     <ServicesTable profileType={profileType}
                    getServices={getServices}
-                   setServices={setServices}
-                   editColumn={editColumn}
-                   setEditColumn={setEditColumn}
+                   addService={addService}
+                   onServiceAdded={onServiceAdded}
+                   onServiceAddCancelled={onServiceAddCancelled}
+                   onServiceChange={onServiceChange}
+                   onServiceRemove={onServiceRemove}
     />
   </>)
 }

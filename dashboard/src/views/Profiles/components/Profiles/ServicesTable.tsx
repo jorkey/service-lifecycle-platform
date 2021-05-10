@@ -32,15 +32,17 @@ export enum ServiceProfileType {
 interface ServicesTableParams {
   profileType: ServiceProfileType
   getServices: () => Array<string>
-  setServices?: (services: Array<string>) => any
-  editColumn: {row?: number, column?: string}
-  setEditColumn: (row?: number, column?: string) => void
+  addService?: boolean
+  onServiceAdded?: (service: string) => void
+  onServiceAddCancelled?: () => void
+  onServiceChange?: (oldServiceName: string, newServiceName: string) => void
+  onServiceRemove?: (service: string) => void
 }
 
 export const ServicesTable = (props: ServicesTableParams) => {
-  const { profileType, getServices: getServices, setServices, editColumn, setEditColumn } = props;
+  const { profileType, getServices, addService, onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = props;
 
-  const [ deleteConfirm, setDeleteConfirm ] = useState(-1)
+  const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
   const classes = useStyles();
 
@@ -53,29 +55,29 @@ export const ServicesTable = (props: ServicesTableParams) => {
     }
   ]
 
-  const rows = getServices().map(service => { return { service: service }})
+  const rows = new Array<Map<string, string>>()
+  getServices().forEach(service => { rows.push(new Map([['service', service]])) })
 
   return (<>
     <EditTable
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
-      editColumn={editColumn}
-      setEditColumn={ () => {} }
-      onRowChange={ (row, column, newValue) => {
-        setServices?.(getServices().map((value, index) =>
-          (index == row)?newValue:value))
-      }}
+      addNewRow={addService}
+      onRowAdded={ (columns) => { onServiceAdded?.(columns.get('service')!) } }
+      onRowAddCancelled={ () => onServiceAddCancelled }
+      onRowChange={ (row, column, oldValue, newValue) => {
+        onServiceChange?.(oldValue, newValue) } }
       onRowRemove={ (row) => {
-        setDeleteConfirm(row)
+        setDeleteConfirm(getServices()[row])
       }}
     />
-    { deleteConfirm != -1 ? (
+    { deleteConfirm ? (
       <ConfirmDialog
-        message={`Do you want to delete service '${getServices()[deleteConfirm]}'?`}
+        message={`Do you want to delete service '${deleteConfirm}'?`}
         open={true}
-        close={() => { setDeleteConfirm(-1) }}
-        onConfirm={() => setServices?.(getServices().filter((value, index) => index != deleteConfirm))}
+        close={() => { setDeleteConfirm(undefined) }}
+        onConfirm={() => onServiceRemove?.(deleteConfirm)}
       />) : null }
   </>)
 }

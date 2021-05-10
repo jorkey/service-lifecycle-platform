@@ -2,6 +2,8 @@ import React, {useState} from "react";
 import {IconButton, Input, Table, TableBody, TableCell, TableHead, TableRow} from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
 import DeleteIcon from "@material-ui/icons/Delete";
+import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
+import RevertIcon from "@material-ui/icons/NotInterestedOutlined";
 
 const useStyles = makeStyles(theme => ({
   actionsColumn: {
@@ -22,71 +24,100 @@ export interface EditColumnParams {
 
 interface EditTableRowParams {
   columns: Array<EditColumnParams>,
-  rowNum: number,
-  values: any,
-  editColumn: string | undefined,
-  setEditColumn: (column: string | undefined) => void,
-  onChange: (column: string, value: string) => void,
-  onRemove: () => void
+  values: Map<string, string>,
+  addRow?: boolean,
+  onAdd?: (values: Map<string, string>) => void,
+  onAddCancel?: () => void,
+  onChange?: (column: string, oldValue: string, newValue: string) => void,
+  onRemove?: () => void
 }
 
 const EditTableRow = (params: EditTableRowParams) => {
-  const { columns, rowNum, values, editColumn, setEditColumn, onChange, onRemove } = params
+  const { columns, values, addRow, onAdd, onAddCancel, onChange, onRemove } = params
 
-  const [editValue, setEditValue] = useState('')
+  const [editColumn, setEditColumn] = useState<string>()
+  const [editOldValue, setEditOldValue] = useState<string>()
+  const [editValues, setEditValues] = useState<Map<string, string>>(new Map())
 
   const classes = useStyles()
 
   const valuesColumns = columns.map((column, index) =>
     (<TableCell key={index} className={column.className}
                 onClick={() => {
-                  if (column.editable && editColumn && editColumn != column.name) {
+                  if (!addRow && column.editable && editColumn != column.name) {
                     setEditColumn(column.name)
-                    setEditValue(values[column.name])
+                    setEditOldValue(values.get(column.name)!)
+                    setEditValues(new Map([[column.name, values.get(column.name)!]]))
                   }
                 }}
                 onBlur={() => {
-                  onChange?.(column.name, editValue)
-                  setEditColumn(undefined)
+                  if (!addRow && editColumn == column.name && editValues) {
+                    onChange?.(column.name, editOldValue!, editValues.get(column.name)!)
+                    setEditColumn(undefined)
+                    setEditValues(new Map())
+                  }
                 }}
     >
-      {editColumn === column.name ? (
+      {addRow || editColumn === column.name ? (
         <Input
-          value={editValue}
+          value={editValues.get(column.name)}
           autoFocus={true}
           onChange={e => {
-            setEditValue(e.target.value)
+            setEditValues(new Map(editValues.set(column.name, e.target.value)))
           }}
         />
       ) : (
-        values[column.name]
+        values.get(column.name)!
       )}
     </TableCell>))
+
+  console.log('add row ' + addRow)
+
   return (<TableRow>
-      {[...valuesColumns, (<TableCell key={valuesColumns.length} className={classes.actionsColumn}>
-             <IconButton
-               onClick={() => onRemove()}
-               title="Delete"
-             >
-                <DeleteIcon/>
-             </IconButton>
-           </TableCell>
-         )]}
+      {[...valuesColumns, (
+        <TableCell key={valuesColumns.length} className={classes.actionsColumn}>
+          { addRow ? (<>
+            <IconButton
+              onClick={ () => {
+                onAdd?.(editValues)
+                setEditValues(new Map())
+              }}
+              title="Cancel"
+            >
+              <DoneIcon/>
+            </IconButton>
+            <IconButton
+              onClick={ () => addRow?onAddCancel?.():onRemove?.() }
+              title="Delete"
+            >
+              <RevertIcon/>
+            </IconButton>
+          </>) : (
+            <IconButton
+              onClick={ () => onRemove?.() }
+              title="Delete"
+            >
+              <DeleteIcon/>
+            </IconButton>
+          )}
+        </TableCell>
+      )]}
     </TableRow>)
 }
 
 interface EditTableParams {
   className: string,
   columns: Array<EditColumnParams>,
-  rows: Array<any>,
-  editColumn: {row?: number, column?: string},
-  setEditColumn: (row?: number, column?: string) => void,
-  onRowChange: (row: number, column: string, value: string) => void,
-  onRowRemove: (row: number) => void
+  rows: Array<Map<string, string>>,
+  addNewRow?: boolean,
+  onRowAdded?: (columns: Map<string, string>) => void,
+  onRowAddCancelled?: () => void,
+  onRowChange?: (row: number, column: string, oldValue: string, newValue: string) => void,
+  onRowRemove?: (row: number) => void
 }
 
 export const EditTable = (props: EditTableParams) => {
-  const { className, columns, rows, editColumn, setEditColumn, onRowChange, onRowRemove } = props
+  const { className, columns, rows, addNewRow, onRowAdded, onRowAddCancelled, onRowChange, onRowRemove } = props
   const classes = useStyles()
 
   return (
@@ -102,12 +133,19 @@ export const EditTable = (props: EditTableParams) => {
         </TableRow>
       </TableHead>
       { <TableBody>
-          { rows.map((row, index) => {
-            return (<EditTableRow key={index} columns={columns} rowNum={index} values={row}
-                           editColumn={(editColumn.row == index)?editColumn.column:undefined}
-                           setEditColumn={column => setEditColumn(index, column)}
-                           onChange={(column, value) => onRowChange(index, column, value) }
-                           onRemove={() => onRowRemove(index) }/>) })}
+          { (addNewRow ?
+            (<EditTableRow key={0} columns={columns} values={new Map()} addRow={addNewRow}
+                          onAdd={(columns) => onRowAdded?.(columns)}
+                          onAddCancel={() => onRowAddCancelled?.()}
+                          onChange={(column, value) => {} }
+                          onRemove={ () => {} }/>) : null) }
+          {  rows.map((row, rowNum) => {
+              return (<EditTableRow key={rowNum} columns={columns} values={row} addRow={false}
+                           onAdd={() => {}}
+                           onAddCancel={() => onRowAddCancelled?.()}
+                           onChange={(column, oldValue, newValue) => onRowChange?.(
+                             rowNum, column, oldValue, newValue) }
+                           onRemove={() => onRowRemove?.(rowNum) }/>) })}
         </TableBody> }
     </Table>)
 }
