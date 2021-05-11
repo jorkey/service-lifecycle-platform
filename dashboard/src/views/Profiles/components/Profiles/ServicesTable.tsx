@@ -21,7 +21,7 @@ export enum ServiceProfileType {
 
 interface ServicesTableParams {
   profileType: ServiceProfileType
-  getServices: () => Array<string>
+  services: Array<string>
   addService?: boolean
   onServiceAdded?: (service: string) => void
   onServiceAddCancelled?: () => void
@@ -30,7 +30,7 @@ interface ServicesTableParams {
 }
 
 export const ServicesTable = (props: ServicesTableParams) => {
-  const { profileType, getServices, addService, onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = props;
+  const { profileType, services, addService, onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = props;
 
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
@@ -47,7 +47,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
   ]
 
   const rows = new Array<Map<string, string>>()
-  getServices().forEach(service => { rows.push(new Map([['service', service]])) })
+  services.forEach(service => { rows.push(new Map([['service', service]])) })
 
   return (<>
     <EditTable
@@ -60,7 +60,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       onRowChange={ (row, oldValues, newValues) => {
         onServiceChange?.(oldValues.get('service')!, newValues.get('service')!) } }
       onRowRemove={ (row) => {
-        setDeleteConfirm(getServices()[row])
+        setDeleteConfirm(services[row])
       }}
     />
     { deleteConfirm ? (

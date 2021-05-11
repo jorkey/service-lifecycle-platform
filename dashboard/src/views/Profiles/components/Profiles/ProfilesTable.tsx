@@ -10,7 +10,6 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import {useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
 
-// eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
   profileColumn: {
     width: '200px',
@@ -56,7 +55,7 @@ const Actions: React.FC<ActionsProps> = (props) => {
       </IconButton>
       <ConfirmDialog
         close={() => { setDeleteConfirm(false) }}
-        message={`Do you want to delete profile '${profile}' (${profile})?`}
+        message={`Do you want to delete profile '${profile}'?`}
         onConfirm={() => removing(removeProfile({ variables: { profile: profile } }).then(() => {}))}
         open={deleteConfirm}
       />

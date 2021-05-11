@@ -45,8 +45,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface ProfileRouteParams {
-  profile?: string,
-  sourceProfile?: string
+  profile?: string
 }
 
 interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
@@ -56,34 +55,64 @@ interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
 const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   const {data: profiles} = useServiceProfilesQuery()
   const [getProfileServices, profileServices] = useProfileServicesLazyQuery()
+  const [getPatternProfileServices, patternProfileServices] = useProfileServicesLazyQuery()
 
   const classes = useStyles()
 
   const [profile, setProfile] = useState('');
   const [services, setServices] = useState(new Array<string>());
+  const [patternServices, setPatternServices] = useState(new Array<string>());
   const [changed, setChanged] = useState(false);
 
   const [initialized, setInitialized] = useState(false);
-
   const [addService, setAddService] = useState(false);
 
   const editProfile = props.match.params.profile
-  const sourceProfile = props.match.params.sourceProfile
+  const patternProfile = (editProfile != 'developer') ? 'developer' : undefined
 
   const history = useHistory()
 
-  if (!initialized) {
-    if (editProfile) {
+  const requestProfileServices = () => {
+    if (editProfile && !profile) {
       if (!profileServices.data && !profileServices.loading) {
         getProfileServices({variables: {profile: editProfile}})
       }
       if (profileServices.data) {
-        setServices([...profileServices.data.serviceProfiles[0].services]
-          .sort((s1,s2) => (s1 > s2 ? 1 : -1)))
         setProfile(editProfile)
-        setInitialized(true)
+        setServices([...profileServices.data.serviceProfiles[0].services]
+          .sort((s1, s2) => (s1 > s2 ? 1 : -1)))
+        return true
+      } else {
+        return false
       }
     } else {
+      return true
+    }
+  }
+
+  const requestPatternProfileServices = () => {
+    if (patternProfile && !patternServices) {
+      if (!patternProfileServices.data && !patternProfileServices.loading) {
+        getPatternProfileServices({variables: {profile: patternProfile}})
+      }
+      if (patternProfileServices.data) {
+        if (patternProfileServices.data.serviceProfiles.length) {
+          setPatternServices([...patternProfileServices.data.serviceProfiles[0].services]
+            .sort((s1, s2) => (s1 > s2 ? 1 : -1)))
+        }
+        return true
+      } else {
+        return false
+      }
+    } else {
+      return true
+    }
+  }
+
+  if (!initialized) {
+    const r1 = requestProfileServices()
+    const r2 = requestPatternProfileServices()
+    if (r1 && r2) {
       setInitialized(true)
     }
   }
@@ -125,7 +154,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
       <Card className={classes.card}>
         <CardHeader
           action={
-            !sourceProfile?
+            !patternProfile?
               (<Box
                 className={classes.controls}
               >
@@ -142,7 +171,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
           }
           title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Profile'}
         />
-        { sourceProfile ? (
+        { patternProfile ? (
           <CardContent>
             <Grid
               container
@@ -153,9 +182,9 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 xs={6}
               >
                 <ServicesProfile profileType={ServiceProfileType.Projection}
-                                 getProfile={() => profile}
+                                 profile={profile}
+                                 services={services}
                                  doesProfileExist={profile => doesProfileExist(profile)}
-                                 getServices={() => services}
                 />
               </Grid>
               <Grid
@@ -163,17 +192,17 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 xs={6}
               >
                 <ServicesProfile profileType={ServiceProfileType.Pattern}
-                                 getProfile={() => sourceProfile}
-                                 getServices={() => []}
+                                 profile={patternProfile}
+                                 services={patternServices}
                 />
               </Grid>
             </Grid>
           </CardContent>) : (
           <CardContent>
             <ServicesProfile profileType={ServiceProfileType.Alone}
-                             getProfile={() => profile}
+                             profile={profile}
                              doesProfileExist={profile => doesProfileExist(profile)}
-                             getServices={() => services}
+                             services={services}
                              addService={addService}
                              onServiceAdded={
                                service => {

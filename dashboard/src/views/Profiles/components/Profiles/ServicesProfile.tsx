@@ -1,13 +1,14 @@
 import TextField from "@material-ui/core/TextField";
 import React, {useState} from "react";
 import {ServicesTable, ServiceProfileType} from "./ServicesTable";
+import {Typography} from '@material-ui/core';
 
 interface ServicesProfileParams {
   profileType: ServiceProfileType,
-  getProfile?: () => string | undefined,
+  profile?: string | undefined,
   setProfile?: (profile: string) => void,
   doesProfileExist?: (profile: string) => boolean,
-  getServices: () => Array<string>
+  services: Array<string>
   addService?: boolean
   onServiceAdded?: (service: string) => void
   onServiceAddCancelled?: () => void
@@ -16,12 +17,10 @@ interface ServicesProfileParams {
 }
 
 const ServicesProfile = (params: ServicesProfileParams) => {
-  const { profileType, getProfile, setProfile, doesProfileExist, getServices, addService,
+  const { profileType, profile, setProfile, doesProfileExist, services, addService,
     onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = params
 
-  const [ newProfile ] = useState(!(getProfile?.()))
-
-  const profile = getProfile?.()
+  const [ newProfile ] = useState(!profile)
 
   return (<>
     { newProfile ? <TextField
@@ -34,11 +33,11 @@ const ServicesProfile = (params: ServicesProfileParams) => {
       margin="normal"
       onChange={(e: any) => setProfile?.(e.target.value)}
       required
-      value={getProfile?.()?getProfile():''}
+      value={profile?profile:''}
       variant="outlined"
-    /> : null}
+    /> : <Typography variant="h6">Profile {profile}</Typography>}
     <ServicesTable profileType={profileType}
-                   getServices={getServices}
+                   services={services}
                    addService={addService}
                    onServiceAdded={onServiceAdded}
                    onServiceAddCancelled={onServiceAddCancelled}
