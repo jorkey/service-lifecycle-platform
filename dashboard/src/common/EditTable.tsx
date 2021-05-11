@@ -11,6 +11,9 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingRight: '40px',
     textAlign: 'right'
+  },
+  input: {
+    width: '100%'
   }
 }));
 
@@ -25,36 +28,50 @@ export interface EditColumnParams {
 interface EditTableRowParams {
   columns: Array<EditColumnParams>,
   values: Map<string, string>,
-  addRow?: boolean,
+  adding?: boolean,
+  editing?: boolean,
   onAdd?: (values: Map<string, string>) => void,
   onAddCancel?: () => void,
+  onEditing?: (editing: boolean) => void,
   onChange?: (oldValues: Map<string, string>, newValues: Map<string, string>) => void,
   onRemove?: () => void
 }
 
 const EditTableRow = (params: EditTableRowParams) => {
-  const { columns, values, addRow, onAdd, onAddCancel, onChange, onRemove } = params
+  const { columns, values, adding, editing, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
 
-  const [editing, setEditing] = useState<boolean>()
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, string>>(new Map())
   const [editValues, setEditValues] = useState<Map<string, string>>(new Map())
 
   const classes = useStyles()
 
+  if (!editing && editColumn) {
+    setEditColumn(undefined)
+    setEditOldValues(new Map())
+    setEditValues(new Map())
+  }
+
   const valuesColumns = columns.map((column, index) =>
     (<TableCell key={index} className={column.className}
                 onClick={() => {
-                  if (!addRow && column.editable && !editing && editColumn != column.name) {
-                    setEditing(true)
+                  if (!adding && column.editable && !editing && editColumn != column.name) {
                     setEditColumn(column.name)
                     setEditOldValues(new Map(values))
                     setEditValues(new Map(values))
+                    onEditing?.(true)
                   }
                 }}
+                onKeyDown={e => {
+                  if (editing && e.keyCode == 27) {
+                    onEditing?.(false)
+                  }
+                }}
+
     >
-      {addRow || (editing && editColumn === column.name) ? (
+      {adding || (editing && editColumn === column.name) ? (
         <Input
+          className={classes.input}
           value={editValues.get(column.name)?editValues.get(column.name):''}
           autoFocus={true}
           onChange={e => {
@@ -70,7 +87,7 @@ const EditTableRow = (params: EditTableRowParams) => {
   return (<TableRow>
       {[...valuesColumns, (
         <TableCell key={valuesColumns.length} className={classes.actionsColumn}>
-          { addRow ? (<>
+          { adding ? (<>
             <IconButton
               onClick={ () => {
                 onAdd?.(editValues)
@@ -93,10 +110,7 @@ const EditTableRow = (params: EditTableRowParams) => {
             <IconButton
               onClick={ () => {
                 onChange?.(editOldValues, editValues)
-                setEditing(false)
-                setEditColumn(undefined)
-                setEditOldValues(new Map())
-                setEditValues(new Map())
+                onEditing?.(false)
               }}
               title="Done"
               disabled={!!columns.find(column => {
@@ -107,10 +121,7 @@ const EditTableRow = (params: EditTableRowParams) => {
             </IconButton>
             <IconButton
               onClick={ () => {
-                setEditing(false)
-                setEditColumn(undefined)
-                setEditOldValues(new Map())
-                setEditValues(new Map())
+                onEditing?.(false)
               }}
               title="Cancel"
             >
@@ -136,6 +147,7 @@ interface EditTableParams {
   addNewRow?: boolean,
   onRowAdded?: (values: Map<string, string>) => void,
   onRowAddCancelled?: () => void,
+  onChanging?: boolean,
   onRowChange?: (row: number, oldValues: Map<string, string>, newValues: Map<string, string>) => void,
   onRowRemove?: (row: number) => void
 }
@@ -143,6 +155,8 @@ interface EditTableParams {
 export const EditTable = (props: EditTableParams) => {
   const { className, columns, rows, addNewRow, onRowAdded, onRowAddCancelled, onRowChange, onRowRemove } = props
   const classes = useStyles()
+
+  const [editingRow, setEditingRow] = useState(-1)
 
   return (
     <Table
@@ -158,15 +172,14 @@ export const EditTable = (props: EditTableParams) => {
       </TableHead>
       { <TableBody>
           { (addNewRow ?
-            (<EditTableRow key={0} columns={columns} values={new Map()} addRow={addNewRow}
-                          onAdd={(columns) => onRowAdded?.(columns)}
-                          onAddCancel={() => onRowAddCancelled?.()}
-                          onChange={(column, value) => {} }
-                          onRemove={ () => {} }/>) : null) }
+            (<EditTableRow key={0} columns={columns} values={new Map()} adding={addNewRow}
+                           onAdd={(columns) => onRowAdded?.(columns)}
+                           onAddCancel={() => onRowAddCancelled?.()}/>) : null) }
           {  rows.map((row, rowNum) => {
-              return (<EditTableRow key={rowNum} columns={columns} values={row} addRow={false}
-                           onAdd={() => {}}
+              return (<EditTableRow key={rowNum} columns={columns} values={row} adding={false}
+                           editing={rowNum == editingRow}
                            onAddCancel={() => onRowAddCancelled?.()}
+                           onEditing={(editing) => setEditingRow(editing?rowNum:-1)}
                            onChange={(oldValues, newValues) => onRowChange?.(
                              rowNum, oldValues, newValues) }
                            onRemove={() => onRowRemove?.(rowNum) }/>) })}
