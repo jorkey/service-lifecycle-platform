@@ -52,6 +52,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       headerName: 'Service',
       className: classes.serviceColumn,
       editable: true,
+      validate: (value) => !!value
     }
   ]
 
@@ -66,8 +67,8 @@ export const ServicesTable = (props: ServicesTableParams) => {
       addNewRow={addService}
       onRowAdded={ (columns) => { onServiceAdded?.(columns.get('service')!) } }
       onRowAddCancelled={onServiceAddCancelled}
-      onRowChange={ (row, column, oldValue, newValue) => {
-        onServiceChange?.(oldValue, newValue) } }
+      onRowChange={ (row, oldValues, newValues) => {
+        onServiceChange?.(oldValues.get('service')!, newValues.get('service')!) } }
       onRowRemove={ (row) => {
         setDeleteConfirm(getServices()[row])
       }}
