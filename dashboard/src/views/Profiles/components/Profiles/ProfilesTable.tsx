@@ -7,7 +7,7 @@ import {
 } from '../../../../generated/graphql';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
-import {useRouteMatch} from 'react-router-dom';
+import {NavLink as RouterLink, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
 
 const useStyles = makeStyles(theme => ({
@@ -42,11 +42,13 @@ const Actions: React.FC<ActionsProps> = (props) => {
 
   return (
     <>
-      <Link href={`${routeMatch.url}/edit/${profile}`}>
-        <IconButton title="Edit">
-          <EditIcon/>
-        </IconButton>
-      </Link>
+      <IconButton
+        title="Edit"
+        component={RouterLink}
+        to={`${routeMatch.url}/edit/${profile}`}
+      >
+        <EditIcon/>
+      </IconButton>
       <IconButton
         onClick={() => setDeleteConfirm(true)}
         title="Delete"

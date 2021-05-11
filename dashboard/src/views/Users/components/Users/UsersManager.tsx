@@ -62,7 +62,7 @@ const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = pro
             </Button>
           </Box>
         }
-        title={userType == 'human'? 'People' : 'Service Profiles'}
+        title={userType == 'human'? 'People' : 'Services'}
       />
       <Divider/>
       <CardContent className={classes.content}>
