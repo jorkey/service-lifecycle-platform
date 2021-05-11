@@ -8,18 +8,8 @@ const useStyles = makeStyles(theme => ({
     marginTop: 20
   },
   serviceColumn: {
-    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
-  },
-  controls: {
-    marginTop: 25,
-    display: 'flex',
-    justifyContent: 'flex-end',
-    p: 2
-  },
-  control: {
-    marginLeft: '25px'
   }
 }));
 

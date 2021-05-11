@@ -140,7 +140,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 </Button>
               </Box>):null
           }
-          title={editProfile?'Edit Service Profile':'New Services Profile'}
+          title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Profile'}
         />
         { sourceProfile ? (
           <CardContent>

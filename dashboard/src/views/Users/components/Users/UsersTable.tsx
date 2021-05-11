@@ -7,7 +7,6 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import {useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 
-// eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
   userColumn: {
     width: '200px',

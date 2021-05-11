@@ -24,7 +24,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
   const profile = getProfile?.()
 
   return (<>
-    <TextField
+    { newProfile ? <TextField
       autoFocus
       disabled={!newProfile}
       error={(newProfile && (!profile || (doesProfileExist?.(profile))))}
@@ -36,7 +36,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
       required
       value={getProfile?.()?getProfile():''}
       variant="outlined"
-    />
+    /> : null}
     <ServicesTable profileType={profileType}
                    getServices={getServices}
                    addService={addService}
