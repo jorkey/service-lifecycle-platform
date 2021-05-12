@@ -3,6 +3,8 @@ import React, {useState} from 'react';
 import Button from '@material-ui/core/Button';
 import {NavLink as RouterLink, RouteComponentProps, useHistory} from 'react-router-dom'
 
+import LeftIcon from "@material-ui/icons/ArrowBack";
+
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Box,
@@ -21,7 +23,6 @@ import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
 import ServicesProfile from "./ServicesProfile";
-import {ServiceProfileType} from "./ServicesTable";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -68,7 +69,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   const [addService, setAddService] = useState(false);
 
   const editProfile = props.match.params.profile
-  const patternProfile = (editProfile != 'developer') ? 'developer' : undefined
+  const patternProfile = (editProfile != 'common') ? 'common' : undefined
 
   const history = useHistory()
 
@@ -91,7 +92,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   }
 
   const requestPatternProfileServices = () => {
-    if (patternProfile && !patternServices) {
+    if (patternProfile && !patternServices.length) {
       if (!patternProfileServices.data && !patternProfileServices.loading) {
         getPatternProfileServices({variables: {profile: patternProfile}})
       }
@@ -181,26 +182,26 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Projection}
-                                 profile={profile}
+                <ServicesProfile profile={profile}
                                  services={services}
                                  doesProfileExist={profile => doesProfileExist(profile)}
+                                 onServiceRemove={service => setServices(services.filter(s => s != service))}
                 />
               </Grid>
               <Grid
                 item
                 xs={6}
               >
-                <ServicesProfile profileType={ServiceProfileType.Pattern}
-                                 profile={patternProfile}
-                                 services={patternServices}
+                <ServicesProfile profile={patternProfile}
+                                 services={patternServices.filter(service => !services.find(s => s == service))}
+                                 deleteIcon={<LeftIcon/>}
+                                 onServiceRemove={service => setServices([...services, service])}
                 />
               </Grid>
             </Grid>
           </CardContent>) : (
           <CardContent>
-            <ServicesProfile profileType={ServiceProfileType.Alone}
-                             profile={profile}
+            <ServicesProfile profile={profile}
                              doesProfileExist={profile => doesProfileExist(profile)}
                              services={services}
                              addService={addService}

@@ -13,16 +13,12 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export enum ServiceProfileType {
-  Alone,
-  Pattern,
-  Projection
-}
-
 interface ServicesTableParams {
-  profileType: ServiceProfileType
   services: Array<string>
   addService?: boolean
+  deleteIcon?: JSX.Element
+  allowEdit?: boolean
+  confirmRemove?: boolean
   onServiceAdded?: (service: string) => void
   onServiceAddCancelled?: () => void
   onServiceChange?: (oldServiceName: string, newServiceName: string) => void
@@ -30,7 +26,8 @@ interface ServicesTableParams {
 }
 
 export const ServicesTable = (props: ServicesTableParams) => {
-  const { profileType, services, addService, onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = props;
+  const { services, addService, deleteIcon, allowEdit, confirmRemove,
+    onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = props;
 
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
@@ -41,7 +38,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       name: 'service',
       headerName: 'Service',
       className: classes.serviceColumn,
-      editable: true,
+      editable: allowEdit,
       validate: (value) => !!value
     }
   ]
@@ -55,12 +52,13 @@ export const ServicesTable = (props: ServicesTableParams) => {
       columns={columns}
       rows={rows}
       addNewRow={addService}
+      deleteIcon={deleteIcon}
       onRowAdded={ (columns) => { onServiceAdded?.(columns.get('service')!) } }
       onRowAddCancelled={onServiceAddCancelled}
       onRowChange={ (row, oldValues, newValues) => {
         onServiceChange?.(oldValues.get('service')!, newValues.get('service')!) } }
       onRowRemove={ (row) => {
-        setDeleteConfirm(services[row])
+        return confirmRemove ? setDeleteConfirm(services[row]) : onServiceRemove?.(services[row])
       }}
     />
     { deleteConfirm ? (

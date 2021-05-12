@@ -30,6 +30,7 @@ interface EditTableRowParams {
   values: Map<string, string>,
   adding?: boolean,
   editing?: boolean,
+  deleteIcon?: JSX.Element,
   onAdd?: (values: Map<string, string>) => void,
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
@@ -38,7 +39,7 @@ interface EditTableRowParams {
 }
 
 const EditTableRow = (params: EditTableRowParams) => {
-  const { columns, values, adding, editing, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
+  const { columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, string>>(new Map())
@@ -129,10 +130,12 @@ const EditTableRow = (params: EditTableRowParams) => {
             </IconButton>
           </>) : (
             <IconButton
-              onClick={ () => onRemove?.() }
+              onClick={ () =>
+                onRemove?.()
+              }
               title="Delete"
             >
-              <DeleteIcon/>
+              { deleteIcon?deleteIcon:<DeleteIcon/> }
             </IconButton>
           )}
         </TableCell>
@@ -145,6 +148,7 @@ interface EditTableParams {
   columns: Array<EditColumnParams>,
   rows: Array<Map<string, string>>,
   addNewRow?: boolean,
+  deleteIcon?: JSX.Element,
   onRowAdded?: (values: Map<string, string>) => void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
@@ -153,7 +157,8 @@ interface EditTableParams {
 }
 
 export const EditTable = (props: EditTableParams) => {
-  const { className, columns, rows, addNewRow, onRowAdded, onRowAddCancelled, onRowChange, onRowRemove } = props
+  const { className, columns, rows, addNewRow, deleteIcon,
+    onRowAdded, onRowAddCancelled, onRowChange, onRowRemove } = props
   const classes = useStyles()
 
   const [editingRow, setEditingRow] = useState(-1)
@@ -178,6 +183,7 @@ export const EditTable = (props: EditTableParams) => {
           {  rows.map((row, rowNum) => {
               return (<EditTableRow key={rowNum} columns={columns} values={row} adding={false}
                            editing={rowNum == editingRow}
+                           deleteIcon={deleteIcon}
                            onAddCancel={() => onRowAddCancelled?.()}
                            onEditing={(editing) => setEditingRow(editing?rowNum:-1)}
                            onChange={(oldValues, newValues) => onRowChange?.(

@@ -1,15 +1,32 @@
 import TextField from "@material-ui/core/TextField";
 import React, {useState} from "react";
-import {ServicesTable, ServiceProfileType} from "./ServicesTable";
+import {ServicesTable} from "./ServicesTable";
 import {Typography} from '@material-ui/core';
+import {makeStyles} from "@material-ui/core/styles";
+
+const useStyles = makeStyles(theme => ({
+  profileName1: {
+    height: 60,
+    margin: 0
+  },
+  profileName2: {
+    paddingLeft: 10,
+    paddingTop: 15,
+    height: 60,
+    margin: 0
+  }
+}));
 
 interface ServicesProfileParams {
-  profileType: ServiceProfileType,
+  newProfile?: boolean,
   profile?: string | undefined,
   setProfile?: (profile: string) => void,
   doesProfileExist?: (profile: string) => boolean,
   services: Array<string>
   addService?: boolean
+  deleteIcon?: JSX.Element
+  allowEdit?: boolean
+  confirmRemove?: boolean
   onServiceAdded?: (service: string) => void
   onServiceAddCancelled?: () => void
   onServiceChange?: (oldServiceName: string, newServiceName: string) => void
@@ -17,28 +34,34 @@ interface ServicesProfileParams {
 }
 
 const ServicesProfile = (params: ServicesProfileParams) => {
-  const { profileType, profile, setProfile, doesProfileExist, services, addService,
+  const { newProfile, profile, setProfile, doesProfileExist, services, addService, deleteIcon, allowEdit, confirmRemove,
     onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = params
 
-  const [ newProfile ] = useState(!profile)
+  const classes = useStyles()
 
   return (<>
-    { newProfile ? <TextField
-      autoFocus
-      disabled={!newProfile}
-      error={(newProfile && (!profile || (doesProfileExist?.(profile))))}
-      fullWidth
-      helperText={(newProfile && profile && doesProfileExist?.(profile)) ? 'Profile already exists': ''}
-      label="Profile"
-      margin="normal"
-      onChange={(e: any) => setProfile?.(e.target.value)}
-      required
-      value={profile?profile:''}
-      variant="outlined"
-    /> : <Typography variant="h6">Profile {profile}</Typography>}
-    <ServicesTable profileType={profileType}
-                   services={services}
+    { newProfile ?
+      <TextField  className={classes.profileName1}
+                  autoFocus
+                  disabled={!newProfile}
+                  error={(newProfile && (!profile || (doesProfileExist?.(profile))))}
+                  fullWidth
+                  helperText={(newProfile && profile && doesProfileExist?.(profile)) ? 'Profile already exists': ''}
+                  label="Profile"
+                  margin="normal"
+                  onChange={(e: any) => setProfile?.(e.target.value)}
+                  required
+                  value={profile?profile:''}
+                  variant="outlined"
+      /> : <Typography className={classes.profileName2}
+                  variant="h6"
+      >Profile '{profile}'
+    </Typography>}
+    <ServicesTable services={services}
                    addService={addService}
+                   deleteIcon={deleteIcon}
+                   allowEdit={allowEdit}
+                   confirmRemove={confirmRemove}
                    onServiceAdded={onServiceAdded}
                    onServiceAddCancelled={onServiceAddCancelled}
                    onServiceChange={onServiceChange}
