@@ -9,6 +9,7 @@ import PeopleIcon from '@material-ui/icons/People';
 import ListIcon from '@material-ui/icons/List';
 import ErrorIcon from '@material-ui/icons/Error';
 import ShareIcon from '@material-ui/icons/Share';
+import BuildIcon from '@material-ui/icons/Build';
 
 import { Profile, SidebarNav } from './components';
 
@@ -99,6 +100,21 @@ const Sidebar = (props:any) => {
         {
           title: 'Consumers',
           href: '/distribution/consumers',
+        }
+      ]
+    },
+    {
+      kind: 'title',
+      title: 'Build',
+      icon: <BuildIcon />,
+      pages: [
+        {
+          title: 'Developer',
+          href: '/build/developer',
+        },
+        {
+          title: 'Client',
+          href: '/build/client',
         }
       ]
     },
