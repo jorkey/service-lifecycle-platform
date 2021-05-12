@@ -42,7 +42,8 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'flex-end'
   },
   control: {
-    paddingLeft: '10px'
+    paddingLeft: '10px',
+    textTransform: 'none'
   },
   distributionSelect: {
     width: '150px'

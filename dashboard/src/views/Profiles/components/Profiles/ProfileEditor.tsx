@@ -38,7 +38,8 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px'
+    marginLeft: '25px',
+    textTransform: 'none'
   },
   alert: {
     marginTop: 25
@@ -54,9 +55,9 @@ interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
 }
 
 const ProfileEditor: React.FC<ProfileEditorParams> = props => {
-  const {data: profiles} = useServiceProfilesQuery()
-  const [getProfileServices, profileServices] = useProfileServicesLazyQuery()
-  const [getPatternProfileServices, patternProfileServices] = useProfileServicesLazyQuery()
+  const {data: profiles} = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
+  const [getProfileServices, profileServices] = useProfileServicesLazyQuery({ fetchPolicy: 'no-cache' })
+  const [getPatternProfileServices, patternProfileServices] = useProfileServicesLazyQuery({ fetchPolicy: 'no-cache' })
 
   const classes = useStyles()
 
@@ -182,10 +183,15 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 item
                 xs={6}
               >
-                <ServicesProfile profile={profile}
+                <ServicesProfile newProfile={!editProfile}
+                                 profile={profile}
+                                 setProfile={setProfile}
                                  services={services}
                                  doesProfileExist={profile => doesProfileExist(profile)}
-                                 onServiceRemove={service => setServices(services.filter(s => s != service))}
+                                 onServiceRemove={service => {
+                                   setServices(services.filter(s => s != service))
+                                   setChanged(true)
+                                 }}
                 />
               </Grid>
               <Grid
@@ -195,13 +201,18 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 <ServicesProfile profile={patternProfile}
                                  services={patternServices.filter(service => !services.find(s => s == service))}
                                  deleteIcon={<LeftIcon/>}
-                                 onServiceRemove={service => setServices([...services, service])}
+                                 onServiceRemove={ service => {
+                                   setServices([...services, service])
+                                   setChanged(true)
+                                 }}
                 />
               </Grid>
             </Grid>
           </CardContent>) : (
           <CardContent>
-            <ServicesProfile profile={profile}
+            <ServicesProfile newProfile={!editProfile}
+                             profile={profile}
+                             setProfile={setProfile}
                              doesProfileExist={profile => doesProfileExist(profile)}
                              services={services}
                              addService={addService}

@@ -29,7 +29,8 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px'
+    marginLeft: '25px',
+    textTransform: 'none'
   },
   alert: {
     marginTop: 25

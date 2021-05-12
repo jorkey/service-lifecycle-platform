@@ -5,11 +5,11 @@ import {Typography} from '@material-ui/core';
 import {makeStyles} from "@material-ui/core/styles";
 
 const useStyles = makeStyles(theme => ({
-  profileName1: {
+  newProfileName: {
     height: 60,
     margin: 0
   },
-  profileName2: {
+  profileName: {
     paddingLeft: 10,
     paddingTop: 15,
     height: 60,
@@ -41,7 +41,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
 
   return (<>
     { newProfile ?
-      <TextField  className={classes.profileName1}
+      <TextField  className={classes.newProfileName}
                   autoFocus
                   disabled={!newProfile}
                   error={(newProfile && (!profile || (doesProfileExist?.(profile))))}
@@ -53,7 +53,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
                   required
                   value={profile?profile:''}
                   variant="outlined"
-      /> : <Typography className={classes.profileName2}
+      /> : <Typography className={classes.profileName}
                   variant="h6"
       >Profile '{profile}'
     </Typography>}
