@@ -8,6 +8,7 @@ import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import PeopleIcon from '@material-ui/icons/People';
 import ListIcon from '@material-ui/icons/List';
 import ErrorIcon from '@material-ui/icons/Error';
+import ShareIcon from '@material-ui/icons/Share';
 
 import { Profile, SidebarNav } from './components';
 
@@ -85,6 +86,21 @@ const Sidebar = (props:any) => {
       title: 'Profiles',
       href: '/profiles',
       icon: <BubbleChartIcon />
+    },
+    {
+      kind: 'title',
+      title: 'Distribution',
+      icon: <ShareIcon />,
+      pages: [
+        {
+          title: 'Provider',
+          href: '/distribution/provider',
+        },
+        {
+          title: 'Consumers',
+          href: '/distribution/consumers',
+        }
+      ]
     },
     {
       kind: 'single',

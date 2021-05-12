@@ -7,8 +7,9 @@ import { Switch, Redirect, Route } from 'react-router-dom';
 import {
   LoginPage as LoginPageView,
   Dashboard as DashboardView,
-  Profiles as ProfilesView,
   Users as UsersView,
+  Profiles as ProfilesView,
+  Distribution as DistributionView,
   Logging as LoggingView,
   Failures as FailuresView,
   NotFound as NotFoundView
@@ -53,6 +54,12 @@ const Routes: React.FC<RoutesProps> = props => {
         component={ProfilesView}
         layout={MainLayout}
         path='/profiles'
+        {...props}
+      />
+      <RouteWithLayout
+        component={DistributionView}
+        layout={MainLayout}
+        path='/distribution'
         {...props}
       />
       <RouteWithLayout
