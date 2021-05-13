@@ -58,7 +58,7 @@ const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = pro
               component={RouterLink}
               to={`${routeMatch.url}/new`}
             >
-              Add New
+              Add New User
             </Button>
           </Box>
         }

@@ -30,13 +30,10 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-interface UsersManagerRouteParams {
-  type: string
+interface ConsumersManagerParams {
 }
 
-const ConsumersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = props => {
-  const userType = props.match.params.type
-
+const ConsumersManager: React.FC<ConsumersManagerParams> = props => {
   const classes = useStyles()
   const routeMatch = useRouteMatch();
 
@@ -57,11 +54,11 @@ const ConsumersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> =
               component={RouterLink}
               to={`${routeMatch.url}/new`}
             >
-              Add New
+              Add New Consumer
             </Button>
           </Box>
         }
-        title={userType == 'human'? 'People' : 'Services'}
+        title={'Consumers'}
       />
       <Divider/>
       <CardContent className={classes.content}>
