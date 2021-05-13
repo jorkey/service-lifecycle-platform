@@ -182,6 +182,8 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
         administratorMutations.addDistributionConsumer("distribution", "common", None)).getOrElse(false))
       assert(
         distribClient.graphqlRequest(distributionMutations.setTestedVersions(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3"))))).getOrElse(false))
+      assert(adminClient.graphqlRequest(
+        administratorMutations.removeDistributionConsumer("distribution")).getOrElse(false))
     }
 
     it should "execute service states requests" in {

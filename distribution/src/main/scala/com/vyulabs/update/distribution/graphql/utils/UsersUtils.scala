@@ -56,22 +56,19 @@ trait UsersUtils extends SprayJsonSupport {
                  roles: Option[Seq[UserRole]], email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Boolean] = {
     log.info(s"Change user ${user}")
     val filters = Filters.eq("user", user)
-    collections.Users.update(filters, r => r match {
-      case Some(r) =>
-        for (oldPassword <- oldPassword) {
-          if (r.passwordHash.hash != PasswordHash.generatePasswordHash(oldPassword, r.passwordHash.salt)) {
-            throw new IOException(s"Password verification error")
-          }
+    collections.Users.change(filters, r => {
+      for (oldPassword <- oldPassword) {
+        if (r.passwordHash.hash != PasswordHash.generatePasswordHash(oldPassword, r.passwordHash.salt)) {
+          throw new IOException(s"Password verification error")
         }
-        Some(ServerUserInfo(r.user, r.human,
-          if (name.isDefined) name.get else r.name,
-          password.map(PasswordHash(_)).getOrElse(r.passwordHash),
-          roles.map(_.map(_.toString)).getOrElse(r.roles),
-          if (email.isDefined) (if (email.get.isEmpty) None else email) else r.email,
-          notifications.map(_.map(_.toString)).getOrElse(r.notifications),
-        ))
-      case None =>
-        None
+      }
+      ServerUserInfo(r.user, r.human,
+        if (name.isDefined) name.get else r.name,
+        password.map(PasswordHash(_)).getOrElse(r.passwordHash),
+        roles.map(_.map(_.toString)).getOrElse(r.roles),
+        if (email.isDefined) (if (email.get.isEmpty) None else email) else r.email,
+        notifications.map(_.map(_.toString)).getOrElse(r.notifications),
+      )
     }).map(_ > 0)
   }
 

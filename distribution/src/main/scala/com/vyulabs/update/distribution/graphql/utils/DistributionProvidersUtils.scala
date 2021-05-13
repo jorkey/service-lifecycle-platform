@@ -35,8 +35,13 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def addDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
-    collections.Client_ProvidersInfo.update(Filters.eq("distribution", distribution),
-      _ => Some(DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval))).map(_ => ())
+    collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
+      DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval)).map(_ => ())
+  }
+
+  def changeDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
+    collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
+      (_) => DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval)).map(_ => ())
   }
 
   def removeDistributionProvider(distribution: DistributionId): Future[Unit] = {

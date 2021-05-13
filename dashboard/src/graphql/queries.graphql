@@ -91,3 +91,31 @@ mutation changeServicesProfile ($profile: String!, $services: [String!]!) {
 mutation removeServicesProfile ($profile: String!) {
     removeServicesProfile (profile: $profile)
 }
+
+# Providers
+
+#mutation addDistributionProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
+#    addDistributionProvider (distribution: $distribution, url: $url, testDistributionMatch: $uploadStateInterval)
+#}
+#
+#mutation changeDistributionProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
+#    changeDistributionProvider (distribution: $distribution, url: $url, testDistributionMatch: $uploadStateInterval)
+#}
+
+mutation removeDistributionProvider ($distribution: String!) {
+    removeDistributionProvider (distribution: $distribution)
+}
+
+# Consumers
+
+mutation addDistributionConsumer ($distribution: String!, $profile: String!, testDistributionMatch: String) {
+    addDistributionConsumer (distribution: $distribution, profile: $profile, testDistributionMatch: $testDistributionMatch)
+}
+
+mutation changeDistributionConsumer ($distribution: String!, $profile: String!, testDistributionMatch: String) {
+    changeDistributionConsumer (distribution: $distribution, profile: $profile, testDistributionMatch: $testDistributionMatch)
+}
+
+mutation removeDistributionConsumer ($distribution: String!) {
+    removeDistributionConsumer (distribution: $distribution)
+}

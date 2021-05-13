@@ -23,13 +23,13 @@ trait ServiceProfilesUtils extends SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def addServicesProfile(servicesProfileId: ServicesProfileId, services: Seq[ServiceId]): Future[Unit] = {
-    collections.Developer_ServiceProfiles.update(Filters.eq("profile", servicesProfileId),
-      _ => Some(ServicesProfile(servicesProfileId, services))).map(_ => ())
+    collections.Developer_ServiceProfiles.add(Filters.eq("profile", servicesProfileId),
+      ServicesProfile(servicesProfileId, services)).map(_ => ())
   }
 
   def changeServicesProfile(servicesProfileId: ServicesProfileId, services: Seq[ServiceId]): Future[Unit] = {
-    collections.Developer_ServiceProfiles.update(Filters.eq("profile", servicesProfileId),
-      _ => Some(ServicesProfile(servicesProfileId, services))).map(_ => ())
+    collections.Developer_ServiceProfiles.change(Filters.eq("profile", servicesProfileId),
+      (_) => ServicesProfile(servicesProfileId, services)).map(_ => ())
   }
 
   def getServiceProfiles(servicesProfileId: Option[ServicesProfileId]): Future[Seq[ServicesProfile]] = {

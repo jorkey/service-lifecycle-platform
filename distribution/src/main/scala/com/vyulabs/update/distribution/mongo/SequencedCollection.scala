@@ -20,6 +20,9 @@ import scala.reflect.{ClassTag, classTag}
 
 case class Sequenced[T](sequence: Long, document: T)
 
+case class DocumentAlreadyExists() extends Exception
+case class NoSuchDocument() extends Exception
+
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]],
                                        historyExpireDays: Int = 7, createIndex: Boolean = true)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
@@ -155,6 +158,24 @@ class SequencedCollection[T: ClassTag](val name: String,
     }
 
     queueFuture[Int](() => modifyInProcess, f => { modifyInProcess = f }, () => update())
+  }
+
+  def add(filters: Bson, doc: T): Future[Int] = {
+    update(filters, _ match {
+      case Some(_) =>
+        throw DocumentAlreadyExists()
+      case None =>
+        Some(doc)
+    })
+  }
+
+  def change(filters: Bson, modify: T => T): Future[Int] = {
+    update(filters, _ match {
+      case Some(oldValue) =>
+        Some(modify(oldValue))
+      case None =>
+        throw NoSuchDocument()
+    })
   }
 
   def delete(filters: Bson = new BsonDocument()): Future[Long] = {

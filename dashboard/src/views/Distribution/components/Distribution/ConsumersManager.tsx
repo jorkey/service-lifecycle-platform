@@ -6,11 +6,13 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, Box, Link,
+  Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import {RouteComponentProps, useRouteMatch} from "react-router-dom";
+import { useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
+import EditTable, {EditColumnParams} from "../../../../common/EditTable";
+import {useServiceProfilesQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -19,6 +21,18 @@ const useStyles = makeStyles((theme:any) => ({
   },
   inner: {
     minWidth: 800
+  },
+  distributionColumn: {
+    padding: '4px',
+    paddingLeft: '16px'
+  },
+  profileColumn: {
+    padding: '4px',
+    paddingLeft: '16px'
+  },
+  testDistributionMatchColumn: {
+    padding: '4px',
+    paddingLeft: '16px'
   },
   controls: {
     display: 'flex',
@@ -30,12 +44,36 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-interface ConsumersManagerParams {
-}
-
-const ConsumersManager: React.FC<ConsumersManagerParams> = props => {
+const ConsumersManager = () => {
   const classes = useStyles()
   const routeMatch = useRouteMatch();
+
+  const { data: serviceProfiles } = useServiceProfilesQuery()
+
+  const columns: Array<EditColumnParams> = [
+    {
+      name: 'distribution',
+      headerName: 'Distribution',
+      className: classes.distributionColumn,
+      editable: true,
+      validate: (value) => !!value
+    },
+    {
+      name: 'profile',
+      headerName: 'Profile',
+      className: classes.profileColumn,
+      editable: !!serviceProfiles,
+      select: serviceProfiles?.serviceProfiles.map(profile => profile.profile),
+      validate: (value) => !!value
+    },
+    {
+      name: 'testDistributionMatch',
+      headerName: 'Test Distribution Match',
+      className: classes.testDistributionMatchColumn,
+      editable: true,
+      validate: () => true
+    }
+  ]
 
   return (
     <Card
@@ -63,7 +101,8 @@ const ConsumersManager: React.FC<ConsumersManagerParams> = props => {
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          {/*<UsersTable userType={userType}/>*/}
+          <EditTable columns={columns}
+            userType={userType}/>
         </div>
       </CardContent>
     </Card>

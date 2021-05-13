@@ -24,8 +24,13 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def addDistributionConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Future[Unit] = {
-    collections.Developer_ConsumersInfo.update(Filters.eq("distribution", distribution),
-      _ => Some(DistributionConsumerInfo(distribution, servicesProfile, testDistributionMatch))).map(_ => ())
+    collections.Developer_ConsumersInfo.add(Filters.eq("distribution", distribution),
+      DistributionConsumerInfo(distribution, servicesProfile, testDistributionMatch)).map(_ => ())
+  }
+
+  def changeDistributionConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Future[Unit] = {
+    collections.Developer_ConsumersInfo.change(Filters.eq("distribution", distribution),
+      (_) => DistributionConsumerInfo(distribution, servicesProfile, testDistributionMatch)).map(_ => ())
   }
 
   def removeDistributionConsumer(distribution: DistributionId): Future[Unit] = {

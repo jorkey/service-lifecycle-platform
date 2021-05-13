@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {IconButton, Input, Table, TableBody, TableCell, TableHead, TableRow} from "@material-ui/core";
+import {IconButton, Input, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow} from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
 import DeleteIcon from "@material-ui/icons/Delete";
 import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
@@ -21,6 +21,7 @@ export interface EditColumnParams {
   name: string,
   headerName: string,
   className: string,
+  select?: string[],
   editable?: boolean,
   validate?: (value: string | undefined) => boolean
 }
@@ -37,6 +38,7 @@ interface EditTableRowParams {
   onChange?: (oldValues: Map<string, string>, newValues: Map<string, string>) => void,
   onRemove?: () => void
 }
+
 
 const EditTableRow = (params: EditTableRowParams) => {
   const { columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
@@ -70,8 +72,17 @@ const EditTableRow = (params: EditTableRowParams) => {
                 }}
 
     >
-      {adding || (editing && editColumn === column.name) ? (
-        <Input
+      {adding || (editing && editColumn === column.name) ?
+        (column.select ?
+          <Select className={classes.input}
+                  autoFocus={true}
+                  onChange={e => {
+                    setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
+                  }}
+          >
+            { column.select.map(item => <MenuItem>{item}</MenuItem>) }
+          </Select>
+        : <Input
           className={classes.input}
           value={editValues.get(column.name)?editValues.get(column.name):''}
           autoFocus={true}
@@ -79,10 +90,10 @@ const EditTableRow = (params: EditTableRowParams) => {
             setEditValues(new Map(editValues.set(column.name, e.target.value)))
           }}
           error={!column.validate?.(editValues.get(column.name))}
-        />
-      ) : (
+        />)
+      :
         values.get(column.name)!
-      )}
+      }
     </TableCell>))
 
   return (<TableRow>

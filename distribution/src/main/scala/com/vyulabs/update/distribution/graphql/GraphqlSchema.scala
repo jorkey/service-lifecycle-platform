@@ -278,6 +278,10 @@ object GraphqlSchema {
         arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addDistributionProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
+      Field("changeDistributionProvider", BooleanType,
+        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.changeDistributionProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
       Field("removeDistributionProvider", BooleanType,
         arguments = DistributionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
@@ -289,6 +293,12 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
         resolve = c => {
           c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
+        }),
+      Field("changeDistributionConsumer", BooleanType,
+        arguments = DistributionArg :: ProfileArg :: OptionTestDistributionMatchArg :: Nil,
+        tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
+        resolve = c => {
+          c.ctx.workspace.changeDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
         }),
       Field("removeDistributionConsumer", BooleanType,
         arguments = DistributionArg :: Nil,
