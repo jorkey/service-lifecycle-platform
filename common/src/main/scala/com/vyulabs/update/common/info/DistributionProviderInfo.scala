@@ -7,7 +7,7 @@ import spray.json.DefaultJsonProtocol
 import java.net.URL
 import scala.concurrent.duration.FiniteDuration
 
-case class DistributionProviderInfo(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration])
+case class DistributionProviderInfo(distribution: DistributionId, url: URL, uploadStateInterval: Option[FiniteDuration])
 
 object DistributionProviderInfo extends DefaultJsonProtocol {
   implicit val infoJson = jsonFormat3(DistributionProviderInfo.apply)

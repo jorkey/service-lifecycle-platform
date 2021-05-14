@@ -63,9 +63,9 @@ object DistributionMain extends App {
     val selfUpdater = new SelfUpdater(collections, dir, workspace)
     selfUpdater.start()
 
-    workspace.getDistributionProvidersInfo().foreach(_.foreach { providerInfo =>
+    workspace.getProvidersInfo().foreach(_.foreach { providerInfo =>
       providerInfo.uploadStateInterval.foreach(uploadStateInterval =>
-        StateUploader(config.distribution, collections, dir, uploadStateInterval, providerInfo.distributionUrl).start())
+        StateUploader(config.distribution, collections, dir, uploadStateInterval, providerInfo.url).start())
     })
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

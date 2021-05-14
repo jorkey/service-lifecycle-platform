@@ -216,6 +216,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                              doesProfileExist={profile => doesProfileExist(profile)}
                              services={services}
                              addService={addService}
+                             allowEdit={true}
+                             confirmRemove={true}
                              onServiceAdded={
                                service => {
                                  setServices([...services, service].sort((s1,s2) => (s1 > s2 ? 1 : -1)))

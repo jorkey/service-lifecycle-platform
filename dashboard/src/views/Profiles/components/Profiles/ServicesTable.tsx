@@ -39,7 +39,12 @@ export const ServicesTable = (props: ServicesTableParams) => {
       headerName: 'Service',
       className: classes.serviceColumn,
       editable: allowEdit,
-      validate: (value) => !!value
+      validate: (value, rowNum) => {
+        return !!value &&
+          !rows.find((row, index) => {
+            return index != rowNum && row.get('service') == value
+          })
+      }
     }
   ]
 
@@ -66,7 +71,10 @@ export const ServicesTable = (props: ServicesTableParams) => {
         message={`Do you want to delete service '${deleteConfirm}'?`}
         open={true}
         close={() => { setDeleteConfirm(undefined) }}
-        onConfirm={() => onServiceRemove?.(deleteConfirm)}
+        onConfirm={() => {
+          onServiceRemove?.(deleteConfirm)
+          setDeleteConfirm(undefined)
+        }}
       />) : null }
   </>)
 }

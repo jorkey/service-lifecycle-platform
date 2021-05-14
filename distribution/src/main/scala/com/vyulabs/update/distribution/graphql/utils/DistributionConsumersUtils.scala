@@ -23,21 +23,21 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addDistributionConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Future[Unit] = {
+  def addConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Future[Unit] = {
     collections.Developer_ConsumersInfo.add(Filters.eq("distribution", distribution),
       DistributionConsumerInfo(distribution, servicesProfile, testDistributionMatch)).map(_ => ())
   }
 
-  def changeDistributionConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Future[Unit] = {
+  def changeConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Future[Unit] = {
     collections.Developer_ConsumersInfo.change(Filters.eq("distribution", distribution),
       (_) => DistributionConsumerInfo(distribution, servicesProfile, testDistributionMatch)).map(_ => ())
   }
 
-  def removeDistributionConsumer(distribution: DistributionId): Future[Unit] = {
+  def removeConsumer(distribution: DistributionId): Future[Unit] = {
     collections.Developer_ConsumersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
   }
 
-  def getDistributionConsumersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionConsumerInfo]] = {
+  def getConsumersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionConsumerInfo]] = {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val args = distributionArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
@@ -45,7 +45,7 @@ trait DistributionConsumersUtils extends SprayJsonSupport {
   }
 
   def getDistributionConsumerInfo(distribution: DistributionId)(implicit log: Logger): Future[DistributionConsumerInfo] = {
-    getDistributionConsumersInfo(Some(distribution))
+    getConsumersInfo(Some(distribution))
       .map(_.headOption.getOrElse(throw new IOException(s"No distribution ${distribution} consumer info")))
   }
 }

@@ -18,7 +18,7 @@ import {VersionsTable} from './VersionsTable';
 import {
   useClientDesiredVersionsLazyQuery,
   useDeveloperDesiredVersionsLazyQuery,
-  useDistributionConsumersInfoQuery,
+  useConsumersInfoQuery,
   useInstalledDesiredVersionsLazyQuery,
   useServiceStatesLazyQuery
 } from "../../../../generated/graphql";
@@ -66,7 +66,7 @@ const Versions: React.FC<VersionsProps> = props => {
       getVersions(consumer)
   }, [consumer]);
 
-  const consumersInfo = useDistributionConsumersInfoQuery()
+  const consumersInfo = useConsumersInfoQuery()
   const [getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery()
   const [getClientDesiredVersions, clientDesiredVersions] = useClientDesiredVersionsLazyQuery()
   const [getInstalledDesiredVersions, installedDesiredVersions] = useInstalledDesiredVersionsLazyQuery()
@@ -100,7 +100,7 @@ const Versions: React.FC<VersionsProps> = props => {
                 title='Select consumer'
                 value={consumer}
               >
-                { consumersInfo.data?.distributionConsumersInfo.map(consumer =>
+                { consumersInfo.data?.consumersInfo.map(consumer =>
                     <option key={consumer.distribution}>{consumer.distribution}</option>) }
               </Select>}
               label='Consumer'

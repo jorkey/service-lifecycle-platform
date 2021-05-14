@@ -21,10 +21,10 @@ class DistributionProviderTest extends TestEnvironment {
 
   it should "add/get/remove distribution providers" in {
     assertResult((OK,
-      ("""{"data":{"addDistributionProvider":true}}""").parseJson))(
+      ("""{"data":{"addProvider":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
-          addDistributionProvider (
+          addProvider (
             distribution: "provider-distribution",
             url: "http://provider-distribution.com",
             uploadStateInterval: "{ \"length\": 30, \"unit\": \"SECONDS\" }"
@@ -33,10 +33,10 @@ class DistributionProviderTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionProvidersInfo":[{"distribution":"provider-distribution","distributionUrl":"http://provider-distribution.com"}]}}""").parseJson))(
+      ("""{"data":{"providersInfo":[{"distribution":"provider-distribution","distributionUrl":"http://provider-distribution.com"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
-          distributionProvidersInfo {
+          providersInfo {
              distribution,
              distributionUrl
           }
@@ -44,10 +44,10 @@ class DistributionProviderTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"addDistributionProvider":true}}""").parseJson))(
+      ("""{"data":{"addProvider":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
-          addDistributionProvider (
+          addProvider (
             distribution: "provider-distribution-1",
             url: "http://provider-distribution-1.com",
             uploadStateInterval: "{ \"length\": 20, \"unit\": \"SECONDS\" }"
@@ -56,20 +56,20 @@ class DistributionProviderTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"removeDistributionProvider":true}}""").parseJson))(
+      ("""{"data":{"removeProvider":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
-          removeDistributionProvider (
+          removeProvider (
             distribution: "provider-distribution"
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionProvidersInfo":[{"distribution":"provider-distribution-1","distributionUrl":"http://provider-distribution-1.com"}]}}""").parseJson))(
+      ("""{"data":{"providersInfo":[{"distribution":"provider-distribution-1","distributionUrl":"http://provider-distribution-1.com"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
-          distributionProvidersInfo {
+          providersInfo {
              distribution,
              distributionUrl
           }

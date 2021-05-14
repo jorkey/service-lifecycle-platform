@@ -117,7 +117,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Add distribution provider to distribution server")
     log.info("")
-    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addDistributionProvider(providerDistributionName, providerDistributionURL, None)).getOrElse(false)) {
+    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addProvider(providerDistributionName, providerDistributionURL, None)).getOrElse(false)) {
       log.error(s"Can't add distribution provider")
       return false
     }
@@ -125,7 +125,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Add distribution consumer to provider distribution server")
     log.info("")
-    if (!providerDistributionClient.get.graphqlRequest(administratorMutations.addDistributionConsumer(distribution, servicesProfile, testDistributionMatch)).getOrElse(false)) {
+    if (!providerDistributionClient.get.graphqlRequest(administratorMutations.addConsumer(distribution, servicesProfile, testDistributionMatch)).getOrElse(false)) {
       log.error(s"Can't add distribution consumer")
       return false
     }

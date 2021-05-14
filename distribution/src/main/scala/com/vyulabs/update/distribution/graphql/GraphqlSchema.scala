@@ -85,7 +85,7 @@ object GraphqlSchema {
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
   val OptionUploadStateIntervalArg = Argument("uploadStateInterval", OptionInputType(FiniteDurationType))
-  val OptionTestDistributionMatchArg = Argument("testDistributionMatch", OptionInputType(StringType))
+  val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
 
   // Queries
 
@@ -144,20 +144,20 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
 
       // Distribution consumers
-      Field("distributionConsumersInfo", ListType(DistributionConsumerInfoType),
+      Field("consumersInfo", ListType(ConsumerInfoType),
         arguments = OptionDistributionArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionConsumersInfo(c.arg(OptionDistributionArg)) }),
+        resolve = c => { c.ctx.workspace.getConsumersInfo(c.arg(OptionDistributionArg)) }),
 
       // Distribution providers
-      Field("distributionProvidersInfo", ListType(DistributionProviderInfoType),
+      Field("providersInfo", ListType(ProviderInfoType),
         arguments = OptionDistributionArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionProvidersInfo(c.arg(OptionDistributionArg)) }),
-      Field("distributionProviderDesiredVersions", ListType(DeveloperDesiredVersionType),
+        resolve = c => { c.ctx.workspace.getProvidersInfo(c.arg(OptionDistributionArg)) }),
+      Field("providerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = DistributionArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionProviderDesiredVersions(c.arg(DistributionArg)) }),
+        resolve = c => { c.ctx.workspace.getProviderDesiredVersions(c.arg(DistributionArg)) }),
 
       // State
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
@@ -274,36 +274,36 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionDeltasArg)).map(_ => true) }),
 
       // Distribution providers management
-      Field("addDistributionProvider", BooleanType,
+      Field("addProvider", BooleanType,
         arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addDistributionProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
-      Field("changeDistributionProvider", BooleanType,
+        resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
+      Field("changeProvider", BooleanType,
         arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeDistributionProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
-      Field("removeDistributionProvider", BooleanType,
+        resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
+      Field("removeProvider", BooleanType,
         arguments = DistributionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeDistributionProvider(c.arg(DistributionArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.removeProvider(c.arg(DistributionArg)).map(_ => true) }),
 
       // Distribution consumers management
-      Field("addDistributionConsumer", BooleanType,
-        arguments = DistributionArg :: ProfileArg :: OptionTestDistributionMatchArg :: Nil,
+      Field("addConsumer", BooleanType,
+        arguments = DistributionArg :: ProfileArg :: OptionTestConsumerArg :: Nil,
         tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
         resolve = c => {
-          c.ctx.workspace.addDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
+          c.ctx.workspace.addConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestConsumerArg)).map(_ => true)
         }),
-      Field("changeDistributionConsumer", BooleanType,
-        arguments = DistributionArg :: ProfileArg :: OptionTestDistributionMatchArg :: Nil,
+      Field("changeConsumer", BooleanType,
+        arguments = DistributionArg :: ProfileArg :: OptionTestConsumerArg :: Nil,
         tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
         resolve = c => {
-          c.ctx.workspace.changeDistributionConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestDistributionMatchArg)).map(_ => true)
+          c.ctx.workspace.changeConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestConsumerArg)).map(_ => true)
         }),
-      Field("removeDistributionConsumer", BooleanType,
+      Field("removeConsumer", BooleanType,
         arguments = DistributionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeDistributionConsumer(c.arg(DistributionArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.removeConsumer(c.arg(DistributionArg)).map(_ => true) }),
 
       // Distribution consumers operations
       Field("installProviderVersion", StringType,

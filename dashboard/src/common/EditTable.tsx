@@ -23,12 +23,13 @@ export interface EditColumnParams {
   className: string,
   select?: string[],
   editable?: boolean,
-  validate?: (value: string | undefined) => boolean
+  validate?: (value: string | undefined, rowNum: number | undefined) => boolean
 }
 
 interface EditTableRowParams {
   columns: Array<EditColumnParams>,
   values: Map<string, string>,
+  rowNum?: number,
   adding?: boolean,
   editing?: boolean,
   deleteIcon?: JSX.Element,
@@ -36,12 +37,12 @@ interface EditTableRowParams {
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
   onChange?: (oldValues: Map<string, string>, newValues: Map<string, string>) => void,
-  onRemove?: () => void
+  onRemove?: (values: Map<string, string>) => void
 }
 
 
 const EditTableRow = (params: EditTableRowParams) => {
-  const { columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
+  const { rowNum, columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, string>>(new Map())
@@ -58,7 +59,7 @@ const EditTableRow = (params: EditTableRowParams) => {
   const valuesColumns = columns.map((column, index) =>
     (<TableCell key={index} className={column.className}
                 onClick={() => {
-                  if (!adding && column.editable && !editing && editColumn != column.name) {
+                  if (!adding && column.editable && editColumn != column.name) {
                     setEditColumn(column.name)
                     setEditOldValues(new Map(values))
                     setEditValues(new Map(values))
@@ -70,17 +71,18 @@ const EditTableRow = (params: EditTableRowParams) => {
                     onEditing?.(false)
                   }
                 }}
-
     >
       {adding || (editing && editColumn === column.name) ?
         (column.select ?
           <Select className={classes.input}
                   autoFocus={true}
+                  value={editValues.get(column.name)?editValues.get(column.name):''}
                   onChange={e => {
+                    console.log('onChange ' + JSON.stringify(e.target))
                     setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
                   }}
           >
-            { column.select.map(item => <MenuItem>{item}</MenuItem>) }
+            { column.select.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
           </Select>
         : <Input
           className={classes.input}
@@ -89,7 +91,7 @@ const EditTableRow = (params: EditTableRowParams) => {
           onChange={e => {
             setEditValues(new Map(editValues.set(column.name, e.target.value)))
           }}
-          error={!column.validate?.(editValues.get(column.name))}
+          error={!column.validate?.(editValues.get(column.name), rowNum)}
         />)
       :
         values.get(column.name)!
@@ -107,7 +109,7 @@ const EditTableRow = (params: EditTableRowParams) => {
               }}
               title="Done"
               disabled={!!columns.find(column => {
-                return !column.validate?.(editValues.get(column.name))
+                return !column.validate?.(editValues.get(column.name), rowNum)
               })}
             >
               <DoneIcon/>
@@ -126,7 +128,7 @@ const EditTableRow = (params: EditTableRowParams) => {
               }}
               title="Done"
               disabled={!!columns.find(column => {
-                return !column.validate?.(editValues.get(column.name))
+                return !column.validate?.(editValues.get(column.name), rowNum)
               })}
             >
               <DoneIcon/>
@@ -142,7 +144,7 @@ const EditTableRow = (params: EditTableRowParams) => {
           </>) : (
             <IconButton
               onClick={ () =>
-                onRemove?.()
+                onRemove?.(values)
               }
               title="Delete"
             >
@@ -158,13 +160,13 @@ interface EditTableParams {
   className: string,
   columns: Array<EditColumnParams>,
   rows: Array<Map<string, string>>,
-  addNewRow?: boolean,
   deleteIcon?: JSX.Element,
+  addNewRow?: boolean,
   onRowAdded?: (values: Map<string, string>) => void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
   onRowChange?: (row: number, oldValues: Map<string, string>, newValues: Map<string, string>) => void,
-  onRowRemove?: (row: number) => void
+  onRowRemove?: (row: number, values: Map<string, string>) => void
 }
 
 export const EditTable = (props: EditTableParams) => {
@@ -188,18 +190,18 @@ export const EditTable = (props: EditTableParams) => {
       </TableHead>
       { <TableBody>
           { (addNewRow ?
-            (<EditTableRow key={0} columns={columns} values={new Map()} adding={addNewRow}
+            (<EditTableRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
                            onAdd={(columns) => onRowAdded?.(columns)}
                            onAddCancel={() => onRowAddCancelled?.()}/>) : null) }
           {  rows.map((row, rowNum) => {
-              return (<EditTableRow key={rowNum} columns={columns} values={row} adding={false}
+              return (<EditTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row} adding={false}
                            editing={rowNum == editingRow}
                            deleteIcon={deleteIcon}
                            onAddCancel={() => onRowAddCancelled?.()}
                            onEditing={(editing) => setEditingRow(editing?rowNum:-1)}
                            onChange={(oldValues, newValues) => onRowChange?.(
                              rowNum, oldValues, newValues) }
-                           onRemove={() => onRowRemove?.(rowNum) }/>) })}
+                           onRemove={(values) => onRowRemove?.(rowNum, values) }/>) })}
         </TableBody> }
     </Table>)
 }

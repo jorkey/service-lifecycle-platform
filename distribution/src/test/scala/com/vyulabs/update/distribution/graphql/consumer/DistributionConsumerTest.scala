@@ -22,11 +22,11 @@ class DistributionConsumerTest extends TestEnvironment {
 
   it should "add/get/remove distribution consumers" in {
     assertResult((OK,
-      ("""{"data":{"addDistributionConsumer":true}}""").parseJson))(
+      ("""{"data":{"addConsumer":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          addDistributionConsumer (
+          addConsumer (
             distribution: "consumer-distribution",
             profile: "common",
             testDistributionMatch: "test-distribution"
@@ -35,11 +35,11 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution","servicesProfile":"common"}]}}""").parseJson))(
+      ("""{"data":{"consumersInfo":[{"distribution":"consumer-distribution","servicesProfile":"common"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         query {
-          distributionConsumersInfo {
+          consumersInfo {
              distribution,
              servicesProfile
           }
@@ -47,11 +47,11 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"addDistributionConsumer":true}}""").parseJson))(
+      ("""{"data":{"addConsumer":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          addDistributionConsumer (
+          addConsumer (
             distribution: "consumer-distribution-1",
             profile: "profile1"
           )
@@ -59,22 +59,22 @@ class DistributionConsumerTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"removeDistributionConsumer":true}}""").parseJson))(
+      ("""{"data":{"removeConsumer":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          removeDistributionConsumer (
+          removeConsumer (
             distribution: "consumer-distribution"
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"distributionConsumersInfo":[{"distribution":"consumer-distribution-1","servicesProfile":"profile1"}]}}""").parseJson))(
+      ("""{"data":{"consumersInfo":[{"distribution":"consumer-distribution-1","servicesProfile":"profile1"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         query {
-          distributionConsumersInfo {
+          consumersInfo {
              distribution,
              servicesProfile
           }

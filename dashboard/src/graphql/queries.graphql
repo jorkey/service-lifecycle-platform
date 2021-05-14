@@ -14,12 +14,6 @@ query distributionInfo {
     distributionInfo { distribution, title }
 }
 
-# Consumers
-
-query distributionConsumersInfo {
-    distributionConsumersInfo { distribution, servicesProfile }
-}
-
 # Versions
 
 query developerDesiredVersions {
@@ -40,7 +34,7 @@ query installedDesiredVersions ($distribution: String!) {
 
 query serviceStates ($distribution: String!) {
     serviceStates(distribution: $distribution) {
-        distribution instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+        distribution, instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }
 
@@ -94,28 +88,40 @@ mutation removeServicesProfile ($profile: String!) {
 
 # Providers
 
-#mutation addDistributionProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
-#    addDistributionProvider (distribution: $distribution, url: $url, testDistributionMatch: $uploadStateInterval)
+query providersInfo ($distribution: String!) {
+    providersInfo (distribution: $distribution) {
+        distribution, url, uploadStateInterval
+    }
+}
+
+#mutation addProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
+#    addProvider (distribution: $distribution, url: $url, uploadStateInterval: $uploadStateInterval)
 #}
 #
-#mutation changeDistributionProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
-#    changeDistributionProvider (distribution: $distribution, url: $url, testDistributionMatch: $uploadStateInterval)
+#mutation changeProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
+#    changeProvider (distribution: $distribution, url: $url, uploadStateInterval: $uploadStateInterval)
 #}
 
-mutation removeDistributionProvider ($distribution: String!) {
-    removeDistributionProvider (distribution: $distribution)
+mutation removeProvider ($distribution: String!) {
+    removeProvider (distribution: $distribution)
 }
 
 # Consumers
 
-mutation addDistributionConsumer ($distribution: String!, $profile: String!, testDistributionMatch: String) {
-    addDistributionConsumer (distribution: $distribution, profile: $profile, testDistributionMatch: $testDistributionMatch)
+query consumersInfo {
+    consumersInfo {
+        distribution, profile, testConsumer
+    }
 }
 
-mutation changeDistributionConsumer ($distribution: String!, $profile: String!, testDistributionMatch: String) {
-    changeDistributionConsumer (distribution: $distribution, profile: $profile, testDistributionMatch: $testDistributionMatch)
+mutation addConsumer ($distribution: String!, $profile: String!, $testConsumer: String) {
+    addConsumer (distribution: $distribution, profile: $profile, testConsumer: $testConsumer)
 }
 
-mutation removeDistributionConsumer ($distribution: String!) {
-    removeDistributionConsumer (distribution: $distribution)
+mutation changeConsumer ($distribution: String!, $profile: String!, $testConsumer: String) {
+    changeConsumer (distribution: $distribution, profile: $profile, testConsumer: $testConsumer)
+}
+
+mutation removeConsumer ($distribution: String!) {
+    removeConsumer (distribution: $distribution)
 }

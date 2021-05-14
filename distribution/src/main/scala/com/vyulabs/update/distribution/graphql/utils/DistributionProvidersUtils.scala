@@ -34,21 +34,21 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def addDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
+  def addProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
     collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
       DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval)).map(_ => ())
   }
 
-  def changeDistributionProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
+  def changeProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
       (_) => DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval)).map(_ => ())
   }
 
-  def removeDistributionProvider(distribution: DistributionId): Future[Unit] = {
+  def removeProvider(distribution: DistributionId): Future[Unit] = {
     collections.Client_ProvidersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
   }
 
-  def getDistributionProviderDesiredVersions(distribution: DistributionId)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+  def getProviderDesiredVersions(distribution: DistributionId)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       distributionProviderClient <- getDistributionProviderClient(distribution)
       desiredVersions <- distributionProviderClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
@@ -95,7 +95,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
     task.taskId
   }
 
-  def getDistributionProvidersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionProviderInfo]] = {
+  def getProvidersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionProviderInfo]] = {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val args = distributionArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
@@ -103,12 +103,12 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
   }
 
   def getDistributionProviderInfo(distribution: DistributionId)(implicit log: Logger): Future[DistributionProviderInfo] = {
-    getDistributionProvidersInfo(Some(distribution)).map(_.headOption.getOrElse(throw NotFoundException(s"No distribution provider ${distribution} config")))
+    getProvidersInfo(Some(distribution)).map(_.headOption.getOrElse(throw NotFoundException(s"No distribution provider ${distribution} config")))
   }
 
   private def getDistributionProviderClient(distribution: DistributionId): Future[DistributionClient[AkkaSource]] = {
-    getDistributionProvidersInfo().map(_.find(_.distribution == distribution).headOption.map(
-      info => new DistributionClient(new AkkaHttpClient(info.distributionUrl))).getOrElse(
+    getProvidersInfo().map(_.find(_.distribution == distribution).headOption.map(
+      info => new DistributionClient(new AkkaHttpClient(info.url))).getOrElse(
         throw new IOException(s"Distribution provider server ${distribution} is not defined")))
   }
 }

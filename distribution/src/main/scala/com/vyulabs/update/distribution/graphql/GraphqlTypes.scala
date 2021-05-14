@@ -87,8 +87,8 @@ object GraphqlTypes {
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
   implicit val ServiceFaultReportType = deriveObjectType[Unit, ServiceFaultReport]()
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
-  implicit val DistributionProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
-  implicit val DistributionConsumerInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
+  implicit val ProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
+  implicit val ConsumerInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
 
   implicit val DeveloperVersionInputType = deriveInputObjectType[DeveloperVersion](InputObjectTypeName("DeveloperVersionInput"))
   implicit val ClientVersionInputType = deriveInputObjectType[ClientVersion](InputObjectTypeName("ClientVersionInput"))
