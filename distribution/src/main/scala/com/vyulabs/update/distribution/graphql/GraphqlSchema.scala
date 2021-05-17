@@ -84,7 +84,7 @@ object GraphqlSchema {
   val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
-  val OptionUploadStateIntervalArg = Argument("uploadStateInterval", OptionInputType(FiniteDurationType))
+  val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
 
   // Queries
@@ -275,13 +275,13 @@ object GraphqlSchema {
 
       // Distribution providers management
       Field("addProvider", BooleanType,
-        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
+        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalSecArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
       Field("changeProvider", BooleanType,
-        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalArg :: Nil,
+        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalSecArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
       Field("removeProvider", BooleanType,
         arguments = DistributionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,

@@ -21,6 +21,7 @@ export interface EditColumnParams {
   name: string,
   headerName: string,
   className: string,
+  type?: string,
   select?: string[],
   editable?: boolean,
   validate?: (value: string | undefined, rowNum: number | undefined) => boolean
@@ -86,8 +87,9 @@ const EditTableRow = (params: EditTableRowParams) => {
           </Select>
         : <Input
           className={classes.input}
+          type={column.type}
           value={editValues.get(column.name)?editValues.get(column.name):''}
-          autoFocus={true}
+          autoFocus={adding?(index == 0):true}
           onChange={e => {
             setEditValues(new Map(editValues.set(column.name, e.target.value)))
           }}

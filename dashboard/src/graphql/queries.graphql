@@ -88,19 +88,19 @@ mutation removeServicesProfile ($profile: String!) {
 
 # Providers
 
-query providersInfo ($distribution: String!) {
-    providersInfo (distribution: $distribution) {
-        distribution, url, uploadStateInterval
+query providersInfo {
+    providersInfo {
+        distribution, url, uploadStateIntervalSec
     }
 }
 
-#mutation addProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
-#    addProvider (distribution: $distribution, url: $url, uploadStateInterval: $uploadStateInterval)
-#}
-#
-#mutation changeProvider ($distribution: String!, $url: URL!, uploadStateInterval: FiniteDuration) {
-#    changeProvider (distribution: $distribution, url: $url, uploadStateInterval: $uploadStateInterval)
-#}
+mutation addProvider ($distribution: String!, $url: URL!, $uploadStateIntervalSec: Int!) {
+    addProvider (distribution: $distribution, url: $url, uploadStateIntervalSec: $uploadStateIntervalSec)
+}
+
+mutation changeProvider ($distribution: String!, $url: URL!, $uploadStateIntervalSec: Int!) {
+    changeProvider (distribution: $distribution, url: $url, uploadStateIntervalSec: $uploadStateIntervalSec)
+}
 
 mutation removeProvider ($distribution: String!) {
     removeProvider (distribution: $distribution)

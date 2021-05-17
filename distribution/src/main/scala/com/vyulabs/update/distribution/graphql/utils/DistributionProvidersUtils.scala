@@ -8,7 +8,7 @@ import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskI
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{DeveloperDesiredVersionDelta, DeveloperDesiredVersion, DistributionProviderInfo}
+import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DistributionProviderInfo}
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
@@ -20,7 +20,6 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.io.{File, IOException}
 import java.net.URL
 import scala.collection.JavaConverters.asJavaIterableConverter
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
@@ -34,14 +33,14 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def addProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
+  def addProvider(distribution: DistributionId, distributionUrl: URL, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
-      DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval)).map(_ => ())
+      DistributionProviderInfo(distribution, distributionUrl, uploadStateIntervalSec)).map(_ => ())
   }
 
-  def changeProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]): Future[Unit] = {
+  def changeProvider(distribution: DistributionId, distributionUrl: URL, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
-      (_) => DistributionProviderInfo(distribution, distributionUrl, uploadStateInterval)).map(_ => ())
+      (_) => DistributionProviderInfo(distribution, distributionUrl, uploadStateIntervalSec)).map(_ => ())
   }
 
   def removeProvider(distribution: DistributionId): Future[Unit] = {
