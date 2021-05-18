@@ -14,10 +14,44 @@ query distributionInfo {
     distributionInfo { distribution, title }
 }
 
-# Versions
+# Developer Versions
+
+query developerVersionsInfo ($service: String!, $version: DeveloperVersionInput) {
+    developerVersionsInfo (service: $service, version: $version) {
+        service, version { distribution, build }, buildInfo { author, branches, date, comment }
+    }
+}
 
 query developerDesiredVersions {
     developerDesiredVersions { service, version { distribution, build } }
+}
+
+query providerDesiredVersions ($distribution: String!) {
+    providerDesiredVersions (distribution: $distribution) { service, version { distribution, build } }
+}
+
+mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!, $branches: [String!], $comment: String) {
+    buildDeveloperVersion (service: $service, version: $version, branches: $branches, comment: $comment)
+}
+
+mutation addDeveloperVersionInfo ($info: DeveloperVersionInfoInput!) {
+    addDeveloperVersionInfo (info: $info)
+}
+
+mutation removeDeveloperVersion ($service: String!, $version: DeveloperDistributionVersionInput!) {
+    removeDeveloperVersion (service: $service, version: $version)
+}
+
+mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaInput!]!) {
+    setDeveloperDesiredVersions (versions: $versions)
+}
+
+# Client Versions
+
+query clientVersionsInfo ($service: String!, $version: ClientVersionInput) {
+    clientVersionsInfo (service: $service, version: $version) {
+        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, branches, date, comment }, installInfo { user, date }
+    }
 }
 
 query clientDesiredVersions {
@@ -25,15 +59,31 @@ query clientDesiredVersions {
 }
 
 query installedDesiredVersions ($distribution: String!) {
-    installedDesiredVersions(distribution: $distribution) {
+    installedDesiredVersions (distribution: $distribution) {
         service, version { distribution, developerBuild, clientBuild }
     }
+}
+
+mutation buildClientVersion ($service: String!, $developerVersion: DeveloperDistributionVersionInput!, $clientVersion: ClientDistributionVersionInput!) {
+    buildClientVersion (service: $service, developerVersion: $developerVersion, clientVersion: $clientVersion)
+}
+
+mutation addClientVersionInfo ($info: ClientVersionInfoInput!) {
+    addClientVersionInfo (info: $info)
+}
+
+mutation removeClientVersion ($service: String!, $version: ClientDistributionVersionInput!) {
+    removeClientVersion (service: $service, version: $version)
+}
+
+mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!) {
+    setClientDesiredVersions (versions: $versions)
 }
 
 # States
 
 query serviceStates ($distribution: String!) {
-    serviceStates(distribution: $distribution) {
+    serviceStates (distribution: $distribution) {
         distribution, instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }
