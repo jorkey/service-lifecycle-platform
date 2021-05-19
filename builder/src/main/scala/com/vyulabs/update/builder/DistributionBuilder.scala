@@ -3,11 +3,11 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{ServicesProfileId, DistributionId, ServiceId, UserId}
-import com.vyulabs.update.common.config.DistributionConfig
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, UserId}
+import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
+import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
 import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.process.ProcessUtils
@@ -254,20 +254,20 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     log.info(s"--------------------------- Create settings directory")
-    val settingsDirectory = new SettingsDirectory(distributionDirectory.getBuilderDir(), distribution)
+    val settingsDirectory = new InstallSettingsDirectory(distributionDirectory.getBuilderDir(), distribution)
 
-    for (updateSourcesUri <- updateSourcesUri) {
-      log.info(s"--------------------------- Create sources config")
-      val sourcesConfig = Map.empty[ServiceId, Seq[SourceConfig]] +
-        (Common.ScriptsServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
-        (Common.BuilderServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
-        (Common.UpdaterServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None))) +
-        (Common.DistributionServiceName -> Seq(SourceConfig(Right(GitConfig(updateSourcesUri, None)), None)))
-      if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), SourcesConfig(sourcesConfig))) {
-        log.error(s"Can't write sources config file")
-        return false
-      }
-    }
+//    for (updateSourcesUri <- updateSourcesUri) {
+//      log.info(s"--------------------------- Create sources config")
+//      val sourcesConfig = Map.empty[ServiceId, Seq[SourceConfig]] +
+//        (Common.ScriptsServiceName -> Seq(SourceConfig("update", Some(GitConfig(updateSourcesUri, None)), None, None))) +
+//        (Common.BuilderServiceName -> Seq(SourceConfig("update", Some(GitConfig(updateSourcesUri, None)), None, None))) +
+//        (Common.UpdaterServiceName -> Seq(SourceConfig("update", Some(GitConfig(updateSourcesUri, None)), None, None))) +
+//        (Common.DistributionServiceName -> Seq(SourceConfig("update", Some(GitConfig(updateSourcesUri, None)), None, None)))
+//      if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), SourcesConfig(sourcesConfig))) {
+//        log.error(s"Can't write sources config file")
+//        return false
+//      }
+//    }
     true
   }
 

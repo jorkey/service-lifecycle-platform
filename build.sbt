@@ -68,6 +68,7 @@ lazy val dashboard = project
 lazy val tests = project
   .in(file("tests"))
   .dependsOn(
+    gitLib,
     common % "compile->compile;test->test",
     distribution % "compile->compile;test->test",
     builder % "compile->compile;test->test",

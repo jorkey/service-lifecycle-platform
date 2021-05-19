@@ -2,6 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
+import com.vyulabs.update.common.config.SourceConfig
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
@@ -15,6 +16,7 @@ import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import spray.json._
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
@@ -33,7 +35,7 @@ object BuilderMain extends App {
     "      [sourceBranches==?[,?]...] [test=true]\n" +
     "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
     "      <providerDistributionName=?> <providerDistributionUrL=?> <servicesProfile=?> [testDistributionMatch=?]\n" +
-    "    buildDeveloperVersion <distribution=?> <service=?> <version=?> [comment=?] [sourceBranches=?[,?]...]\n" +
+    "    buildDeveloperVersion <distribution=?> <service=?> <version=?> <sources=?> [comment=?]\n" +
     "    buildClientVersion <distribution=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
   if (args.size < 1) Utils.error(usage())
@@ -97,7 +99,7 @@ object BuilderMain extends App {
           val service = arguments.getValue("service")
           val version = DeveloperVersion.parse(arguments.getValue("version"))
           val comment: Option[String] = arguments.getOptionValue("comment")
-          val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
+          val sourceBranches = arguments.getValue("sourcesConfig").parseJson.convertTo[Seq[SourceConfig]]
           val developerBuilder = new DeveloperBuilder(new File("."), distribution)
           if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {
             Utils.error("Developer version is not generated")

@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.utils
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId, UserId}
-import com.vyulabs.update.common.config.DistributionConfig
+import com.vyulabs.update.common.config.{DistributionConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
@@ -15,6 +15,7 @@ import org.slf4j.Logger
 
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
+import spray.json._
 
 trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfilesUtils
     with StateUtils with RunBuilderUtils with SprayJsonSupport {
@@ -27,13 +28,13 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
   protected implicit val executionContext: ExecutionContext
 
   def buildDeveloperVersion(service: ServiceId, developerVersion: DeveloperVersion, author: UserId,
-                            sourceBranches: Seq[String], comment: Option[String])(implicit log: Logger): TaskId = {
+                            sources: Seq[SourceConfig], comment: Option[String])(implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Build developer version ${developerVersion} of service ${service}",
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
           s"distribution=${config.distribution}", s"service=${service}", s"version=${developerVersion.toString}", s"author=${author}",
-          s"sourceBranches=${sourceBranches.foldLeft("")((branches, branch) => { branches + (if (branches.isEmpty) branch else s",${branch}}") })}") ++
+          s"sources=${sources.toJson.compactPrint}") ++
           comment.map(comment => s"comment=${comment}")
         runBuilder(taskId, arguments)
       })

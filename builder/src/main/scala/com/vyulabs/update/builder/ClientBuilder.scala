@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.{builderMutations, builderQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.SettingsDirectory
+import com.vyulabs.update.common.distribution.server.InstallSettingsDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
 import com.vyulabs.update.common.utils.Utils.makeDir
@@ -27,7 +27,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionId) {
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
-  private val settingsDirectory = new SettingsDirectory(builderDir, distribution)
+  private val settingsDirectory = new InstallSettingsDirectory(builderDir, distribution)
 
   def clientServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def clientBuildDir(service: ServiceId) = makeDir(new File(clientServiceDir(service), "build"))

@@ -1,6 +1,7 @@
 package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
+import com.vyulabs.update.common.config.SourceConfig
 import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{DistributionConsumerInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.{FiniteDurationFormat, URLJsonFormat}
@@ -141,8 +142,11 @@ trait ConsumersAdministrationCoder {
 }
 
 trait BuildDeveloperVersionCoder {
-  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion) =
-    GraphqlMutation[String]("buildDeveloperVersion", Seq(GraphqlArgument("service" -> service), GraphqlArgument("version" -> version, "DeveloperVersionInput")))
+  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, sources: Seq[SourceConfig]) =
+    GraphqlMutation[String]("buildDeveloperVersion", Seq(
+      GraphqlArgument("service" -> service),
+      GraphqlArgument("version" -> version, "DeveloperVersionInput"),
+      GraphqlArgument("sources" -> sources, "[SourceConfig!]")))
 }
 
 trait RemoveDeveloperVersionCoder {

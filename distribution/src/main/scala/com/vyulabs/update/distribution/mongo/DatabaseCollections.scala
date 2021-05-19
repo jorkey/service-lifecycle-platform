@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
+import com.vyulabs.update.common.config.{ServiceSourcesConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
@@ -68,6 +69,12 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
       collection.createIndex(Indexes.ascending("user", "_archiveTime"), new IndexOptions().unique(true))
       collection.createIndex(Indexes.ascending("human"))
     } else Future()
+  } yield collection, Sequences, createIndex = createIndices)
+
+  val Sources = new SequencedCollection[ServiceSourcesConfig]("developer.sources", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.sources")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
+      new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Developer_Versions = new SequencedCollection[DeveloperVersionInfo]("developer.versions", for {

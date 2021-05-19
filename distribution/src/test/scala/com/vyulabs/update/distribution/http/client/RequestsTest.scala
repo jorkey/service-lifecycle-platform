@@ -2,6 +2,7 @@ package com.vyulabs.update.distribution.http.client
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.vyulabs.update.common.config.{GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.developerSubscriptions
@@ -117,10 +118,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
       assert(builderClient.graphqlRequest(builderMutations.addDeveloperVersionInfo(
         DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
-          BuildInfo("author1", Seq("master"), date, Some("comment"))))).getOrElse(false))
+          BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", None, None))), date, Some("comment"))))).getOrElse(false))
 
       assertResult(Some(Seq(DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
-        BuildInfo("author1", Seq("master"), date, Some("comment"))))))(
+        BuildInfo("author1", Seq(SourceConfig("root", GitConfig("git://dummy", None, None))), date, Some("comment"))))))(
         adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", Some("test"),
           Some(DeveloperVersion(Build.parse("1.2.3"))))))
 
@@ -148,10 +149,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
       assert(builderClient.graphqlRequest(builderMutations.addClientVersionInfo(
         ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-          BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))).getOrElse(false))
+          BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", None, None))), date, Some("comment")), InstallInfo("user1", date)))).getOrElse(false))
 
       assertResult(Some(Seq(ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-        BuildInfo("author1", Seq("master"), date, Some("comment")), InstallInfo("user1", date)))))(
+        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", None, None))), date, Some("comment")), InstallInfo("user1", date)))))(
         adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", Some("test"),
           Some(ClientVersion.parse("1.2.3_1")))))
 

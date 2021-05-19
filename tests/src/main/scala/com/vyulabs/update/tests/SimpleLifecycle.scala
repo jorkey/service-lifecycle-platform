@@ -1,13 +1,13 @@
 package com.vyulabs.update.tests
 
-import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
+import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, SettingsDirectory}
+import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
 import com.vyulabs.update.common.info.ClientDesiredVersionDelta
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
@@ -32,7 +32,6 @@ class SimpleLifecycle {
   private val distribution = "test-distribution"
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
-  private val settingsDirectory = new SettingsDirectory(builderDir, distribution)
   private val developerDistributionUrl = new URL(s"http://${Common.InstallerServiceName}:${Common.InstallerServiceName}@localhost:8000")
   private val builderDistributionUrl = new URL(s"http://${Common.BuilderServiceName}:${Common.BuilderServiceName}@localhost:8000")
   private val updaterDistributionUrl = new URL(s"http://${Common.UpdaterServiceName}:${Common.UpdaterServiceName}@localhost:8000")
@@ -50,6 +49,10 @@ class SimpleLifecycle {
     new DistributionClient(new HttpClientImpl(developerDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
   private var processes = Set.empty[ChildProcess]
+
+  private val testSourceRepository = GitRepository.createRepository(testServiceSourcesDir, false).getOrElse {
+    sys.error("Can't create Git repository")
+  }
 
   private def startDistribution(): Boolean = {
     log.info("Start distribution server")
@@ -118,16 +121,10 @@ class SimpleLifecycle {
     if (!IoUtils.writeBytesToFile(new File(testServiceSourcesDir, "sourceScript.sh"), scriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }
-    val sourcesConfig = IoUtils.readFileToJson[SourcesConfig](settingsDirectory.getSourcesFile()).getOrElse {
-      sys.error(s"Can't read sources config file")
-    }
-    val newSourcesConfig = SourcesConfig(sourcesConfig.sources + (testServiceName -> Seq(SourceConfig(Left(testServiceSourcesDir.getAbsolutePath), None))))
-    if (!IoUtils.writeJsonToFile(settingsDirectory.getSourcesFile(), newSourcesConfig)) {
-      sys.error(s"Can't write sources config file")
-    }
 
     println(s"--------------------------- Make test service version")
-    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild))
+    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild),
+      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), None, None))))
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
@@ -162,7 +159,8 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make fixed test service version")
-    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild).next)
+    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild),
+      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), None, None))))
 
     println()
     println(s"########################### Test service is updated")
@@ -198,9 +196,11 @@ class SimpleLifecycle {
     println()
   }
 
-  private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource], version: DeveloperVersion): Unit = {
+  private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
+                                       version: DeveloperVersion, sources: Seq[SourceConfig]): Unit = {
     println("--------------------------- Build developer version of test service")
-    val taskId = developerClient.graphqlRequest(developerMutations.buildDeveloperVersion(testServiceName, version)).getOrElse {
+    val taskId = developerClient.graphqlRequest(
+        developerMutations.buildDeveloperVersion(testServiceName, version, sources)).getOrElse {
       sys.error("Can't execute build developer version task")
     }
     if (!subscribeTask(developerClient, taskId)) {

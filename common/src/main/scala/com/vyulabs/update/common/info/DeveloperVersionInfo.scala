@@ -1,13 +1,14 @@
 package com.vyulabs.update.common.info
 
 import com.vyulabs.update.common.common.Common.ServiceId
+import com.vyulabs.update.common.config.SourceConfig
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import spray.json.DefaultJsonProtocol
 
 import java.util.Date
 
-case class BuildInfo(author: String, branches: Seq[String], date: Date, comment: Option[String])
+case class BuildInfo(author: String, sources: Seq[SourceConfig], date: Date, comment: Option[String])
 
 object BuildInfo extends DefaultJsonProtocol {
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)

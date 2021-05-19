@@ -1,14 +1,13 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
-import com.vyulabs.update.builder.config.{SourceConfig, SourcesConfig}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.InstallConfig._
-import com.vyulabs.update.common.config.UpdateConfig
+import com.vyulabs.update.common.config.{SourceConfig, UpdateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.SettingsDirectory
+import com.vyulabs.update.common.distribution.server.InstallSettingsDirectory
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
@@ -31,22 +30,19 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   private val developerDir = makeDir(new File(builderDir, "developer"))
   private val servicesDir = makeDir(new File(developerDir, "services"))
 
-  private val settingsDirectory = new SettingsDirectory(builderDir, distribution)
+  private val settingsDirectory = new InstallSettingsDirectory(builderDir, distribution)
 
   def developerServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def developerBuildDir(service: ServiceId) = makeDir(new File(developerServiceDir(service), "build"))
   def developerSourceDir(service: ServiceId) = makeDir(new File(developerServiceDir(service), "source"))
 
-  def getBuildDirectory(service: ServiceId, subDirectory: Option[String]): File = {
-    subDirectory.map(subDirectory => new File(developerSourceDir(service), subDirectory)).getOrElse {
-      developerSourceDir(service)
-    }
+  def getBuildDirectory(service: ServiceId, sourceName: String): File = {
+    new File(developerSourceDir(service), sourceName)
   }
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
-                            author: String, service: ServiceId, newVersion: DeveloperVersion,
-                            comment: Option[String], sourceBranches: Seq[String])
-                           (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
+                            author: String, service: ServiceId, newVersion: DeveloperVersion, comment: Option[String],
+                            sourcesConfig: Seq[SourceConfig])(implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     val newDistributionVersion = DeveloperDistributionVersion.from(distribution, newVersion)
     IoUtils.synchronize[Boolean](new File(developerServiceDir(service), builderLockFile), false,
       (attempt, _) => {
@@ -58,15 +54,14 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
       },
       () => {
         log.info(s"Prepare source directories of service ${service}")
-        val sourcesConfig = getSourcesConfig(service)
-        val sourceRepositories = prepareSourceDirectories(service, sourceBranches, sourcesConfig).getOrElse {
+        val sourceRepositories = prepareSourceDirectories(service, sourcesConfig).getOrElse {
           log.error(s"Can't pull source directories")
           return false
         }
 
         log.info(s"Generate version ${newVersion} of service ${service}")
         val arguments = Map("version" -> newVersion.toString)
-        if (!generateDeveloperVersion(service, getBuildDirectory(service, sourcesConfig.head.buildDirectory), arguments)) {
+        if (!generateDeveloperVersion(service, getBuildDirectory(service, sourcesConfig.head.name), arguments)) {
           log.error(s"Can't generate version")
           return false
         }
@@ -78,7 +73,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
         }
 
         log.info(s"Upload version image ${newVersion} of service ${service} to distribution server")
-        val buildInfo = BuildInfo(author, sourceBranches, new Date(), comment)
+        val buildInfo = BuildInfo(author, sourcesConfig, new Date(), comment)
         if (!uploadDeveloperVersion(distributionClient, service, newDistributionVersion, buildInfo, imageFile)) {
           log.error("Can't upload version image")
           return false
@@ -93,40 +88,16 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
       }).getOrElse(false)
   }
 
-  def getSourcesConfig(service: ServiceId): Seq[SourceConfig] = {
-    val sourcesConfig = SourcesConfig.fromFile(settingsDirectory.getSourcesFile()).getOrElse {
-      log.error("Can't get config of sources")
-      return Seq.empty
-    }
-    sourcesConfig.sources.get(service).getOrElse {
-      log.error(s"Source repositories of service ${service} is not specified.")
-      return Seq.empty
-    }
-  }
-
-  def prepareSourceDirectories(service: ServiceId, sourceBranches: Seq[String],
-                               sourcesConfig: Seq[SourceConfig]): Option[Seq[GitRepository]] = {
+  def prepareSourceDirectories(service: ServiceId, sourcesConfig: Seq[SourceConfig]): Option[Seq[GitRepository]] = {
     var gitRepositories = Seq.empty[GitRepository]
-    val sourceBranchIt = sourceBranches.iterator
     for (sourceConfig <- sourcesConfig) {
-      sourceConfig.source match {
-        case Left(directory) =>
-          if (!IoUtils.copyFile(new File(directory), getBuildDirectory(service, sourceConfig.buildDirectory))) {
-            return None
-          }
-        case Right(git) =>
-          val branch = if (sourceBranchIt.hasNext) {
-            sourceBranchIt.next()
-          } else {
-            "master"
-          }
-          val sourceRepository =
-            GitRepository.getGitRepository(git.url, branch, git.cloneSubmodules.getOrElse(true),
-                getBuildDirectory(service, sourceConfig.buildDirectory)).getOrElse {
-              return None
-            }
-          gitRepositories :+= sourceRepository
-      }
+      val branch = sourceConfig.git.branch.getOrElse("master")
+      val sourceRepository =
+        GitRepository.getGitRepository(sourceConfig.git.url, branch, sourceConfig.git.cloneSubmodules.getOrElse(true),
+          getBuildDirectory(service, sourceConfig.name)).getOrElse {
+          return None
+        }
+      gitRepositories :+= sourceRepository
     }
     Some(gitRepositories)
   }

@@ -20,7 +20,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends DistributionInfoUtils with ServiceProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
+    extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with UsersUtils
 
 case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)
@@ -59,6 +59,7 @@ object GraphqlSchema {
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
+  val SourcesArg = Argument("sources", ListInputType(SourceConfigInputType))
   val UrlArg = Argument("url", UrlType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
@@ -81,7 +82,6 @@ object GraphqlSchema {
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientVersionInputType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
   val OptionCommentArg = Argument("comment", OptionInputType(StringType))
-  val OptionBranchesArg = Argument("branches", OptionInputType(ListInputType(StringType)))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
@@ -221,6 +221,20 @@ object GraphqlSchema {
             c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionUserRolesArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg))
         }),
 
+      // Sources
+      Field("addSources", BooleanType,
+        arguments = ServiceArg :: SourcesArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.addSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
+      Field("changeSources", BooleanType,
+        arguments = ServiceArg :: SourcesArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.changeSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
+      Field("removeSources", BooleanType,
+        arguments = ServiceArg :: Nil,
+        tags = Authorized(UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.removeSources(c.arg(ServiceArg)).map(_ => true) }),
+
       // Profiles
       Field("addServicesProfile", BooleanType,
         arguments = ProfileArg :: ServicesArg :: Nil,
@@ -237,10 +251,10 @@ object GraphqlSchema {
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,
-        arguments = ServiceArg :: DeveloperVersionArg :: OptionBranchesArg :: OptionCommentArg :: Nil,
+        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: OptionCommentArg :: Nil,
         tags = Authorized(UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.user,
-          c.arg(OptionBranchesArg).getOrElse(Seq.empty), c.arg(OptionCommentArg)) }),
+          c.arg(SourcesArg), c.arg(OptionCommentArg)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         tags = Authorized(UserRole.Builder) :: Nil,
