@@ -19,8 +19,17 @@ trait SourceUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def addSources(service: ServiceId, sources: Seq[SourceConfig])
-                (implicit log: Logger): Future[Unit] = {
+  def getDeveloperServices()(implicit log: Logger): Future[Seq[ServiceId]] = {
+    collections.Sources.find().map(_.map(_.service))
+  }
+
+  def getServiceSources(service: ServiceId)(implicit log: Logger): Future[Seq[SourceConfig]] = {
+    val filters = Filters.eq("service", service)
+    collections.Sources.find(filters).map(_.headOption.map(_.sources).getOrElse(Seq.empty))
+  }
+
+  def addServiceSources(service: ServiceId, sources: Seq[SourceConfig])
+                       (implicit log: Logger): Future[Unit] = {
     log.info(s"Add sources for service ${service}")
     for {
       result <- {
@@ -30,8 +39,8 @@ trait SourceUtils extends SprayJsonSupport {
     } yield result
   }
 
-  def removeSources(service: ServiceId)
-                   (implicit log: Logger): Future[Boolean] = {
+  def removeServiceSources(service: ServiceId)
+                          (implicit log: Logger): Future[Boolean] = {
     log.info(s"Remove sources of service ${service}")
     val filters = Filters.eq("service", service)
     collections.Sources.delete(filters).map(_ > 0)

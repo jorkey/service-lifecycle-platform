@@ -11,7 +11,7 @@ import {NavLink as RouterLink, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
 
 const useStyles = makeStyles(theme => ({
-  profileColumn: {
+  serviceColumn: {
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
@@ -57,14 +57,14 @@ const Actions: React.FC<ActionsProps> = (props) => {
       </IconButton>
       <ConfirmDialog
         close={() => { setDeleteConfirm(false) }}
-        message={`Do you want to delete profile '${profile}'?`}
+        message={`Do you want to delete service '${profile}'?`}
         onConfirm={() => removing(removeProfile({ variables: { profile: profile } }).then(() => {}))}
         open={deleteConfirm}
       />
     </>)
 }
 
-const ProfilesTable = () => {
+const SourcesTable = () => {
   const [ selected, setSelected ] = React.useState('')
   const { data, refetch } = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
 
@@ -74,7 +74,7 @@ const ProfilesTable = () => {
     <Table stickyHeader>
       <TableHead>
         <TableRow>
-          <TableCell className={classes.profileColumn}>Profile</TableCell>
+          <TableCell className={classes.serviceColumn}>Service</TableCell>
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
         </TableRow>
       </TableHead>
@@ -89,7 +89,7 @@ const ProfilesTable = () => {
                 onClick={() => setSelected(profile.profile)}
                 selected={profile.profile===selected}
               >
-                <TableCell className={classes.profileColumn}>{profile.profile}</TableCell>
+                <TableCell className={classes.serviceColumn}>{profile.profile}</TableCell>
                 <TableCell className={classes.actionsColumn}><Actions
                   removing={promise => promise.then(() => refetch())}
                   profile={profile.profile}
@@ -100,4 +100,4 @@ const ProfilesTable = () => {
     </Table>)
 }
 
-export default ProfilesTable;
+export default SourcesTable;

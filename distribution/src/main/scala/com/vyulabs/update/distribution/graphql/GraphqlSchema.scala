@@ -111,6 +111,15 @@ object GraphqlSchema {
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg), c.arg(OptionHumanArg)) }),
 
+      // Sources
+      Field("developerServices", ListType(StringType),
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperServices() }),
+      Field("serviceSources", ListType(SourceConfigType),
+        arguments = ServiceArg :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getServiceSources(c.arg(ServiceArg)) }),
+
       // Profiles
       Field("serviceProfiles", ListType(ServicesProfileType),
         arguments = OptionProfileArg :: Nil,
@@ -222,18 +231,18 @@ object GraphqlSchema {
         }),
 
       // Sources
-      Field("addSources", BooleanType,
+      Field("addServiceSources", BooleanType,
         arguments = ServiceArg :: SourcesArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
-      Field("changeSources", BooleanType,
+        resolve = c => { c.ctx.workspace.addServiceSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
+      Field("changeServiceSources", BooleanType,
         arguments = ServiceArg :: SourcesArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.changeSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
-      Field("removeSources", BooleanType,
+      Field("removeServiceSources", BooleanType,
         arguments = ServiceArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeSources(c.arg(ServiceArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.removeServiceSources(c.arg(ServiceArg)).map(_ => true) }),
 
       // Profiles
       Field("addServicesProfile", BooleanType,

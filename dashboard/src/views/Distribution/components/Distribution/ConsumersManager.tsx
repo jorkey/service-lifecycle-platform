@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme:any) => ({
     paddingLeft: '16px',
     width: '400px'
   },
-  profileColumn: {
+  serviceColumn: {
     padding: '4px',
     paddingLeft: '16px',
     width: '400px'
@@ -88,7 +88,7 @@ const ConsumersManager = () => {
     {
       name: 'profile',
       headerName: 'Profile',
-      className: classes.profileColumn,
+      className: classes.serviceColumn,
       editable: !!serviceProfiles,
       select: serviceProfiles?.serviceProfiles.map(profile => profile.profile),
       validate: (value) => !!value

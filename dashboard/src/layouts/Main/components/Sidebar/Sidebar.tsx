@@ -83,10 +83,19 @@ const Sidebar = (props:any) => {
       ]
     },
     {
-      kind: 'single',
-      title: 'Profiles',
-      href: '/profiles',
-      icon: <BubbleChartIcon />
+      kind: 'title',
+      title: 'Services',
+      icon: <BubbleChartIcon />,
+      pages: [
+        {
+          title: 'Sources',
+          href: '/services/sources',
+        },
+        {
+          title: 'Profiles',
+          href: '/services/profiles',
+        }
+      ]
     },
     {
       kind: 'title',

@@ -18,7 +18,7 @@ query distributionInfo {
 
 query developerVersionsInfo ($service: String!, $version: DeveloperVersionInput) {
     developerVersionsInfo (service: $service, version: $version) {
-        service, version { distribution, build }, buildInfo { author, branches, date, comment }
+        service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment }
     }
 }
 
@@ -30,8 +30,8 @@ query providerDesiredVersions ($distribution: String!) {
     providerDesiredVersions (distribution: $distribution) { service, version { distribution, build } }
 }
 
-mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!, $branches: [String!], $comment: String) {
-    buildDeveloperVersion (service: $service, version: $version, branches: $branches, comment: $comment)
+mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!, $sources: [SourceConfigInput!]!, $comment: String) {
+    buildDeveloperVersion (service: $service, version: $version, sources: $sources, comment: $comment)
 }
 
 mutation addDeveloperVersionInfo ($info: DeveloperVersionInfoInput!) {
@@ -50,7 +50,7 @@ mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaIn
 
 query clientVersionsInfo ($service: String!, $version: ClientVersionInput) {
     clientVersionsInfo (service: $service, version: $version) {
-        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, branches, date, comment }, installInfo { user, date }
+        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment }, installInfo { user, date }
     }
 }
 
@@ -88,7 +88,7 @@ query serviceStates ($distribution: String!) {
     }
 }
 
-# Profiles
+# Services
 
 query usersInfo ($human: Boolean!) {
     usersInfo (human: $human) { user, human, name, roles, email, notifications }
@@ -112,6 +112,28 @@ mutation changeUser ($user: String!, $name: String, $oldPassword: String, $passw
 
 mutation removeUser ($user: String!) {
     removeUser (user: $user)
+}
+
+# Sources
+
+query developerServices {
+    developerServices
+}
+
+query serviceSources ($service: String!) {
+    serviceSources (service: $service) { name, git { url, branch, cloneSubmodules }  }
+}
+
+mutation addServiceSources ($service: String!, $sources: [SourceConfigInput!]!) {
+    addServiceSources (service: $service, sources: $sources)
+}
+
+mutation changeServiceSources ($service: String!, $sources: [SourceConfigInput!]!) {
+    changeServiceSources (service: $service, sources: $sources)
+}
+
+mutation removeServiceSources ($service: String!) {
+    removeServiceSources (service: $service)
 }
 
 # Profiles
