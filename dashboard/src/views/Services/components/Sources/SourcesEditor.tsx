@@ -3,8 +3,6 @@ import React, {useState} from 'react';
 import Button from '@material-ui/core/Button';
 import {NavLink as RouterLink, RouteComponentProps, useHistory} from 'react-router-dom'
 
-import LeftIcon from "@material-ui/icons/ArrowBack";
-
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Box,
@@ -13,16 +11,15 @@ import {
   CardHeader,
   Divider, Grid,
 } from '@material-ui/core';
-import {
-  useAddServicesProfileMutation,
-  useChangeServicesProfileMutation,
-  useProfileServicesLazyQuery,
-  useServiceProfilesQuery,
-} from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
-import ServicesProfile from "./ServicesProfile";
+import {
+  SourceConfig,
+  useAddServiceSourcesMutation,
+  useChangeServiceSourcesMutation, useDeveloperServicesQuery, useServiceSourcesLazyQuery,
+} from "../../../../generated/graphql";
+import ServiceSources from "./ServiceSources";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -46,109 +43,73 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface ProfileRouteParams {
-  profile?: string
+interface ServiceRouteParams {
+  service?: string
 }
 
-interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
+interface ServiceSourcesEditorParams extends RouteComponentProps<ServiceRouteParams> {
   fromUrl: string
 }
 
-const ProfileEditor: React.FC<ProfileEditorParams> = props => {
-  const {data: profiles} = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
-  const [getProfileServices, profileServices] = useProfileServicesLazyQuery({ fetchPolicy: 'no-cache' })
-  const [getPatternProfileServices, patternProfileServices] = useProfileServicesLazyQuery({ fetchPolicy: 'no-cache' })
+const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
+  const {data: services} = useDeveloperServicesQuery({ fetchPolicy: 'no-cache' })
+  const [getServiceSources, serviceSources] = useServiceSourcesLazyQuery({ fetchPolicy: 'no-cache' })
 
   const classes = useStyles()
 
-  const [profile, setProfile] = useState('');
-  const [services, setServices] = useState(new Array<string>());
-  const [patternServices, setPatternServices] = useState(new Array<string>());
+  const [service, setService] = useState('');
+  const [sources, setSources] = useState(new Array<SourceConfig>());
   const [changed, setChanged] = useState(false);
 
-  const [initialized, setInitialized] = useState(false);
   const [addService, setAddService] = useState(false);
 
-  const editProfile = props.match.params.profile
-  const patternProfile = (editProfile != 'common') ? 'common' : undefined
+  const editService = props.match.params.service
 
   const history = useHistory()
 
-  const requestProfileServices = () => {
-    if (editProfile && !profile) {
-      if (!profileServices.data && !profileServices.loading) {
-        getProfileServices({variables: {profile: editProfile}})
-      }
-      if (profileServices.data) {
-        setProfile(editProfile)
-        setServices([...profileServices.data.serviceProfiles[0].services]
-          .sort((s1, s2) => (s1 > s2 ? 1 : -1)))
-        return true
-      } else {
-        return false
-      }
-    } else {
+  if (editService && !service) {
+    if (!serviceSources.data && !serviceSources.loading) {
+      getServiceSources({variables: {service: editService}})
+    }
+    if (serviceSources.data) {
+      setService(editService)
+      setSources(serviceSources.data.serviceSources)
       return true
-    }
-  }
-
-  const requestPatternProfileServices = () => {
-    if (patternProfile && !patternServices.length) {
-      if (!patternProfileServices.data && !patternProfileServices.loading) {
-        getPatternProfileServices({variables: {profile: patternProfile}})
-      }
-      if (patternProfileServices.data) {
-        if (patternProfileServices.data.serviceProfiles.length) {
-          setPatternServices([...patternProfileServices.data.serviceProfiles[0].services]
-            .sort((s1, s2) => (s1 > s2 ? 1 : -1)))
-        }
-        return true
-      } else {
-        return false
-      }
     } else {
-      return true
+      return false
     }
   }
 
-  if (!initialized) {
-    const r1 = requestProfileServices()
-    const r2 = requestPatternProfileServices()
-    if (r1 && r2) {
-      setInitialized(true)
-    }
-  }
-
-  const [addProfile, { data: addProfileData, error: addProfileError }] =
-    useAddServicesProfileMutation({
+  const [addSources, { data: addSourcesData, error: addSourcesError }] =
+    useAddServiceSourcesMutation({
       onError(err) { console.log(err) }
     })
 
-  const [changeProfile, { data: changeProfileData, error: changeProfileError }] =
-    useChangeServicesProfileMutation({
+  const [changeSources, { data: changeSourcesData, error: changeSourcesError }] =
+    useChangeServiceSourcesMutation({
       onError(err) { console.log(err) }
     })
 
-  if (addProfileData || changeProfileData) {
+  if (addSourcesData || changeSourcesData) {
     history.push(props.fromUrl)
   }
 
   const validate: () => boolean = () => {
-    return !!profile && (!!editProfile || !doesProfileExist(profile)) && services.length != 0
+    return !!service && (!!editService || !doesSourceExist(service)) && sources.length != 0
   }
 
   const submit = () => {
     if (validate()) {
-      if (editProfile) {
-        changeProfile({variables: { profile: profile, services: services }} )
+      if (editService) {
+        changeSources({variables: { service: service, sources: sources }} )
       } else {
-        addProfile({variables: { profile: profile, services: services }})
+        addSources({variables: { service: service, sources: sources }})
       }
     }
   }
 
-  const doesProfileExist: (profile: string) => boolean = (profile) => {
-    return profiles?!!profiles.serviceProfiles.find(p => p.profile == profile):false
+  const doesSourceExist: (source: string) => boolean = (name) => {
+    return sources?!!sources.find(p => p.name == name):false
   }
 
   const ProfileCard = () => {
@@ -156,132 +117,93 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
       <Card className={classes.card}>
         <CardHeader
           action={
-            !patternProfile?
-              (<Box
-                className={classes.controls}
-              >
-                <Button
-                  className={classes.control}
-                  color="primary"
-                  onClick={() => setAddService(true)}
-                  startIcon={<AddIcon/>}
-                  variant="contained"
-                >
-                  Add New Service
-                </Button>
-              </Box>):null
-          }
-          title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Profile'}
-        />
-        { patternProfile ? (
-          <CardContent>
-            <Grid
-              container
-              spacing={3}
+            <Box
+              className={classes.controls}
             >
-              <Grid
-                item
-                xs={6}
+              <Button
+                className={classes.control}
+                color="primary"
+                onClick={() => setAddService(true)}
+                startIcon={<AddIcon/>}
+                variant="contained"
               >
-                <ServicesProfile newProfile={!editProfile}
-                                 profile={profile}
-                                 setProfile={setProfile}
-                                 services={services}
-                                 doesProfileExist={profile => doesProfileExist(profile)}
-                                 onServiceRemove={service => {
-                                   setServices(services.filter(s => s != service))
-                                   setChanged(true)
-                                 }}
-                />
-              </Grid>
-              <Grid
-                item
-                xs={6}
-              >
-                <ServicesProfile profile={patternProfile}
-                                 services={patternServices.filter(service => !services.find(s => s == service))}
-                                 deleteIcon={<LeftIcon/>}
-                                 onServiceRemove={ service => {
-                                   setServices([...services, service])
-                                   setChanged(true)
-                                 }}
-                />
-              </Grid>
-            </Grid>
-          </CardContent>) : (
-          <CardContent>
-            <ServicesProfile newProfile={!editProfile}
-                             profile={profile}
-                             setProfile={setProfile}
-                             doesProfileExist={profile => doesProfileExist(profile)}
-                             services={services}
-                             addService={addService}
-                             allowEdit={true}
-                             confirmRemove={true}
-                             onServiceAdded={
-                               service => {
-                                 setServices([...services, service].sort((s1,s2) => (s1 > s2 ? 1 : -1)))
-                                 setAddService(false)
-                                 setChanged(true)
-                               }
-                             }
-                             onServiceAddCancelled={() => {
+                Add New Service
+              </Button>
+            </Box>
+          }
+          title={editService?`Edit Service Profile '${editService}'`:'New Services Profile'}
+        />
+        <CardContent>
+          <ServiceSources  newService={!editService}
+                           service={service}
+                           setService={setService}
+                           doesSourceExist={doesSourceExist}
+                           services={sources}
+                           addSource={addService}
+                           allowEdit={true}
+                           confirmRemove={true}
+                           onSourceAdded={
+                             service => {
+                               setSources([...sources, service].sort((s1,s2) => (s1 > s2 ? 1 : -1)))
                                setAddService(false)
-                             }}
-                             onServiceChange={
-                               (oldService, newService) => {
-                                 const newServices = services.filter(s => s != oldService)
-                                 setServices([...newServices, newService].sort((s1,s2) => (s1 > s2 ? 1 : -1)));
-                                 setChanged(true)}
+                               setChanged(true)
                              }
-                             onServiceRemove={
-                               service => {
-                                 const newServices = services.filter(s => s != service)
-                                 setServices(newServices.sort((s1,s2) => (s1 > s2 ? 1 : -1)));
-                                 setChanged(true)
-                               }
+                           }
+                           onSourceAddCancelled={() => {
+                             setAddService(false)
+                           }}
+                           onSourceChange={
+                             (oldSource, newSource) => {
+                               const newServices = sources.filter(s => s != oldSource)
+                               setSources([...newServices, newSource].sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                               setChanged(true)}
+                           }
+                           onSourceRemove={
+                             source => {
+                               const newServices = sources.filter(s => s != source)
+                               setSources(newServices.sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                               setChanged(true)
                              }
-            />
-          </CardContent>
-        )}
+                           }
+          />
+        </CardContent>)
       </Card>)
   }
 
-  const error = addProfileError?addProfileError.message:changeProfileError?changeProfileError.message:''
+  const error = addSourcesError?addSourcesError.message:changeSourcesError?changeSourcesError.message:''
 
   return (
-    initialized ? (
-      <Card
-        className={clsx(classes.root)}
-      >
-        <ProfileCard />
-        <Divider />
-        {error && <Alert
-          className={classes.alert}
-          severity="error"
-        >{error}</Alert>}
-        <Box className={classes.controls}>
-          <Button
-            className={classes.control}
-            color="primary"
-            component={RouterLink}
-            to={props.fromUrl}
-            variant="contained"
-          >
-            Cancel
-          </Button>
-          <Button
-            className={classes.control}
-            color="primary"
-            disabled={!changed || !validate()}
-            onClick={() => submit()}
-            variant="contained"
-          >
-            {!editProfile?'Add New Profile':'Save'}
-          </Button>
-        </Box>
-      </Card>) : null
+    <Card
+      className={clsx(classes.root)}
+    >
+      <ProfileCard />
+      <Divider />
+      {error && <Alert
+        className={classes.alert}
+        severity="error"
+      >{error}</Alert>}
+      <Box className={classes.controls}>
+        <Button
+          className={classes.control}
+          color="primary"
+          component={RouterLink}
+          to={props.fromUrl}
+          variant="contained"
+        >
+          Cancel
+        </Button>
+        <Button
+          className={classes.control}
+          color="primary"
+          disabled={!changed || !validate()}
+          onClick={() => submit()}
+          variant="contained"
+        >
+          {!editService?'Add New Profile':'Save'}
+        </Button>
+      </Box>
+    </Card>
   );
 }
 
-export default ProfileEditor;
+export default ServiceSourcesEditor;

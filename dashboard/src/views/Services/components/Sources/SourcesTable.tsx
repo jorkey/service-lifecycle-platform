@@ -2,8 +2,9 @@ import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {
+  useDeveloperServicesQuery,
   useRemoveServicesProfileMutation,
-  useServiceProfilesQuery,
+  useServiceProfilesQuery, useServiceSourcesQuery,
 } from '../../../../generated/graphql';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -66,7 +67,7 @@ const Actions: React.FC<ActionsProps> = (props) => {
 
 const SourcesTable = () => {
   const [ selected, setSelected ] = React.useState('')
-  const { data, refetch } = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
+  const { data: services, refetch } = useDeveloperServicesQuery({ fetchPolicy: 'no-cache' })
 
   const classes = useStyles()
 
@@ -78,24 +79,22 @@ const SourcesTable = () => {
           <TableCell className={classes.actionsColumn}>Actions</TableCell>
         </TableRow>
       </TableHead>
-      { data ?
+      { services ?
         <TableBody>
-          {[...data.serviceProfiles]
-            .sort((u1,u2) =>  (u1.profile > u2.profile ? 1 : -1))
-            .map(profile =>
-              (<TableRow
-                hover
-                key={profile.profile}
-                onClick={() => setSelected(profile.profile)}
-                selected={profile.profile===selected}
-              >
-                <TableCell className={classes.serviceColumn}>{profile.profile}</TableCell>
-                <TableCell className={classes.actionsColumn}><Actions
-                  removing={promise => promise.then(() => refetch())}
-                  profile={profile.profile}
-                /></TableCell>
-              </TableRow>)
-            )}
+          {services.developerServices.map(service =>
+            (<TableRow
+              hover
+              key={service}
+              onClick={() => setSelected(service)}
+              selected={service===selected}
+            >
+              <TableCell className={classes.serviceColumn}>{service}</TableCell>
+              <TableCell className={classes.actionsColumn}><Actions
+                removing={promise => promise.then(() => refetch())}
+                profile={service}
+              /></TableCell>
+            </TableRow>)
+          )}
         </TableBody> : null }
     </Table>)
 }
