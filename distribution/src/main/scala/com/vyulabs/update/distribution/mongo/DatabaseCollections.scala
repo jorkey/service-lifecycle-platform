@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.config.{ServiceSourcesConfig, SourceConfig}
+import com.vyulabs.update.common.config.{GitConfig, ServiceSourcesConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
@@ -26,6 +26,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[ServerUserInfo],
     classOf[UserCredentials],
     classOf[PasswordHash],
+    classOf[GitConfig],
+    classOf[SourceConfig],
+    classOf[ServiceSourcesConfig],
     classOf[ClientVersion],
     classOf[ClientDistributionVersion],
     classOf[DeveloperVersion],

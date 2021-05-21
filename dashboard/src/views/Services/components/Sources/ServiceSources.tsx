@@ -3,6 +3,7 @@ import React, {useState} from "react";
 import {SourcesTable} from "./SourcesTable";
 import {Typography} from '@material-ui/core';
 import {makeStyles} from "@material-ui/core/styles";
+import {SourceConfig} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   newServiceName: {
@@ -21,20 +22,18 @@ interface ServiceSourcesParams {
   newService?: boolean,
   service?: string | undefined,
   setService?: (service: string) => void,
-  doesSourceExist?: (service: string) => boolean,
-  services: Array<string>
+  doesServiceExist?: (service: string) => boolean,
+  sources: Array<SourceConfig>
   addSource?: boolean
-  deleteIcon?: JSX.Element
-  allowEdit?: boolean
   confirmRemove?: boolean
-  onSourceAdded?: (service: string) => void
+  onSourceAdded?: (source: SourceConfig) => void
   onSourceAddCancelled?: () => void
-  onSourceChange?: (oldServiceName: string, newServiceName: string) => void
-  onSourceRemove?: (service: string) => void
+  onSourceChange?: (oldSource: SourceConfig, newSource: SourceConfig) => void
+  onSourceRemove?: (source: SourceConfig) => void
 }
 
-const ServicesProfile = (params: ServiceSourcesParams) => {
-  const { newService, service, setService, doesSourceExist, services, addSource, deleteIcon, allowEdit, confirmRemove,
+const ServiceSources = (params: ServiceSourcesParams) => {
+  const { newService, service, setService, doesServiceExist, sources, addSource, confirmRemove,
     onSourceAdded, onSourceAddCancelled, onSourceChange, onSourceRemove } = params
 
   const classes = useStyles()
@@ -44,9 +43,9 @@ const ServicesProfile = (params: ServiceSourcesParams) => {
       <TextField  className={classes.newServiceName}
                   autoFocus
                   disabled={!newService}
-                  error={(newService && (!service || (doesSourceExist?.(service))))}
+                  error={(newService && (!service || (doesServiceExist?.(service))))}
                   fullWidth
-                  helperText={(newService && service && doesSourceExist?.(service)) ? 'Profile already exists': ''}
+                  helperText={(newService && service && doesServiceExist?.(service)) ? 'Profile already exists': ''}
                   label="Profile"
                   margin="normal"
                   onChange={(e: any) => setService?.(e.target.value)}
@@ -57,17 +56,15 @@ const ServicesProfile = (params: ServiceSourcesParams) => {
                   variant="h6"
       >Profile '{service}'
     </Typography>}
-    <ServicesTable services={services}
-                   addService={addSource}
-                   deleteIcon={deleteIcon}
-                   allowEdit={allowEdit}
-                   confirmRemove={confirmRemove}
-                   onServiceAdded={onSourceAdded}
-                   onServiceAddCancelled={onSourceAddCancelled}
-                   onServiceChange={onSourceChange}
-                   onServiceRemove={onSourceRemove}
+    <SourcesTable sources={sources}
+                  addSource={addSource}
+                  confirmRemove={confirmRemove}
+                  onSourceAdded={onSourceAdded}
+                  onSourceAddCancelled={onSourceAddCancelled}
+                  onSourceChange={onSourceChange}
+                  onSourceRemove={onSourceRemove}
     />
   </>)
 }
 
-export default ServicesProfile;
+export default ServiceSources;

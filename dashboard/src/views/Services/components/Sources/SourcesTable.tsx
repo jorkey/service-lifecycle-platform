@@ -1,102 +1,116 @@
-import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
-import React, {useState} from 'react';
-import {makeStyles} from '@material-ui/styles';
-import {
-  useDeveloperServicesQuery,
-  useRemoveServicesProfileMutation,
-  useServiceProfilesQuery, useServiceSourcesQuery,
-} from '../../../../generated/graphql';
-import EditIcon from '@material-ui/icons/Edit';
-import DeleteIcon from '@material-ui/icons/Delete';
-import {NavLink as RouterLink, useRouteMatch} from 'react-router-dom';
-import ConfirmDialog from '../../../../common/ConfirmDialog';
+import React, {useState} from "react";
+import {makeStyles} from "@material-ui/core/styles";
+import EditTable, {EditColumnParams} from "../../../../common/EditTable";
+import ConfirmDialog from "../../../../common/ConfirmDialog";
+import {SourceConfig} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
-  serviceColumn: {
-    width: '200px',
+  servicesTable: {
+    marginTop: 20
+  },
+  nameColumn: {
     padding: '4px',
     paddingLeft: '16px'
   },
-  actionsColumn: {
-    width: '200px',
+  urlColumn: {
     padding: '4px',
-    paddingRight: '40px',
-    textAlign: 'right'
+    paddingLeft: '16px'
+  },
+  cloneSubmodulesColumn: {
+    padding: '4px',
+    paddingLeft: '16px'
   }
 }));
 
-interface ActionsProps {
-  profile: string,
-  removing: (promise: Promise<void>) => void
+interface SourceTableParams {
+  sources: Array<SourceConfig>
+  addSource?: boolean
+  confirmRemove?: boolean
+  onSourceAdded?: (source: SourceConfig) => void
+  onSourceAddCancelled?: () => void
+  onSourceChange?: (oldSource: SourceConfig, newSource: SourceConfig) => void
+  onSourceRemove?: (source: SourceConfig) => void
 }
 
-const Actions: React.FC<ActionsProps> = (props) => {
-  const { profile, removing } = props
-  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
+export const SourcesTable = (props: SourceTableParams) => {
+  const { sources, addSource, confirmRemove,
+    onSourceAdded, onSourceAddCancelled, onSourceChange, onSourceRemove } = props;
 
-  const routeMatch = useRouteMatch();
+  const [ deleteConfirm, setDeleteConfirm ] = useState<SourceConfig>()
 
-  const [removeProfile] = useRemoveServicesProfileMutation({
-    variables: { profile: profile },
-    onError(err) { console.log(err) }
-  })
+  const classes = useStyles();
 
-  return (
-    <>
-      <IconButton
-        title="Edit"
-        component={RouterLink}
-        to={`${routeMatch.url}/edit/${profile}`}
-      >
-        <EditIcon/>
-      </IconButton>
-      <IconButton
-        onClick={() => setDeleteConfirm(true)}
-        title="Delete"
-      >
-        <DeleteIcon/>
-      </IconButton>
+  const columns: Array<EditColumnParams> = [
+    {
+      name: 'name',
+      headerName: 'Name',
+      className: classes.nameColumn,
+      editable: true,
+      validate: (value, rowNum) => {
+        return !!value &&
+          !rows.find((row, index) => {
+            return index != rowNum && row.get('service') == value
+          })
+      }
+    },
+    {
+      name: 'url',
+      headerName: 'URL',
+      className: classes.urlColumn,
+      editable: true,
+      validate: (value, rowNum) => {
+        try {
+          return value?!!new URL(value):false
+        } catch (ex) {
+          return false
+        }
+      }
+    },
+    {
+      name: 'cloneSubmodules',
+      headerName: 'Clone Submodules',
+      className: classes.urlColumn,
+      type: 'checkbox',
+      editable: true,
+      validate: (value, rowNum) => {
+        return true
+      }
+    }
+  ]
+
+  const rows = new Array<Map<string, string>>()
+  sources.forEach(source => { rows.push(new Map([
+    ['name', source.name],
+    ['url', source.git.url],
+    ['cloneSubmodules', String(source.git.cloneSubmodules)]
+  ])) })
+
+  return (<>
+    <EditTable
+      className={classes.servicesTable}
+      columns={columns}
+      rows={rows}
+      addNewRow={addSource}
+      onRowAdded={ (columns) => {
+        onSourceAdded?.({ name: columns.get('name')!,
+          git: { url: columns.get('url')!, cloneSubmodules: Boolean(columns.get('cloneSubmodules')) } }) }}
+      onRowAddCancelled={onSourceAddCancelled}
+      onRowChange={ (row, oldValues, newValues) => {
+        onSourceChange?.(sources[row], { name: newValues.get('name')!,
+          git: { url: newValues.get('url')!, cloneSubmodules: Boolean(newValues.get('cloneSubmodules')) } }) }}
+      onRowRemove={ (row) => {
+        return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemove?.(sources[row])
+      }}
+    />
+    { deleteConfirm ? (
       <ConfirmDialog
-        close={() => { setDeleteConfirm(false) }}
-        message={`Do you want to delete service '${profile}'?`}
-        onConfirm={() => removing(removeProfile({ variables: { profile: profile } }).then(() => {}))}
-        open={deleteConfirm}
-      />
-    </>)
+        message={`Do you want to delete source '${deleteConfirm}'?`}
+        open={true}
+        close={() => { setDeleteConfirm(undefined) }}
+        onConfirm={() => {
+          onSourceRemove?.(deleteConfirm)
+          setDeleteConfirm(undefined)
+        }}
+      />) : null }
+  </>)
 }
-
-const SourcesTable = () => {
-  const [ selected, setSelected ] = React.useState('')
-  const { data: services, refetch } = useDeveloperServicesQuery({ fetchPolicy: 'no-cache' })
-
-  const classes = useStyles()
-
-  return (
-    <Table stickyHeader>
-      <TableHead>
-        <TableRow>
-          <TableCell className={classes.serviceColumn}>Service</TableCell>
-          <TableCell className={classes.actionsColumn}>Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      { services ?
-        <TableBody>
-          {services.developerServices.map(service =>
-            (<TableRow
-              hover
-              key={service}
-              onClick={() => setSelected(service)}
-              selected={service===selected}
-            >
-              <TableCell className={classes.serviceColumn}>{service}</TableCell>
-              <TableCell className={classes.actionsColumn}><Actions
-                removing={promise => promise.then(() => refetch())}
-                profile={service}
-              /></TableCell>
-            </TableRow>)
-          )}
-        </TableBody> : null }
-    </Table>)
-}
-
-export default SourcesTable;

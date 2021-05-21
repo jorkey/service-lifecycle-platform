@@ -1,5 +1,16 @@
 import React, {useState} from "react";
-import {IconButton, Input, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow} from "@material-ui/core";
+import {
+  Checkbox,
+  IconButton,
+  Input,
+  MenuItem,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
+} from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
 import DeleteIcon from "@material-ui/icons/Delete";
 import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
@@ -79,21 +90,26 @@ const EditTableRow = (params: EditTableRowParams) => {
                   autoFocus={true}
                   value={editValues.get(column.name)?editValues.get(column.name):''}
                   onChange={e => {
-                    console.log('onChange ' + JSON.stringify(e.target))
                     setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
                   }}
           >
             { column.select.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
           </Select>
-        : <Input
-          className={classes.input}
-          type={column.type}
-          value={editValues.get(column.name)?editValues.get(column.name):''}
-          autoFocus={adding?(index == 0):true}
-          onChange={e => {
-            setEditValues(new Map(editValues.set(column.name, e.target.value)))
-          }}
-          error={!column.validate?.(editValues.get(column.name), rowNum)}
+        : column.type == 'checkbox' ?
+          <Checkbox className={classes.input}
+                    value={editValues.get(column.name)?Boolean(editValues.get(column.name)):false}
+                    onChange={e => {
+                      setEditValues(new Map(editValues.set(column.name, e.target.value)))
+                    }}
+          /> :
+          <Input  className={classes.input}
+                  type={column.type}
+                  value={editValues.get(column.name)?editValues.get(column.name):''}
+                  autoFocus={adding?(index == 0):true}
+                  onChange={e => {
+                    setEditValues(new Map(editValues.set(column.name, e.target.value)))
+                  }}
+                  error={!column.validate?.(editValues.get(column.name), rowNum)}
         />)
       :
         values.get(column.name)!

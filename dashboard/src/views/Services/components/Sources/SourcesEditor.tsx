@@ -9,7 +9,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider, Grid,
+  Divider,
 } from '@material-ui/core';
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
@@ -74,9 +74,6 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     if (serviceSources.data) {
       setService(editService)
       setSources(serviceSources.data.serviceSources)
-      return true
-    } else {
-      return false
     }
   }
 
@@ -112,7 +109,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     return sources?!!sources.find(p => p.name == name):false
   }
 
-  const ProfileCard = () => {
+  const SourcesCard = () => {
     return (
       <Card className={classes.card}>
         <CardHeader
@@ -127,20 +124,19 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
                 startIcon={<AddIcon/>}
                 variant="contained"
               >
-                Add New Service
+                Add New Source
               </Button>
             </Box>
           }
-          title={editService?`Edit Service Profile '${editService}'`:'New Services Profile'}
+          title={editService?`Edit Service '${editService}'`:'New Service'}
         />
         <CardContent>
           <ServiceSources  newService={!editService}
                            service={service}
                            setService={setService}
-                           doesSourceExist={doesSourceExist}
-                           services={sources}
+                           doesServiceExist={doesSourceExist}
+                           sources={sources}
                            addSource={addService}
-                           allowEdit={true}
                            confirmRemove={true}
                            onSourceAdded={
                              service => {
@@ -166,7 +162,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
                              }
                            }
           />
-        </CardContent>)
+        </CardContent>
       </Card>)
   }
 
@@ -176,7 +172,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     <Card
       className={clsx(classes.root)}
     >
-      <ProfileCard />
+      <SourcesCard />
       <Divider />
       {error && <Alert
         className={classes.alert}
@@ -199,7 +195,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
           onClick={() => submit()}
           variant="contained"
         >
-          {!editService?'Add New Profile':'Save'}
+          {!editService?'Add New Service':'Save'}
         </Button>
       </Box>
     </Card>

@@ -1,6 +1,6 @@
 package com.vyulabs.update.distribution.graphql
 
-import com.vyulabs.update.common.config.{GitConfig, ServiceSourcesConfig, SourceConfig}
+import com.vyulabs.update.common.config.{GitConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
@@ -64,7 +64,6 @@ object GraphqlTypes {
   implicit val ServicesProfileType = deriveObjectType[Unit, ServicesProfile]()
   implicit val GitConfigType = deriveObjectType[Unit, GitConfig]()
   implicit val SourceConfigType = deriveObjectType[Unit, SourceConfig]()
-  implicit val ServiceSourcesConfigType = deriveObjectType[Unit, ServiceSourcesConfig]()
   implicit val DeveloperVersionType = deriveObjectType[Unit, DeveloperVersion]()
   implicit val DistributionVersionType = deriveObjectType[Unit, DeveloperDistributionVersion]()
   implicit val ClientVersionType = deriveObjectType[Unit, ClientVersion]()

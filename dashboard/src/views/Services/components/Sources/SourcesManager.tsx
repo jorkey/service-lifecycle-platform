@@ -9,7 +9,7 @@ import {
   Divider, Box, Link,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import SourcesTable from './SourcesTable';
+import ServicesTable from './ServicesTable';
 import {useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
 
@@ -61,7 +61,7 @@ const SourcesManager = () => {
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <SourcesTable/>
+          <ServicesTable/>
         </div>
       </CardContent>
     </Card>
