@@ -68,9 +68,19 @@ const EditTableRow = (params: EditTableRowParams) => {
     setEditValues(new Map())
   }
 
+  let jsonObject = {};
+  values.forEach((value, key) => {
+    // @ts-ignore
+    jsonObject[key] = value
+  });
+  console.log('values ' + JSON.stringify(jsonObject))
+
+  console.log('value ' + String(editValues.get('cloneSubmodules')?Boolean(editValues.get('cloneSubmodules')):false))
+
   const valuesColumns = columns.map((column, index) =>
     (<TableCell key={index} className={column.className}
                 onClick={() => {
+                  console.log('click')
                   if (!adding && column.editable && editColumn != column.name) {
                     setEditColumn(column.name)
                     setEditOldValues(new Map(values))
@@ -84,33 +94,36 @@ const EditTableRow = (params: EditTableRowParams) => {
                   }
                 }}
     >
-      {adding || (editing && editColumn === column.name) ?
-        (column.select ?
-          <Select className={classes.input}
-                  autoFocus={true}
-                  value={editValues.get(column.name)?editValues.get(column.name):''}
+      { column.type == 'checkbox' ?
+        <Checkbox className={classes.input}
+                  value={
+                    editValues.get(column.name)?Boolean(editValues.get(column.name)):false
+                  }
                   onChange={e => {
-                    setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
+                    console.log('on change ' + e.target.value)
+                    setEditValues(new Map(editValues.set(column.name, e.target.value)))
                   }}
-          >
-            { column.select.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
-          </Select>
-        : column.type == 'checkbox' ?
-          <Checkbox className={classes.input}
-                    value={editValues.get(column.name)?Boolean(editValues.get(column.name)):false}
+        /> :
+        (adding || (editing && editColumn === column.name)) ?
+          (column.select ?
+            <Select className={classes.input}
+                    autoFocus={true}
+                    value={editValues.get(column.name)?editValues.get(column.name):''}
+                    onChange={e => {
+                      setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
+                    }}
+            >
+              { column.select.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
+            </Select> :
+            <Input  className={classes.input}
+                    type={column.type}
+                    value={editValues.get(column.name)?editValues.get(column.name):''}
+                    autoFocus={adding?(index == 0):true}
                     onChange={e => {
                       setEditValues(new Map(editValues.set(column.name, e.target.value)))
                     }}
-          /> :
-          <Input  className={classes.input}
-                  type={column.type}
-                  value={editValues.get(column.name)?editValues.get(column.name):''}
-                  autoFocus={adding?(index == 0):true}
-                  onChange={e => {
-                    setEditValues(new Map(editValues.set(column.name, e.target.value)))
-                  }}
-                  error={!column.validate?.(editValues.get(column.name), rowNum)}
-        />)
+                    error={(column.validate)?!column.validate(editValues.get(column.name), rowNum):false}
+            />)
       :
         values.get(column.name)!
       }

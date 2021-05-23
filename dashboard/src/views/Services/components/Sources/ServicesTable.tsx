@@ -2,9 +2,7 @@ import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {
-  useDeveloperServicesQuery,
-  useRemoveServicesProfileMutation,
-  useServiceProfilesQuery, useServiceSourcesQuery,
+  useDeveloperServicesQuery, useRemoveServiceSourcesMutation
 } from '../../../../generated/graphql';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -26,18 +24,18 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface ActionsProps {
-  profile: string,
+  service: string,
   removing: (promise: Promise<void>) => void
 }
 
 const Actions: React.FC<ActionsProps> = (props) => {
-  const { profile, removing } = props
+  const { service, removing } = props
   const [ deleteConfirm, setDeleteConfirm ] = useState(false)
 
   const routeMatch = useRouteMatch();
 
-  const [removeProfile] = useRemoveServicesProfileMutation({
-    variables: { profile: profile },
+  const [removeService] = useRemoveServiceSourcesMutation({
+    variables: { service: service },
     onError(err) { console.log(err) }
   })
 
@@ -46,7 +44,7 @@ const Actions: React.FC<ActionsProps> = (props) => {
       <IconButton
         title="Edit"
         component={RouterLink}
-        to={`${routeMatch.url}/edit/${profile}`}
+        to={`${routeMatch.url}/edit/${service}`}
       >
         <EditIcon/>
       </IconButton>
@@ -58,8 +56,8 @@ const Actions: React.FC<ActionsProps> = (props) => {
       </IconButton>
       <ConfirmDialog
         close={() => { setDeleteConfirm(false) }}
-        message={`Do you want to delete service '${profile}'?`}
-        onConfirm={() => removing(removeProfile({ variables: { profile: profile } }).then(() => {}))}
+        message={`Do you want to delete service '${service}'?`}
+        onConfirm={() => removing(removeService({ variables: { service: service } }).then(() => {}))}
         open={deleteConfirm}
       />
     </>)
@@ -91,7 +89,7 @@ const ServicesTable = () => {
               <TableCell className={classes.serviceColumn}>{service}</TableCell>
               <TableCell className={classes.actionsColumn}><Actions
                 removing={promise => promise.then(() => refetch())}
-                profile={service}
+                service={service}
               /></TableCell>
             </TableRow>)
           )}

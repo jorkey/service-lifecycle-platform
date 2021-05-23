@@ -69,6 +69,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
 
   if (editService && !service) {
     if (!serviceSources.data && !serviceSources.loading) {
+      console.log('getServiceSources ' + editService)
       getServiceSources({variables: {service: editService}})
     }
     if (serviceSources.data) {

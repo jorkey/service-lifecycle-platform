@@ -45,17 +45,14 @@ const ServiceSources = (params: ServiceSourcesParams) => {
                   disabled={!newService}
                   error={(newService && (!service || (doesServiceExist?.(service))))}
                   fullWidth
-                  helperText={(newService && service && doesServiceExist?.(service)) ? 'Profile already exists': ''}
-                  label="Profile"
+                  helperText={(newService && service && doesServiceExist?.(service)) ? 'Service already exists': ''}
+                  label="Service"
                   margin="normal"
                   onChange={(e: any) => setService?.(e.target.value)}
                   required
                   value={service?service:''}
                   variant="outlined"
-      /> : <Typography className={classes.serviceName}
-                  variant="h6"
-      >Profile '{service}'
-    </Typography>}
+      /> : null }
     <SourcesTable sources={sources}
                   addSource={addSource}
                   confirmRemove={confirmRemove}

@@ -31,18 +31,18 @@ const Services = () => {
             <Route exact path={`${routeMatch.url}/sources`}
                    component={SourcesManager}/>
             <Route exact path={`${routeMatch.url}/sources/new`}
-                   render={(props) => <SourcesEditor fromUrl={routeMatch.url} {...props} /> }>
+                   render={(props) => <SourcesEditor fromUrl={`${routeMatch.url}/sources`} {...props} /> }>
             </Route>
-            <Route exact path={`${routeMatch.url}/sources/edit/:source`}
-                   render={(props) => <SourcesEditor fromUrl={routeMatch.url} {...props} /> }>
+            <Route exact path={`${routeMatch.url}/sources/edit/:service`}
+                   render={(props) => <SourcesEditor fromUrl={`${routeMatch.url}/sources`} {...props} /> }>
             </Route>
             <Route exact path={`${routeMatch.url}/profiles`}
               component={ProfilesManager}/>
             <Route exact path={`${routeMatch.url}/profiles/new`}
-              render={(props) => <ProfileEditor fromUrl={routeMatch.url} {...props} /> }>
+              render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
             </Route>
             <Route exact path={`${routeMatch.url}/profiles/edit/:profile`}
-              render={(props) => <ProfileEditor fromUrl={routeMatch.url} {...props} /> }>
+              render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
             </Route>
           </Switch>
         </Grid>
