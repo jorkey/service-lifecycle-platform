@@ -92,7 +92,7 @@ const ProvidersManager = () => {
           if (!value) {
             return false
           }
-          new URL(value)
+          new URL(value as string)
           return true
         } catch {
           return false
@@ -110,7 +110,7 @@ const ProvidersManager = () => {
           if (!value) {
             return false
           }
-          return !isNaN(parseInt(value))
+          return !isNaN(value as number)
         } catch {
           return false
         }
@@ -161,21 +161,21 @@ const ProvidersManager = () => {
             onRowAdded={(row) => {
               setAddNewRow(false)
               addProvider({ variables: {
-                distribution: row.get('distribution')!,
-                url: row.get('url')!,
-                uploadStateIntervalSec: parseInt(row.get('uploadStateInterval')!)
+                distribution: row.get('distribution')! as string,
+                url: row.get('url')! as string,
+                uploadStateIntervalSec: row.get('uploadStateInterval')! as number
               }}).then(() => refetchProviders())
             }}
             onRowChange={(row, oldValues, newValues) => {
               setAddNewRow(false)
               changeProvider({ variables: {
-                  distribution: newValues.get('distribution')!,
-                  url: newValues.get('url')!,
-                  uploadStateIntervalSec: parseInt(newValues.get('uploadStateInterval')!)
+                  distribution: newValues.get('distribution')! as string,
+                  url: newValues.get('url')! as string,
+                  uploadStateIntervalSec: newValues.get('uploadStateInterval')! as number
                 }}).then(() => refetchProviders())
             }}
             onRowRemove={(row, values) =>
-              setDeleteConfirm(values.get('distribution')!)
+              setDeleteConfirm(values.get('distribution')! as string)
             }
           />
           { deleteConfirm ? (

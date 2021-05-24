@@ -145,21 +145,21 @@ const ConsumersManager = () => {
             onRowAdded={(row) => {
               setAddNewRow(false)
               addConsumer({ variables: {
-                distribution: row.get('distribution')!,
-                profile: row.get('profile')!,
-                testConsumer: row.get('testConsumer')
+                distribution: row.get('distribution')! as string,
+                profile: row.get('profile')! as string,
+                testConsumer: row.get('testConsumer') as string
               }}).then(() => refetchConsumers())
             }}
             onRowChange={(row, oldValues, newValues) => {
               setAddNewRow(false)
               changeConsumer({ variables: {
-                  distribution: newValues.get('distribution')!,
-                  profile: newValues.get('profile')!,
-                  testConsumer: newValues.get('testConsumer')
+                  distribution: newValues.get('distribution')! as string,
+                  profile: newValues.get('profile')! as string,
+                  testConsumer: newValues.get('testConsumer') as string
                 }}).then(() => refetchConsumers())
             }}
             onRowRemove={(row, values) =>
-              setDeleteConfirm(values.get('distribution')!)
+              setDeleteConfirm(values.get('distribution')! as string)
             }
           />
           { deleteConfirm ? (

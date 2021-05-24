@@ -9,6 +9,7 @@ const useStyles = makeStyles(theme => ({
     marginTop: 20
   },
   nameColumn: {
+    width: '250px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -17,6 +18,7 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: '16px'
   },
   cloneSubmodulesColumn: {
+    width: '100px',
     padding: '4px',
     paddingLeft: '16px'
   }
@@ -49,7 +51,7 @@ export const SourcesTable = (props: SourceTableParams) => {
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
-            return index != rowNum && row.get('service') == value
+            return index != rowNum && row.get('name') == value
           })
       }
     },
@@ -60,7 +62,7 @@ export const SourcesTable = (props: SourceTableParams) => {
       editable: true,
       validate: (value, rowNum) => {
         try {
-          return value?!!new URL(value):false
+          return value?!!new URL(value as string):false
         } catch (ex) {
           return false
         }
@@ -69,7 +71,7 @@ export const SourcesTable = (props: SourceTableParams) => {
     {
       name: 'cloneSubmodules',
       headerName: 'Clone Submodules',
-      className: classes.urlColumn,
+      className: classes.cloneSubmodulesColumn,
       type: 'checkbox',
       editable: true,
       validate: (value, rowNum) => {
@@ -92,19 +94,20 @@ export const SourcesTable = (props: SourceTableParams) => {
       rows={rows}
       addNewRow={addSource}
       onRowAdded={ (columns) => {
-        onSourceAdded?.({ name: columns.get('name')!,
-          git: { url: columns.get('url')!, cloneSubmodules: Boolean(columns.get('cloneSubmodules')) } }) }}
+        onSourceAdded?.({ name: columns.get('name')! as string,
+          git: { url: columns.get('url')! as string, cloneSubmodules: columns.get('cloneSubmodules') as boolean } }) }}
       onRowAddCancelled={onSourceAddCancelled}
       onRowChange={ (row, oldValues, newValues) => {
-        onSourceChange?.(sources[row], { name: newValues.get('name')!,
-          git: { url: newValues.get('url')!, cloneSubmodules: Boolean(newValues.get('cloneSubmodules')) } }) }}
+        console.log('--- cloneSubmodules ' + newValues.get('cloneSubmodules'))
+        onSourceChange?.(sources[row], { name: newValues.get('name')! as string,
+          git: { url: newValues.get('url')! as string, cloneSubmodules: newValues.get('cloneSubmodules') as boolean } }) }}
       onRowRemove={ (row) => {
         return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemove?.(sources[row])
       }}
     />
     { deleteConfirm ? (
       <ConfirmDialog
-        message={`Do you want to delete source '${deleteConfirm}'?`}
+        message={`Do you want to delete source '${deleteConfirm.name}'?`}
         open={true}
         close={() => { setDeleteConfirm(undefined) }}
         onConfirm={() => {

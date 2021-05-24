@@ -15,6 +15,7 @@ import {makeStyles} from "@material-ui/core/styles";
 import DeleteIcon from "@material-ui/icons/Delete";
 import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
 import RevertIcon from "@material-ui/icons/NotInterestedOutlined";
+import {number} from "prop-types";
 
 const useStyles = makeStyles(theme => ({
   actionsColumn: {
@@ -35,21 +36,21 @@ export interface EditColumnParams {
   type?: string,
   select?: string[],
   editable?: boolean,
-  validate?: (value: string | undefined, rowNum: number | undefined) => boolean
+  validate?: (value: string|number|boolean|undefined, rowNum: number|undefined) => boolean
 }
 
 interface EditTableRowParams {
   columns: Array<EditColumnParams>,
-  values: Map<string, string>,
+  values: Map<string, string|number|boolean>,
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
   deleteIcon?: JSX.Element,
-  onAdd?: (values: Map<string, string>) => void,
+  onAdd?: (values: Map<string, string|number|boolean>) => void,
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
-  onChange?: (oldValues: Map<string, string>, newValues: Map<string, string>) => void,
-  onRemove?: (values: Map<string, string>) => void
+  onChange?: (oldValues: Map<string, string|number|boolean>, newValues: Map<string, string|number|boolean>) => void,
+  onRemove?: (values: Map<string, string|number|boolean>) => void
 }
 
 
@@ -57,8 +58,8 @@ const EditTableRow = (params: EditTableRowParams) => {
   const { rowNum, columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
 
   const [editColumn, setEditColumn] = useState<string>()
-  const [editOldValues, setEditOldValues] = useState<Map<string, string>>(new Map())
-  const [editValues, setEditValues] = useState<Map<string, string>>(new Map())
+  const [editOldValues, setEditOldValues] = useState<Map<string, string|number|boolean>>(new Map())
+  const [editValues, setEditValues] = useState<Map<string, string|number|boolean>>(new Map())
 
   const classes = useStyles()
 
@@ -68,19 +69,9 @@ const EditTableRow = (params: EditTableRowParams) => {
     setEditValues(new Map())
   }
 
-  let jsonObject = {};
-  values.forEach((value, key) => {
-    // @ts-ignore
-    jsonObject[key] = value
-  });
-  console.log('values ' + JSON.stringify(jsonObject))
-
-  console.log('value ' + String(editValues.get('cloneSubmodules')?Boolean(editValues.get('cloneSubmodules')):false))
-
   const valuesColumns = columns.map((column, index) =>
     (<TableCell key={index} className={column.className}
                 onClick={() => {
-                  console.log('click')
                   if (!adding && column.editable && editColumn != column.name) {
                     setEditColumn(column.name)
                     setEditOldValues(new Map(values))
@@ -96,12 +87,10 @@ const EditTableRow = (params: EditTableRowParams) => {
     >
       { column.type == 'checkbox' ?
         <Checkbox className={classes.input}
-                  value={
-                    editValues.get(column.name)?Boolean(editValues.get(column.name)):false
-                  }
-                  onChange={e => {
-                    console.log('on change ' + e.target.value)
-                    setEditValues(new Map(editValues.set(column.name, e.target.value)))
+                  checked={editing?editValues.get(column.name) as boolean:values.get(column.name) as boolean}
+                  onChange={() => {
+                    const newValue = !(editValues.get(column.name) as boolean)
+                    setEditValues(editValues => new Map(editValues.set(column.name, newValue)))
                   }}
         /> :
         (adding || (editing && editColumn === column.name)) ?
@@ -190,14 +179,14 @@ const EditTableRow = (params: EditTableRowParams) => {
 interface EditTableParams {
   className: string,
   columns: Array<EditColumnParams>,
-  rows: Array<Map<string, string>>,
+  rows: Array<Map<string, string|number|boolean>>,
   deleteIcon?: JSX.Element,
   addNewRow?: boolean,
-  onRowAdded?: (values: Map<string, string>) => void,
+  onRowAdded?: (values: Map<string, string|number|boolean>) => void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
-  onRowChange?: (row: number, oldValues: Map<string, string>, newValues: Map<string, string>) => void,
-  onRowRemove?: (row: number, values: Map<string, string>) => void
+  onRowChange?: (row: number, oldValues: Map<string, string|number|boolean>, newValues: Map<string, string|number|boolean>) => void,
+  onRowRemove?: (row: number, values: Map<string, string|number|boolean>) => void
 }
 
 export const EditTable = (props: EditTableParams) => {

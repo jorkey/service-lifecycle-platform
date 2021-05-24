@@ -69,7 +69,6 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
 
   if (editService && !service) {
     if (!serviceSources.data && !serviceSources.loading) {
-      console.log('getServiceSources ' + editService)
       getServiceSources({variables: {service: editService}})
     }
     if (serviceSources.data) {
@@ -93,7 +92,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
   }
 
   const validate: () => boolean = () => {
-    return !!service && (!!editService || !doesSourceExist(service)) && sources.length != 0
+    return !!service && (!!editService || !doesServiceExist(service)) && sources.length != 0
   }
 
   const submit = () => {
@@ -106,8 +105,8 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     }
   }
 
-  const doesSourceExist: (source: string) => boolean = (name) => {
-    return sources?!!sources.find(p => p.name == name):false
+  const doesServiceExist: (service: string) => boolean = (name) => {
+    return services?.developerServices?!!services?.developerServices.find(s => s == name):false
   }
 
   const SourcesCard = () => {
@@ -135,13 +134,13 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
           <ServiceSources  newService={!editService}
                            service={service}
                            setService={setService}
-                           doesServiceExist={doesSourceExist}
+                           doesServiceExist={doesServiceExist}
                            sources={sources}
                            addSource={addService}
                            confirmRemove={true}
                            onSourceAdded={
-                             service => {
-                               setSources([...sources, service].sort((s1,s2) => (s1 > s2 ? 1 : -1)))
+                             source => {
+                               setSources([...sources, source])
                                setAddService(false)
                                setChanged(true)
                              }
@@ -151,14 +150,16 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
                            }}
                            onSourceChange={
                              (oldSource, newSource) => {
-                               const newServices = sources.filter(s => s != oldSource)
-                               setSources([...newServices, newSource].sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                               console.log('name ' + newSource.name)
+                               console.log('cloneSubmodules ' + newSource.git.cloneSubmodules)
+                               const newSources = sources.filter(s => s != oldSource)
+                               setSources([...newSources, newSource])
                                setChanged(true)}
                            }
                            onSourceRemove={
                              source => {
                                const newServices = sources.filter(s => s != source)
-                               setSources(newServices.sort((s1,s2) => (s1 > s2 ? 1 : -1)));
+                               setSources(newServices)
                                setChanged(true)
                              }
                            }
