@@ -29,6 +29,8 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
+export type EditColumn = string|number|boolean|undefined
+
 export interface EditColumnParams {
   name: string,
   headerName: string,
@@ -36,21 +38,21 @@ export interface EditColumnParams {
   type?: string,
   select?: string[],
   editable?: boolean,
-  validate?: (value: string|number|boolean|undefined, rowNum: number|undefined) => boolean
+  validate?: (value: EditColumn, rowNum: number|undefined) => boolean
 }
 
 interface EditTableRowParams {
   columns: Array<EditColumnParams>,
-  values: Map<string, string|number|boolean>,
+  values: Map<string, EditColumn>,
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
   deleteIcon?: JSX.Element,
-  onAdd?: (values: Map<string, string|number|boolean>) => void,
+  onAdd?: (values: Map<string, EditColumn>) => void,
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
-  onChange?: (oldValues: Map<string, string|number|boolean>, newValues: Map<string, string|number|boolean>) => void,
-  onRemove?: (values: Map<string, string|number|boolean>) => void
+  onChange?: (oldValues: Map<string, EditColumn>, newValues: Map<string, EditColumn>) => void,
+  onRemove?: (values: Map<string, EditColumn>) => void
 }
 
 
@@ -58,8 +60,8 @@ const EditTableRow = (params: EditTableRowParams) => {
   const { rowNum, columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
 
   const [editColumn, setEditColumn] = useState<string>()
-  const [editOldValues, setEditOldValues] = useState<Map<string, string|number|boolean>>(new Map())
-  const [editValues, setEditValues] = useState<Map<string, string|number|boolean>>(new Map())
+  const [editOldValues, setEditOldValues] = useState<Map<string, EditColumn>>(new Map())
+  const [editValues, setEditValues] = useState<Map<string, EditColumn>>(new Map())
 
   const classes = useStyles()
 
@@ -87,10 +89,10 @@ const EditTableRow = (params: EditTableRowParams) => {
     >
       { column.type == 'checkbox' ?
         <Checkbox className={classes.input}
-                  checked={editing?editValues.get(column.name) as boolean:values.get(column.name) as boolean}
+                  checked={adding || editing ? editValues.get(column.name) ? editValues.get(column.name) as boolean : false : values.get(column.name) as boolean}
                   onChange={() => {
-                    const newValue = !(editValues.get(column.name) as boolean)
-                    setEditValues(editValues => new Map(editValues.set(column.name, newValue)))
+                    const value = adding || editing ? editValues.get(column.name) as boolean : values.get(column.name) as boolean
+                    setEditValues(editValues => new Map(editValues.set(column.name, !value)))
                   }}
         /> :
         (adding || (editing && editColumn === column.name)) ?
@@ -113,9 +115,9 @@ const EditTableRow = (params: EditTableRowParams) => {
                     }}
                     error={(column.validate)?!column.validate(editValues.get(column.name), rowNum):false}
             />)
-      :
-        values.get(column.name)!
-      }
+      : adding || editing ? editValues.get(column.name)!
+      : values.get(column.name)!
+    }
     </TableCell>))
 
   return (<TableRow>
@@ -179,14 +181,14 @@ const EditTableRow = (params: EditTableRowParams) => {
 interface EditTableParams {
   className: string,
   columns: Array<EditColumnParams>,
-  rows: Array<Map<string, string|number|boolean>>,
+  rows: Array<Map<string, EditColumn>>,
   deleteIcon?: JSX.Element,
   addNewRow?: boolean,
-  onRowAdded?: (values: Map<string, string|number|boolean>) => void,
+  onRowAdded?: (values: Map<string, EditColumn>) => void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
-  onRowChange?: (row: number, oldValues: Map<string, string|number|boolean>, newValues: Map<string, string|number|boolean>) => void,
-  onRowRemove?: (row: number, values: Map<string, string|number|boolean>) => void
+  onRowChange?: (row: number, oldValues: Map<string, EditColumn>, newValues: Map<string, EditColumn>) => void,
+  onRowRemove?: (row: number, values: Map<string, EditColumn>) => void
 }
 
 export const EditTable = (props: EditTableParams) => {

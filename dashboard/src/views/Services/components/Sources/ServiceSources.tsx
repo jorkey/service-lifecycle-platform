@@ -1,9 +1,9 @@
 import TextField from "@material-ui/core/TextField";
 import React, {useState} from "react";
-import {SourcesTable} from "./SourcesTable";
 import {Typography} from '@material-ui/core';
 import {makeStyles} from "@material-ui/core/styles";
 import {SourceConfig} from "../../../../generated/graphql";
+import SourcesTable from "./SourcesTable";
 
 const useStyles = makeStyles(theme => ({
   newServiceName: {

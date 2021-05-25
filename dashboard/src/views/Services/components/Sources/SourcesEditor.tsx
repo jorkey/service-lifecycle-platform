@@ -128,7 +128,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
               </Button>
             </Box>
           }
-          title={editService?`Edit Service '${editService}'`:'New Service'}
+          title={editService?`Edit Development Service '${editService}'`:'New Development Service'}
         />
         <CardContent>
           <ServiceSources  newService={!editService}
@@ -150,8 +150,6 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
                            }}
                            onSourceChange={
                              (oldSource, newSource) => {
-                               console.log('name ' + newSource.name)
-                               console.log('cloneSubmodules ' + newSource.git.cloneSubmodules)
                                const newSources = sources.filter(s => s != oldSource)
                                setSources([...newSources, newSource])
                                setChanged(true)}

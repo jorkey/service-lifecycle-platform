@@ -1,8 +1,10 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import EditTable, {EditColumnParams} from "../../../../common/EditTable";
+import EditTable, {EditColumn, EditColumnParams} from "../../../../common/EditTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
+import {number} from "prop-types";
+import ServiceSources from "./ServiceSources";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -34,7 +36,7 @@ interface SourceTableParams {
   onSourceRemove?: (source: SourceConfig) => void
 }
 
-export const SourcesTable = (props: SourceTableParams) => {
+const SourcesTable = (props: SourceTableParams) => {
   const { sources, addSource, confirmRemove,
     onSourceAdded, onSourceAddCancelled, onSourceChange, onSourceRemove } = props;
 
@@ -80,11 +82,11 @@ export const SourcesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = new Array<Map<string, string>>()
-  sources.forEach(source => { rows.push(new Map([
+  const rows = new Array<Map<string, EditColumn>>()
+  sources.forEach(source => { rows.push(new Map<string, EditColumn>([
     ['name', source.name],
     ['url', source.git.url],
-    ['cloneSubmodules', String(source.git.cloneSubmodules)]
+    ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false]
   ])) })
 
   return (<>
@@ -117,3 +119,5 @@ export const SourcesTable = (props: SourceTableParams) => {
       />) : null }
   </>)
 }
+
+export default SourcesTable;

@@ -56,7 +56,7 @@ const SourcesManager = () => {
             </Button>
           </Box>
         }
-        title={'Developer Services'}
+        title={'Sources Of Development Services'}
       />
       <Divider/>
       <CardContent className={classes.content}>
