@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 
 import Button from '@material-ui/core/Button';
-import {NavLink as RouterLink, RouteComponentProps, useHistory} from 'react-router-dom'
+import {NavLink as RouterLink, Redirect, RouteComponentProps, useHistory} from 'react-router-dom'
 
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -173,8 +173,6 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
 
   const editService = props.match.params.service
 
-  const history = useHistory()
-
   const [addSources, { data: addSourcesData, error: addSourcesError }] =
     useAddServiceSourcesMutation({
       onError(err) { console.log(err) }
@@ -186,7 +184,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     })
 
   if (addSourcesData || changeSourcesData) {
-    history.push(props.fromUrl)
+    return <Redirect to={props.fromUrl} />
   }
 
   const submit = () => {
@@ -201,6 +199,8 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
 
   const error = addSourcesError?addSourcesError.message:changeSourcesError?changeSourcesError.message:''
 
+  console.log('render ==========')
+
   return (
     <Card
       className={clsx(classes.root)}
@@ -208,8 +208,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
       <SourcesCard editService={editService} onServiceChanged={(service, sources, readyToSave) => {
         setService(service)
         setSources(sources)
-        setReadyToSave(readyToSave)
-      }
+        setReadyToSave(readyToSave)}
       }/>
       <Divider />
       {error && <Alert
