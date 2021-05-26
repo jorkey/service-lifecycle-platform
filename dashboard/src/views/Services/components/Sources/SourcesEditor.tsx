@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import {NavLink as RouterLink, RouteComponentProps, useHistory} from 'react-router-dom'
@@ -19,7 +19,8 @@ import {
   useAddServiceSourcesMutation,
   useChangeServiceSourcesMutation, useDeveloperServicesQuery, useServiceSourcesLazyQuery,
 } from "../../../../generated/graphql";
-import ServiceSources from "./ServiceSources";
+import TextField from "@material-ui/core/TextField";
+import SourcesTable from "./SourcesTable";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -27,6 +28,16 @@ const useStyles = makeStyles(theme => ({
   },
   card: {
     marginTop: 25
+  },
+  newServiceName: {
+    height: 60,
+    margin: 0
+  },
+  serviceName: {
+    paddingLeft: 10,
+    paddingTop: 15,
+    height: 60,
+    margin: 0
   },
   controls: {
     marginTop: 25,
@@ -43,29 +54,34 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface ServiceRouteParams {
-  service?: string
+interface SourcesCardParams {
+  editService: string | undefined
+  onServiceChanged: (service: string, sources: SourceConfig[], readyToSave: boolean) => void
 }
 
-interface ServiceSourcesEditorParams extends RouteComponentProps<ServiceRouteParams> {
-  fromUrl: string
-}
+const SourcesCard = (params: SourcesCardParams) => {
+  const { editService, onServiceChanged } = params
+  const classes = useStyles()
 
-const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
   const {data: services} = useDeveloperServicesQuery({ fetchPolicy: 'no-cache' })
   const [getServiceSources, serviceSources] = useServiceSourcesLazyQuery({ fetchPolicy: 'no-cache' })
 
-  const classes = useStyles()
-
   const [service, setService] = useState('');
   const [sources, setSources] = useState(new Array<SourceConfig>());
-  const [changed, setChanged] = useState(false);
 
-  const [addService, setAddService] = useState(false);
+  const [addSource, setAddSource] = useState(false);
 
-  const editService = props.match.params.service
+  useEffect(() => {
+    onServiceChanged(service, sources, validate())
+  }, [service, sources])
 
-  const history = useHistory()
+  const doesServiceExist: (service: string) => boolean = (name) => {
+    return services?.developerServices?!!services?.developerServices.find(s => s == name):false
+  }
+
+  const validate: () => boolean = () => {
+    return !!service && (!!editService || !doesServiceExist(service)) && sources.length != 0
+  }
 
   if (editService && !service) {
     if (!serviceSources.data && !serviceSources.loading) {
@@ -76,6 +92,88 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
       setSources(serviceSources.data.serviceSources)
     }
   }
+
+  return (<div>
+    <Card className={classes.card}>
+      <CardHeader
+        action={
+          <Box
+            className={classes.controls}
+          >
+            <Button
+              className={classes.control}
+              color="primary"
+              onClick={() => setAddSource(true)}
+              startIcon={<AddIcon/>}
+              variant="contained"
+            >
+              Add New Source
+            </Button>
+          </Box>
+        }
+        title={editService?`Edit Development Service '${editService}'`:'New Development Service'}
+      />
+      <CardContent>
+        { !editService ?
+          <TextField  className={classes.newServiceName}
+                      autoFocus
+                      error={!!service && doesServiceExist?.(service)}
+                      fullWidth
+                      helperText={(service && doesServiceExist?.(service)) ? 'Service already exists': ''}
+                      label="Service"
+                      margin="normal"
+                      onChange={e => {setService(e.target.value)}}
+                      required
+                      value={service?service:''}
+                      variant="outlined"
+          /> : null }
+        <SourcesTable  sources={sources}
+                       addSource={addSource}
+                       confirmRemove={true}
+                       onSourceAdded={
+                         source => {
+                           setSources([...sources, source])
+                           setAddSource(false)
+                         }
+                       }
+                       onSourceAddCancelled={() => {
+                         setAddSource(false)
+                       }}
+                       onSourceChanged={
+                         (oldSource, newSource) => {
+                           const newSources = sources.filter(s => s != oldSource)
+                           setSources([...newSources, newSource])
+                         }
+                       }
+                       onSourceRemoved={
+                         source => {
+                           const newServices = sources.filter(s => s != source)
+                           setSources(newServices)
+                         }
+                       }
+        />
+      </CardContent>
+    </Card></div>)
+}
+
+interface ServiceRouteParams {
+  service?: string
+}
+
+interface ServiceSourcesEditorParams extends RouteComponentProps<ServiceRouteParams> {
+    fromUrl: string
+}
+
+const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
+  const classes = useStyles()
+
+  const [service, setService] = useState('');
+  const [sources, setSources] = useState(new Array<SourceConfig>());
+  const [readyToSave, setReadyToSave] = useState(false);
+
+  const editService = props.match.params.service
+
+  const history = useHistory()
 
   const [addSources, { data: addSourcesData, error: addSourcesError }] =
     useAddServiceSourcesMutation({
@@ -91,12 +189,8 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     history.push(props.fromUrl)
   }
 
-  const validate: () => boolean = () => {
-    return !!service && (!!editService || !doesServiceExist(service)) && sources.length != 0
-  }
-
   const submit = () => {
-    if (validate()) {
+    if (readyToSave) {
       if (editService) {
         changeSources({variables: { service: service, sources: sources }} )
       } else {
@@ -105,74 +199,18 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     }
   }
 
-  const doesServiceExist: (service: string) => boolean = (name) => {
-    return services?.developerServices?!!services?.developerServices.find(s => s == name):false
-  }
-
-  const SourcesCard = () => {
-    return (
-      <Card className={classes.card}>
-        <CardHeader
-          action={
-            <Box
-              className={classes.controls}
-            >
-              <Button
-                className={classes.control}
-                color="primary"
-                onClick={() => setAddService(true)}
-                startIcon={<AddIcon/>}
-                variant="contained"
-              >
-                Add New Source
-              </Button>
-            </Box>
-          }
-          title={editService?`Edit Development Service '${editService}'`:'New Development Service'}
-        />
-        <CardContent>
-          <ServiceSources  newService={!editService}
-                           service={service}
-                           setService={setService}
-                           doesServiceExist={doesServiceExist}
-                           sources={sources}
-                           addSource={addService}
-                           confirmRemove={true}
-                           onSourceAdded={
-                             source => {
-                               setSources([...sources, source])
-                               setAddService(false)
-                               setChanged(true)
-                             }
-                           }
-                           onSourceAddCancelled={() => {
-                             setAddService(false)
-                           }}
-                           onSourceChange={
-                             (oldSource, newSource) => {
-                               const newSources = sources.filter(s => s != oldSource)
-                               setSources([...newSources, newSource])
-                               setChanged(true)}
-                           }
-                           onSourceRemove={
-                             source => {
-                               const newServices = sources.filter(s => s != source)
-                               setSources(newServices)
-                               setChanged(true)
-                             }
-                           }
-          />
-        </CardContent>
-      </Card>)
-  }
-
   const error = addSourcesError?addSourcesError.message:changeSourcesError?changeSourcesError.message:''
 
   return (
     <Card
       className={clsx(classes.root)}
     >
-      <SourcesCard />
+      <SourcesCard editService={editService} onServiceChanged={(service, sources, readyToSave) => {
+        setService(service)
+        setSources(sources)
+        setReadyToSave(readyToSave)
+      }
+      }/>
       <Divider />
       {error && <Alert
         className={classes.alert}
@@ -191,7 +229,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
         <Button
           className={classes.control}
           color="primary"
-          disabled={!changed || !validate()}
+          disabled={!readyToSave}
           onClick={() => submit()}
           variant="contained"
         >

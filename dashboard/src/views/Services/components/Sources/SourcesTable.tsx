@@ -3,8 +3,6 @@ import {makeStyles} from "@material-ui/core/styles";
 import EditTable, {EditColumn, EditColumnParams} from "../../../../common/EditTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
-import {number} from "prop-types";
-import ServiceSources from "./ServiceSources";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -32,13 +30,13 @@ interface SourceTableParams {
   confirmRemove?: boolean
   onSourceAdded?: (source: SourceConfig) => void
   onSourceAddCancelled?: () => void
-  onSourceChange?: (oldSource: SourceConfig, newSource: SourceConfig) => void
-  onSourceRemove?: (source: SourceConfig) => void
+  onSourceChanged?: (oldSource: SourceConfig, newSource: SourceConfig) => void
+  onSourceRemoved?: (source: SourceConfig) => void
 }
 
 const SourcesTable = (props: SourceTableParams) => {
   const { sources, addSource, confirmRemove,
-    onSourceAdded, onSourceAddCancelled, onSourceChange, onSourceRemove } = props;
+    onSourceAdded, onSourceAddCancelled, onSourceChanged, onSourceRemoved } = props;
 
   const [ deleteConfirm, setDeleteConfirm ] = useState<SourceConfig>()
 
@@ -100,11 +98,10 @@ const SourcesTable = (props: SourceTableParams) => {
           git: { url: columns.get('url')! as string, cloneSubmodules: columns.get('cloneSubmodules') as boolean } }) }}
       onRowAddCancelled={onSourceAddCancelled}
       onRowChange={ (row, oldValues, newValues) => {
-        console.log('--- cloneSubmodules ' + newValues.get('cloneSubmodules'))
-        onSourceChange?.(sources[row], { name: newValues.get('name')! as string,
+        onSourceChanged?.(sources[row], { name: newValues.get('name')! as string,
           git: { url: newValues.get('url')! as string, cloneSubmodules: newValues.get('cloneSubmodules') as boolean } }) }}
       onRowRemove={ (row) => {
-        return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemove?.(sources[row])
+        return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemoved?.(sources[row])
       }}
     />
     { deleteConfirm ? (
@@ -113,7 +110,7 @@ const SourcesTable = (props: SourceTableParams) => {
         open={true}
         close={() => { setDeleteConfirm(undefined) }}
         onConfirm={() => {
-          onSourceRemove?.(deleteConfirm)
+          onSourceRemoved?.(deleteConfirm)
           setDeleteConfirm(undefined)
         }}
       />) : null }
