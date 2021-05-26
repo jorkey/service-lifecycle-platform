@@ -88,8 +88,8 @@ const Sidebar = (props:any) => {
       icon: <BubbleChartIcon />,
       pages: [
         {
-          title: 'Sources',
-          href: '/services/sources',
+          title: 'Development',
+          href: '/services/development',
         },
         {
           title: 'Profiles',

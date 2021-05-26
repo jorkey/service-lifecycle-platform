@@ -31,7 +31,7 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-const SourcesManager = () => {
+const ServicesManager = () => {
   const classes = useStyles()
   const routeMatch = useRouteMatch();
 
@@ -56,7 +56,7 @@ const SourcesManager = () => {
             </Button>
           </Box>
         }
-        title={'Sources Of Development Services'}
+        title={'Development Services'}
       />
       <Divider/>
       <CardContent className={classes.content}>
@@ -68,4 +68,4 @@ const SourcesManager = () => {
   );
 }
 
-export default SourcesManager
+export default ServicesManager
