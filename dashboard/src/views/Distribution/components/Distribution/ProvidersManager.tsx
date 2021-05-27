@@ -9,7 +9,7 @@ import {
   Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import EditTable, {EditColumnParams} from "../../../../common/EditTable";
+import Grid, {EditColumnParams} from "../../../../common/EditTable";
 import {
   useAddProviderMutation, useChangeProviderMutation,
   useProvidersInfoQuery, useRemoveProviderMutation,
@@ -150,7 +150,7 @@ const ProvidersManager = () => {
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <EditTable
+          <Grid
             className={classes.ProvidersTable}
             columns={columns}
             rows={rows}

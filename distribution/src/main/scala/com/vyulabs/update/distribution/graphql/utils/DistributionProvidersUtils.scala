@@ -62,7 +62,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
         val future = for {
           distributionProviderClient <- getDistributionProviderClient(distributionProvider)
           versionExists <- getDeveloperVersionsInfo(
-            service, Some(version.distribution), Some(version.developerVersion)).map(!_.isEmpty)
+            Some(service), Some(version.distribution), Some(version.developerVersion)).map(!_.isEmpty)
           _ <-
             if (!versionExists) {
               log.info(s"Download provider version ${version}")

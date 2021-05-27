@@ -127,10 +127,14 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getServiceProfiles(c.arg(OptionProfileArg)) }),
 
       // Developer versions
-      Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
-        arguments = ServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
+      Field("developerVersionsInProcess", ListType(DeveloperVersionInProcessInfoType),
+        arguments = OptionServiceArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution, UserRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
+        resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
+      Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
+        arguments = OptionServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
+        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution, UserRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(OptionServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder, UserRole.Distribution) :: Nil,

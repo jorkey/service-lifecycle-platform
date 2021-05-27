@@ -17,6 +17,8 @@ import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import spray.json._
 
+import java.util.Date
+
 trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfilesUtils
     with StateUtils with RunBuilderUtils with SprayJsonSupport {
 
@@ -27,18 +29,29 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
 
   protected implicit val executionContext: ExecutionContext
 
-  def buildDeveloperVersion(service: ServiceId, developerVersion: DeveloperVersion, author: UserId,
+  private var versionsInProcess = Seq.empty[DeveloperVersionInProcessInfo]
+
+  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: UserId,
                             sources: Seq[SourceConfig], comment: Option[String])(implicit log: Logger): TaskId = {
-    val task = taskManager.create(s"Build developer version ${developerVersion} of service ${service}",
+    val task = taskManager.create(s"Build developer version ${version} of service ${service}",
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
-          s"distribution=${config.distribution}", s"service=${service}", s"version=${developerVersion.toString}", s"author=${author}",
+          s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
           s"sources=${sources.toJson.compactPrint}") ++
           comment.map(comment => s"comment=${comment}")
         runBuilder(taskId, arguments)
       })
+    synchronized {
+      versionsInProcess = versionsInProcess.filter(_.service != service) :+ DeveloperVersionInProcessInfo(service, version, author, sources, comment,
+        task.taskId, new Date()) }
+    task.future.andThen { case _ => synchronized {
+      versionsInProcess = versionsInProcess.filter(_.service != service) } }
     task.taskId
+  }
+
+  def getDeveloperVersionsInProcess(service: Option[ServiceId]): Seq[DeveloperVersionInProcessInfo] = {
+    synchronized { versionsInProcess.filter(version => { service.isEmpty || version.service == service.get } ) }
   }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
@@ -51,7 +64,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
 
   private def removeObsoleteVersions(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Unit] = {
     for {
-      versions <- getDeveloperVersionsInfo(service, distribution = Some(distribution))
+      versions <- getDeveloperVersionsInfo(service = Some(service), distribution = Some(distribution))
       busyVersions <- getBusyVersions(distribution, service)
       complete <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.developerVersion))
@@ -80,12 +93,12 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
     } yield profile
   }
 
-  def getDeveloperVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None,
+  def getDeveloperVersionsInfo(service: Option[ServiceId] = None, distribution: Option[DistributionId] = None,
                                version: Option[DeveloperVersion] = None)(implicit log: Logger): Future[Seq[DeveloperVersionInfo]] = {
-    val serviceArg = Filters.eq("service", service)
+    val serviceArg = service.map { service => Filters.eq("service", service) }
     val distributionArg = distribution.map { distribution => Filters.eq("version.distribution", distribution ) }
     val versionArg = version.map { version => Filters.eq("version.build", version.build) }
-    val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
+    val filters = Filters.and((serviceArg ++ distributionArg ++ versionArg).asJava)
     collections.Developer_Versions.find(filters)
   }
 

@@ -199,8 +199,6 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
 
   const error = addSourcesError?addSourcesError.message:changeSourcesError?changeSourcesError.message:''
 
-  console.log('render ==========')
-
   return (
     <Card
       className={clsx(classes.root)}

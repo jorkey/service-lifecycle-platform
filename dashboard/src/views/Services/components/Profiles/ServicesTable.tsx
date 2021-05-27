@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import EditTable, {EditColumnParams} from "../../../../common/EditTable";
+import Grid, {EditColumnParams} from "../../../../common/EditTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 
 const useStyles = makeStyles(theme => ({
@@ -52,7 +52,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
   services.forEach(service => { rows.push(new Map([['service', service]])) })
 
   return (<>
-    <EditTable
+    <Grid
       className={classes.servicesTable}
       columns={columns}
       rows={rows}

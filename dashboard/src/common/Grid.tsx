@@ -15,7 +15,6 @@ import {makeStyles} from "@material-ui/core/styles";
 import DeleteIcon from "@material-ui/icons/Delete";
 import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
 import RevertIcon from "@material-ui/icons/NotInterestedOutlined";
-import {number} from "prop-types";
 
 const useStyles = makeStyles(theme => ({
   actionsColumn: {
@@ -29,39 +28,39 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export type EditColumn = string|number|boolean|undefined
+export type GridColumn = string|number|boolean|undefined
 
-export interface EditColumnParams {
+export interface GridColumnParams {
   name: string,
   headerName: string,
   className: string,
   type?: string,
   select?: string[],
   editable?: boolean,
-  validate?: (value: EditColumn, rowNum: number|undefined) => boolean
+  validate?: (value: GridColumn, rowNum: number|undefined) => boolean
 }
 
-interface EditTableRowParams {
-  columns: Array<EditColumnParams>,
-  values: Map<string, EditColumn>,
+interface GridRowParams {
+  columns: Array<GridColumnParams>,
+  values: Map<string, GridColumn>,
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
   deleteIcon?: JSX.Element,
-  onAdd?: (values: Map<string, EditColumn>) => void,
+  onAdd?: (values: Map<string, GridColumn>) => void,
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
-  onChange?: (oldValues: Map<string, EditColumn>, newValues: Map<string, EditColumn>) => void,
-  onRemove?: (values: Map<string, EditColumn>) => void
+  onChange?: (oldValues: Map<string, GridColumn>, newValues: Map<string, GridColumn>) => void,
+  onRemove?: (values: Map<string, GridColumn>) => void
 }
 
 
-const EditTableRow = (params: EditTableRowParams) => {
+const GridRow = (params: GridRowParams) => {
   const { rowNum, columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
 
   const [editColumn, setEditColumn] = useState<string>()
-  const [editOldValues, setEditOldValues] = useState<Map<string, EditColumn>>(new Map())
-  const [editValues, setEditValues] = useState<Map<string, EditColumn>>(new Map())
+  const [editOldValues, setEditOldValues] = useState<Map<string, GridColumn>>(new Map())
+  const [editValues, setEditValues] = useState<Map<string, GridColumn>>(new Map())
 
   const classes = useStyles()
 
@@ -178,20 +177,20 @@ const EditTableRow = (params: EditTableRowParams) => {
     </TableRow>)
 }
 
-interface EditTableParams {
+interface GridParams {
   className: string,
-  columns: Array<EditColumnParams>,
-  rows: Array<Map<string, EditColumn>>,
+  columns: Array<GridColumnParams>,
+  rows: Array<Map<string, GridColumn>>,
   deleteIcon?: JSX.Element,
   addNewRow?: boolean,
-  onRowAdded?: (values: Map<string, EditColumn>) => void,
+  onRowAdded?: (values: Map<string, GridColumn>) => void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
-  onRowChange?: (row: number, oldValues: Map<string, EditColumn>, newValues: Map<string, EditColumn>) => void,
-  onRowRemove?: (row: number, values: Map<string, EditColumn>) => void
+  onRowChange?: (row: number, oldValues: Map<string, GridColumn>, newValues: Map<string, GridColumn>) => void,
+  onRowRemove?: (row: number, values: Map<string, GridColumn>) => void
 }
 
-export const EditTable = (props: EditTableParams) => {
+export const Grid = (props: GridParams) => {
   const { className, columns, rows, addNewRow, deleteIcon,
     onRowAdded, onRowAddCancelled, onRowChange, onRowRemove } = props
   const classes = useStyles()
@@ -212,11 +211,11 @@ export const EditTable = (props: EditTableParams) => {
       </TableHead>
       { <TableBody>
           { (addNewRow ?
-            (<EditTableRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
+            (<GridRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
                            onAdd={(columns) => onRowAdded?.(columns)}
                            onAddCancel={() => onRowAddCancelled?.()}/>) : null) }
           {  rows.map((row, rowNum) => {
-              return (<EditTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row} adding={false}
+              return (<GridRow key={rowNum} rowNum={rowNum} columns={columns} values={row} adding={false}
                            editing={rowNum == editingRow}
                            deleteIcon={deleteIcon}
                            onAddCancel={() => onRowAddCancelled?.()}
@@ -228,4 +227,4 @@ export const EditTable = (props: EditTableParams) => {
     </Table>)
 }
 
-export default EditTable;
+export default Grid;

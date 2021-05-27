@@ -16,7 +16,13 @@ query distributionInfo {
 
 # Developer Versions
 
-query developerVersionsInfo ($service: String!, $version: DeveloperVersionInput) {
+query developerVersionsInProcess ($service: String) {
+    developerVersionsInProcess (service: $service) {
+        service, version { build }, author, sources { name, git { url, branch, cloneSubmodules } }, comment, taskId, startTime
+    }
+}
+
+query developerVersionsInfo ($service: String, $version: DeveloperVersionInput) {
     developerVersionsInfo (service: $service, version: $version) {
         service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment }
     }

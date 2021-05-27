@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import EditTable, {EditColumn, EditColumnParams} from "../../../../common/EditTable";
+import Grid, {GridColumn, GridColumnParams} from "../../../../common/Grid";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
 
@@ -42,7 +42,7 @@ const SourcesTable = (props: SourceTableParams) => {
 
   const classes = useStyles();
 
-  const columns: Array<EditColumnParams> = [
+  const columns: GridColumnParams[] = [
     {
       name: 'name',
       headerName: 'Name',
@@ -80,15 +80,15 @@ const SourcesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = new Array<Map<string, EditColumn>>()
-  sources.forEach(source => { rows.push(new Map<string, EditColumn>([
+  const rows = new Array<Map<string, GridColumn>>()
+  sources.forEach(source => { rows.push(new Map<string, GridColumn>([
     ['name', source.name],
     ['url', source.git.url],
     ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false]
   ])) })
 
   return (<>
-    <EditTable
+    <Grid
       className={classes.servicesTable}
       columns={columns}
       rows={rows}

@@ -41,6 +41,7 @@
     "chart.js": "^2.9.4",
     "clsx": "^1.0.4",
     "graphql": "^15.5.0",
+    "graphql-iso-date": "^3.6.1",
     "history": "^4.9.0",
     "moment": "^2.29.1",
     "node-sass": "^4.12.0",

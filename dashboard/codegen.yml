@@ -3,8 +3,7 @@ schema: "http://localhost:8000/graphql"
 config:
   scalars:
     URL: "string"
-#    Date: "../common/DateTime#DateTime"
-    FiniteDuration: "../common/FiniteDuration#FiniteDuration"
+    Date: "Date"
 documents: "**/*.graphql"
 generates:
   src/generated/graphql.tsx:
