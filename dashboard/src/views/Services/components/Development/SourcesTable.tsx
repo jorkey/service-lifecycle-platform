@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import Grid, {GridColumn, GridColumnParams} from "../../../../common/Grid";
+import Grid, {GridColumnValue, GridColumnParams} from "../../../../common/Grid";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
 
@@ -80,12 +80,11 @@ const SourcesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = new Array<Map<string, GridColumn>>()
-  sources.forEach(source => { rows.push(new Map<string, GridColumn>([
+  const rows = sources.map(source => new Map<string, GridColumnValue>([
     ['name', source.name],
     ['url', source.git.url],
     ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false]
-  ])) })
+  ]))
 
   return (<>
     <Grid

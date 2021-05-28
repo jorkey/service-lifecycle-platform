@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import Grid, {EditColumnParams} from "../../../../common/EditTable";
+import Grid, {GridColumnParams} from "../../../../common/Grid";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 
 const useStyles = makeStyles(theme => ({
@@ -33,7 +33,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
 
   const classes = useStyles();
 
-  const columns: Array<EditColumnParams> = [
+  const columns: Array<GridColumnParams> = [
     {
       name: 'service',
       headerName: 'Service',

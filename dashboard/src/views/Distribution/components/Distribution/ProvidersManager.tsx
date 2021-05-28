@@ -9,13 +9,12 @@ import {
   Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import Grid, {EditColumnParams} from "../../../../common/EditTable";
+import Grid, {GridColumnParams} from "../../../../common/Grid";
 import {
   useAddProviderMutation, useChangeProviderMutation,
   useProvidersInfoQuery, useRemoveProviderMutation,
 } from "../../../../generated/graphql";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import FiniteDuration from "../../../../common/FiniteDuration";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -70,7 +69,7 @@ const ProvidersManager = () => {
   const [ addNewRow, setAddNewRow ] = useState(false)
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
-  const columns: Array<EditColumnParams> = [
+  const columns: Array<GridColumnParams> = [
     {
       name: 'distribution',
       headerName: 'Distribution',

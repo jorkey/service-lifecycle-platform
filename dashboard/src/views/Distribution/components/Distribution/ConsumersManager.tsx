@@ -9,7 +9,7 @@ import {
   Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import Grid, {EditColumnParams} from "../../../../common/EditTable";
+import Grid, {GridColumnParams} from "../../../../common/Grid";
 import {
   useAddConsumerMutation, useChangeConsumerMutation,
   useConsumersInfoQuery, useRemoveConsumerMutation,
@@ -72,7 +72,7 @@ const ConsumersManager = () => {
   const [ addNewRow, setAddNewRow ] = useState(false)
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
-  const columns: Array<EditColumnParams> = [
+  const columns: Array<GridColumnParams> = [
     {
       name: 'distribution',
       headerName: 'Distribution',

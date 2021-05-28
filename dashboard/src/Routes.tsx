@@ -10,6 +10,7 @@ import {
   Users as UsersView,
   Services as ServicesView,
   Distribution as DistributionView,
+  Build as BuildView,
   Logging as LoggingView,
   Failures as FailuresView,
   NotFound as NotFoundView
@@ -60,6 +61,12 @@ const Routes: React.FC<RoutesProps> = props => {
         component={DistributionView}
         layout={MainLayout}
         path='/distribution'
+        {...props}
+      />
+      <RouteWithLayout
+        component={BuildView}
+        layout={MainLayout}
+        path='/build'
         {...props}
       />
       <RouteWithLayout

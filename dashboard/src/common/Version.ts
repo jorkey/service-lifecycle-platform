@@ -1,4 +1,4 @@
-import {ClientDistributionVersion, DeveloperDistributionVersion} from "../generated/graphql";
+import {ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion} from "../generated/graphql";
 
 export class Version {
   build: Array<number>
@@ -21,6 +21,10 @@ export class Version {
     let str = ''
     build.forEach(v => { if (str.length === 0) str += v; else str += `.${v}` })
     return str
+  }
+
+  static developerVersionToString(version: DeveloperVersion): string {
+    return Version.buildToString(version.build)
   }
 
   static developerDistributionVersionToString(version: DeveloperDistributionVersion): string {

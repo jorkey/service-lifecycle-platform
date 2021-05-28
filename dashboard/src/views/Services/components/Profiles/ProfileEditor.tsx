@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
-import {NavLink as RouterLink, RouteComponentProps, useHistory} from 'react-router-dom'
+import {NavLink as RouterLink, Redirect, RouteComponentProps, useHistory} from 'react-router-dom'
 
 import LeftIcon from "@material-ui/icons/ArrowBack";
 
@@ -71,8 +71,6 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   const editProfile = props.match.params.profile
 
-  const history = useHistory()
-
   const requestProfileServices = () => {
     if (editProfile && !profile) {
       if (!profileServices.data && !profileServices.loading) {
@@ -108,7 +106,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
     })
 
   if (addProfileData || changeProfileData) {
-    history.push(props.fromUrl)
+    return <Redirect to={props.fromUrl} />
   }
 
   const validate: () => boolean = () => {

@@ -3,6 +3,7 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
 import {Route, Switch, useRouteMatch} from "react-router-dom";
+import BuildDeveloper from "./components/Developer/BuildDeveloper";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -24,9 +25,9 @@ const Build = () => {
           xs={12}
         >
           <Switch>
-            <Route exact path={`${routeMatch.url}/build/developer`}
-                   component={BuildDeveloper}/>}
-            <Route exact path={`${routeMatch.url}/build/client`} />
+            <Route exact path={`${routeMatch.url}/developer`}
+                   component={BuildDeveloper}/>
+            <Route exact path={`${routeMatch.url}/client`} />
           </Switch>
         </Grid>
       </Grid>

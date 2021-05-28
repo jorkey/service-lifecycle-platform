@@ -28,7 +28,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export type GridColumn = string|number|boolean|undefined
+export type GridColumnValue = string|number|boolean|Date|undefined
 
 export interface GridColumnParams {
   name: string,
@@ -37,30 +37,29 @@ export interface GridColumnParams {
   type?: string,
   select?: string[],
   editable?: boolean,
-  validate?: (value: GridColumn, rowNum: number|undefined) => boolean
+  validate?: (value: GridColumnValue, rowNum: number|undefined) => boolean
 }
 
 interface GridRowParams {
   columns: Array<GridColumnParams>,
-  values: Map<string, GridColumn>,
+  values: Map<string, GridColumnValue>,
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
   deleteIcon?: JSX.Element,
-  onAdd?: (values: Map<string, GridColumn>) => void,
+  onAdd?: (values: Map<string, GridColumnValue>) => void,
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
-  onChange?: (oldValues: Map<string, GridColumn>, newValues: Map<string, GridColumn>) => void,
-  onRemove?: (values: Map<string, GridColumn>) => void
+  onChange?: (oldValues: Map<string, GridColumnValue>, newValues: Map<string, GridColumnValue>) => void,
+  onRemove?: (values: Map<string, GridColumnValue>) => void
 }
-
 
 const GridRow = (params: GridRowParams) => {
   const { rowNum, columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
 
   const [editColumn, setEditColumn] = useState<string>()
-  const [editOldValues, setEditOldValues] = useState<Map<string, GridColumn>>(new Map())
-  const [editValues, setEditValues] = useState<Map<string, GridColumn>>(new Map())
+  const [editOldValues, setEditOldValues] = useState<Map<string, GridColumnValue>>(new Map())
+  const [editValues, setEditValues] = useState<Map<string, GridColumnValue>>(new Map())
 
   const classes = useStyles()
 
@@ -180,14 +179,14 @@ const GridRow = (params: GridRowParams) => {
 interface GridParams {
   className: string,
   columns: Array<GridColumnParams>,
-  rows: Array<Map<string, GridColumn>>,
+  rows: Array<Map<string, GridColumnValue>>,
   deleteIcon?: JSX.Element,
   addNewRow?: boolean,
-  onRowAdded?: (values: Map<string, GridColumn>) => void,
+  onRowAdded?: (values: Map<string, GridColumnValue>) => void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
-  onRowChange?: (row: number, oldValues: Map<string, GridColumn>, newValues: Map<string, GridColumn>) => void,
-  onRowRemove?: (row: number, values: Map<string, GridColumn>) => void
+  onRowChange?: (row: number, oldValues: Map<string, GridColumnValue>, newValues: Map<string, GridColumnValue>) => void,
+  onRowRemove?: (row: number, values: Map<string, GridColumnValue>) => void
 }
 
 export const Grid = (props: GridParams) => {
