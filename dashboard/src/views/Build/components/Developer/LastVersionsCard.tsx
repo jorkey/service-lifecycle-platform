@@ -78,11 +78,6 @@ const LastVersionsCard = () => {
       className: classes.commentColumn,
     },
     {
-      name: 'task',
-      headerName: 'Task',
-      className: classes.taskColumn,
-    },
-    {
       name: 'creationTime',
       headerName: 'Creation Time',
       className: classes.startTimeColumn,

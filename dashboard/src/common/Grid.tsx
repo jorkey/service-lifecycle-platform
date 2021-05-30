@@ -46,16 +46,16 @@ interface GridRowParams {
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
-  deleteIcon?: JSX.Element,
+  actions?: JSX.Element[],
   onAdd?: (values: Map<string, GridColumnValue>) => void,
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
   onChange?: (oldValues: Map<string, GridColumnValue>, newValues: Map<string, GridColumnValue>) => void,
-  onRemove?: (values: Map<string, GridColumnValue>) => void
+  onAction?: (actionIndex: number, values: Map<string, GridColumnValue>) => void
 }
 
 const GridRow = (params: GridRowParams) => {
-  const { rowNum, columns, values, adding, editing, deleteIcon, onAdd, onAddCancel, onEditing, onChange, onRemove } = params
+  const { rowNum, columns, values, adding, editing, actions, onAdd, onAddCancel, onEditing, onChange, onAction } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, GridColumnValue>>(new Map())
@@ -178,20 +178,20 @@ const GridRow = (params: GridRowParams) => {
 
 interface GridParams {
   className: string,
-  columns: Array<GridColumnParams>,
-  rows: Array<Map<string, GridColumnValue>>,
-  deleteIcon?: JSX.Element,
+  columns: GridColumnParams[],
+  rows: Map<string, GridColumnValue>[],
+  actions?: JSX.Element[],
   addNewRow?: boolean,
   onRowAdded?: (values: Map<string, GridColumnValue>) => void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
   onRowChange?: (row: number, oldValues: Map<string, GridColumnValue>, newValues: Map<string, GridColumnValue>) => void,
-  onRowRemove?: (row: number, values: Map<string, GridColumnValue>) => void
+  onAction?: (actionIndex: number, row: number, values: Map<string, GridColumnValue>) => void
 }
 
 export const Grid = (props: GridParams) => {
-  const { className, columns, rows, addNewRow, deleteIcon,
-    onRowAdded, onRowAddCancelled, onRowChange, onRowRemove } = props
+  const { className, columns, rows, actions, addNewRow,
+    onRowAdded, onRowAddCancelled, onRowChange, onAction } = props
   const classes = useStyles()
 
   const [editingRow, setEditingRow] = useState(-1)
@@ -216,7 +216,7 @@ export const Grid = (props: GridParams) => {
           {  rows.map((row, rowNum) => {
               return (<GridRow key={rowNum} rowNum={rowNum} columns={columns} values={row} adding={false}
                            editing={rowNum == editingRow}
-                           deleteIcon={deleteIcon}
+                           deleteIcon={removeRows}
                            onAddCancel={() => onRowAddCancelled?.()}
                            onEditing={(editing) => setEditingRow(editing?rowNum:-1)}
                            onChange={(oldValues, newValues) => onRowChange?.(

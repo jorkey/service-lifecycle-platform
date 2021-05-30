@@ -57,7 +57,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       columns={columns}
       rows={rows}
       addNewRow={addService}
-      deleteIcon={deleteIcon}
+      removeRows={deleteIcon}
       onRowAdded={ (columns) => { onServiceAdded?.(columns.get('service')! as string) } }
       onRowAddCancelled={onServiceAddCancelled}
       onRowChange={ (row, oldValues, newValues) => {
