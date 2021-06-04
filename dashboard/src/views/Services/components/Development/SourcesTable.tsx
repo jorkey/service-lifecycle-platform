@@ -1,8 +1,10 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import Grid, {GridColumnValue, GridColumnParams} from "../../../../common/Grid";
+import GridTable from "../../../../common/grid/GridTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -42,7 +44,7 @@ const SourcesTable = (props: SourceTableParams) => {
 
   const classes = useStyles();
 
-  const columns: GridColumnParams[] = [
+  const columns: GridTableColumnParams[] = [
     {
       name: 'name',
       headerName: 'Name',
@@ -80,17 +82,19 @@ const SourcesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = sources.map(source => new Map<string, GridColumnValue>([
+  const rows = sources.map(source => new Map<string, GridTableColumnValue>([
     ['name', source.name],
     ['url', source.git.url],
     ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false]
   ]))
 
   return (<>
-    <Grid
+    <GridTable
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
+      editable={true}
+      actions={[<DeleteIcon/>]}
       addNewRow={addSource}
       onRowAdded={ (columns) => {
         onSourceAdded?.({ name: columns.get('name')! as string,
@@ -99,7 +103,7 @@ const SourcesTable = (props: SourceTableParams) => {
       onRowChange={ (row, oldValues, newValues) => {
         onSourceChanged?.(sources[row], { name: newValues.get('name')! as string,
           git: { url: newValues.get('url')! as string, cloneSubmodules: newValues.get('cloneSubmodules') as boolean } }) }}
-      onRowRemove={ (row) => {
+      onAction={ (index, row) => {
         return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemoved?.(sources[row])
       }}
     />

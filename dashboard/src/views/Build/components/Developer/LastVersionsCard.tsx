@@ -6,8 +6,9 @@ import {
   CardContent, CardHeader,
 } from '@material-ui/core';
 import {useDeveloperVersionsInfoQuery} from "../../../../generated/graphql";
-import Grid, {GridColumnValue, GridColumnParams} from "../../../../common/Grid";
+import GridTable from "../../../../common/grid/GridTable";
 import {Version} from "../../../../common";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -56,7 +57,7 @@ const LastVersionsCard = () => {
 
   const {data:developerVersionsInfo} = useDeveloperVersionsInfoQuery()
 
-  const columns: Array<GridColumnParams> = [
+  const columns: Array<GridTableColumnParams> = [
     {
       name: 'service',
       headerName: 'Service',
@@ -85,7 +86,7 @@ const LastVersionsCard = () => {
   ]
 
   const rows = developerVersionsInfo?.developerVersionsInfo.map(
-      version => new Map<string, GridColumnValue>([
+      version => new Map<string, GridTableColumnValue>([
     ['service', version.service],
     ['version', Version.buildToString(version.version.build)],
     ['author', version.buildInfo.author],
@@ -100,7 +101,7 @@ const LastVersionsCard = () => {
       <CardHeader title='Last Versions'/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <Grid
+          <GridTable
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}/>

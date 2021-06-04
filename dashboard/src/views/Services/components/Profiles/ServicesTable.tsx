@@ -1,7 +1,8 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import Grid, {GridColumnParams} from "../../../../common/Grid";
+import GridTable from "../../../../common/grid/GridTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
+import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -33,7 +34,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
 
   const classes = useStyles();
 
-  const columns: Array<GridColumnParams> = [
+  const columns: Array<GridTableColumnParams> = [
     {
       name: 'service',
       headerName: 'Service',
@@ -52,17 +53,18 @@ export const ServicesTable = (props: ServicesTableParams) => {
   services.forEach(service => { rows.push(new Map([['service', service]])) })
 
   return (<>
-    <Grid
+    <GridTable
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
+      editable={allowEdit}
+      actions={deleteIcon?[deleteIcon]:undefined}
       addNewRow={addService}
-      removeRows={deleteIcon}
       onRowAdded={ (columns) => { onServiceAdded?.(columns.get('service')! as string) } }
       onRowAddCancelled={onServiceAddCancelled}
       onRowChange={ (row, oldValues, newValues) => {
         onServiceChange?.(oldValues.get('service')! as string, newValues.get('service')! as string) } }
-      onRowRemove={ (row) => {
+      onAction={ (row) => {
         return confirmRemove ? setDeleteConfirm(services[row]) : onServiceRemove?.(services[row])
       }}
     />

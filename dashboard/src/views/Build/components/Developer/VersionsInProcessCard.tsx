@@ -5,10 +5,10 @@ import {
   Card,
   CardContent, CardHeader,
 } from '@material-ui/core';
-import {useRouteMatch} from "react-router-dom";
-import {useDeveloperVersionsInfoQuery, useDeveloperVersionsInProcessQuery} from "../../../../generated/graphql";
-import Grid, {GridColumnValue, GridColumnParams} from "../../../../common/Grid";
+import {useDeveloperVersionsInProcessQuery} from "../../../../generated/graphql";
+import GridTable from "../../../../common/grid/GridTable";
 import {Version} from "../../../../common";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -57,7 +57,7 @@ const VersionsInProcessCard = () => {
 
   const {data:versionsInProcess} = useDeveloperVersionsInProcessQuery()
 
-  const columns: Array<GridColumnParams> = [
+  const columns: Array<GridTableColumnParams> = [
     {
       name: 'service',
       headerName: 'Service',
@@ -91,7 +91,7 @@ const VersionsInProcessCard = () => {
   ]
 
   const rows = versionsInProcess?.developerVersionsInProcess.map(
-      version => new Map<string, GridColumnValue>([
+      version => new Map<string, GridTableColumnValue>([
     ['service', version.service],
     ['version', Version.developerVersionToString(version.version)],
     ['author', version.author],
@@ -106,7 +106,7 @@ const VersionsInProcessCard = () => {
       <CardHeader title='Versions In Process'/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <Grid
+          <GridTable
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}/>

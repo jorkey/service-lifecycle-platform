@@ -9,13 +9,15 @@ import {
   Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import Grid, {GridColumnParams} from "../../../../common/Grid";
+import GridTable from "../../../../common/grid/GridTable";
 import {
   useAddConsumerMutation, useChangeConsumerMutation,
   useConsumersInfoQuery, useRemoveConsumerMutation,
   useServiceProfilesQuery
 } from "../../../../generated/graphql";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
+import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -72,7 +74,7 @@ const ConsumersManager = () => {
   const [ addNewRow, setAddNewRow ] = useState(false)
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
-  const columns: Array<GridColumnParams> = [
+  const columns: Array<GridTableColumnParams> = [
     {
       name: 'distribution',
       headerName: 'Distribution',
@@ -134,14 +136,14 @@ const ConsumersManager = () => {
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <Grid
+          <GridTable
             className={classes.consumersTable}
             columns={columns}
             rows={rows}
+            editable={true}
+            actions={[<DeleteIcon/>]}
             addNewRow={addNewRow}
-            onRowAddCancelled={
-              () => setAddNewRow(false)
-            }
+            onRowAddCancelled={ () => setAddNewRow(false) }
             onRowAdded={(row) => {
               setAddNewRow(false)
               addConsumer({ variables: {
@@ -158,7 +160,7 @@ const ConsumersManager = () => {
                   testConsumer: newValues.get('testConsumer') as string
                 }}).then(() => refetchConsumers())
             }}
-            onRowRemove={(row, values) =>
+            onAction={(index, row, values) =>
               setDeleteConfirm(values.get('distribution')! as string)
             }
           />

@@ -9,12 +9,14 @@ import {
   Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import Grid, {GridColumnParams} from "../../../../common/Grid";
+import GridTable from "../../../../common/grid/GridTable";
 import {
   useAddProviderMutation, useChangeProviderMutation,
   useProvidersInfoQuery, useRemoveProviderMutation,
 } from "../../../../generated/graphql";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
+import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -69,7 +71,7 @@ const ProvidersManager = () => {
   const [ addNewRow, setAddNewRow ] = useState(false)
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
-  const columns: Array<GridColumnParams> = [
+  const columns: Array<GridTableColumnParams> = [
     {
       name: 'distribution',
       headerName: 'Distribution',
@@ -86,6 +88,7 @@ const ProvidersManager = () => {
       name: 'url',
       headerName: 'URL',
       className: classes.urlColumn,
+      editable: true,
       validate: (value) => {
         try {
           if (!value) {
@@ -149,32 +152,32 @@ const ProvidersManager = () => {
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <Grid
+          <GridTable
             className={classes.ProvidersTable}
             columns={columns}
             rows={rows}
+            editable={true}
+            actions={[<DeleteIcon/>]}
             addNewRow={addNewRow}
-            onRowAddCancelled={
-              () => setAddNewRow(false)
-            }
+            onRowAddCancelled={ () => setAddNewRow(false) }
             onRowAdded={(row) => {
               setAddNewRow(false)
               addProvider({ variables: {
-                distribution: row.get('distribution')! as string,
-                url: row.get('url')! as string,
-                uploadStateIntervalSec: row.get('uploadStateInterval')! as number
+                distribution: String(row.get('distribution')!),
+                url: String(row.get('url')!),
+                uploadStateIntervalSec: Number(row.get('uploadStateInterval')!)
               }}).then(() => refetchProviders())
             }}
             onRowChange={(row, oldValues, newValues) => {
               setAddNewRow(false)
               changeProvider({ variables: {
-                  distribution: newValues.get('distribution')! as string,
-                  url: newValues.get('url')! as string,
-                  uploadStateIntervalSec: newValues.get('uploadStateInterval')! as number
+                  distribution: String(newValues.get('distribution')!),
+                  url: String(newValues.get('url')!),
+                  uploadStateIntervalSec: Number(newValues.get('uploadStateInterval')!)
                 }}).then(() => refetchProviders())
             }}
-            onRowRemove={(row, values) =>
-              setDeleteConfirm(values.get('distribution')! as string)
+            onAction={(action, row, values) =>
+              setDeleteConfirm(String(values.get('distribution')!))
             }
           />
           { deleteConfirm ? (
