@@ -57,6 +57,7 @@ const UserEditor: React.FC<UserEditorParams> = props => {
   const [human, setHuman] = useState(true);
   const [name, setName] = useState('');
   const [roles, setRoles] = useState(new Array<UserRole>());
+  const [changePassword, setChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState<string>();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -171,42 +172,57 @@ const UserEditor: React.FC<UserEditorParams> = props => {
   }
 
   const PasswordCard = () => {
-    return (
-      <Card className={classes.card}>
-        <CardHeader title='Password'/>
-        <CardContent>
-          { (whoAmI.data && !whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator)) ?
-            <TextField
-              fullWidth
-              label="Old Password"
-              type="password"
-              margin="normal"
-              onChange={(e: any) => setOldPassword(e.target.value)}
-              required
-              variant="outlined"
-            /> : null }
-          <TextField
-            fullWidth
-            label="Password"
-            type="password"
-            margin="normal"
-            onChange={(e: any) => setPassword(e.target.value)}
-            required
-            variant="outlined"
-          />
-          { password ? <TextField
-            fullWidth
-            label="Confirm Password"
-            type="password"
-            margin="normal"
-            onChange={(e: any) => setConfirmPassword(e.target.value)}
-            helperText={password != confirmPassword ? 'Must be same as password' : ''}
-            error={password != confirmPassword}
-            required
-            variant="outlined"
-          /> : null }
-        </CardContent>
-      </Card>)
+    if (whoAmI.data) {
+      const admin = whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator)
+      const self = whoAmI.data.whoAmI.user == editUser
+      return (
+        <Card className={classes.card}>
+          <CardHeader title='Password'/>
+          <CardContent>
+            { (editUser && !changePassword)?
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={ () => setChangePassword(true) }
+              >Change Password</Button> : null }
+            { (self && changePassword) ?
+              <TextField
+                fullWidth
+                label="Old Password"
+                type="password"
+                margin="normal"
+                onChange={(e: any) => setOldPassword(e.target.value)}
+                required
+                variant="outlined"
+              /> : null}
+            { (!editUser || changePassword) ?
+              <>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type="password"
+                  margin="normal"
+                  onChange={(e: any) => setPassword(e.target.value)}
+                  required
+                  variant="outlined"
+                />
+                {password ? <TextField
+                  fullWidth
+                  label="Confirm Password"
+                  type="password"
+                  margin="normal"
+                  onChange={(e: any) => setConfirmPassword(e.target.value)}
+                  helperText={password != confirmPassword ? 'Must be same as password' : ''}
+                  error={password != confirmPassword}
+                  required
+                  variant="outlined"
+                /> : null}
+              </> : null }
+          </CardContent>
+        </Card>)
+    } else {
+      return null
+    }
   }
 
   const checkRole = (role: UserRole, checked: boolean) => {
