@@ -49,6 +49,7 @@ export interface GridTableRowParams {
   adding?: boolean,
   editing?: boolean,
   actions?: JSX.Element[],
+  onClick?: () => void,
   onAdd?: (values: Map<string, GridTableColumnValue>) => void,
   onAddCancel?: () => void,
   onEditing?: (editing: boolean) => void,
@@ -57,7 +58,7 @@ export interface GridTableRowParams {
 }
 
 export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, editable, adding, editing, actions, onAdd, onAddCancel, onEditing, onChange, onAction } = params
+  const { rowNum, columns, values, editable, adding, editing, actions, onClick, onAdd, onAddCancel, onEditing, onChange, onAction } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, GridTableColumnValue>>(new Map())
@@ -79,6 +80,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
                     setEditOldValues(new Map(values))
                     setEditValues(new Map(values))
                     onEditing?.(true)
+                  } else {
+                    onClick?.()
                   }
                 }}
                 onKeyDown={e => {

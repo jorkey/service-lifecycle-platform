@@ -64,7 +64,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       onRowAddCancelled={onServiceAddCancelled}
       onRowChange={ (row, oldValues, newValues) => {
         onServiceChange?.(oldValues.get('service')! as string, newValues.get('service')! as string) } }
-      onAction={ (row) => {
+      onAction={ (action, row) => {
         return confirmRemove ? setDeleteConfirm(services[row]) : onServiceRemove?.(services[row])
       }}
     />

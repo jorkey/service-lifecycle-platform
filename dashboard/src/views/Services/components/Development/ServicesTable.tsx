@@ -1,15 +1,17 @@
-import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {
   useDeveloperServicesQuery, useRemoveServiceSourcesMutation
 } from '../../../../generated/graphql';
-import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
-import {NavLink as RouterLink, useRouteMatch} from 'react-router-dom';
+import {Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
+import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
+import GridTable from "../../../../common/grid/GridTable";
 
 const useStyles = makeStyles(theme => ({
+  servicesTable: {
+  },
   serviceColumn: {
     width: '200px',
     padding: '4px',
@@ -23,78 +25,65 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface ActionsProps {
-  service: string,
-  removing: (promise: Promise<void>) => void
-}
-
-const Actions: React.FC<ActionsProps> = (props) => {
-  const { service, removing } = props
-  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
-
-  const routeMatch = useRouteMatch();
-
-  const [removeService] = useRemoveServiceSourcesMutation({
-    variables: { service: service },
-    onError(err) { console.log(err) }
-  })
-
-  return (
-    <>
-      <IconButton
-        title="Edit"
-        component={RouterLink}
-        to={`${routeMatch.url}/edit/${service}`}
-      >
-        <EditIcon/>
-      </IconButton>
-      <IconButton
-        onClick={() => setDeleteConfirm(true)}
-        title="Delete"
-      >
-        <DeleteIcon/>
-      </IconButton>
-      <ConfirmDialog
-        close={() => { setDeleteConfirm(false) }}
-        message={`Do you want to delete service '${service}'?`}
-        onConfirm={() => removing(removeService({ variables: { service: service } }).then(() => {}))}
-        open={deleteConfirm}
-      />
-    </>)
-}
-
 const ServicesTable = () => {
-  const [ selected, setSelected ] = React.useState('')
+  const [ startEdit, setStartEdit ] = React.useState('')
+  const [ deleteConfirm, setDeleteConfirm ] = useState('')
+
   const { data: services, refetch } = useDeveloperServicesQuery({ fetchPolicy: 'no-cache' })
+  const [ removeServiceSources ] = useRemoveServiceSourcesMutation({ onError(err) { console.log(err) }})
 
   const classes = useStyles()
 
-  return (
-    <Table stickyHeader>
-      <TableHead>
-        <TableRow>
-          <TableCell className={classes.serviceColumn}>Service</TableCell>
-          <TableCell className={classes.actionsColumn}>Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      { services ?
-        <TableBody>
-          {services.developerServices.map(service =>
-            (<TableRow
-              hover
-              key={service}
-              onClick={() => setSelected(service)}
-              selected={service===selected}
-            >
-              <TableCell className={classes.serviceColumn}>{service}</TableCell>
-              <TableCell className={classes.actionsColumn}><Actions
-                removing={promise => promise.then(() => refetch())}
-                service={service}
-              /></TableCell>
-            </TableRow>)
-          )}
-        </TableBody> : null }
-    </Table>)
+  const routeMatch = useRouteMatch();
+
+  if (startEdit) {
+    return <Redirect to={`${routeMatch.url}/edit/${startEdit}`}/>
+  }
+
+  const columns: Array<GridTableColumnParams> = [
+    {
+      name: 'service',
+      headerName: 'Service',
+      className: classes.serviceColumn
+    }
+  ]
+
+  const rows = new Array<Map<string, string>>()
+  if (services) {
+    [...services.developerServices]
+      .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
+      .forEach(service => {
+        rows.push(new Map<string, string>([['service', service]]))
+      })
+  }
+
+  return (<>
+    <GridTable
+      className={classes.servicesTable}
+      columns={columns}
+      rows={rows}
+      actions={[<DeleteIcon/>]}
+      onClick={ (row, values) =>
+        setStartEdit(values.get('service')! as string) }
+      onAction={ (action, row, values) => {
+        setDeleteConfirm(values.get('service')! as string)
+      }}
+    />
+    { deleteConfirm ? (
+      <ConfirmDialog
+        message={`Do you want to delete service '${deleteConfirm}'?`}
+        open={true}
+        close={() => {
+          setDeleteConfirm('')
+        }}
+        onConfirm={() => {
+          removeServiceSources({
+            variables: { service: deleteConfirm }
+          }).then(() => refetch())
+          setDeleteConfirm('')
+        }}
+      />) : null }
+  </>)
 }
 
 export default ServicesTable;

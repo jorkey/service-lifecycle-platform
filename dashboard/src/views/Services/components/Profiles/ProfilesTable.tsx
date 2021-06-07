@@ -1,17 +1,19 @@
-import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {
   useRemoveServicesProfileMutation,
   useServiceProfilesQuery,
 } from '../../../../generated/graphql';
-import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
-import {NavLink as RouterLink, useRouteMatch} from 'react-router-dom';
+import {NavLink as RouterLink, Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
+import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
+import GridTable from "../../../../common/grid/GridTable";
 
 const useStyles = makeStyles(theme => ({
-  serviceColumn: {
+  profileTable: {
+  },
+  profileColumn: {
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
@@ -29,75 +31,65 @@ interface ActionsProps {
   removing: (promise: Promise<void>) => void
 }
 
-const Actions: React.FC<ActionsProps> = (props) => {
-  const { profile, removing } = props
-  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
-
-  const routeMatch = useRouteMatch();
-
-  const [removeProfile] = useRemoveServicesProfileMutation({
-    variables: { profile: profile },
-    onError(err) { console.log(err) }
-  })
-
-  return (
-    <>
-      <IconButton
-        title="Edit"
-        component={RouterLink}
-        to={`${routeMatch.url}/edit/${profile}`}
-      >
-        <EditIcon/>
-      </IconButton>
-      <IconButton
-        onClick={() => setDeleteConfirm(true)}
-        title="Delete"
-      >
-        <DeleteIcon/>
-      </IconButton>
-      <ConfirmDialog
-        close={() => { setDeleteConfirm(false) }}
-        message={`Do you want to delete profile '${profile}'?`}
-        onConfirm={() => removing(removeProfile({ variables: { profile: profile } }).then(() => {}))}
-        open={deleteConfirm}
-      />
-    </>)
-}
-
 const ProfilesTable = () => {
-  const [ selected, setSelected ] = React.useState('')
-  const { data, refetch } = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
+  const [ startEdit, setStartEdit ] = React.useState('')
+  const [ deleteConfirm, setDeleteConfirm ] = useState('')
+
+  const { data: profiles, refetch } = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
+  const [ removeProfile ] = useRemoveServicesProfileMutation({ onError(err) { console.log(err) } })
 
   const classes = useStyles()
 
-  return (
-    <Table stickyHeader>
-      <TableHead>
-        <TableRow>
-          <TableCell className={classes.serviceColumn}>Profile</TableCell>
-          <TableCell className={classes.actionsColumn}>Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      { data ?
-        <TableBody>
-          {[...data.serviceProfiles]
-            .sort((u1,u2) =>  (u1.profile > u2.profile ? 1 : -1))
-            .map(profile =>
-              (<TableRow
-                hover
-                key={profile.profile}
-                onClick={() => setSelected(profile.profile)}
-                selected={profile.profile===selected}
-              >
-                <TableCell className={classes.serviceColumn}>{profile.profile}</TableCell>
-                <TableCell className={classes.actionsColumn}><Actions
-                  removing={promise => promise.then(() => refetch())}
-                  profile={profile.profile}
-                /></TableCell>
-              </TableRow>)
-            )}
-        </TableBody> : null }
-    </Table>)
+  const routeMatch = useRouteMatch();
+
+  if (startEdit) {
+    return <Redirect to={`${routeMatch.url}/edit/${startEdit}`}/>
+  }
+
+  const columns: Array<GridTableColumnParams> = [
+    {
+      name: 'profile',
+      headerName: 'Profile',
+      className: classes.profileColumn
+    }
+  ]
+
+  const rows = new Array<Map<string, string>>()
+  if (profiles) {
+    [...profiles.serviceProfiles]
+      .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
+      .forEach(profile => {
+        rows.push(new Map<string, string>([['profile', profile.profile]]))
+      })
+  }
+
+  return (<>
+    <GridTable
+      className={classes.profileTable}
+      columns={columns}
+      rows={rows}
+      actions={[<DeleteIcon/>]}
+      onClick={ (row, values) =>
+        setStartEdit(values.get('profile')! as string) }
+      onAction={ (action, row, values) => {
+        setDeleteConfirm(values.get('profile')! as string)
+      }}
+    />
+    { deleteConfirm ? (
+      <ConfirmDialog
+        message={`Do you want to delete profile '${deleteConfirm}'?`}
+        open={true}
+        close={() => {
+          setDeleteConfirm('')
+        }}
+        onConfirm={() => {
+          removeProfile({
+            variables: { profile: deleteConfirm }
+          }).then(() => refetch())
+          setDeleteConfirm('')
+        }}
+      />) : null }
+  </>)
 }
 
 export default ProfilesTable;

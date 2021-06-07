@@ -1,13 +1,15 @@
-import {IconButton, Link, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../generated/graphql';
-import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
-import {NavLink as RouterLink, useRouteMatch} from "react-router-dom";
+import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
+import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
+import GridTable from "../../../../common/grid/GridTable";
 
 const useStyles = makeStyles(theme => ({
+  usersTable: {
+  },
   userColumn: {
     width: '200px',
     padding: '4px',
@@ -25,51 +27,8 @@ const useStyles = makeStyles(theme => ({
   emailColumn: {
     padding: '4px',
     paddingLeft: '16px'
-  },
-  actionsColumn: {
-    width: '200px',
-    padding: '4px',
-    paddingRight: '40px',
-    textAlign: 'right'
   }
 }));
-
-interface ActionsProps {
-  userInfo: UserInfo,
-  removing: (promise: Promise<void>) => void
-}
-
-const Actions: React.FC<ActionsProps> = (props) => {
-  const { userInfo, removing } = props
-  const [ deleteConfirm, setDeleteConfirm ] = useState(false)
-
-  const routeMatch = useRouteMatch();
-
-  const [removeUser] = useRemoveUserMutation({
-    variables: { user: userInfo.user },
-    onError(err) { console.log(err) }
-  })
-
-  return (
-    <>
-      <IconButton
-        title='Edit'
-        component={RouterLink}
-        to={`${routeMatch.url}/edit/${userInfo.user}`}
-      >
-        <EditIcon/>
-      </IconButton>
-      <IconButton title='Delete' onClick={() => setDeleteConfirm(true)}>
-        <DeleteIcon/>
-      </IconButton>
-      <ConfirmDialog
-        message={`Do you want to delete user '${userInfo.user}' (${userInfo.name})?`}
-        open={deleteConfirm}
-        close={() => { setDeleteConfirm(false) }}
-        onConfirm={() => removing(removeUser({ variables: { user: userInfo.user } }).then(() => {}))}
-      />
-    </>)
-}
 
 interface UsersTableProps {
   userType: string
@@ -77,45 +36,89 @@ interface UsersTableProps {
 
 const UsersTable: React.FC<UsersTableProps> = props => {
   const { userType } = props
-  const [ selected, setSelected ] = React.useState('')
-  const { data, refetch } = useUsersInfoQuery({ variables: { human: userType == 'human' }, fetchPolicy: 'no-cache' })
+  const [ startEdit, setStartEdit ] = React.useState('')
+  const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
   const classes = useStyles()
 
-  return (
-    <Table stickyHeader>
-      <TableHead>
-        <TableRow>
-          <TableCell className={classes.userColumn}>User</TableCell>
-          <TableCell className={classes.nameColumn}>Name</TableCell>
-          <TableCell className={classes.rolesColumn}>Roles</TableCell>
-          { userType == 'human' ? <TableCell className={classes.emailColumn}>E-Mail</TableCell> : null }
-          <TableCell className={classes.actionsColumn}>Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      { data ?
-        <TableBody>
-          {[...data.usersInfo]
-              .sort((u1,u2) =>  (u1.user > u2.user ? 1 : -1))
-              .map(userInfo =>
-            (<TableRow
-              hover
-              key={userInfo.user}
-              onClick={() => setSelected(userInfo.user)}
-              selected={userInfo.user===selected}
-            >
-              <TableCell className={classes.userColumn}>{userInfo.user}</TableCell>
-              <TableCell className={classes.nameColumn}>{userInfo.name}</TableCell>
-              <TableCell className={classes.rolesColumn}>{userInfo.roles.toString()}</TableCell>
-              { userType == 'human' ? <TableCell className={classes.emailColumn}>{userInfo.email}</TableCell> : null }
-              <TableCell className={classes.actionsColumn}><Actions
-                removing={ promise => promise.then(() => refetch()) }
-                userInfo={ userInfo }
-              /></TableCell>
-            </TableRow>)
-          )}
-        </TableBody> : null }
-    </Table>)
+  const { data, refetch } = useUsersInfoQuery({ variables: { human: userType == 'human' }, fetchPolicy: 'no-cache' })
+  const [removeUser] = useRemoveUserMutation({ onError(err) { console.log(err) }})
+
+  const routeMatch = useRouteMatch();
+
+  if (startEdit) {
+    return <Redirect to={`${routeMatch.url}/edit/${startEdit}`}/>
+  }
+
+  const columns: Array<GridTableColumnParams> = [
+    {
+      name: 'user',
+      headerName: 'User',
+      className: classes.userColumn
+    },
+    {
+      name: 'name',
+      headerName: 'Name',
+      className: classes.nameColumn
+    },
+    {
+      name: 'roles',
+      headerName: 'Roles',
+      className: classes.rolesColumn
+    }
+  ]
+
+  if (userType == 'human') {
+    columns.push({
+      name: 'email',
+      headerName: 'E-Mail',
+      className: classes.emailColumn
+    })
+  }
+
+  const rows = new Array<Map<string, string>>()
+  if (data) {
+    [...data.usersInfo]
+      .sort((u1,u2) =>  (u1.user > u2.user ? 1 : -1))
+      .forEach(user => {
+        const row = new Map<string, string>()
+        row.set('user', user.user)
+        row.set('name', user.name)
+        row.set('roles', user.roles.toString())
+        if (userType == 'human' && user.email) {
+          row.set('email', user.email)
+        }
+        rows.push(row)
+      })
+  }
+
+  return (<>
+    <GridTable
+      className={classes.usersTable}
+      columns={columns}
+      rows={rows}
+      actions={[<DeleteIcon/>]}
+      onClick={ (row, values) =>
+        setStartEdit(values.get('user')! as string) }
+      onAction={ (action, row, values) => {
+        setDeleteConfirm(values.get('user')! as string)
+      }}
+    />
+    { deleteConfirm ? (
+      <ConfirmDialog
+        message={`Do you want to delete user '${deleteConfirm}'?`}
+        open={true}
+        close={() => {
+          setDeleteConfirm('')
+        }}
+        onConfirm={() => {
+          removeUser({
+            variables: { user: deleteConfirm }
+          }).then(() => refetch())
+          setDeleteConfirm('')
+        }}
+      />) : null }
+  </>)
 }
 
 export default UsersTable;
