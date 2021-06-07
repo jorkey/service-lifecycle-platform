@@ -18,6 +18,12 @@ object PingCoder {
   def ping() = GraphqlQuery[String]("ping")
 }
 
+trait ServiceSourcesCoder {
+  def getServiceSources(service: ServiceId) =
+    GraphqlQuery[Seq[SourceConfig]]("serviceSources",
+      Seq(GraphqlArgument("service" -> service)))
+}
+
 trait DistributionConsumersCoder {
   def getDistributionProvidersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionProviderInfo]]("providersInfo",
@@ -90,22 +96,15 @@ object LoginCoder {
       Seq(GraphqlArgument("user" -> user), GraphqlArgument("password" -> password)))
 }
 
-trait AddServiceLogsCoder {
-  def addServiceLogs(service: ServiceId, instance: InstanceId, processId: ProcessId, taskId: Option[TaskId],
-                     serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
-    GraphqlMutation[Boolean]("addServiceLogs",
-      Seq(GraphqlArgument("service" -> service), GraphqlArgument("instance" -> instance), GraphqlArgument("process" -> processId),
-        GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ taskId.map(taskId => GraphqlArgument("taskId" -> taskId)))
-}
-
-trait SetServiceStatesCoder {
-  def setServiceStates(states: Seq[InstanceServiceState]) =
-    GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
-}
-
-trait AddFaultReportInfoCoder {
-  def addFaultReportInfo(fault: ServiceFaultReport) =
-    GraphqlMutation[Boolean]("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
+trait UsersAdministrationCoder {
+  def addServiceSources(service: ServiceId, sources: Seq[SourceConfig]) =
+    GraphqlMutation[Boolean]("addServiceSources", Seq(GraphqlArgument("service" -> service),
+      GraphqlArgument("sources" -> sources, "[SourceConfigInput!]")))
+  def changeServiceSources(service: ServiceId, sources: Seq[SourceConfig]) =
+    GraphqlMutation[Boolean]("changeServiceSources", Seq(GraphqlArgument("service" -> service),
+      GraphqlArgument("sources" -> sources, "[SourceConfigInput!]")))
+  def removeServiceSources(service: ServiceId) =
+    GraphqlMutation[Boolean]("removeServiceSources", Seq(GraphqlArgument("service" -> service)))
 }
 
 trait UsersAdministrationCoder {
@@ -196,6 +195,25 @@ trait AddClientVersionInfoCoder {
   def addClientVersionInfo(versionInfo: ClientVersionInfo) =
     GraphqlMutation[Boolean]("addClientVersionInfo", Seq(GraphqlArgument("info" -> versionInfo, "ClientVersionInfoInput")))
 }
+
+trait AddServiceLogsCoder {
+  def addServiceLogs(service: ServiceId, instance: InstanceId, processId: ProcessId, taskId: Option[TaskId],
+                     serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
+    GraphqlMutation[Boolean]("addServiceLogs",
+      Seq(GraphqlArgument("service" -> service), GraphqlArgument("instance" -> instance), GraphqlArgument("process" -> processId),
+        GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ taskId.map(taskId => GraphqlArgument("taskId" -> taskId)))
+}
+
+trait SetServiceStatesCoder {
+  def setServiceStates(states: Seq[InstanceServiceState]) =
+    GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> states, "[InstanceServiceStateInput!]")))
+}
+
+trait AddFaultReportInfoCoder {
+  def addFaultReportInfo(fault: ServiceFaultReport) =
+    GraphqlMutation[Boolean]("addFaultReportInfo", Seq(GraphqlArgument("fault" -> fault, "ServiceFaultReportInput")))
+}
+
 
 trait SubscribeTaskLogsCoder {
   def subscribeTaskLogs(taskId: TaskId) =
