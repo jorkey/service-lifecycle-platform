@@ -1,20 +1,13 @@
 import React, {useState} from "react";
 import {
   Checkbox,
-  IconButton,
   Input,
   MenuItem,
   Select,
-  Table,
-  TableBody,
   TableCell,
-  TableHead,
   TableRow
 } from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
-import DeleteIcon from "@material-ui/icons/Delete";
-import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
-import RevertIcon from "@material-ui/icons/NotInterestedOutlined";
 import {GridActions} from "./GridActions";
 
 const useStyles = makeStyles(theme => ({

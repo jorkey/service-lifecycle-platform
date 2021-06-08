@@ -37,6 +37,7 @@ export const GridActions = (params: GridActionsParams) => {
   return <div>
     { adding ? (<>
       <IconButton
+        size={"small"}
         onClick={ () => { onSubmit?.() }}
         title="Done"
         disabled={!valid}
@@ -44,6 +45,7 @@ export const GridActions = (params: GridActionsParams) => {
         <DoneIcon/>
       </IconButton>
       <IconButton
+        size={"small"}
         onClick={ () => onCancel?.() }
         title="Cancel"
       >
@@ -51,6 +53,7 @@ export const GridActions = (params: GridActionsParams) => {
       </IconButton>
     </>) : editing ? (<>
       <IconButton
+        size={"small"}
         onClick={ () => { onSubmit?.() }}
         title="Done"
         disabled={!valid}
@@ -58,13 +61,16 @@ export const GridActions = (params: GridActionsParams) => {
         <DoneIcon/>
       </IconButton>
       <IconButton
+        size={"small"}
         onClick={ () => { onCancel?.() }}
         title="Cancel"
       >
         <RevertIcon/>
       </IconButton>
     </>) : actions?.map((element, index) =>
-      <IconButton key={index}
+      <IconButton
+        key={index}
+        size={"small"}
         onClick={ () => onAction?.(index) }
       >
         { element }

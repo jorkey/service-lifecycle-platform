@@ -96,7 +96,7 @@ object LoginCoder {
       Seq(GraphqlArgument("user" -> user), GraphqlArgument("password" -> password)))
 }
 
-trait UsersAdministrationCoder {
+trait SourcesAdministrationCoder {
   def addServiceSources(service: ServiceId, sources: Seq[SourceConfig]) =
     GraphqlMutation[Boolean]("addServiceSources", Seq(GraphqlArgument("service" -> service),
       GraphqlArgument("sources" -> sources, "[SourceConfigInput!]")))
@@ -242,7 +242,7 @@ object DeveloperGraphqlCoder {
 
 object AdministratorQueriesCoder extends DistributionConsumersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
-object AdministratorMutationsCoder extends UsersAdministrationCoder with ConsumersAdministrationCoder
+object AdministratorMutationsCoder extends SourcesAdministrationCoder with UsersAdministrationCoder with ConsumersAdministrationCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
 object AdministratorSubscriptionsCoder extends SubscribeTaskLogsCoder {}
 

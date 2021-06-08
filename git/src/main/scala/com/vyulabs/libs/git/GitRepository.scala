@@ -27,6 +27,10 @@ class GitRepository(git: Git)(implicit log: Logger) {
     git.getRepository.getWorkTree
   }
 
+  def getBranch(): String = {
+    git.getRepository.getBranch
+  }
+
   def setBare(bare: Boolean): Boolean = {
     try {
       val config = git.getRepository.getConfig

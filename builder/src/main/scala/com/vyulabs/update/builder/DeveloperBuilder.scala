@@ -91,7 +91,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   def prepareSourceDirectories(service: ServiceId, sourcesConfig: Seq[SourceConfig]): Option[Seq[GitRepository]] = {
     var gitRepositories = Seq.empty[GitRepository]
     for (sourceConfig <- sourcesConfig) {
-      val branch = sourceConfig.git.branch.getOrElse("master")
+      val branch = sourceConfig.git.branch
       val sourceRepository =
         GitRepository.getGitRepository(sourceConfig.git.url, branch, sourceConfig.git.cloneSubmodules.getOrElse(true),
           getBuildDirectory(service, sourceConfig.name)).getOrElse {

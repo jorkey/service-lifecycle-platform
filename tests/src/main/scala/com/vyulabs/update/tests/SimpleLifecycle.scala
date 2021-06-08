@@ -93,7 +93,8 @@ class SimpleLifecycle {
       sys.error("Can't create distribution users")
     }
 
-    if (!distributionBuilder.generateAndUploadInitialVersions(author) ||
+    if (!distributionBuilder.addUpdateServicesSources() ||
+        !distributionBuilder.generateAndUploadInitialVersions(author) ||
         !distributionBuilder.addCommonServicesProfile() ||
         !distributionBuilder.installBuilderFromSources()) {
       sys.error("Can't initialize distribution")
@@ -124,7 +125,7 @@ class SimpleLifecycle {
 
     println(s"--------------------------- Make test service version")
     buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild),
-      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), None, None))))
+      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
@@ -160,7 +161,7 @@ class SimpleLifecycle {
 
     println(s"--------------------------- Make fixed test service version")
     buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild),
-      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), None, None))))
+      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
 
     println()
     println(s"########################### Test service is updated")

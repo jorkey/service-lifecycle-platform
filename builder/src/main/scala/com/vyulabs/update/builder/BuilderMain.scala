@@ -64,6 +64,7 @@ object BuilderMain extends App {
 
       if (command == "buildProviderDistribution") {
         if (!distributionBuilder.buildDistributionFromSources() ||
+            !distributionBuilder.addUpdateServicesSources() ||
             !distributionBuilder.addDistributionUsers() ||
             !distributionBuilder.generateAndUploadInitialVersions(author) ||
             !distributionBuilder.addCommonServicesProfile() ||

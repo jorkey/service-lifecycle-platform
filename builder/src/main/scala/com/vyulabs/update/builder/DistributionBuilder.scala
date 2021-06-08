@@ -136,6 +136,19 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
+  def addUpdateServicesSources(): Boolean = {
+    val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
+    val sourceConfig = SourceConfig("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
+    Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.BuilderServiceName, Common.UpdaterServiceName)
+      .foreach(service => {
+        if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addServiceSources(service, Seq(sourceConfig))).getOrElse(false)) {
+          log.error(s"Can't add service ${service} sources")
+          return false
+        }
+      })
+    true
+  }
+
   def generateAndUploadInitialVersions(author: String): Boolean = {
     log.info(s"--------------------------- Generate and upload initial versions")
     if (!uploadDeveloperAndClientVersions(Map(
