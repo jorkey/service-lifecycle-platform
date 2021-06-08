@@ -22,17 +22,17 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: 20
   },
   serviceColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
   authorColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -40,13 +40,13 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px'
   },
-  taskColumn: {
-    width: '250px',
+  startTimeColumn: {
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
-  startTimeColumn: {
-    width: '250px',
+  taskColumn: {
+    width: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -74,6 +74,11 @@ const VersionsInProcessCard = () => {
       className: classes.authorColumn,
     },
     {
+      name: 'startTime',
+      headerName: 'Start Time',
+      className: classes.startTimeColumn,
+    },
+    {
       name: 'comment',
       headerName: 'Comment',
       className: classes.commentColumn,
@@ -82,11 +87,6 @@ const VersionsInProcessCard = () => {
       name: 'task',
       headerName: 'Task',
       className: classes.taskColumn,
-    },
-    {
-      name: 'startTime',
-      headerName: 'Start Time',
-      className: classes.startTimeColumn,
     },
   ]
 

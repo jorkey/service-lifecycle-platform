@@ -98,11 +98,11 @@ const SourcesTable = (props: SourceTableParams) => {
       addNewRow={addSource}
       onRowAdded={ (columns) => {
         onSourceAdded?.({ name: columns.get('name')! as string,
-          git: { url: columns.get('url')! as string, cloneSubmodules: columns.get('cloneSubmodules') as boolean } }) }}
+          git: { url: columns.get('url')! as string, branch: 'master', cloneSubmodules: columns.get('cloneSubmodules') as boolean } }) }}
       onRowAddCancelled={onSourceAddCancelled}
       onRowChange={ (row, oldValues, newValues) => {
         onSourceChanged?.(sources[row], { name: newValues.get('name')! as string,
-          git: { url: newValues.get('url')! as string, cloneSubmodules: newValues.get('cloneSubmodules') as boolean } }) }}
+          git: { url: newValues.get('url')! as string, branch: 'master', cloneSubmodules: newValues.get('cloneSubmodules') as boolean } }) }}
       onAction={ (index, row) => {
         return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemoved?.(sources[row])
       }}

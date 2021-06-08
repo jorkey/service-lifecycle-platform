@@ -11,6 +11,6 @@ generates:
       - "typescript"
       - "typescript-operations"
       - "typescript-react-apollo"
-  ./graphql.schema.json:
+  src/generated/graphql.schema.json:
     plugins:
       - "introspection"

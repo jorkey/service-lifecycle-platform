@@ -9,10 +9,15 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import './assets/scss/index.scss';
 import validators from './common/validators';
 import LoginRoutes from './Routes';
-import {ApolloProvider, ServerError} from '@apollo/client';
+import {ApolloLink, ApolloProvider, Resolvers, ServerError} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import {onError} from '@apollo/client/link/error';
+import DateFnsUtils from "@date-io/date-fns";
+import {MuiPickersUtilsProvider} from "@material-ui/pickers";
+import {withScalars} from "apollo-link-scalars";
+import introspectionResult from "./generated/graphql.schema.json";
+import {buildClientSchema, GraphQLScalarType, IntrospectionQuery} from "graphql"
 
 const browserHistory = createBrowserHistory();
 
@@ -58,13 +63,35 @@ const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
   }
 });
 
-const resolvers = {
-//  DeveloperVersion: Scalars.developerVersionScalar
-};
+const schema = buildClientSchema((introspectionResult as unknown) as IntrospectionQuery)
+
+const dateScalar = new GraphQLScalarType({
+  name: 'Date',
+  description: 'Date custom scalar type',
+  serialize(value) {
+    return value.getTime();
+  },
+  parseValue(value) {
+    return new Date(value);
+  }
+});
+
+const scalarsLink = withScalars({
+  schema,
+  typesMap: {
+    Date: dateScalar
+  }
+});
+
+const link = ApolloLink.from([
+  errorLink,
+  authLink,
+  scalarsLink,
+  httpLink
+]);
 
 const client = new ApolloClient({
-  link: errorLink.concat(authLink).concat(httpLink),
-  resolvers: resolvers,
+  link: link,
   cache: new InMemoryCache()
 });
 
@@ -72,11 +99,13 @@ export default class App extends Component {
   render() {
     return (
       <ApolloProvider client={client}>
-        <ThemeProvider theme={theme}>
-          <Router history={browserHistory}>
-            <LoginRoutes />
-          </Router>
-        </ThemeProvider>
+        <MuiPickersUtilsProvider utils={DateFnsUtils}>
+          <ThemeProvider theme={theme}>
+            <Router history={browserHistory}>
+              <LoginRoutes />
+            </Router>
+          </ThemeProvider>
+        </MuiPickersUtilsProvider>
       </ApolloProvider>
     );
   }

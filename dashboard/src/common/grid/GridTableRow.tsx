@@ -28,7 +28,7 @@ export interface GridTableColumnParams {
   name: string,
   headerName: string,
   className: string,
-  type?: string,
+  type?: 'checkbox' | 'date' | 'number',
   select?: string[],
   editable?: boolean,
   validate?: (value: GridTableColumnValue, rowNum: number|undefined) => boolean
@@ -90,8 +90,10 @@ export const GridTableRow = (params: GridTableRowParams) => {
                     const value = adding || editing ? editValues.get(column.name) as boolean : values.get(column.name) as boolean
                     setEditValues(editValues => new Map(editValues.set(column.name, !value)))
                   }}
-        /> :
-        (adding || (editing && editColumn === column.name)) ?
+        />
+        : column.type == 'date' ?
+          (values.get(column.name)! as Date).toDateString()
+        : (adding || (editing && editColumn === column.name)) ?
           (column.select ?
             <Select className={classes.input}
                     autoFocus={true}
@@ -111,8 +113,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
                     }}
                     error={(column.validate)?!column.validate(editValues.get(column.name), rowNum):false}
             />)
-      : adding || editing ? editValues.get(column.name)!
-      : values.get(column.name)!
+        : adding || editing ? editValues.get(column.name)!
+        : values.get(column.name)!
     }
     </TableCell>))
 

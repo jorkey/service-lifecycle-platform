@@ -9,6 +9,7 @@ import {useDeveloperVersionsInfoQuery} from "../../../../generated/graphql";
 import GridTable from "../../../../common/grid/GridTable";
 import {Version} from "../../../../common";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
+import {instanceOf} from "prop-types";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -22,17 +23,17 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: 20
   },
   serviceColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
   authorColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -41,12 +42,12 @@ const useStyles = makeStyles((theme:any) => ({
     paddingLeft: '16px'
   },
   taskColumn: {
-    width: '250px',
+    width: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
   startTimeColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -74,14 +75,15 @@ const LastVersionsCard = () => {
       className: classes.authorColumn,
     },
     {
+      name: 'creationTime',
+      headerName: 'Creation Time',
+      type: 'date',
+      className: classes.startTimeColumn,
+    },
+    {
       name: 'comment',
       headerName: 'Comment',
       className: classes.commentColumn,
-    },
-    {
-      name: 'creationTime',
-      headerName: 'Creation Time',
-      className: classes.startTimeColumn,
     },
   ]
 
