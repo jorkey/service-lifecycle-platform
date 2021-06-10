@@ -9,6 +9,7 @@ import {NavLink as RouterLink, Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
 import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
 import GridTable from "../../../../common/grid/GridTable";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
   profileTable: {
@@ -23,20 +24,29 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingRight: '40px',
     textAlign: 'right'
+  },
+  alert: {
+    marginTop: 25
   }
 }));
-
-interface ActionsProps {
-  profile: string,
-  removing: (promise: Promise<void>) => void
-}
 
 const ProfilesTable = () => {
   const [ startEdit, setStartEdit ] = React.useState('')
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
-  const { data: profiles, refetch } = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
-  const [ removeProfile ] = useRemoveServicesProfileMutation({ onError(err) { console.log(err) } })
+  const [error, setError] = useState<string>()
+
+  const { data: profiles, refetch } = useServiceProfilesQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query service profiles error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+
+  const [ removeProfile ] = useRemoveServicesProfileMutation({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Remove services profile error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   const classes = useStyles()
 
@@ -75,6 +85,7 @@ const ProfilesTable = () => {
         setDeleteConfirm(values.get('profile')! as string)
       }}
     />
+    {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (
       <ConfirmDialog
         message={`Do you want to delete profile '${deleteConfirm}'?`}

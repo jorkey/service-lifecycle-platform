@@ -9,6 +9,7 @@ import {useDeveloperVersionsInProcessQuery} from "../../../../generated/graphql"
 import GridTable from "../../../../common/grid/GridTable";
 import {Version} from "../../../../common";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -50,12 +51,21 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  alert: {
+    marginTop: 25
+  }
 }));
 
 const VersionsInProcessCard = () => {
   const classes = useStyles()
 
-  const {data:versionsInProcess} = useDeveloperVersionsInProcessQuery()
+  const [error, setError] = useState<string>()
+
+  const {data:versionsInProcess} = useDeveloperVersionsInProcessQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query developer versions in process error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -110,6 +120,7 @@ const VersionsInProcessCard = () => {
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}/>
+          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
       </CardContent>
     </Card>

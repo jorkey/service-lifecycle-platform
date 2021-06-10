@@ -173,14 +173,18 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
 
   const editService = props.match.params.service
 
+  const [error, setError] = useState<string>()
+
   const [addSources, { data: addSourcesData, error: addSourcesError }] =
     useAddServiceSourcesMutation({
-      onError(err) { console.log(err) }
+      onError(err) { setError('Add service sources error ' + err.message) },
+      onCompleted() { setError(undefined) }
     })
 
   const [changeSources, { data: changeSourcesData, error: changeSourcesError }] =
     useChangeServiceSourcesMutation({
-      onError(err) { console.log(err) }
+      onError(err) { setError('Change service sources error ' + err.message) },
+      onCompleted() { setError(undefined) }
     })
 
   if (addSourcesData || changeSourcesData) {
@@ -197,8 +201,6 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     }
   }
 
-  const error = addSourcesError?addSourcesError.message:changeSourcesError?changeSourcesError.message:''
-
   return (
     <Card
       className={clsx(classes.root)}
@@ -209,10 +211,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
         setReadyToSave(readyToSave)}
       }/>
       <Divider />
-      {error && <Alert
-        className={classes.alert}
-        severity="error"
-      >{error}</Alert>}
+      {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
       <Box className={classes.controls}>
         <Button
           className={classes.control}

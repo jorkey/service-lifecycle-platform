@@ -56,9 +56,25 @@ interface ProfileEditorParams extends RouteComponentProps<ProfileRouteParams> {
 }
 
 const ProfileEditor: React.FC<ProfileEditorParams> = props => {
-  const {data: profiles} = useServiceProfilesQuery({ fetchPolicy: 'no-cache' })
-  const {data: developerServices} = useDeveloperServicesQuery({ fetchPolicy: 'no-cache' })
-  const [getProfileServices, profileServices] = useProfileServicesLazyQuery({ fetchPolicy: 'no-cache' })
+  const [error, setError] = useState<string>()
+
+  const {data: profiles} = useServiceProfilesQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query service profiles error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+
+  const {data: developerServices} = useDeveloperServicesQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query developer services error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+
+  const [getProfileServices, profileServices] = useProfileServicesLazyQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query profile services error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   const classes = useStyles()
 
@@ -97,12 +113,14 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   const [addProfile, { data: addProfileData, error: addProfileError }] =
     useAddServicesProfileMutation({
-      onError(err) { console.log(err) }
+      onError(err) { setError('Add services profile error ' + err.message) },
+      onCompleted() { setError(undefined) }
     })
 
   const [changeProfile, { data: changeProfileData, error: changeProfileError }] =
     useChangeServicesProfileMutation({
-      onError(err) { console.log(err) }
+      onError(err) { setError('Change services profile error ' + err.message) },
+      onCompleted() { setError(undefined) }
     })
 
   if (addProfileData || changeProfileData) {
@@ -187,8 +205,6 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
       </Card>)
   }
 
-  const error = addProfileError?addProfileError.message:changeProfileError?changeProfileError.message:''
-
   return (
     initialized ? (
       <Card
@@ -196,10 +212,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
       >
         <ProfileCard />
         <Divider />
-        {error && <Alert
-          className={classes.alert}
-          severity="error"
-        >{error}</Alert>}
+        {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         <Box className={classes.controls}>
           <Button
             className={classes.control}

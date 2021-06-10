@@ -6,6 +6,7 @@ import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
 import GridTable from "../../../../common/grid/GridTable";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
   usersTable: {
@@ -27,6 +28,9 @@ const useStyles = makeStyles(theme => ({
   emailColumn: {
     padding: '4px',
     paddingLeft: '16px'
+  },
+  alert: {
+    marginTop: 25
   }
 }));
 
@@ -41,8 +45,19 @@ const UsersTable: React.FC<UsersTableProps> = props => {
 
   const classes = useStyles()
 
-  const { data, refetch } = useUsersInfoQuery({ variables: { human: userType == 'human' }, fetchPolicy: 'no-cache' })
-  const [removeUser] = useRemoveUserMutation({ onError(err) { console.log(err) }})
+  const [error, setError] = useState<string>()
+
+  const { data, refetch } = useUsersInfoQuery({
+    variables: { human: userType == 'human' },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query users info error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+
+  const [removeUser] = useRemoveUserMutation({
+    onError(err) { setError('Remove user error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   const routeMatch = useRouteMatch();
 
@@ -104,6 +119,7 @@ const UsersTable: React.FC<UsersTableProps> = props => {
         setDeleteConfirm(values.get('user')! as string)
       }}
     />
+    {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (
       <ConfirmDialog
         message={`Do you want to delete user '${deleteConfirm}'?`}

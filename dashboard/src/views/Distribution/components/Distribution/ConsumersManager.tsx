@@ -18,6 +18,7 @@ import {
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
 import DeleteIcon from "@material-ui/icons/Delete";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -51,25 +52,41 @@ const useStyles = makeStyles((theme:any) => ({
   control: {
     marginLeft: '50px',
     textTransform: 'none'
+  },
+  alert: {
+    marginTop: 25
   }
 }));
 
 const ConsumersManager = () => {
   const classes = useStyles()
 
-  const { data: consumers, refetch: refetchConsumers } = useConsumersInfoQuery({ fetchPolicy: 'no-cache' })
-  const { data: serviceProfiles } = useServiceProfilesQuery()
+  const [error, setError] = useState<string>()
+
+  const { data: consumers, refetch: refetchConsumers } = useConsumersInfoQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query consumers info error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+
+  const { data: serviceProfiles } = useServiceProfilesQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query service profiles error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   const [ addConsumer ] = useAddConsumerMutation({
-    onError(err) { console.log(err) }
+    onError(err) { setError('Add consumer error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
-  const [ changeConsumer ] = useChangeConsumerMutation({
-    onError(err) { console.log(err) }
+  const [ changeConsumer, { data: changeConsumerData, error: changeConsumerError } ] = useChangeConsumerMutation({
+    onError(err) { setError('Change consumer error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
   const [ removeConsumer ] = useRemoveConsumerMutation({
-    onError(err) { console.log(err) }
+    onError(err) { console.log(err); setError('Remove consumer error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
-
 
   const [ addNewRow, setAddNewRow ] = useState(false)
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
@@ -172,6 +189,7 @@ const ConsumersManager = () => {
               onConfirm={() => removeConsumer({ variables: {
                   distribution: deleteConfirm }}).then(() => refetchConsumers()) }
             />) : null }
+          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
       </CardContent>
     </Card>

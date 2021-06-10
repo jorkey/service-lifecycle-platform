@@ -17,6 +17,7 @@ import {
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
 import DeleteIcon from "@material-ui/icons/Delete";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -50,22 +51,39 @@ const useStyles = makeStyles((theme:any) => ({
   control: {
     marginLeft: '50px',
     textTransform: 'none'
+  },
+  alert: {
+    marginTop: 25
   }
 }));
 
 const ProvidersManager = () => {
   const classes = useStyles()
 
-  const { data: providers, refetch: refetchProviders } = useProvidersInfoQuery({ fetchPolicy: 'no-cache' })
+  const [error, setError] = useState<string>()
+
+  const { data: providers, refetch: refetchProviders } = useProvidersInfoQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query providers info error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   const [ addProvider ] = useAddProviderMutation({
-    onError(err) { console.log(err) }
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Add provider error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
+
   const [ changeProvider ] = useChangeProviderMutation({
-    onError(err) { console.log(err) }
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Change provider error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
+
   const [ removeProvider ] = useRemoveProviderMutation({
-    onError(err) { console.log(err) }
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Remove provider error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
 
   const [ addNewRow, setAddNewRow ] = useState(false)
@@ -187,6 +205,7 @@ const ProvidersManager = () => {
               onConfirm={() => removeProvider({ variables: {
                   distribution: deleteConfirm }}).then(() => refetchProviders()) }
             />) : null }
+          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
       </CardContent>
     </Card>

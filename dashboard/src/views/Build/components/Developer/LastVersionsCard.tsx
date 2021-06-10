@@ -9,7 +9,7 @@ import {useDeveloperVersionsInfoQuery} from "../../../../generated/graphql";
 import GridTable from "../../../../common/grid/GridTable";
 import {Version} from "../../../../common";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
-import {instanceOf} from "prop-types";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -51,12 +51,21 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  alert: {
+    marginTop: 25
+  }
 }));
 
 const LastVersionsCard = () => {
   const classes = useStyles()
 
-  const {data:developerVersionsInfo} = useDeveloperVersionsInfoQuery()
+  const [error, setError] = useState<string>()
+
+  const {data:developerVersionsInfo} = useDeveloperVersionsInfoQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query developer versions error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -107,6 +116,7 @@ const LastVersionsCard = () => {
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}/>
+          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
       </CardContent>
     </Card>
