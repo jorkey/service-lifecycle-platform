@@ -39,19 +39,20 @@ export interface GridTableRowParams {
   values: Map<string, GridTableColumnValue>,
   rowNum?: number,
   editable?: boolean,
+  actions?: JSX.Element[],
   adding?: boolean,
   editing?: boolean,
-  actions?: JSX.Element[],
+  changingInProgress?: boolean,
   onClick?: () => void,
-  onAdd?: (values: Map<string, GridTableColumnValue>) => void,
-  onAddCancel?: () => void,
-  onEditing?: (editing: boolean) => void,
-  onChange?: (oldValues: Map<string, GridTableColumnValue>, newValues: Map<string, GridTableColumnValue>) => void,
+  onBeginEditing?: () => boolean,
+  onSubmitted?: (values: Map<string, GridTableColumnValue>, oldValues: Map<string, GridTableColumnValue>) => void,
+  onCanceled?: () => void,
   onAction?: (actionIndex: number, values: Map<string, GridTableColumnValue>) => void
 }
 
 export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, editable, adding, editing, actions, onClick, onAdd, onAddCancel, onEditing, onChange, onAction } = params
+  const { rowNum, columns, values, editable, actions, adding, editing,
+    onClick, onBeginEditing, onSubmitted, onCanceled, onAction } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, GridTableColumnValue>>(new Map())
@@ -70,16 +71,17 @@ export const GridTableRow = (params: GridTableRowParams) => {
                 onClick={() => {
                   if (!adding && column.editable && editColumn != column.name) {
                     setEditColumn(column.name)
-                    setEditOldValues(new Map(values))
-                    setEditValues(new Map(values))
-                    onEditing?.(true)
+                    if (!editing && onBeginEditing?.()) {
+                      setEditOldValues(new Map(values))
+                      setEditValues(new Map(values))
+                    }
                   } else {
                     onClick?.()
                   }
                 }}
                 onKeyDown={e => {
                   if (editing && e.keyCode == 27) {
-                    onEditing?.(false)
+                    onCanceled?.()
                   }
                 }}
     >
@@ -103,8 +105,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
                     }}
             >
               { column.select.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
-            </Select> :
-            <Input  className={classes.input}
+            </Select>
+          : <Input  className={classes.input}
                     type={column.type}
                     value={editValues.get(column.name)?editValues.get(column.name):''}
                     autoFocus={adding?(index == 0):true}
@@ -128,22 +130,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
                              column => { return !column.validate?.(editValues.get(column.name), rowNum) })}
                          actions={actions}
                          onAction={ (actionIndex) => onAction?.(actionIndex, values) }
-                         onSubmit={() => {
-                             if (adding) {
-                               onAdd?.(editValues)
-                             } else if (editing) {
-                               onChange?.(editOldValues, editValues)
-                               onEditing?.(false)
-                             }
-                             setEditValues(new Map())
-                           }}
-                         onCancel={() => {
-                             if (adding) {
-                               onAddCancel?.()
-                             } else if (editing) {
-                               onEditing?.(false)
-                             }
-                           }}
+                         onSubmit={() => onSubmitted?.(editValues, editOldValues) }
+                         onCancel={() => onCanceled?.() }
         />
         </TableCell>
       ]}

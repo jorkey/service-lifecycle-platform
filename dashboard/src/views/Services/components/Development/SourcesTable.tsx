@@ -11,11 +11,16 @@ const useStyles = makeStyles(theme => ({
     marginTop: 20
   },
   nameColumn: {
-    width: '250px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
   urlColumn: {
+    padding: '4px',
+    paddingLeft: '16px'
+  },
+  branchColumn: {
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -71,6 +76,13 @@ const SourcesTable = (props: SourceTableParams) => {
       }
     },
     {
+      name: 'branch',
+      headerName: 'Branch',
+      className: classes.branchColumn,
+      editable: true,
+      validate: (value, rowNum) => !!value
+    },
+    {
       name: 'cloneSubmodules',
       headerName: 'Clone Submodules',
       className: classes.cloneSubmodulesColumn,
@@ -98,11 +110,13 @@ const SourcesTable = (props: SourceTableParams) => {
       addNewRow={addSource}
       onRowAdded={ (columns) => {
         onSourceAdded?.({ name: columns.get('name')! as string,
-          git: { url: columns.get('url')! as string, branch: 'master', cloneSubmodules: columns.get('cloneSubmodules') as boolean } }) }}
+          git: { url: columns.get('url')! as string, branch: columns.get('branch')! as string,
+            cloneSubmodules: columns.get('cloneSubmodules') as boolean } }) }}
       onRowAddCancelled={onSourceAddCancelled}
-      onRowChange={ (row, oldValues, newValues) => {
-        onSourceChanged?.(sources[row], { name: newValues.get('name')! as string,
-          git: { url: newValues.get('url')! as string, branch: 'master', cloneSubmodules: newValues.get('cloneSubmodules') as boolean } }) }}
+      onRowChanged={ (row, values, oldValues) => {
+        onSourceChanged!(sources[row], { name: values.get('name')! as string,
+          git: { url: values.get('url')! as string, branch: values.get('branch')! as string,
+            cloneSubmodules: values.get('cloneSubmodules') as boolean } }) }}
       onAction={ (index, row) => {
         return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemoved?.(sources[row])
       }}

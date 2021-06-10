@@ -168,14 +168,13 @@ const ProvidersManager = () => {
                 uploadStateIntervalSec: Number(row.get('uploadStateInterval')!)
               }}).then(() => refetchProviders())
             }}
-            onRowChange={(row, oldValues, newValues) => {
+            onRowChanged={(row, values, oldValues) => {
               setAddNewRow(false)
-              changeProvider({ variables: {
-                  distribution: String(newValues.get('distribution')!),
-                  url: String(newValues.get('url')!),
-                  uploadStateIntervalSec: Number(newValues.get('uploadStateInterval')!)
-                }}).then(() => refetchProviders())
-            }}
+              return changeProvider({ variables: {
+                  distribution: String(values.get('distribution')!),
+                  url: String(values.get('url')!),
+                  uploadStateIntervalSec: Number(values.get('uploadStateInterval')!)
+                }}).then(() => refetchProviders().then(() => {}))}}
             onAction={(action, row, values) =>
               setDeleteConfirm(String(values.get('distribution')!))
             }

@@ -26,18 +26,20 @@ interface GridParams {
   actions?: JSX.Element[],
   addNewRow?: boolean,
   onClick?: (row: number, values: Map<string, GridTableColumnValue>) => void,
-  onRowAdded?: (values: Map<string, GridTableColumnValue>) => void,
+  onRowAdded?: (values: Map<string, GridTableColumnValue>) => Promise<void> | void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
-  onRowChange?: (row: number, oldValues: Map<string, GridTableColumnValue>, newValues: Map<string, GridTableColumnValue>) => void,
+  onRowChanged?: (row: number, values: Map<string, GridTableColumnValue>,
+                  oldValues: Map<string, GridTableColumnValue>) => Promise<void> | void,
   onAction?: (action: number, row: number, values: Map<string, GridTableColumnValue>) => void
 }
 
 export const GridTable = (props: GridParams) => {
   const { className, columns, rows, editable, actions, addNewRow,
-    onClick, onRowAdded, onRowAddCancelled, onRowChange, onAction } = props
+    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onAction } = props
 
   const [editingRow, setEditingRow] = useState(-1)
+  const [changingInProgress, setChangingInProgress] = useState(false)
 
   const classes = useStyles()
 
@@ -56,22 +58,38 @@ export const GridTable = (props: GridParams) => {
       { <TableBody>
           { (addNewRow ?
             (<GridTableRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
-                           onAdd={(columns) => onRowAdded?.(columns)}
-                           onAddCancel={() => onRowAddCancelled?.()}/>) : null) }
+                           onSubmitted={(values, oldValues) =>
+                             onRowAdded?.(values) }
+                           onCanceled={() => onRowAddCancelled?.()}/>) : null) }
           {  rows.map((row, rowNum) => {
               return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row}
                                     editable={editable}
                                     adding={false}
                                     editing={rowNum == editingRow}
                                     actions={actions}
-                                    onClick={() => onClick?.(rowNum, row) }
-                                    onAdd={onRowAdded}
-                                    onAddCancel={() => onRowAddCancelled?.()}
-                                    onEditing={(editing) => setEditingRow(editing?rowNum:-1)}
-                                    onChange={(oldValues, newValues) => onRowChange?.(
-                                       rowNum, oldValues, newValues) }
+                                    onClick={() => onClick?.(rowNum, row)}
+                                    onBeginEditing={() => {
+                                      if (!changingInProgress) {
+                                        setEditingRow(rowNum)
+                                        return true
+                                      }
+                                      return false
+                                    }}
+                                    onSubmitted={(values, oldValues) => {
+                                      const promise = onRowChanged!(rowNum, values, oldValues)
+                                      if (promise) {
+                                        setChangingInProgress(true)
+                                        promise.then(() => {
+                                          setEditingRow(-1)
+                                          setChangingInProgress(false)
+                                        })
+                                      } else {
+                                        setEditingRow(-1)
+                                      }
+                                    }}
+                                    onCanceled={() => setEditingRow(-1)}
                                     onAction={(index, values) =>
-                                       onAction?.(index, rowNum, values) }/>) })}
+                                      onAction?.(index, rowNum, values) }/>)})}
         </TableBody> }
     </Table>)
 }

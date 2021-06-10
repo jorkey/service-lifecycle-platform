@@ -15,7 +15,7 @@ const useStyles = makeStyles(theme => ({
 interface DevelopmentServicesParams {
   services: Array<string>
   deleteIcon?: JSX.Element
-  onServiceRemove?: (service: string) => void
+  onServiceRemove?: (service: string) => Promise<void> | void
 }
 
 const DevelopmentServices = (params: DevelopmentServicesParams) => {

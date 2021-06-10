@@ -152,13 +152,13 @@ const ConsumersManager = () => {
                 testConsumer: row.get('testConsumer') as string
               }}).then(() => refetchConsumers())
             }}
-            onRowChange={(row, oldValues, newValues) => {
+            onRowChanged={(row, values, oldValues) => {
               setAddNewRow(false)
-              changeConsumer({ variables: {
-                  distribution: newValues.get('distribution')! as string,
-                  profile: newValues.get('profile')! as string,
-                  testConsumer: newValues.get('testConsumer') as string
-                }}).then(() => refetchConsumers())
+              return changeConsumer({ variables: {
+                  distribution: values.get('distribution')! as string,
+                  profile: values.get('profile')! as string,
+                  testConsumer: values.get('testConsumer') as string
+                }}).then(() => refetchConsumers()).then(() => {})
             }}
             onAction={(index, row, values) =>
               setDeleteConfirm(values.get('distribution')! as string)
