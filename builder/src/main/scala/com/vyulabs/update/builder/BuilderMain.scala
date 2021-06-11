@@ -35,7 +35,7 @@ object BuilderMain extends App {
     "      [sourceBranches==?[,?]...] [test=true]\n" +
     "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
     "      <providerDistributionName=?> <providerDistributionUrL=?> <servicesProfile=?> [testDistributionMatch=?]\n" +
-    "    buildDeveloperVersion <distribution=?> <service=?> <version=?> <sources=?> [comment=?]\n" +
+    "    buildDeveloperVersion <distribution=?> <service=?> <version=?> <sources=?> <comment=?>\n" +
     "    buildClientVersion <distribution=?> <service=?> <developerVersion=?> <clientVersion=?>"
 
   if (args.size < 1) Utils.error(usage())
@@ -99,7 +99,7 @@ object BuilderMain extends App {
           val author = arguments.getValue("author")
           val service = arguments.getValue("service")
           val version = DeveloperVersion.parse(arguments.getValue("version"))
-          val comment: Option[String] = arguments.getOptionValue("comment")
+          val comment = arguments.getValue("comment")
           val sourceBranches = arguments.getValue("sourcesConfig").parseJson.convertTo[Seq[SourceConfig]]
           val developerBuilder = new DeveloperBuilder(new File("."), distribution)
           if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {

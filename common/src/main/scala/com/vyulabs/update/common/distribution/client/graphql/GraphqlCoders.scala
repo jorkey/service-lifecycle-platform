@@ -83,7 +83,7 @@ trait StateCoder {
     )
 
   def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], last: Option[Int]) =
-    GraphqlQuery[Seq[DistributionFaultReport]]("faultReportsInfo",
+    GraphqlQuery[Seq[DistributionFaultReport]]("faultReports",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
       "{ distribution, report { faultId, info { date, instance, service, serviceDirectory, serviceProfile, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 }

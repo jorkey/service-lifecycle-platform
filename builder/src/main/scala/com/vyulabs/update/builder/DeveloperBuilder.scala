@@ -41,7 +41,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   }
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
-                            author: String, service: ServiceId, newVersion: DeveloperVersion, comment: Option[String],
+                            author: String, service: ServiceId, newVersion: DeveloperVersion, comment: String,
                             sourcesConfig: Seq[SourceConfig])(implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     val newDistributionVersion = DeveloperDistributionVersion.from(distribution, newVersion)
     IoUtils.synchronize[Boolean](new File(developerServiceDir(service), builderLockFile), false,
@@ -178,7 +178,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
                              service: ServiceId, version: DeveloperDistributionVersion, author: String): Boolean = {
-    val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
+    val buildInfo = BuildInfo(author, Seq.empty, new Date(), "Initial version")
     ZipUtils.zipAndSend(developerBuildDir(service), file => {
       uploadDeveloperVersion(distributionClient, service, version, buildInfo, file)
     })
@@ -199,11 +199,11 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   }
 
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], service: ServiceId,
-                                     version: DeveloperDistributionVersion, comment: Option[String]): Boolean = {
+                                     version: DeveloperDistributionVersion, comment: String): Boolean = {
     for (repository <- sourceRepositories) {
       log.info(s"Mark source repository with version ${version}")
       val tag = service + "-" + version.toString
-      if (!repository.setTag(tag, comment)) {
+      if (!repository.setTag(tag, Some(comment))) {
         return false
       }
       if (!repository.push(Seq(new RefSpec(tag)))) {

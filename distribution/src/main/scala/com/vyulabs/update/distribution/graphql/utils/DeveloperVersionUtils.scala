@@ -33,7 +33,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
   private var versionsInProcess = Seq.empty[DeveloperVersionInProcessInfo]
 
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: UserId,
-                            sources: Seq[SourceConfig], comment: Option[String])(implicit log: Logger): TaskId = {
+                            sources: Seq[SourceConfig], comment: String)(implicit log: Logger): TaskId = {
     synchronized {
       if (versionsInProcess.exists(_.service == service)) {
         throw new IOException(s"Build developer version of service ${service} is already in process")

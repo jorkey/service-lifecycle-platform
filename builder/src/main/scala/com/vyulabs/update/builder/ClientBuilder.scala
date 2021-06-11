@@ -54,7 +54,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionId) {
 
   def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                           version: ClientDistributionVersion, author: String): Boolean = {
-    val buildInfo = BuildInfo(author, Seq.empty, new Date(), Some("Initial version"))
+    val buildInfo = BuildInfo(author, Seq.empty, new Date(), "Initial version")
     uploadClientVersion(distributionClient, service, version, author, buildInfo)
   }
 

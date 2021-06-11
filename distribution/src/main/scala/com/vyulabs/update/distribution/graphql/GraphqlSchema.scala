@@ -61,6 +61,7 @@ object GraphqlSchema {
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
   val SourcesArg = Argument("sources", ListInputType(SourceConfigInputType))
   val UrlArg = Argument("url", UrlType)
+  val CommentArg = Argument("comment", StringType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))
   val OptionHumanArg = Argument("human", OptionInputType(BooleanType))
@@ -81,7 +82,6 @@ object GraphqlSchema {
   val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperVersionInputType))
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientVersionInputType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
-  val OptionCommentArg = Argument("comment", OptionInputType(StringType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(LongType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
@@ -190,7 +190,7 @@ object GraphqlSchema {
         arguments = TaskArg :: OptionFromArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg)).map(_.map(_.document)) }),
-      Field("faultReportsInfo", ListType(DistributionFaultReportType),
+      Field("faultReports", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
@@ -264,10 +264,10 @@ object GraphqlSchema {
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,
-        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: OptionCommentArg :: Nil,
+        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg :: Nil,
         tags = Authorized(UserRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.user,
-          c.arg(SourcesArg), c.arg(OptionCommentArg)) }),
+          c.arg(SourcesArg), c.arg(CommentArg)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         tags = Authorized(UserRole.Builder) :: Nil,

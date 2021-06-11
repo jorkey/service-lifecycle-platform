@@ -139,8 +139,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("line.distribution")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val State_FaultReportsInfo = new SequencedCollection[DistributionFaultReport]("state.faultReportsInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("state.faultReportsInfo")
+  val State_FaultReportsInfo = new SequencedCollection[DistributionFaultReport]("state.faultReports", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.faultReports")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("report.faultId")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("report.info.service")) else Future()

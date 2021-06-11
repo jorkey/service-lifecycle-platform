@@ -5,7 +5,9 @@ import {
   Card,
   CardContent, CardHeader,
 } from '@material-ui/core';
-import {useDeveloperVersionsInfoLazyQuery, useDeveloperVersionsInfoQuery} from "../../../../generated/graphql";
+import {
+  useDeveloperVersionsInfoQuery,
+} from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableRow";
@@ -43,11 +45,6 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px'
   },
-  taskColumn: {
-    width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
   startTimeColumn: {
     width: '200px',
     padding: '4px',
@@ -67,13 +64,11 @@ const LastVersions = () => {
 
   const [error, setError] = useState<string>()
 
-  const [getDeveloperVersionsInfo, developerVersionsInfo] = useDeveloperVersionsInfoLazyQuery({
+  const {data:developerVersionsInfo, refetch:getDeveloperVersionsInfo} = useDeveloperVersionsInfoQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-
-  React.useEffect(() => { getDeveloperVersionsInfo() }, []);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -104,7 +99,7 @@ const LastVersions = () => {
     },
   ]
 
-  const rows = developerVersionsInfo.data?.developerVersionsInfo.map(
+  const rows = developerVersionsInfo?.developerVersionsInfo.map(
       version => new Map<string, GridTableColumnValue>([
     ['service', version.service],
     ['version', Version.buildToString(version.version.build)],

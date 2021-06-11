@@ -94,7 +94,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
                   }}
         />
         : column.type == 'date' ?
-          (values.get(column.name)! as Date).toLocaleString()
+          values.get(column.name)?(values.get(column.name) as Date).toLocaleString():''
         : (adding || (editing && editColumn === column.name)) ?
           (column.select ?
             <Select className={classes.input}

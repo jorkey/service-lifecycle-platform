@@ -5,7 +5,7 @@ import {
   Card, CardContent, CardHeader,
 } from '@material-ui/core';
 import {
-  useDeveloperVersionsInProcessLazyQuery,
+  useDeveloperVersionsInProcessLazyQuery, useDeveloperVersionsInProcessQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -68,13 +68,11 @@ const VersionsInProcess = () => {
 
   const [error, setError] = useState<string>()
 
-  const [getVersionsInProcess, versionsInProcess] = useDeveloperVersionsInProcessLazyQuery({
+  const { data: versionsInProcess, refetch: getVersionsInProcess } = useDeveloperVersionsInProcessQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-
-  React.useEffect(() => { getVersionsInProcess() }, []);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -104,7 +102,7 @@ const VersionsInProcess = () => {
     }
   ]
 
-  const rows = versionsInProcess.data?.developerVersionsInProcess.map(
+  const rows = versionsInProcess?.developerVersionsInProcess.map(
       version => new Map<string, GridTableColumnValue>([
     ['service', version.service],
     ['version', Version.developerVersionToString(version.version)],
