@@ -1,8 +1,8 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import GridTable from "../../../../common/grid/GridTable";
+import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({

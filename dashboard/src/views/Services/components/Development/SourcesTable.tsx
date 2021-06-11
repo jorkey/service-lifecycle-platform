@@ -1,9 +1,9 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import GridTable from "../../../../common/grid/GridTable";
+import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableRow";
 import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles(theme => ({

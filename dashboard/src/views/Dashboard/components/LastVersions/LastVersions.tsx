@@ -5,11 +5,13 @@ import {
   Card,
   CardContent, CardHeader,
 } from '@material-ui/core';
-import {useDeveloperVersionsInProcessQuery} from "../../../../generated/graphql";
-import GridTable from "../../../../common/grid/GridTable";
+import {useDeveloperVersionsInfoLazyQuery, useDeveloperVersionsInfoQuery} from "../../../../generated/graphql";
+import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/grid/GridTableRow";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableRow";
 import Alert from "@material-ui/lab/Alert";
+import FormGroup from "@material-ui/core/FormGroup";
+import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -41,31 +43,37 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  taskColumn: {
+    width: '100px',
+    padding: '4px',
+    paddingLeft: '16px'
+  },
   startTimeColumn: {
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
-  taskColumn: {
-    width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
+  control: {
+    paddingLeft: '10px',
+    textTransform: 'none'
   },
   alert: {
     marginTop: 25
   }
 }));
 
-const VersionsInProcessCard = () => {
+const LastVersions = () => {
   const classes = useStyles()
 
   const [error, setError] = useState<string>()
 
-  const {data:versionsInProcess} = useDeveloperVersionsInProcessQuery({
+  const [getDeveloperVersionsInfo, developerVersionsInfo] = useDeveloperVersionsInfoLazyQuery({
     fetchPolicy: 'no-cache',
-    onError(err) { setError('Query developer versions in process error ' + err.message) },
+    onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
+
+  React.useEffect(() => { getDeveloperVersionsInfo() }, []);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -84,8 +92,9 @@ const VersionsInProcessCard = () => {
       className: classes.authorColumn,
     },
     {
-      name: 'startTime',
-      headerName: 'Start Time',
+      name: 'creationTime',
+      headerName: 'Creation Time',
+      type: 'date',
       className: classes.startTimeColumn,
     },
     {
@@ -93,27 +102,32 @@ const VersionsInProcessCard = () => {
       headerName: 'Comment',
       className: classes.commentColumn,
     },
-    {
-      name: 'task',
-      headerName: 'Task',
-      className: classes.taskColumn,
-    },
   ]
 
-  const rows = versionsInProcess?.developerVersionsInProcess.map(
+  const rows = developerVersionsInfo.data?.developerVersionsInfo.map(
       version => new Map<string, GridTableColumnValue>([
     ['service', version.service],
-    ['version', Version.developerVersionToString(version.version)],
-    ['author', version.author],
-    ['comment', version.taskId],
-    ['startTime', version.startTime]
+    ['version', Version.buildToString(version.version.build)],
+    ['author', version.buildInfo.author],
+    ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
+    ['creationTime', version.buildInfo.date]
   ]))
 
   return (
     <Card
       className={clsx(classes.root)}
     >
-      <CardHeader title='Versions In Process'/>
+      <CardHeader
+        action={
+          <FormGroup row>
+            <RefreshControl
+              className={classes.control}
+              refresh={() => getDeveloperVersionsInfo()}
+            />
+          </FormGroup>
+        }
+        title='Last Versions'
+      />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <GridTable
@@ -127,4 +141,4 @@ const VersionsInProcessCard = () => {
   );
 }
 
-export default VersionsInProcessCard
+export default LastVersions

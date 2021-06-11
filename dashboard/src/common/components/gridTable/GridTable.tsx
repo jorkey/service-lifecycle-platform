@@ -43,7 +43,7 @@ export const GridTable = (props: GridParams) => {
 
   const classes = useStyles()
 
-  return (<>
+  return (
     <Table
       className={className}
       stickyHeader
@@ -91,8 +91,7 @@ export const GridTable = (props: GridParams) => {
                                     onAction={(index, values) =>
                                       onAction?.(index, rowNum, values) }/>)})}
         </TableBody> }
-    </Table>
-  </>)
+    </Table>)
 }
 
 export default GridTable;

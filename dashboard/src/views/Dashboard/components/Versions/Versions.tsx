@@ -22,6 +22,7 @@ import {
   useInstalledDesiredVersionsLazyQuery,
   useServiceStatesLazyQuery
 } from "../../../../generated/graphql";
+import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 
 const useStyles = makeStyles(theme => ({
   root: {},
@@ -60,7 +61,7 @@ const Versions: React.FC<VersionsProps> = props => {
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
-  const [onlyAlerts, setOnlyAlerts] = useState(false)
+  const [onlyAlerts, setOnlyAlerts] = useState(true)
 
   React.useEffect(() => {
       getVersions(consumer)
@@ -114,18 +115,9 @@ const Versions: React.FC<VersionsProps> = props => {
               />}
               label='Only Alerts'
             />
-            <FormControlLabel
+            <RefreshControl
               className={classes.control}
-              label={null}
-              control={<Button
-                onClick={() => getVersions(consumer)}
-                title='Refresh'
-              >
-                <RefreshIcon/>
-                <InputLabel>{new Date().getHours().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
-                  ':' + new Date().getMinutes().toLocaleString(undefined, {minimumIntegerDigits: 2}) +
-                  ':' + new Date().getSeconds().toLocaleString(undefined, {minimumIntegerDigits: 2})}</InputLabel>
-              </Button>}
+              refresh={() => getVersions(consumer)}
             />
           </FormGroup>
         }

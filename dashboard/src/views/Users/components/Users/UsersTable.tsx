@@ -4,8 +4,8 @@ import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../ge
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
-import GridTable from "../../../../common/grid/GridTable";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
+import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({

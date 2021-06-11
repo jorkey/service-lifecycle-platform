@@ -1,10 +1,9 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { Grid } from '@material-ui/core';
-
-import {
-  Versions,
-} from './components';
+import LastVersions from "./components/LastVersions/LastVersions";
+import VersionsInProcess from "./components/VersionsInProcess/VersionsInProcess";
+import Versions from "./components/Versions/Versions";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -20,14 +19,15 @@ const Dashboard: React.FC<DashboardProps> = props => {
 
   return (
     <div className={classes.root}>
-      <Grid
-        container
-      >
-        <Grid
-          item
-          xs={12}
-        >
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
           <Versions/>
+        </Grid>
+        <Grid item xs={12}>
+          <VersionsInProcess/>
+        </Grid>
+        <Grid item xs={12}>
+          <LastVersions/>
         </Grid>
       </Grid>
     </div>

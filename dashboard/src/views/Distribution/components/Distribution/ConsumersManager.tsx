@@ -9,14 +9,14 @@ import {
   Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import GridTable from "../../../../common/grid/GridTable";
+import GridTable from "../../../../common/components/gridTable/GridTable";
 import {
   useAddConsumerMutation, useChangeConsumerMutation,
   useConsumersInfoQuery, useRemoveConsumerMutation,
   useServiceProfilesQuery
 } from "../../../../generated/graphql";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/grid/GridTableRow";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Alert from "@material-ui/lab/Alert";
 
@@ -96,7 +96,6 @@ const ConsumersManager = () => {
       name: 'distribution',
       headerName: 'Distribution',
       className: classes.distributionColumn,
-      editable: true,
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
