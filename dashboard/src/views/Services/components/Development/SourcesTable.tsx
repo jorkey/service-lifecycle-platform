@@ -97,6 +97,7 @@ const SourcesTable = (props: SourceTableParams) => {
   const rows = sources.map(source => new Map<string, GridTableColumnValue>([
     ['name', source.name],
     ['url', source.git.url],
+    ['branch', source.git.branch],
     ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false]
   ]))
 
