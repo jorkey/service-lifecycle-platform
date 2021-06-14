@@ -1,15 +1,8 @@
 import {ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion} from "../generated/graphql";
 
 export class Version {
-  build: Array<number>
-
-  constructor(build: Array<number>) {
-    this.build = build;
-  }
-
-  static parse(version: string): Version {
-    const build = version.split('.').map(Number)
-    return new Version(build)
+  static parseBuild(version: string): Array<number> {
+    return version.split('.').map(Number)
   }
 
   static contains(clientVersion: ClientDistributionVersion, developerVersion: DeveloperDistributionVersion): boolean {
@@ -36,21 +29,28 @@ export class Version {
       `${version.distribution}-${Version.buildToString(version.developerBuild)}_${version.clientBuild}`
   }
 
-  next(): Version {
-    let build = new Array<number>()
-    for (let i=0; i < this.build.length; i++) {
-      if (i !== this.build.length - 1) {
-        build.push(this.build[i])
-      } else {
-        build.push(this.build[i] + 1)
+  static compareBuilds(build1: Array<number>, build2: Array<number>): number {
+    let i=0
+    for (; i < build1.length; i++) {
+      if (build2.length <= i || build1[i] > build2[i]) {
+        return 1
+      }
+      if (build1[i] < build2[i]) {
+        return -1
       }
     }
-    return new Version(build)
+    return (build2.length > i) ? -1 : 0
   }
 
-  toString(): String {
-    let s = ''
-    this.build.forEach(v => { if (s.length === 0) s = v.toString(); else s = s + '.' + v.toString() })
-    return s
+  static nextBuild(build: Array<number>): Array<number> {
+    let nextBuild = new Array<number>()
+    for (let i=0; i < build.length; i++) {
+      if (i !== build.length - 1) {
+        nextBuild.push(build[i])
+      } else {
+        nextBuild.push(build[i] + 1)
+      }
+    }
+    return nextBuild
   }
 }

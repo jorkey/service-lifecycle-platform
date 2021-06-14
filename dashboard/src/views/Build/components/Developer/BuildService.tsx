@@ -7,15 +7,22 @@ import {NavLink as RouterLink, RouteComponentProps, useRouteMatch, useHistory} f
 import { makeStyles } from '@material-ui/core/styles';
 import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
 import {
-  DeveloperVersion, SourceConfig,
+  DeveloperVersion,
+  SourceConfig,
   useAddUserMutation,
-  useChangeUserMutation, useDeveloperVersionsInProcessQuery,
+  useChangeUserMutation,
+  useDeveloperVersionsInfoLazyQuery,
+  useDeveloperVersionsInfoQuery,
+  useDeveloperVersionsInProcessQuery,
   UserRole,
-  useUserInfoLazyQuery, useUsersListQuery, useWhoAmIQuery
+  useUserInfoLazyQuery,
+  useUsersListQuery,
+  useWhoAmIQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 import BranchesTable from "./BranchesTable";
+import {Version} from "../../../../common";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -52,10 +59,12 @@ const BuildService: React.FC<BuildServiceParams> = props => {
 
   const service = props.match.params.service
 
-  const [version, setVersion] = useState<DeveloperVersion>();
-  const [author, setAuthor] = useState<string>('');
+  const [version, setVersion] = useState('');
+  const [author, setAuthor] = useState('');
   const [sources, setSources] = useState<SourceConfig[]>([]);
   const [comment, setComment] = useState('');
+
+  const [inProcess, setInProcess] = useState(false)
 
   const [error, setError] = useState<string>()
 
@@ -70,13 +79,45 @@ const BuildService: React.FC<BuildServiceParams> = props => {
     onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
+  const [ getDeveloperVersions, developerVersions ] = useDeveloperVersionsInfoLazyQuery({
+    variables: { service: service },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query developer versions error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
 
   if (!initialized && whoAmI) {
-    if (versionInProcess?.developerVersionsInProcess?.length) {
-      const inProcess = versionInProcess?.developerVersionsInProcess![0]
-      setVersion(inProcess.version)
-      setAuthor(inProcess.author)
-      setComment(inProcess.comment)
+    if (versionInProcess) {
+      if (versionInProcess.developerVersionsInProcess?.length) {
+        const v = versionInProcess?.developerVersionsInProcess![0]
+        setInProcess(true)
+        setVersion(Version.buildToString(v.version.build))
+        setAuthor(v.author)
+        setSources(v.sources)
+        setComment(v.comment)
+      } else {
+        if (!developerVersions.data && !developerVersions.loading) {
+          getDeveloperVersions()
+        }
+        if (developerVersions.data) {
+          const versions = [...developerVersions.data.developerVersionsInfo]
+            .sort((v1, v2) =>
+              Version.compareBuilds(v1.version.build, v2.version.build))
+          const lastVersion = versions.length > 0 ? versions[versions.length-1] : undefined
+          if (lastVersion) {
+            setVersion(Version.buildToString(lastVersion.version.build))
+          }
+        }
+      }
+    }
+  }
+
+  const validateVersion = (version: string) => {
+    try {
+      Version.parseBuild(version)
+      return true
+    } catch {
+      return false
     }
   }
 
@@ -93,10 +134,10 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                   fullWidth
                   margin="normal"
                   value={version}
-                  helperText={!editUser && doesUserExist(user) ? 'User already exists': ''}
-                  error={!user || (!editUser && doesUserExist(user))}
-                  onChange={(e: any) => setUser(e.target.value)}
-                  disabled={editUser !== undefined}
+                  helperText={!validateVersion(version) ? 'Version is not valid': ''}
+                  error={!validateVersion(version)}
+                  onChange={(e: any) => setVersion(e.target.value)}
+                  disabled={inProcess}
                   required
                   variant="outlined"
                 />)}
@@ -108,6 +149,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                   fullWidth
                   margin="normal"
                   value={author}
+                  disabled={true}
                   required
                   variant="outlined"
                 />)}
@@ -117,6 +159,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
               control={(
                 <BranchesTable
                   branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
+                  editable={!inProcess}
                   onBranchesChanged={branches => setSources(sources.map(source => {
                     const branch = branches.find(branch => branch.name == source.name)
                     return branch ?
@@ -133,6 +176,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                   margin="normal"
                   value={comment}
                   variant="outlined"
+                  disabled={inProcess}
                 />)}
               label="Comment"
             />
@@ -156,7 +200,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
             color="primary"
             variant="contained"
             component={RouterLink}
-            to={props.fromUrl + '/' + props.match.params.type}
+            to={props.fromUrl + '/' /* + props.match.params.type */}
           >
             Cancel
           </Button>
@@ -164,8 +208,8 @@ const BuildService: React.FC<BuildServiceParams> = props => {
             color="primary"
             variant="contained"
             disabled={!validate()}
-            onClick={() => submit()}
-          > 
+            // onClick={() => submit()}
+          >
             Create New Version
           </Button>
         </Box>

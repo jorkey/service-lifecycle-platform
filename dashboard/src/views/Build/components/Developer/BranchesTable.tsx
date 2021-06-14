@@ -23,11 +23,12 @@ const useStyles = makeStyles(theme => ({
 
 interface SourceTableParams {
   branches: { name: string, branch: string}[]
+  editable: boolean
   onBranchesChanged: (sources: { name: string, branch: string}[]) => void
 }
 
 const BranchesTable = (props: SourceTableParams) => {
-  const { branches, onBranchesChanged } = props;
+  const { branches, editable, onBranchesChanged } = props;
 
   const classes = useStyles();
 
@@ -41,7 +42,7 @@ const BranchesTable = (props: SourceTableParams) => {
       name: 'branch',
       headerName: 'Branch',
       className: classes.branchColumn,
-      editable: true,
+      editable: editable,
       validate: (value, rowNum) => !!value
     }
   ]
