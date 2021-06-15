@@ -24,3 +24,9 @@ case class SequencedServiceLogLine(sequence: Long, logLine: ServiceLogLine)
 object SequencedServiceLogLine extends DefaultJsonProtocol {
   implicit val sequencedServiceLogLineJson = jsonFormat2(SequencedServiceLogLine.apply)
 }
+
+case class SequencedLogLine(sequence: Long, logLine: LogLine)
+
+object SequencedLogLine extends DefaultJsonProtocol {
+  implicit val sequencedLogLineJson = jsonFormat2(SequencedLogLine.apply)
+}

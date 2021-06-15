@@ -203,3 +203,21 @@ mutation changeConsumer ($distribution: String!, $profile: String!, $testConsume
 mutation removeConsumer ($distribution: String!) {
     removeConsumer (distribution: $distribution)
 }
+
+# Subscriptions
+
+subscription subscribeTaskLogs ($task: String!, $from: Long) {
+    subscribeTaskLogs (task: $task, from: $from) {
+        sequence, logLine { distribution, service, taskId, instance, processId, directory,
+            line { date, level, unit, message, terminationStatus } }
+    }
+}
+
+subscription subscribeServiceLogs ($distribution: String!, $service: String!, $instance: String!, $process: String!,
+        $directory: String!, $from: Long!) {
+    subscribeServiceLogs (distribution: $distribution, service: $service, instance: $instance, process: $process,
+            directory: $directory, from: $from) {
+        sequence, logLine { distribution, service, taskId, instance, processId, directory,
+            line { date, level, unit, message, terminationStatus } }
+    }
+}

@@ -7,16 +7,16 @@ import {NavLink as RouterLink, RouteComponentProps, useRouteMatch, useHistory} f
 import { makeStyles } from '@material-ui/core/styles';
 import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
 import {
-  DeveloperVersion,
+  DeveloperVersion, LogLine,
   SourceConfig,
-  useAddUserMutation,
+  useAddUserMutation, useBuildDeveloperVersionMutation,
   useChangeUserMutation,
   useDeveloperVersionsInfoLazyQuery,
   useDeveloperVersionsInfoQuery,
   useDeveloperVersionsInProcessQuery,
-  UserRole,
+  UserRole, useServiceSourcesLazyQuery, useSubscribeTaskLogsSubscription,
   useUserInfoLazyQuery,
-  useUsersListQuery,
+  useUsersListQuery, useWhoAmILazyQuery,
   useWhoAmIQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
@@ -64,19 +64,25 @@ const BuildService: React.FC<BuildServiceParams> = props => {
   const [sources, setSources] = useState<SourceConfig[]>([]);
   const [comment, setComment] = useState('');
 
-  const [inProcess, setInProcess] = useState(false)
+  const [taskId, setTaskId] = useState('')
+
+  const [initialized, setInitialized] = useState(false)
+
+  const [logLines, setLogLines] = useState<LogLine[]>([])
 
   const [error, setError] = useState<string>()
 
-  const [initialized, setInitialized] = useState(false);
-
   const history = useHistory()
 
-  const { data: whoAmI } = useWhoAmIQuery()
   const { data: versionInProcess } = useDeveloperVersionsInProcessQuery({
     variables: { service: service },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions in process error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+  const [ getWhoAmI, whoAmI ] = useWhoAmILazyQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query who am I error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const [ getDeveloperVersions, developerVersions ] = useDeveloperVersionsInfoLazyQuery({
@@ -85,21 +91,52 @@ const BuildService: React.FC<BuildServiceParams> = props => {
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
+  const [ getServiceSources, serviceSources ] = useServiceSourcesLazyQuery({
+    variables: { service: service },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query service sources error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+  const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
+    variables: { service: service, version: { build: Version.parseBuild(version) }, sources: sources, comment: comment },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Build version error ' + err.message) },
+    onCompleted(data) {
+      setTaskId(data.buildDeveloperVersion)
+      setError(undefined)
+    }
+  })
+  useSubscribeTaskLogsSubscription({
+    variables: { task: taskId },
+    fetchPolicy: 'no-cache',
+    onSubscriptionData(data) {
+      setLogLines([... logLines, data.subscriptionData.data?.subscribeTaskLogs.logLine])
+      data.subscriptionData.data?.subscribeTaskLogs.
+    },
+    onSubscriptionComplete() {}
+  })
 
-  if (!initialized && whoAmI) {
+  if (!initialized) {
     if (versionInProcess) {
       if (versionInProcess.developerVersionsInProcess?.length) {
         const v = versionInProcess?.developerVersionsInProcess![0]
-        setInProcess(true)
+        setTaskId(v.taskId)
         setVersion(Version.buildToString(v.version.build))
         setAuthor(v.author)
         setSources(v.sources)
         setComment(v.comment)
+        setInitialized(true)
       } else {
+        if (!whoAmI.data && !whoAmI.loading) {
+          getWhoAmI()
+        }
         if (!developerVersions.data && !developerVersions.loading) {
           getDeveloperVersions()
         }
-        if (developerVersions.data) {
+        if (!serviceSources.data && !serviceSources.loading) {
+          getServiceSources()
+        }
+        if (whoAmI.data && developerVersions.data && serviceSources.data) {
           const versions = [...developerVersions.data.developerVersionsInfo]
             .sort((v1, v2) =>
               Version.compareBuilds(v1.version.build, v2.version.build))
@@ -107,7 +144,10 @@ const BuildService: React.FC<BuildServiceParams> = props => {
           if (lastVersion) {
             setVersion(Version.buildToString(lastVersion.version.build))
           }
+          setAuthor(whoAmI.data.whoAmI.user)
+          setSources(serviceSources.data.serviceSources)
         }
+        setInitialized(true)
       }
     }
   }
@@ -137,7 +177,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                   helperText={!validateVersion(version) ? 'Version is not valid': ''}
                   error={!validateVersion(version)}
                   onChange={(e: any) => setVersion(e.target.value)}
-                  disabled={inProcess}
+                  disabled={!!taskId}
                   required
                   variant="outlined"
                 />)}
@@ -159,7 +199,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
               control={(
                 <BranchesTable
                   branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
-                  editable={!inProcess}
+                  editable={!taskId}
                   onBranchesChanged={branches => setSources(sources.map(source => {
                     const branch = branches.find(branch => branch.name == source.name)
                     return branch ?
@@ -176,7 +216,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                   margin="normal"
                   value={comment}
                   variant="outlined"
-                  disabled={inProcess}
+                  disabled={!!taskId}
                 />)}
               label="Comment"
             />
@@ -208,7 +248,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
             color="primary"
             variant="contained"
             disabled={!validate()}
-            // onClick={() => submit()}
+            onClick={() => buildDeveloperVersion()}
           >
             Create New Version
           </Button>
