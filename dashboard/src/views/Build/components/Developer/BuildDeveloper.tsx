@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
@@ -16,6 +16,7 @@ import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/co
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
+import {useHistory} from "react-router-dom";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -70,6 +71,8 @@ const BuildDeveloper = () => {
   const classes = useStyles()
 
   const [error, setError] = useState<string>()
+  const history = useHistory()
+  const handleOnClick = useCallback((service: string) => history.push('developer/' + service), [history]);
 
   const { data: services, refetch: getServices } = useDeveloperServicesQuery({
     fetchPolicy: 'no-cache',
@@ -165,7 +168,9 @@ const BuildDeveloper = () => {
           <GridTable
            className={classes.versionsTable}
            columns={columns}
-           rows={rows?rows:[]}/>
+           rows={rows?rows:[]}
+           onClick={(row, values) => handleOnClick(values.get('service')! as string)}
+          />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
       </CardContent>
