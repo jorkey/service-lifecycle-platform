@@ -103,7 +103,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     } yield {
       @volatile var logOutputFuture = Option.empty[Future[Unit]]
       logSource.map(line => {
-        for (terminationStatus <- line.logLine.line.terminationStatus) {
+        for (terminationStatus <- line.line.line.terminationStatus) {
           if (terminationStatus) {
             result.success()
           } else {
@@ -112,7 +112,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
         }
         logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
           addServiceLogs(config.distribution, Common.DistributionServiceName,
-            Some(taskId), config.instance, 0.toString, "", Seq(line.logLine.line)).map(_ => ())
+            Some(taskId), config.instance, 0.toString, "", Seq(line.line.line)).map(_ => ())
         })
       }).run()
     }

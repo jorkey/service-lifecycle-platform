@@ -120,19 +120,19 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     val sequenceArg = fromSequence.map(sequence => Filters.gte("_id", sequence))
     val args = Seq(distributionArg, serviceArg, instanceArg, processArg, directoryArg) ++ sequenceArg
     val filters = Filters.and(args.asJava)
-    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => Sequenced(line.sequence), LogLine())) })
+    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => Sequenced(line.sequence, line.document.line)))
   }
 
-  def getTaskLogs(taskId: TaskId, fromSequence: Option[Long])(implicit log: Logger): Future[Seq[Sequenced[ServiceLogLine]]] = {
+  def getTaskLogs(taskId: TaskId, fromSequence: Option[Long])(implicit log: Logger): Future[Seq[Sequenced[LogLine]]] = {
     val taskArg = Filters.eq("taskId", taskId)
     val sequenceArg = fromSequence.map(sequence => Filters.gte("_id", sequence))
     val filters = Filters.and((Seq(taskArg) ++ sequenceArg).asJava)
-    collections.State_ServiceLogs.findSequenced(filters)
+    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => Sequenced(line.sequence, line.document.line)))
   }
 
   def subscribeServiceLogs(distribution: DistributionId, service: ServiceId,
                            instance: InstanceId, processId: ProcessId, directory: ServiceDirectory,
-                           fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+                           fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedLogLine], NotUsed] = {
     val distributionArg = Filters.eq("distribution", distribution)
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
@@ -147,18 +147,18 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
       .filter(_.document.processId == processId)
       .filter(_.document.directory == directory)
       .via(NippleFlow.takeWhile(!_.document.line.terminationStatus.isDefined))
-      .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
+      .map(line => Action(SequencedLogLine(line.sequence, line.document.line)))
       .buffer(250, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
   }
 
   def subscribeTaskLogs(taskId: TaskId, fromSequence: Option[Long])
-                       (implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+                       (implicit log: Logger): Source[Action[Nothing, SequencedLogLine], NotUsed] = {
     val filters = Filters.eq("taskId", taskId)
     val source = collections.State_ServiceLogs.subscribe(filters, fromSequence)
       .filter(_.document.taskId.contains(taskId))
       .via(NippleFlow.takeWhile(!_.document.line.terminationStatus.isDefined))
-      .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
+      .map(line => Action(SequencedLogLine(line.sequence, line.document.line)))
       .buffer(250, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
   }

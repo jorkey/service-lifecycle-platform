@@ -200,7 +200,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       do {
         line = source.next()
         line.foreach(line => {
-          val l = line.logLine.line
+          val l = line.line.line
           if (l.level == "INFO") {
             log.info(l.message)
           }

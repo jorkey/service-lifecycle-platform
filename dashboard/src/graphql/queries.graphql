@@ -208,8 +208,7 @@ mutation removeConsumer ($distribution: String!) {
 
 subscription subscribeTaskLogs ($task: String!, $from: Long) {
     subscribeTaskLogs (task: $task, from: $from) {
-        sequence, logLine { distribution, service, taskId, instance, processId, directory,
-            line { date, level, unit, message, terminationStatus } }
+        sequence, line { date, level, unit, message, terminationStatus }
     }
 }
 
@@ -217,7 +216,6 @@ subscription subscribeServiceLogs ($distribution: String!, $service: String!, $i
         $directory: String!, $from: Long!) {
     subscribeServiceLogs (distribution: $distribution, service: $service, instance: $instance, process: $process,
             directory: $directory, from: $from) {
-        sequence, logLine { distribution, service, taskId, instance, processId, directory,
-            line { date, level, unit, message, terminationStatus } }
+        sequence, line { date, level, unit, message, terminationStatus }
     }
 }

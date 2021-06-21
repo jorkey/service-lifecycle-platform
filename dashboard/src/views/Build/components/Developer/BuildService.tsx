@@ -110,7 +110,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
     variables: { task: taskId },
     fetchPolicy: 'no-cache',
     onSubscriptionData(data) {
-      setLogLines([... logLines, data.subscriptionData.data?.subscribeTaskLogs.logLine])
+      setLogLines([... logLines, data.subscriptionData.data?.subscribeTaskLogs.line])
       data.subscriptionData.data?.subscribeTaskLogs.
     },
     onSubscriptionComplete() {}
