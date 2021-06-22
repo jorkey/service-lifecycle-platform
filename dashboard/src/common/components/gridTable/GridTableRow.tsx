@@ -120,19 +120,21 @@ export const GridTableRow = (params: GridTableRowParams) => {
     }
     </TableCell>))
 
+  console.log(`editable ${editable} adding ${adding} editing ${editing} actions ${actions}`)
+
   return (<TableRow hover>
-      {[...valuesColumns
-        , <TableCell key={-1} className={classes.actionsColumn}>
-            <GridActions editable={editable}
-                         adding={adding}
-                         editing={editing}
-                         valid={!columns.find(
-                             column => { return !column.validate?.(editValues.get(column.name), rowNum) })}
-                         actions={actions}
-                         onAction={ (actionIndex) => onAction?.(actionIndex, values) }
-                         onSubmit={() => onSubmitted?.(editValues, editOldValues) }
-                         onCancel={() => onCanceled?.() }
-        />
+      { (!editable && !adding && !editing && !actions) ? valuesColumns :
+      [...valuesColumns,
+        <TableCell key={-1} className={classes.actionsColumn}>
+          <GridActions adding={adding}
+                       editing={editing}
+                       valid={!columns.find(
+                           column => { return !column.validate?.(editValues.get(column.name), rowNum) })}
+                       actions={actions}
+                       onAction={ (actionIndex) => onAction?.(actionIndex, values) }
+                       onSubmit={() => onSubmitted?.(editValues, editOldValues) }
+                       onCancel={() => onCanceled?.() }
+          />
         </TableCell>
       ]}
     </TableRow>)

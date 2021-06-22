@@ -17,7 +17,6 @@ import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
 import RevertIcon from "@material-ui/icons/NotInterestedOutlined";
 
 export interface GridActionsParams {
-  editable?: boolean,
   adding?: boolean,
   editing?: boolean,
   valid?: boolean,
@@ -28,11 +27,7 @@ export interface GridActionsParams {
 }
 
 export const GridActions = (params: GridActionsParams) => {
-  const { editable, adding, editing, valid, actions, onAction, onSubmit, onCancel } = params
-
-  if (!editable && !adding && editing && !actions) {
-    return null
-  }
+  const { adding, editing, valid, actions, onAction, onSubmit, onCancel } = params
 
   return <div>
     { adding ? (<>

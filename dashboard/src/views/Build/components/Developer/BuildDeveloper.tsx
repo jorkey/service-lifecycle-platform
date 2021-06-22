@@ -17,6 +17,8 @@ import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {useHistory} from "react-router-dom";
+import DeleteIcon from "@material-ui/icons/Delete";
+import BuildIcon from "@material-ui/icons/Build";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -142,8 +144,8 @@ const BuildDeveloper = () => {
         ['service', service],
         ['version', version],
         ['author', author],
-        ['comment', comment],
         ['time', time],
+        ['comment', comment],
         ['status', status]
       ])
     })
@@ -169,7 +171,9 @@ const BuildDeveloper = () => {
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}
+           actions={[<BuildIcon/>]}
            onClick={(row, values) => handleOnClick(values.get('service')! as string)}
+           onAction={(action, row, values) => handleOnClick(values.get('service')! as string)}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
