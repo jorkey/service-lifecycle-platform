@@ -1,10 +1,7 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
-import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {SourceConfig} from "../../../../generated/graphql";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableRow";
-import DeleteIcon from "@material-ui/icons/Delete";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 
 const useStyles = makeStyles(theme => ({
   branchesTable: {
@@ -57,7 +54,6 @@ const BranchesTable = (props: SourceTableParams) => {
       className={classes.branchesTable}
       columns={columns}
       rows={rows}
-      editable={true}
       onRowChanged={ (row, values, oldValues) => {
         onBranchesChanged(branches.map(branch =>
           (branch.name == values.get('name')!)?{

@@ -2,23 +2,23 @@ import React, {useCallback, useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
+  Button,
   Card,
   CardContent, CardHeader,
 } from '@material-ui/core';
 import {
   useDeveloperServicesQuery,
-  useDeveloperVersionsInfoLazyQuery,
   useDeveloperVersionsInfoQuery, useDeveloperVersionsInProcessQuery
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableRow";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {useHistory} from "react-router-dom";
-import DeleteIcon from "@material-ui/icons/Delete";
 import BuildIcon from "@material-ui/icons/Build";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -59,6 +59,12 @@ const useStyles = makeStyles((theme:any) => ({
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
   },
   control: {
     paddingLeft: '10px',
@@ -124,6 +130,12 @@ const BuildDeveloper = () => {
       headerName: 'Status',
       className: classes.statusColumn,
     },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
+    }
   ]
 
   const rows = services?.developerServices.map(
@@ -146,7 +158,10 @@ const BuildDeveloper = () => {
         ['author', author],
         ['time', time],
         ['comment', comment],
-        ['status', status]
+        ['status', status],
+        ['actions', [<Button key='0' onClick={ () => handleOnClick(service) }>
+          <BuildIcon/>
+        </Button>]]
       ])
     })
 
@@ -171,9 +186,7 @@ const BuildDeveloper = () => {
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}
-           actions={[<BuildIcon/>]}
            onClick={(row, values) => handleOnClick(values.get('service')! as string)}
-           onAction={(action, row, values) => handleOnClick(values.get('service')! as string)}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>

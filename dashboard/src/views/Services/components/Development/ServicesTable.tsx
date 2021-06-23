@@ -6,9 +6,10 @@ import {
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {Button} from "@material-ui/core";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -60,15 +61,27 @@ const ServicesTable = () => {
       name: 'service',
       headerName: 'Service',
       className: classes.serviceColumn
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
 
-  const rows = new Array<Map<string, string>>()
+  const rows = new Array<Map<string, GridTableColumnValue>>()
   if (services) {
     [...services.developerServices]
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(service => {
-        rows.push(new Map<string, string>([['service', service]]))
+        rows.push(new Map<string, GridTableColumnValue>([
+          ['service', service],
+          ['actions',
+            [<Button key='0' onClick={ () => setDeleteConfirm(service) }>
+              <DeleteIcon/>
+            </Button>]]
+        ]))
       })
   }
 
@@ -77,12 +90,9 @@ const ServicesTable = () => {
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
-      actions={[<DeleteIcon/>]}
       onClick={ (row, values) =>
-        setStartEdit(values.get('service')! as string) }
-      onAction={ (action, row, values) => {
-        setDeleteConfirm(values.get('service')! as string)
-      }}
+        setStartEdit(values.get('service')! as string)
+      }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

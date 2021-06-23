@@ -21,13 +21,12 @@ export interface GridActionsParams {
   editing?: boolean,
   valid?: boolean,
   actions?: JSX.Element[]
-  onAction?: (actionIndex: number) => void
   onSubmit?: () => void,
   onCancel?: () => void,
 }
 
 export const GridActions = (params: GridActionsParams) => {
-  const { adding, editing, valid, actions, onAction, onSubmit, onCancel } = params
+  const { adding, editing, valid, actions, onSubmit, onCancel } = params
 
   return <div>
     { adding ? (<>
@@ -62,14 +61,6 @@ export const GridActions = (params: GridActionsParams) => {
       >
         <RevertIcon/>
       </IconButton>
-    </>) : actions?.map((element, index) =>
-      <IconButton
-        key={index}
-        size={"small"}
-        onClick={ () => onAction?.(index) }
-      >
-        { element }
-      </IconButton>
-    ) }
+    </>) : actions }
   </div>
 }

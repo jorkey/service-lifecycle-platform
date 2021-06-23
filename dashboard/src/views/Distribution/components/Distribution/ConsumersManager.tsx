@@ -16,9 +16,9 @@ import {
   useServiceProfilesQuery
 } from "../../../../generated/graphql";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Alert from "@material-ui/lab/Alert";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -44,6 +44,12 @@ const useStyles = makeStyles((theme:any) => ({
   testConsumerColumn: {
     padding: '4px',
     paddingLeft: '16px'
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
   },
   controls: {
     display: 'flex',
@@ -117,14 +123,23 @@ const ConsumersManager = () => {
       className: classes.testConsumerColumn,
       editable: true,
       validate: () => true
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
 
-  const rows = new Array<Map<string, string>>()
-  consumers?.consumersInfo.forEach(consumer => { rows.push(new Map([
+  const rows = new Array<Map<string, GridTableColumnValue>>()
+  consumers?.consumersInfo.forEach(consumer => { rows.push(new Map<string, GridTableColumnValue>([
     ['distribution', consumer.distribution],
     ['profile', consumer.profile],
-    ['testConsumer', consumer.testConsumer?consumer.testConsumer:'']
+    ['testConsumer', consumer.testConsumer?consumer.testConsumer:''],
+    ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(consumer.distribution) }>
+      <DeleteIcon/>
+    </Button>]]
   ])) })
 
   return (
@@ -156,8 +171,6 @@ const ConsumersManager = () => {
             className={classes.consumersTable}
             columns={columns}
             rows={rows}
-            editable={true}
-            actions={[<DeleteIcon/>]}
             addNewRow={addNewRow}
             onRowAddCancelled={ () => setAddNewRow(false) }
             onRowAdded={(row) => {
@@ -176,9 +189,6 @@ const ConsumersManager = () => {
                   testConsumer: values.get('testConsumer') as string
                 }}).then(() => refetchConsumers()).then(() => {})
             }}
-            onAction={(index, row, values) =>
-              setDeleteConfirm(values.get('distribution')! as string)
-            }
           />
           { deleteConfirm ? (
             <ConfirmDialog

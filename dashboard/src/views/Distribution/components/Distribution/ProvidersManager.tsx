@@ -15,9 +15,9 @@ import {
   useProvidersInfoQuery, useRemoveProviderMutation,
 } from "../../../../generated/graphql";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Alert from "@material-ui/lab/Alert";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -39,6 +39,12 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px',
     width: '400px'
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
   },
   uploadStateInterval: {
     padding: '4px',
@@ -134,14 +140,23 @@ const ProvidersManager = () => {
           return false
         }
       }
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
 
-  const rows = new Array<Map<string, string>>()
-  providers?.providersInfo.forEach(provider => { rows.push(new Map([
+  const rows = new Array<Map<string, GridTableColumnValue>>()
+  providers?.providersInfo.forEach(provider => { rows.push(new Map<string, GridTableColumnValue>([
     ['distribution', provider.distribution],
     ['url', provider.url],
-    ['uploadStateInterval', provider.uploadStateIntervalSec?provider.uploadStateIntervalSec.toString():'']
+    ['uploadStateInterval', provider.uploadStateIntervalSec?provider.uploadStateIntervalSec.toString():''],
+    ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
+      <DeleteIcon/>
+    </Button>]]
   ])) })
 
   return (
@@ -173,8 +188,6 @@ const ProvidersManager = () => {
             className={classes.ProvidersTable}
             columns={columns}
             rows={rows}
-            editable={true}
-            actions={[<DeleteIcon/>]}
             addNewRow={addNewRow}
             onRowAddCancelled={ () => setAddNewRow(false) }
             onRowAdded={(row) => {
@@ -192,9 +205,6 @@ const ProvidersManager = () => {
                   url: String(values.get('url')!),
                   uploadStateIntervalSec: Number(values.get('uploadStateInterval')!)
                 }}).then(() => refetchProviders().then(() => {}))}}
-            onAction={(action, row, values) =>
-              setDeleteConfirm(String(values.get('distribution')!))
-            }
           />
           { deleteConfirm ? (
             <ConfirmDialog

@@ -2,8 +2,8 @@ import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
-import Alert from "@material-ui/lab/Alert";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {Button} from "@material-ui/core";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -12,7 +12,13 @@ const useStyles = makeStyles(theme => ({
   serviceColumn: {
     padding: '4px',
     paddingLeft: '16px'
-  }
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
+  },
 }));
 
 interface ServicesTableParams {
@@ -47,19 +53,31 @@ export const ServicesTable = (props: ServicesTableParams) => {
             return index != rowNum && row.get('service') == value
           })
       }
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
 
-  const rows = new Array<Map<string, string>>()
-  services.forEach(service => { rows.push(new Map([['service', service]])) })
+  const rows = new Array<Map<string, GridTableColumnValue>>()
+  services.forEach(service => {
+    rows.push(new Map<string, GridTableColumnValue>([
+      ['service', service],
+      ['actions', deleteIcon ?
+          [<Button onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
+            deleteIcon
+          </Button>] : undefined]
+    ]))
+  })
 
   return (<>
     <GridTable
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
-      editable={allowEdit}
-      actions={deleteIcon?[deleteIcon]:undefined}
       addNewRow={addService}
       onRowAdded={ (columns) => {
         return onServiceAdded!(columns.get('service')! as string) }
@@ -67,9 +85,6 @@ export const ServicesTable = (props: ServicesTableParams) => {
       onRowAddCancelled={onServiceAddCancelled}
       onRowChanged={ (row, values, oldValues) => {
         return onServiceChange!(oldValues.get('service')! as string, values.get('service')! as string) }}
-      onAction={ (action, row) => {
-        return confirmRemove ? setDeleteConfirm(services[row]) : onServiceRemove?.(services[row])
-      }}
     />
     { deleteConfirm ? (
       <ConfirmDialog

@@ -7,9 +7,9 @@ import {
 import DeleteIcon from '@material-ui/icons/Delete';
 import {NavLink as RouterLink, Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/ConfirmDialog';
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 
 const useStyles = makeStyles(theme => ({
   profileTable: {
@@ -61,15 +61,24 @@ const ProfilesTable = () => {
       name: 'profile',
       headerName: 'Profile',
       className: classes.profileColumn
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
 
-  const rows = new Array<Map<string, string>>()
+  const rows = new Array<Map<string, GridTableColumnValue>>()
   if (profiles) {
     [...profiles.serviceProfiles]
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(profile => {
-        rows.push(new Map<string, string>([['profile', profile.profile]]))
+        rows.push(new Map<string, GridTableColumnValue>([
+          ['profile', profile.profile],
+          ['actions', [<DeleteIcon key='0' onClick={ () => setStartEdit(profile.profile) }/>]]
+        ]))
       })
   }
 
@@ -78,21 +87,15 @@ const ProfilesTable = () => {
       className={classes.profileTable}
       columns={columns}
       rows={rows}
-      actions={[<DeleteIcon/>]}
       onClick={ (row, values) =>
         setStartEdit(values.get('profile')! as string) }
-      onAction={ (action, row, values) => {
-        setDeleteConfirm(values.get('profile')! as string)
-      }}
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (
       <ConfirmDialog
         message={`Do you want to delete profile '${deleteConfirm}'?`}
         open={true}
-        close={() => {
-          setDeleteConfirm('')
-        }}
+        close={() => { setDeleteConfirm('') }}
         onConfirm={() => {
           removeProfile({
             variables: { profile: deleteConfirm }

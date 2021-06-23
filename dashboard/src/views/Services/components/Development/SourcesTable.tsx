@@ -3,8 +3,9 @@ import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableRow";
 import DeleteIcon from "@material-ui/icons/Delete";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {Button} from "@material-ui/core";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -28,7 +29,13 @@ const useStyles = makeStyles(theme => ({
     width: '100px',
     padding: '4px',
     paddingLeft: '16px'
-  }
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
+  },
 }));
 
 interface SourceTableParams {
@@ -91,6 +98,12 @@ const SourcesTable = (props: SourceTableParams) => {
       validate: (value, rowNum) => {
         return true
       }
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
 
@@ -98,7 +111,10 @@ const SourcesTable = (props: SourceTableParams) => {
     ['name', source.name],
     ['url', source.git.url],
     ['branch', source.git.branch],
-    ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false]
+    ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false],
+    ['actions', [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(source) : onSourceRemoved?.(source) }>
+      <DeleteIcon/>
+    </Button>]]
   ]))
 
   return (<>
@@ -106,8 +122,6 @@ const SourcesTable = (props: SourceTableParams) => {
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
-      editable={true}
-      actions={[<DeleteIcon/>]}
       addNewRow={addSource}
       onRowAdded={ (columns) => {
         onSourceAdded?.({ name: columns.get('name')! as string,
@@ -118,9 +132,6 @@ const SourcesTable = (props: SourceTableParams) => {
         onSourceChanged!(sources[row], { name: values.get('name')! as string,
           git: { url: values.get('url')! as string, branch: values.get('branch')! as string,
             cloneSubmodules: values.get('cloneSubmodules') as boolean } }) }}
-      onAction={ (index, row) => {
-        return confirmRemove ? setDeleteConfirm(sources[row]) : onSourceRemoved?.(sources[row])
-      }}
     />
     { deleteConfirm ? (
       <ConfirmDialog

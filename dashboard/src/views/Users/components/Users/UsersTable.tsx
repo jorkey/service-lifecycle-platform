@@ -4,9 +4,10 @@ import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../ge
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableRow";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {Button} from "@material-ui/core";
 
 const useStyles = makeStyles(theme => ({
   usersTable: {
@@ -28,6 +29,12 @@ const useStyles = makeStyles(theme => ({
   emailColumn: {
     padding: '4px',
     paddingLeft: '16px'
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
   },
   alert: {
     marginTop: 25
@@ -91,18 +98,28 @@ const UsersTable: React.FC<UsersTableProps> = props => {
     })
   }
 
-  const rows = new Array<Map<string, string>>()
+  columns.push({
+    name: 'actions',
+    headerName: 'Actions',
+    type: 'elements',
+    className: classes.actionsColumn
+  })
+
+  const rows = new Array<Map<string, GridTableColumnValue>>()
   if (data) {
     [...data.usersInfo]
       .sort((u1,u2) =>  (u1.user > u2.user ? 1 : -1))
       .forEach(user => {
-        const row = new Map<string, string>()
+        const row = new Map<string, GridTableColumnValue>()
         row.set('user', user.user)
         row.set('name', user.name)
         row.set('roles', user.roles.toString())
         if (userType == 'human' && user.email) {
           row.set('email', user.email)
         }
+        row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(user.user) }>
+            <DeleteIcon/>
+          </Button>])
         rows.push(row)
       })
   }
@@ -112,12 +129,8 @@ const UsersTable: React.FC<UsersTableProps> = props => {
       className={classes.usersTable}
       columns={columns}
       rows={rows}
-      actions={[<DeleteIcon/>]}
       onClick={ (row, values) =>
         setStartEdit(values.get('user')! as string) }
-      onAction={ (action, row, values) => {
-        setDeleteConfirm(values.get('user')! as string)
-      }}
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (
@@ -128,9 +141,7 @@ const UsersTable: React.FC<UsersTableProps> = props => {
           setDeleteConfirm('')
         }}
         onConfirm={() => {
-          removeUser({
-            variables: { user: deleteConfirm }
-          }).then(() => refetch())
+          removeUser({ variables: { user: deleteConfirm } }).then(() => refetch())
           setDeleteConfirm('')
         }}
       />) : null }

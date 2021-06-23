@@ -9,50 +9,30 @@ import {
 } from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridActions} from "./GridActions";
+import {GridTableColumnParams, GridTableColumnValue} from "./GridTableColumn";
 
 const useStyles = makeStyles(theme => ({
   input: {
     width: '100%'
-  },
-  actionsColumn: {
-    width: '200px',
-    padding: '4px',
-    paddingRight: '40px',
-    textAlign: 'right'
   }
 }));
-
-export type GridTableColumnValue = string|number|boolean|Date|undefined
-
-export interface GridTableColumnParams {
-  name: string,
-  headerName: string,
-  className: string,
-  type?: 'checkbox' | 'date' | 'number',
-  select?: string[],
-  editable?: boolean,
-  validate?: (value: GridTableColumnValue, rowNum: number|undefined) => boolean
-}
 
 export interface GridTableRowParams {
   columns: Array<GridTableColumnParams>,
   values: Map<string, GridTableColumnValue>,
   rowNum?: number,
-  editable?: boolean,
-  actions?: JSX.Element[],
   adding?: boolean,
   editing?: boolean,
   changingInProgress?: boolean,
   onClick?: () => void,
   onBeginEditing?: () => boolean,
   onSubmitted?: (values: Map<string, GridTableColumnValue>, oldValues: Map<string, GridTableColumnValue>) => void,
-  onCanceled?: () => void,
-  onAction?: (actionIndex: number, values: Map<string, GridTableColumnValue>) => void
+  onCanceled?: () => void
 }
 
 export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, editable, actions, adding, editing,
-    onClick, onBeginEditing, onSubmitted, onCanceled, onAction } = params
+  const { rowNum, columns, values, adding, editing,
+    onClick, onBeginEditing, onSubmitted, onCanceled } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, GridTableColumnValue>>(new Map())
@@ -75,7 +55,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
                       setEditOldValues(new Map(values))
                       setEditValues(new Map(values))
                     }
-                  } else {
+                  } else if (column.type != 'elements') {
                     onClick?.()
                   }
                 }}
@@ -95,6 +75,17 @@ export const GridTableRow = (params: GridTableRowParams) => {
         />
         : column.type == 'date' ?
           values.get(column.name)?(values.get(column.name) as Date).toLocaleString():''
+        : column.type == 'elements' ?
+            (column.name == 'actions' ?
+              <GridActions adding={adding}
+                           editing={editing}
+                           valid={!columns.find(
+                             c => { return c != column && !c.validate?.(editValues.get(c.name), rowNum) })}
+                           actions={values.get(column.name)! as JSX.Element[]}
+                           onSubmit={() => onSubmitted?.(editValues, editOldValues) }
+                           onCancel={() => onCanceled?.() }
+              />
+              : values.get(column.name)! as JSX.Element[])
         : (adding || (editing && editColumn === column.name)) ?
           (column.select ?
             <Select className={classes.input}
@@ -120,22 +111,5 @@ export const GridTableRow = (params: GridTableRowParams) => {
     }
     </TableCell>))
 
-  console.log(`editable ${editable} adding ${adding} editing ${editing} actions ${actions}`)
-
-  return (<TableRow hover>
-      { (!editable && !adding && !editing && !actions) ? valuesColumns :
-      [...valuesColumns,
-        <TableCell key={-1} className={classes.actionsColumn}>
-          <GridActions adding={adding}
-                       editing={editing}
-                       valid={!columns.find(
-                           column => { return !column.validate?.(editValues.get(column.name), rowNum) })}
-                       actions={actions}
-                       onAction={ (actionIndex) => onAction?.(actionIndex, values) }
-                       onSubmit={() => onSubmitted?.(editValues, editOldValues) }
-                       onCancel={() => onCanceled?.() }
-          />
-        </TableCell>
-      ]}
-    </TableRow>)
+  return (<TableRow hover>{valuesColumns}</TableRow>)
 }
