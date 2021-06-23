@@ -17,8 +17,8 @@ import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {useHistory} from "react-router-dom";
 import BuildIcon from "@material-ui/icons/Build";
+import VisibilityIcon from "@material-ui/icons/Visibility";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
-import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -160,7 +160,7 @@ const BuildDeveloper = () => {
         ['comment', comment],
         ['status', status],
         ['actions', [<Button key='0' onClick={ () => handleOnClick(service) }>
-          <BuildIcon/>
+          {versionInProcess?<VisibilityIcon/>:<BuildIcon/>}
         </Button>]]
       ])
     })

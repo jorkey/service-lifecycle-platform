@@ -147,8 +147,8 @@ const BuildService: React.FC<BuildServiceParams> = props => {
           }
           setAuthor(whoAmI.data.whoAmI.user)
           setSources(serviceSources.data.serviceSources)
+          setInitialized(true)
         }
-        setInitialized(true)
       }
     }
   }
@@ -167,37 +167,32 @@ const BuildService: React.FC<BuildServiceParams> = props => {
       <Card className={classes.card}>
         <CardHeader title={`Build Service ${service}`}/>
         <CardContent>
-          <FormGroup row>
-            <FormControlLabel
-              control={(
-                <TextField
-                  autoFocus
-                  fullWidth
-                  margin="normal"
-                  value={version}
-                  helperText={!validateVersion(version) ? 'Version is not valid': ''}
-                  error={!validateVersion(version)}
-                  onChange={(e: any) => setVersion(e.target.value)}
-                  disabled={!!taskId}
-                  required
-                  variant="outlined"
-                />)}
+          <FormGroup>
+            <TextField
+              autoFocus
+              fullWidth
               label="Version"
+              margin="normal"
+              value={version}
+              helperText={!validateVersion(version) ? 'Version is not valid': ''}
+              error={!validateVersion(version)}
+              onChange={(e: any) => setVersion(e.target.value)}
+              disabled={!!taskId}
+              required
+              variant="outlined"
             />
-            <FormControlLabel
-              control={(
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  value={author}
-                  disabled={true}
-                  required
-                  variant="outlined"
-                />)}
+            <TextField
+              fullWidth
               label="Author"
+              margin="normal"
+              value={author}
+              disabled={true}
+              required
+              variant="outlined"
             />
-            <FormControlLabel
-              control={(
+            <Card>
+              <CardHeader title='Branches Of Sources' titleTypographyProps={{variant:'h6'}}/>
+              <CardContent>
                 <BranchesTable
                   branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
                   editable={!taskId}
@@ -207,19 +202,17 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                       { name: source.name, git: { url: source.git.url, branch: branch.branch, cloneSubmodules: source.git.cloneSubmodules } }
                       : source }))
                   }
-                />)}
-              label="Branches"
-            />
-            <FormControlLabel
-              control={(
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  value={comment}
-                  variant="outlined"
-                  disabled={!!taskId}
-                />)}
+                />
+              </CardContent>
+            </Card>
+            <TextField
+              fullWidth
               label="Comment"
+              margin="normal"
+              value={comment}
+              variant="outlined"
+              disabled={!!taskId}
+              error={!comment}
             />
           </FormGroup>
         </CardContent>

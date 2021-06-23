@@ -15,7 +15,13 @@ const useStyles = makeStyles(theme => ({
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
-  }
+  },
+  actionsColumn: {
+    width: '200px',
+    padding: '4px',
+    paddingRight: '40px',
+    textAlign: 'right'
+  },
 }));
 
 interface SourceTableParams {
@@ -31,8 +37,8 @@ const BranchesTable = (props: SourceTableParams) => {
 
   const columns: GridTableColumnParams[] = [
     {
-      name: 'name',
-      headerName: 'Name',
+      name: 'source',
+      headerName: 'Source',
       className: classes.nameColumn
     },
     {
@@ -41,11 +47,17 @@ const BranchesTable = (props: SourceTableParams) => {
       className: classes.branchColumn,
       editable: editable,
       validate: (value, rowNum) => !!value
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
 
   const rows = branches.map(source => new Map<string, GridTableColumnValue>([
-    ['name', source.name],
+    ['source', source.name],
     ['branch', source.branch]
   ]))
 
@@ -56,8 +68,8 @@ const BranchesTable = (props: SourceTableParams) => {
       rows={rows}
       onRowChanged={ (row, values, oldValues) => {
         onBranchesChanged(branches.map(branch =>
-          (branch.name == values.get('name')!)?{
-            name: values.get('name')! as string, branch: values.get('branch')! as string}:branch)) }}
+          (branch.name == values.get('source')!)?{
+            name: values.get('source')! as string, branch: values.get('branch')! as string}:branch)) }}
     />
   </>)
 }
