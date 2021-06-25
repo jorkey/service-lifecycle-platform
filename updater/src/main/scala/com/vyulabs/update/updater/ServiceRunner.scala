@@ -32,7 +32,7 @@ class ServiceRunner(instanceId: InstanceId, profiledServiceName: ProfiledService
   private var process = Option.empty[Process]
   private var lastStartTime = 0L
 
-  private val maxLogHistoryDirCapacity = 5L * 1000 * 1000 * 1000
+  private val maxLogHistoryDirCapacity = 1L * 1000 * 1000 * 1000
 
   private val processTerminateTimeoutMs = 5000
 
