@@ -1,28 +1,31 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import {NavLink as RouterLink, RouteComponentProps, useRouteMatch, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
-import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
 import {
-  DeveloperVersion, LogLine,
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  Grid
+} from '@material-ui/core';
+import {
   SourceConfig,
-  useAddUserMutation, useBuildDeveloperVersionMutation,
-  useChangeUserMutation,
+  useBuildDeveloperVersionMutation,
   useDeveloperVersionsInfoLazyQuery,
-  useDeveloperVersionsInfoQuery,
   useDeveloperVersionsInProcessQuery,
-  UserRole, useServiceSourcesLazyQuery, useSubscribeTaskLogsSubscription,
-  useUserInfoLazyQuery,
-  useUsersListQuery, useWhoAmILazyQuery,
-  useWhoAmIQuery
+  useServiceSourcesLazyQuery,
+  useWhoAmILazyQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 import BranchesTable from "./BranchesTable";
 import {Version} from "../../../../common";
+import {TaskLogs} from "../../../../common/components/logsTable/TaskLogs";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -68,8 +71,6 @@ const BuildService: React.FC<BuildServiceParams> = props => {
 
   const [initialized, setInitialized] = useState(false)
 
-  const [logLines, setLogLines] = useState<LogLine[]>([])
-
   const [error, setError] = useState<string>()
 
   const history = useHistory()
@@ -98,23 +99,14 @@ const BuildService: React.FC<BuildServiceParams> = props => {
     onCompleted() { setError(undefined) }
   })
   const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
-    variables: { service: service, version: { build: Version.parseBuild(version) }, sources: sources, comment: comment },
+    variables: { service: service, version: { build: Version.parseBuild(version) },
+      sources: sources, comment: comment },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
       setTaskId(data.buildDeveloperVersion)
       setError(undefined)
     }
-  })
-  useSubscribeTaskLogsSubscription({
-    variables: { task: taskId },
-    fetchPolicy: 'no-cache',
-    onSubscriptionData(data) {
-      if (data.subscriptionData.data) {
-        setLogLines([...logLines, data.subscriptionData.data.subscribeTaskLogs.line])
-      }
-    },
-    onSubscriptionComplete() {}
   })
 
   if (!initialized) {
@@ -143,7 +135,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
               Version.compareBuilds(v1.version.build, v2.version.build))
           const lastVersion = versions.length > 0 ? versions[versions.length-1] : undefined
           if (lastVersion) {
-            setVersion(Version.buildToString(lastVersion.version.build))
+            setVersion(Version.buildToString(Version.nextBuild(lastVersion.version.build)))
           }
           setAuthor(whoAmI.data.whoAmI.user)
           setSources(serviceSources.data.serviceSources)
@@ -162,64 +154,59 @@ const BuildService: React.FC<BuildServiceParams> = props => {
     }
   }
 
+  const validate = () => {
+    return validateVersion(version) && sources.length != 0 && comment.length != 0
+  }
+
   const BuildCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={`Build Service ${service}`}/>
+        <CardHeader title={taskId?`Building Service '${service}'. Author ${author}.`:
+          `Build Service '${service}'.`}/>
         <CardContent>
-          <FormGroup>
-            <TextField
-              autoFocus
-              fullWidth
-              label="Version"
-              margin="normal"
-              value={version}
-              helperText={!validateVersion(version) ? 'Version is not valid': ''}
-              error={!validateVersion(version)}
-              onChange={(e: any) => setVersion(e.target.value)}
-              disabled={!!taskId}
-              required
-              variant="outlined"
-            />
-            <TextField
-              fullWidth
-              label="Author"
-              margin="normal"
-              value={author}
-              disabled={true}
-              required
-              variant="outlined"
-            />
-            <Card>
-              <CardHeader title='Branches Of Sources' titleTypographyProps={{variant:'h6'}}/>
-              <CardContent>
-                <BranchesTable
-                  branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
-                  editable={!taskId}
-                  onBranchesChanged={branches => setSources(sources.map(source => {
-                    const branch = branches.find(branch => branch.name == source.name)
-                    return branch ?
-                      { name: source.name, git: { url: source.git.url, branch: branch.branch, cloneSubmodules: source.git.cloneSubmodules } }
-                      : source }))
-                  }
-                />
-              </CardContent>
-            </Card>
-            <TextField
-              fullWidth
-              label="Comment"
-              margin="normal"
-              value={comment}
-              variant="outlined"
-              disabled={!!taskId}
-              error={!comment}
-            />
-          </FormGroup>
-        </CardContent>
-      </Card>)
+          <Grid container spacing={3}>
+            <Grid item md={2} xs={12}>
+              <TextField
+                fullWidth
+                label="Version"
+                margin="normal"
+                value={version}
+                helperText={!validateVersion(version) ? 'Version is not valid': ''}
+                error={!validateVersion(version)}
+                onChange={(e: any) => setVersion(e.target.value)}
+                disabled={!!taskId}
+                required
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item md={10} xs={12}>
+              <TextField
+                fullWidth
+                label="Comment"
+                margin="normal"
+                autoFocus
+                value={comment}
+                variant="outlined"
+                onChange={(e: any) => setComment(e.target.value)}
+                disabled={!!taskId}
+                error={!comment}
+              />
+            </Grid>
+          </Grid>
+          <BranchesTable
+            branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
+            editable={!taskId}
+            onBranchesChanged={branches => setSources(sources.map(source => {
+              const branch = branches.find(branch => branch.name == source.name)
+              return branch ?
+                { name: source.name, git: { url: source.git.url, branch: branch.branch, cloneSubmodules: source.git.cloneSubmodules } }
+                : source }))
+            }
+          />
+          { taskId ? <TaskLogs taskId={taskId}/> : null }
+      </CardContent>
+    </Card>)
   }
-
-  const validate = () => true
 
   return (
     initialized ? (

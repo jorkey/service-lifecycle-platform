@@ -174,7 +174,7 @@ const BuildDeveloper = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={() => {}}
+              refresh={ () => { getServices(); getVersionsInProcess(); getCompletedVersions() }}
             />
           </FormGroup>
         }

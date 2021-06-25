@@ -38,7 +38,7 @@ const BranchesTable = (props: SourceTableParams) => {
   const columns: GridTableColumnParams[] = [
     {
       name: 'source',
-      headerName: 'Source',
+      headerName: 'Source Name',
       className: classes.nameColumn
     },
     {

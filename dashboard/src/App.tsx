@@ -9,7 +9,7 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import './assets/scss/index.scss';
 import validators from './common/validators';
 import LoginRoutes from './Routes';
-import {ApolloLink, ApolloProvider, Resolvers, ServerError} from '@apollo/client';
+import {ApolloLink, ApolloProvider, Operation, Resolvers, ServerError} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import {onError} from '@apollo/client/link/error';
@@ -18,6 +18,8 @@ import {MuiPickersUtilsProvider} from "@material-ui/pickers";
 import {withScalars} from "apollo-link-scalars";
 import introspectionResult from "./generated/graphql.schema.json";
 import {buildClientSchema, GraphQLScalarType, IntrospectionQuery} from "graphql"
+import {stripProperty} from "./common/Graphql";
+import {NextLink} from "@apollo/client/link/core/types";
 
 const browserHistory = createBrowserHistory();
 
@@ -83,10 +85,18 @@ const scalarsLink = withScalars({
   }
 });
 
+const removeTypenameLink = new ApolloLink(
+  (operation: Operation, forward: NextLink) => {
+    operation.variables = stripProperty(operation.variables, '__typename');
+    return forward(operation);
+  }
+)
+
 const link = ApolloLink.from([
   errorLink,
   authLink,
   scalarsLink,
+  removeTypenameLink,
   httpLink
 ]);
 

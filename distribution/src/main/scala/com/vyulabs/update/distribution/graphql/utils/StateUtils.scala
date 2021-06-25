@@ -111,7 +111,7 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
 
   def getServiceLogs(distribution: DistributionId, service: ServiceId, instance: InstanceId,
                      processId: ProcessId, directory: ServiceDirectory, fromSequence: Option[Long])
-                    (implicit log: Logger): Future[Seq[Sequenced[LogLine]]] = {
+                    (implicit log: Logger): Future[Seq[SequencedLogLine]] = {
     val distributionArg = Filters.eq("distribution", distribution)
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
@@ -120,14 +120,14 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
     val sequenceArg = fromSequence.map(sequence => Filters.gte("_id", sequence))
     val args = Seq(distributionArg, serviceArg, instanceArg, processArg, directoryArg) ++ sequenceArg
     val filters = Filters.and(args.asJava)
-    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => Sequenced(line.sequence, line.document.line)))
+    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
   }
 
-  def getTaskLogs(taskId: TaskId, fromSequence: Option[Long])(implicit log: Logger): Future[Seq[Sequenced[LogLine]]] = {
+  def getTaskLogs(taskId: TaskId, fromSequence: Option[Long])(implicit log: Logger): Future[Seq[SequencedLogLine]] = {
     val taskArg = Filters.eq("taskId", taskId)
     val sequenceArg = fromSequence.map(sequence => Filters.gte("_id", sequence))
     val filters = Filters.and((Seq(taskArg) ++ sequenceArg).asJava)
-    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => Sequenced(line.sequence, line.document.line)))
+    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
   }
 
   def subscribeServiceLogs(distribution: DistributionId, service: ServiceId,

@@ -80,7 +80,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
               <GridActions adding={adding}
                            editing={editing}
                            valid={!columns.find(
-                             c => { return c != column && !c.validate?.(editValues.get(c.name), rowNum) })}
+                             c => { return c.validate && !c.validate(editValues.get(c.name), rowNum) })}
                            actions={values.get(column.name)! as JSX.Element[]}
                            onSubmit={() => onSubmitted?.(editValues, editOldValues) }
                            onCancel={() => onCanceled?.() }

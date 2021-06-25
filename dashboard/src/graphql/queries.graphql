@@ -86,11 +86,23 @@ mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!
     setClientDesiredVersions (versions: $versions)
 }
 
-# States
+# States and logs
 
 query serviceStates ($distribution: String!) {
     serviceStates (distribution: $distribution) {
         distribution, instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+    }
+}
+
+query serviceLogs ($distribution: String!, $service: String!, $instance: String!, $process: String!, $directory: String!) {
+    serviceLogs (distribution: $distribution, service: $service, instance: $instance, process: $process, directory: $directory) {
+        sequence, line { date, level, unit, message, terminationStatus }
+    }
+}
+
+query taskLogs ($task: String!) {
+    taskLogs (task: $task) {
+        sequence, line { date, level, unit, message, terminationStatus }
     }
 }
 
