@@ -10,7 +10,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future}
 
-case class Task(taskId: TaskId, description: String, future: Future[Unit], cancel: Option[() => Unit]) {
+case class Task(task: TaskId, description: String, future: Future[Unit], cancel: Option[() => Unit]) {
   val startDate: Date = new Date
 }
 
@@ -31,9 +31,9 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
     appender.start()
     val (future, cancel) = run(taskId, logger)
     val task = Task(taskId, description, future, cancel)
-    activeTasks += (task.taskId -> task)
+    activeTasks += (task.task -> task)
     future.andThen { case status =>
-      log.info(s"Task ${taskId} '${description}' is finished with status ${status}")
+      log.info(s"Task ${task} '${description}' is finished with status ${status}")
       if (status.isSuccess) {
         appender.setTerminationStatus(true, None)
       } else {
@@ -45,8 +45,8 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
     task
   }
 
-  def cancel(taskId: TaskId): Boolean = {
-    for (task <- activeTasks.get(taskId)) {
+  def cancel(task: TaskId): Boolean = {
+    for (task <- activeTasks.get(task)) {
       for (cancel <- task.cancel) {
         cancel()
         return true

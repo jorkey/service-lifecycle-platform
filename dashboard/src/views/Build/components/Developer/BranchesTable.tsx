@@ -27,7 +27,7 @@ const useStyles = makeStyles(theme => ({
 interface SourceTableParams {
   branches: { name: string, branch: string}[]
   editable: boolean
-  onBranchesChanged: (sources: { name: string, branch: string}[]) => void
+  onBranchesChanged?: (sources: { name: string, branch: string}[]) => void
 }
 
 const BranchesTable = (props: SourceTableParams) => {
@@ -67,7 +67,7 @@ const BranchesTable = (props: SourceTableParams) => {
       columns={columns}
       rows={rows}
       onRowChanged={ (row, values, oldValues) => {
-        onBranchesChanged(branches.map(branch =>
+        onBranchesChanged?.(branches.map(branch =>
           (branch.name == values.get('source')!)?{
             name: values.get('source')! as string, branch: values.get('branch')! as string}:branch)) }}
     />

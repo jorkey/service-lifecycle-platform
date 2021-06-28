@@ -44,9 +44,9 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     assertResult(OK)(buildResponse._1)
     val fields = buildResponse._2.asJsObject.fields
     val data = fields.get("data").get.asJsObject
-    val taskId = data.fields.get("buildDeveloperVersion").get.toString().drop(1).dropRight(1)
+    val task = data.fields.get("buildDeveloperVersion").get.toString().drop(1).dropRight(1)
 
-    val subscribeResponse = subscribeTaskLogs(taskId)
+    val subscribeResponse = subscribeTaskLogs(task)
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
@@ -81,9 +81,9 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     assertResult(OK)(buildResponse._1)
     val fields = buildResponse._2.asJsObject.fields
     val data = fields.get("data").get.asJsObject
-    val taskId = data.fields.get("buildDeveloperVersion").get.toString().drop(1).dropRight(1)
+    val task = data.fields.get("buildDeveloperVersion").get.toString().drop(1).dropRight(1)
 
-    val subscribeResponse = subscribeTaskLogs(taskId)
+    val subscribeResponse = subscribeTaskLogs(task)
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
@@ -97,10 +97,10 @@ class BuildDeveloperVersionTest extends TestEnvironment {
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":15,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
 
     assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
-        mutation CancelTask($$taskId: String!) {
-          cancelTask (task: $$taskId)
+        mutation CancelTask($$task: String!) {
+          cancelTask (task: $$task)
         }
-      """, variables = JsObject("taskId" -> JsString(taskId)))))
+      """, variables = JsObject("task" -> JsString(task)))))
 
     println(logInput.requestNext())
     println(logInput.requestNext())
@@ -120,9 +120,9 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     assertResult(OK)(buildResponse._1)
     val fields = buildResponse._2.asJsObject.fields
     val data = fields.get("data").get.asJsObject
-    val taskId = data.fields.get("runBuilder").get.toString().drop(1).dropRight(1)
+    val task = data.fields.get("runBuilder").get.toString().drop(1).dropRight(1)
 
-    val subscribeResponse = subscribeTaskLogs(taskId)
+    val subscribeResponse = subscribeTaskLogs(task)
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
@@ -146,11 +146,11 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     logInput.expectComplete()
   }
 
-  def subscribeTaskLogs(taskId: TaskId): ToResponseMarshallable = {
+  def subscribeTaskLogs(task: TaskId): ToResponseMarshallable = {
     result(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
-        subscription SubscribeTaskLogs($$taskId: String!) {
+        subscription SubscribeTaskLogs($$task: String!) {
           subscribeTaskLogs (
-            task: $$taskId,
+            task: $$task,
             from: 1
           ) {
             sequence
@@ -162,6 +162,6 @@ class BuildDeveloperVersionTest extends TestEnvironment {
             }
           }
         }
-      """, variables = JsObject("taskId" -> JsString(taskId))))
+      """, variables = JsObject("task" -> JsString(task))))
   }
 }

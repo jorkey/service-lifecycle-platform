@@ -188,12 +188,12 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info(s"--------------------------- Versions for update ${versionsForUpdate}")
     versionsForUpdate.foreach { case (service, version) =>
       log.info(s"--------------------------- Install provider version ${version} of service ${service}")
-      val taskId = adminDistributionClient.get.graphqlRequest(administratorMutations.installProviderVersion(providerDistributionName.get, service, version)).getOrElse {
+      val task = adminDistributionClient.get.graphqlRequest(administratorMutations.installProviderVersion(providerDistributionName.get, service, version)).getOrElse {
         log.error(s"Can't install provider developer version ${version} of service ${service}")
         return false
       }
-      val source = adminDistributionClient.get.graphqlSubRequest(administratorSubscriptions.subscribeTaskLogs(taskId)).getOrElse {
-        log.error(s"Can't subscribe to task ${taskId} logs")
+      val source = adminDistributionClient.get.graphqlSubRequest(administratorSubscriptions.subscribeTaskLogs(task)).getOrElse {
+        log.error(s"Can't subscribe to task ${task} logs")
         return false
       }
       var line = Option.empty[SequencedServiceLogLine]

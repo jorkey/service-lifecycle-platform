@@ -7,6 +7,7 @@ import {
 import {LogsTable} from "./LogsTable";
 import Alert from "@material-ui/lab/Alert";
 import {makeStyles} from "@material-ui/core/styles";
+import {dark} from "@material-ui/core/styles/createPalette";
 
 const useStyles = makeStyles(theme => ({
   alert: {
@@ -15,23 +16,34 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface TaskLogsParams {
-  taskId: string
+  task: string
+  terminated: () => void
 }
 
 export const TaskLogs = (props: TaskLogsParams) => {
-  const { taskId } = props
+  const { task, terminated } = props
   const [error, setError] = useState<string>()
   const classes = useStyles()
 
   const { data: taskLogs } = useTaskLogsQuery({
-    variables: { task: taskId },
+    variables: { task: task },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query service logs error ' + err.message) },
-    onCompleted() { setError(undefined) }
+    onCompleted(data) {
+      if (data.taskLogs) {
+        setError(undefined)
+        if (data.taskLogs.find(log => log.line.terminationStatus)) {
+          terminated()
+        }
+      }
+    }
   })
 
   return (<>
-    { (taskLogs && taskLogs?.taskLogs) ? <TaskLogsSubscription taskId={taskId} lines={taskLogs.taskLogs}/> : null }
+    { (taskLogs && taskLogs?.taskLogs) ? <TaskLogsSubscription
+        taskId={task}
+        lines={taskLogs.taskLogs}
+        terminated={() => terminated()}/> : null }
     { error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
   </>)
 }
@@ -39,10 +51,11 @@ export const TaskLogs = (props: TaskLogsParams) => {
 interface TaskLogsSubscriptionParams {
   taskId: string
   lines: SequencedLogLine[]
+  terminated: () => void
 }
 
 export const TaskLogsSubscription = (props: TaskLogsSubscriptionParams) => {
-  const { taskId, lines } = props
+  const { taskId, lines, terminated } = props
   const [logLines, setLogLines] = useState<LogLine[]>(lines.map(line => line.line))
   const from = (lines.length == 0) ? 0 : lines[lines.length-1].sequence
 
@@ -51,7 +64,11 @@ export const TaskLogsSubscription = (props: TaskLogsSubscriptionParams) => {
     fetchPolicy: 'no-cache',
     onSubscriptionData(data) {
       if (data.subscriptionData.data) {
-        setLogLines([...logLines, data.subscriptionData.data.subscribeTaskLogs.line])
+        const line = data.subscriptionData.data.subscribeTaskLogs.line
+        if (line.terminationStatus) {
+          terminated()
+        }
+        setLogLines([...logLines, line])
       }
     },
     onSubscriptionComplete() {}

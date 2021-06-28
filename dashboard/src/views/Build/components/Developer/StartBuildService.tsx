@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import {NavLink as RouterLink, RouteComponentProps, useRouteMatch, useHistory} from "react-router-dom"
+import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -17,7 +17,6 @@ import {
   SourceConfig,
   useBuildDeveloperVersionMutation,
   useDeveloperVersionsInfoLazyQuery,
-  useDeveloperVersionsInProcessQuery,
   useServiceSourcesLazyQuery,
   useWhoAmILazyQuery
 } from '../../../../generated/graphql';
@@ -57,7 +56,7 @@ interface BuildServiceParams extends RouteComponentProps<BuildRouteParams> {
   fromUrl: string
 }
 
-const BuildService: React.FC<BuildServiceParams> = props => {
+const StartBuildService: React.FC<BuildServiceParams> = props => {
   const classes = useStyles()
 
   const service = props.match.params.service
@@ -67,20 +66,12 @@ const BuildService: React.FC<BuildServiceParams> = props => {
   const [sources, setSources] = useState<SourceConfig[]>([]);
   const [comment, setComment] = useState('');
 
-  const [taskId, setTaskId] = useState('')
-
   const [initialized, setInitialized] = useState(false)
 
   const [error, setError] = useState<string>()
 
   const history = useHistory()
 
-  const { data: versionInProcess } = useDeveloperVersionsInProcessQuery({
-    variables: { service: service },
-    fetchPolicy: 'no-cache',
-    onError(err) { setError('Query developer versions in process error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
   const [ getWhoAmI, whoAmI ] = useWhoAmILazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query who am I error ' + err.message) },
@@ -104,44 +95,31 @@ const BuildService: React.FC<BuildServiceParams> = props => {
     fetchPolicy: 'no-cache',
     onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
-      setTaskId(data.buildDeveloperVersion)
-      setError(undefined)
+      history.push(props.fromUrl + '/developer/monitor/' + service)
     }
   })
 
   if (!initialized) {
-    if (versionInProcess) {
-      if (versionInProcess.developerVersionsInProcess?.length) {
-        const v = versionInProcess?.developerVersionsInProcess![0]
-        setTaskId(v.taskId)
-        setVersion(Version.buildToString(v.version.build))
-        setAuthor(v.author)
-        setSources(v.sources)
-        setComment(v.comment)
-        setInitialized(true)
-      } else {
-        if (!whoAmI.data && !whoAmI.loading) {
-          getWhoAmI()
-        }
-        if (!developerVersions.data && !developerVersions.loading) {
-          getDeveloperVersions()
-        }
-        if (!serviceSources.data && !serviceSources.loading) {
-          getServiceSources()
-        }
-        if (whoAmI.data && developerVersions.data && serviceSources.data) {
-          const versions = [...developerVersions.data.developerVersionsInfo]
-            .sort((v1, v2) =>
-              Version.compareBuilds(v1.version.build, v2.version.build))
-          const lastVersion = versions.length > 0 ? versions[versions.length-1] : undefined
-          if (lastVersion) {
-            setVersion(Version.buildToString(Version.nextBuild(lastVersion.version.build)))
-          }
-          setAuthor(whoAmI.data.whoAmI.user)
-          setSources(serviceSources.data.serviceSources)
-          setInitialized(true)
-        }
+    if (!whoAmI.data && !whoAmI.loading) {
+      getWhoAmI()
+    }
+    if (!developerVersions.data && !developerVersions.loading) {
+      getDeveloperVersions()
+    }
+    if (!serviceSources.data && !serviceSources.loading) {
+      getServiceSources()
+    }
+    if (whoAmI.data && developerVersions.data && serviceSources.data) {
+      const versions = [...developerVersions.data.developerVersionsInfo]
+        .sort((v1, v2) =>
+          Version.compareBuilds(v1.version.build, v2.version.build))
+      const lastVersion = versions.length > 0 ? versions[versions.length-1] : undefined
+      if (lastVersion) {
+        setVersion(Version.buildToString(Version.nextBuild(lastVersion.version.build)))
       }
+      setAuthor(whoAmI.data.whoAmI.user)
+      setSources(serviceSources.data.serviceSources)
+      setInitialized(true)
     }
   }
 
@@ -161,8 +139,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
   const BuildCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={taskId?`Building Service '${service}'. Author ${author}.`:
-          `Build Service '${service}'.`}/>
+        <CardHeader title={`Start Build Service '${service}'.`}/>
         <CardContent>
           <Grid container spacing={3}>
             <Grid item md={2} xs={12}>
@@ -174,7 +151,6 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                 helperText={!validateVersion(version) ? 'Version is not valid': ''}
                 error={!validateVersion(version)}
                 onChange={(e: any) => setVersion(e.target.value)}
-                disabled={!!taskId}
                 required
                 variant="outlined"
               />
@@ -188,14 +164,13 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                 value={comment}
                 variant="outlined"
                 onChange={(e: any) => setComment(e.target.value)}
-                disabled={!!taskId}
                 error={!comment}
               />
             </Grid>
           </Grid>
           <BranchesTable
             branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
-            editable={!taskId}
+            editable={true}
             onBranchesChanged={branches => setSources(sources.map(source => {
               const branch = branches.find(branch => branch.name == source.name)
               return branch ?
@@ -203,7 +178,6 @@ const BuildService: React.FC<BuildServiceParams> = props => {
                 : source }))
             }
           />
-          { taskId ? <TaskLogs taskId={taskId}/> : null }
       </CardContent>
     </Card>)
   }
@@ -221,7 +195,7 @@ const BuildService: React.FC<BuildServiceParams> = props => {
             color="primary"
             variant="contained"
             component={RouterLink}
-            to={props.fromUrl + '/' /* + props.match.params.type */}
+            to={ props.fromUrl }
           >
             Cancel
           </Button>
@@ -238,4 +212,4 @@ const BuildService: React.FC<BuildServiceParams> = props => {
   );
 }
 
-export default BuildService;
+export default StartBuildService;

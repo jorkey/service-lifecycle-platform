@@ -80,7 +80,6 @@ const BuildDeveloper = () => {
 
   const [error, setError] = useState<string>()
   const history = useHistory()
-  const handleOnClick = useCallback((service: string) => history.push('developer/' + service), [history]);
 
   const { data: services, refetch: getServices } = useDeveloperServicesQuery({
     fetchPolicy: 'no-cache',
@@ -97,6 +96,12 @@ const BuildDeveloper = () => {
     onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
+
+  const handleOnClick = useCallback((service: string) => {
+    versionsInProcess?.developerVersionsInProcess.find(version => version.service == service) ?
+      history.push('developer/monitor/' + service) :
+      history.push('developer/start/' + service)
+  }, [ versionsInProcess, history ]);
 
   const columns: Array<GridTableColumnParams> = [
     {

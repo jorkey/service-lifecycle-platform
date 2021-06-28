@@ -39,19 +39,19 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
         throw new IOException(s"Build developer version of service ${service} is already in process")
       }
       val task = taskManager.create(s"Build developer version ${version} of service ${service}",
-        (taskId, logger) => {
+        (task, logger) => {
           implicit val log = logger
           val arguments = Seq("buildDeveloperVersion",
             s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
             s"sources=${sources.toJson.compactPrint}") ++
             comment.map(comment => s"comment=${comment}")
-          runBuilder(taskId, arguments)
+          runBuilder(task, arguments)
         })
       versionsInProcess = versionsInProcess.filter(_.service != service) :+ DeveloperVersionInProcessInfo(service, version, author, sources, comment,
-        task.taskId, new Date())
+        task.task, new Date())
       task.future.andThen { case _ => synchronized {
         versionsInProcess = versionsInProcess.filter(_.service != service) } }
-      task.taskId
+      task.task
     }
   }
 

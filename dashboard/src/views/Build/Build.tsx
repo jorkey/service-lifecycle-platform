@@ -4,7 +4,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import BuildDeveloper from "./components/Developer/BuildDeveloper";
-import BuildService from "./components/Developer/BuildService";
+import StartBuildService from "./components/Developer/StartBuildService";
+import MonitorBuildService from "./components/Developer/MonitorBuildService";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -28,8 +29,11 @@ const Build = () => {
           <Switch>
             <Route exact path={`${routeMatch.url}/developer`}
                    component={BuildDeveloper}/>
-            <Route exact path={`${routeMatch.url}/developer/:service`}
-                   render={(props) => <BuildService fromUrl={routeMatch.url} {...props} /> }>
+            <Route exact path={`${routeMatch.url}/developer/start/:service`}
+                   render={(props) => <StartBuildService fromUrl={routeMatch.url} {...props} /> }>
+            </Route>
+            <Route exact path={`${routeMatch.url}/developer/monitor/:service`}
+                   render={(props) => <MonitorBuildService fromUrl={routeMatch.url} {...props} /> }>
             </Route>
             <Route exact path={`${routeMatch.url}/client`} />
           </Switch>

@@ -38,4 +38,4 @@ object InstallInfo extends DefaultJsonProtocol {
 
 case class DeveloperVersionInProcessInfo(service: ServiceId, version: DeveloperVersion, author: UserId,
                                          sources: Seq[SourceConfig], comment: String,
-                                         taskId: TaskId, startTime: Date)
+                                         task: TaskId, startTime: Date)

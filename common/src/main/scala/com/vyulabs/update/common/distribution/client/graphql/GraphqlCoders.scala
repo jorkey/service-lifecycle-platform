@@ -197,11 +197,11 @@ trait AddClientVersionInfoCoder {
 }
 
 trait AddServiceLogsCoder {
-  def addServiceLogs(service: ServiceId, instance: InstanceId, processId: ProcessId, taskId: Option[TaskId],
+  def addServiceLogs(service: ServiceId, instance: InstanceId, processId: ProcessId, task: Option[TaskId],
                      serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
     GraphqlMutation[Boolean]("addServiceLogs",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("instance" -> instance), GraphqlArgument("process" -> processId),
-        GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ taskId.map(taskId => GraphqlArgument("taskId" -> taskId)))
+        GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ task.map(task => GraphqlArgument("task" -> task)))
 }
 
 trait SetServiceStatesCoder {
@@ -216,9 +216,9 @@ trait AddFaultReportInfoCoder {
 
 
 trait SubscribeTaskLogsCoder {
-  def subscribeTaskLogs(taskId: TaskId) =
-    GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> taskId, "String")),
-      "{ sequence, logLine { distribution, service, taskId, instance, processId, directory, line { date, level, unit, message, terminationStatus } } }")
+  def subscribeTaskLogs(task: TaskId) =
+    GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> task, "String")),
+      "{ sequence, logLine { distribution, service, task, instance, processId, directory, line { date, level, unit, message, terminationStatus } } }")
 }
 
 trait TestSubscriptionCoder {

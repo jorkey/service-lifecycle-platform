@@ -200,21 +200,21 @@ class SimpleLifecycle {
   private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
                                        version: DeveloperVersion, sources: Seq[SourceConfig]): Unit = {
     println("--------------------------- Build developer version of test service")
-    val taskId = developerClient.graphqlRequest(
+    val task = developerClient.graphqlRequest(
         developerMutations.buildDeveloperVersion(testServiceName, version, sources)).getOrElse {
       sys.error("Can't execute build developer version task")
     }
-    if (!subscribeTask(developerClient, taskId)) {
+    if (!subscribeTask(developerClient, task)) {
       sys.error("Execution of build developer version task error")
     }
 
     println("--------------------------- Build client version of test service")
-    val taskId1 = developerClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
+    val task1 = developerClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
         DeveloperDistributionVersion.from(distribution, version),
         ClientDistributionVersion.from(distribution, version, 0))).getOrElse {
       sys.error("Can't execute build client version task")
     }
-    if (!subscribeTask(developerClient, taskId1)) {
+    if (!subscribeTask(developerClient, task1)) {
       sys.error("Execution of build client version task error")
     }
 
@@ -225,8 +225,8 @@ class SimpleLifecycle {
     }
   }
 
-  private def subscribeTask(distributionClient: SyncDistributionClient[SyncSource], taskId: TaskId): Boolean = {
-    val source = distributionClient.graphqlSubRequest(developerSubscriptions.subscribeTaskLogs(taskId)).getOrElse {
+  private def subscribeTask(distributionClient: SyncDistributionClient[SyncSource], task: TaskId): Boolean = {
+    val source = distributionClient.graphqlSubRequest(developerSubscriptions.subscribeTaskLogs(task)).getOrElse {
       sys.error("Can't subscribe build developer version task")
     }
     while (true) {

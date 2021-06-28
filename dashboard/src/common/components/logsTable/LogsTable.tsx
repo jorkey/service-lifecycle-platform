@@ -13,15 +13,15 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: '16px'
   },
   levelColumn: {
-    width: '200px',
+    width: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
-  unitColumn: {
-    width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
+  // unitColumn: {
+  //   width: '100px',
+  //   padding: '4px',
+  //   paddingLeft: '16px'
+  // },
   messageColumn: {
     padding: '4px',
     paddingLeft: '16px'
@@ -49,11 +49,11 @@ export const LogsTable = (props: LogsTableParams) => {
       headerName: 'Level',
       className: classes.levelColumn
     },
-    {
-      name: 'unit',
-      headerName: 'Unit',
-      className: classes.unitColumn
-    },
+    // {
+    //   name: 'unit',
+    //   headerName: 'Unit',
+    //   className: classes.unitColumn
+    // },
     {
       name: 'message',
       headerName: 'Line',

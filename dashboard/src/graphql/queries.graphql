@@ -18,7 +18,7 @@ query distributionInfo {
 
 query developerVersionsInProcess ($service: String) {
     developerVersionsInProcess (service: $service) {
-        service, version { build }, author, sources { name, git { url, branch, cloneSubmodules } }, comment, taskId, startTime
+        service, version { build }, author, sources { name, git { url, branch, cloneSubmodules } }, comment, task, startTime
     }
 }
 
@@ -230,4 +230,10 @@ subscription subscribeServiceLogs ($distribution: String!, $service: String!, $i
             directory: $directory, from: $from) {
         sequence, line { date, level, unit, message, terminationStatus }
     }
+}
+
+# Cancel task
+
+mutation cancelTask ($task: String!) {
+    cancelTask (task: $task)
 }

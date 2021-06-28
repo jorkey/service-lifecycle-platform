@@ -24,7 +24,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
 
   /*
   def buildClientVersions(services: Seq[ServiceName], author: String)(implicit log: Logger): TaskId = {
-    taskManager.create(s"Build client versions of services ${services} by ${author}", (taskId, logger) => {
+    taskManager.create(s"Build client versions of services ${services} by ${author}", (task, logger) => {
       implicit val log = logger
       @volatile var cancels = Seq.empty[() => Unit]
       val future = for {
@@ -52,22 +52,22 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
         result <- setClientDesiredVersions(ClientDesiredVersions.fromMap(clientDesiredVersions))
       } yield result
       (future, Some(() => cancels.foreach { _() }))
-    }).taskId
+    }).task
   }*/
 
   def buildClientVersion(service: ServiceId,
                          developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String)
                         (implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Build client version ${developerVersion} of service ${service}",
-      (taskId, logger) => {
+      (task, logger) => {
         implicit val log = logger
         val arguments = Seq("buildClientVersion",
           s"distribution=${config.distribution}", s"service=${service}",
           s"developerVersion=${developerVersion.toString}", s"clientVersion=${clientVersion.toString}",
           s"author=${author}")
-        runBuilder(taskId, arguments)
+        runBuilder(task, arguments)
       })
-    task.taskId
+    task.task
   }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {

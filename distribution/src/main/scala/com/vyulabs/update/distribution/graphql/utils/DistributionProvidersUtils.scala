@@ -57,7 +57,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
   def installProviderVersion(distributionProvider: DistributionId, service: ServiceId, version: DeveloperDistributionVersion)
                             (implicit log: Logger): TaskId = {
     val task = taskManager.create(s"Download and install developer version ${version} of service ${service}",
-      (taskId, logger) => {
+      (task, logger) => {
         implicit val log = logger
         val future = for {
           distributionProviderClient <- getDistributionProviderClient(distributionProvider)
@@ -91,7 +91,7 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
         } yield {}
         (future, None)
       })
-    task.taskId
+    task.task
   }
 
   def getProvidersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionProviderInfo]] = {
