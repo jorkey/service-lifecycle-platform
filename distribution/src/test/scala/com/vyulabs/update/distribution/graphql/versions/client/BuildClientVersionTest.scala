@@ -147,7 +147,7 @@ class BuildClientVersionTest extends TestEnvironment {
   }
 
   def subscribeTaskLogs(task: TaskId): ToResponseMarshallable = {
-    result(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
+    result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         subscription SubscribeTaskLogs($$task: String!) {
           subscribeTaskLogs (
             task: $$task,

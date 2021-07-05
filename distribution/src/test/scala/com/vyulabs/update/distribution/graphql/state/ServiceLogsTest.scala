@@ -124,7 +124,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   def subscribeServiceLogs(from: Long): ToResponseMarshallable = {
-    result(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
+    result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         subscription SubscribeServiceLogs($$from: Long!) {
           subscribeServiceLogs (
             distribution: "test",
@@ -166,7 +166,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   def subscribeTaskLogs(from: Long): ToResponseMarshallable = {
-    result(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
+    result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         subscription SubscribeTaskLogs($$from: Long!) {
           subscribeTaskLogs (
             task: "task1",

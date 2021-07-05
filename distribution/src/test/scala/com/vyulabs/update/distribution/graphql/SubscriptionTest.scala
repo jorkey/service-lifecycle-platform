@@ -30,7 +30,7 @@ class SubscriptionTest extends TestEnvironment with ScalatestRouteTest {
 
   it should "test subscription" in {
     val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
-    val subscribeResponse = result(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
+    val subscribeResponse = result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
       subscription {
         testSubscription
       }

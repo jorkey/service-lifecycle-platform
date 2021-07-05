@@ -9,7 +9,7 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import './assets/scss/index.scss';
 import validators from './common/validators';
 import LoginRoutes from './Routes';
-import {ApolloLink, ApolloProvider, Operation, Resolvers, ServerError} from '@apollo/client';
+import {ApolloLink, ApolloProvider, Operation, Resolvers, ServerError, split} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import {onError} from '@apollo/client/link/error';
@@ -17,9 +17,13 @@ import DateFnsUtils from "@date-io/date-fns";
 import {MuiPickersUtilsProvider} from "@material-ui/pickers";
 import {withScalars} from "apollo-link-scalars";
 import introspectionResult from "./generated/graphql.schema.json";
-import {buildClientSchema, GraphQLScalarType, IntrospectionQuery} from "graphql"
+import {buildClientSchema, GraphQLScalarType, IntrospectionQuery, OperationDefinitionNode} from "graphql"
 import {stripProperty} from "./common/Graphql";
 import {NextLink} from "@apollo/client/link/core/types";
+import {getMainDefinition, Observable} from '@apollo/client/utilities';
+import EventSource from 'eventsource'
+import { WebSocketLink } from "@apollo/client/link/ws"
+import {SubscriptionClient} from "subscriptions-transport-ws";
 
 const browserHistory = createBrowserHistory();
 
@@ -57,7 +61,7 @@ const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
   }
 
   if (networkError) {
-    console.log(`Network error: ${networkError}`);
+    console.log(`Network error: ${JSON.stringify(networkError)}`);
     if ((networkError as ServerError).statusCode === 401) {
       localStorage.removeItem('token')
       window.location.replace('/')
@@ -92,12 +96,54 @@ const removeTypenameLink = new ApolloLink(
   }
 )
 
+const sseLink = new ApolloLink(
+  (operation: Operation, forward: NextLink) => {
+    const token = localStorage.getItem('token');
+    return operation.operationName.startsWith('subscribe') ?
+      new Observable(observer => {
+        const source = new EventSource('/graphql'
+          + '?query=' + operation.query.loc?.source.body.trim()
+          + '&operation=' + operation.operationName
+          + '&variables=' + JSON.stringify(operation.variables).trim(),
+          { headers: { 'Authorization': `Bearer ${token}` }})
+
+        source.onopen = (event) => {
+          console.log('source.onopen ' + JSON.stringify(event))
+        };
+        source.onmessage = (event) => {
+          console.log('source.onmessage ' + JSON.stringify(event))
+          observer.next(event);
+        };
+        source.onerror = (exception) => {
+          console.log('source.onerror ' + JSON.stringify(exception))
+          observer.error(exception);
+        };
+
+        return () => {
+          source.close();
+        };
+      })
+      : forward(operation);
+  }
+)
+
+const wsLink: ApolloLink = new WebSocketLink(new SubscriptionClient('ws://localhost:8000/graphql',{
+    reconnect: true
+}))
+
 const link = ApolloLink.from([
-  errorLink,
-  authLink,
-  scalarsLink,
   removeTypenameLink,
-  httpLink
+  authLink,
+  errorLink,
+  scalarsLink,
+  split(
+    ({ query }) => {
+      const definition = getMainDefinition(query);
+      return definition.kind === 'OperationDefinition' && definition.operation === 'subscription'
+    },
+    wsLink,
+    httpLink
+  )
 ]);
 
 const client = new ApolloClient({

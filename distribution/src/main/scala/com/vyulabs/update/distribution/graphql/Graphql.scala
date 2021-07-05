@@ -1,5 +1,6 @@
 package com.vyulabs.update.distribution.graphql
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
@@ -7,6 +8,7 @@ import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK}
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import org.slf4j.LoggerFactory
 import sangria.ast.Document
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError, _}
@@ -54,9 +56,9 @@ class Graphql() extends SprayJsonSupport {
       }
   }
 
-  def executeSubscriptionQuery(schema: Schema[GraphqlContext, Unit], context: GraphqlContext,
-                              query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty)
-                             (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): Future[ToResponseMarshallable] = {
+  def executeSubscriptionQueryToSSE(schema: Schema[GraphqlContext, Unit], context: GraphqlContext,
+                                    query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty)
+                                   (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): Future[ToResponseMarshallable] = {
     import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
     import sangria.execution.ExecutionScheme.Stream
     import sangria.streaming.akkaStreams._
@@ -78,5 +80,18 @@ class Graphql() extends SprayJsonSupport {
           log.error("Graphql query error", error)
           ToResponseMarshallable(InternalServerError -> error.resolveError)
       }
+  }
+
+  def executeSubscriptionQueryToJsonSource(schema: Schema[GraphqlContext, Unit], context: GraphqlContext,
+                                           query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty,
+                                           tracing: Boolean = false)
+                                           (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)
+      : Source[String, NotUsed] = {
+    import sangria.execution.ExecutionScheme.Stream
+    import sangria.streaming.akkaStreams._
+    Executor.execute(schema = schema, queryAst = query, userContext = context, operationName = operation,
+      variables = variables, exceptionHandler = errorHandler,
+      middleware = AuthMiddleware :: (if (tracing) SlowLog.apolloTracing :: Nil else Nil)
+    ).map(_.compactPrint)
   }
 }

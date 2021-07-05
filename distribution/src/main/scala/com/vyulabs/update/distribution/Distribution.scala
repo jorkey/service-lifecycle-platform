@@ -15,7 +15,7 @@ import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlSchema, GraphqlWorkspace}
+import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlHttpSupport, GraphqlSchema, GraphqlWebSocketSupport, GraphqlWorkspace}
 import org.slf4j.LoggerFactory
 import sangria.ast.OperationType
 import sangria.parser.QueryParser
@@ -24,8 +24,9 @@ import spray.json._
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
-class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
-                  (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) {
+class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
+                  (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)
+    extends GraphqlHttpSupport with GraphqlWebSocketSupport {
   implicit val jsonStreamingSupport = EntityStreamingSupport.json()
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -45,17 +46,10 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
                 (workspace.getOptionalAccessToken() & optionalHeaderValueByName("X-Apollo-Tracing")) { (token, tracing) =>
                   post {
                     entity(as[JsValue]) { requestJson =>
-                      val JsObject(fields) = requestJson
-                      val JsString(query) = fields("query")
-                      val operation = fields.get("operation") collect { case JsString(op) => op }
-                      val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
-                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
+                      executeGraphqlRequest(token, requestJson, tracing.isDefined)
                     }
                   } ~ get {
-                    parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
-                      val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
-                      executeGraphqlRequest(token, workspace, query, operation, variables, tracing.isDefined)
-                    }
+                    handleWebSocketMessages(handleWebSocket(token, tracing.isDefined))
                   }
                 }
               }
@@ -122,29 +116,6 @@ class Distribution(workspace: GraphqlWorkspace, graphql: Graphql)
           }
         }
       }
-    }
-  }
-
-  private def executeGraphqlRequest(token: Option[AccessToken], workspace: GraphqlWorkspace,
-                                    query: String, operation: Option[String], variables: JsObject,
-                                    tracing: Boolean): Route = {
-    QueryParser.parse(query) match {
-      case Success(document) =>
-        val context = GraphqlContext(token, workspace)
-        log.debug(s"Execute graphql query ${query}, operation ${operation}, variables ${variables}")
-        document.operationType(operation) match {
-          case Some(OperationType.Subscription) =>
-            complete(graphql.executeSubscriptionQuery(GraphqlSchema.SchemaDefinition, context, document, operation, variables))
-          case _ =>
-            complete(graphql.executeQuery(GraphqlSchema.SchemaDefinition, context, document, operation, variables, tracing).andThen {
-              case Success((statusCode, value)) =>
-                log.debug(s"Graphql query terminated with status ${statusCode}, value ${value}")
-              case Failure(ex) =>
-                log.error(s"Graphql query terminated with error", ex)
-            })
-        }
-      case Failure(error) =>
-        complete(BadRequest, JsObject("error" -> JsString(error.toString)))
     }
   }
 
