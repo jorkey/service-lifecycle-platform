@@ -20,7 +20,9 @@ trait HttpClient[Stream[_]] {
 
   def graphql[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Response]
 
-  def graphqlSub[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
+  def graphqlSubSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
+
+  def graphqlSubWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
 
   def upload(path: String, fieldName: String, file: File)(implicit log: Logger): Future[Unit]
 

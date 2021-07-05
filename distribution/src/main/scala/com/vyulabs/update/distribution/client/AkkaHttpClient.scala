@@ -3,10 +3,11 @@ package com.vyulabs.update.distribution.client
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, Multipart, StatusCodes}
+import akka.http.scaladsl.model.headers.{Authorization, HttpCredentials, OAuth2BearerToken}
+import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpHeader, Multipart, StatusCodes, Uri}
 import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Framing, Source}
+import akka.stream.scaladsl.{FileIO, Flow, Framing, Source}
 import akka.util.ByteString
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.HttpClient
@@ -18,6 +19,7 @@ import spray.json._
 import java.io.{File, IOException}
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
+import scala.collection._
 
 class AkkaHttpClient(val distributionUrl: URL)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
@@ -48,15 +50,46 @@ class AkkaHttpClient(val distributionUrl: URL)
     }
   }
 
-  override def graphqlSub[Response](request: GraphqlRequest[Response])
-                                   (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
+  override def graphqlSubSSE[Response](request: GraphqlRequest[Response])
+                                      (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
     val queryJson = request.encodeRequest()
-    log.debug(s"Send graphql query: ${queryJson}")
+    log.debug(s"Send graphql SSE query: ${queryJson}")
     var post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
       HttpEntity(ContentTypes.`application/json`, request.encodeRequest().compactPrint.getBytes()))
-    getHttpCredentials().foreach(credentials => post = post.addCredentials(credentials))
+    getHttpCredentials().foreach(credentials => post.addCredentials(credentials))
     for {
       response <- Http(system).singleRequest(post)
+    } yield {
+      if (response.status.isSuccess()) {
+        response.entity.dataBytes
+          .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 10240))
+          .map(_.decodeString("utf8"))
+          .filter(!_.isEmpty)
+          .map(line => if (line.startsWith("data:")) line.substring(5) else throw new IOException(s"Error data line: ${line}"))
+          .map(line => request.decodeResponse(line.parseJson.asJsObject) match {
+            case Left(response) =>
+              response
+            case Right(error) =>
+              throw new IOException(error)
+          })
+      } else {
+        if (response.status == StatusCodes.Unauthorized) {
+          accessToken = None
+        }
+        throw new IOException(response.status.toString())
+      }
+    }
+  }
+
+  override def graphqlSubWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
+    val queryJson = request.encodeRequest()
+    log.debug(s"Send graphql WebSocket query: ${queryJson}")
+    val req = request.encodeRequest().compactPrint
+    val webSocketRequest = WebSocketRequest(Uri(distributionUrl.toString),
+      getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], immutable.Seq.empty[String])
+    for {
+      response <- Http(system).singleWebSocketRequest(webSocketRequest,
+        Flow[Message])
     } yield {
       if (response.status.isSuccess()) {
         response.entity.dataBytes

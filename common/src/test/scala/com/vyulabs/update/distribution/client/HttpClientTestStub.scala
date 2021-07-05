@@ -85,8 +85,12 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
     request.promise.future
   }
 
-  override def graphqlSub[Response](request: GraphqlRequest[Response])
-                                   (implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
+
+  override def graphqlSubSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
+    throw new UnsupportedOperationException()
+  }
+
+  override def graphqlSubWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
     throw new UnsupportedOperationException()
   }
 

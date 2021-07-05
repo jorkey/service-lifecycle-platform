@@ -56,8 +56,8 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
     }
   }
 
-  override def graphqlSub[Response](request: GraphqlRequest[Response])
-                                   (implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
+  override def graphqlSubSSE[Response](request: GraphqlRequest[Response])
+                                      (implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
     Future {
       val connection = openConnection(graphqlPathPrefix)
       try {
@@ -109,6 +109,11 @@ class HttpClientImpl(val distributionUrl: URL, connectTimeoutMs: Int = 1000, rea
           throw ex
       }
     }
+  }
+
+
+  override def graphqlSubWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
+    throw new UnsupportedOperationException()
   }
 
   def upload(path: String, fieldName: String, file: File)

@@ -99,7 +99,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
     for {
       remoteTaskId <- remoteTaskId
-      logSource <- client.graphqlSubRequest(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTaskId))
+      logSource <- client.graphqlSubRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTaskId))
     } yield {
       @volatile var logOutputFuture = Option.empty[Future[Unit]]
       logSource.map(line => {
