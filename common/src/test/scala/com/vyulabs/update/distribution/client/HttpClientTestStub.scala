@@ -3,12 +3,10 @@ package com.vyulabs.update.distribution.client
 import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlRequest}
 import org.scalatest.Matchers
+import org.slf4j.Logger
 import spray.json.JsonReader
 
 import java.io.{File, IOException}
-import org.slf4j.Logger
-
-import java.net.URL
 import scala.collection.immutable.Queue
 import scala.concurrent.{Future, Promise}
 import scala.reflect.ClassTag
@@ -21,7 +19,7 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
   case class DownloadClientRequest(path: String, file: File) extends ClientRequest[Unit]
   case class ExistsClientRequest(path: String) extends ClientRequest[Unit]
 
-  val distributionUrl: URL = new URL("http://test:test@test")
+  val distributionUrl: String = "http://test:test@test"
   var requests = Queue.empty[ClientRequest[_]]
 
   def waitForQuery[Response](command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
@@ -86,11 +84,11 @@ class HttpClientTestStub[Stream[_]] extends HttpClient[Stream] with Matchers {
   }
 
 
-  override def graphqlSubSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
+  override def graphqlSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
     throw new UnsupportedOperationException()
   }
 
-  override def graphqlSubWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
+  override def graphqlWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]] = {
     throw new UnsupportedOperationException()
   }
 

@@ -18,7 +18,6 @@ import org.bson.BsonDocument
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{File, IOException}
-import java.net.URL
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -33,12 +32,12 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def addProvider(distribution: DistributionId, distributionUrl: URL, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
+  def addProvider(distribution: DistributionId, distributionUrl: String, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
       DistributionProviderInfo(distribution, distributionUrl, uploadStateIntervalSec)).map(_ => ())
   }
 
-  def changeProvider(distribution: DistributionId, distributionUrl: URL, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
+  def changeProvider(distribution: DistributionId, distributionUrl: String, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
       (_) => DistributionProviderInfo(distribution, distributionUrl, uploadStateIntervalSec)).map(_ => ())
   }

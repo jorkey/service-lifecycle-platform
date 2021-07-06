@@ -2,14 +2,12 @@ package com.vyulabs.update.builder.config
 
 import com.vyulabs.update.common.common.Common.{DistributionId, InstanceId}
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.utils.JsonFormats._
 import org.slf4j.Logger
 import spray.json._
 
 import java.io.File
-import java.net.URL
 
-case class DistributionLink(distribution: DistributionId, distributionUrl: URL)
+case class DistributionLink(distribution: DistributionId, distributionUrl: String)
 
 object DistributionLink extends DefaultJsonProtocol {
   implicit val distributionLinkJson = jsonFormat2(DistributionLink.apply)

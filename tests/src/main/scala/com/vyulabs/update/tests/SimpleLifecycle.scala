@@ -7,18 +7,17 @@ import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.ClientDesiredVersionDelta
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version._
 import com.vyulabs.update.distribution.mongo.MongoDb
 import com.vyulabs.update.updater.config.UpdaterConfig
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 
 import java.io.File
-import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -32,9 +31,9 @@ class SimpleLifecycle {
   private val distribution = "test-distribution"
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
-  private val developerDistributionUrl = new URL(s"http://${Common.InstallerServiceName}:${Common.InstallerServiceName}@localhost:8000")
-  private val builderDistributionUrl = new URL(s"http://${Common.BuilderServiceName}:${Common.BuilderServiceName}@localhost:8000")
-  private val updaterDistributionUrl = new URL(s"http://${Common.UpdaterServiceName}:${Common.UpdaterServiceName}@localhost:8000")
+  private val developerDistributionUrl = s"http://${Common.InstallerServiceName}:${Common.InstallerServiceName}@localhost:8000"
+  private val builderDistributionUrl = s"http://${Common.BuilderServiceName}:${Common.BuilderServiceName}@localhost:8000"
+  private val updaterDistributionUrl = s"http://${Common.UpdaterServiceName}:${Common.UpdaterServiceName}@localhost:8000"
   private val testServiceName = "test"
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
@@ -226,7 +225,7 @@ class SimpleLifecycle {
   }
 
   private def subscribeTask(distributionClient: SyncDistributionClient[SyncSource], task: TaskId): Boolean = {
-    val source = distributionClient.graphqlSubRequest(developerSubscriptions.subscribeTaskLogs(task)).getOrElse {
+    val source = distributionClient.graphqlRequestSSE(developerSubscriptions.subscribeTaskLogs(task)).getOrElse {
       sys.error("Can't subscribe build developer version task")
     }
     while (true) {

@@ -5,8 +5,8 @@ import akka.stream.stage.{AsyncCallback, GraphStageLogic, GraphStageWithMaterial
 
 import scala.collection.immutable.Queue
 
-class AkkaSource[Stream]() extends GraphStageWithMaterializedValue[SourceShape[Stream], AsyncCallback[Stream]] {
-  private val out = Outlet[Stream](s"AkkaSource")
+class AkkaCallbackSource[Stream]() extends GraphStageWithMaterializedValue[SourceShape[Stream], AsyncCallback[Stream]] {
+  private val out = Outlet[Stream](s"AkkaCallbackSource")
 
   override val shape: SourceShape[Stream] = SourceShape.of(out)
 

@@ -8,7 +8,6 @@ import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
 import java.io.File
-import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
@@ -67,7 +66,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       consumerDistributionName, "Test client distribution server",
       consumerMongoDbName,true, 8001)
 
-    assert(consumerDistributionBuilder.buildFromProviderDistribution(consumerDistributionName, new URL("http://builder:builder@localhost:8000"),
+    assert(consumerDistributionBuilder.buildFromProviderDistribution(consumerDistributionName, "http://builder:builder@localhost:8000",
       Common.CommonConsumerProfile, None))
     assert(consumerDistributionBuilder.updateDistributionFromProvider())
     assert(consumerDistributionBuilder.installBuilder(None))

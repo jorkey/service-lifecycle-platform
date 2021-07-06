@@ -13,8 +13,6 @@ import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
-import java.net.URL
-
 class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
   behavior of "Log trace uploader"
 
@@ -29,7 +27,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
   var server = Http().newServerAt("0.0.0.0", 8084).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
 
-  val httpClient = new HttpClientImpl(new URL("http://updater:updater@localhost:8084"))
+  val httpClient = new HttpClientImpl("http://updater:updater@localhost:8084")
   val distributionClient = new DistributionClient(httpClient)
 
   val sender = new LogUploader("service1", None, "instance1", distributionClient)

@@ -4,12 +4,11 @@ import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.SourceConfig
 import com.vyulabs.update.common.info.UserRole.UserRole
 import com.vyulabs.update.common.info.{DistributionConsumerInfo, _}
-import com.vyulabs.update.common.utils.JsonFormats.{FiniteDurationFormat, URLJsonFormat}
+import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
-import java.net.URL
 import scala.concurrent.duration.FiniteDuration
 
 // Queries
@@ -28,12 +27,12 @@ trait DistributionConsumersCoder {
   def getDistributionProvidersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionProviderInfo]]("providersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
-      subSelection = "{ distribution, distributionUrl, uploadStateInterval }")
+      subSelection = "{ distribution, url, uploadStateIntervalSec }")
 
   def getDistributionConsumersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionConsumerInfo]]("consumersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
-      subSelection = "{ distribution, servicesProfile, testDistributionMatch }")
+      subSelection = "{ distribution, profile, testConsumer }")
 
   def getDistributionProviderDesiredVersions(distribution: DistributionId) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("providerDesiredVersions",
@@ -45,14 +44,14 @@ trait DeveloperVersionsInfoCoder {
   def getDeveloperVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[DeveloperVersion] = None) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "DeveloperVersionInput")).filter(_.value != JsNull),
-      "{ service, version { distribution, build }, buildInfo { author, branches, date, comment } }")
+      "{ service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment } }")
 }
 
 trait ClientVersionsInfoCoder {
   def getClientVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[ClientVersion] = None) =
     GraphqlQuery[Seq[ClientVersionInfo]]("clientVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "ClientVersionInput")).filter(_.value != JsNull),
-      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, branches, date, comment }, installInfo { user,  date} }")
+      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, installInfo { user,  date} }")
 
   def getInstalledDesiredVersions(distribution: DistributionId, services: Seq[ServiceId]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",
@@ -123,7 +122,7 @@ trait ConsumersAdministrationCoder {
   def removeServicesProfile(servicesProfile: ServicesProfileId) =
     GraphqlMutation[Boolean]("removeServicesProfile", Seq(GraphqlArgument("profile" -> servicesProfile)))
 
-  def addProvider(distribution: DistributionId, distributionUrl: URL, uploadStateInterval: Option[FiniteDuration]) =
+  def addProvider(distribution: DistributionId, distributionUrl: String, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addProvider", Seq(GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
   def removeProvider(distribution: DistributionId) =

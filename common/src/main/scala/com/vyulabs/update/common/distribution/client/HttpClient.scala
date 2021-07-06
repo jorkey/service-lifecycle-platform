@@ -1,12 +1,10 @@
 package com.vyulabs.update.common.distribution.client
 
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
+import org.slf4j.Logger
 import spray.json.JsonReader
 
 import java.io._
-import org.slf4j.Logger
-
-import java.net.URL
 import scala.concurrent.Future
 
 /**
@@ -14,15 +12,15 @@ import scala.concurrent.Future
   * Copyright FanDate, Inc.
   */
 trait HttpClient[Stream[_]] {
-  val distributionUrl: URL
+  val distributionUrl: String
 
   @volatile var accessToken = Option.empty[String]
 
   def graphql[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Response]
 
-  def graphqlSubSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
+  def graphqlSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
 
-  def graphqlSubWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
+  def graphqlWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
 
   def upload(path: String, fieldName: String, file: File)(implicit log: Logger): Future[Unit]
 

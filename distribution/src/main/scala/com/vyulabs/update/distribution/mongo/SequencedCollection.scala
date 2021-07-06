@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
 import com.mongodb.client.model._
-import com.vyulabs.update.distribution.common.AkkaSource
+import com.vyulabs.update.distribution.common.AkkaCallbackSource
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
@@ -28,7 +28,7 @@ class SequencedCollection[T: ClassTag](val name: String,
                                        historyExpireDays: Int = 7, createIndex: Boolean = true)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   private implicit val log = Logging(system, this.getClass)
 
-  private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaSource[Sequenced[T]]()).toMat(BroadcastHub.sink)(Keep.both).run()
+  private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Sequenced[T]]()).toMat(BroadcastHub.sink)(Keep.both).run()
   private var publisherBuffer = Queue.empty[Sequenced[T]]
 
   private var modifyInProcess = Option.empty[Future[Int]]

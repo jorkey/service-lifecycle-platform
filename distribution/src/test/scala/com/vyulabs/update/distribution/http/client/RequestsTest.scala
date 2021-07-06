@@ -10,12 +10,11 @@ import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphql
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version._
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import spray.json.DefaultJsonProtocol._
 
-import java.net.URL
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -47,25 +46,25 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
   def httpRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://admin:admin@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://updater:updater@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://updater:updater@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     val builderClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://builder:builder@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://builder:builder@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://distribution:distribution@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://distribution:distribution@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     requests(adminClient, updaterClient, builderClient, distribClient)
   }
 
   def akkaHttpRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://admin:admin@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://admin:admin@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://updater:updater@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://updater:updater@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     val builderClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://builder:builder@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://builder:builder@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://distribution:distribution@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://distribution:distribution@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
     requests(adminClient, updaterClient, builderClient, distribClient)
   }
 
@@ -81,9 +80,9 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
     it should "execute distribution provider requests" in {
       assert(adminClient.graphqlRequest(administratorMutations.addProvider("distribution2",
-          new URL("http://localhost/graphql"), None)).getOrElse(false))
+          "http://localhost/graphql", None)).getOrElse(false))
 
-      assertResult(Some(Seq(DistributionProviderInfo("distribution2", new URL("http://localhost/graphql"), None))))(
+      assertResult(Some(Seq(DistributionProviderInfo("distribution2", "http://localhost/graphql", None))))(
         adminClient.graphqlRequest(administratorQueries.getDistributionProvidersInfo()))
 
       assert(adminClient.graphqlRequest(administratorMutations.removeProvider("distribution2")).getOrElse(false))
@@ -121,7 +120,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
           BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment")))).getOrElse(false))
 
       assertResult(Some(Seq(DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
-        BuildInfo("author1", Seq(SourceConfig("root", GitConfig("git://dummy", "master", None))), date, "comment")))))(
+        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment")))))(
         adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", Some("test"),
           Some(DeveloperVersion(Build.parse("1.2.3"))))))
 
@@ -152,7 +151,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
           BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("user1", date)))).getOrElse(false))
 
       assertResult(Some(Seq(ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("user1", date)))))(
+        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "test", None))), date, "comment"), InstallInfo("user1", date)))))(
         adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", Some("test"),
           Some(ClientVersion.parse("1.2.3_1")))))
 
@@ -225,10 +224,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
   def subRequests(): Unit = {
     val developerClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://developer:developer@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://developer:developer@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
 
-    it should "execute subscription requests" in {
-      val source = developerClient.graphqlSubRequest(developerSubscriptions.testSubscription())
+    it should "execute SSE subscription request" in {
+      val source = developerClient.graphqlRequestSSE(developerSubscriptions.testSubscription())
       var line = Option.empty[String]
       do {
         line = source.get.next()
@@ -239,17 +238,22 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
   def akkaSubRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://developer:developer@localhost:8081"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("ws://developer:developer@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
 
-    it should "execute subscription requests" in {
-      val source = adminClient.graphqlSubRequest(developerSubscriptions.testSubscription()).get
+//    it should "execute SSE subscription request" in {
+//      val source = adminClient.graphqlRequestSSE(developerSubscriptions.testSubscription()).get
+//      result(source.map(println(_)).run())
+//    }
+
+    it should "execute WS subscription request" in {
+      val source = adminClient.graphqlRequestWS(developerSubscriptions.testSubscription()).get
       result(source.map(println(_)).run())
     }
   }
 
-  "Http requests" should behave like httpRequests()
-  "Akka http requests" should behave like akkaHttpRequests()
-
-  "Http subscription requests" should behave like subRequests()
+//  "Http requests" should behave like httpRequests()
+//  "Akka http requests" should behave like akkaHttpRequests()
+//
+//  "Http subscription requests" should behave like subRequests()
   "Akka http subscription requests" should behave like akkaSubRequests()
 }

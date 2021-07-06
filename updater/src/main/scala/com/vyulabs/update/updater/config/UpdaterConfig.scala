@@ -1,15 +1,13 @@
 package com.vyulabs.update.updater.config
 
-import java.io.File
-import java.net.URL
-
 import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.utils.IoUtils
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
-import com.vyulabs.update.common.utils.JsonFormats._
 
-case class UpdaterConfig(instance: InstanceId, clientDistributionUrl: URL)
+import java.io.File
+
+case class UpdaterConfig(instance: InstanceId, clientDistributionUrl: String)
 
 object UpdaterConfig extends DefaultJsonProtocol {
   implicit val updaterConfigJson = jsonFormat2(UpdaterConfig.apply)

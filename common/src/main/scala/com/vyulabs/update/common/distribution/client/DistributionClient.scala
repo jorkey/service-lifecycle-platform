@@ -1,8 +1,7 @@
 package com.vyulabs.update.common.distribution.client
 
-import com.vyulabs.update.common.common.Common.{DistributionId, FaultId, ServiceId}
+import com.vyulabs.update.common.common.Common.{FaultId, ServiceId}
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.{GraphqlRequest, LoginCoder, PingCoder}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.Logger
@@ -10,8 +9,10 @@ import spray.json.DefaultJsonProtocol._
 import spray.json.JsonReader
 
 import java.io.{File, IOException}
+import java.net.{URL, URLConnection, URLStreamHandler, URLStreamHandlerFactory}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
 
 class DistributionClient[Source[_]](client: HttpClient[Source])
                         (implicit executionContext: ExecutionContext) {
@@ -28,7 +29,10 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
           client.accessToken match {
             case None =>
               val authTokenRx = "(.*):(.*)".r
-              client.distributionUrl.getUserInfo match {
+              new URL(null, client.distributionUrl, new URLStreamHandler() {
+                override def openConnection(u: URL): URLConnection = null
+              }
+          ).getUserInfo match {
                 case authTokenRx(user, password) =>
                   val future = client.graphql(LoginCoder.login(user, password))
                     .andThen { case result =>
@@ -61,14 +65,14 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     login().map(_ => client.graphql(request)).flatten
   }
 
-  def graphqlSubRequestSSE[Response](request: GraphqlRequest[Response])
-                                    (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
-    login().map(_ => client.graphqlSubSSE(request)).flatten
+  def graphqlRequestSSE[Response](request: GraphqlRequest[Response])
+                                 (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
+    login().map(_ => client.graphqlSSE(request)).flatten
   }
 
-  def graphqlSubRequestWS[Response](request: GraphqlRequest[Response])
-                                   (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
-    login().map(_ => client.graphqlSubWS(request)).flatten
+  def graphqlRequestWS[Response](request: GraphqlRequest[Response])
+                                (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
+    login().map(_ => client.graphqlWS(request)).flatten
   }
 
   def downloadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File)

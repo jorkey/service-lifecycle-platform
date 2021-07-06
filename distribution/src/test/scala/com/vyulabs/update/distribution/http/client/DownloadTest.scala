@@ -1,15 +1,14 @@
 package com.vyulabs.update.distribution.http.client
 
-import java.io.File
-import java.net.URL
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
-import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
+import com.vyulabs.update.distribution.TestEnvironment
+import com.vyulabs.update.distribution.client.AkkaHttpClient
 
+import java.io.File
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
@@ -26,21 +25,21 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
 
   def httpDownload(): Unit = {
     val builderClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://builder:builder@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://builder:builder@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://updater:updater@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://updater:updater@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(new URL("http://distribution:distribution@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new HttpClientImpl("http://distribution:distribution@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     download(builderClient, updaterClient, distribClient)
   }
 
   def akkaHttpDownload(): Unit = {
     val builderClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://builder:builder@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://builder:builder@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://updater:updater@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://updater:updater@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     val distribClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient(new URL("http://distribution:distribution@localhost:8082"))), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://distribution:distribution@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     download(builderClient, updaterClient, distribClient)
   }
 

@@ -3,12 +3,11 @@ package com.vyulabs.update.common.config
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, InstanceId}
 import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.JsonFormats._
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
-import com.vyulabs.update.common.utils.JsonFormats._
 
 import java.io.File
-import java.net.URL
 import scala.concurrent.duration.FiniteDuration
 
 case class MongoDbConfig(connection: String, name: String, temporary: Boolean)
@@ -23,7 +22,7 @@ object NetworkConfig {
   implicit val networkConfigJson = jsonFormat2(NetworkConfig.apply)
 }
 
-case class RemoteBuilderConfig(distributionUrl: URL)
+case class RemoteBuilderConfig(distributionUrl: String)
 
 object RemoteBuilderConfig {
   implicit val builderConfigJson = jsonFormat1(RemoteBuilderConfig.apply)

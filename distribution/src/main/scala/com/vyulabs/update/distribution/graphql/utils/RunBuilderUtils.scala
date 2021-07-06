@@ -19,7 +19,6 @@ import spray.json.DefaultJsonProtocol._
 import spray.json._
 
 import java.io.IOException
-import java.net.URL
 import java.text.ParseException
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -93,13 +92,13 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     }).flatten, Some(() => process.map(_.terminate())))
   }
 
-  private def runRemoteBuilder(task: TaskId, arguments: Seq[String], distributionUrl: URL)(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+  private def runRemoteBuilder(task: TaskId, arguments: Seq[String], distributionUrl: String)(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val result = Promise[Unit]()
     val client = new DistributionClient(new AkkaHttpClient(distributionUrl))
     val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
     for {
       remoteTaskId <- remoteTaskId
-      logSource <- client.graphqlSubRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTaskId))
+      logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTaskId))
     } yield {
       @volatile var logOutputFuture = Option.empty[Future[Unit]]
       logSource.map(line => {

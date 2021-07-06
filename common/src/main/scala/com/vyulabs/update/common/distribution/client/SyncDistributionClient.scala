@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.distribution.client
 
-import com.vyulabs.update.common.common.Common.{DistributionId, FaultId, ServiceId}
+import com.vyulabs.update.common.common.Common.{FaultId, ServiceId}
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.{Logger, LoggerFactory}
@@ -25,12 +25,12 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.graphqlRequest(request))
   }
 
-  def graphqlSubRequestSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Source[Response]] = {
-    result(client.graphqlSubRequestSSE(request))
+  def graphqlRequestSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Source[Response]] = {
+    result(client.graphqlRequestSSE(request))
   }
 
-  def graphqlSubRequestWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Source[Response]] = {
-    result(client.graphqlSubRequestWS(request))
+  def graphqlRequestWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response]): Option[Source[Response]] = {
+    result(client.graphqlRequestWS(request))
   }
 
   def downloadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File): Boolean = {

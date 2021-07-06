@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
-import java.net.URL
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
@@ -158,7 +157,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
 
 object StateUploader {
   def apply(distribution: DistributionId,
-            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration, distributionUrl: URL)
+            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration, distributionUrl: String)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
     new StateUploader(distribution, collections, distributionDirectory, uploadInterval, new DistributionClient(new AkkaHttpClient(distributionUrl)))
   }

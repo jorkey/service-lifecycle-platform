@@ -74,7 +74,7 @@ object BuilderMain extends App {
         }
       } else {
         val providerDistributionName = arguments.getValue("providerDistributionName")
-        val providerDistributionURL = new URL(arguments.getValue("providerDistributionUrl"))
+        val providerDistributionURL = arguments.getValue("providerDistributionUrl")
         val servicesProfile = arguments.getValue("servicesProfile")
         val testDistributionMatch = arguments.getOptionValue("testDistributionMatch")
         if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL, servicesProfile, testDistributionMatch) ||

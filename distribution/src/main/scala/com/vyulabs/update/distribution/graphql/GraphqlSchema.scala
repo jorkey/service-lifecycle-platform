@@ -60,7 +60,7 @@ object GraphqlSchema {
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
   val SourcesArg = Argument("sources", ListInputType(SourceConfigInputType))
-  val UrlArg = Argument("url", UrlType)
+  val UrlArg = Argument("url", StringType)
   val CommentArg = Argument("comment", StringType)
 
   val OptionUserArg = Argument("user", OptionInputType(StringType))

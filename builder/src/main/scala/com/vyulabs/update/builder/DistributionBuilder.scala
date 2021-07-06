@@ -17,7 +17,6 @@ import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
 import java.io.File
-import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
@@ -90,7 +89,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def buildFromProviderDistribution(providerDistributionName: DistributionId, providerDistributionURL: URL,
+  def buildFromProviderDistribution(providerDistributionName: DistributionId, providerDistributionURL: String,
                                     servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Boolean = {
     this.providerDistributionName = Some(providerDistributionName)
     providerDistributionClient = Some(new SyncDistributionClient(
@@ -192,7 +191,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
         log.error(s"Can't install provider developer version ${version} of service ${service}")
         return false
       }
-      val source = adminDistributionClient.get.graphqlSubRequest(administratorSubscriptions.subscribeTaskLogs(task)).getOrElse {
+      val source = adminDistributionClient.get.graphqlRequestSSE(administratorSubscriptions.subscribeTaskLogs(task)).getOrElse {
         log.error(s"Can't subscribe to task ${task} logs")
         return false
       }
@@ -470,13 +469,13 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     Some(clientVersion)
   }
 
-  private def makeDistributionUrl(user: UserId): URL = {
+  private def makeDistributionUrl(user: UserId): String = {
     val config = distributionConfig.getOrElse {
       sys.error("No distribution config")
     }
     val protocol = if (config.network.ssl.isDefined) "https" else "http"
     val port = config.network.port
-    new URL(s"${protocol}://${user}:${user}@localhost:${port}")
+    s"${protocol}://${user}:${user}@localhost:${port}"
   }
 
   private def startDistributionService(): Boolean = {
