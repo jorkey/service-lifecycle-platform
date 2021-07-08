@@ -18,9 +18,9 @@ trait HttpClient[Stream[_]] {
 
   def graphql[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Response]
 
-  def graphqlSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
+  def subscribeSSE[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
 
-  def graphqlWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
+  def subscribeWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[Stream[Response]]
 
   def upload(path: String, fieldName: String, file: File)(implicit log: Logger): Future[Unit]
 

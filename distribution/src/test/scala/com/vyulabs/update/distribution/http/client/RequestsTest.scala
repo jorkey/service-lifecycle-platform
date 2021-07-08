@@ -253,7 +253,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
 //  "Http requests" should behave like httpRequests()
 //  "Akka http requests" should behave like akkaHttpRequests()
-//
+
 //  "Http subscription requests" should behave like subRequests()
   "Akka http subscription requests" should behave like akkaSubRequests()
 }

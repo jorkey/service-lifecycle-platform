@@ -67,12 +67,12 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
 
   def graphqlRequestSSE[Response](request: GraphqlRequest[Response])
                                  (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
-    login().map(_ => client.graphqlSSE(request)).flatten
+    login().map(_ => client.subscribeSSE(request)).flatten
   }
 
   def graphqlRequestWS[Response](request: GraphqlRequest[Response])
                                 (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
-    login().map(_ => client.graphqlWS(request)).flatten
+    login().map(_ => client.subscribeWS(request)).flatten
   }
 
   def downloadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File)

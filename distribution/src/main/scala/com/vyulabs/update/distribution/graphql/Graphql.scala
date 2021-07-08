@@ -86,12 +86,12 @@ class Graphql() extends SprayJsonSupport {
                                            query: Document, operation: Option[String] = None, variables: JsObject = JsObject.empty,
                                            tracing: Boolean = false)
                                            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)
-      : Source[String, NotUsed] = {
+      : Source[JsValue, NotUsed] = {
     import sangria.execution.ExecutionScheme.Stream
     import sangria.streaming.akkaStreams._
     Executor.execute(schema = schema, queryAst = query, userContext = context, operationName = operation,
       variables = variables, exceptionHandler = errorHandler,
       middleware = AuthMiddleware :: (if (tracing) SlowLog.apolloTracing :: Nil else Nil)
-    ).map(_.compactPrint)
+    )
   }
 }

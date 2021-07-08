@@ -9,7 +9,7 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import './assets/scss/index.scss';
 import validators from './common/validators';
 import LoginRoutes from './Routes';
-import {ApolloLink, ApolloProvider, Operation, Resolvers, ServerError, split} from '@apollo/client';
+import {ApolloLink, ApolloProvider, FetchResult, Operation, Resolvers, ServerError, split} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import {onError} from '@apollo/client/link/error';
@@ -17,13 +17,11 @@ import DateFnsUtils from "@date-io/date-fns";
 import {MuiPickersUtilsProvider} from "@material-ui/pickers";
 import {withScalars} from "apollo-link-scalars";
 import introspectionResult from "./generated/graphql.schema.json";
-import {buildClientSchema, GraphQLScalarType, IntrospectionQuery, OperationDefinitionNode} from "graphql"
+import {buildClientSchema, ExecutionResult, GraphQLError, GraphQLScalarType, IntrospectionQuery, print} from "graphql"
 import {stripProperty} from "./common/Graphql";
 import {NextLink} from "@apollo/client/link/core/types";
 import {getMainDefinition, Observable} from '@apollo/client/utilities';
-import EventSource from 'eventsource'
-import { WebSocketLink } from "@apollo/client/link/ws"
-import {SubscriptionClient} from "subscriptions-transport-ws";
+import {Client, ClientOptions, createClient} from 'graphql-ws'
 
 const browserHistory = createBrowserHistory();
 
@@ -96,40 +94,89 @@ const removeTypenameLink = new ApolloLink(
   }
 )
 
-const sseLink = new ApolloLink(
-  (operation: Operation, forward: NextLink) => {
-    const token = localStorage.getItem('token');
-    return operation.operationName.startsWith('subscribe') ?
-      new Observable(observer => {
-        const source = new EventSource('/graphql'
-          + '?query=' + operation.query.loc?.source.body.trim()
-          + '&operation=' + operation.operationName
-          + '&variables=' + JSON.stringify(operation.variables).trim(),
-          { headers: { 'Authorization': `Bearer ${token}` }})
+// const sseLink = new ApolloLink(
+//   (operation: Operation, forward: NextLink) => {
+//     const token = localStorage.getItem('token');
+//     return operation.operationName.startsWith('subscribe') ?
+//       new Observable(observer => {
+//         const source = new EventSource('/graphql'
+//           + '?query=' + operation.query.loc?.source.body.trim()
+//           + '&operation=' + operation.operationName
+//           + '&variables=' + JSON.stringify(operation.variables).trim(),
+//           { headers: { 'Authorization': `Bearer ${token}` }})
+//
+//         source.onopen = (event) => {
+//           console.log('source.onopen ' + JSON.stringify(event))
+//         };
+//         source.onmessage = (event) => {
+//           console.log('source.onmessage ' + JSON.stringify(event))
+//           observer.next(event);
+//         };
+//         source.onerror = (exception) => {
+//           console.log('source.onerror ' + JSON.stringify(exception))
+//           observer.error(exception);
+//         };
+//
+//         return () => {
+//           source.close();
+//         };
+//       })
+//       : forward(operation);
+//   }
+// )
 
-        source.onopen = (event) => {
-          console.log('source.onopen ' + JSON.stringify(event))
-        };
-        source.onmessage = (event) => {
-          console.log('source.onmessage ' + JSON.stringify(event))
-          observer.next(event);
-        };
-        source.onerror = (exception) => {
-          console.log('source.onerror ' + JSON.stringify(exception))
-          observer.error(exception);
-        };
+class WebSocketLink extends ApolloLink {
+  private client: Client;
 
-        return () => {
-          source.close();
-        };
-      })
-      : forward(operation);
+  constructor(options: ClientOptions) {
+    super();
+    this.client = createClient(options);
   }
-)
 
-const wsLink: ApolloLink = new WebSocketLink(new SubscriptionClient('ws://localhost:8000/graphql',{
-    reconnect: true
-}))
+  public request(operation: Operation): Observable<FetchResult> {
+    return new Observable((sink) => {
+      return this.client.subscribe<FetchResult>(
+        { ...operation, query: print(operation.query) as string },
+        {
+          next: sink.next.bind(sink),
+          complete: sink.complete.bind(sink),
+          error: (err) => {
+            if (err instanceof Error) {
+              return sink.error(err);
+            }
+
+            if (err instanceof CloseEvent) {
+              return sink.error(
+                // reason will be available on clean closes
+                new Error(
+                  `Socket closed with event ${err.code} ${err.reason || ''}`,
+                ),
+              );
+            }
+
+            return sink.error(
+              new Error(
+                (err as GraphQLError[])
+                  .map(({ message }) => message)
+                  .join(', '),
+              ),
+            );
+          },
+        },
+      );
+    });
+  }
+}
+
+const wsLink = new WebSocketLink({
+  url: 'ws://localhost:8000/graphql',
+  connectionParams: () => {
+    const token = localStorage.getItem('token');
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  },
+});
 
 const link = ApolloLink.from([
   removeTypenameLink,

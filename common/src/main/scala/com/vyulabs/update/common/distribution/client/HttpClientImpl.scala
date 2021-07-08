@@ -56,8 +56,8 @@ class HttpClientImpl(val distributionUrl: String, connectTimeoutMs: Int = 1000, 
     }
   }
 
-  override def graphqlSSE[Response](request: GraphqlRequest[Response])
-                                   (implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
+  override def subscribeSSE[Response](request: GraphqlRequest[Response])
+                                     (implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
     Future {
       val connection = openConnection(graphqlPathPrefix)
       try {
@@ -112,7 +112,7 @@ class HttpClientImpl(val distributionUrl: String, connectTimeoutMs: Int = 1000, 
   }
 
 
-  override def graphqlWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
+  override def subscribeWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[SyncSource[Response]] = {
     throw new UnsupportedOperationException()
   }
 

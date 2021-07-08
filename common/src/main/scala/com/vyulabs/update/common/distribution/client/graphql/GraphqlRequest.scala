@@ -30,15 +30,23 @@ object GraphqlArgument {
 case class GraphqlRequest[Response](request: String, command: String, arguments: Seq[GraphqlArgument] = Seq.empty, subSelection: String = "")
                                    (implicit reader: JsonReader[Response]) {
   def encodeRequest(): JsObject = {
+    val query = encodeQuery()
+    val variables = encodeVariables()
+    JsObject("query" -> JsString(query), "variables" -> variables)
+  }
+
+  def encodeQuery(): String = {
     val types = arguments.foldLeft("")((args, arg) => {
       args + (if (!args.isEmpty) ", " else "") + s"$$${arg.name}: ${arg.inputType}!"
     })
     val args = arguments.foldLeft("")((args, arg) => {
       args + (if (!args.isEmpty) ", " else "") + s"${arg.name}: $$${arg.name}"
     })
-    val query = s"${request} ${command}${group(types)} { ${command} ${group(args)} ${subSelection} }"
-    val variables = arguments.foldLeft(Map.empty[String, JsValue])((map, arg) => map + (arg.name -> arg.value))
-    JsObject("query" -> JsString(query), "variables" -> variables.toJson)
+    s"${request} ${command}${group(types)} { ${command} ${group(args)} ${subSelection} }"
+  }
+
+  def encodeVariables(): JsObject = {
+    arguments.foldLeft(Map.empty[String, JsValue])((map, arg) => map + (arg.name -> arg.value)).toJson.asJsObject
   }
 
   def decodeResponse(responseJson: JsObject): Either[Response, String] = {

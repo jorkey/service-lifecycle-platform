@@ -49,7 +49,8 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                       executeGraphqlRequest(token, requestJson, tracing.isDefined)
                     }
                   } ~ get {
-                    handleWebSocketMessages(handleWebSocket(token, tracing.isDefined))
+                    handleWebSocketMessagesForProtocol(
+                      handleWebSocket(token, tracing.isDefined), "graphql-transport-ws")
                   }
                 }
               }

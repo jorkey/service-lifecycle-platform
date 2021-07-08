@@ -14,12 +14,13 @@ import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
+import com.vyulabs.update.distribution.graphql.{Next, Subscribe, SubscribePayload}
 import org.slf4j.Logger
 import spray.json._
 
 import java.io.{File, IOException}
-import scala.collection.immutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Random
 
 class AkkaHttpClient(val distributionUrl: String)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
@@ -50,8 +51,8 @@ class AkkaHttpClient(val distributionUrl: String)
     }
   }
 
-  override def graphqlSSE[Response](request: GraphqlRequest[Response])
-                                   (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
+  override def subscribeSSE[Response](request: GraphqlRequest[Response])
+                                     (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
     val queryJson = request.encodeRequest()
     log.debug(s"Send graphql SSE query: ${queryJson}")
     var post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
@@ -81,25 +82,34 @@ class AkkaHttpClient(val distributionUrl: String)
     }
   }
 
-  override def graphqlWS[Response](request: GraphqlRequest[Response])(implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
-    val queryJson = request.encodeRequest()
-    log.debug(s"Send graphql WebSocket query: ${queryJson}")
+  override def subscribeWS[Response](request: GraphqlRequest[Response])
+                                    (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
+    log.debug(s"Send graphql WebSocket query: ${request}")
     val webSocketRequest = WebSocketRequest(Uri(distributionUrl + "/" + graphqlPathPrefix),
-      getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], immutable.Seq.empty[String])
+      getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
     val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Response]()).toMat(BroadcastHub.sink)(Keep.both).run()
+    val id = Random.nextInt().toString
     (for {
       response <- {
         val handlerFlow = Flow.fromSinkAndSource[Message, Message](Sink.foreach(m => { m match {
           case TextMessage.Strict(m) =>
-            publisherCallback.invoke(request.decodeResponse(m.parseJson.asJsObject) match {
-              case Left(response) =>
-                response
-              case Right(error) =>
-                throw new IOException(error)
-            })
+            val response = m.parseJson.asJsObject
+            val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
+            responseType match {
+              case Next.`type` =>
+                val subscribe = response.convertTo[Next]
+                publisherCallback.invoke(request.decodeResponse(subscribe.payload.data.asJsObject) match {
+                  case Left(response) =>
+                    response
+                  case Right(error) =>
+                    throw new IOException(error)
+                })
+              case m =>
+                log.error(s"Invalid message ${m}")
+            }
           case _ =>
-        }
-        }), Source.single(TextMessage(request.encodeRequest().compactPrint)))
+        }}), Source.single(TextMessage(Subscribe(id = id, payload =
+          SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint)))
         Http(system).singleWebSocketRequest(webSocketRequest, handlerFlow)._1
       }
     } yield {
