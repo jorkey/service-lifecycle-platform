@@ -6,7 +6,7 @@ import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.Materializer
+import akka.stream.{KillSwitch, KillSwitches, Materializer, UniqueKillSwitch}
 import akka.stream.scaladsl.{BroadcastHub, FileIO, Flow, Framing, Keep, Sink, Source}
 import akka.util.ByteString
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
@@ -14,7 +14,7 @@ import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
-import com.vyulabs.update.distribution.graphql.{Next, Subscribe, SubscribePayload}
+import com.vyulabs.update.distribution.graphql.{Complete, Next, Subscribe, SubscribePayload}
 import org.slf4j.Logger
 import spray.json._
 
@@ -87,7 +87,11 @@ class AkkaHttpClient(val distributionUrl: String)
     log.debug(s"Send graphql WebSocket query: ${request}")
     val webSocketRequest = WebSocketRequest(Uri(distributionUrl + "/" + graphqlPathPrefix),
       getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
-    val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Response]()).toMat(BroadcastHub.sink)(Keep.both).run()
+    val ((publisherCallback, killSwitch), publisherSource) =
+      Source.fromGraph(new AkkaCallbackSource[Response]())
+        .viaMat(KillSwitches.single)(Keep.both)
+        .toMat(BroadcastHub.sink)(Keep.both)
+        .run()
     val id = Random.nextInt().toString
     (for {
       response <- {
@@ -104,6 +108,9 @@ class AkkaHttpClient(val distributionUrl: String)
                   case Right(error) =>
                     throw new IOException(error)
                 })
+              case Complete.`type` =>
+                val complete = response.convertTo[Complete]
+                killSwitch.shutdown()
               case m =>
                 log.error(s"Invalid message ${m}")
             }

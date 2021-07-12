@@ -240,10 +240,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
     val adminClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient("ws://developer:developer@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
 
-//    it should "execute SSE subscription request" in {
-//      val source = adminClient.graphqlRequestSSE(developerSubscriptions.testSubscription()).get
-//      result(source.map(println(_)).run())
-//    }
+    it should "execute SSE subscription request" in {
+      val source = adminClient.graphqlRequestSSE(developerSubscriptions.testSubscription()).get
+      result(source.map(println(_)).run())
+    }
 
     it should "execute WS subscription request" in {
       val source = adminClient.graphqlRequestWS(developerSubscriptions.testSubscription()).get
@@ -251,9 +251,9 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
     }
   }
 
-//  "Http requests" should behave like httpRequests()
-//  "Akka http requests" should behave like akkaHttpRequests()
+  "Http requests" should behave like httpRequests()
+  "Akka http requests" should behave like akkaHttpRequests()
 
-//  "Http subscription requests" should behave like subRequests()
+  "Http subscription requests" should behave like subRequests()
   "Akka http subscription requests" should behave like akkaSubRequests()
 }

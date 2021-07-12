@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.mongo
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging
+import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
 import com.mongodb.client.model._
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
@@ -28,7 +29,8 @@ class SequencedCollection[T: ClassTag](val name: String,
                                        historyExpireDays: Int = 7, createIndex: Boolean = true)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
   private implicit val log = Logging(system, this.getClass)
 
-  private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Sequenced[T]]()).toMat(BroadcastHub.sink)(Keep.both).run()
+  private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Sequenced[T]]())
+    .toMat(BroadcastHub.sink)(Keep.both).run()
   private var publisherBuffer = Queue.empty[Sequenced[T]]
 
   private var modifyInProcess = Option.empty[Future[Int]]
@@ -61,17 +63,17 @@ class SequencedCollection[T: ClassTag](val name: String,
       var seq = sequence - documents.size + 1
       synchronized {
         documents.foreach { doc =>
-          val log = Sequenced(seq, doc)
+          val line = Sequenced(seq, doc)
           if (!publisherBuffer.isEmpty) {
             if (sequence <= publisherBuffer.last.sequence) {
               publisherBuffer = Queue.empty
             }
           }
-          publisherBuffer = publisherBuffer.enqueue(log)
+          publisherBuffer = publisherBuffer.enqueue(line)
           if (publisherBuffer.size > 100) {
             publisherBuffer = publisherBuffer.takeRight(100)
           }
-          publisherCallback.invoke(log)
+          publisherCallback.invoke(line)
           seq += 1
         }
       }
@@ -204,6 +206,7 @@ class SequencedCollection[T: ClassTag](val name: String,
       val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
       var sequence = fromSequence.getOrElse(0L)
       Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))
+        .buffer(1000, OverflowStrategy.fail)
         .filter(doc => {
           if (doc.sequence >= sequence) {
             sequence = doc.sequence + 1

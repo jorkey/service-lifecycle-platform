@@ -17,12 +17,9 @@ import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlHttpSupport, GraphqlSchema, GraphqlWebSocketSupport, GraphqlWorkspace}
 import org.slf4j.LoggerFactory
-import sangria.ast.OperationType
-import sangria.parser.QueryParser
 import spray.json._
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                   (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)
@@ -50,7 +47,7 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                     }
                   } ~ get {
                     handleWebSocketMessagesForProtocol(
-                      handleWebSocket(token, tracing.isDefined), "graphql-transport-ws")
+                      handleWebSocket(tracing.isDefined), "graphql-transport-ws")
                   }
                 }
               }

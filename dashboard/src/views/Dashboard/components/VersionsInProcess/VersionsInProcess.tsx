@@ -92,6 +92,7 @@ const VersionsInProcess = () => {
     },
     {
       name: 'startTime',
+      type: 'date',
       headerName: 'Start Time',
       className: classes.startTimeColumn,
     },
