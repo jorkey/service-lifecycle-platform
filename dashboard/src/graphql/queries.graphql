@@ -184,11 +184,11 @@ query providersInfo {
     }
 }
 
-mutation addProvider ($distribution: String!, $url: URL!, $uploadStateIntervalSec: Int!) {
+mutation addProvider ($distribution: String!, $url: String!, $uploadStateIntervalSec: Int!) {
     addProvider (distribution: $distribution, url: $url, uploadStateIntervalSec: $uploadStateIntervalSec)
 }
 
-mutation changeProvider ($distribution: String!, $url: URL!, $uploadStateIntervalSec: Int!) {
+mutation changeProvider ($distribution: String!, $url: String!, $uploadStateIntervalSec: Int!) {
     changeProvider (distribution: $distribution, url: $url, uploadStateIntervalSec: $uploadStateIntervalSec)
 }
 

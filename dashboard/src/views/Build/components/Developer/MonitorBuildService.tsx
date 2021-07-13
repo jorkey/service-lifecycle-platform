@@ -113,7 +113,7 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
             branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
             editable={false}
           />
-          { <TaskLogs task={task} terminated={() => { setTerminated(true) }}/> }
+          { <TaskLogs task={task} terminated={terminated} onTerminated={() => { setTerminated(true) }}/> }
       </CardContent>
     </Card>)
   }

@@ -16,12 +16,13 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface TaskLogsParams {
-  task: string
-  terminated: () => void
+  task: string,
+  terminated: boolean,
+  onTerminated: () => void
 }
 
 export const TaskLogs = (props: TaskLogsParams) => {
-  const { task, terminated } = props
+  const { task, terminated, onTerminated } = props
   const [error, setError] = useState<string>()
   const classes = useStyles()
 
@@ -33,7 +34,7 @@ export const TaskLogs = (props: TaskLogsParams) => {
       if (data.taskLogs) {
         setError(undefined)
         if (data.taskLogs.find(log => log.line.terminationStatus)) {
-          terminated()
+          onTerminated()
         }
       }
     }
@@ -43,35 +44,42 @@ export const TaskLogs = (props: TaskLogsParams) => {
     { (taskLogs && taskLogs?.taskLogs) ? <TaskLogsSubscription
         taskId={task}
         lines={taskLogs.taskLogs}
-        terminated={() => terminated()}/> : null }
+        terminated={terminated}
+        onTerminated={() => onTerminated()}/> : null }
     { error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
   </>)
 }
 
 interface TaskLogsSubscriptionParams {
-  taskId: string
-  lines: SequencedLogLine[]
-  terminated: () => void
+  taskId: string,
+  lines: SequencedLogLine[],
+  terminated: boolean,
+  onTerminated: () => void
 }
 
 export const TaskLogsSubscription = (props: TaskLogsSubscriptionParams) => {
-  const { taskId, lines, terminated } = props
+  const { taskId, lines, terminated, onTerminated } = props
   const [logLines, setLogLines] = useState<LogLine[]>(lines.map(line => line.line))
-  const from = (lines.length == 0) ? 0 : lines[lines.length-1].sequence
+  const from = (lines.length == 0) ? 0 : (lines[lines.length-1].sequence + 1)
 
   useSubscribeTaskLogsSubscription({
     variables: { task: taskId, from: from },
     fetchPolicy: 'no-cache',
     onSubscriptionData(data) {
-      if (data.subscriptionData.data) {
+      if (!terminated && !data.subscriptionData.loading && data.subscriptionData.data) {
         const line = data.subscriptionData.data.subscribeTaskLogs.line
+        console.log('line ' + line.message)
         if (line.terminationStatus) {
-          terminated()
+          console.log('----- terminated')
+          onTerminated()
         }
         setLogLines([...logLines, line])
       }
     },
-    onSubscriptionComplete() {}
+    onSubscriptionComplete() {
+      console.log('----- complete')
+      onTerminated()
+    }
   })
 
   return <LogsTable lines={logLines}/>
