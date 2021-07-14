@@ -64,11 +64,14 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
   const [author, setAuthor] = useState('')
   const [sources, setSources] = useState<SourceConfig[]>([])
   const [comment, setComment] = useState('')
+  const [startTime, setStartTime] = useState<Date>()
 
   const [initialized, setInitialized] = useState(false)
-  const [terminated, setTerminated] = useState(false)
+  const [terminatedStatus, setTerminatedStatus] = useState<boolean>()
 
   const [error, setError] = useState<string>()
+
+  const [status, setStatus] = useState('')
 
   const { data: versionInProcess } = useDeveloperVersionsInProcessQuery({
     variables: { service: service },
@@ -90,6 +93,8 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
       setAuthor(v.author)
       setSources(v.sources)
       setComment(v.comment)
+      setStartTime(v.startTime)
+      setStatus('In process')
     } else {
       setError('Building of service is not in process now')
     }
@@ -97,31 +102,64 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
   }
 
   const MonitorCard = () => {
-    return (
+    return (<>
       <Card className={classes.card}>
         <CardHeader title={`Building Service '${service}'`}/>
         <CardContent>
-          <Grid container component='dl' spacing={3}>
-            <Grid item md={2} xs={12}>
-              <Typography component='dt' variant='h6'>Version</Typography>
-            </Grid>
-            <Grid item md={10} xs={12}>
-              <Typography component='dd'>{version}</Typography>
+          <Grid container spacing={1}>
+            <Grid item md={1} xs={12}>
+              <Typography>Version</Typography>
             </Grid>
             <Grid item md={2} xs={12}>
-              <Typography component='dt' variant='h6'>Comment</Typography>
+              <Typography>{version}</Typography>
             </Grid>
-            <Grid item md={10} xs={12}>
-              <Typography component='dd'>{comment}</Typography>
+
+            <Grid item md={1} xs={12}>
+              <Typography>Comment</Typography>
+            </Grid>
+            <Grid item md={8} xs={12}>
+              <Typography>{comment}</Typography>
+            </Grid>
+
+            <Grid item md={1} xs={12}>
+              <Typography>Author</Typography>
+            </Grid>
+            <Grid item md={2} xs={12}>
+              <Typography>{author}</Typography>
+            </Grid>
+
+            <Grid item md={1} xs={12}>
+              <Typography>Branches</Typography>
+            </Grid>
+            <Grid item md={8} xs={12}>
+              <Typography>{sources?.map(source => { return source.name + ':' + source.git.branch })}</Typography>
+            </Grid>
+
+            <Grid item md={1} xs={12}>
+              <Typography>Status</Typography>
+            </Grid>
+            <Grid item md={2} xs={12}>
+              <Typography>{status}</Typography>
+            </Grid>
+
+            <Grid item md={1} xs={12}>
+              <Typography>Start</Typography>
+            </Grid>
+            <Grid item md={8} xs={12}>
+              <Typography>{startTime?.toLocaleString()}</Typography>
             </Grid>
           </Grid>
-          <BranchesTable
-            branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
-            editable={false}
-          />
-          { <TaskLogs task={task} terminated={terminated} onTerminated={() => { setTerminated(true) }}/> }
-      </CardContent>
-    </Card>)
+        </CardContent>
+      </Card>
+      <Card className={classes.card}>
+        <CardHeader title={`Task logs`}/>
+        <CardContent>
+          { <TaskLogs task={task} terminated={terminatedStatus != undefined} onTerminated={
+            stat => { setStatus(stat ? 'Success': 'Error'); setTerminatedStatus(true) }
+          }/> }
+        </CardContent>
+      </Card>
+    </>)
   }
 
   return (
@@ -133,7 +171,7 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
         <Divider />
         {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
         <Box className={classes.controls}>
-          { !terminated ?
+          { !terminatedStatus ?
           <Button className={classes.control}
                   color="primary"
                   variant="contained"

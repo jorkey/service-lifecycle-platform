@@ -9,7 +9,7 @@ const useStyles = makeStyles(theme => ({
     display: 'relative'
   },
   logsTable: {
-    height: 'calc(100vh - 420px)',
+    height: 'calc(100vh - 550px)',
   },
   dateColumn: {
     width: '200px',
@@ -21,11 +21,6 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingLeft: '16px'
   },
-  // unitColumn: {
-  //   width: '100px',
-  //   padding: '4px',
-  //   paddingLeft: '16px'
-  // },
   messageColumn: {
     padding: '4px',
     paddingLeft: '16px'
@@ -53,11 +48,6 @@ export const LogsTable = (props: LogsTableParams) => {
       headerName: 'Level',
       className: classes.levelColumn
     },
-    // {
-    //   name: 'unit',
-    //   headerName: 'Unit',
-    //   className: classes.unitColumn
-    // },
     {
       name: 'message',
       headerName: 'Line',

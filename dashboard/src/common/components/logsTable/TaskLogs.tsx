@@ -18,7 +18,7 @@ const useStyles = makeStyles(theme => ({
 interface TaskLogsParams {
   task: string,
   terminated: boolean,
-  onTerminated: () => void
+  onTerminated: (status:boolean) => void
 }
 
 export const TaskLogs = (props: TaskLogsParams) => {
@@ -33,8 +33,9 @@ export const TaskLogs = (props: TaskLogsParams) => {
     onCompleted(data) {
       if (data.taskLogs) {
         setError(undefined)
-        if (data.taskLogs.find(log => log.line.terminationStatus)) {
-          onTerminated()
+        const last = data.taskLogs.find(log => log.line.terminationStatus)
+        if (last) {
+          onTerminated(last.line.terminationStatus!)
         }
       }
     }
@@ -45,7 +46,7 @@ export const TaskLogs = (props: TaskLogsParams) => {
         taskId={task}
         lines={taskLogs.taskLogs}
         terminated={terminated}
-        onTerminated={() => onTerminated()}/> : null }
+        onTerminated={() => onTerminated(false)}/> : null }
     { error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
   </>)
 }
