@@ -68,16 +68,13 @@ export const TaskLogsSubscription = (props: TaskLogsSubscriptionParams) => {
     onSubscriptionData(data) {
       if (!terminated && !data.subscriptionData.loading && data.subscriptionData.data) {
         const line = data.subscriptionData.data.subscribeTaskLogs.line
-        console.log('line ' + line.message)
         if (line.terminationStatus) {
-          console.log('----- terminated')
           onTerminated()
         }
         setLogLines([...logLines, line])
       }
     },
     onSubscriptionComplete() {
-      console.log('----- complete')
       onTerminated()
     }
   })

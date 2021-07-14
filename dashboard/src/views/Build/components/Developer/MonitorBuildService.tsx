@@ -101,12 +101,18 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
       <Card className={classes.card}>
         <CardHeader title={`Building Service '${service}'`}/>
         <CardContent>
-          <Grid container spacing={3}>
+          <Grid container component='dl' spacing={3}>
             <Grid item md={2} xs={12}>
-              <Typography>{version}</Typography>
+              <Typography component='dt' variant='h6'>Version</Typography>
             </Grid>
             <Grid item md={10} xs={12}>
-              <Typography>{comment}</Typography>
+              <Typography component='dd'>{version}</Typography>
+            </Grid>
+            <Grid item md={2} xs={12}>
+              <Typography component='dt' variant='h6'>Comment</Typography>
+            </Grid>
+            <Grid item md={10} xs={12}>
+              <Typography component='dd'>{comment}</Typography>
             </Grid>
           </Grid>
           <BranchesTable

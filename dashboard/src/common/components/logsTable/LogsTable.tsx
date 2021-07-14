@@ -5,7 +5,11 @@ import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTabl
 import {makeStyles} from "@material-ui/core/styles";
 
 const useStyles = makeStyles(theme => ({
+  div: {
+    display: 'relative'
+  },
   logsTable: {
+    height: 'calc(100vh - 420px)',
   },
   dateColumn: {
     width: '200px',

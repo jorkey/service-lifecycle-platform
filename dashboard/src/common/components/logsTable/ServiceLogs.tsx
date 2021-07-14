@@ -2,12 +2,10 @@ import React, {useState} from "react";
 import {
   LogLine, Scalars, SequencedLogLine, useServiceLogsQuery,
   useSubscribeServiceLogsSubscription,
-  useSubscribeTaskLogsSubscription
 } from "../../../generated/graphql";
 import {LogsTable} from "./LogsTable";
 import {makeStyles} from "@material-ui/core/styles";
 import Alert from "@material-ui/lab/Alert";
-import {TaskLogsSubscription} from "./TaskLogs";
 
 const useStyles = makeStyles(theme => ({
   alert: {

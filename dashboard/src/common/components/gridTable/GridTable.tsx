@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import {
   Table,
   TableBody,
-  TableCell,
+  TableCell, TableContainer,
   TableHead,
   TableRow
 } from "@material-ui/core";
@@ -30,50 +30,49 @@ export const GridTable = (props: GridParams) => {
   const [changingInProgress, setChangingInProgress] = useState(false)
 
   return (
-    <Table
-      className={className}
-      stickyHeader
-    >
-      <TableHead>
-        <TableRow>
-          { columns.map((column, index) =>
-            <TableCell key={index} className={column.className}>{column.headerName}</TableCell>) }
-        </TableRow>
-      </TableHead>
-      { <TableBody>
-          { (addNewRow ?
-            (<GridTableRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
-                           onSubmitted={(values, oldValues) =>
-                             onRowAdded?.(values) }
-                           onCanceled={() => onRowAddCancelled?.()}/>) : null) }
-          {  rows.map((row, rowNum) => {
-              return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row}
-                                    adding={false}
-                                    editing={rowNum == editingRow}
-                                    onClick={() => onClick?.(rowNum, row)}
-                                    onBeginEditing={() => {
-                                      if (!changingInProgress) {
-                                        setEditingRow(rowNum)
-                                        return true
-                                      }
-                                      return false
-                                    }}
-                                    onSubmitted={(values, oldValues) => {
-                                      const promise = onRowChanged!(rowNum, values, oldValues)
-                                      if (promise) {
-                                        setChangingInProgress(true)
-                                        promise.then(() => {
+    <TableContainer className={className}>
+      <Table stickyHeader>
+        <TableHead>
+          <TableRow>
+            { columns.map((column, index) =>
+              <TableCell key={index} className={column.className}>{column.headerName}</TableCell>) }
+          </TableRow>
+        </TableHead>
+        { <TableBody>
+            { (addNewRow ?
+              (<GridTableRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
+                             onSubmitted={(values, oldValues) =>
+                               onRowAdded?.(values) }
+                             onCanceled={() => onRowAddCancelled?.()}/>) : null) }
+            {  rows.map((row, rowNum) => {
+                return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row}
+                                      adding={false}
+                                      editing={rowNum == editingRow}
+                                      onClick={() => onClick?.(rowNum, row)}
+                                      onBeginEditing={() => {
+                                        if (!changingInProgress) {
+                                          setEditingRow(rowNum)
+                                          return true
+                                        }
+                                        return false
+                                      }}
+                                      onSubmitted={(values, oldValues) => {
+                                        const promise = onRowChanged!(rowNum, values, oldValues)
+                                        if (promise) {
+                                          setChangingInProgress(true)
+                                          promise.then(() => {
+                                            setEditingRow(-1)
+                                            setChangingInProgress(false)
+                                          })
+                                        } else {
                                           setEditingRow(-1)
-                                          setChangingInProgress(false)
-                                        })
-                                      } else {
-                                        setEditingRow(-1)
-                                      }
-                                    }}
-                                    onCanceled={() => setEditingRow(-1)}
-              />)})}
-        </TableBody> }
-    </Table>)
+                                        }
+                                      }}
+                                      onCanceled={() => setEditingRow(-1)}
+                />)})}
+          </TableBody> }
+      </Table>
+    </TableContainer> )
 }
 
 export default GridTable;
