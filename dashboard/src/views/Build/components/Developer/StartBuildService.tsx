@@ -95,7 +95,7 @@ const StartBuildService: React.FC<BuildServiceParams> = props => {
     fetchPolicy: 'no-cache',
     onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
-      history.push(props.fromUrl + '/developer/monitor/' + service)
+      history.push(props.fromUrl + '/monitor/' + service)
     }
   })
 

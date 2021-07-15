@@ -17,13 +17,13 @@ const useStyles = makeStyles(theme => ({
 
 interface TaskLogsParams {
   task: string,
-  terminated: boolean,
-  onTerminated: (status:boolean) => void
+  onTerminated: (date: Date, status: boolean) => void
 }
 
 export const TaskLogs = (props: TaskLogsParams) => {
-  const { task, terminated, onTerminated } = props
+  const { task, onTerminated } = props
   const [error, setError] = useState<string>()
+  const [terminated, setTerminated] = useState(false)
   const classes = useStyles()
 
   const { data: taskLogs } = useTaskLogsQuery({
@@ -35,18 +35,18 @@ export const TaskLogs = (props: TaskLogsParams) => {
         setError(undefined)
         const last = data.taskLogs.find(log => log.line.terminationStatus)
         if (last) {
-          onTerminated(last.line.terminationStatus!)
+          setTerminated(true)
+          onTerminated(last.line.date, last.line.terminationStatus!)
         }
       }
     }
   })
 
   return (<>
-    { (taskLogs && taskLogs?.taskLogs) ? <TaskLogsSubscription
+    { (taskLogs && taskLogs?.taskLogs && !terminated) ? <TaskLogsSubscription
         taskId={task}
         lines={taskLogs.taskLogs}
-        terminated={terminated}
-        onTerminated={() => onTerminated(false)}/> : null }
+        onTerminated={(date, status) => onTerminated(date, status)}/> : null }
     { error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
   </>)
 }
@@ -54,13 +54,13 @@ export const TaskLogs = (props: TaskLogsParams) => {
 interface TaskLogsSubscriptionParams {
   taskId: string,
   lines: SequencedLogLine[],
-  terminated: boolean,
-  onTerminated: () => void
+  onTerminated: (date: Date, status: boolean) => void
 }
 
 export const TaskLogsSubscription = (props: TaskLogsSubscriptionParams) => {
-  const { taskId, lines, terminated, onTerminated } = props
+  const { taskId, lines, onTerminated } = props
   const [logLines, setLogLines] = useState<LogLine[]>(lines.map(line => line.line))
+  const [terminated, setTerminated] = useState(false)
   const from = (lines.length == 0) ? 0 : (lines[lines.length-1].sequence + 1)
 
   useSubscribeTaskLogsSubscription({
@@ -69,14 +69,18 @@ export const TaskLogsSubscription = (props: TaskLogsSubscriptionParams) => {
     onSubscriptionData(data) {
       if (!terminated && !data.subscriptionData.loading && data.subscriptionData.data) {
         const line = data.subscriptionData.data.subscribeTaskLogs.line
-        if (line.terminationStatus) {
-          onTerminated()
+        if (line.terminationStatus != undefined) {
+          setTerminated(true)
+          onTerminated(line.date, line.terminationStatus)
         }
         setLogLines([...logLines, line])
       }
     },
     onSubscriptionComplete() {
-      onTerminated()
+      if (!terminated) {
+        setTerminated(true)
+        onTerminated(new Date(), false)
+      }
     }
   })
 

@@ -30,10 +30,10 @@ const Build = () => {
             <Route exact path={`${routeMatch.url}/developer`}
                    component={BuildDeveloper}/>
             <Route exact path={`${routeMatch.url}/developer/start/:service`}
-                   render={(props) => <StartBuildService fromUrl={routeMatch.url} {...props} /> }>
+                   render={(props) => <StartBuildService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
             </Route>
             <Route exact path={`${routeMatch.url}/developer/monitor/:service`}
-                   render={(props) => <MonitorBuildService fromUrl={routeMatch.url} {...props} /> }>
+                   render={(props) => <MonitorBuildService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
             </Route>
             <Route exact path={`${routeMatch.url}/client`} />
           </Switch>

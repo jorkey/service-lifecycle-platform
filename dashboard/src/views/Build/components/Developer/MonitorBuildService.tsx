@@ -59,44 +59,45 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
 
   const service = props.match.params.service
 
-  const [task, setTask] = useState('')
-  const [version, setVersion] = useState('')
-  const [author, setAuthor] = useState('')
-  const [sources, setSources] = useState<SourceConfig[]>([])
-  const [comment, setComment] = useState('')
+  const [task, setTask] = useState<string>()
+  const [version, setVersion] = useState<string>()
+  const [author, setAuthor] = useState<string>()
+  const [sources, setSources] = useState<SourceConfig[]>()
+  const [comment, setComment] = useState<string>()
   const [startTime, setStartTime] = useState<Date>()
+  const [endTime, setEndTime] = useState<Date>()
 
   const [initialized, setInitialized] = useState(false)
   const [terminatedStatus, setTerminatedStatus] = useState<boolean>()
 
   const [error, setError] = useState<string>()
 
-  const [status, setStatus] = useState('')
+  enum Status { InProcess, Success, Error}
+  const [status, setStatus] = useState<Status>()
 
   const { data: versionInProcess } = useDeveloperVersionsInProcessQuery({
     variables: { service: service },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions in process error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
   const [ cancelTask ] = useCancelTaskMutation({
-    variables: { task: task },
+    variables: { task: task! },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Cancel task error ' + err.message) },
   })
 
-  if (!initialized && versionInProcess) {
-    if (versionInProcess.developerVersionsInProcess?.length) {
-      const v = versionInProcess?.developerVersionsInProcess![0]
+  if (!initialized && versionInProcess?.developerVersionsInProcess) {
+    if (versionInProcess.developerVersionsInProcess.length) {
+      const v = versionInProcess.developerVersionsInProcess![0]
       setTask(v.task)
       setVersion(Version.buildToString(v.version.build))
       setAuthor(v.author)
       setSources(v.sources)
       setComment(v.comment)
       setStartTime(v.startTime)
-      setStatus('In process')
+      setStatus(Status.InProcess)
     } else {
-      setError('Building of service is not in process now')
+      setError(`Building of service ${service} is not in process now`)
     }
     setInitialized(true)
   }
@@ -139,23 +140,40 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
               <Typography>Status</Typography>
             </Grid>
             <Grid item md={2} xs={12}>
-              <Typography>{status}</Typography>
+              <Typography>{status == Status.InProcess ? 'In Process': status == Status.Success ? 'Success' : 'Error'}</Typography>
             </Grid>
 
-            <Grid item md={1} xs={12}>
-              <Typography>Start</Typography>
-            </Grid>
-            <Grid item md={8} xs={12}>
-              <Typography>{startTime?.toLocaleString()}</Typography>
-            </Grid>
+            { (startTime && !endTime) ?
+              <>
+                <Grid item md={1} xs={12}>
+                  <Typography>Start</Typography>
+                </Grid>
+                <Grid item md={8} xs={12}>
+                  <Typography>{startTime.toLocaleString()}</Typography>
+                </Grid>
+              </> : (startTime && endTime) ?
+              <>
+                <Grid item md={1} xs={12}>
+                  <Typography>Start / End</Typography>
+                </Grid>
+                <Grid item md={8} xs={12}>
+                  <Typography>{startTime.toLocaleString() + ' / ' + endTime.toLocaleString()}</Typography>
+                </Grid>
+              </> :
+              <Grid item md={9} xs={12}/>
+            }
           </Grid>
         </CardContent>
       </Card>
       <Card className={classes.card}>
         <CardHeader title={`Task logs`}/>
         <CardContent>
-          { <TaskLogs task={task} terminated={terminatedStatus != undefined} onTerminated={
-            stat => { setStatus(stat ? 'Success': 'Error'); setTerminatedStatus(true) }
+          { <TaskLogs task={task!} onTerminated={
+            (date, stat) => {
+              setStatus(stat ? Status.Success: Status.Error)
+              setEndTime(date)
+              setTerminatedStatus(stat)
+            }
           }/> }
         </CardContent>
       </Card>
@@ -163,33 +181,38 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
   }
 
   return (
-    initialized ? (
+    initialized ?
       <Card
         className={clsx(classes.root)}
       >
-        {MonitorCard()}
-        <Divider />
-        {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
-        <Box className={classes.controls}>
-          { !terminatedStatus ?
-          <Button className={classes.control}
-                  color="primary"
-                  variant="contained"
-                  onClick={ () => cancelTask() }
-          >
-            Stop Build
-          </Button> : null }
-          <Button className={classes.control}
-                  color="primary"
-                  variant="contained"
-                  component={RouterLink}
-                  to={ props.fromUrl }
-          >
-            Exit
-          </Button>
-        </Box>
-      </Card>) : null
-  );
+        { task ?
+          <>
+            {MonitorCard()}
+            <Divider/>
+            {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
+            <Box className={classes.controls}>
+              { !terminatedStatus ?
+              <Button className={classes.control}
+                      color="primary"
+                      variant="contained"
+                      onClick={ () => cancelTask() }
+              >
+                Stop Build
+              </Button> : null }
+              <Button className={classes.control}
+                      color="primary"
+                      variant="contained"
+                      component={RouterLink}
+                      to={ props.fromUrl }
+              >
+                Exit
+              </Button>
+            </Box>
+          </> : error ?
+            <Alert className={classes.alert} severity='error'>{error}</Alert> : error
+        }
+      </Card> : null
+  )
 }
 
 export default MonitorBuildService;
