@@ -43,8 +43,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
           implicit val log = logger
           val arguments = Seq("buildDeveloperVersion",
             s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
-            s"sources=${sources.toJson.compactPrint}") ++
-            comment.map(comment => s"comment=${comment}")
+            s"sources=${sources.toJson.compactPrint}", s"comment=${comment}")
           runBuilder(task, arguments)
         })
       versionsInProcess = versionsInProcess.filter(_.service != service) :+ DeveloperVersionInProcessInfo(service, version, author, sources, comment,

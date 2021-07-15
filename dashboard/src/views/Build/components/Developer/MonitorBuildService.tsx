@@ -191,7 +191,7 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
             <Divider/>
             {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
             <Box className={classes.controls}>
-              { !terminatedStatus ?
+              { terminatedStatus == undefined ?
               <Button className={classes.control}
                       color="primary"
                       variant="contained"
