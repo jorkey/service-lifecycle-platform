@@ -51,7 +51,7 @@ trait ClientVersionsInfoCoder {
   def getClientVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[ClientVersion] = None) =
     GraphqlQuery[Seq[ClientVersionInfo]]("clientVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "ClientVersionInput")).filter(_.value != JsNull),
-      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, installInfo { user,  date} }")
+      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment }, installInfo { user,  date} }")
 
   def getInstalledDesiredVersions(distribution: DistributionId, services: Seq[ServiceId]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",

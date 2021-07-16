@@ -151,7 +151,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
           BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("user1", date)))).getOrElse(false))
 
       assertResult(Some(Seq(ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "test", None))), date, "comment"), InstallInfo("user1", date)))))(
+        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("user1", date)))))(
         adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", Some("test"),
           Some(ClientVersion.parse("1.2.3_1")))))
 

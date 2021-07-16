@@ -164,7 +164,8 @@ trait StateUtils extends DistributionConsumersUtils with SprayJsonSupport {
   }
 
   def testSubscription()(implicit log: Logger): Source[Action[Nothing, String], NotUsed] = {
-    Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line")).mapMaterializedValue(_ => NotUsed).take(5)
+    Source.tick(FiniteDuration(1, TimeUnit.SECONDS), FiniteDuration(1, TimeUnit.SECONDS), Action("line"))
+      .mapMaterializedValue(_ => NotUsed).take(5)
   }
 
   def addServiceFaultReportInfo(distribution: DistributionId, report: ServiceFaultReport)(implicit log: Logger): Future[Unit] = {

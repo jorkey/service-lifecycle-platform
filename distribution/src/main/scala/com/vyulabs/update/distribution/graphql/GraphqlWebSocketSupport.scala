@@ -3,14 +3,15 @@ package com.vyulabs.update.distribution.graphql
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.ws._
-import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.Materializer
 import akka.stream.scaladsl._
-import com.vyulabs.update.common.info.{AccessToken, UserRole}
 import org.slf4j.Logger
 import sangria.parser.QueryParser
 import spray.json._
 
-import scala.concurrent.ExecutionContext
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext}
 import scala.util._
 
 trait GraphqlWebSocketSupport {
@@ -22,10 +23,9 @@ trait GraphqlWebSocketSupport {
                       executionContext: ExecutionContext, log: Logger): Flow[Message, Message, Any] = {
     val output = MergeHub.source[TextMessage.Strict](perProducerBufferSize = 16)
     var sink = Option.empty[Sink[TextMessage.Strict, NotUsed]]
-    var accessToken: Option[AccessToken] = Some(AccessToken("admin", Seq(UserRole.Administrator)))
-    val context = GraphqlContext(accessToken, workspace)
+    var context = Option.empty[GraphqlContext]
 
-    log.debug(s"Handle websocket with access token ${accessToken}")
+    if (log.isDebugEnabled) log.debug(s"Handle websocket")
 
     def serializeMessage[T <: OutputGraphqlMessage](message: T)(implicit writer: JsonWriter[T]) = {
       TextMessage.Strict(message.toJson.compactPrint)
@@ -33,13 +33,13 @@ trait GraphqlWebSocketSupport {
 
     def singleReply[T <: OutputGraphqlMessage](message: T)(implicit writer: JsonWriter[T]) = {
       for (sink <- sink) {
-        log.debug(s"Send websocket reply ${message}")
+        if (log.isDebugEnabled) log.debug(s"Send websocket reply ${message}")
         Source.single(serializeMessage(message)).to(sink).run()
       }
     }
 
     def sendError(id: String, message: String): Unit = {
-      log.debug(s"Send websocket error for subscription ${id}: ${message}")
+      if (log.isDebugEnabled) log.debug(s"Send websocket error for subscription ${id}: ${message}")
       log.error(message)
       singleReply(Error(id = id, payload = ErrorPayload(message)))
     }
@@ -49,35 +49,47 @@ trait GraphqlWebSocketSupport {
         case TextMessage.Strict(queryMessage) =>
           try {
             val query = queryMessage.parseJson.asJsObject
-            log.debug(s"Received websocket graphql query ${query}")
+            if (log.isDebugEnabled) log.debug(s"Received websocket graphql query ${query}")
             val queryType = query.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
             queryType match {
               case ConnectionInit.`type` =>
                 val init = query.convertTo[ConnectionInit]
-                singleReply(ConnectionAck())
+                workspace.getOptionalAccessToken(init.payload.Authorization).onComplete {
+                  case Success(accessToken) =>
+                    context = Some(GraphqlContext(accessToken, workspace))
+                    singleReply(ConnectionAck())
+                  case Failure(ex) =>
+                    log.error("Getting access token error", ex)
+                }
               case Subscribe.`type` =>
                 val subscribe = query.convertTo[Subscribe]
-                QueryParser.parse(subscribe.payload.query) match {
-                  case Success(document) =>
-                    val querySource = graphql.executeSubscriptionQueryToJsonSource(
-                      GraphqlSchema.SchemaDefinition, context, document, subscribe.payload.operationName,
-                      subscribe.payload.variables.getOrElse(JsObject.empty), tracing)
-                    for (sink <- sink) {
-                      Source.combine(querySource.map(msg => {
-                            msg.asJsObject.fields.get("data") match {
-                              case Some(data) if data != JsNull =>
-                                serializeMessage(Next(id = subscribe.id, payload = ExecutionResult(data)))
-                              case _ =>
-// TODO                               msg.asJsObject.fields.get("errors").get.asJsObject.
-                                serializeMessage(Error(id = subscribe.id, payload = ErrorPayload(message = "Error !?!?!")))
-                            }
-                          }),
-                          Source.single(serializeMessage(Complete(id = subscribe.id))))(Concat(_))
-                        .map(msg => { log.debug(s"Send websocket message ${msg}"); msg })
-                        .to(sink).run()
-                    }
-                  case Failure(e) =>
-                    sendError(subscribe.id, "Graphql parse error: " + e.getMessage)
+                try {
+                  QueryParser.parse(subscribe.payload.query) match {
+                    case Success(document) =>
+                      context match {
+                        case Some(context) =>
+                          val querySource = graphql.executeSubscriptionQueryToJsonSource(
+                            GraphqlSchema.SchemaDefinition, context, document, subscribe.payload.operationName,
+                            subscribe.payload.variables.getOrElse(JsObject.empty), tracing)
+                          for (sink <- sink) {
+                            Source.combine(querySource.flatMapConcat(msg => {
+                              Source.single(serializeMessage(Next(id = subscribe.id, payload = msg.asJsObject))) }),
+                              Source.single(serializeMessage(Complete(id = subscribe.id))))(Concat(_))
+                              .map(msg => {
+                                if (log.isDebugEnabled) log.debug(s"Send websocket message ${msg}"); msg
+                              })
+                              .to(sink).run()
+                          }
+                        case None =>
+                          sendError(subscribe.id, "Connection is not initialized")
+                      }
+                    case Failure(ex) =>
+                      sendError(subscribe.id, "Graphql parse error: " + ex.getMessage)
+                  }
+                } catch {
+                  case ex: Throwable =>
+                    log.error("Subscribe query handle error", ex)
+                    sendError(subscribe.id, "Subscribe query handle error: " + ex.getMessage)
                 }
               case Ping.`type` =>
                 singleReply(Pong())

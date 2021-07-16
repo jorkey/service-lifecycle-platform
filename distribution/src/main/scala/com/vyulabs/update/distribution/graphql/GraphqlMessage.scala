@@ -42,13 +42,7 @@ object Subscribe extends DefaultJsonProtocol {
   implicit val queryJson = jsonFormat3(Subscribe.apply)
 }
 
-case class ExecutionResult(data: JsValue)
-
-object ExecutionResult extends DefaultJsonProtocol {
-  implicit val queryJson = jsonFormat1(ExecutionResult.apply)
-}
-
-case class Next(`type`: String = Next.`type`, id: String, payload: ExecutionResult) extends OutputGraphqlMessage
+case class Next(`type`: String = Next.`type`, id: String, payload: JsObject) extends OutputGraphqlMessage
 
 object Next extends DefaultJsonProtocol {
   val `type` = "next"

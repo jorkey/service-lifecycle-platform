@@ -95,37 +95,46 @@ trait UsersUtils extends SprayJsonSupport {
     }
   }
 
-  def getOptionalAccessToken()(implicit log: Logger): Directive1[Option[AccessToken]] = {
-    val bearerTokenRx = "Bearer (.*)".r
-    val basicTokenRx = "Basic (.*)".r
-    optionalHeaderValueByName("Authorization").flatMap {
-      case Some(bearerTokenRx(value)) ⇒
-        try {
-          Jwt.decode(value, config.jwtSecret) match {
-            case Success(jsonValue) ⇒ provide(Some(jsonValue.convertTo[AccessToken]))
-            case Failure(_) ⇒ complete(StatusCodes.Unauthorized)
-          }
-        } catch {
-          case _: InvalidSignatureException =>
-            complete(StatusCodes.Unauthorized)
-        }
-      case Some(basicTokenRx(value)) ⇒
-        val authTokenRx = "(.*):(.*)".r
-        new String(Base64.getDecoder.decode(value), "utf8") match {
-          case authTokenRx(user, password) =>
-            onSuccess(login(user, password)).flatMap { token => provide(Some(token)) }
-          case _ =>
-            throw AuthenticationException("Authentication error")
-        }
-      case _ ⇒
-        provide(None)
-    }
-  }
-
   def getAccessToken()(implicit log: Logger): Directive1[AccessToken] = {
     getOptionalAccessToken().flatMap {
       case Some(token) => provide(token)
       case None => complete(StatusCodes.Unauthorized)
+    }
+  }
+
+  def getOptionalAccessToken()(implicit log: Logger): Directive1[Option[AccessToken]] = {
+    optionalHeaderValueByName("Authorization").flatMap {
+      case Some(authorization) =>
+        onSuccess(getOptionalAccessToken(authorization)).flatMap { token => provide(token) }
+      case None =>
+        provide(None)
+    }
+  }
+
+  def getOptionalAccessToken(authorization: String)(implicit log: Logger): Future[Option[AccessToken]] = {
+    val bearerTokenRx = "Bearer (.*)".r
+    val basicTokenRx = "Basic (.*)".r
+    authorization match {
+      case bearerTokenRx(value) =>
+        try {
+          Jwt.decode(value, config.jwtSecret) match {
+            case Success(jsonValue) ⇒ Future(Some(jsonValue.convertTo[AccessToken]))
+            case Failure(_) ⇒ Future(None)
+          }
+        } catch {
+          case _: InvalidSignatureException =>
+            Future(None)
+        }
+      case basicTokenRx(value) ⇒
+        val authTokenRx = "(.*):(.*)".r
+        new String(Base64.getDecoder.decode(value), "utf8") match {
+          case authTokenRx(user, password) =>
+            login(user, password).map(Some(_))
+          case _ =>
+            Future.failed(AuthenticationException(s"Invalid authorization ${authorization}"))
+        }
+      case _ ⇒
+        Future.failed(AuthenticationException(s"Invalid authorization ${authorization}"))
     }
   }
 

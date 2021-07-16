@@ -7,19 +7,19 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.{KillSwitch, KillSwitches, Materializer, UniqueKillSwitch}
-import akka.stream.scaladsl.{BroadcastHub, FileIO, Flow, Framing, Keep, Sink, Source}
+import akka.stream.scaladsl.{BroadcastHub, Concat, FileIO, Flow, Framing, Keep, Sink, Source}
 import akka.util.ByteString
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
-import com.vyulabs.update.distribution.graphql.{Complete, Next, Subscribe, SubscribePayload}
+import com.vyulabs.update.distribution.graphql.{Complete, ConnectionAck, ConnectionInit, ConnectionInitPayload, Next, Subscribe, SubscribePayload}
 import org.slf4j.Logger
 import spray.json._
 
 import java.io.{File, IOException}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Random
 
 class AkkaHttpClient(val distributionUrl: String)
@@ -55,7 +55,7 @@ class AkkaHttpClient(val distributionUrl: String)
                                      (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
     val queryJson = request.encodeRequest()
     log.debug(s"Send graphql SSE query: ${queryJson}")
-    var post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
+    val post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
       HttpEntity(ContentTypes.`application/json`, request.encodeRequest().compactPrint.getBytes()))
     getHttpCredentials().foreach(credentials => post.addCredentials(credentials))
     for {
@@ -85,6 +85,7 @@ class AkkaHttpClient(val distributionUrl: String)
   override def subscribeWS[Response](request: GraphqlRequest[Response])
                                     (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
     log.debug(s"Send graphql WebSocket query: ${request}")
+    val token = accessToken.getOrElse(throw new IOException("Not authorized"))
     val webSocketRequest = WebSocketRequest(Uri(distributionUrl + "/" + graphqlPathPrefix),
       getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
     val ((publisherCallback, killSwitch), publisherSource) =
@@ -100,9 +101,10 @@ class AkkaHttpClient(val distributionUrl: String)
             val response = m.parseJson.asJsObject
             val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
             responseType match {
+              case ConnectionAck.`type` =>
               case Next.`type` =>
                 val subscribe = response.convertTo[Next]
-                publisherCallback.invoke(request.decodeResponse(subscribe.payload.data.asJsObject) match {
+                publisherCallback.invoke(request.decodeResponse(subscribe.payload) match {
                   case Left(response) =>
                     response
                   case Right(error) =>
@@ -115,8 +117,14 @@ class AkkaHttpClient(val distributionUrl: String)
                 log.error(s"Invalid message ${m}")
             }
           case _ =>
-        }}), Source.single(TextMessage(Subscribe(id = id, payload =
-          SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint)))
+        }}), Source.combine(
+            Source.fromIterator(() => Seq(
+            TextMessage(ConnectionInit(payload =
+              ConnectionInitPayload(s"Bearer ${token}")).toJson.compactPrint),
+            TextMessage(Subscribe(id = id, payload =
+                SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint),
+            ).iterator), Source.future(Promise[Message]().future))(Concat(_))
+        )
         Http(system).singleWebSocketRequest(webSocketRequest, handlerFlow)._1
       }
     } yield {
