@@ -40,7 +40,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
     result(serviceStatesCollection.insert(
       DistributionServiceState(distributionName, "instance1", DirectoryServiceState("distribution", "directory1",
-        ServiceState(date = stateDate, None, None, version =
+        ServiceState(time = stateDate, None, None, version =
           Some(ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0)), None, None, None, None)))))
   }
 

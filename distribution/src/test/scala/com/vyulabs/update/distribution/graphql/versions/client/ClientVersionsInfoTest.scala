@@ -92,11 +92,11 @@ class ClientVersionsInfoTest extends TestEnvironment {
                         buildInfo: {
                           author: "author1",
                           branches: [ "master" ],
-                          date: $$buildDate
+                          time: $$buildTime
                         },
                         installInfo: {
                           user: "admin",
-                          date: $$installDate
+                          time: $$installTime
                         }
                       })
                   }
@@ -104,8 +104,8 @@ class ClientVersionsInfoTest extends TestEnvironment {
         variables = JsObject(
           "service" -> JsString(service),
           "version" -> version.toJson,
-          "buildDate" -> new Date().toJson,
-          "installDate" -> new Date().toJson))))
+          "buildTime" -> new Date().toJson,
+          "installTime" -> new Date().toJson))))
     assert(distributionDir.getClientVersionImageFile(service, version).createNewFile())
   }
 

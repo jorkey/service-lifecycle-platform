@@ -95,7 +95,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
       busyVersions <- getBusyVersions(distribution, service)
       _ <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.clientVersion))
-          .sortBy(_.buildInfo.date.getTime).map(_.version)
+          .sortBy(_.buildInfo.time.getTime).map(_.version)
         if (notUsedVersions.size > config.versions.maxHistorySize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
             removeClientVersion(service, version)

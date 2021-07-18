@@ -16,7 +16,7 @@ object UpdateError extends DefaultJsonProtocol {
   implicit val updateErrorJson = jsonFormat2(UpdateError.apply)
 }
 
-case class ServiceState(date: Date, installDate: Option[Date], startDate: Option[Date],
+case class ServiceState(time: Date, installTime: Option[Date], startTime: Option[Date],
                         version: Option[ClientDistributionVersion], updateToVersion: Option[ClientDistributionVersion],
                         updateError: Option[UpdateError], failuresCount: Option[Int], lastExitCode: Option[Int])
 
@@ -30,8 +30,8 @@ object DirectoryServiceState extends DefaultJsonProtocol {
   implicit val serviceStateJson = jsonFormat3(DirectoryServiceState.apply)
 
   def getServiceInstanceState(service: ServiceId, directory: File)(implicit log: Logger): DirectoryServiceState = {
-    val ownState = ServiceState(date = new Date(), installDate = IoUtils.getServiceInstallTime(service, directory),
-      startDate = None, version = IoUtils.readServiceVersion(service, directory),
+    val ownState = ServiceState(time = new Date(), installTime = IoUtils.getServiceInstallTime(service, directory),
+      startTime = None, version = IoUtils.readServiceVersion(service, directory),
       updateToVersion = None, updateError = None, failuresCount = None, lastExitCode = None)
     DirectoryServiceState(service, directory.getCanonicalPath(), ownState)
   }

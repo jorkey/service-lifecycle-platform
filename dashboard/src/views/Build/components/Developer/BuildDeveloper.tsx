@@ -146,13 +146,14 @@ const BuildDeveloper = () => {
   const rows = services?.developerServices.map(
     service => {
       const versionInProcess = versionsInProcess?.developerVersionsInProcess.find(version => version.service == service)
-      const completedVersion = completedVersions?.developerVersionsInfo?.find(version => version.service == service)
+      const completedVersion = completedVersions?.developerVersionsInfo?.filter(version => version.service == service)
+        .sort((v1, v2) => Version.compareBuilds(v2.version.build, v1.version.build))[0]
       const version = versionInProcess?Version.buildToString(versionInProcess.version.build):
         completedVersion?Version.buildToString(completedVersion.version.build):undefined
       const author = versionInProcess?versionInProcess.author:
         completedVersion?completedVersion.buildInfo.author:undefined
       const time = versionInProcess?versionInProcess.startTime:
-        completedVersion?completedVersion.buildInfo.date:undefined
+        completedVersion?completedVersion.buildInfo.time:undefined
       const comment = versionInProcess?versionInProcess.comment:
         completedVersion?completedVersion.buildInfo.comment:undefined
       const status = versionInProcess?'In Process':

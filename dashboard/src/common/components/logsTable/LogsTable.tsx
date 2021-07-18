@@ -11,7 +11,7 @@ const useStyles = makeStyles(theme => ({
   logsTable: {
     height: 'calc(100vh - 550px)',
   },
-  dateColumn: {
+  timeColumn: {
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
@@ -38,9 +38,9 @@ export const LogsTable = (props: LogsTableParams) => {
 
   const columns: GridTableColumnParams[] = [
     {
-      name: 'date',
-      headerName: 'Date',
-      className: classes.dateColumn,
+      name: 'time',
+      headerName: 'Time',
+      className: classes.timeColumn,
       type: 'date',
     },
     {
@@ -56,11 +56,13 @@ export const LogsTable = (props: LogsTableParams) => {
   ]
 
   const rows = lines.map(line => new Map<string, GridTableColumnValue>([
-    ['date', line.date],
+    ['time', line.time],
     ['level', line.level],
     ['unit', line.unit],
     ['message', line.message]
   ]))
+
+  console.log('rows ' + rows.length)
 
   return <GridTable
     className={classes.logsTable}

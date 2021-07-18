@@ -108,7 +108,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
                         buildInfo: {
                           author: "author1",
                           branches: [ "master" ]
-                          date: $$date
+                          time: $$time
                         }
                       })
                   }
@@ -116,7 +116,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
         variables = JsObject(
           "service" -> JsString(service),
           "version" -> version.toJson,
-          "date" -> new Date().toJson))))
+          "time" -> new Date().toJson))))
     assert(distributionDir.getDeveloperVersionImageFile(service, version).createNewFile())
   }
 

@@ -8,7 +8,7 @@ import spray.json.DefaultJsonProtocol
 
 import java.util.Date
 
-case class BuildInfo(author: String, sources: Seq[SourceConfig], date: Date, comment: String)
+case class BuildInfo(author: String, sources: Seq[SourceConfig], time: Date, comment: String)
 
 object BuildInfo extends DefaultJsonProtocol {
   implicit val versionInfoJson = jsonFormat4(BuildInfo.apply)
@@ -30,7 +30,7 @@ object DeveloperVersionsInfoJson extends DefaultJsonProtocol {
   implicit val developerVersionsInfoJson = jsonFormat1(DeveloperVersionsInfo.apply)
 }
 
-case class InstallInfo(user: String, date: Date)
+case class InstallInfo(user: String, time: Date)
 
 object InstallInfo extends DefaultJsonProtocol {
   implicit val installInfoJson = jsonFormat2(InstallInfo.apply)

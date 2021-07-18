@@ -58,7 +58,8 @@
     "recompose": "^0.30.0",
     "underscore": "^1.12.1",
     "uuid": "^3.3.2",
-    "validate.js": "^0.13.1"
+    "validate.js": "^0.13.1",
+    "ws": "^7.5.3"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "1.21.2",

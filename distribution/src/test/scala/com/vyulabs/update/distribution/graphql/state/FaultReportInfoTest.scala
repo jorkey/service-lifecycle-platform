@@ -83,7 +83,7 @@ class FaultReportInfoTest extends TestEnvironment {
     clear()
   }
 
-  def addFaultReportInfo(faultId: FaultId, service: ServiceId, sequence: Long, date: Date): Unit = {
+  def addFaultReportInfo(faultId: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
@@ -112,16 +112,16 @@ class FaultReportInfoTest extends TestEnvironment {
             }
           )
         }
-      """, variables = JsObject("date" -> date.toJson, "faultId" -> JsString(faultId), "service" -> JsString(service)))))
+      """, variables = JsObject("time" -> time.toJson, "faultId" -> JsString(faultId), "service" -> JsString(service)))))
     assert(distributionDir.getFaultReportFile(faultId).createNewFile())
 
-    checkReportExists(faultId, service, sequence, date)
+    checkReportExists(faultId, service, sequence, time)
   }
 
-  def checkReportExists(faultId: FaultId, service: ServiceId, sequence: Long, date: Date): Unit = {
+  def checkReportExists(faultId: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("distribution",
-        ServiceFaultReport(faultId, FaultInfo(date, "instance1", service, "directory1", "Common", ServiceState(date, None, None, None, None, None, None, None), Seq("line1", "line2")), Seq("core", "log/service.log")))))
+        ServiceFaultReport(faultId, FaultInfo(time, "instance1", service, "directory1", "Common", ServiceState(time, None, None, None, None, None, None, None), Seq("line1", "line2")), Seq("core", "log/service.log")))))
     )(result(faultsInfoCollection.findSequenced(Filters.eq("report.faultId", faultId))))
   }
 

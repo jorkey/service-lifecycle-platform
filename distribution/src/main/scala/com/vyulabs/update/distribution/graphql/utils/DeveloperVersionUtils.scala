@@ -19,6 +19,7 @@ import spray.json._
 
 import java.io.IOException
 import java.util.Date
+import scala.util.{Failure, Success}
 
 trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfilesUtils
     with StateUtils with RunBuilderUtils with SprayJsonSupport {
@@ -44,7 +45,12 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
           val arguments = Seq("buildDeveloperVersion",
             s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
             s"sources=${sources.toJson.compactPrint}", s"comment=${comment}")
-          runBuilder(task, arguments)
+          val (builderFuture, cancel) = runBuilder(task, arguments)
+          val future = builderFuture.flatMap(_ => {
+            setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
+              Some(DeveloperDistributionVersion(config.distribution, version.build)))))
+          })
+          (future, cancel)
         })
       versionsInProcess = versionsInProcess.filter(_.service != service) :+ DeveloperVersionInProcessInfo(service, version, author, sources, comment,
         task.task, new Date())
@@ -74,7 +80,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
       busyVersions <- getBusyVersions(distribution, service)
       complete <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.developerVersion))
-          .sortBy(_.buildInfo.date.getTime).map(_.version)
+          .sortBy(_.buildInfo.time.getTime).map(_.version)
         if (notUsedVersions.size > config.versions.maxHistorySize) {
           Future.sequence(notUsedVersions.take(notUsedVersions.size - config.versions.maxHistorySize).map { version =>
             removeDeveloperVersion(service, version)

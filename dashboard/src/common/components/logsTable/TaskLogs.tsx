@@ -36,7 +36,7 @@ export const TaskLogs = (props: TaskLogsParams) => {
         const last = data.taskLogs.find(log => log.line.terminationStatus)
         if (last) {
           setTerminated(true)
-          onTerminated(last.line.date, last.line.terminationStatus!)
+          onTerminated(last.line.time, last.line.terminationStatus!)
         }
       }
     }
@@ -71,7 +71,7 @@ export const TaskLogsSubscription = (props: TaskLogsSubscriptionParams) => {
         const line = data.subscriptionData.data.subscribeTaskLogs.line
         if (line.terminationStatus != undefined) {
           setTerminated(true)
-          onTerminated(line.date, line.terminationStatus)
+          onTerminated(line.time, line.terminationStatus)
         }
         setLogLines([...logLines, line])
       }

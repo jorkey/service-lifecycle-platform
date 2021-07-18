@@ -105,7 +105,7 @@ const LastVersions = () => {
     ['version', Version.buildToString(version.version.build)],
     ['author', version.buildInfo.author],
     ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-    ['creationTime', version.buildInfo.date]
+    ['creationTime', version.buildInfo.time]
   ]))
 
   return (

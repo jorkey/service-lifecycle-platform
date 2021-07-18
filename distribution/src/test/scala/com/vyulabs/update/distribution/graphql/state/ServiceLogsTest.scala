@@ -109,14 +109,14 @@ class ServiceLogsTest extends TestEnvironment {
     assertResult((OK,
       ("""{"data":{"addServiceLogs":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, updaterContext, graphql"""
-        mutation AddServiceLogs($$date: Date!, $$level: String!, $$unit: String!, $$message: String!) {
+        mutation AddServiceLogs($$time: Date!, $$level: String!, $$unit: String!, $$message: String!) {
           addServiceLogs (
             service: "service1",
             instance: "instance1",
             process: "process1",
             directory: "dir",
             logs: [
-              { date: $$date, level: $$level, unit: $$unit, message: $$message }
+              { time: $$time, level: $$level, unit: $$unit, message: $$message }
             ]
           )
         }

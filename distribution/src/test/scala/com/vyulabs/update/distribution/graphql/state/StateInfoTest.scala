@@ -87,30 +87,30 @@ class StateInfoTest extends TestEnvironment {
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
-        mutation ServicesState($$date: Date!) {
+        mutation ServicesState($$time: Date!) {
           setServiceStates (
             states: [
               { instance: "instance1", service: "service1", directory: "dir",
-                  state: { date: $$date, version: { distribution: "test", developerBuild: [1,2,3], clientBuild: 0 } }
+                  state: { time: $$time, version: { distribution: "test", developerBuild: [1,2,3], clientBuild: 0 } }
               }
             ]
           )
         }
-      """, variables = JsObject("date" -> new Date().toJson))))
+      """, variables = JsObject("time" -> new Date().toJson))))
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
-        mutation ServicesState($$date: Date!) {
+        mutation ServicesState($$time: Date!) {
           setServiceStates (
             states: [
               { instance: "instance1", service: "service1", directory: "dir",
-                  state: { date: $$date, version: { distribution: "test", developerBuild: [1,2,4], clientBuild: 0 } }
+                  state: { time: $$time, version: { distribution: "test", developerBuild: [1,2,4], clientBuild: 0 } }
               }
             ]
           )
         }
-      """, variables = JsObject("date" -> new Date().toJson))))
+      """, variables = JsObject("time" -> new Date().toJson))))
 
     assertResult((OK,
       ("""{"data":{"serviceStates":[{"instance":{"instance":"instance1","state":{"version":{"distribution":"test","developerBuild":[1,2,4],"clientBuild":0}}}}]}}""").parseJson))(

@@ -72,7 +72,7 @@ export const ServiceStatePopup: React.FC<ServiceStateProps> = (props) => {
   const classes = useStyles()
 
   return anchor && state &&
-      (state.installDate || state.startDate || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
+      (state.installTime || state.startTime || state.updateToVersion || state.updateError || state.failuresCount) ? (<Popover
         id="mouse-over-popover"
         className={classes.statePopover}
         open={Boolean(anchor)}
@@ -89,10 +89,10 @@ export const ServiceStatePopup: React.FC<ServiceStateProps> = (props) => {
     >
       <Table>
         <TableBody>
-          {state.installDate?(<TableRow><TableCell className={classes.stateColumn}>Install Date</TableCell>
-            <TableCell className={classes.stateColumn}>{new Date(state.installDate).toLocaleString()}</TableCell></TableRow>):null}
-          {state.startDate?(<TableRow><TableCell className={classes.stateColumn}>Start Date</TableCell>
-            <TableCell className={classes.stateColumn}>{new Date(state.startDate).toLocaleString()}</TableCell></TableRow>):null}
+          {state.installTime?(<TableRow><TableCell className={classes.stateColumn}>Install Time</TableCell>
+            <TableCell className={classes.stateColumn}>{new Date(state.installTime).toLocaleString()}</TableCell></TableRow>):null}
+          {state.startTime?(<TableRow><TableCell className={classes.stateColumn}>Start Time</TableCell>
+            <TableCell className={classes.stateColumn}>{new Date(state.startTime).toLocaleString()}</TableCell></TableRow>):null}
           {state.updateToVersion?(<TableRow><TableCell className={classes.stateColumn}>Updating To</TableCell>
             <TableCell className={classes.stateColumn}>{Version.clientDistributionVersionToString(state.updateToVersion)}</TableCell></TableRow>):null}
           {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>{state.updateError.critical?'Critical Update Error':'Update Error'}</TableCell>

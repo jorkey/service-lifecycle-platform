@@ -54,7 +54,7 @@ class SequencedCollection[T: ClassTag](val name: String,
         val docs = documents.map { document =>
           val doc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
           doc.append("_id", new BsonInt64(seq)); seq += 1
-          doc.append("_time", new BsonDateTime(System.currentTimeMillis()))
+          doc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
           doc
         }
         collection.insert(docs).map(_ => sequence)
@@ -120,7 +120,7 @@ class SequencedCollection[T: ClassTag](val name: String,
     def insert(collection: MongoDbCollection[BsonDocument], document: T, sequence: Long): Future[Unit] = {
       val newDoc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
       newDoc.append("_id", new BsonInt64(sequence))
-      newDoc.append("_time", new BsonDateTime(System.currentTimeMillis()))
+      newDoc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
       collection.insert(newDoc).map(_ => ())
     }
 

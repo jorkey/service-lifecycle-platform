@@ -44,14 +44,14 @@ trait DeveloperVersionsInfoCoder {
   def getDeveloperVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[DeveloperVersion] = None) =
     GraphqlQuery[Seq[DeveloperVersionInfo]]("developerVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "DeveloperVersionInput")).filter(_.value != JsNull),
-      "{ service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment } }")
+      "{ service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment } }")
 }
 
 trait ClientVersionsInfoCoder {
   def getClientVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[ClientVersion] = None) =
     GraphqlQuery[Seq[ClientVersionInfo]]("clientVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "ClientVersionInput")).filter(_.value != JsNull),
-      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment }, installInfo { user,  date} }")
+      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { user,  time} }")
 
   def getInstalledDesiredVersions(distribution: DistributionId, services: Seq[ServiceId]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",
@@ -78,13 +78,13 @@ trait StateCoder {
     GraphqlQuery[Seq[DistributionServiceState]]("serviceStates",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service),
         GraphqlArgument("instance" -> instance), GraphqlArgument("directory" -> directory)).filter(_.value != JsNull),
-      "{ distribution instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } } }"
+      "{ distribution instance { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } } }"
     )
 
   def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], last: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faultReports",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
-      "{ distribution, report { faultId, info { date, instance, service, serviceDirectory, serviceProfile, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
+      "{ distribution, report { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 }
 
 // Mutations
@@ -217,7 +217,7 @@ trait AddFaultReportInfoCoder {
 trait SubscribeTaskLogsCoder {
   def subscribeTaskLogs(task: TaskId) =
     GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> task, "String")),
-      "{ sequence, logLine { distribution, service, task, instance, processId, directory, line { date, level, unit, message, terminationStatus } } }")
+      "{ sequence, logLine { distribution, service, task, instance, processId, directory, line { time, level, unit, message, terminationStatus } } }")
 }
 
 trait TestSubscriptionCoder {

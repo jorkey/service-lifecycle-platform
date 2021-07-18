@@ -24,7 +24,7 @@ query developerVersionsInProcess ($service: String) {
 
 query developerVersionsInfo ($service: String, $version: DeveloperVersionInput) {
     developerVersionsInfo (service: $service, version: $version) {
-        service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment }
+        service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }
     }
 }
 
@@ -56,7 +56,7 @@ mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaIn
 
 query clientVersionsInfo ($service: String!, $version: ClientVersionInput) {
     clientVersionsInfo (service: $service, version: $version) {
-        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, date, comment }, installInfo { user, date }
+        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { user, time }
     }
 }
 
@@ -90,19 +90,19 @@ mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!
 
 query serviceStates ($distribution: String!) {
     serviceStates (distribution: $distribution) {
-        distribution, instance { instance, service, directory, state { date, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+        distribution, instance { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }
 
 query serviceLogs ($distribution: String!, $service: String!, $instance: String!, $process: String!, $directory: String!) {
     serviceLogs (distribution: $distribution, service: $service, instance: $instance, process: $process, directory: $directory) {
-        sequence, line { date, level, unit, message, terminationStatus }
+        sequence, line { time, level, unit, message, terminationStatus }
     }
 }
 
 query taskLogs ($task: String!) {
     taskLogs (task: $task) {
-        sequence, line { date, level, unit, message, terminationStatus }
+        sequence, line { time, level, unit, message, terminationStatus }
     }
 }
 
@@ -220,7 +220,7 @@ mutation removeConsumer ($distribution: String!) {
 
 subscription subscribeTaskLogs ($task: String!, $from: Long) {
     subscribeTaskLogs (task: $task, from: $from) {
-        sequence, line { date, level, unit, message, terminationStatus }
+        sequence, line { time, level, unit, message, terminationStatus }
     }
 }
 
@@ -228,7 +228,7 @@ subscription subscribeServiceLogs ($distribution: String!, $service: String!, $i
         $directory: String!, $from: Long!) {
     subscribeServiceLogs (distribution: $distribution, service: $service, instance: $instance, process: $process,
             directory: $directory, from: $from) {
-        sequence, line { date, level, unit, message, terminationStatus }
+        sequence, line { time, level, unit, message, terminationStatus }
     }
 }
 
