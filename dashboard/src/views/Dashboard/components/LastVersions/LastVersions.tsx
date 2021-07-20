@@ -27,28 +27,24 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: 20
   },
   serviceColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
-    paddingLeft: '16px'
   },
   authorColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
-    paddingLeft: '16px'
   },
   commentColumn: {
     padding: '4px',
-    paddingLeft: '16px'
   },
   startTimeColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
-    paddingLeft: '16px'
   },
   control: {
     paddingLeft: '10px',
@@ -99,14 +95,17 @@ const LastVersions = () => {
     },
   ]
 
-  const rows = developerVersionsInfo?.developerVersionsInfo.map(
-      version => new Map<string, GridTableColumnValue>([
-    ['service', version.service],
-    ['version', Version.buildToString(version.version.build)],
-    ['author', version.buildInfo.author],
-    ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-    ['creationTime', version.buildInfo.time]
-  ]))
+  const rows = developerVersionsInfo?.developerVersionsInfo
+    .sort((v1, v2) =>
+      Version.compareBuilds(v2.version.build, v1.version.build))
+    .map(
+        version => new Map<string, GridTableColumnValue>([
+      ['service', version.service],
+      ['version', Version.buildToString(version.version.build)],
+      ['author', version.buildInfo.author],
+      ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
+      ['creationTime', version.buildInfo.time]
+    ]))
 
   return (
     <Card

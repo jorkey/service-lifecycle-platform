@@ -8,17 +8,17 @@ import {Info} from './ServiceState';
 // eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
   serviceColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
     padding: '4px',
-    width: '200px'
+    width: '100px'
   },
   alarmVersionColumn: {
     padding: '4px',
-    width: '200px',
+    width: '100px',
     color: 'red'
   },
   directoryColumn: {

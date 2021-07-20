@@ -26,33 +26,24 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: 20
   },
   serviceColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
-    paddingLeft: '16px'
   },
   authorColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
-    paddingLeft: '16px'
   },
   commentColumn: {
     padding: '4px',
-    paddingLeft: '16px'
   },
   startTimeColumn: {
-    width: '200px',
+    width: '150px',
     padding: '4px',
-    paddingLeft: '16px'
-  },
-  taskColumn: {
-    width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   control: {
     paddingLeft: '10px',

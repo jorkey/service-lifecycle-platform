@@ -334,7 +334,7 @@ object GraphqlSchema {
 
       // Distribution consumers operations
       Field("installProviderVersion", StringType,
-        arguments = DistributionArg:: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
+        arguments = DistributionArg :: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.installProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setTestedVersions", BooleanType,

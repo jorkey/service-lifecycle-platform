@@ -13,18 +13,18 @@ import {
 
 // eslint-disable-next-line no-unused-vars
 const useStyles = makeStyles(theme => ({
-  profileColumn: {
-    width: '200px',
+  serviceColumn: {
+    width: '150px',
     padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
     padding: '4px',
-    width: '200px'
+    width: '150px'
   },
   alarmVersionColumn: {
     padding: '4px',
-    width: '200px',
+    width: '150px',
     color: 'red'
   },
   directoryColumn: {
@@ -126,7 +126,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
       {(versionIndex <= 0 && directoryIndex <= 0 && stateIndex <= 0) ? (
         <>
           <TableCell
-            className={classes.profileColumn}
+            className={classes.serviceColumn}
             rowSpan={rowNum + 1}
           >{service}</TableCell>
           <TableCell
@@ -190,7 +190,7 @@ export const VersionsTable: React.FC<VersionsTableProps> = props => {
   return (<Table stickyHeader>
     <TableHead>
       <TableRow>
-        <TableCell className={classes.profileColumn}>Service</TableCell>
+        <TableCell className={classes.serviceColumn}>Service</TableCell>
         <TableCell className={classes.versionColumn}>Developer Version</TableCell>
         <TableCell className={classes.versionColumn}>Client Version</TableCell>
         <TableCell className={classes.versionColumn}>Working Version</TableCell>

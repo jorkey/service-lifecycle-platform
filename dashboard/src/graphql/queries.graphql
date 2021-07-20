@@ -196,6 +196,16 @@ mutation removeProvider ($distribution: String!) {
     removeProvider (distribution: $distribution)
 }
 
+query providerDesiredVersions ($distribution: String!) {
+    providerDesiredVersions (distribution: $distribution) {
+        service, version { distribution, build }
+    }
+}
+
+mutation installProviderVersion ($distribution: String!, $service: String!, $version: DeveloperDistributionVersionInput!) {
+    installProviderVersion (distribution: $distribution, service: $service, version: $version)
+}
+
 # Consumers
 
 query consumersInfo {
