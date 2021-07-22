@@ -35,13 +35,18 @@ const useStyles = makeStyles((theme:any) => ({
     minWidth: 800
   },
   providerSelect: {
-    width: '150px'
+    width: '150px',
+    paddingRight: '2px'
+  },
+  serviceSelect: {
+    width: '150px',
+    paddingRight: '2px'
   },
   downloadUpdates: {
-    width: '150px'
+    paddingRight: '2px'
   },
   rebuildWithNewConfig: {
-    width: '150px'
+    paddingRight: '2px'
   },
   versionsTable: {
     marginTop: 20
@@ -94,11 +99,10 @@ const BuildClient = () => {
   const classes = useStyles()
 
   const [provider, setProvider] = useState<string>()
+  const [service, setService] = useState<string>()
   const [downloadUpdates, setDownloadUpdates] = useState<boolean>(true)
   const [rebuildWithNewConfig, setRebuildWithNewConfig] = useState<boolean>(false)
-  const [services, setServices] = useState(new Set<string>())
   const [error, setError] = useState<string>()
-  const history = useHistory()
 
   const { data: providers } = useProvidersInfoQuery({
     fetchPolicy: 'no-cache',
@@ -121,33 +125,37 @@ const BuildClient = () => {
     onCompleted() { setError(undefined) }
   })
 
-  if (provider) {
-    getProviderDesiredVersions()
+  React.useEffect(() => {
+    if (provider) {
+      getProviderDesiredVersions({ variables: { distribution: provider } })
+    }
+  }, [ 'provider' ])
+
+  const makeServicesList = () => {
+    const servicesSet = new Set<string>()
+
+    if (providerDesiredVersions.data) {
+      providerDesiredVersions.data.providerDesiredVersions.forEach(
+        version => servicesSet.add(version.service)
+      )
+    }
+
+    if (developerVersions?.developerVersionsInfo) {
+      developerVersions.developerVersionsInfo.forEach(
+        version => servicesSet.add(version.service)
+      )
+    }
+
+    if (clientVersions?.clientVersionsInfo) {
+      clientVersions.clientVersionsInfo.forEach(
+        version => servicesSet.add(version.service)
+      )
+    }
+
+    return Array.from(servicesSet)
   }
 
-  if (providerDesiredVersions.data) {
-    const newServices = new Set(services)
-    providerDesiredVersions.data.providerDesiredVersions.forEach(
-      version => newServices.add(version.service)
-    )
-    setServices(services)
-  }
-
-  if (developerVersions?.developerVersionsInfo) {
-    const newServices = new Set(services)
-    developerVersions.developerVersionsInfo.forEach(
-      version => newServices.add(version.service)
-    )
-    setServices(services)
-  }
-
-  if (clientVersions?.clientVersionsInfo) {
-    const newServices = new Set(services)
-    clientVersions.clientVersionsInfo.forEach(
-      version => newServices.add(version.service)
-    )
-    setServices(services)
-  }
+  const services = makeServicesList()
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -172,7 +180,7 @@ const BuildClient = () => {
     }
   ]
 
-  const rows = Array.from(services).sort().map(
+  const rows = services.filter(s => { return service == undefined || s == service }).sort().map(
     service => {
       const providerVersion = providerDesiredVersions.data?.providerDesiredVersions.find(version => version.service == service)
       const developerVersion = developerVersions?.developerVersionsInfo.find(version => version.service == service)
@@ -192,34 +200,41 @@ const BuildClient = () => {
       <CardHeader
         action={
           <FormGroup row>
+            { providers?.providersInfo.length ?
+              <FormControlLabel
+                className={classes.control}
+                control={
+                <Select
+                  className={classes.providerSelect}
+                  native
+                  onChange={(event) => setProvider(event.target.value as string)}
+                  title='Select provider'
+                  value={provider}
+                >
+                  { providers?.providersInfo.map(provider =>
+                    <option key={provider.distribution}>{provider.distribution}</option>) }
+                </Select>}
+                label='Provider'
+              /> : null }
             <FormControlLabel
               className={classes.control}
-              control={<Select
-                className={classes.providerSelect}
+              control={
+              <Select
+                className={classes.serviceSelect}
                 native
-                onChange={(event) => setProvider(event.target.value as string)}
-                title='Select provider'
+                onChange={(event) => {
+                  const choice = event.target.value as string
+                  setService(choice != 'All Services' ? choice : undefined)
+                }}
+                title='Select service'
                 value={provider}
               >
-                { providers?.providersInfo.map(provider =>
-                  <option key={provider.distribution}>{provider.distribution}</option>) }
-              </Select>}
-              label='Provider'
+              { (new Array('All Services').concat(services))
+                  .map((service, index) => <option key={index}>{service}</option>) }
+            </Select>}
+            label='Service'
             />
-            <FormControlLabel
-              className={classes.control}
-              control={<Select
-                className={classes.providerSelect}
-                native
-                onChange={(event) => setProvider(event.target.value as string)}
-                title='Select provider'
-                value={provider}
-              >
-                { providers?.providersInfo.map(provider =>
-                  <option key={provider.distribution}>{provider.distribution}</option>) }
-              </Select>}
-              label='Provider'
-            />
+            { provider ?
             <FormControlLabel
               className={classes.control}
               control={<Checkbox
@@ -228,7 +243,7 @@ const BuildClient = () => {
                 onChange={event => setDownloadUpdates(event.target.checked)}
               />}
               label='Download Updates'
-            />
+            /> : null }
             <FormControlLabel
               className={classes.control}
               control={<Checkbox
@@ -249,7 +264,7 @@ const BuildClient = () => {
             />
           </FormGroup>
         }
-        title='Build service'
+        title='Build Client Service Version'
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>

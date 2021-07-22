@@ -6,6 +6,7 @@ import {Route, Switch, useRouteMatch} from "react-router-dom";
 import BuildDeveloper from "./components/Developer/BuildDeveloper";
 import StartBuildService from "./components/Developer/StartBuildService";
 import MonitorBuildService from "./components/Developer/MonitorBuildService";
+import BuildClient from "./components/Client/BuildClient";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -35,7 +36,8 @@ const Build = () => {
             <Route exact path={`${routeMatch.url}/developer/monitor/:service`}
                    render={(props) => <MonitorBuildService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
             </Route>
-            <Route exact path={`${routeMatch.url}/client`} />
+            <Route exact path={`${routeMatch.url}/client`}
+                   component={BuildClient}/>
           </Switch>
         </Grid>
       </Grid>

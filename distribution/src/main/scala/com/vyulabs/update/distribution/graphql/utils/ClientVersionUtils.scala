@@ -78,20 +78,20 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumer
     } yield result
   }
 
-  def getClientVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None,
+  def getClientVersionsInfo(service: Option[ServiceId], distribution: Option[DistributionId] = None,
                             version: Option[ClientVersion] = None)(implicit log: Logger): Future[Seq[ClientVersionInfo]] = {
-    val serviceArg = Filters.eq("service", service)
+    val serviceArg = service.map { service => Filters.eq("service", service) }
     val distributionArg = distribution.map { distribution => Filters.eq("version.distribution", distribution ) }
     val versionArg = version.map { version => Filters.and(
       Filters.eq("version.developerBuild", version.developerBuild),
       Filters.eq("version.clientBuild", version.clientBuild)) }
-    val filters = Filters.and((Seq(serviceArg) ++ distributionArg ++ versionArg).asJava)
+    val filters = Filters.and((serviceArg ++ distributionArg ++ versionArg).asJava)
     collections.Client_Versions.find(filters)
   }
 
   private def removeObsoleteVersions(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Unit] = {
     for {
-      versions <- getClientVersionsInfo(service, distribution = Some(distribution))
+      versions <- getClientVersionsInfo(Some(service), distribution = Some(distribution))
       busyVersions <- getBusyVersions(distribution, service)
       _ <- {
         val notUsedVersions = versions.filterNot(info => busyVersions.contains(info.version.clientVersion))

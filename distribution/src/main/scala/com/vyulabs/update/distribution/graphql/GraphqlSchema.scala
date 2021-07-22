@@ -148,9 +148,9 @@ object GraphqlSchema {
 
       // Client versions
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
-        arguments = ServiceArg :: OptionDistributionArg :: OptionClientVersionArg :: Nil,
+        arguments = OptionServiceArg :: OptionDistributionArg :: OptionClientVersionArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientVersionsInfo(c.arg(ServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionClientVersionArg)) }),
+        resolve = c => { c.ctx.workspace.getClientVersionsInfo(c.arg(OptionServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionClientVersionArg)) }),
       Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
         tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder, UserRole.Updater) :: Nil,
@@ -333,10 +333,10 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeConsumer(c.arg(DistributionArg)).map(_ => true) }),
 
       // Distribution consumers operations
-      Field("installProviderVersion", StringType,
+      Field("downloadProviderVersion", StringType,
         arguments = DistributionArg :: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
         tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.installProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
+        resolve = c => { c.ctx.workspace.downloadProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(UserRole.Distribution) :: Nil,

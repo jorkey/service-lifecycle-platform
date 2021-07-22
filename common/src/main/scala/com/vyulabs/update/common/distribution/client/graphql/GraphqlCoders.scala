@@ -128,8 +128,8 @@ trait ConsumersAdministrationCoder {
   def removeProvider(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeProvider", Seq(GraphqlArgument("distribution" -> distribution)))
 
-  def installProviderVersion(distribution: DistributionId, service: ServiceId, version: DeveloperDistributionVersion) =
-    GraphqlMutation[String]("installProviderVersion",
+  def downloadProviderVersion(distribution: DistributionId, service: ServiceId, version: DeveloperDistributionVersion) =
+    GraphqlMutation[String]("downloadProviderVersion",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput")))
 
   def addConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]) =

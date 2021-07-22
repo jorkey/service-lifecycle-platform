@@ -54,7 +54,7 @@ mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaIn
 
 # Client Versions
 
-query clientVersionsInfo ($service: String!, $version: ClientVersionInput) {
+query clientVersionsInfo ($service: String, $version: ClientVersionInput) {
     clientVersionsInfo (service: $service, version: $version) {
         service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { user, time }
     }

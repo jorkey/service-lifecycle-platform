@@ -184,7 +184,7 @@ const BuildDeveloper = () => {
             />
           </FormGroup>
         }
-        title='Build service'
+        title='Build Developer Service Version'
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
