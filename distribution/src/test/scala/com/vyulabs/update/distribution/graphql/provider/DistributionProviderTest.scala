@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.consumer
+package com.vyulabs.update.distribution.graphql.provider
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
@@ -27,18 +27,18 @@ class DistributionProviderTest extends TestEnvironment {
           addProvider (
             distribution: "provider-distribution",
             url: "http://provider-distribution.com",
-            uploadStateInterval: "{ \"length\": 30, \"unit\": \"SECONDS\" }"
+            uploadStateIntervalSec: 30
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"providersInfo":[{"distribution":"provider-distribution","distributionUrl":"http://provider-distribution.com"}]}}""").parseJson))(
+      ("""{"data":{"providersInfo":[{"distribution":"provider-distribution","url":"http://provider-distribution.com"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           providersInfo {
              distribution,
-             distributionUrl
+             url
           }
         }
       """)))
@@ -50,7 +50,7 @@ class DistributionProviderTest extends TestEnvironment {
           addProvider (
             distribution: "provider-distribution-1",
             url: "http://provider-distribution-1.com",
-            uploadStateInterval: "{ \"length\": 20, \"unit\": \"SECONDS\" }"
+            uploadStateIntervalSec: 20
           )
         }
       """)))
@@ -66,12 +66,12 @@ class DistributionProviderTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"providersInfo":[{"distribution":"provider-distribution-1","distributionUrl":"http://provider-distribution-1.com"}]}}""").parseJson))(
+      ("""{"data":{"providersInfo":[{"distribution":"provider-distribution-1","url":"http://provider-distribution-1.com"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           providersInfo {
              distribution,
-             distributionUrl
+             url
           }
         }
       """)))

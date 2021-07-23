@@ -3,12 +3,12 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, UserId}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, AccountId}
 import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
-import com.vyulabs.update.common.info.UserRole.UserRole
+import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.IoUtils
@@ -71,19 +71,19 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def addDistributionUsers(): Boolean = {
+  def addDistributionAccounts(): Boolean = {
     log.info(s"--------------------------- Add distribution users")
-    if (!addServiceUser(Common.InstallerServiceName, "Temporary install user", UserRole.Developer) ||
-        !addServiceUser(Common.BuilderServiceName, "Builder service user", UserRole.Builder) ||
-        !addServiceUser(Common.UpdaterServiceName, "Updater service user", UserRole.Updater)) {
+    if (!addServiceAccount(Common.InstallerServiceName, "Temporary install user", AccountRole.Developer) ||
+        !addServiceAccount(Common.BuilderServiceName, "Builder service user", AccountRole.Builder) ||
+        !addServiceAccount(Common.UpdaterServiceName, "Updater service user", AccountRole.Updater)) {
       return false
     }
     true
   }
 
-  def removeTemporaryDistributionUsers(): Boolean = {
+  def removeTemporaryDistributionAccounts(): Boolean = {
     log.info(s"--------------------------- Remove temporary distribution users")
-    if (!removeUser(Common.InstallerServiceName)) {
+    if (!removeAccount(Common.InstallerServiceName)) {
       return false
     }
     true
@@ -118,14 +118,6 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addProvider(providerDistributionName, providerDistributionURL, None)).getOrElse(false)) {
       log.error(s"Can't add distribution provider")
-      return false
-    }
-
-    log.info("")
-    log.info(s"########################### Add distribution consumer to provider distribution server")
-    log.info("")
-    if (!providerDistributionClient.get.graphqlRequest(administratorMutations.addConsumer(distribution, servicesProfile, testDistributionMatch)).getOrElse(false)) {
-      log.error(s"Can't add distribution consumer")
       return false
     }
 
@@ -350,16 +342,16 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def addServiceUser(user: UserId, name: String, role: UserRole): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.addUser(user, false,
+  private def addServiceAccount(user: AccountId, name: String, role: AccountRole): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(user, false,
         name, user, Seq(role))).getOrElse {
       return false
     }
     role match {
-      case UserRole.Developer =>
+      case AccountRole.Developer =>
         developerDistributionClient = Some(new SyncDistributionClient(
           new DistributionClient(new HttpClientImpl(makeDistributionUrl(user))), FiniteDuration(60, TimeUnit.SECONDS)))
-      case UserRole.Builder =>
+      case AccountRole.Builder =>
         builderDistributionClient = Some(new SyncDistributionClient(
           new DistributionClient(new HttpClientImpl(makeDistributionUrl(user))), FiniteDuration(60, TimeUnit.SECONDS)))
       case _ =>
@@ -367,8 +359,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def removeUser(user: UserId): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.removeUser(user)).getOrElse {
+  private def removeAccount(user: AccountId): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.removeAccount(user)).getOrElse {
       return false
     }
   }
@@ -469,7 +461,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     Some(clientVersion)
   }
 
-  private def makeDistributionUrl(user: UserId): String = {
+  private def makeDistributionUrl(user: AccountId): String = {
     val config = distributionConfig.getOrElse {
       sys.error("No distribution config")
     }

@@ -13,7 +13,7 @@ import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import com.vyulabs.update.common.info.{AccessToken, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlHttpSupport, GraphqlSchema, GraphqlWebSocketSupport, GraphqlWorkspace}
 import org.slf4j.LoggerFactory
@@ -46,8 +46,17 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                       executeGraphqlRequest(token, requestJson, tracing.isDefined)
                     }
                   } ~ get {
-                    handleWebSocketMessagesForProtocol(
-                      handleWebSocket(tracing.isDefined), "graphql-transport-ws")
+                    pathPrefix(websocketPathPrefix) {
+                      seal {
+                        handleWebSocketMessagesForProtocol(
+                          handleWebSocket(tracing.isDefined), "graphql-transport-ws")
+                      }
+                    } ~ {
+                      parameters("query", "operation".?, "variables".?) { (query, operation, vars) =>
+                        val variables = vars.map(_.parseJson.asJsObject).getOrElse(JsObject.empty)
+                        executeGraphqlRequest(token, query, operation, variables, tracing.isDefined)
+                      }
+                    }
                   }
                 }
               }
@@ -56,12 +65,12 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                 workspace.getAccessToken()(log) { case token =>
                   path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Distribution)) {
+                      authorize(token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Distribution)) {
                         getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
                           DeveloperDistributionVersion.parse(version)))
                       }
                     } ~ post {
-                      authorize(token.hasRole(UserRole.Builder)) {
+                      authorize(token.hasRole(AccountRole.Builder)) {
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
@@ -72,11 +81,11 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                     }
                   } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(UserRole.Builder) || token.hasRole(UserRole.Updater)) {
+                      authorize(token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Updater)) {
                         getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                       }
                     } ~ post {
-                      authorize(token.hasRole(UserRole.Builder)) {
+                      authorize(token.hasRole(AccountRole.Builder)) {
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
@@ -87,11 +96,11 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                     }
                   } ~ path(faultReportPath / ".*".r) { faultId =>
                     get {
-                      authorize(token.hasRole(UserRole.Developer) || token.hasRole(UserRole.Administrator)) {
+                      authorize(token.hasRole(AccountRole.Developer) || token.hasRole(AccountRole.Administrator)) {
                         getFromFile(workspace.directory.getFaultReportFile(faultId))
                       }
                     } ~ post {
-                      authorize(token.hasRole(UserRole.Updater) || token.hasRole(UserRole.Distribution)) {
+                      authorize(token.hasRole(AccountRole.Updater) || token.hasRole(AccountRole.Distribution)) {
                         fileUpload(faultReportPath) {
                           case (fileInfo, byteSource) =>
                             log.info(s"Receive fault report file from client ${workspace.config.distribution}")

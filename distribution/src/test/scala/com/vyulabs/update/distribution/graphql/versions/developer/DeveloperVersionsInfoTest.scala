@@ -100,15 +100,16 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
       (s"""{"data":{"addDeveloperVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, builderContext,
         graphql"""
-                  mutation AddDeveloperVersionInfo($$service: String!, $$version: DeveloperDistributionVersionInput!, $$date: Date!) {
+                  mutation AddDeveloperVersionInfo($$service: String!, $$version: DeveloperDistributionVersionInput!, $$time: Date!) {
                     addDeveloperVersionInfo (
                       info: {
                         service: $$service,
                         version: $$version,
                         buildInfo: {
+                          sources: [],
                           author: "author1",
-                          branches: [ "master" ]
-                          time: $$time
+                          time: $$time,
+                          comment: "Comment",
                         }
                       })
                   }

@@ -206,26 +206,6 @@ mutation installProviderVersion ($distribution: String!, $service: String!, $ver
     installProviderVersion (distribution: $distribution, service: $service, version: $version)
 }
 
-# Consumers
-
-query consumersInfo {
-    consumersInfo {
-        distribution, profile, testConsumer
-    }
-}
-
-mutation addConsumer ($distribution: String!, $profile: String!, $testConsumer: String) {
-    addConsumer (distribution: $distribution, profile: $profile, testConsumer: $testConsumer)
-}
-
-mutation changeConsumer ($distribution: String!, $profile: String!, $testConsumer: String) {
-    changeConsumer (distribution: $distribution, profile: $profile, testConsumer: $testConsumer)
-}
-
-mutation removeConsumer ($distribution: String!) {
-    removeConsumer (distribution: $distribution)
-}
-
 # Subscriptions
 
 subscription subscribeTaskLogs ($task: String!, $from: Long) {

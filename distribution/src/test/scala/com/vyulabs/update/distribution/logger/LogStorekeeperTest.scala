@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
 import com.vyulabs.update.common.common.ThreadTimer
-import com.vyulabs.update.common.info.{AccessToken, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.common.logger.{LogBuffer, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment

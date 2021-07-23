@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId, UserId}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, TaskId, AccountId}
 import com.vyulabs.update.common.config.{DistributionConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
@@ -19,9 +19,8 @@ import spray.json._
 
 import java.io.IOException
 import java.util.Date
-import scala.util.{Failure, Success}
 
-trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfilesUtils
+trait DeveloperVersionUtils extends ServiceProfilesUtils
     with StateUtils with RunBuilderUtils with SprayJsonSupport {
 
   protected val directory: DistributionDirectory
@@ -33,7 +32,7 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
 
   private var versionsInProcess = Seq.empty[DeveloperVersionInProcessInfo]
 
-  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: UserId,
+  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: AccountId,
                             sources: Seq[SourceConfig], comment: String)(implicit log: Logger): TaskId = {
     synchronized {
       if (versionsInProcess.exists(_.service == service)) {
@@ -141,34 +140,33 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
     getDeveloperDesiredVersions(Set(service)).map(_.headOption.map(_.version))
   }
 
-  def filterDesiredVersionsByProfile(distribution: DistributionId, future: Future[Seq[DeveloperDesiredVersion]])(implicit log: Logger)
+  def filterDesiredVersionsByProfile(profile: ServicesProfileId,
+                                     future: Future[Seq[DeveloperDesiredVersion]])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      consumerConfig <- getDistributionConsumerInfo(distribution)
-      servicesProfile <- getServicesProfile(consumerConfig.profile)
+      servicesProfile <- getServicesProfile(profile)
       versions <- Future(desiredVersions.filter(version => servicesProfile.services.contains(version.service)))
     } yield versions
   }
 
-  def getDeveloperDesiredVersions(distribution: DistributionId, services: Set[ServiceId])(implicit log: Logger)
+  def getDeveloperDesiredVersions(profile: ServicesProfileId, testConsumer: Option[String], services: Set[ServiceId])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      distributionConsumerInfo <- getDistributionConsumerInfo(distribution)
-      developerVersions <- distributionConsumerInfo.testConsumer match {
+      developerVersions <- testConsumer match {
         case Some(testDistributionConsumer) =>
           for {
-            testedVersions <- getTestedVersions(distributionConsumerInfo.profile).map(testedVersions => {
+            testedVersions <- getTestedVersions(profile).map(testedVersions => {
               testedVersions match {
                 case Some(testedVersions) =>
                   val testCondition = testedVersions.signatures.exists(signature => signature.distribution == testDistributionConsumer)
                   if (testCondition) {
                     testedVersions.versions
                   } else {
-                    throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.profile} are not tested by clients ${testDistributionConsumer}")
+                    throw NotFoundException(s"Desired versions for profile ${profile} are not tested by clients ${testDistributionConsumer}")
                   }
                 case None =>
-                  throw NotFoundException(s"Desired versions for profile ${distributionConsumerInfo.profile} are not tested by anyone")
+                  throw NotFoundException(s"Desired versions for profile ${profile} are not tested")
               }
             })
           } yield testedVersions
@@ -181,13 +179,11 @@ trait DeveloperVersionUtils extends DistributionConsumersUtils with ServiceProfi
   private def getBusyVersions(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Set[DeveloperVersion]] = {
     for {
       desiredVersion <- getDeveloperDesiredVersion(service)
-      clientsInfo <- getConsumersInfo()
-      installedVersions <- Future.sequence(clientsInfo.map(client => getInstalledDesiredVersion(client.distribution, service))).map(
-        _.flatten.map(_.version.original))
-      testedVersions <- Future.sequence(clientsInfo.map(client => getTestedVersions(client.profile))).map(
+      profiles <- getServiceProfiles(None)
+      testedVersions <- Future.sequence(profiles.map(profile => getTestedVersions(profile.profile))).map(
         _.flatten.map(_.versions.find(_.service == service).map(_.version)).flatten)
     } yield {
-      (desiredVersion.toSet ++ installedVersions ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)
+      (desiredVersion.toSet ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)
     }
   }
 }

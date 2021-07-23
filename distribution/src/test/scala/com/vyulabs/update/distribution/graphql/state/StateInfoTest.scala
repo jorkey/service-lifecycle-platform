@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.graphql.state
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -23,7 +24,6 @@ class StateInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override protected def beforeAll(): Unit = {
-    result(collections.Developer_ConsumersInfo.insert(DistributionConsumerInfo("distribution", "common", Some("test"))))
   }
 
   it should "set tested versions" in {
@@ -45,9 +45,9 @@ class StateInfoTest extends TestEnvironment {
     assertResult(Seq(TestedDesiredVersions("common", Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2))),
       DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", Seq(2, 1, 2)))),
-      Seq(TestSignature("distribution", date)))))(result(collections.State_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
+      Seq(TestSignature("distribution", date)))))(result(collections.Developer_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
         v.servicesProfile, v.versions, v.signatures.map(s => TestSignature(s.distribution, date)))))))
-    result(collections.State_TestedVersions.drop())
+    result(collections.Developer_TestedVersions.drop())
   }
 
   it should "set/get installed desired versions" in {
@@ -82,7 +82,7 @@ class StateInfoTest extends TestEnvironment {
   }
 
   it should "set services state" in {
-    val distributionContext = GraphqlContext(Some(AccessToken("distribution", Seq(UserRole.Distribution))), workspace)
+    val distributionContext = GraphqlContext(Some(AccessToken("distribution", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(

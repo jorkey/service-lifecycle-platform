@@ -2,8 +2,8 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.SourceConfig
-import com.vyulabs.update.common.info.UserRole.UserRole
-import com.vyulabs.update.common.info.{DistributionConsumerInfo, _}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo, DistributionFaultReport, DistributionProviderInfo, DistributionServiceState, InstanceServiceState, LogLine, SequencedServiceLogLine, ServiceFaultReport}
+import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
@@ -23,16 +23,11 @@ trait ServiceSourcesCoder {
       Seq(GraphqlArgument("service" -> service)))
 }
 
-trait DistributionConsumersCoder {
+trait DistributionProvidersCoder {
   def getDistributionProvidersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionProviderInfo]]("providersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
-      subSelection = "{ distribution, url, uploadStateIntervalSec }")
-
-  def getDistributionConsumersInfo(distribution: Option[DistributionId] = None) =
-    GraphqlQuery[Seq[DistributionConsumerInfo]]("consumersInfo",
-      distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
-      subSelection = "{ distribution, profile, testConsumer }")
+      subSelection = "{ distribution, url, testConsumer, uploadStateIntervalSec }")
 
   def getDistributionProviderDesiredVersions(distribution: DistributionId) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("providerDesiredVersions",
@@ -51,7 +46,7 @@ trait ClientVersionsInfoCoder {
   def getClientVersionsInfo(service: ServiceId, distribution: Option[DistributionId] = None, version: Option[ClientVersion] = None) =
     GraphqlQuery[Seq[ClientVersionInfo]]("clientVersionsInfo",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("distribution" -> distribution), GraphqlArgument("version" -> version, "ClientVersionInput")).filter(_.value != JsNull),
-      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { user,  time} }")
+      "{ service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { account,  time} }")
 
   def getInstalledDesiredVersions(distribution: DistributionId, services: Seq[ServiceId]) =
     GraphqlQuery[Seq[ClientDesiredVersion]]("installedDesiredVersions",
@@ -84,15 +79,15 @@ trait StateCoder {
   def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], last: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faultReports",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
-      "{ distribution, report { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installDate, startDate, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
+      "{ distribution, report { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 }
 
 // Mutations
 
 object LoginCoder {
-  def login(user: UserId, password: String) =
+  def login(account: AccountId, password: String) =
     GraphqlMutation[String]("login",
-      Seq(GraphqlArgument("user" -> user), GraphqlArgument("password" -> password)))
+      Seq(GraphqlArgument("account" -> account), GraphqlArgument("password" -> password)))
 }
 
 trait SourcesAdministrationCoder {
@@ -106,13 +101,13 @@ trait SourcesAdministrationCoder {
     GraphqlMutation[Boolean]("removeServiceSources", Seq(GraphqlArgument("service" -> service)))
 }
 
-trait UsersAdministrationCoder {
-  def addUser(user: UserId, human: Boolean, name: String, password: String, roles: Seq[UserRole]) =
-    GraphqlMutation[Boolean]("addUser", Seq(GraphqlArgument("user" -> user),
+trait AccountsAdministrationCoder {
+  def addAccount(account: AccountId, human: Boolean, name: String, password: String, roles: Seq[AccountRole]) =
+    GraphqlMutation[Boolean]("addAccount", Seq(GraphqlArgument("account" -> account),
       GraphqlArgument("human" -> human), GraphqlArgument("name" -> name),
-      GraphqlArgument("password" -> password), GraphqlArgument("roles" -> roles, "[UserRole!]")))
-  def removeUser(user: UserId) =
-    GraphqlMutation[Boolean]("removeUser", Seq(GraphqlArgument("user" -> user)))
+      GraphqlArgument("password" -> password), GraphqlArgument("roles" -> roles, "[AccountRole!]")))
+  def removeAccount(account: AccountId) =
+    GraphqlMutation[Boolean]("removeAccount", Seq(GraphqlArgument("account" -> account)))
 }
 
 trait ConsumersAdministrationCoder {
@@ -131,12 +126,6 @@ trait ConsumersAdministrationCoder {
   def downloadProviderVersion(distribution: DistributionId, service: ServiceId, version: DeveloperDistributionVersion) =
     GraphqlMutation[String]("downloadProviderVersion",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput")))
-
-  def addConsumer(distribution: DistributionId, servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]) =
-    GraphqlMutation[Boolean]("addConsumer", Seq(GraphqlArgument("distribution" -> distribution),
-      GraphqlArgument("profile" -> servicesProfile), GraphqlArgument("testDistributionMatch" -> testDistributionMatch)).filter(_.value != JsNull))
-  def removeConsumer(distribution: DistributionId) =
-    GraphqlMutation[Boolean]("removeConsumer", Seq(GraphqlArgument("distribution" -> distribution)))
 }
 
 trait BuildDeveloperVersionCoder {
@@ -225,9 +214,9 @@ trait TestSubscriptionCoder {
     GraphqlSubscription[String]("testSubscription")
 }
 
-// Users
+// Accounts
 
-object DeveloperQueriesCoder extends DistributionConsumersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
+object DeveloperQueriesCoder extends DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
 object DeveloperMutationsCoder extends BuildDeveloperVersionCoder with RemoveDeveloperVersionCoder
   with BuildClientVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
@@ -239,9 +228,9 @@ object DeveloperGraphqlCoder {
   val developerSubscriptions = DeveloperSubscriptionsCoder
 }
 
-object AdministratorQueriesCoder extends DistributionConsumersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
+object AdministratorQueriesCoder extends DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
-object AdministratorMutationsCoder extends SourcesAdministrationCoder with UsersAdministrationCoder with ConsumersAdministrationCoder
+object AdministratorMutationsCoder extends SourcesAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
 object AdministratorSubscriptionsCoder extends SubscribeTaskLogsCoder {}
 

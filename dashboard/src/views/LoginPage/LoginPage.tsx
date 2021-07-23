@@ -32,12 +32,12 @@ const LoginPage: React.FC<LoginPageProps> = () => {
 
   useEffect(() => localStorage.removeItem('token'), []);
 
-  const [user, setUser] = useState('');
+  const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
 
   const [loginMutation, { data, loading, error }] =
     useLoginMutation({
-      variables: { user: user, password: password },
+      variables: { account: account, password: password },
       onError(err) {
         console.log(err);
       }})
@@ -48,8 +48,8 @@ const LoginPage: React.FC<LoginPageProps> = () => {
     window.location.replace('/')
   }
 
-  const handleUserChange = (e: any) => {
-    setUser(e.target.value);
+  const handleAccountChange = (e: any) => {
+    setAccount(e.target.value);
   }
 
   const handlePasswordChange = (e: any) => {
@@ -59,7 +59,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
   const handleSubmit = (e: any) => {
     e.preventDefault();
 
-    if (user && password) {
+    if (account && password) {
       loginMutation()
     }
   }
@@ -84,12 +84,12 @@ const LoginPage: React.FC<LoginPageProps> = () => {
                 margin='normal'
                 required
                 fullWidth
-                id='user'
-                label='User Name'
-                name='user'
+                id='account'
+                label='Account Name'
+                name='account'
                 autoComplete='email'
                 autoFocus
-                onChange={handleUserChange}
+                onChange={handleAccountChange}
               />
               <TextField
                 variant='outlined'

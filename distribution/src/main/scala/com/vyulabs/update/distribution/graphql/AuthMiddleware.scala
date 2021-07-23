@@ -1,10 +1,10 @@
 package com.vyulabs.update.distribution.graphql
 
-import com.vyulabs.update.common.info.UserRole.UserRole
+import com.vyulabs.update.common.info.AccountRole.AccountRole
 import sangria.execution.{FieldTag, MiddlewareBeforeField, MiddlewareQueryContext}
 import sangria.schema.Context
 
-case class Authorized(roles: UserRole*) extends FieldTag
+case class Authorized(roles: AccountRole*) extends FieldTag
 
 case class AuthException(message: String) extends Exception(message)
 

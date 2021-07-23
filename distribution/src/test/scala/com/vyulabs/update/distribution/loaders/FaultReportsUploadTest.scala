@@ -80,7 +80,7 @@ class FaultReportsUploadTest extends TestEnvironment {
   }
 
   def waitForLogin(): Promise[String] = {
-    httpClient.waitForMutation("login", Seq(GraphqlArgument("user" -> "test"), GraphqlArgument("password" -> "test")))
+    httpClient.waitForMutation("login", Seq(GraphqlArgument("account" -> "test"), GraphqlArgument("password" -> "test")))
   }
 
   def waitForFaultReportUpload(faultId: FaultId): Promise[Unit] = {

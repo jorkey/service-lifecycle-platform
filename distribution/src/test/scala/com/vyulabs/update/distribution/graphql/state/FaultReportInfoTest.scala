@@ -55,29 +55,29 @@ class FaultReportInfoTest extends TestEnvironment {
   }
 
   it should "clear old fault reports when max reports exceed" in {
-    val date1 = new Date()
-    addFaultReportInfo("fault1", "service1", 1, date1)
-    val date2 = new Date()
-    addFaultReportInfo("fault2", "service1", 2, date2)
-    val date3 = new Date()
-    addFaultReportInfo("fault3", "service1", 3, date3)
-    val date4 = new Date()
-    addFaultReportInfo("fault4", "service1", 4, date4)
+    val time1 = new Date()
+    addFaultReportInfo("fault1", "service1", 1, time1)
+    val time2 = new Date()
+    addFaultReportInfo("fault2", "service1", 2, time2)
+    val time3 = new Date()
+    addFaultReportInfo("fault3", "service1", 3, time3)
+    val time4 = new Date()
+    addFaultReportInfo("fault4", "service1", 4, time4)
 
     checkReportNotExists("fault1")
-    checkReportExists("fault2", "service1", 2, date2)
+    checkReportExists("fault2", "service1", 2, time2)
 
     clear()
   }
 
   it should "clear old fault reports when expiration time came" in {
-    val date1 = new Date()
-    addFaultReportInfo("fault1", "service1", 1, date1)
+    val time1 = new Date()
+    addFaultReportInfo("fault1", "service1", 1, time1)
 
     Thread.sleep(config.faultReports.expirationTimeout.toMillis)
 
-    val date2 = new Date()
-    addFaultReportInfo("fault2", "service1", 2, date2)
+    val time2 = new Date()
+    addFaultReportInfo("fault2", "service1", 2, time2)
     checkReportNotExists("fault1")
 
     clear()
@@ -87,18 +87,18 @@ class FaultReportInfoTest extends TestEnvironment {
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
-        mutation FaultReportInfo($$date: Date!, $$faultId: String!, $$service: String!) {
+        mutation FaultReportInfo($$time: Date!, $$faultId: String!, $$service: String!) {
           addFaultReportInfo (
             fault: {
               faultId: $$faultId,
               info: {
-                date: $$date,
+                time: $$time,
                 instance: "instance1",
                 serviceDirectory: "directory1",
                 service: $$service,
                 serviceProfile: "Common",
                 state: {
-                  date: $$date
+                  time: $$time
                 },
                 logTail: [
                    "line1",

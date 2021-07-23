@@ -70,19 +70,19 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
   def requests[Source[_]](adminClient: SyncDistributionClient[Source], updaterClient: SyncDistributionClient[Source],
                           builderClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
-    it should "execute add/remove user requests" in {
-      assert(adminClient.graphqlRequest(administratorMutations.addUser("user1", true, "user1", "user1", Seq(UserRole.Developer))).getOrElse(false))
+    it should "execute add/remove account requests" in {
+      assert(adminClient.graphqlRequest(administratorMutations.addAccount("account1", true, "account1", "account1", Seq(AccountRole.Developer))).getOrElse(false))
 
-      assert(!adminClient.graphqlRequest(administratorMutations.addUser("user1", true, "user1", "user1", Seq(UserRole.Developer))).getOrElse(false))
+      assert(!adminClient.graphqlRequest(administratorMutations.addAccount("account1", true, "account1", "account1", Seq(AccountRole.Developer))).getOrElse(false))
 
-      assert(adminClient.graphqlRequest(administratorMutations.removeUser("user1")).getOrElse(false))
+      assert(adminClient.graphqlRequest(administratorMutations.removeAccount("account1")).getOrElse(false))
     }
 
     it should "execute distribution provider requests" in {
       assert(adminClient.graphqlRequest(administratorMutations.addProvider("distribution2",
           "http://localhost/graphql", None)).getOrElse(false))
 
-      assertResult(Some(Seq(DistributionProviderInfo("distribution2", "http://localhost/graphql", None))))(
+      assertResult(Some(Seq(DistributionProviderInfo("distribution2", "http://localhost/graphql", None, None))))(
         adminClient.graphqlRequest(administratorQueries.getDistributionProvidersInfo()))
 
       assert(adminClient.graphqlRequest(administratorMutations.removeProvider("distribution2")).getOrElse(false))
@@ -96,24 +96,11 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
         administratorMutations.removeServicesProfile("common")).getOrElse(false))
     }
 
-    it should "execute distribution consumer requests" in {
-      assert(adminClient.graphqlRequest(
-        administratorMutations.addConsumer("distribution", "common", None)).getOrElse(false))
-
-      assertResult(Some(Seq(DistributionConsumerInfo("distribution", "common", None))))(
-        adminClient.graphqlRequest(administratorQueries.getDistributionConsumersInfo()))
-
-      assert(adminClient.graphqlRequest(
-        administratorMutations.removeConsumer("distribution")).getOrElse(false))
-    }
-
     it should "execute developer version requests" in {
       val date = new Date()
 
       assert(adminClient.graphqlRequest(
         administratorMutations.addServicesProfile("common", Seq("service1"))).getOrElse(false))
-      assert(adminClient.graphqlRequest(
-        administratorMutations.addConsumer("distribution", "common", None)).getOrElse(false))
 
       assert(builderClient.graphqlRequest(builderMutations.addDeveloperVersionInfo(
         DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
@@ -138,8 +125,6 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
         distribClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(Seq("service1"))))
 
       assert(adminClient.graphqlRequest(
-        administratorMutations.removeConsumer("distribution")).getOrElse(false))
-      assert(adminClient.graphqlRequest(
         administratorMutations.removeServicesProfile("common")).getOrElse(false))
     }
 
@@ -148,10 +133,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
       assert(builderClient.graphqlRequest(builderMutations.addClientVersionInfo(
         ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-          BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("user1", date)))).getOrElse(false))
+          BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("account1", date)))).getOrElse(false))
 
       assertResult(Some(Seq(ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("user1", date)))))(
+        BuildInfo("author1", Seq(SourceConfig("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("account1", date)))))(
         adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", Some("test"),
           Some(ClientVersion.parse("1.2.3_1")))))
 
@@ -178,12 +163,8 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
     }
 
     it should "execute tested versions requests" in {
-      assert(adminClient.graphqlRequest(
-        administratorMutations.addConsumer("distribution", "common", None)).getOrElse(false))
       assert(
         distribClient.graphqlRequest(distributionMutations.setTestedVersions(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3"))))).getOrElse(false))
-      assert(adminClient.graphqlRequest(
-        administratorMutations.removeConsumer("distribution")).getOrElse(false))
     }
 
     it should "execute service states requests" in {

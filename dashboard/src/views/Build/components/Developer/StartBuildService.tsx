@@ -117,7 +117,7 @@ const StartBuildService: React.FC<BuildServiceParams> = props => {
       if (lastVersion) {
         setVersion(Version.buildToString(Version.nextBuild(lastVersion.version.build)))
       }
-      setAuthor(whoAmI.data.whoAmI.user)
+      setAuthor(whoAmI.data.whoAmI.account)
       setSources(serviceSources.data.serviceSources)
       setInitialized(true)
     }

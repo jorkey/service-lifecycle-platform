@@ -88,8 +88,8 @@ class SimpleLifecycle {
     println("########################### Initialize distribution")
     println()
 
-    if (!distributionBuilder.addDistributionUsers()) {
-      sys.error("Can't create distribution users")
+    if (!distributionBuilder.addDistributionAccounts()) {
+      sys.error("Can't create distribution accounts")
     }
 
     if (!distributionBuilder.addUpdateServicesSources() ||

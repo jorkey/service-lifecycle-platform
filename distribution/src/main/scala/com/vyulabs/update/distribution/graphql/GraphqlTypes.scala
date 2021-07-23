@@ -59,7 +59,7 @@ object GraphqlTypes {
     override def errorMessage: String = "Error during parsing version"
   }
 
-  implicit val UserRoleType = deriveEnumType[UserRole.UserRole]()
+  implicit val AccountRoleType = deriveEnumType[AccountRole.AccountRole]()
 
   implicit val ServicesProfileType = deriveObjectType[Unit, ServicesProfile]()
   implicit val GitConfigType = deriveObjectType[Unit, GitConfig]()
@@ -79,7 +79,7 @@ object GraphqlTypes {
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
   implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersions]()
   implicit val ClientInfoType = deriveObjectType[Unit, DistributionConsumerInfo]()
-  implicit val UserInfoType = deriveObjectType[Unit, UserInfo]()
+  implicit val AccountInfoType = deriveObjectType[Unit, AccountInfo]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
   implicit val DirectoryServiceStateType = deriveObjectType[Unit, DirectoryServiceState]()

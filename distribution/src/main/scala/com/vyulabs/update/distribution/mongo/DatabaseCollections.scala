@@ -4,10 +4,11 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.{GitConfig, ServiceSourcesConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.users.{PasswordHash, ServerUserInfo, UserCredentials}
+import com.vyulabs.update.distribution.accounts.{AccountCredentials, PasswordHash, ServerAccountInfo}
 import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
@@ -23,8 +24,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   private implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
-    classOf[ServerUserInfo],
-    classOf[UserCredentials],
+    classOf[ServerAccountInfo],
+    classOf[AccountCredentials],
     classOf[PasswordHash],
     classOf[GitConfig],
     classOf[SourceConfig],
@@ -66,10 +67,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("name"), new IndexOptions().unique(true)) else Future()
   } yield collection
 
-  val Users = new SequencedCollection[ServerUserInfo]("users", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("users")
+  val Accounts = new SequencedCollection[ServerAccountInfo]("accounts", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("accounts")
     _ <- if (createIndices) {
-      collection.createIndex(Indexes.ascending("user", "_archiveTime"), new IndexOptions().unique(true))
+      collection.createIndex(Indexes.ascending("account", "_archiveTime"), new IndexOptions().unique(true))
       collection.createIndex(Indexes.ascending("human"))
     } else Future()
   } yield collection, Sequences, createIndex = createIndices)
@@ -95,9 +96,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("profile", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Developer_ConsumersInfo = new SequencedCollection[DistributionConsumerInfo]("developer.consumers", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.consumers")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
+  val Developer_TestedVersions = new SequencedCollection[TestedDesiredVersions]("developer.testedDesiredVersions", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.testedDesiredVersions")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("servicesProfile")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Client_Versions = new SequencedCollection[ClientVersionInfo]("client.versions", for {
@@ -118,11 +119,6 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   val State_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("state.installedDesiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.installedDesiredVersions")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-  } yield collection, Sequences, createIndex = createIndices)
-
-  val State_TestedVersions = new SequencedCollection[TestedDesiredVersions]("state.testedDesiredVersions", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("state.testedDesiredVersions")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("servicesProfile")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {
@@ -152,13 +148,13 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   } yield collection
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
-    val filters = Filters.eq("user", "admin")
+    val filters = Filters.eq("account", "admin")
     for {
-      adminRecords <- Users.find(filters)
+      adminRecords <- Accounts.find(filters)
     } yield {
       if (adminRecords.isEmpty) {
-        Users.insert(ServerUserInfo("admin", true, "Administrator", PasswordHash("admin"),
-          Seq(UserRole.Administrator.toString), None, Seq.empty))
+        Accounts.insert(ServerAccountInfo("admin", true, "Administrator", PasswordHash("admin"),
+          Seq(AccountRole.Administrator.toString), None, None, Seq.empty))
       } else {
         Future()
       }

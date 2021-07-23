@@ -91,7 +91,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   def waitForLogin(): Promise[String] = {
-    httpClient.waitForMutation("login", Seq(GraphqlArgument("user" -> "test"), GraphqlArgument("password" -> "test")))
+    httpClient.waitForMutation("login", Seq(GraphqlArgument("account" -> "test"), GraphqlArgument("password" -> "test")))
   }
 
   private def waitForSetServiceStates(states: Seq[DistributionServiceState]): Promise[Boolean] = {

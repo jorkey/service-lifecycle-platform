@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.info
 
-import com.vyulabs.update.common.common.Common.{ServiceId, TaskId, UserId}
+import com.vyulabs.update.common.common.Common.{ServiceId, TaskId, AccountId}
 import com.vyulabs.update.common.config.SourceConfig
 import com.vyulabs.update.common.utils.JsonFormats._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
@@ -30,12 +30,12 @@ object DeveloperVersionsInfoJson extends DefaultJsonProtocol {
   implicit val developerVersionsInfoJson = jsonFormat1(DeveloperVersionsInfo.apply)
 }
 
-case class InstallInfo(user: String, time: Date)
+case class InstallInfo(account: String, time: Date)
 
 object InstallInfo extends DefaultJsonProtocol {
   implicit val installInfoJson = jsonFormat2(InstallInfo.apply)
 }
 
-case class DeveloperVersionInProcessInfo(service: ServiceId, version: DeveloperVersion, author: UserId,
+case class DeveloperVersionInProcessInfo(service: ServiceId, version: DeveloperVersion, author: AccountId,
                                          sources: Seq[SourceConfig], comment: String,
                                          task: TaskId, startTime: Date)

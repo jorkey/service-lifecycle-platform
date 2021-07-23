@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
-import {useRemoveUserMutation, UserInfo, useUsersInfoQuery} from '../../../../generated/graphql';
+import {useRemoveAccountMutation, AccountInfo, useAccountsInfoQuery} from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
@@ -10,9 +10,9 @@ import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/co
 import {Button} from "@material-ui/core";
 
 const useStyles = makeStyles(theme => ({
-  usersTable: {
+  accountsTable: {
   },
-  userColumn: {
+  accountColumn: {
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
@@ -41,12 +41,12 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface UsersTableProps {
-  userType: string
+interface AccountsTableProps {
+  accountType: string
 }
 
-const UsersTable: React.FC<UsersTableProps> = props => {
-  const { userType } = props
+const AccountsTable: React.FC<AccountsTableProps> = props => {
+  const { accountType } = props
   const [ startEdit, setStartEdit ] = React.useState('')
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
@@ -54,15 +54,15 @@ const UsersTable: React.FC<UsersTableProps> = props => {
 
   const [error, setError] = useState<string>()
 
-  const { data, refetch } = useUsersInfoQuery({
-    variables: { human: userType == 'human' },
+  const { data, refetch } = useAccountsInfoQuery({
+    variables: { human: accountType == 'human' },
     fetchPolicy: 'no-cache',
-    onError(err) { setError('Query users info error ' + err.message) },
+    onError(err) { setError('Query accounts info error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
-  const [removeUser] = useRemoveUserMutation({
-    onError(err) { setError('Remove user error ' + err.message) },
+  const [removeAccount] = useRemoveAccountMutation({
+    onError(err) { setError('Remove account error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
@@ -74,9 +74,9 @@ const UsersTable: React.FC<UsersTableProps> = props => {
 
   const columns: Array<GridTableColumnParams> = [
     {
-      name: 'user',
-      headerName: 'User',
-      className: classes.userColumn
+      name: 'account',
+      headerName: 'Account',
+      className: classes.accountColumn
     },
     {
       name: 'name',
@@ -90,7 +90,7 @@ const UsersTable: React.FC<UsersTableProps> = props => {
     }
   ]
 
-  if (userType == 'human') {
+  if (accountType == 'human') {
     columns.push({
       name: 'email',
       headerName: 'E-Mail',
@@ -107,17 +107,17 @@ const UsersTable: React.FC<UsersTableProps> = props => {
 
   const rows = new Array<Map<string, GridTableColumnValue>>()
   if (data) {
-    [...data.usersInfo]
-      .sort((u1,u2) =>  (u1.user > u2.user ? 1 : -1))
-      .forEach(user => {
+    [...data.accountsInfo]
+      .sort((u1,u2) =>  (u1.account > u2.account ? 1 : -1))
+      .forEach(account => {
         const row = new Map<string, GridTableColumnValue>()
-        row.set('user', user.user)
-        row.set('name', user.name)
-        row.set('roles', user.roles.toString())
-        if (userType == 'human' && user.email) {
-          row.set('email', user.email)
+        row.set('account', account.account)
+        row.set('name', account.name)
+        row.set('roles', account.roles.toString())
+        if (accountType == 'human' && account.email) {
+          row.set('email', account.email)
         }
-        row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(user.user) }>
+        row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(account.account) }>
             <DeleteIcon/>
           </Button>])
         rows.push(row)
@@ -126,26 +126,26 @@ const UsersTable: React.FC<UsersTableProps> = props => {
 
   return (<>
     <GridTable
-      className={classes.usersTable}
+      className={classes.accountsTable}
       columns={columns}
       rows={rows}
       onClick={ (row, values) =>
-        setStartEdit(values.get('user')! as string) }
+        setStartEdit(values.get('account')! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (
       <ConfirmDialog
-        message={`Do you want to delete user '${deleteConfirm}'?`}
+        message={`Do you want to delete account '${deleteConfirm}'?`}
         open={true}
         close={() => {
           setDeleteConfirm('')
         }}
         onConfirm={() => {
-          removeUser({ variables: { user: deleteConfirm } }).then(() => refetch())
+          removeAccount({ variables: { account: deleteConfirm } }).then(() => refetch())
           setDeleteConfirm('')
         }}
       />) : null }
   </>)
 }
 
-export default UsersTable;
+export default AccountsTable;

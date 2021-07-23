@@ -69,16 +69,16 @@ const Sidebar = (props:any) => {
     },
     {
       kind: 'title',
-      title: 'Users',
+      title: 'Accounts',
       icon: <PeopleIcon />,
       pages: [
         {
           title: 'People',
-          href: '/users/human',
+          href: '/accounts/human',
         },
         {
           title: 'Services',
-          href: '/users/service',
+          href: '/accounts/service',
         }
       ]
     },

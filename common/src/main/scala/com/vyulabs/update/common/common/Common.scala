@@ -7,7 +7,7 @@ package com.vyulabs.update.common.common
 object Common {
   type DistributionId = String
   type ServiceId = String
-  type UserId = String
+  type AccountId = String
   type InstanceId = String
   type ProcessId = String
   type TaskId = String

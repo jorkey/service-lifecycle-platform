@@ -83,7 +83,7 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
         return false
       }
       val profiledServiceName = ProfiledServiceName(fault.info.service, fault.info.serviceProfile)
-      val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(DeveloperDistributionVersion("???", Build.empty))}_${fault.info.instance}_${Utils.serializeISO8601Date(fault.info.date)}_fault.zip"
+      val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(DeveloperDistributionVersion("???", Build.empty))}_${fault.info.instance}_${Utils.serializeISO8601Date(fault.info.time)}_fault.zip"
       val archiveFile = new File(serviceDir, archivedFileName)
       val tmpDirectory = Files.createTempDirectory(s"fault-${profiledServiceName}").toFile
       val faultInfoFile = new File(tmpDirectory, Common.FaultInfoFileName)

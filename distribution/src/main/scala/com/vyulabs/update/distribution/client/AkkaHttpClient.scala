@@ -55,7 +55,7 @@ class AkkaHttpClient(val distributionUrl: String)
                                      (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
     val queryJson = request.encodeRequest()
     log.debug(s"Send graphql SSE query: ${queryJson}")
-    val post = Post(distributionUrl.toString + "/" + graphqlPathPrefix,
+    val post = Post(distributionUrl.toString + "/" + graphqlPathPrefix + "/" + websocketPathPrefix,
       HttpEntity(ContentTypes.`application/json`, request.encodeRequest().compactPrint.getBytes()))
     getHttpCredentials().foreach(credentials => post.addCredentials(credentials))
     for {
@@ -86,7 +86,7 @@ class AkkaHttpClient(val distributionUrl: String)
                                     (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
     log.debug(s"Send graphql WebSocket query: ${request}")
     val token = accessToken.getOrElse(throw new IOException("Not authorized"))
-    val webSocketRequest = WebSocketRequest(Uri(distributionUrl + "/" + graphqlPathPrefix),
+    val webSocketRequest = WebSocketRequest(Uri(distributionUrl + "/" + graphqlPathPrefix + "/" + websocketPathPrefix),
       getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
     val ((publisherCallback, killSwitch), publisherSource) =
       Source.fromGraph(new AkkaCallbackSource[Response]())
@@ -181,13 +181,13 @@ class AkkaHttpClient(val distributionUrl: String)
   }
 
   private def getHttpCredentials(): Option[HttpCredentials] = {
-//    if (distributionUrl.getUserInfo != null) {
-//      val userInfo = distributionUrl.getUserInfo
-//      val index = userInfo.indexOf(':')
+//    if (distributionUrl.getAccountInfo != null) {
+//      val accountInfo = distributionUrl.getAccountInfo
+//      val index = accountInfo.indexOf(':')
 //      if (index != -1) {
-//        val user = userInfo.substring(0, index)
-//        val password = userInfo.substring(index + 1)
-//        Some(BasicHttpCredentials(user, password))
+//        val account = accountInfo.substring(0, index)
+//        val password = accountInfo.substring(index + 1)
+//        Some(BasicHttpCredentials(account, password))
 //      } else {
 //        None
 //      }

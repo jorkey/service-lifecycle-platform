@@ -29,7 +29,7 @@ class SubscriptionTest extends TestEnvironment with ScalatestRouteTest {
   override def dbName = super.dbName
 
   it should "test subscription" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(UserRole.Administrator))), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(AccountRole.Administrator), None)), workspace)
     val subscribeResponse = result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
       subscription {
         testSubscription

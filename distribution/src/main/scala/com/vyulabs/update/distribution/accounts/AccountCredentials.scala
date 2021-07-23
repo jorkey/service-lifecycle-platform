@@ -1,8 +1,8 @@
-package com.vyulabs.update.distribution.users
+package com.vyulabs.update.distribution.accounts
 
 import com.typesafe.config.Config
-import com.vyulabs.update.common.common.Common.UserId
-import com.vyulabs.update.common.info.UserRole.UserRole
+import com.vyulabs.update.common.common.Common.{AccountId, ServicesProfileId}
+import com.vyulabs.update.common.info.AccountRole.AccountRole
 import spray.json._
 
 import java.security.SecureRandom
@@ -41,8 +41,8 @@ object PasswordHash extends DefaultJsonProtocol {
   }
 }
 
-case class UserCredentials(roles: Seq[UserRole], var passwordHash: PasswordHash)
+case class AccountCredentials(roles: Seq[AccountRole], profile: Option[ServicesProfileId], var passwordHash: PasswordHash)
 
 // We can't use enumeration role because mongodb does not have codec for enumerations.
-case class ServerUserInfo(user: UserId, human: Boolean, name: String, passwordHash: PasswordHash,
-                          roles: Seq[String], email: Option[String], notifications: Seq[String])
+case class ServerAccountInfo(account: AccountId, human: Boolean, name: String, passwordHash: PasswordHash,
+                             roles: Seq[String], profile: Option[ServicesProfileId], email: Option[String], notifications: Seq[String])

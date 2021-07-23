@@ -2,8 +2,8 @@ import React from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
-import UsersManager from "./components/Users/UsersManager";
-import UserEditor from "./components/Users/UserEditor";
+import AccountManager from "./components/Accounts/AccountManager";
+import AccountEditor from "./components/Accounts/AccountEditor";
 import {Route, RouteComponentProps, Switch, useRouteMatch} from "react-router-dom";
 
 const useStyles = makeStyles(theme => ({
@@ -12,7 +12,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Users = () => {
+const Accounts = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
@@ -27,12 +27,12 @@ const Users = () => {
         >
           <Switch>
             <Route exact path={`${routeMatch.url}/:type`}
-              component={UsersManager}/>
+              component={AccountManager}/>
             <Route exact path={`${routeMatch.url}/:type/new`}
-              render={(props) => <UserEditor fromUrl={routeMatch.url} {...props} /> }>
+              render={(props) => <AccountEditor fromUrl={routeMatch.url} {...props} /> }>
             </Route>
-            <Route exact path={`${routeMatch.url}/:type/edit/:user`}
-              render={(props) => <UserEditor fromUrl={routeMatch.url} {...props} /> }>
+            <Route exact path={`${routeMatch.url}/:type/edit/:account`}
+              render={(props) => <AccountEditor fromUrl={routeMatch.url} {...props} /> }>
             </Route>
           </Switch>
         </Grid>
@@ -41,4 +41,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default Accounts;

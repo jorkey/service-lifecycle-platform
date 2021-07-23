@@ -14,7 +14,7 @@ import org.slf4j.Logger
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends DeveloperVersionUtils with DistributionConsumersUtils with RunBuilderUtils {
+trait ClientVersionUtils extends DeveloperVersionUtils with RunBuilderUtils {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig

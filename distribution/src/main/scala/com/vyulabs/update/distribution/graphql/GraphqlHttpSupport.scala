@@ -27,6 +27,12 @@ trait GraphqlHttpSupport {
     val JsString(query) = fields("query")
     val operation = fields.get("operation") collect { case JsString(op) => op }
     val variables = fields.get("variables").map(_.asJsObject).getOrElse(JsObject.empty)
+    executeGraphqlRequest(token, query, operation, variables, tracing)
+  }
+
+  def executeGraphqlRequest(token: Option[AccessToken], query: String, operation: Option[String], variables: JsObject, tracing: Boolean)
+                           (implicit system: ActorSystem, materializer: Materializer,
+                            executionContext: ExecutionContext, log: Logger): Route = {
     QueryParser.parse(query) match {
       case Success(document) =>
         val context = GraphqlContext(token, workspace)

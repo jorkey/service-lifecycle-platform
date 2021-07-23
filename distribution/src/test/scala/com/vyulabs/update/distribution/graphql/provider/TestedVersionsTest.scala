@@ -1,8 +1,9 @@
-package com.vyulabs.update.distribution.graphql.consumer
+package com.vyulabs.update.distribution.graphql.provider
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
@@ -22,16 +23,12 @@ class TestedVersionsTest extends TestEnvironment {
 
   override def beforeAll() = {
     val servicesProfileCollection = collections.Developer_ServiceProfiles
-    val clientInfoCollection = collections.Developer_ConsumersInfo
 
     result(servicesProfileCollection.insert(ServicesProfile("common", Seq("service1", "service2"))))
-
-    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution1", "common", None)))
-    result(clientInfoCollection.insert(DistributionConsumerInfo("distribution2", "common", Some("distribution1"))))
   }
 
   it should "set/get tested versions" in {
-    val graphqlContext1 = GraphqlContext(Some(AccessToken("distribution1", Seq(UserRole.Distribution))), workspace)
+    val graphqlContext1 = GraphqlContext(Some(AccessToken("distribution1", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -46,38 +43,38 @@ class TestedVersionsTest extends TestEnvironment {
         }
       """)))
 
-    val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2", Seq(UserRole.Distribution))), workspace)
+    val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"service":"service1","version":{"distribution":"test","build":[1,1,1]}},{"service":"service2","version":{"distribution":"test","build":[2,1,1]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext2, graphql"""
-        query {
-          developerDesiredVersions {
+        query DeveloperDesiredVersions($$testConsumer: String) {
+          developerDesiredVersions(testConsumer: $$testConsumer) {
             service
             version { distribution, build }
           }
         }
-      """)))
+      """, variables = JsObject("testConsumer" -> JsString("distribution1")))))
 
-    result(collections.State_TestedVersions.drop())
+    result(collections.Developer_TestedVersions.drop())
   }
 
   it should "return error if no tested versions for the client's profile" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("distribution2", Seq(UserRole.Distribution))), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
     assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested by anyone","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
-        query {
-          developerDesiredVersions {
+        query DeveloperDesiredVersions($$testConsumer: String) {
+          developerDesiredVersions(testConsumer: $$testConsumer) {
             service
             version { distribution, build }
           }
         }
-      """)))
+      """, variables = JsObject("testConsumer" -> JsString("distribution1")))))
   }
 
   it should "return error if client required preliminary testing has personal desired versions" in {
-    result(collections.State_TestedVersions.insert(
+    result(collections.Developer_TestedVersions.insert(
       TestedDesiredVersions("common", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 0)))),
         Seq(TestSignature("test-client", new Date())))))

@@ -38,7 +38,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   it should "build developer version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
-          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, branches: ["master", "master"], comment: "Test version")
+          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, sources: [], comment: "Test version")
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -51,22 +51,24 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":1,"logLine":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":1,"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":2,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":2,"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sources=[], comment=Test version) in directory ${builderDirectory}"}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":5,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":5,"line":{"level":"INFO","message":"Builder started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":6,"logLine":{"line":{"level":"INFO","message":"Builder continued"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":6,"line":{"level":"INFO","message":"Builder continued"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":7,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":7,"line":{"level":"INFO","message":"Builder finished"}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":9,"logLine":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":9,"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":10,"logLine":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":10,"line":{"level":"INFO","message":"Upload developer desired versions List(DeveloperDesiredVersionDelta(service1,Some(test-1.1.1)))"}}}}"""))
+    logInput.requestNext(
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` finished successfully"}}}}"""))
     logInput.expectComplete()
   }
 
@@ -75,7 +77,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
-          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, branches: ["master", "master"], comment: "Test version")
+          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, sources: [], comment: "Test version")
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -88,13 +90,13 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"logLine":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sourceBranches=master,master}, comment=Test version) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sources=[], comment=Test version) in directory ${builderDirectory}"}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":15,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":15,"line":{"level":"INFO","message":"Builder started"}}}}"""))
 
     assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation CancelTask($$task: String!) {
@@ -102,6 +104,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
         }
       """, variables = JsObject("task" -> JsString(task)))))
 
+    println(logInput.requestNext())
     println(logInput.requestNext())
     println(logInput.requestNext())
     println(logInput.requestNext())
@@ -114,7 +117,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
         mutation {
-          runBuilder (arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin", "sourceBranches=master,master"])
+          runBuilder (arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin", "sources=[]"])
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -127,22 +130,22 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"logLine":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` started"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"line":{"level":"INFO","message":"`Run local builder by remote distribution` started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"logLine":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sourceBranches=master,master) in directory ${builderDirectory}"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]) in directory ${builderDirectory}"}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":25,"logLine":{"line":{"level":"INFO","message":"Builder started"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":25,"line":{"level":"INFO","message":"Builder started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":26,"logLine":{"line":{"level":"INFO","message":"Builder continued"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":26,"line":{"level":"INFO","message":"Builder continued"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":27,"logLine":{"line":{"level":"INFO","message":"Builder finished"}}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":27,"line":{"level":"INFO","message":"Builder finished"}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":29,"logLine":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":29,"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":30,"logLine":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":30,"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}"""))
     logInput.expectComplete()
   }
 
@@ -154,11 +157,9 @@ class BuildDeveloperVersionTest extends TestEnvironment {
             from: 1
           ) {
             sequence
-            logLine {
-              line {
-                level
-                message
-              }
+            line {
+              level
+              message
             }
           }
         }

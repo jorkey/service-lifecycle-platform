@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, TaskId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -32,14 +32,16 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def addProvider(distribution: DistributionId, distributionUrl: String, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
+  def addProvider(distribution: DistributionId, distributionUrl: String, testDistributionMatch: Option[String],
+                  uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
-      DistributionProviderInfo(distribution, distributionUrl, uploadStateIntervalSec)).map(_ => ())
+      DistributionProviderInfo(distribution, distributionUrl, testDistributionMatch, uploadStateIntervalSec)).map(_ => ())
   }
 
-  def changeProvider(distribution: DistributionId, distributionUrl: String, uploadStateIntervalSec: Option[Int]): Future[Unit] = {
+  def changeProvider(distribution: DistributionId, distributionUrl: String, testDistributionMatch: Option[String],
+                     uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
-      (_) => DistributionProviderInfo(distribution, distributionUrl, uploadStateIntervalSec)).map(_ => ())
+      (_) => DistributionProviderInfo(distribution, distributionUrl, testDistributionMatch, uploadStateIntervalSec)).map(_ => ())
   }
 
   def removeProvider(distribution: DistributionId): Future[Unit] = {

@@ -9,6 +9,7 @@ import java.net.URLEncoder
 object DistributionWebPaths {
 
   val graphqlPathPrefix = "graphql"
+  val websocketPathPrefix = "websocket"
   val uiStaticPathPrefix = "ui"
 
   val loadPathPrefix = "load"

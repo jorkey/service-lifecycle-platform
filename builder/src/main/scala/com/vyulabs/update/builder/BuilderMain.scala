@@ -65,11 +65,11 @@ object BuilderMain extends App {
         if (command == "buildProviderDistribution") {
           if (!distributionBuilder.buildDistributionFromSources() ||
             !distributionBuilder.addUpdateServicesSources() ||
-            !distributionBuilder.addDistributionUsers() ||
+            !distributionBuilder.addDistributionAccounts() ||
             !distributionBuilder.generateAndUploadInitialVersions(author) ||
             !distributionBuilder.addCommonServicesProfile() ||
             !distributionBuilder.installBuilderFromSources() ||
-            !distributionBuilder.removeTemporaryDistributionUsers()) {
+            !distributionBuilder.removeTemporaryDistributionAccounts()) {
             Utils.error("Build distribution error")
           }
         } else {

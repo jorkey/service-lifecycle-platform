@@ -1,4 +1,4 @@
-package com.vyulabs.update.distribution.graphql.users
+package com.vyulabs.update.distribution.graphql.accounts
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
@@ -11,8 +11,8 @@ import spray.json._
 
 import scala.concurrent.ExecutionContext
 
-class UsersTest extends TestEnvironment {
-  behavior of "Users Requests"
+class AccountsTest extends TestEnvironment {
+  behavior of "Accounts Requests"
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
@@ -20,17 +20,16 @@ class UsersTest extends TestEnvironment {
 
   override def beforeAll() = {
     result(collections.Developer_ServiceProfiles.insert(ServicesProfile("common", Seq("service1", "service2"))))
-    result(collections.Developer_ConsumersInfo.insert(DistributionConsumerInfo("client2", "common", None)))
   }
 
-  it should "add/change password/remove users" in {
+  it should "add/change password/remove accounts" in {
     assertResult((OK,
-      ("""{"data":{"addUser":true}}""").parseJson))(
+      ("""{"data":{"addAccount":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          addUser (
-            user: "distribution2",
+          addAccount (
+            account: "distribution2",
             roles: [Distribution],
             password: "password1"
           )
@@ -38,24 +37,24 @@ class UsersTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"changeUser":true}}""").parseJson))(
+      ("""{"data":{"changeAccount":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          changeUser (
-            user: "distribution2",
+          changeAccount (
+            account: "distribution2",
             password: "password2"
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":{"removeUser":true}}""").parseJson))(
+      ("""{"data":{"removeAccount":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          removeUser (
-            user: "distribution2",
+          removeAccount (
+            account: "distribution2",
           )
         }
       """)))
@@ -63,12 +62,12 @@ class UsersTest extends TestEnvironment {
 
   it should "change self password" in {
     assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"You can change only self account","path":["changeUser"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      ("""{"data":null,"errors":[{"message":"You can change only self account","path":["changeAccount"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
-          changeUser (
-            user: "admin",
+          changeAccount (
+            account: "admin",
             oldPassword: "password",
             password: "password2"
           )
@@ -76,24 +75,24 @@ class UsersTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"Old password is not specified","path":["changeUser"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      ("""{"data":null,"errors":[{"message":"Old password is not specified","path":["changeAccount"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
-          changeUser (
-            user: "developer",
+          changeAccount (
+            account: "developer",
             password: "password2"
           )
         }
       """)))
 
     assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"Password verification error","path":["changeUser"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      ("""{"data":null,"errors":[{"message":"Password verification error","path":["changeAccount"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
-          changeUser (
-            user: "developer",
+          changeAccount (
+            account: "developer",
             oldPassword: "bad password",
             password: "password2"
           )
@@ -101,12 +100,12 @@ class UsersTest extends TestEnvironment {
       """)))
 
     assertResult((OK,
-      ("""{"data":{"changeUser":true}}""").parseJson))(
+      ("""{"data":{"changeAccount":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext,
         graphql"""
         mutation {
-          changeUser (
-            user: "developer",
+          changeAccount (
+            account: "developer",
             oldPassword: "developer",
             password: "password2"
           )
@@ -114,14 +113,14 @@ class UsersTest extends TestEnvironment {
       """)))
   }
 
-  it should "change user password by administrator" in {
+  it should "change account password by administrator" in {
     assertResult((OK,
-      ("""{"data":{"changeUser":true}}""").parseJson))(
+      ("""{"data":{"changeAccount":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext,
         graphql"""
         mutation {
-          changeUser (
-            user: "developer",
+          changeAccount (
+            account: "developer",
             password: "password3"
           )
         }

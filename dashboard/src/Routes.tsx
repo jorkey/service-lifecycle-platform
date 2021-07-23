@@ -7,7 +7,7 @@ import { Switch, Redirect, Route } from 'react-router-dom';
 import {
   LoginPage as LoginPageView,
   Dashboard as DashboardView,
-  Users as UsersView,
+  Accounts as AccountsView,
   Services as ServicesView,
   Distribution as DistributionView,
   Build as BuildView,
@@ -46,9 +46,9 @@ const Routes: React.FC<RoutesProps> = props => {
         {...props}
       />
       <RouteWithLayout
-        component={UsersView}
+        component={AccountsView}
         layout={MainLayout}
-        path='/users'
+        path='/accounts'
         {...props}
       />
       <RouteWithLayout

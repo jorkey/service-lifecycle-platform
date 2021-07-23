@@ -7,10 +7,10 @@ import {NavLink as RouterLink, RouteComponentProps, useRouteMatch, useHistory} f
 import { makeStyles } from '@material-ui/core/styles';
 import {Box, Card, CardContent, CardHeader, Checkbox, Divider, FormControlLabel, FormGroup} from '@material-ui/core';
 import {
-  useAddUserMutation,
-  useChangeUserMutation,
-  UserRole,
-  useUserInfoLazyQuery, useUsersListQuery, useWhoAmIQuery
+  useAddAccountMutation,
+  useChangeAccountMutation,
+  AccountRole,
+  useAccountInfoLazyQuery, useAccountsListQuery, useWhoAmIQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
@@ -37,26 +37,26 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface UserRouteParams {
+interface AccountRouteParams {
   type: string,
-  user?: string
+  account?: string
 }
 
-interface UserEditorParams extends RouteComponentProps<UserRouteParams> {
+interface AccountEditorParams extends RouteComponentProps<AccountRouteParams> {
   fromUrl: string
 }
 
-const UserEditor: React.FC<UserEditorParams> = props => {
+const AccountEditor: React.FC<AccountEditorParams> = props => {
   const whoAmI = useWhoAmIQuery()
-  const {data: usersList} = useUsersListQuery()
-  const [getUserInfo, userInfo] = useUserInfoLazyQuery()
+  const {data: accountsList} = useAccountsListQuery()
+  const [getAccountInfo, accountInfo] = useAccountInfoLazyQuery()
 
   const classes = useStyles()
 
-  const [user, setUser] = useState('');
+  const [account, setAccount] = useState('');
   const [human, setHuman] = useState(true);
   const [name, setName] = useState('');
-  const [roles, setRoles] = useState(new Array<UserRole>());
+  const [roles, setRoles] = useState(new Array<AccountRole>());
   const [changePassword, setChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState<string>();
   const [password, setPassword] = useState('');
@@ -65,86 +65,86 @@ const UserEditor: React.FC<UserEditorParams> = props => {
 
   const [initialized, setInitialized] = useState(false);
 
-  const editUser = props.match.params.user
+  const editAccount = props.match.params.account
   const [byAdmin, setByAdmin] = useState(false);
 
   const history = useHistory()
 
   if (!initialized && whoAmI.data) {
-    if (editUser) {
-      if (!userInfo.data && !userInfo.loading) {
-        getUserInfo({variables: {user: editUser}})
+    if (editAccount) {
+      if (!accountInfo.data && !accountInfo.loading) {
+        getAccountInfo({variables: {account: editAccount}})
       }
-      if (userInfo.data) {
-        const info = userInfo.data.usersInfo[0]
+      if (accountInfo.data) {
+        const info = accountInfo.data.accountsInfo[0]
         if (info) {
-          setUser(info.user)
+          setAccount(info.account)
           setHuman(info.human)
           setName(info.name)
           setRoles(info.roles)
           if (info.email) setEmail(info.email)
         }
-        setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator) != undefined)
+        setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator) != undefined)
         setInitialized(true)
       }
     } else {
       setHuman(props.match.params.type == 'human')
-      setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator) != undefined)
+      setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator) != undefined)
       setInitialized(true)
     }
   }
 
-  const [addUser, { data: addUserData, error: addUserError }] =
-    useAddUserMutation({
+  const [addAccount, { data: addAccountData, error: addAccountError }] =
+    useAddAccountMutation({
       onError(err) { console.log(err) }
     })
 
-  const [changeUser, { data: changeUserData, error: changeUserError }] =
-    useChangeUserMutation({
+  const [changeAccount, { data: changeAccountData, error: changeAccountError }] =
+    useChangeAccountMutation({
       onError(err) { console.log(err) }
     })
 
-  if (addUserData || changeUserData) {
+  if (addAccountData || changeAccountData) {
     history.push(props.fromUrl + '/' + props.match.params.type)
   }
 
   const validate: () => boolean = () => {
-    return  !!user && !!name && roles.length != 0 &&
-            (!!editUser || !doesUserExist(user)) &&
-            (!!editUser || !!password) &&
+    return  !!account && !!name && roles.length != 0 &&
+            (!!editAccount || !doesAccountExist(account)) &&
+            (!!editAccount || !!password) &&
             (byAdmin || !!oldPassword) &&
             (!password || password == confirmPassword)
   }
 
   const submit = () => {
     if (validate()) {
-      if (editUser) {
-        changeUser({variables: { user: user, name: name, oldPassword: oldPassword, password: password, roles: roles, email: email }} )
+      if (editAccount) {
+        changeAccount({variables: { account: account, name: name, oldPassword: oldPassword, password: password, roles: roles, email: email }} )
       } else {
-        addUser({variables: { user: user, human: human, name: name, password: password, roles: roles, email: email }})
+        addAccount({variables: { account: account, human: human, name: name, password: password, roles: roles, email: email }})
       }
     }
   }
 
-  const doesUserExist: (user: string) => boolean = (user) => {
-    return usersList?!!usersList.usersInfo.find(info => info.user == user):false
+  const doesAccountExist: (account: string) => boolean = (account) => {
+    return accountsList?!!accountsList.accountsInfo.find(info => info.account == account):false
   }
 
-  const UserCard = () => {
+  const AccountCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={editUser?'Edit User':(human?'New User':'New Service User')}/>
+        <CardHeader title={editAccount?'Edit Account':(human?'New Account':'New Service Account')}/>
         <CardContent>
           <TextField
             autoFocus
             fullWidth
-            label="User"
+            label="Account"
             margin="normal"
-            value={user}
-            helperText={!editUser && doesUserExist(user) ? 'User already exists': ''}
-            error={!user || (!editUser && doesUserExist(user))}
-            onChange={(e: any) => setUser(e.target.value)}
-            disabled={editUser !== undefined}
+            value={account}
+            helperText={!editAccount && doesAccountExist(account) ? 'Account already exists': ''}
+            error={!account || (!editAccount && doesAccountExist(account))}
+            onChange={(e: any) => setAccount(e.target.value)}
+            disabled={editAccount !== undefined}
             required
             variant="outlined"
           />
@@ -154,7 +154,7 @@ const UserEditor: React.FC<UserEditorParams> = props => {
             margin="normal"
             value={name}
             onChange={(e: any) => setName(e.target.value)}
-            error={!user}
+            error={!account}
             required
             variant="outlined"
           />
@@ -173,13 +173,13 @@ const UserEditor: React.FC<UserEditorParams> = props => {
 
   const PasswordCard = () => {
     if (whoAmI.data) {
-      const admin = whoAmI.data.whoAmI.roles.find(role => role == UserRole.Administrator)
-      const self = whoAmI.data.whoAmI.user == editUser
+      const admin = whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator)
+      const self = whoAmI.data.whoAmI.account == editAccount
       return (
         <Card className={classes.card}>
           <CardHeader title='Password'/>
           <CardContent>
-            { (editUser && !changePassword)?
+            { (editAccount && !changePassword)?
               <Button
                 color="primary"
                 variant="contained"
@@ -195,7 +195,7 @@ const UserEditor: React.FC<UserEditorParams> = props => {
                 required
                 variant="outlined"
               /> : null}
-            { (!editUser || changePassword) ?
+            { (!editAccount || changePassword) ?
               <>
                 <TextField
                   fullWidth
@@ -225,7 +225,7 @@ const UserEditor: React.FC<UserEditorParams> = props => {
     }
   }
 
-  const checkRole = (role: UserRole, checked: boolean) => {
+  const checkRole = (role: AccountRole, checked: boolean) => {
     if (checked) {
       setRoles(previousRoles => {
         if (previousRoles.find(r => r == role)) return previousRoles
@@ -251,8 +251,8 @@ const UserEditor: React.FC<UserEditorParams> = props => {
                 control={(
                   <Checkbox
                     color="primary"
-                    checked={roles.find(role => role == UserRole.Developer) != undefined}
-                    onChange={ event => checkRole(UserRole.Developer, event.target.checked) }
+                    checked={roles.find(role => role == AccountRole.Developer) != undefined}
+                    onChange={ event => checkRole(AccountRole.Developer, event.target.checked) }
                   />
                 )}
                 label="Developer"
@@ -261,8 +261,8 @@ const UserEditor: React.FC<UserEditorParams> = props => {
                 control={(
                   <Checkbox
                     color="primary"
-                    checked={roles.find(role => role == UserRole.Administrator) != undefined}
-                    onChange={ event => checkRole(UserRole.Administrator, event.target.checked) }
+                    checked={roles.find(role => role == AccountRole.Administrator) != undefined}
+                    onChange={ event => checkRole(AccountRole.Administrator, event.target.checked) }
                   />
                 )}
                 label="Administrator"
@@ -273,8 +273,8 @@ const UserEditor: React.FC<UserEditorParams> = props => {
                 control={(
                   <Checkbox
                     color="primary"
-                    checked={roles.find(role => role == UserRole.Distribution) != undefined}
-                    onChange={ event => checkRole(UserRole.Distribution, event.target.checked) }
+                    checked={roles.find(role => role == AccountRole.Distribution) != undefined}
+                    onChange={ event => checkRole(AccountRole.Distribution, event.target.checked) }
                   />
                 )}
                 label="Distribution"
@@ -283,8 +283,8 @@ const UserEditor: React.FC<UserEditorParams> = props => {
                 control={(
                   <Checkbox
                     color="primary"
-                    checked={roles.find(role => role == UserRole.Builder) != undefined}
-                    onChange={ event => checkRole(UserRole.Builder, event.target.checked) }
+                    checked={roles.find(role => role == AccountRole.Builder) != undefined}
+                    onChange={ event => checkRole(AccountRole.Builder, event.target.checked) }
                   />
                 )}
                 label="Builder"
@@ -293,8 +293,8 @@ const UserEditor: React.FC<UserEditorParams> = props => {
                 control={(
                   <Checkbox
                     color="primary"
-                    checked={roles.find(role => role == UserRole.Updater) != undefined}
-                    onChange={ event => checkRole(UserRole.Updater, event.target.checked) }
+                    checked={roles.find(role => role == AccountRole.Updater) != undefined}
+                    onChange={ event => checkRole(AccountRole.Updater, event.target.checked) }
                   />
                 )}
                 label="Updater"
@@ -306,14 +306,14 @@ const UserEditor: React.FC<UserEditorParams> = props => {
     </Card>)
   }
 
-  const error = addUserError?addUserError.message:changeUserError?changeUserError.message:''
+  const error = addAccountError?addAccountError.message:changeAccountError?changeAccountError.message:''
 
   return (
     initialized ? (
       <Card
         className={clsx(classes.root)}
       >
-        {UserCard()}
+        {AccountCard()}
         <Divider />
         {RolesCard()}
         <Divider />
@@ -334,11 +334,11 @@ const UserEditor: React.FC<UserEditorParams> = props => {
             disabled={!validate()}
             onClick={() => submit()}
           >
-            {!editUser?'Add New User':'Save'}
+            {!editAccount?'Add New Account':'Save'}
           </Button>
         </Box>
       </Card>) : null
   );
 }
 
-export default UserEditor;
+export default AccountEditor;

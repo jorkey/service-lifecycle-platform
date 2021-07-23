@@ -20,7 +20,6 @@ class DeveloperDesiredVersionsTest extends TestEnvironment {
 
   override def beforeAll() = {
     result(collections.Developer_ServiceProfiles.insert(ServicesProfile("common", Seq("service1", "service2"))))
-    result(collections.Developer_ConsumersInfo.insert(DistributionConsumerInfo("client2", "common", None)))
   }
 
   it should "set/get developer desired versions" in {

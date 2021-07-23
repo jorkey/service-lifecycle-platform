@@ -2,12 +2,12 @@ package com.vyulabs.update.common.info
 
 import spray.json.{JsString, JsValue, RootJsonFormat}
 
-object UserRole extends Enumeration {
-  type UserRole = Value
+object AccountRole extends Enumeration {
+  type AccountRole = Value
   val None, Developer, Administrator, Distribution, Builder, Updater = Value
 
-  implicit object UserRoleJsonFormat extends RootJsonFormat[UserRole] {
-    def write(value: UserRole) = JsString(value.toString)
+  implicit object AccountRoleJsonFormat extends RootJsonFormat[AccountRole] {
+    def write(value: AccountRole) = JsString(value.toString)
     def read(value: JsValue) = withName(value.asInstanceOf[JsString].value)
   }
 }

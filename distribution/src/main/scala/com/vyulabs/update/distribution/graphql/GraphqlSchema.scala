@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{AccessToken, UserRole}
+import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
 import com.vyulabs.update.distribution.graphql.utils._
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
@@ -20,20 +20,20 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionConsumersUtils with DistributionProvidersUtils
-      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with UsersUtils
+    extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils
+      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with AccountsUtils
 
 case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)
 
 object GraphqlSchema {
   // Arguments
 
-  val UserArg = Argument("user", StringType)
+  val AccountArg = Argument("account", StringType)
   val HumanArg = Argument("human", BooleanType)
   val NameArg = Argument("name", StringType)
   val OldPasswordArg = Argument("oldPassword", StringType)
   val PasswordArg = Argument("password", StringType)
-  val UserRolesArg = Argument("roles", ListInputType(UserRoleType))
+  val AccountRolesArg = Argument("roles", ListInputType(AccountRoleType))
   val DistributionArg = Argument("distribution", StringType)
   val InstanceArg = Argument("instance", StringType)
   val ProcessArg = Argument("process", StringType)
@@ -63,12 +63,12 @@ object GraphqlSchema {
   val UrlArg = Argument("url", StringType)
   val CommentArg = Argument("comment", StringType)
 
-  val OptionUserArg = Argument("user", OptionInputType(StringType))
+  val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionHumanArg = Argument("human", OptionInputType(BooleanType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
-  val OptionUserRolesArg = Argument("roles", OptionInputType(ListInputType(UserRoleType)))
+  val OptionAccountRolesArg = Argument("roles", OptionInputType(ListInputType(AccountRoleType)))
   val OptionEmailArg = Argument("email", OptionInputType(StringType))
   val OptionNotificationsArg = Argument("notifications", OptionInputType(ListInputType(StringType)))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -101,46 +101,47 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getDistributionInfo() }),
 
       // Own account operations
-      Field("whoAmI", UserInfoType,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.user) }),
+      Field("whoAmI", AccountInfoType,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.account) }),
 
-      // Users
-      Field("usersInfo", ListType(UserInfoType),
-        arguments = OptionUserArg :: OptionHumanArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getUsersInfo(c.arg(OptionUserArg), c.arg(OptionHumanArg)) }),
+      // Accounts
+      Field("accountsInfo", ListType(AccountInfoType),
+        arguments = OptionAccountArg :: OptionHumanArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getAccountsInfo(c.arg(OptionAccountArg), c.arg(OptionHumanArg)) }),
 
       // Sources
       Field("developerServices", ListType(StringType),
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperServices() }),
       Field("serviceSources", ListType(SourceConfigType),
         arguments = ServiceArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getServiceSources(c.arg(ServiceArg)) }),
 
       // Profiles
       Field("serviceProfiles", ListType(ServicesProfileType),
         arguments = OptionProfileArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getServiceProfiles(c.arg(OptionProfileArg)) }),
 
       // Developer versions
       Field("developerVersionsInProcess", ListType(DeveloperVersionInProcessInfoType),
         arguments = OptionServiceArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution, UserRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = OptionServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution, UserRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(OptionServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
-        arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder, UserRole.Distribution) :: Nil,
+        arguments = OptionTestConsumerArg :: OptionServicesArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Distribution) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(UserRole.Distribution)) {
-            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.user, c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
+          if (c.ctx.accessToken.get.roles.contains(AccountRole.Distribution)) {
+            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.profile.get,
+              c.arg(OptionTestConsumerArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           } else {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           }
@@ -149,50 +150,44 @@ object GraphqlSchema {
       // Client versions
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
         arguments = OptionServiceArg :: OptionDistributionArg :: OptionClientVersionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getClientVersionsInfo(c.arg(OptionServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionClientVersionArg)) }),
       Field("clientDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Builder, UserRole.Updater) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
-
-      // Distribution consumers
-      Field("consumersInfo", ListType(ConsumerInfoType),
-        arguments = OptionDistributionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getConsumersInfo(c.arg(OptionDistributionArg)) }),
 
       // Distribution providers
       Field("providersInfo", ListType(ProviderInfoType),
         arguments = OptionDistributionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getProvidersInfo(c.arg(OptionDistributionArg)) }),
       Field("providerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = DistributionArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getProviderDesiredVersions(c.arg(DistributionArg)) }),
 
       // State
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = DistributionArg :: OptionServicesArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceStates", ListType(DistributionServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Updater) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
       Field("serviceLogs", ListType(SequencedLogLineType),
         arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(DistributionArg), c.arg(ServiceArg),
           c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg)) }),
       Field("taskLogs", ListType(SequencedLogLineType),
         arguments = TaskArg :: OptionFromArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg)) }),
       Field("faultReports", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
     )
   )
@@ -202,194 +197,182 @@ object GraphqlSchema {
     fields[GraphqlContext, Unit](
       // Login
       Field("login", StringType,
-        arguments = UserArg :: PasswordArg :: Nil,
-        resolve = c => { c.ctx.workspace.login(c.arg(UserArg), c.arg(PasswordArg))
+        arguments = AccountArg :: PasswordArg :: Nil,
+        resolve = c => { c.ctx.workspace.login(c.arg(AccountArg), c.arg(PasswordArg))
           .map(c.ctx.workspace.encodeAccessToken(_)) }),
 
-      // Users management
-      Field("addUser", BooleanType,
-        arguments = UserArg :: HumanArg :: NameArg :: PasswordArg :: UserRolesArg ::
+      // Accounts management
+      Field("addAccount", BooleanType,
+        arguments = AccountArg :: HumanArg :: NameArg :: PasswordArg :: AccountRolesArg :: OptionProfileArg ::
           OptionEmailArg :: OptionNotificationsArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addUser(c.arg(UserArg), c.arg(HumanArg), c.arg(NameArg),
-          c.arg(PasswordArg), c.arg(UserRolesArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg)).map(_ => true) }),
-      Field("removeUser", BooleanType,
-        arguments = UserArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeUser(c.arg(UserArg)) }),
-      Field("changeUser", BooleanType,
-        arguments = UserArg :: OptionNameArg :: OptionOldPasswordArg :: OptionPasswordArg :: OptionUserRolesArg :: OptionEmailArg :: OptionNotificationsArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.addAccount(c.arg(AccountArg), c.arg(HumanArg), c.arg(NameArg),
+          c.arg(PasswordArg), c.arg(AccountRolesArg), c.arg(OptionProfileArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg)).map(_ => true) }),
+      Field("removeAccount", BooleanType,
+        arguments = AccountArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.removeAccount(c.arg(AccountArg)) }),
+      Field("changeAccount", BooleanType,
+        arguments = OptionAccountArg :: OptionNameArg :: OptionOldPasswordArg :: OptionPasswordArg ::
+          OptionAccountRolesArg :: OptionProfileArg :: OptionEmailArg :: OptionNotificationsArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => {
           val token = c.ctx.accessToken.get
-          if (!token.hasRole(UserRole.Administrator)) {
-            if (token.user != c.arg(UserArg)) {
+          val account = c.arg(OptionAccountArg).getOrElse(token.account)
+          if (!token.hasRole(AccountRole.Administrator)) {
+            if (token.account != account) {
               throw AuthorizationException(s"You can change only self account")
             }
             if (!c.arg(OptionOldPasswordArg).isDefined) {
               throw AuthorizationException(s"Old password is not specified")
             }
           }
-          c.ctx.workspace.changeUser(c.arg(UserArg), c.arg(OptionNameArg),
-            c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionUserRolesArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg))
+          c.ctx.workspace.changeAccount(account, c.arg(OptionNameArg),
+            c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionAccountRolesArg), c.arg(OptionProfileArg),
+            c.arg(OptionEmailArg), c.arg(OptionNotificationsArg))
         }),
 
       // Sources
       Field("addServiceSources", BooleanType,
         arguments = ServiceArg :: SourcesArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addServiceSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
       Field("changeServiceSources", BooleanType,
         arguments = ServiceArg :: SourcesArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.changeSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
       Field("removeServiceSources", BooleanType,
         arguments = ServiceArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeServiceSources(c.arg(ServiceArg)).map(_ => true) }),
 
       // Profiles
       Field("addServicesProfile", BooleanType,
         arguments = ProfileArg :: ServicesArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addServicesProfile(c.arg(ProfileArg), c.arg(ServicesArg)).map(_ => true) }),
       Field("changeServicesProfile", BooleanType,
         arguments = ProfileArg :: ServicesArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.changeServicesProfile(c.arg(ProfileArg), c.arg(ServicesArg)).map(_ => true) }),
       Field("removeServicesProfile", BooleanType,
         arguments = ProfileArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeServicesProfile(c.arg(ProfileArg)).map(_ => true) }),
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,
         arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.user,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
+        resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.account,
           c.arg(SourcesArg), c.arg(CommentArg)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
-        tags = Authorized(UserRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.addDeveloperVersionInfo(c.arg(DeveloperVersionInfoArg)).map(_ => true) }),
       Field("removeDeveloperVersion", BooleanType,
         arguments = ServiceArg :: DeveloperDistributionVersionArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.removeDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setDeveloperDesiredVersions", BooleanType,
         arguments = DeveloperDesiredVersionDeltasArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionDeltasArg)).map(_ => true) }),
 
       // Client versions
       Field("buildClientVersion", StringType,
         arguments = ServiceArg :: DeveloperDistributionVersionUniqueArg :: ClientDistributionVersionUniqueArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildClientVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionUniqueArg),
-          c.arg(ClientDistributionVersionUniqueArg), c.ctx.accessToken.get.user) }),
+          c.arg(ClientDistributionVersionUniqueArg), c.ctx.accessToken.get.account) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
-        tags = Authorized(UserRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.addClientVersionInfo(c.arg(ClientVersionInfoArg)).map(_ => true) }),
       Field("removeClientVersion", BooleanType,
         arguments = ServiceArg :: ClientDistributionVersionArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.removeClientVersion(c.arg(ServiceArg), c.arg(ClientDistributionVersionArg)) }),
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionDeltasArg :: Nil,
-        tags = Authorized(UserRole.Administrator, UserRole.Developer) :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionDeltasArg)).map(_ => true) }),
 
       // Distribution providers management
       Field("addProvider", BooleanType,
-        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalSecArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
+        arguments = DistributionArg :: UrlArg :: OptionTestConsumerArg :: OptionUploadStateIntervalSecArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg),
+          c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
       Field("changeProvider", BooleanType,
-        arguments = DistributionArg :: UrlArg :: OptionUploadStateIntervalSecArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
+        arguments = DistributionArg :: UrlArg :: OptionTestConsumerArg :: OptionUploadStateIntervalSecArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg),
+          c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
       Field("removeProvider", BooleanType,
         arguments = DistributionArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeProvider(c.arg(DistributionArg)).map(_ => true) }),
-
-      // Distribution consumers management
-      Field("addConsumer", BooleanType,
-        arguments = DistributionArg :: ProfileArg :: OptionTestConsumerArg :: Nil,
-        tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
-        resolve = c => {
-          c.ctx.workspace.addConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestConsumerArg)).map(_ => true)
-        }),
-      Field("changeConsumer", BooleanType,
-        arguments = DistributionArg :: ProfileArg :: OptionTestConsumerArg :: Nil,
-        tags = Authorized(UserRole.Builder, UserRole.Administrator) :: Nil,
-        resolve = c => {
-          c.ctx.workspace.changeConsumer(c.arg(DistributionArg), c.arg(ProfileArg), c.arg(OptionTestConsumerArg)).map(_ => true)
-        }),
-      Field("removeConsumer", BooleanType,
-        arguments = DistributionArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeConsumer(c.arg(DistributionArg)).map(_ => true) }),
 
       // Distribution consumers operations
       Field("downloadProviderVersion", StringType,
         arguments = DistributionArg :: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
-        tags = Authorized(UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.downloadProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.user, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
+        tags = Authorized(AccountRole.Distribution) :: Nil,
+        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.account,
+          c.ctx.accessToken.get.profile.get, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
 
       // State
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.accessToken.get.user, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
+        tags = Authorized(AccountRole.Distribution) :: Nil,
+        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.accessToken.get.account, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
-        tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.Distribution) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
+          if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
             c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distribution, c.arg(InstanceServiceStatesArg)).map(_ => true)
           } else {
-            c.ctx.workspace.setServiceStates(c.ctx.accessToken.get.user, c.arg(InstanceServiceStatesArg)).map(_ => true)
+            c.ctx.workspace.setServiceStates(c.ctx.accessToken.get.account, c.arg(InstanceServiceStatesArg)).map(_ => true)
           }
         }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
-        tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.Distribution) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
+          if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
             c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distribution,
               c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
           } else {
-            c.ctx.workspace.addServiceLogs(c.ctx.accessToken.get.user,
+            c.ctx.workspace.addServiceLogs(c.ctx.accessToken.get.account,
               c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
           }
         }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        tags = Authorized(UserRole.Updater, UserRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.Distribution) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(UserRole.Updater)) {
+          if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
             c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distribution, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
           } else {
-            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.user, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
+            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.account, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
           }
         }),
 
       // Run builder remotely
       Field("runBuilder", StringType,
         arguments = ArgumentsArg :: Nil,
-        tags = Authorized(UserRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Distribution) :: Nil,
         resolve = c => { c.ctx.workspace.runLocalBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
 
       // Cancel tasks
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution) :: Nil,
         resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) })
     )
   )
@@ -399,15 +382,15 @@ object GraphqlSchema {
     fields[GraphqlContext, Unit](
       Field.subs("subscribeServiceLogs", SequencedLogLineType,
         arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeServiceLogs(
           c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
       Field.subs("subscribeTaskLogs", SequencedLogLineType,
         arguments = TaskArg :: OptionFromArg :: Nil,
-        tags = Authorized(UserRole.Developer, UserRole.Administrator, UserRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg))),
       Field.subs("testSubscription", StringType,
-        tags = Authorized(UserRole.Developer) :: Nil,
+        tags = Authorized(AccountRole.Developer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
     ))
 

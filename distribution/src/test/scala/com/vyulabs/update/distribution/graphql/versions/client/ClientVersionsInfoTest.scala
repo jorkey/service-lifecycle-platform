@@ -26,26 +26,26 @@ class ClientVersionsInfoTest extends TestEnvironment {
     addClientVersionInfo("service1", ClientDistributionVersion.parse("distribution1-2.1.3_1"))
 
     assertResult((OK,
-      ("""{"data":{"clientVersionsInfo":[{"version":{"distribution":"test","developerBuild":[1,1,1],"clientBuild":1},"buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
+      ("""{"data":{"clientVersionsInfo":[{"version":{"distribution":"test","developerBuild":[1,1,1],"clientBuild":1},"buildInfo":{"author":"author1"},"installInfo":{"account":"admin"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientVersionsInfo (service: "service1", distribution: "test", version: { developerBuild: [1, 1, 1], clientBuild: 1 } ) {
             version { distribution, developerBuild, clientBuild }
             buildInfo { author }
-            installInfo { user }
+            installInfo { account }
           }
         }
       """
     )))
 
     assertResult((OK,
-      ("""{"data":{"clientVersionsInfo":[{"version":{"distribution":"distribution1","developerBuild":[2,1,3],"clientBuild":1},"buildInfo":{"author":"author1"},"installInfo":{"user":"admin"}}]}}""").parseJson))(
+      ("""{"data":{"clientVersionsInfo":[{"version":{"distribution":"distribution1","developerBuild":[2,1,3],"clientBuild":1},"buildInfo":{"author":"author1"},"installInfo":{"account":"admin"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           clientVersionsInfo (service: "service1", distribution: "distribution1") {
             version { distribution, developerBuild, clientBuild }
             buildInfo { author }
-            installInfo { user }
+            installInfo { account }
           }
         }
       """
@@ -95,7 +95,7 @@ class ClientVersionsInfoTest extends TestEnvironment {
                           time: $$buildTime
                         },
                         installInfo: {
-                          user: "admin",
+                          account: "admin",
                           time: $$installTime
                         }
                       })

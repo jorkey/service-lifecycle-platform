@@ -9,7 +9,7 @@ import {
   Divider, Box, Link,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import UsersTable from './UsersTable';
+import AccountsTable from './AccountsTable';
 import {RouteComponentProps, useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
 
@@ -31,12 +31,12 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-interface UsersManagerRouteParams {
+interface AccountsManagerRouteParams {
   type: string
 }
 
-const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = props => {
-  const userType = props.match.params.type
+const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> = props => {
+  const accountType = props.match.params.type
 
   const classes = useStyles()
   const routeMatch = useRouteMatch();
@@ -58,20 +58,20 @@ const UsersManager: React.FC<RouteComponentProps<UsersManagerRouteParams>> = pro
               component={RouterLink}
               to={`${routeMatch.url}/new`}
             >
-              Add New User
+              Add New Account
             </Button>
           </Box>
         }
-        title={userType == 'human'? 'People' : 'Services'}
+        title={accountType == 'human'? 'People' : 'Services'}
       />
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <UsersTable userType={userType}/>
+          <AccountsTable accountType={accountType}/>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-export default UsersManager
+export default AccountManager
