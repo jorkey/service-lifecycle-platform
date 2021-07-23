@@ -84,14 +84,15 @@ class ClientVersionsInfoTest extends TestEnvironment {
       (s"""{"data":{"addClientVersionInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, builderContext,
         graphql"""
-                  mutation AddClientVersionInfo($$service: String!, $$version: ClientDistributionVersionInput!, $$buildDate: Date!, $$installDate: Date!) {
+                  mutation AddClientVersionInfo($$service: String!, $$version: ClientDistributionVersionInput!, $$buildTime: Date!, $$installTime: Date!) {
                     addClientVersionInfo (
                       info: {
                         service: $$service,
                         version: $$version,
                         buildInfo: {
                           author: "author1",
-                          branches: [ "master" ],
+                          sources: [],
+                          comment: "Comment",
                           time: $$buildTime
                         },
                         installInfo: {

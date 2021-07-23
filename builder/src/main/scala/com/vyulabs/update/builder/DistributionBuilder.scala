@@ -187,15 +187,15 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
         log.error(s"Can't subscribe to task ${task} logs")
         return false
       }
-      var line = Option.empty[SequencedServiceLogLine]
+      var line = Option.empty[SequencedLogLine]
       do {
         line = source.next()
         line.foreach(line => {
-          val l = line.line.line
-          if (l.level == "INFO") {
-            log.info(l.message)
+          val l = line
+          if (l.line.level == "INFO") {
+            log.info(l.line.message)
           }
-          for (terminationStatus <- l.terminationStatus) {
+          for (terminationStatus <- l.line.terminationStatus) {
             if (!terminationStatus) {
               log.error(s"Install version ${version} of service ${service} error")
               return false

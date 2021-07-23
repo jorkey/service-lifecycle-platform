@@ -2,7 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.SourceConfig
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo, DistributionFaultReport, DistributionProviderInfo, DistributionServiceState, InstanceServiceState, LogLine, SequencedServiceLogLine, ServiceFaultReport}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo, DistributionFaultReport, DistributionProviderInfo, DistributionServiceState, InstanceServiceState, LogLine, SequencedLogLine, SequencedServiceLogLine, ServiceFaultReport}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -205,8 +205,8 @@ trait AddFaultReportInfoCoder {
 
 trait SubscribeTaskLogsCoder {
   def subscribeTaskLogs(task: TaskId) =
-    GraphqlSubscription[SequencedServiceLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> task, "String")),
-      "{ sequence, logLine { distribution, service, task, instance, processId, directory, line { time, level, unit, message, terminationStatus } } }")
+    GraphqlSubscription[SequencedLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> task, "String")),
+      "{ sequence, line { time, level, unit, message, terminationStatus } }")
 }
 
 trait TestSubscriptionCoder {

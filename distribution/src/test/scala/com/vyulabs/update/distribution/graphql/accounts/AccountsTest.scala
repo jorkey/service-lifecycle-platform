@@ -30,8 +30,10 @@ class AccountsTest extends TestEnvironment {
         mutation {
           addAccount (
             account: "distribution2",
+            name: "Second Distribution",
             roles: [Distribution],
-            password: "password1"
+            password: "password1",
+            human: false
           )
         }
       """)))

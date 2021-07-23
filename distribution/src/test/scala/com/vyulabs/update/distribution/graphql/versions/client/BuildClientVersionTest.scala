@@ -6,6 +6,7 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.stream.scaladsl.Source
+import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
@@ -16,6 +17,7 @@ import sangria.macros.LiteralGraphQLStringContext
 import spray.json.{JsObject, JsString, _}
 
 import java.io.File
+import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 
 class BuildClientVersionTest extends TestEnvironment {
@@ -67,7 +69,8 @@ class BuildClientVersionTest extends TestEnvironment {
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Build client version test-1.1.1 of service service1` finished successfully"}}}}"""))
-    logInput.expectComplete()
+
+    expectComplete(logInput)
   }
 
   it should "cancel of building developer version" in {
@@ -99,6 +102,8 @@ class BuildClientVersionTest extends TestEnvironment {
           cancelTask (task: $$task)
         }
       """, variables = JsObject("task" -> JsString(task)))))
+
+    expectComplete(logInput)
   }
 
   it should "run builder" in {
@@ -135,7 +140,8 @@ class BuildClientVersionTest extends TestEnvironment {
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}"""))
-    logInput.expectComplete()
+
+    expectComplete(logInput)
   }
 
   def subscribeTaskLogs(task: TaskId): ToResponseMarshallable = {
@@ -152,5 +158,14 @@ class BuildClientVersionTest extends TestEnvironment {
           }
         }
       """, variables = JsObject("task" -> JsString(task))))
+  }
+
+  @tailrec
+  private def expectComplete(input: TestSubscriber.Probe[ServerSentEvent]): Unit = {
+    input.request(1)
+    val r = input.expectNextOrComplete()
+    if (!r.isLeft) {
+      expectComplete(input)
+    }
   }
 }

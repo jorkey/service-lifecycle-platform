@@ -6,6 +6,7 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.stream.scaladsl.Source
+import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
@@ -16,6 +17,7 @@ import sangria.macros.LiteralGraphQLStringContext
 import spray.json.{JsObject, JsString, _}
 
 import java.io.File
+import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 
 class BuildDeveloperVersionTest extends TestEnvironment {
@@ -69,11 +71,12 @@ class BuildDeveloperVersionTest extends TestEnvironment {
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":10,"line":{"level":"INFO","message":"Upload developer desired versions List(DeveloperDesiredVersionDelta(service1,Some(test-1.1.1)))"}}}}"""))
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` finished successfully"}}}}"""))
-    logInput.expectComplete()
+
+    expectComplete(logInput)
   }
 
   it should "cancel of building developer version" in {
-    setSequence("state.serviceLogs", 10)
+    setSequence("state.serviceLogs", 100)
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
@@ -90,13 +93,13 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":11,"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":101,"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":12,"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sources=[], comment=Test version) in directory ${builderDirectory}"}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":102,"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sources=[], comment=Test version) in directory ${builderDirectory}"}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":15,"line":{"level":"INFO","message":"Builder started"}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":105,"line":{"level":"INFO","message":"Builder started"}}}}"""))
 
     assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation CancelTask($$task: String!) {
@@ -104,16 +107,11 @@ class BuildDeveloperVersionTest extends TestEnvironment {
         }
       """, variables = JsObject("task" -> JsString(task)))))
 
-    println(logInput.requestNext())
-    println(logInput.requestNext())
-    println(logInput.requestNext())
-    println(logInput.requestNext())
-    println(logInput.requestNext())
-    logInput.expectComplete()
+    expectComplete(logInput)
   }
 
   it should "run builder" in {
-    setSequence("state.serviceLogs", 20)
+    setSequence("state.serviceLogs", 200)
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
         mutation {
@@ -130,23 +128,24 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"line":{"level":"INFO","message":"`Run local builder by remote distribution` started"}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":201,"line":{"level":"INFO","message":"`Run local builder by remote distribution` started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":22,"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]) in directory ${builderDirectory}"}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":202,"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]) in directory ${builderDirectory}"}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":25,"line":{"level":"INFO","message":"Builder started"}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":205,"line":{"level":"INFO","message":"Builder started"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":26,"line":{"level":"INFO","message":"Builder continued"}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":206,"line":{"level":"INFO","message":"Builder continued"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":27,"line":{"level":"INFO","message":"Builder finished"}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"sequence":207,"line":{"level":"INFO","message":"Builder finished"}}}}"""))
     logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":29,"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":209,"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":30,"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}"""))
-    logInput.expectComplete()
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":210,"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}"""))
+
+    expectComplete(logInput)
   }
 
   def subscribeTaskLogs(task: TaskId): ToResponseMarshallable = {
@@ -164,5 +163,14 @@ class BuildDeveloperVersionTest extends TestEnvironment {
           }
         }
       """, variables = JsObject("task" -> JsString(task))))
+  }
+
+  @tailrec
+  private def expectComplete(input: TestSubscriber.Probe[ServerSentEvent]): Unit = {
+    input.request(1)
+    val r = input.expectNextOrComplete()
+    if (!r.isLeft) {
+      expectComplete(input)
+    }
   }
 }

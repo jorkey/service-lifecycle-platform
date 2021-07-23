@@ -232,8 +232,8 @@ class SimpleLifecycle {
       val log = source.next().getOrElse {
         sys.error("Unexpected end of subscription")
       }
-      println(log.line.line.message)
-      for (terminationStatus <- log.line.line.terminationStatus) {
+      println(log.line.message)
+      for (terminationStatus <- log.line.terminationStatus) {
         println(s"Build developer version termination status is ${terminationStatus}")
         return terminationStatus
       }
