@@ -7,6 +7,7 @@ import {
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
+  DistributionInfo, DistributionProviderInfo,
   useClientVersionsInfoQuery,
   useDeveloperServicesQuery,
   useDeveloperVersionsInfoQuery,
@@ -49,7 +50,7 @@ const useStyles = makeStyles((theme:any) => ({
     paddingRight: '2px'
   },
   versionsTable: {
-    marginTop: 20
+    marginTop: '20px'
   },
   serviceColumn: {
     width: '150px',
@@ -98,7 +99,7 @@ const useStyles = makeStyles((theme:any) => ({
 const BuildClient = () => {
   const classes = useStyles()
 
-  const [provider, setProvider] = useState<string>()
+  const [provider, setProvider] = useState<DistributionProviderInfo>()
   const [service, setService] = useState<string>()
   const [downloadUpdates, setDownloadUpdates] = useState<boolean>(true)
   const [rebuildWithNewConfig, setRebuildWithNewConfig] = useState<boolean>(false)
@@ -127,7 +128,7 @@ const BuildClient = () => {
 
   React.useEffect(() => {
     if (provider) {
-      getProviderDesiredVersions({ variables: { distribution: provider } })
+      getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
     }
   }, [ 'provider' ])
 
@@ -207,14 +208,30 @@ const BuildClient = () => {
                 <Select
                   className={classes.providerSelect}
                   native
-                  onChange={(event) => setProvider(event.target.value as string)}
+                  onChange={(event) => {
+                    const distribution = providers?.providersInfo.find(provider => provider.distribution == event.target.value as string)
+                    setProvider(distribution)
+                  }}
                   title='Select provider'
-                  value={provider}
+                  value={provider?.distribution}
                 >
-                  { providers?.providersInfo.map(provider =>
-                    <option key={provider.distribution}>{provider.distribution}</option>) }
+                  {
+                    new Array('').concat(providers?.providersInfo
+                      .map((provider) => provider.distribution))
+                      .map((provider) => <option>{provider}</option>)
+                  }
                 </Select>}
                 label='Provider'
+              /> : null }
+            { provider ?
+              <FormControlLabel
+                className={classes.control}
+                control={<Checkbox
+                  checked={downloadUpdates}
+                  className={classes.downloadUpdates}
+                  onChange={event => setDownloadUpdates(event.target.checked)}
+                />}
+                label='Download Updates'
               /> : null }
             <FormControlLabel
               className={classes.control}
@@ -224,26 +241,16 @@ const BuildClient = () => {
                 native
                 onChange={(event) => {
                   const choice = event.target.value as string
-                  setService(choice != 'All Services' ? choice : undefined)
+                  setService(choice ? choice : undefined)
                 }}
                 title='Select service'
-                value={provider}
+                value={ service ? service : '' }
               >
-              { (new Array('All Services').concat(services))
+              { (new Array('').concat(services))
                   .map((service, index) => <option key={index}>{service}</option>) }
             </Select>}
             label='Service'
             />
-            { provider ?
-            <FormControlLabel
-              className={classes.control}
-              control={<Checkbox
-                checked={downloadUpdates}
-                className={classes.downloadUpdates}
-                onChange={event => setDownloadUpdates(event.target.checked)}
-              />}
-              label='Download Updates'
-            /> : null }
             <FormControlLabel
               className={classes.control}
               control={<Checkbox
@@ -257,7 +264,7 @@ const BuildClient = () => {
               className={classes.control}
               refresh={ () => {
                 if (provider) {
-                  getProviderDesiredVersions({ variables: { distribution: provider } })
+                  getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
                 }
                 getDeveloperVersions()
                 getClientVersions() }}

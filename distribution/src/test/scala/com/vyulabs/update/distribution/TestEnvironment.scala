@@ -83,12 +83,12 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val updaterContext = GraphqlContext(Some(AccessToken("updater", Seq(AccountRole.Updater), None)), workspace)
 
   result(for {
-    _ <- collections.Accounts.insert(ServerAccountInfo(adminHttpCredentials.username, true, "Test Administrator", adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None, None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(developerHttpCredentials.username, true, "Test Developer", developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None, None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(builderHttpCredentials.username, false, "Test Builder", builderCredentials.passwordHash, builderCredentials.roles.map(_.toString), None, None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(distributionHttpCredentials.username, false, "Test Distribution", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString),
+    _ <- collections.Accounts.insert(ServerAccountInfo(adminHttpCredentials.username, "Test Administrator", adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None, None, Seq.empty))
+    _ <- collections.Accounts.insert(ServerAccountInfo(developerHttpCredentials.username, "Test Developer", developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None, None, Seq.empty))
+    _ <- collections.Accounts.insert(ServerAccountInfo(builderHttpCredentials.username, "Test Builder", builderCredentials.passwordHash, builderCredentials.roles.map(_.toString), None, None, Seq.empty))
+    _ <- collections.Accounts.insert(ServerAccountInfo(distributionHttpCredentials.username, "Test Distribution", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString),
       Some(Common.CommonServiceProfile), None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(updaterHttpCredentials.username, false, "Test Updater", updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString),
+    _ <- collections.Accounts.insert(ServerAccountInfo(updaterHttpCredentials.username, "Test Updater", updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString),
       None,  None, Seq.empty))
   } yield {})
 

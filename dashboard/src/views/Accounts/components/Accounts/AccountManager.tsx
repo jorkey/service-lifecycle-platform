@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, Box, Link,
+  Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import AccountsTable from './AccountsTable';
@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme:any) => ({
 }));
 
 interface AccountsManagerRouteParams {
-  type: string
+  type: 'human' | 'service' | 'consumer'
 }
 
 const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> = props => {

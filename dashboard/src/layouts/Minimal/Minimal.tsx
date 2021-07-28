@@ -2,7 +2,6 @@ import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 
 import { Topbar } from './components';
-import {DistributionInfo} from "../../generated/graphql";
 
 const useStyles = makeStyles(() => ({
   root: {

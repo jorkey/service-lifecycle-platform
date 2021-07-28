@@ -9,7 +9,7 @@ import {
   Dashboard as DashboardView,
   Accounts as AccountsView,
   Services as ServicesView,
-  Distribution as DistributionView,
+  Providers as ProvidersView,
   Build as BuildView,
   Logging as LoggingView,
   Failures as FailuresView,
@@ -58,15 +58,15 @@ const Routes: React.FC<RoutesProps> = props => {
         {...props}
       />
       <RouteWithLayout
-        component={DistributionView}
-        layout={MainLayout}
-        path='/distribution'
-        {...props}
-      />
-      <RouteWithLayout
         component={BuildView}
         layout={MainLayout}
         path='/build'
+        {...props}
+      />
+      <RouteWithLayout
+        component={ProvidersView}
+        layout={MainLayout}
+        path='/providers'
         {...props}
       />
       <RouteWithLayout

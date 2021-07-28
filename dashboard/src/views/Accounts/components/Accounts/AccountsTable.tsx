@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
-import {useRemoveAccountMutation, AccountInfo, useAccountsInfoQuery} from '../../../../generated/graphql';
+import {AccountRole, useAccountsInfoQuery, useRemoveAccountMutation} from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
@@ -30,6 +30,10 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  profileColumn: {
+    padding: '4px',
+    paddingLeft: '16px'
+  },
   actionsColumn: {
     width: '200px',
     padding: '4px',
@@ -42,7 +46,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface AccountsTableProps {
-  accountType: string
+  accountType: 'human' | 'service' | 'consumer'
 }
 
 const AccountsTable: React.FC<AccountsTableProps> = props => {
@@ -54,8 +58,7 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
 
   const [error, setError] = useState<string>()
 
-  const { data, refetch } = useAccountsInfoQuery({
-    variables: { human: accountType == 'human' },
+  const { data: accountsInfo, refetch: getAccountsInfo } = useAccountsInfoQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query accounts info error ' + err.message) },
     onCompleted() { setError(undefined) }
@@ -96,6 +99,12 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
       headerName: 'E-Mail',
       className: classes.emailColumn
     })
+  } else if (accountType == 'consumer') {
+    columns.push({
+      name: 'profile',
+      headerName: 'Profile',
+      className: classes.profileColumn
+    })
   }
 
   columns.push({
@@ -106,8 +115,19 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
   })
 
   const rows = new Array<Map<string, GridTableColumnValue>>()
-  if (data) {
-    [...data.accountsInfo]
+  if (accountsInfo) {
+    [...accountsInfo.accountsInfo]
+      .filter(account => {
+        if (accountType == 'human') {
+          return account.roles.find(role => { return role == AccountRole.Administrator || role == AccountRole.Developer})
+        } else if (accountType == 'service') {
+          return account.roles.find(role => { return role == AccountRole.Builder || role == AccountRole.Updater})
+        } else if (accountType == 'consumer') {
+          return account.roles.find(role => { return role == AccountRole.Distribution })
+        } else {
+          return false
+        }
+      })
       .sort((u1,u2) =>  (u1.account > u2.account ? 1 : -1))
       .forEach(account => {
         const row = new Map<string, GridTableColumnValue>()
@@ -116,6 +136,8 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
         row.set('roles', account.roles.toString())
         if (accountType == 'human' && account.email) {
           row.set('email', account.email)
+        } else if (accountType == 'consumer' && account.profile) {
+          row.set('profile', account.profile)
         }
         row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(account.account) }>
             <DeleteIcon/>
@@ -141,7 +163,7 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
           setDeleteConfirm('')
         }}
         onConfirm={() => {
-          removeAccount({ variables: { account: deleteConfirm } }).then(() => refetch())
+          removeAccount({ variables: { account: deleteConfirm } }).then(() => getAccountsInfo())
           setDeleteConfirm('')
         }}
       />) : null }

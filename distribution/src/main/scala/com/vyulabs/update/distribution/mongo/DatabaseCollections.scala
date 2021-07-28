@@ -71,7 +71,6 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     collection <- db.getOrCreateCollection[BsonDocument]("accounts")
     _ <- if (createIndices) {
       collection.createIndex(Indexes.ascending("account", "_archiveTime"), new IndexOptions().unique(true))
-      collection.createIndex(Indexes.ascending("human"))
     } else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
@@ -153,7 +152,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
       adminRecords <- Accounts.find(filters)
     } yield {
       if (adminRecords.isEmpty) {
-        Accounts.insert(ServerAccountInfo("admin", true, "Administrator", PasswordHash("admin"),
+        Accounts.insert(ServerAccountInfo("admin", "Administrator", PasswordHash("admin"),
           Seq(AccountRole.Administrator.toString), None, None, Seq.empty))
       } else {
         Future()

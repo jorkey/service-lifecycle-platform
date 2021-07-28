@@ -159,7 +159,7 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make fixed test service version")
-    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild),
+    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild).next,
       Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
 
     println()
@@ -200,7 +200,7 @@ class SimpleLifecycle {
                                        version: DeveloperVersion, sources: Seq[SourceConfig]): Unit = {
     println("--------------------------- Build developer version of test service")
     val task = developerClient.graphqlRequest(
-        developerMutations.buildDeveloperVersion(testServiceName, version, sources)).getOrElse {
+        developerMutations.buildDeveloperVersion(testServiceName, version, sources, "Test service version")).getOrElse {
       sys.error("Can't execute build developer version task")
     }
     if (!subscribeTask(developerClient, task)) {

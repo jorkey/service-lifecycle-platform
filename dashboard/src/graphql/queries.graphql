@@ -1,13 +1,13 @@
 # Login
 
-mutation login($user: String!, $password: String!) {
-    login(user: $user, password: $password)
+mutation login($account: String!, $password: String!) {
+    login(account: $account, password: $password)
 }
 
 # Info
 
 query whoAmI {
-    whoAmI { user, roles }
+    whoAmI { account, roles }
 }
 
 query distributionInfo {
@@ -56,7 +56,7 @@ mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaIn
 
 query clientVersionsInfo ($service: String, $version: ClientVersionInput) {
     clientVersionsInfo (service: $service, version: $version) {
-        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { user, time }
+        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { account, time }
     }
 }
 
@@ -108,28 +108,28 @@ query taskLogs ($task: String!) {
 
 # Services
 
-query usersInfo ($human: Boolean!) {
-    usersInfo (human: $human) { user, human, name, roles, email, notifications }
+query accountsList {
+    accountsInfo { account }
 }
 
-query usersList {
-    usersInfo { user }
+query accountsInfo {
+    accountsInfo { account, name, roles, profile, email, notifications }
 }
 
-query userInfo ($user: String!) {
-    usersInfo (user: $user) { user, human, name, roles, email, notifications }
+query accountInfo ($account: String!) {
+    accountsInfo (account: $account) { account, name, roles, profile, email, notifications }
 }
 
-mutation addUser ($user: String!, $human: Boolean!, $name: String!, $password: String!, $roles: [UserRole!]!, $email: String, $notifications: [String!]) {
-    addUser (user: $user, human: $human, name: $name, password: $password, roles: $roles, email: $email, notifications: $notifications)
+mutation addAccount ($account: String!, $name: String!, $password: String!, $roles: [AccountRole!]!, $profile: String, $email: String, $notifications: [String!]) {
+    addAccount (account: $account, name: $name, password: $password, roles: $roles, profile: $profile, email: $email, notifications: $notifications)
 }
 
-mutation changeUser ($user: String!, $name: String, $oldPassword: String, $password: String, $roles: [UserRole!], $email: String, $notifications: [String!]) {
-    changeUser (user: $user, name: $name, oldPassword: $oldPassword, password: $password, roles: $roles, email: $email, notifications: $notifications)
+mutation changeAccount ($account: String!, $name: String, $oldPassword: String, $password: String, $roles: [AccountRole!], $profile: String, $email: String, $notifications: [String!]) {
+    changeAccount (account: $account, name: $name, oldPassword: $oldPassword, password: $password, roles: $roles, profile: $profile, email: $email, notifications: $notifications)
 }
 
-mutation removeUser ($user: String!) {
-    removeUser (user: $user)
+mutation removeAccount ($account: String!) {
+    removeAccount (account: $account)
 }
 
 # Sources
@@ -180,16 +180,16 @@ mutation removeServicesProfile ($profile: String!) {
 
 query providersInfo {
     providersInfo {
-        distribution, url, uploadStateIntervalSec
+        distribution, url, testConsumer, uploadStateIntervalSec
     }
 }
 
-mutation addProvider ($distribution: String!, $url: String!, $uploadStateIntervalSec: Int!) {
-    addProvider (distribution: $distribution, url: $url, uploadStateIntervalSec: $uploadStateIntervalSec)
+mutation addProvider ($distribution: String!, $url: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
+    addProvider (distribution: $distribution, url: $url, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
 }
 
-mutation changeProvider ($distribution: String!, $url: String!, $uploadStateIntervalSec: Int!) {
-    changeProvider (distribution: $distribution, url: $url, uploadStateIntervalSec: $uploadStateIntervalSec)
+mutation changeProvider ($distribution: String!, $url: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
+    changeProvider (distribution: $distribution, url: $url, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
 }
 
 mutation removeProvider ($distribution: String!) {
@@ -202,8 +202,8 @@ query providerDesiredVersions ($distribution: String!) {
     }
 }
 
-mutation installProviderVersion ($distribution: String!, $service: String!, $version: DeveloperDistributionVersionInput!) {
-    installProviderVersion (distribution: $distribution, service: $service, version: $version)
+mutation downloadProviderVersion ($distribution: String!, $service: String!, $version: DeveloperDistributionVersionInput!) {
+    downloadProviderVersion (distribution: $distribution, service: $service, version: $version)
 }
 
 # Subscriptions

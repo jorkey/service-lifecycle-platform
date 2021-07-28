@@ -1,5 +1,6 @@
 package com.vyulabs.libs.git
 
+import com.vyulabs.libs.git
 import com.vyulabs.update.common.utils.IoUtils
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand.ListMode
@@ -20,7 +21,11 @@ import scala.collection.JavaConverters._
   */
 class GitRepository(git: Git)(implicit log: Logger) {
   def getUrl(): String ={
-    git.getRepository.getConfig().getString("remote", "origin", "url")
+    val url = git.getRepository.getConfig().getString("remote", "origin", "url")
+    if (url != null) {
+      return url
+    }
+    "file://" + git.getRepository.getWorkTree.toString
   }
 
   def getDirectory(): File = {
@@ -297,13 +302,18 @@ object GitRepository {
   def cloneRepository(uri: String, branch: String, directory: File, cloneSubmodules: Boolean)(implicit log: Logger): Option[GitRepository] = {
     log.info(s"Clone repository ${uri} to ${directory}")
     try {
-      val git = Git.cloneRepository()
-        .setURI(uri)
-        .setBranch(branch)
-        .setDirectory(directory)
-        .setCloneSubmodules(cloneSubmodules)
-        .call()
-      Some(new GitRepository(git))
+      if (uri.startsWith("file://")) {
+        IoUtils.copyFile(new File(uri.substring(7)), directory)
+        Some(new GitRepository(Git.open(directory)))
+      } else {
+        val git = Git.cloneRepository()
+          .setURI(uri)
+          .setBranch(branch)
+          .setDirectory(directory)
+          .setCloneSubmodules(cloneSubmodules)
+          .call()
+        Some(new GitRepository(git))
+      }
     } catch {
       case ex:Exception =>
         log.error("Clone Git repository error", ex)

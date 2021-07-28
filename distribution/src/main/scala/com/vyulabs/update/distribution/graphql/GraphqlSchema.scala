@@ -29,7 +29,6 @@ object GraphqlSchema {
   // Arguments
 
   val AccountArg = Argument("account", StringType)
-  val HumanArg = Argument("human", BooleanType)
   val NameArg = Argument("name", StringType)
   val OldPasswordArg = Argument("oldPassword", StringType)
   val PasswordArg = Argument("password", StringType)
@@ -64,7 +63,6 @@ object GraphqlSchema {
   val CommentArg = Argument("comment", StringType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
-  val OptionHumanArg = Argument("human", OptionInputType(BooleanType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
@@ -107,9 +105,9 @@ object GraphqlSchema {
 
       // Accounts
       Field("accountsInfo", ListType(AccountInfoType),
-        arguments = OptionAccountArg :: OptionHumanArg :: Nil,
+        arguments = OptionAccountArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getAccountsInfo(c.arg(OptionAccountArg), c.arg(OptionHumanArg)) }),
+        resolve = c => { c.ctx.workspace.getAccountsInfo(c.arg(OptionAccountArg)) }),
 
       // Sources
       Field("developerServices", ListType(StringType),
@@ -203,10 +201,10 @@ object GraphqlSchema {
 
       // Accounts management
       Field("addAccount", BooleanType,
-        arguments = AccountArg :: HumanArg :: NameArg :: PasswordArg :: AccountRolesArg :: OptionProfileArg ::
+        arguments = AccountArg :: NameArg :: PasswordArg :: AccountRolesArg :: OptionProfileArg ::
           OptionEmailArg :: OptionNotificationsArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addAccount(c.arg(AccountArg), c.arg(HumanArg), c.arg(NameArg),
+        resolve = c => { c.ctx.workspace.addAccount(c.arg(AccountArg), c.arg(NameArg),
           c.arg(PasswordArg), c.arg(AccountRolesArg), c.arg(OptionProfileArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg)).map(_ => true) }),
       Field("removeAccount", BooleanType,
         arguments = AccountArg :: Nil,

@@ -33,22 +33,27 @@ const useStyles = makeStyles((theme:any) => ({
   distributionColumn: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '400px'
+    width: '150px'
   },
   urlColumn: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '400px'
+  },
+  testConsumerColumn: {
+    padding: '4px',
+    paddingLeft: '16px',
+    width: '150px'
   },
   actionsColumn: {
-    width: '200px',
     padding: '4px',
     paddingRight: '40px',
-    textAlign: 'right'
+    textAlign: 'right',
+    width: '200px',
   },
   uploadStateInterval: {
     padding: '4px',
-    paddingLeft: '16px'
+    paddingLeft: '16px',
+    width: '200px'
   },
   controls: {
     display: 'flex',
@@ -125,6 +130,12 @@ const ProvidersManager = () => {
       }
     },
     {
+      name: 'testConsumer',
+      headerName: 'Test Consumer',
+      className: classes.testConsumerColumn,
+      editable: true
+    },
+    {
       name: 'uploadStateInterval',
       headerName: 'Upload State Interval (sec)',
       className: classes.uploadStateInterval,
@@ -153,6 +164,7 @@ const ProvidersManager = () => {
   providers?.providersInfo.forEach(provider => { rows.push(new Map<string, GridTableColumnValue>([
     ['distribution', provider.distribution],
     ['url', provider.url],
+    ['testConsumer', provider.testConsumer?provider.testConsumer:''],
     ['uploadStateInterval', provider.uploadStateIntervalSec?provider.uploadStateIntervalSec.toString():''],
     ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
       <DeleteIcon/>
@@ -195,6 +207,7 @@ const ProvidersManager = () => {
               addProvider({ variables: {
                 distribution: String(row.get('distribution')!),
                 url: String(row.get('url')!),
+                testConsumer: row.get('testConsumer')?String(row.get('testConsumer')!):undefined,
                 uploadStateIntervalSec: Number(row.get('uploadStateInterval')!)
               }}).then(() => refetchProviders())
             }}

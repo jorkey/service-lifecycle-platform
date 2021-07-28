@@ -102,10 +102,9 @@ trait SourcesAdministrationCoder {
 }
 
 trait AccountsAdministrationCoder {
-  def addAccount(account: AccountId, human: Boolean, name: String, password: String, roles: Seq[AccountRole]) =
+  def addAccount(account: AccountId, name: String, password: String, roles: Seq[AccountRole]) =
     GraphqlMutation[Boolean]("addAccount", Seq(GraphqlArgument("account" -> account),
-      GraphqlArgument("human" -> human), GraphqlArgument("name" -> name),
-      GraphqlArgument("password" -> password), GraphqlArgument("roles" -> roles, "[AccountRole!]")))
+      GraphqlArgument("name" -> name), GraphqlArgument("password" -> password), GraphqlArgument("roles" -> roles, "[AccountRole!]")))
   def removeAccount(account: AccountId) =
     GraphqlMutation[Boolean]("removeAccount", Seq(GraphqlArgument("account" -> account)))
 }
@@ -129,11 +128,12 @@ trait ConsumersAdministrationCoder {
 }
 
 trait BuildDeveloperVersionCoder {
-  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, sources: Seq[SourceConfig]) =
+  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, sources: Seq[SourceConfig], comment: String) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("version" -> version, "DeveloperVersionInput"),
-      GraphqlArgument("sources" -> sources, "[SourceConfig!]")))
+      GraphqlArgument("sources" -> sources, "[SourceConfigInput!]"),
+      GraphqlArgument("comment" -> comment)))
 }
 
 trait RemoveDeveloperVersionCoder {

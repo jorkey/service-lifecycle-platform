@@ -44,5 +44,5 @@ object PasswordHash extends DefaultJsonProtocol {
 case class AccountCredentials(roles: Seq[AccountRole], profile: Option[ServicesProfileId], var passwordHash: PasswordHash)
 
 // We can't use enumeration role because mongodb does not have codec for enumerations.
-case class ServerAccountInfo(account: AccountId, human: Boolean, name: String, passwordHash: PasswordHash,
+case class ServerAccountInfo(account: AccountId, name: String, passwordHash: PasswordHash,
                              roles: Seq[String], profile: Option[ServicesProfileId], email: Option[String], notifications: Seq[String])

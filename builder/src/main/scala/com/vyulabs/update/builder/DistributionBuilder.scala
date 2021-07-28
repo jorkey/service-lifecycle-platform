@@ -343,7 +343,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   private def addServiceAccount(user: AccountId, name: String, role: AccountRole): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(user, false,
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(user,
         name, user, Seq(role))).getOrElse {
       return false
     }

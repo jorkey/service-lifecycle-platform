@@ -35,13 +35,13 @@ trait AccountsUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def addAccount(account: AccountId, human: Boolean, name: String, password: String,
+  def addAccount(account: AccountId, name: String, password: String,
                  roles: Seq[AccountRole], profiles: Option[ServicesProfileId],
                  email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Unit] = {
     log.info(s"Add account ${account} with roles ${roles}")
     for {
       result <- {
-        val document = ServerAccountInfo(account, human, name, PasswordHash(password),
+        val document = ServerAccountInfo(account, name, PasswordHash(password),
           roles.map(_.toString), profiles, email, notifications.getOrElse(Seq.empty))
         collections.Accounts.insert(document).map(_ => ())
       }
@@ -65,7 +65,7 @@ trait AccountsUtils extends SprayJsonSupport {
           throw new IOException(s"Password verification error")
         }
       }
-      ServerAccountInfo(r.account, r.human,
+      ServerAccountInfo(r.account,
         if (name.isDefined) name.get else r.name,
         password.map(PasswordHash(_)).getOrElse(r.passwordHash),
         roles.map(_.map(_.toString)).getOrElse(r.roles),
@@ -148,12 +148,11 @@ trait AccountsUtils extends SprayJsonSupport {
       info.roles.map(AccountRole.withName(_)), info.profile, info.passwordHash)).headOption)
   }
 
-  def getAccountsInfo(account: Option[AccountId] = None, human: Option[Boolean] = None)(implicit log: Logger): Future[Seq[AccountInfo]] = {
+  def getAccountsInfo(account: Option[AccountId] = None)(implicit log: Logger): Future[Seq[AccountInfo]] = {
     val accountArg = account.map(Filters.eq("account", _))
-    val humanArg = human.map(Filters.eq("human", _))
-    val args = accountArg.toSeq ++ humanArg.toSeq
+    val args = accountArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Accounts.find(filters).map(_.map(info => AccountInfo(info.account, info.human,
+    collections.Accounts.find(filters).map(_.map(info => AccountInfo(info.account,
       info.name, info.roles.map(AccountRole.withName(_)), info.profile, info.email, info.notifications)))
   }
 }

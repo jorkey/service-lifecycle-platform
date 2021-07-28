@@ -79,6 +79,10 @@ const Sidebar = (props:any) => {
         {
           title: 'Services',
           href: '/accounts/service',
+        },
+        {
+          title: 'Consumers',
+          href: '/accounts/consumer',
         }
       ]
     },
@@ -99,21 +103,6 @@ const Sidebar = (props:any) => {
     },
     {
       kind: 'title',
-      title: 'Distribution',
-      icon: <ShareIcon />,
-      pages: [
-        {
-          title: 'Provider',
-          href: '/distribution/provider',
-        },
-        {
-          title: 'Consumers',
-          href: '/distribution/consumers',
-        }
-      ]
-    },
-    {
-      kind: 'title',
       title: 'Build',
       icon: <BuildIcon />,
       pages: [
@@ -126,6 +115,12 @@ const Sidebar = (props:any) => {
           href: '/build/client',
         }
       ]
+    },
+    {
+      kind: 'single',
+      title: 'Providers',
+      href: '/providers',
+      icon: <ShareIcon />
     },
     {
       kind: 'single',

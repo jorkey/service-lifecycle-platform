@@ -2,9 +2,8 @@ import React from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
-import ConsumersManager from "./components/Distribution/ConsumersManager";
 import {Route, Switch, useRouteMatch} from "react-router-dom";
-import ProvidersManager from "./components/Distribution/ProvidersManager";
+import ProvidersManager from "./components/Providers/ProvidersManager";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -12,7 +11,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Distribution = () => {
+const Providers = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
@@ -26,10 +25,8 @@ const Distribution = () => {
           xs={12}
         >
           <Switch>
-            <Route exact path={`${routeMatch.url}/provider`}
+            <Route exact path={`${routeMatch.url}`}
               component={ProvidersManager}/>
-            <Route exact path={`${routeMatch.url}/consumers`}
-              component={ConsumersManager}/>
           </Switch>
         </Grid>
       </Grid>
@@ -37,4 +34,4 @@ const Distribution = () => {
   );
 };
 
-export default Distribution;
+export default Providers;
