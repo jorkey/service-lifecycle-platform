@@ -2,17 +2,14 @@ import React, {useCallback, useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
-  Button,
   Card,
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
   DistributionInfo, DistributionProviderInfo,
   useClientVersionsInfoQuery,
-  useDeveloperServicesQuery,
   useDeveloperVersionsInfoQuery,
   useDeveloperVersionsInProcessQuery, useProviderDesiredVersionsLazyQuery,
-  useProviderDesiredVersionsQuery,
   useProvidersInfoQuery
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
@@ -58,34 +55,9 @@ const useStyles = makeStyles((theme:any) => ({
     paddingLeft: '16px'
   },
   versionColumn: {
-    width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  authorColumn: {
-    width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  commentColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  statusColumn: {
-    width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  timeColumn: {
     width: '200px',
     padding: '4px',
     paddingLeft: '16px'
-  },
-  actionsColumn: {
-    width: '120px',
-    padding: '4px',
-    paddingRight: '30px',
-    textAlign: 'right'
   },
   control: {
     paddingLeft: '10px',
@@ -100,9 +72,10 @@ const BuildClient = () => {
   const classes = useStyles()
 
   const [provider, setProvider] = useState<DistributionProviderInfo>()
-  const [service, setService] = useState<string>()
   const [downloadUpdates, setDownloadUpdates] = useState<boolean>(true)
   const [rebuildWithNewConfig, setRebuildWithNewConfig] = useState<boolean>(false)
+  const [selectedRows, setSelectedRows] = useState(new Set<number>())
+
   const [error, setError] = useState<string>()
 
   const { data: providers } = useProvidersInfoQuery({
@@ -179,9 +152,9 @@ const BuildClient = () => {
       headerName: 'Client Version',
       className: classes.versionColumn,
     }
-  ]
+  ].filter(c => provider || c.name != 'providerVersion')
 
-  const rows = services.filter(s => { return service == undefined || s == service }).sort().map(
+  const rows = services.sort().map(
     service => {
       const providerVersion = providerDesiredVersions.data?.providerDesiredVersions.find(version => version.service == service)
       const developerVersion = developerVersions?.developerVersionsInfo.find(version => version.service == service)
@@ -205,22 +178,22 @@ const BuildClient = () => {
               <FormControlLabel
                 className={classes.control}
                 control={
-                <Select
-                  className={classes.providerSelect}
-                  native
-                  onChange={(event) => {
-                    const distribution = providers?.providersInfo.find(provider => provider.distribution == event.target.value as string)
-                    setProvider(distribution)
-                  }}
-                  title='Select provider'
-                  value={provider?.distribution}
-                >
-                  {
-                    new Array('').concat(providers?.providersInfo
-                      .map((provider) => provider.distribution))
-                      .map((provider) => <option>{provider}</option>)
-                  }
-                </Select>}
+                  <Select
+                    className={classes.providerSelect}
+                    native
+                    onChange={(event) => {
+                      const distribution = providers?.providersInfo.find(provider => provider.distribution == event.target.value as string)
+                      setProvider(distribution)
+                    }}
+                    title='Select provider'
+                    value={provider?.distribution}
+                  >
+                    <option key={-1}/>
+                    { providers?.providersInfo
+                        .map((provider) => provider.distribution)
+                        .map((provider, index) => <option key={index}>{provider}</option>)}
+                  </Select>
+                }
                 label='Provider'
               /> : null }
             { provider ?
@@ -233,24 +206,6 @@ const BuildClient = () => {
                 />}
                 label='Download Updates'
               /> : null }
-            <FormControlLabel
-              className={classes.control}
-              control={
-              <Select
-                className={classes.serviceSelect}
-                native
-                onChange={(event) => {
-                  const choice = event.target.value as string
-                  setService(choice ? choice : undefined)
-                }}
-                title='Select service'
-                value={ service ? service : '' }
-              >
-              { (new Array('').concat(services))
-                  .map((service, index) => <option key={index}>{service}</option>) }
-            </Select>}
-            label='Service'
-            />
             <FormControlLabel
               className={classes.control}
               control={<Checkbox
@@ -276,10 +231,20 @@ const BuildClient = () => {
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <GridTable
-           className={classes.versionsTable}
-           columns={columns}
-           rows={rows?rows:[]}
-           // onClick={(row, values) => handleOnClick(values.get('service')! as string)}
+             className={classes.versionsTable}
+             columns={columns}
+             rows={rows?rows:[]}
+             select={!provider?.testConsumer}
+             selectedRows={
+               !provider?.testConsumer ? selectedRows : new Set(rows.map((row, num) => num))
+             }
+             onRowSelected={(row, columns) => {
+               setSelectedRows(new Set(selectedRows.add(row)))
+             }}
+             onRowUnselected={(row, columns) => {
+               selectedRows.delete(row)
+               setSelectedRows(new Set(selectedRows))
+             }}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
