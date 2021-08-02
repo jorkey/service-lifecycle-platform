@@ -20,7 +20,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils
+    extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with AccountsUtils
 
 case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)
@@ -45,8 +45,6 @@ object GraphqlSchema {
   val ClientVersionArg = Argument("version", ClientVersionInputType)
   val DeveloperDistributionVersionArg = Argument("version", DeveloperDistributionVersionInputType)
   val ClientDistributionVersionArg = Argument("version", ClientDistributionVersionInputType)
-  val DeveloperDistributionVersionUniqueArg = Argument("developerVersion", DeveloperDistributionVersionInputType)
-  val ClientDistributionVersionUniqueArg = Argument("clientVersion", ClientDistributionVersionInputType)
   val DeveloperVersionInfoArg = Argument("info", DeveloperVersionInfoInputType)
   val ClientVersionInfoArg = Argument("info", ClientVersionInfoInputType)
   val DeveloperDesiredVersionsArg = Argument("versions", ListInputType(DeveloperDesiredVersionInputType))
@@ -61,6 +59,8 @@ object GraphqlSchema {
   val SourcesArg = Argument("sources", ListInputType(SourceConfigInputType))
   val UrlArg = Argument("url", StringType)
   val CommentArg = Argument("comment", StringType)
+  val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
+  val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -169,7 +169,7 @@ object GraphqlSchema {
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = DistributionArg :: OptionServicesArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+        resolve = c => { c.ctx.workspace.getConsumerInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
       Field("serviceStates", ListType(DistributionServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Updater) :: Nil,
@@ -278,11 +278,16 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionDeltasArg)).map(_ => true) }),
 
       // Client versions
-      Field("buildClientVersion", StringType,
-        arguments = ServiceArg :: DeveloperDistributionVersionUniqueArg :: ClientDistributionVersionUniqueArg :: Nil,
+      Field("updateClientVersions", StringType,
+        arguments = DistributionArg :: DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.buildClientVersion(c.arg(ServiceArg), c.arg(DeveloperDistributionVersionUniqueArg),
-          c.arg(ClientDistributionVersionUniqueArg), c.ctx.accessToken.get.account) }),
+        resolve = c => { c.ctx.workspace.updateClientVersions(c.arg(DistributionArg), c.arg(DeveloperDesiredVersionsArg),
+          c.ctx.accessToken.get.account) }),
+      Field("buildClientVersion", StringType,
+        arguments = ServiceArg :: ClientDistributionVersionArg :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
+        resolve = c => { c.ctx.workspace.buildClientVersion(c.arg(ServiceArg), c.arg(ClientDistributionVersionArg),
+          c.ctx.accessToken.get.account) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Builder) :: Nil,
@@ -313,10 +318,6 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeProvider(c.arg(DistributionArg)).map(_ => true) }),
 
       // Distribution consumers operations
-      Field("downloadProviderVersion", StringType,
-        arguments = DistributionArg :: ServiceArg :: DeveloperDistributionVersionArg :: Nil,
-        tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.downloadProviderVersion(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(DeveloperDistributionVersionArg)) }),
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(AccountRole.Distribution) :: Nil,
@@ -327,7 +328,7 @@ object GraphqlSchema {
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
         tags = Authorized(AccountRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.setInstalledDesiredVersions(c.ctx.accessToken.get.account, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.setConsumerInstalledDesiredVersions(c.ctx.accessToken.get.account, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
         tags = Authorized(AccountRole.Updater, AccountRole.Distribution) :: Nil,

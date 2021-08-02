@@ -9,14 +9,14 @@ import {
   Box,
   Card,
   CardContent,
-  CardHeader,
-  Divider,
+  CardHeader, Checkbox,
+  Divider, FormControlLabel,
   Grid
 } from '@material-ui/core';
 import {
   SourceConfig,
   useBuildDeveloperVersionMutation,
-  useDeveloperVersionsInfoLazyQuery,
+  useDeveloperVersionsInfoLazyQuery, useProfileServicesQuery, useServiceProfilesQuery,
   useServiceSourcesLazyQuery,
   useWhoAmILazyQuery
 } from '../../../../generated/graphql';
@@ -24,7 +24,6 @@ import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 import BranchesTable from "./BranchesTable";
 import {Version} from "../../../../common";
-import {TaskLogs} from "../../../../common/components/logsTable/TaskLogs";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -65,6 +64,7 @@ const StartBuildService: React.FC<BuildServiceParams> = props => {
   const [author, setAuthor] = useState('');
   const [sources, setSources] = useState<SourceConfig[]>([]);
   const [comment, setComment] = useState('');
+  const [allowBuildClientVersion, setAllowBuildClientVersion] = useState(true);
 
   const [initialized, setInitialized] = useState(false)
 
@@ -88,6 +88,11 @@ const StartBuildService: React.FC<BuildServiceParams> = props => {
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query service sources error ' + err.message) },
     onCompleted() { setError(undefined) }
+  })
+  const { data: ownServicesProfile } = useProfileServicesQuery({
+    variables: { profile: 'own' },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query own profile services error ' + err.message) },
   })
   const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
     variables: { service: service, version: { build: Version.parseBuild(version) },
@@ -178,8 +183,24 @@ const StartBuildService: React.FC<BuildServiceParams> = props => {
                 : source }))
             }
           />
+          {hasClient()?
+            <FormControlLabel
+              control={(
+                <Checkbox
+                  color="primary"
+                  checked={allowBuildClientVersion}
+                  onChange={ event => setAllowBuildClientVersion(event.target.checked) }
+                />
+              )}
+              label="Build Client Version"
+            />
+            : null}
       </CardContent>
     </Card>)
+  }
+
+  const hasClient = () => {
+    return ownServicesProfile?.serviceProfiles?.find(profile => profile.services.find(s => s == service))
   }
 
   return (

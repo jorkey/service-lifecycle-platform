@@ -35,6 +35,10 @@ object DeveloperDistributionVersion {
     DeveloperDistributionVersion(distribution, version.build)
   }
 
+  def from(version: ClientDistributionVersion): DeveloperDistributionVersion = {
+    DeveloperDistributionVersion(version.distribution, version.developerBuild)
+  }
+
   def parse(version: String): DeveloperDistributionVersion = {
     val index = version.lastIndexOf('-')
     if (index == -1) {

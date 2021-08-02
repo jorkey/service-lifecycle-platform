@@ -115,8 +115,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val State_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("state.installedDesiredVersions", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("state.installedDesiredVersions")
+  val Consumers_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("consumers.installedDesiredVersions", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("consumers.installedDesiredVersions")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 

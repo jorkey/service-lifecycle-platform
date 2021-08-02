@@ -1,10 +1,10 @@
 package com.vyulabs.update.distribution.graphql.utils
 
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
+import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
@@ -14,7 +14,7 @@ import org.slf4j.Logger
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends DeveloperVersionUtils with RunBuilderUtils {
+trait ClientVersionUtils extends DeveloperVersionUtils with DistributionProvidersUtils with RunBuilderUtils {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
@@ -22,52 +22,40 @@ trait ClientVersionUtils extends DeveloperVersionUtils with RunBuilderUtils {
 
   protected implicit val executionContext: ExecutionContext
 
-  /*
-  def buildClientVersions(services: Seq[ServiceName], author: String)(implicit log: Logger): TaskId = {
-    taskManager.create(s"Build client versions of services ${services} by ${author}", (task, logger) => {
-      implicit val log = logger
-      @volatile var cancels = Seq.empty[() => Unit]
-      val future = for {
-        developerDesiredVersions <- getDeveloperDesiredVersions(services.toSet).map(DeveloperDesiredVersions.toMap(_))
-        clientDesiredVersions <- {
-          Future.sequence(developerDesiredVersions.map {
-            case (service, developerVersion) =>
-              for {
-                existingVersions <- getClientVersionsInfo(service).map(_.map(_.version)
-                  .filter(_.original() == developerVersion))
-                result <- {
-                  val clientVersion =
-                    if (!existingVersions.isEmpty) {
-                      existingVersions.sorted(ClientDistributionVersion.ordering).last.next()
-                    } else {
-                      ClientDistributionVersion(config.distribution, ClientVersion(developerVersion.version))
-                    }
-                  val task = buildClientVersion(service, developerVersion, clientVersion, author)
-                  cancels ++= task.cancel
-                  task.future.map(_ => (service -> clientVersion))
-                }
-              } yield result
-          }).map(_.foldLeft(Map.empty[ServiceName, ClientDistributionVersion])((map, entry) => map + entry))
-        }
-        result <- setClientDesiredVersions(ClientDesiredVersions.fromMap(clientDesiredVersions))
-      } yield result
-      (future, Some(() => cancels.foreach { _() }))
-    }).task
-  }*/
-
-  def buildClientVersion(service: ServiceId,
-                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion, author: String)
-                        (implicit log: Logger): TaskId = {
-    val task = taskManager.create(s"Build client version ${developerVersion} of service ${service}",
+  def updateClientVersions(distribution: DistributionId, versions: Seq[DeveloperDesiredVersion], author: AccountId)
+                          (implicit log: Logger): TaskId = {
+    var cancels = Seq.empty[() => Unit]
+    val task = taskManager.create(s"Update client services from developer versions: ${versions}",
       (task, logger) => {
         implicit val log = logger
-        val arguments = Seq("buildClientVersion",
-          s"distribution=${config.distribution}", s"service=${service}",
-          s"developerVersion=${developerVersion.toString}", s"clientVersion=${clientVersion.toString}",
-          s"author=${author}")
-        runBuilder(task, arguments)
+        (for {
+          _ <- Future.sequence(versions
+            .map(version => downloadProviderVersion(distribution, version.service, version.version)))
+          _ <- {
+            val results = versions.map(version => buildClientVersion(task, version.service,
+              ClientDistributionVersion.from(version.version, 0), author))
+            results.foreach(_._2.foreach(cancel => cancels :+= cancel))
+            Future.sequence(results.map(_._1)).map(_ => Unit)
+          }
+        } yield {}, Some(() => cancels.foreach(cancel => cancel())))
       })
     task.task
+  }
+
+  def buildClientVersion(service: ServiceId, version: ClientDistributionVersion, author: String)
+                        (implicit log: Logger): TaskId = {
+    val task = taskManager.create(s"Build client version ${version} of service ${service}",
+      (task, logger) => { buildClientVersion(task, service, version, author) })
+    task.task
+  }
+
+  private def buildClientVersion(task: TaskId, service: ServiceId,
+                                 version: ClientDistributionVersion, author: String)
+                                (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    val arguments = Seq("buildClientVersion",
+      s"distribution=${config.distribution}", s"service=${service}",
+      s"version=${version.toString}", s"author=${author}")
+    runBuilder(task, arguments)
   }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {

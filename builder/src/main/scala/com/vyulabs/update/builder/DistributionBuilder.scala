@@ -162,6 +162,13 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
         Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName))).getOrElse(false)
   }
 
+  def addOwnServicesProfile(): Boolean = {
+    log.info(s"--------------------------- Add own services profile")
+    adminDistributionClient.get.graphqlRequest(
+      administratorMutations.addServicesProfile(Common.OwnConsumerProfile, Seq(Common.DistributionServiceName,
+        Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName))).getOrElse(false)
+  }
+
   def updateDistributionFromProvider(): Boolean = {
     log.info(s"--------------------------- Get distribution provider desired versions")
     val providerDesiredVersions = DeveloperDesiredVersions.toMap(
@@ -179,7 +186,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info(s"--------------------------- Versions for update ${versionsForUpdate}")
     versionsForUpdate.foreach { case (service, version) =>
       log.info(s"--------------------------- Install provider version ${version} of service ${service}")
-      val task = adminDistributionClient.get.graphqlRequest(administratorMutations.downloadProviderVersion(providerDistributionName.get, service, version)).getOrElse {
+      val task = adminDistributionClient.get.graphqlRequest(administratorMutations.updateClientVersions(providerDistributionName.get,
+          Seq(DeveloperDesiredVersion(service, version)))).getOrElse {
         log.error(s"Can't install provider developer version ${version} of service ${service}")
         return false
       }

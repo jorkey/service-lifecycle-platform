@@ -32,8 +32,7 @@ class AccountsTest extends TestEnvironment {
             account: "distribution2",
             name: "Second Distribution",
             roles: [Distribution],
-            password: "password1",
-            human: false
+            password: "password1"
           )
         }
       """)))

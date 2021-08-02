@@ -75,10 +75,10 @@ class StateInfoTest extends TestEnvironment {
         }
       """)))
 
-    result(collections.State_InstalledDesiredVersions.find().map(assertResult(Seq(InstalledDesiredVersions("distribution", Seq(
+    result(collections.Consumers_InstalledDesiredVersions.find().map(assertResult(Seq(InstalledDesiredVersions("distribution", Seq(
       ClientDesiredVersion("service1", ClientDistributionVersion("test", Seq(1, 1, 1), 0)),
       ClientDesiredVersion("service2", ClientDistributionVersion("test", Seq(2, 1, 1), 0))))))(_)))
-    result(collections.State_InstalledDesiredVersions.drop())
+    result(collections.Consumers_InstalledDesiredVersions.drop())
   }
 
   it should "set services state" in {

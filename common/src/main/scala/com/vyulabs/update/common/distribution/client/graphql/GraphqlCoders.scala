@@ -121,10 +121,6 @@ trait ConsumersAdministrationCoder {
       GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
   def removeProvider(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeProvider", Seq(GraphqlArgument("distribution" -> distribution)))
-
-  def downloadProviderVersion(distribution: DistributionId, service: ServiceId, version: DeveloperDistributionVersion) =
-    GraphqlMutation[String]("downloadProviderVersion",
-      Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("version" -> version, "DeveloperDistributionVersionInput")))
 }
 
 trait BuildDeveloperVersionCoder {
@@ -143,11 +139,14 @@ trait RemoveDeveloperVersionCoder {
 }
 
 trait BuildClientVersionCoder {
-  def buildClientVersion(service: ServiceId, developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion) =
+  def updateClientVersions(distribution: DistributionId, versions: Seq[DeveloperDesiredVersion]) =
+    GraphqlMutation[String]("updateClientVersions", Seq(
+      GraphqlArgument("distribution" -> distribution),
+      GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
+  def buildClientVersion(service: ServiceId, version: ClientDistributionVersion) =
     GraphqlMutation[String]("buildClientVersion", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("developerVersion" -> developerVersion, "DeveloperDistributionVersionInput"),
-      GraphqlArgument("clientVersion" -> clientVersion, "ClientDistributionVersionInput")))
+      GraphqlArgument("clientVersion" -> version, "ClientDistributionVersionInput")))
 }
 
 trait RemoveClientVersionCoder {
@@ -230,7 +229,7 @@ object DeveloperGraphqlCoder {
 
 object AdministratorQueriesCoder extends DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
-object AdministratorMutationsCoder extends SourcesAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
+object AdministratorMutationsCoder extends SourcesAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder with BuildClientVersionCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
 object AdministratorSubscriptionsCoder extends SubscribeTaskLogsCoder {}
 

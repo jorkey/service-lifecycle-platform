@@ -55,44 +55,38 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
     } yield desiredVersions
   }
 
-  def downloadProviderVersion(distributionProvider: DistributionId, service: ServiceId, version: DeveloperDistributionVersion)
-                             (implicit log: Logger): TaskId = {
-    val task = taskManager.create(s"Download and install developer version ${version} of service ${service}",
-      (task, logger) => {
-        implicit val log = logger
-        val future = for {
-          distributionProviderClient <- getDistributionProviderClient(distributionProvider)
-          versionExists <- getDeveloperVersionsInfo(
-            Some(service), Some(version.distribution), Some(version.developerVersion)).map(!_.isEmpty)
-          _ <-
-            if (!versionExists) {
-              log.info(s"Download provider version ${version}")
-              val imageFile = File.createTempFile("version", "image")
-              for {
-                _ <- distributionProviderClient.downloadDeveloperVersionImage(service, version, imageFile)
-                  .andThen {
-                    case Success(_) =>
-                      imageFile.renameTo(directory.getDeveloperVersionImageFile(service, version))
-                    case _ =>
-                  }.andThen { case _ => imageFile.delete() }
-                versionInfo <- distributionProviderClient.graphqlRequest(
-                  distributionQueries.getDeveloperVersionsInfo(service, Some(version.distribution), Some(version.developerVersion))).map(_.headOption)
-                _ <- versionInfo match {
-                  case Some(versionInfo) =>
-                    addDeveloperVersionInfo(versionInfo)
-                  case None =>
-                    Future()
-                }
-                _ <- setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service, Some(version))))
-              } yield {}
-            } else {
-              log.info(s"Version ${version} already exists")
-              Future()
+  def downloadProviderVersion(distributionProvider: DistributionId, service: ServiceId,
+                              version: DeveloperDistributionVersion)(implicit log: Logger): Future[Unit] = {
+    for {
+      distributionProviderClient <- getDistributionProviderClient(distributionProvider)
+      versionExists <- getDeveloperVersionsInfo(
+        Some(service), Some(version.distribution), Some(version.developerVersion)).map(!_.isEmpty)
+      _ <-
+        if (!versionExists) {
+          log.info(s"Download provider version ${version}")
+          val imageFile = File.createTempFile("version", "image")
+          for {
+            _ <- distributionProviderClient.downloadDeveloperVersionImage(service, version, imageFile)
+              .andThen {
+                case Success(_) =>
+                  imageFile.renameTo(directory.getDeveloperVersionImageFile(service, version))
+                case _ =>
+              }.andThen { case _ => imageFile.delete() }
+            versionInfo <- distributionProviderClient.graphqlRequest(
+              distributionQueries.getDeveloperVersionsInfo(service, Some(version.distribution), Some(version.developerVersion))).map(_.headOption)
+            _ <- versionInfo match {
+              case Some(versionInfo) =>
+                addDeveloperVersionInfo(versionInfo)
+              case None =>
+                Future()
             }
-        } yield {}
-        (future, None)
-      })
-    task.task
+            _ <- setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service, Some(version))))
+          } yield {}
+        } else {
+          log.info(s"Version ${version} already exists")
+          Future()
+        }
+    } yield {}
   }
 
   def getProvidersInfo(distribution: Option[DistributionId] = None)(implicit log: Logger): Future[Seq[DistributionProviderInfo]] = {

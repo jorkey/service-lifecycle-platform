@@ -31,21 +31,6 @@ trait StateUtils extends SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  def setInstalledDesiredVersions(distribution: DistributionId, desiredVersions: Seq[ClientDesiredVersion])(implicit log: Logger): Future[Unit] = {
-    val clientArg = Filters.eq("distribution", distribution)
-    collections.State_InstalledDesiredVersions.update(clientArg, _ => Some(InstalledDesiredVersions(distribution, desiredVersions))).map(_ => ())
-  }
-
-  def getInstalledDesiredVersions(distribution: DistributionId, services: Set[ServiceId] = Set.empty)(implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
-    val clientArg = Filters.eq("distribution", distribution)
-    collections.State_InstalledDesiredVersions.find(clientArg).map(_.headOption.map(_.versions).getOrElse(Seq.empty[ClientDesiredVersion]))
-      .map(_.filter(v => services.isEmpty || services.contains(v.service)).sortBy(_.service))
-  }
-
-  def getInstalledDesiredVersion(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Option[ClientDesiredVersion]] = {
-    getInstalledDesiredVersions(distribution, Set(service)).map(_.headOption)
-  }
-
   def setTestedVersions(distribution: DistributionId, servicesProfile: ServicesProfileId,
                         desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     for {

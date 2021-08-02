@@ -45,6 +45,7 @@ object Common {
   val ProfileFileNameMatch = "profile-x.json"
 
   val CommonConsumerProfile = "common"
+  val OwnConsumerProfile = "own"
 
   val CommonServiceProfile = "common"
 

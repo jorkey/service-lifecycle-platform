@@ -68,6 +68,7 @@ object BuilderMain extends App {
             !distributionBuilder.addDistributionAccounts() ||
             !distributionBuilder.generateAndUploadInitialVersions(author) ||
             !distributionBuilder.addCommonServicesProfile() ||
+            !distributionBuilder.addOwnServicesProfile() ||
             !distributionBuilder.installBuilderFromSources() ||
             !distributionBuilder.removeTemporaryDistributionAccounts()) {
             Utils.error("Build distribution error")
@@ -110,11 +111,10 @@ object BuilderMain extends App {
           case "buildClientVersion" =>
             val author = arguments.getValue("author")
             val service = arguments.getValue("service")
-            val developerVersion = DeveloperDistributionVersion.parse(arguments.getValue("developerVersion"))
-            val clientVersion = ClientDistributionVersion.parse(arguments.getValue("clientVersion"))
-            val buildArguments = Map("distribDirectoryUrl" -> distributionUrl, "version" -> clientVersion.toString)
+            val version = ClientDistributionVersion.parse(arguments.getValue("version"))
+            val buildArguments = Map("distribDirectoryUrl" -> distributionUrl, "version" -> version.toString)
             val clientBuilder = new ClientBuilder(new File("."), distribution)
-            if (!clientBuilder.buildClientVersion(distributionClient, service, developerVersion, clientVersion, author, buildArguments)) {
+            if (!clientBuilder.buildClientVersion(distributionClient, service, version, author, buildArguments)) {
               Utils.error("Client version is not generated")
             }
         }

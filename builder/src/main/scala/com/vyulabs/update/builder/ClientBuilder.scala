@@ -35,20 +35,21 @@ class ClientBuilder(builderDir: File, val distribution: DistributionId) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
-                         developerVersion: DeveloperDistributionVersion, clientVersion: ClientDistributionVersion,
-                         author: String, arguments: Map[String, String])(implicit log: Logger): Boolean = {
+                         version: ClientDistributionVersion, author: String, arguments: Map[String, String])
+                         (implicit log: Logger): Boolean = {
+    val developerVersion = DeveloperDistributionVersion.from(version)
     val versionInfo = downloadDeveloperVersion(distributionClient, service, developerVersion).getOrElse {
       log.error(s"Can't download developer version ${developerVersion} of service ${service}")
       return false
     }
 
     if (!generateClientVersion(service, arguments)) {
-      log.error(s"Can't generate client version ${clientVersion} of service ${service}")
+      log.error(s"Can't generate client version ${version} of service ${service}")
       return false
     }
 
-    log.info(s"Upload client version ${clientVersion} of service ${service}")
-    uploadClientVersion(distributionClient, service, clientVersion,
+    log.info(s"Upload client version ${version} of service ${service}")
+    uploadClientVersion(distributionClient, service, version,
       author, versionInfo.buildInfo)
   }
 

@@ -158,6 +158,7 @@ mutation removeServiceSources ($service: String!) {
 
 query serviceProfiles {
     serviceProfiles { profile }
+    serviceProfiles { profile }
 }
 
 query profileServices ($profile: String!) {

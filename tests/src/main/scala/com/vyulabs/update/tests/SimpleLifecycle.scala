@@ -95,6 +95,7 @@ class SimpleLifecycle {
     if (!distributionBuilder.addUpdateServicesSources() ||
         !distributionBuilder.generateAndUploadInitialVersions(author) ||
         !distributionBuilder.addCommonServicesProfile() ||
+        !distributionBuilder.addOwnServicesProfile() ||
         !distributionBuilder.installBuilderFromSources()) {
       sys.error("Can't initialize distribution")
     }
@@ -209,7 +210,6 @@ class SimpleLifecycle {
 
     println("--------------------------- Build client version of test service")
     val task1 = developerClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
-        DeveloperDistributionVersion.from(distribution, version),
         ClientDistributionVersion.from(distribution, version, 0))).getOrElse {
       sys.error("Can't execute build client version task")
     }

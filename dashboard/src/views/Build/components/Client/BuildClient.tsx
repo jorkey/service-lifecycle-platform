@@ -6,10 +6,10 @@ import {
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
-  DistributionInfo, DistributionProviderInfo,
+  DistributionProviderInfo,
   useClientVersionsInfoQuery,
   useDeveloperVersionsInfoQuery,
-  useDeveloperVersionsInProcessQuery, useProviderDesiredVersionsLazyQuery,
+  useProviderDesiredVersionsLazyQuery,
   useProvidersInfoQuery
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
@@ -17,9 +17,6 @@ import {Version} from "../../../../common";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import {useHistory} from "react-router-dom";
-import BuildIcon from "@material-ui/icons/Build";
-import VisibilityIcon from "@material-ui/icons/Visibility";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Checkbox from "@material-ui/core/Checkbox";
@@ -98,6 +95,15 @@ const BuildClient = () => {
     onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
+
+  // useBuildClientVersionMutation({
+  //   fetchPolicy: 'no-cache',
+  //   variables: {
+  //     service:
+  //     developerVersion
+  //     clientVersion
+  //   }
+  // })
 
   React.useEffect(() => {
     if (provider) {
@@ -234,9 +240,10 @@ const BuildClient = () => {
              className={classes.versionsTable}
              columns={columns}
              rows={rows?rows:[]}
-             select={!provider?.testConsumer}
+             select={!provider?.testConsumer || rebuildWithNewConfig}
              selectedRows={
-               !provider?.testConsumer ? selectedRows : new Set(rows.map((row, num) => num))
+               (!provider?.testConsumer || rebuildWithNewConfig) ? selectedRows :
+                 new Set(rows.map((row, num) => num))
              }
              onRowSelected={(row, columns) => {
                setSelectedRows(new Set(selectedRows.add(row)))
