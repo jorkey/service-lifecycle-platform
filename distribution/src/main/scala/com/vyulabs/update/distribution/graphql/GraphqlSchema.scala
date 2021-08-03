@@ -21,7 +21,18 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
     extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
-      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with AccountsUtils
+      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with AccountsUtils {
+  protected val sourceUtils = this
+  protected val distributionInfoUtils = this
+  protected val serviceProfilesUtils = this
+  protected val distributionProvidersUtils = this
+  protected val distributionConsumersUtils = this
+  protected val developerVersionUtils = this
+  protected val clientVersionUtils = this
+  protected val stateUtils = this
+  protected val runBuilderUtils = this
+  protected val accountUtils = this
+}
 
 case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)
 

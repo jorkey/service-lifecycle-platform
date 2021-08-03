@@ -22,7 +22,7 @@ import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-trait DistributionConsumersUtils extends DeveloperVersionUtils with SprayJsonSupport {
+trait DistributionConsumersUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext

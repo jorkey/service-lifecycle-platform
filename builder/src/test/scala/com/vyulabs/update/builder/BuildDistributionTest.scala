@@ -54,6 +54,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       providerMongoDbName,true, 8000)
     assert(providerDistributionBuilder.buildDistributionFromSources())
     assert(providerDistributionBuilder.addDistributionAccounts())
+    assert(providerDistributionBuilder.addConsumerAccount("consumer"))
     assert(providerDistributionBuilder.generateAndUploadInitialVersions("ak"))
     assert(providerDistributionBuilder.addCommonServicesProfile())
     assert(providerDistributionBuilder.addOwnServicesProfile())
@@ -67,10 +68,12 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       consumerDistributionName, "Test client distribution server",
       consumerMongoDbName,true, 8001)
 
-    assert(consumerDistributionBuilder.buildFromProviderDistribution(consumerDistributionName, "http://builder:builder@localhost:8000",
+    assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
+      "http://consumer:consumer@localhost:8000",
       Common.CommonConsumerProfile, None))
-    assert(consumerDistributionBuilder.updateDistributionFromProvider())
+    assert(consumerDistributionBuilder.addDistributionAccounts())
     assert(consumerDistributionBuilder.installBuilder(None))
+    assert(consumerDistributionBuilder.updateDistributionFromProvider())
   }
 
   def startService(directory: File): Boolean = {

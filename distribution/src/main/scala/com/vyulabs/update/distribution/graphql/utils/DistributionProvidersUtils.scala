@@ -22,13 +22,15 @@ import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSupport {
+trait DistributionProvidersUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
 
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
+
+  protected val developerVersionUtils: DeveloperVersionUtils
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -59,11 +61,11 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
                               version: DeveloperDistributionVersion)(implicit log: Logger): Future[Unit] = {
     for {
       distributionProviderClient <- getDistributionProviderClient(distributionProvider)
-      versionExists <- getDeveloperVersionsInfo(
+      versionExists <- developerVersionUtils.getDeveloperVersionsInfo(
         Some(service), Some(version.distribution), Some(version.developerVersion)).map(!_.isEmpty)
       _ <-
         if (!versionExists) {
-          log.info(s"Download provider version ${version}")
+          log.info(s"Download developer version ${version} of service ${service}")
           val imageFile = File.createTempFile("version", "image")
           for {
             _ <- distributionProviderClient.downloadDeveloperVersionImage(service, version, imageFile)
@@ -76,11 +78,11 @@ trait DistributionProvidersUtils extends DeveloperVersionUtils with SprayJsonSup
               distributionQueries.getDeveloperVersionsInfo(service, Some(version.distribution), Some(version.developerVersion))).map(_.headOption)
             _ <- versionInfo match {
               case Some(versionInfo) =>
-                addDeveloperVersionInfo(versionInfo)
+                developerVersionUtils.addDeveloperVersionInfo(versionInfo)
               case None =>
                 Future()
             }
-            _ <- setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service, Some(version))))
+            _ <- developerVersionUtils.setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service, Some(version))))
           } yield {}
         } else {
           log.info(s"Version ${version} already exists")

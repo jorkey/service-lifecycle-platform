@@ -14,11 +14,14 @@ import org.slf4j.Logger
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ClientVersionUtils extends DeveloperVersionUtils with DistributionProvidersUtils with RunBuilderUtils {
+trait ClientVersionUtils {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
   protected val taskManager: TaskManager
+
+  protected val distributionProvidersUtils: DistributionProvidersUtils
+  protected val runBuilderUtils: RunBuilderUtils
 
   protected implicit val executionContext: ExecutionContext
 
@@ -30,7 +33,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionProvider
         implicit val log = logger
         (for {
           _ <- Future.sequence(versions
-            .map(version => downloadProviderVersion(distribution, version.service, version.version)))
+            .map(version => distributionProvidersUtils.downloadProviderVersion(distribution, version.service, version.version)))
           _ <- {
             val results = versions.map(version => buildClientVersion(task, version.service,
               ClientDistributionVersion.from(version.version, 0), author))
@@ -55,7 +58,7 @@ trait ClientVersionUtils extends DeveloperVersionUtils with DistributionProvider
     val arguments = Seq("buildClientVersion",
       s"distribution=${config.distribution}", s"service=${service}",
       s"version=${version.toString}", s"author=${author}")
-    runBuilder(task, arguments)
+    runBuilderUtils.runBuilder(task, arguments)
   }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {

@@ -20,13 +20,16 @@ import spray.json._
 import java.io.IOException
 import java.util.Date
 
-trait DeveloperVersionUtils extends ServiceProfilesUtils
-    with StateUtils with RunBuilderUtils with SprayJsonSupport {
+trait DeveloperVersionUtils extends SprayJsonSupport {
 
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
   protected val taskManager: TaskManager
+
+  protected val serviceProfilesUtils: ServiceProfilesUtils
+  protected val stateUtils: StateUtils
+  protected val runBuilderUtils: RunBuilderUtils
 
   protected implicit val executionContext: ExecutionContext
 
@@ -44,7 +47,7 @@ trait DeveloperVersionUtils extends ServiceProfilesUtils
           val arguments = Seq("buildDeveloperVersion",
             s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
             s"sources=${sources.toJson.compactPrint}", s"comment=${comment}")
-          val (builderFuture, cancel) = runBuilder(task, arguments)
+          val (builderFuture, cancel) = runBuilderUtils.runBuilder(task, arguments)
           val future = builderFuture.flatMap(_ => {
             setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
               Some(DeveloperDistributionVersion(config.distribution, version.build)))))
@@ -114,7 +117,7 @@ trait DeveloperVersionUtils extends ServiceProfilesUtils
   }
 
   def setDeveloperDesiredVersions(deltas: Seq[DeveloperDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
-    log.info(s"Upload developer desired versions ${deltas}")
+    log.info(s"Set developer desired versions ${deltas}")
     collections.Developer_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
       val desiredVersionsMap = DeveloperDesiredVersions.toMap(desiredVersions.map(_.versions).getOrElse(Seq.empty))
       val newVersions =
@@ -145,7 +148,7 @@ trait DeveloperVersionUtils extends ServiceProfilesUtils
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      servicesProfile <- getServicesProfile(profile)
+      servicesProfile <- serviceProfilesUtils.getServicesProfile(profile)
       versions <- Future(desiredVersions.filter(version => servicesProfile.services.contains(version.service)))
     } yield versions
   }
@@ -156,7 +159,7 @@ trait DeveloperVersionUtils extends ServiceProfilesUtils
       developerVersions <- testConsumer match {
         case Some(testDistributionConsumer) =>
           for {
-            testedVersions <- getTestedVersions(profile).map(testedVersions => {
+            testedVersions <- stateUtils.getTestedVersions(profile).map(testedVersions => {
               testedVersions match {
                 case Some(testedVersions) =>
                   val testCondition = testedVersions.signatures.exists(signature => signature.distribution == testDistributionConsumer)
@@ -179,8 +182,8 @@ trait DeveloperVersionUtils extends ServiceProfilesUtils
   private def getBusyVersions(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Set[DeveloperVersion]] = {
     for {
       desiredVersion <- getDeveloperDesiredVersion(service)
-      profiles <- getServiceProfiles(None)
-      testedVersions <- Future.sequence(profiles.map(profile => getTestedVersions(profile.profile))).map(
+      profiles <- serviceProfilesUtils.getServiceProfiles(None)
+      testedVersions <- Future.sequence(profiles.map(profile => stateUtils.getTestedVersions(profile.profile))).map(
         _.flatten.map(_.versions.find(_.service == service).map(_.version)).flatten)
     } yield {
       (desiredVersion.toSet ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)

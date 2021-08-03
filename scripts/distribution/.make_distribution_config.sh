@@ -2,11 +2,11 @@
 set -e
 
 function exitUsage() {
-  >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port>"
+  >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port> <builderDistribution>"
   exit 1
 }
 
-if [ $# -ne 6 ]; then
+if [ $# -ne 7 ]; then
   exitUsage
 fi
 
@@ -16,6 +16,7 @@ distributionTitle=$3
 mongoDbName=$4
 mongoDbTemporary=$5
 port=$6
+builderDistribution=$7
 
 jwtSecret=`openssl rand -base64 32`
 
@@ -31,7 +32,7 @@ else
   exit 1
 fi
 
-jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port}" >distribution.json <<EOF
+jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port} | .builder.distribution=\"${builderDistribution}\"" >distribution.json <<EOF
 {
   "distribution": "undefined",
   "title": "undefined",
@@ -44,6 +45,9 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
   },
   "network": {
     "port" : 8000
+  },
+  "builder": {
+    "distribution": "undefined"
   },
   "versions": {
     "maxHistorySize": 100

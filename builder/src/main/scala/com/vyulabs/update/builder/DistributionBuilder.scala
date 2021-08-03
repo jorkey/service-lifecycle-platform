@@ -60,7 +60,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Install distribution service")
     log.info("")
-    if (!installDistributionService(initialClientVersion, initialClientVersion)) {
+    if (!installDistributionService(initialClientVersion, initialClientVersion, distribution)) {
       log.error("Can't install distribution service")
       return false
     }
@@ -72,10 +72,18 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def addDistributionAccounts(): Boolean = {
-    log.info(s"--------------------------- Add distribution users")
-    if (!addServiceAccount(Common.InstallerServiceName, "Temporary install user", AccountRole.Developer) ||
-        !addServiceAccount(Common.BuilderServiceName, "Builder service user", AccountRole.Builder) ||
-        !addServiceAccount(Common.UpdaterServiceName, "Updater service user", AccountRole.Updater)) {
+    log.info(s"--------------------------- Add distribution accounts")
+    if (!addServiceAccount(Common.InstallerServiceName, "Temporary install account", AccountRole.Developer) ||
+        !addServiceAccount(Common.BuilderServiceName, "Builder service account", AccountRole.Builder) ||
+        !addServiceAccount(Common.UpdaterServiceName, "Updater service account", AccountRole.Updater)) {
+      return false
+    }
+    true
+  }
+
+  def addConsumerAccount(consumer: String): Boolean = {
+    log.info(s"--------------------------- Add consumer users")
+    if (!addServiceAccount(consumer, "Distribution Consumer", AccountRole.Distribution)) {
       return false
     }
     true
@@ -108,7 +116,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Install distribution service")
     log.info("")
-    if (!installDistributionService(scriptsVersion, distributionVersion)) {
+    if (!installDistributionService(scriptsVersion, distributionVersion, providerDistributionName)) {
       log.error("Can't install distribution service")
       return false
     }
@@ -185,7 +193,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
     log.info(s"--------------------------- Versions for update ${versionsForUpdate}")
     versionsForUpdate.foreach { case (service, version) =>
-      log.info(s"--------------------------- Install provider version ${version} of service ${service}")
+      log.info(s"--------------------------- Install version ${version} of service ${service}")
       val task = adminDistributionClient.get.graphqlRequest(administratorMutations.updateClientVersions(providerDistributionName.get,
           Seq(DeveloperDesiredVersion(service, version)))).getOrElse {
         log.error(s"Can't install provider developer version ${version} of service ${service}")
@@ -306,7 +314,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def installDistributionService(scriptsVersion: ClientDistributionVersion, distributionVersion: ClientDistributionVersion): Boolean = {
+  private def installDistributionService(scriptsVersion: ClientDistributionVersion,
+                                         distributionVersion: ClientDistributionVersion,
+                                         builderDistribution: DistributionId): Boolean = {
     if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory.directory) ||
       !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory.directory, Common.UpdateSh)) ||
       !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDirectory.directory)) {
@@ -326,7 +336,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
       return false
     }
     log.info(s"--------------------------- Make distribution config file")
-    val arguments = Seq(cloudProvider, distribution, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString)
+    val arguments = Seq(cloudProvider, distribution, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString,
+      builderDistribution)
     if (!ProcessUtils.runProcess("/bin/sh", ".make_distribution_config.sh" +: arguments, Map.empty,
       distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
@@ -350,7 +361,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  private def addServiceAccount(user: AccountId, name: String, role: AccountRole): Boolean = {
+  def addServiceAccount(user: AccountId, name: String, role: AccountRole): Boolean = {
     adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(user,
         name, user, Seq(role))).getOrElse {
       return false

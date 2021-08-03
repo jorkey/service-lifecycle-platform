@@ -8,15 +8,19 @@ import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-trait TestedVersionsUtils extends ClientVersionUtils {
+trait TestedVersionsUtils {
   val config: DistributionConfig
+
+  protected implicit val executionContext: ExecutionContext
+
+  protected val clientVersionUtils: ClientVersionUtils
 
   def signVersionsAsTested(developerDistributionClient: DistributionClient[AkkaSource])
                           (implicit log: Logger): Future[Boolean] = {
     for {
-      clientDesiredVersions <- getClientDesiredVersions().map(ClientDesiredVersions.toMap(_))
+      clientDesiredVersions <- clientVersionUtils.getClientDesiredVersions().map(ClientDesiredVersions.toMap(_))
       developerDesiredVersions <- developerDistributionClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions()).map(DeveloperDesiredVersions.toMap(_))
       result <- {
         if (!clientDesiredVersions.filter(_._2.distribution == config.distribution)

@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.utils
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.TaskId
+import com.vyulabs.update.common.common.Common.{DistributionId, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, GraphqlArgument, GraphqlMutation}
@@ -22,6 +22,7 @@ import java.io.IOException
 import java.text.ParseException
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   protected val directory: DistributionDirectory
@@ -32,14 +33,15 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   protected implicit val executionContext: ExecutionContext
   protected implicit val system: ActorSystem
 
+  protected val distributionProvidersUtils: DistributionProvidersUtils
+
   implicit val timer = new AkkaTimer(system.scheduler)
 
   def runBuilder(task: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    config.remoteBuilder match {
-      case Some(remoteBuilder) =>
-        runRemoteBuilder(task, arguments, remoteBuilder.distributionUrl)
-      case None =>
-        runLocalBuilder(task, arguments)
+    if (config.distribution == config.builder.distribution) {
+      runLocalBuilder(task, arguments)
+    } else {
+      runRemoteBuilder(task, arguments, config.builder.distribution)
     }
   }
 
@@ -92,31 +94,40 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     }).flatten, Some(() => process.map(_.terminate())))
   }
 
-  private def runRemoteBuilder(task: TaskId, arguments: Seq[String], distributionUrl: String)(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    val result = Promise[Unit]()
-    val client = new DistributionClient(new AkkaHttpClient(distributionUrl))
-    val remoteTaskId = client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder", Seq(GraphqlArgument("arguments" -> arguments.toJson))))
-    for {
-      remoteTaskId <- remoteTaskId
-      logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTaskId))
-    } yield {
-      @volatile var logOutputFuture = Option.empty[Future[Unit]]
-      logSource.map(line => {
-        for (terminationStatus <- line.line.terminationStatus) {
-          if (terminationStatus) {
-            result.success()
-          } else {
-            result.failure(throw new IOException(s"Remote builder is failed"))
+  private def runRemoteBuilder(task: TaskId, arguments: Seq[String], distribution: DistributionId)
+                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    @volatile var distributionClient = Option.empty[DistributionClient[AkkaHttpClient.AkkaSource]]
+    @volatile var remoteTaskId = Option.empty[TaskId]
+    val future = for {
+      client <- distributionProvidersUtils.getDistributionProviderInfo(distribution).map(provider => {
+        new DistributionClient(new AkkaHttpClient(provider.url)) })
+      remoteTask <- client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder",
+        Seq(GraphqlArgument("arguments" -> arguments, "[String!]"))))
+      logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
+      end <- {
+        distributionClient = Some(client)
+        remoteTaskId = Some(remoteTask)
+        val result = Promise[Unit]()
+        @volatile var logOutputFuture = Option.empty[Future[Unit]]
+        logSource.map(line => {
+          for (terminationStatus <- line.line.terminationStatus) {
+            if (terminationStatus) {
+              result.success()
+            } else {
+              result.failure(throw new IOException(s"Remote builder is failed"))
+            }
           }
-        }
-        logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-          addServiceLogs(config.distribution, Common.DistributionServiceName,
-            Some(task), config.instance, 0.toString, "", Seq(line.line)).map(_ => ())
-        })
-      }).run()
-    }
-    (result.future, Some(() => {
-      remoteTaskId.map(remoteTaskId => client.graphqlRequest(GraphqlMutation[Boolean]("cancelTask", Seq(GraphqlArgument("task" -> remoteTaskId)))).map(_ => ()))
+          logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
+            addServiceLogs(config.distribution, Common.DistributionServiceName,
+              Some(task), config.instance, 0.toString, "", Seq(line.line)).map(_ => ())
+          })
+        }).run()
+        result.future
+      }
+    } yield end
+    (future, Some(() => {
+      remoteTaskId.map(remoteTaskId => distributionClient.foreach(
+        _.graphqlRequest(GraphqlMutation[Boolean]("cancelTask", Seq(GraphqlArgument("task" -> remoteTaskId)))).map(_ => ())))
     }))
   }
 }

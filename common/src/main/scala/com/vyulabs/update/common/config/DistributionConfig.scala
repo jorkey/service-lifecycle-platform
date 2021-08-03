@@ -22,10 +22,10 @@ object NetworkConfig {
   implicit val networkConfigJson = jsonFormat2(NetworkConfig.apply)
 }
 
-case class RemoteBuilderConfig(distributionUrl: String)
+case class BuilderConfig(distribution: DistributionId)
 
-object RemoteBuilderConfig {
-  implicit val builderConfigJson = jsonFormat1(RemoteBuilderConfig.apply)
+object BuilderConfig {
+  implicit val builderConfigJson = jsonFormat1(BuilderConfig.apply)
 }
 
 case class VersionsConfig(maxHistorySize: Int)
@@ -47,12 +47,12 @@ object FaultReportsConfig {
 }
 
 case class DistributionConfig(distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
-                              mongoDb: MongoDbConfig, network: NetworkConfig, remoteBuilder: Option[RemoteBuilderConfig],
+                              mongoDb: MongoDbConfig, network: NetworkConfig, builder: BuilderConfig,
                               versions: VersionsConfig, instanceState: InstanceStateConfig, faultReports: FaultReportsConfig)
 
 object DistributionConfig {
   implicit val distributionConfigJson = jsonFormat10((name: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
-                                                      mongoDb: MongoDbConfig, network: NetworkConfig, builder: Option[RemoteBuilderConfig],
+                                                      mongoDb: MongoDbConfig, network: NetworkConfig, builder: BuilderConfig,
                                                       versions: VersionsConfig, instanceState: InstanceStateConfig,
                                                       faultReports: FaultReportsConfig) =>
     DistributionConfig.apply(name, title, instance, jwtSecret, mongoDb, network, builder,

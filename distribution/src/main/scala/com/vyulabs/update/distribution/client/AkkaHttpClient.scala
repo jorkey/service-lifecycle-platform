@@ -20,7 +20,7 @@ import spray.json._
 
 import java.io.{File, IOException}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Random
+import scala.util.{Failure, Random, Success}
 
 class AkkaHttpClient(val distributionUrl: String)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
@@ -43,6 +43,7 @@ class AkkaHttpClient(val distributionUrl: String)
           case Right(value) => throw new IOException(value)
         }
       } else {
+        log.error(s"Receive graphql error: ${response}")
         if (response.status == StatusCodes.Unauthorized) {
           accessToken = None
         }

@@ -64,13 +64,13 @@ object BuilderMain extends App {
 
         if (command == "buildProviderDistribution") {
           if (!distributionBuilder.buildDistributionFromSources() ||
-            !distributionBuilder.addUpdateServicesSources() ||
-            !distributionBuilder.addDistributionAccounts() ||
-            !distributionBuilder.generateAndUploadInitialVersions(author) ||
-            !distributionBuilder.addCommonServicesProfile() ||
-            !distributionBuilder.addOwnServicesProfile() ||
-            !distributionBuilder.installBuilderFromSources() ||
-            !distributionBuilder.removeTemporaryDistributionAccounts()) {
+              !distributionBuilder.addUpdateServicesSources() ||
+              !distributionBuilder.addDistributionAccounts() ||
+              !distributionBuilder.generateAndUploadInitialVersions(author) ||
+              !distributionBuilder.addCommonServicesProfile() ||
+              !distributionBuilder.addOwnServicesProfile() ||
+              !distributionBuilder.installBuilderFromSources() ||
+              !distributionBuilder.removeTemporaryDistributionAccounts()) {
             Utils.error("Build distribution error")
           }
         } else {
@@ -79,8 +79,8 @@ object BuilderMain extends App {
           val servicesProfile = arguments.getValue("servicesProfile")
           val testDistributionMatch = arguments.getOptionValue("testDistributionMatch")
           if (!distributionBuilder.buildFromProviderDistribution(providerDistributionName, providerDistributionURL, servicesProfile, testDistributionMatch) ||
-            !distributionBuilder.updateDistributionFromProvider() ||
-            !distributionBuilder.installBuilder(None)) {
+              !distributionBuilder.installBuilder(None) ||
+              !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }
         }

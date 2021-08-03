@@ -155,9 +155,9 @@ function getServiceVersionFile {
 #  stdout - version
 function getCurrentVersion {
   set -e
-  local storedDesiredVersionFile=`getServiceVersionFile $1`
-  if [ -f ${storedDesiredVersionFile} ]; then
-    jq -c . ${storedDesiredVersionFile}
+  local currentVersionFile=`getServiceVersionFile $1`
+  if [ -f ${currentVersionFile} ]; then
+    jq -c . ${currentVersionFile}
   else
     echo
   fi
