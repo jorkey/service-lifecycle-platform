@@ -102,9 +102,10 @@ trait SourcesAdministrationCoder {
 }
 
 trait AccountsAdministrationCoder {
-  def addAccount(account: AccountId, name: String, password: String, roles: Seq[AccountRole]) =
+  def addAccount(account: AccountId, name: String, password: String, roles: Seq[AccountRole], profile: Option[ServicesProfileId] = None) =
     GraphqlMutation[Boolean]("addAccount", Seq(GraphqlArgument("account" -> account),
-      GraphqlArgument("name" -> name), GraphqlArgument("password" -> password), GraphqlArgument("roles" -> roles, "[AccountRole!]")))
+      GraphqlArgument("name" -> name), GraphqlArgument("password" -> password),
+      GraphqlArgument("roles" -> roles, "[AccountRole!]")) ++ profile.map(profile => GraphqlArgument("profile" -> profile)))
   def removeAccount(account: AccountId) =
     GraphqlMutation[Boolean]("removeAccount", Seq(GraphqlArgument("account" -> account)))
 }

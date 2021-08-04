@@ -54,11 +54,11 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       providerMongoDbName,true, 8000)
     assert(providerDistributionBuilder.buildDistributionFromSources())
     assert(providerDistributionBuilder.addDistributionAccounts())
-    assert(providerDistributionBuilder.addConsumerAccount("consumer"))
     assert(providerDistributionBuilder.generateAndUploadInitialVersions("ak"))
     assert(providerDistributionBuilder.addCommonServicesProfile())
     assert(providerDistributionBuilder.addOwnServicesProfile())
     assert(providerDistributionBuilder.installBuilderFromSources())
+    assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName, "Distribution Consumer", Common.CommonConsumerProfile))
 
     log.info("")
     log.info(s"########################### Build consumer distribution from provider distribution")
@@ -69,7 +69,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       consumerMongoDbName,true, 8001)
 
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
-      "http://consumer:consumer@localhost:8000",
+      "http://localhost:8000", Common.BuilderServiceName, consumerDistributionName,
       Common.CommonConsumerProfile, None))
     assert(consumerDistributionBuilder.addDistributionAccounts())
     assert(consumerDistributionBuilder.installBuilder(None))

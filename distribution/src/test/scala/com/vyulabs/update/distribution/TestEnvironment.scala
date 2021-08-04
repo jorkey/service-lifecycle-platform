@@ -73,13 +73,13 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   val adminCredentials = AccountCredentials(Seq(AccountRole.Administrator), None, PasswordHash(adminHttpCredentials.password))
   val developerCredentials = AccountCredentials(Seq(AccountRole.Developer), None, PasswordHash(developerHttpCredentials.password))
-  val distributionCredentials = AccountCredentials(Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile), PasswordHash(distributionHttpCredentials.password))
+  val distributionCredentials = AccountCredentials(Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile), PasswordHash(distributionHttpCredentials.password))
   val builderCredentials = AccountCredentials(Seq(AccountRole.Builder), None, PasswordHash(builderHttpCredentials.password))
   val updaterCredentials = AccountCredentials(Seq(AccountRole.Updater), None, PasswordHash(updaterHttpCredentials.password))
 
   val adminContext = GraphqlContext(Some(AccessToken("admin", Seq(AccountRole.Administrator), None)), workspace)
   val developerContext = GraphqlContext(Some(AccessToken("developer", Seq(AccountRole.Developer), None)), workspace)
-  val distributionContext = GraphqlContext(Some(AccessToken("distribution", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
+  val distributionContext = GraphqlContext(Some(AccessToken("distribution", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
   val builderContext = GraphqlContext(Some(AccessToken("builder", Seq(AccountRole.Builder), None)), workspace)
   val updaterContext = GraphqlContext(Some(AccessToken("updater", Seq(AccountRole.Updater), None)), workspace)
 

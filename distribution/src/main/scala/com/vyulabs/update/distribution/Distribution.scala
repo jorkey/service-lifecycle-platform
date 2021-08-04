@@ -65,7 +65,7 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                 workspace.getAccessToken()(log) { case token =>
                   path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Distribution)) {
+                      authorize(token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Consumer)) {
                         getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
                           DeveloperDistributionVersion.parse(version)))
                       }
@@ -100,7 +100,7 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                         getFromFile(workspace.directory.getFaultReportFile(faultId))
                       }
                     } ~ post {
-                      authorize(token.hasRole(AccountRole.Updater) || token.hasRole(AccountRole.Distribution)) {
+                      authorize(token.hasRole(AccountRole.Updater) || token.hasRole(AccountRole.Consumer)) {
                         fileUpload(faultReportPath) {
                           case (fileInfo, byteSource) =>
                             log.info(s"Receive fault report file from client ${workspace.config.distribution}")

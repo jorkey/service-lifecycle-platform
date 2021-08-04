@@ -3,7 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.config._
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, AccountId}
+import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId}
 import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
@@ -11,12 +11,13 @@ import com.vyulabs.update.common.distribution.server.{DistributionDirectory, Ins
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.process.ProcessUtils
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
@@ -44,7 +45,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private var distributionConfig = Option.empty[DistributionConfig]
 
   private var providerDistributionName = Option.empty[DistributionId]
-  private var providerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
+  private var providerBuilderClient = Option.empty[SyncDistributionClient[SyncSource]]
 
   def buildDistributionFromSources(): Boolean = {
     log.info("")
@@ -81,14 +82,6 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def addConsumerAccount(consumer: String): Boolean = {
-    log.info(s"--------------------------- Add consumer users")
-    if (!addServiceAccount(consumer, "Distribution Consumer", AccountRole.Distribution)) {
-      return false
-    }
-    true
-  }
-
   def removeTemporaryDistributionAccounts(): Boolean = {
     log.info(s"--------------------------- Remove temporary distribution users")
     if (!removeAccount(Common.InstallerServiceName)) {
@@ -97,26 +90,28 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def buildFromProviderDistribution(providerDistributionName: DistributionId, providerDistributionURL: String,
+  def buildFromProviderDistribution(provider: DistributionId, providerURL: String,
+                                    providerBuilderPassword: String, providerConsumerPassword: String,
                                     servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Boolean = {
-    this.providerDistributionName = Some(providerDistributionName)
-    providerDistributionClient = Some(new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(providerDistributionURL)), FiniteDuration(60, TimeUnit.SECONDS)))
+    this.providerDistributionName = Some(provider)
+    providerBuilderClient = Some(new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(
+        Utils.addCredentialsToUrl(providerURL, Common.BuilderServiceName, providerBuilderPassword))), FiniteDuration(60, TimeUnit.SECONDS)))
 
     log.info("")
     log.info(s"########################### Download and generate client versions")
     log.info("")
-    val scriptsVersion = downloadAndGenerateClientVersion(providerDistributionClient.get, Common.ScriptsServiceName).getOrElse {
+    val scriptsVersion = downloadAndGenerateClientVersion(providerBuilderClient.get, Common.ScriptsServiceName).getOrElse {
       return false
     }
-    val distributionVersion = downloadAndGenerateClientVersion(providerDistributionClient.get, Common.DistributionServiceName).getOrElse {
+    val distributionVersion = downloadAndGenerateClientVersion(providerBuilderClient.get, Common.DistributionServiceName).getOrElse {
       return false
     }
 
     log.info("")
     log.info(s"########################### Install distribution service")
     log.info("")
-    if (!installDistributionService(scriptsVersion, distributionVersion, providerDistributionName)) {
+    if (!installDistributionService(scriptsVersion, distributionVersion, provider)) {
       log.error("Can't install distribution service")
       return false
     }
@@ -124,7 +119,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Add distribution provider to distribution server")
     log.info("")
-    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addProvider(providerDistributionName, providerDistributionURL, None)).getOrElse(false)) {
+    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addProvider(provider,
+        Utils.addCredentialsToUrl(providerURL, distribution, providerConsumerPassword), None)).getOrElse(false)) {
       log.error(s"Can't add distribution provider")
       return false
     }
@@ -378,6 +374,14 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
+  def addConsumerAccount(distribution: AccountId, name: String, profile: ServicesProfileId): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(distribution,
+        name, distribution, Seq(AccountRole.Consumer), Some(profile))).getOrElse {
+      return false
+    }
+    true
+  }
+
   private def removeAccount(user: AccountId): Boolean = {
     adminDistributionClient.get.graphqlRequest(administratorMutations.removeAccount(user)).getOrElse {
       return false
@@ -486,7 +490,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
     val protocol = if (config.network.ssl.isDefined) "https" else "http"
     val port = config.network.port
-    s"${protocol}://${user}:${user}@localhost:${port}"
+    Utils.addCredentialsToUrl(s"${protocol}://localhost:${port}", user, user)
   }
 
   private def startDistributionService(): Boolean = {

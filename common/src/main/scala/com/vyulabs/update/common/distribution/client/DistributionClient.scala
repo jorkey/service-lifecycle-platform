@@ -32,7 +32,7 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
               new URL(null, client.distributionUrl, new URLStreamHandler() {
                 override def openConnection(u: URL): URLConnection = null
               }
-          ).getUserInfo match {
+              ).getUserInfo match {
                 case authTokenRx(user, password) =>
                   val future = client.graphql(LoginCoder.login(user, password))
                     .andThen { case result =>

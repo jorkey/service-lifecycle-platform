@@ -69,6 +69,16 @@ object Utils {
     }
   }
 
+  def addCredentialsToUrl(url: String, user: String, password: String): String = {
+    val index1 = url.indexOf("//")
+    if (index1 != -1) {
+      val index2 = if (url.indexOf('@') == -1) index1 + 2 else url.indexOf('@') + 1
+      url.substring(0, index1 + 2) + user + ":" + password + "@" + url.substring(index2)
+    } else {
+      url
+    }
+  }
+
   def isServiceNeedUpdate(service: ServiceId,
                           ownVersion: Option[ClientDistributionVersion], desiredVersion: Option[ClientDistributionVersion])
                          (implicit log: Logger) : Option[ClientDistributionVersion] = {

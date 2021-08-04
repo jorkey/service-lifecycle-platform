@@ -138,17 +138,17 @@ object GraphqlSchema {
       // Developer versions
       Field("developerVersionsInProcess", ListType(DeveloperVersionInProcessInfoType),
         arguments = OptionServiceArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution, AccountRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = OptionServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution, AccountRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(OptionServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionTestConsumerArg :: OptionServicesArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Consumer) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(AccountRole.Distribution)) {
+          if (c.ctx.accessToken.get.roles.contains(AccountRole.Consumer)) {
             c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.profile.get,
               c.arg(OptionTestConsumerArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           } else {
@@ -331,18 +331,18 @@ object GraphqlSchema {
       // Distribution consumers operations
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        tags = Authorized(AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Consumer) :: Nil,
         resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.account,
           c.ctx.accessToken.get.profile.get, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
 
       // State
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        tags = Authorized(AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Consumer) :: Nil,
         resolve = c => { c.ctx.workspace.setConsumerInstalledDesiredVersions(c.ctx.accessToken.get.account, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
-        tags = Authorized(AccountRole.Updater, AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.Consumer) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
             c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distribution, c.arg(InstanceServiceStatesArg)).map(_ => true)
@@ -352,7 +352,7 @@ object GraphqlSchema {
         }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
-        tags = Authorized(AccountRole.Updater, AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.Consumer) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
             c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distribution,
@@ -364,7 +364,7 @@ object GraphqlSchema {
         }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        tags = Authorized(AccountRole.Updater, AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.Consumer) :: Nil,
         resolve = c => {
           if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
             c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distribution, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
@@ -376,13 +376,13 @@ object GraphqlSchema {
       // Run builder remotely
       Field("runBuilder", StringType,
         arguments = ArgumentsArg :: Nil,
-        tags = Authorized(AccountRole.Distribution) :: Nil,
-        resolve = c => { c.ctx.workspace.runLocalBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
+        tags = Authorized(AccountRole.Consumer) :: Nil,
+        resolve = c => { c.ctx.workspace.runBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
 
       // Cancel tasks
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer) :: Nil,
         resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) })
     )
   )
@@ -397,7 +397,7 @@ object GraphqlSchema {
           c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
       Field.subs("subscribeTaskLogs", SequencedLogLineType,
         arguments = TaskArg :: OptionFromArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Distribution) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg))),
       Field.subs("testSubscription", StringType,
         tags = Authorized(AccountRole.Developer) :: Nil,

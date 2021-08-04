@@ -28,7 +28,7 @@ class TestedVersionsTest extends TestEnvironment {
   }
 
   it should "set/get tested versions" in {
-    val graphqlContext1 = GraphqlContext(Some(AccessToken("distribution1", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
+    val graphqlContext1 = GraphqlContext(Some(AccessToken("distribution1", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -43,7 +43,7 @@ class TestedVersionsTest extends TestEnvironment {
         }
       """)))
 
-    val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
+    val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"service":"service1","version":{"distribution":"test","build":[1,1,1]}},{"service":"service2","version":{"distribution":"test","build":[2,1,1]}}]}}""").parseJson))(
@@ -60,7 +60,7 @@ class TestedVersionsTest extends TestEnvironment {
   }
 
   it should "return error if no tested versions for the client's profile" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Distribution), Some(Common.CommonServiceProfile))), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""

@@ -45,8 +45,8 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
     }
   }
 
-  def runLocalBuilderByRemoteDistribution(arguments: Seq[String])(implicit log: Logger): TaskId = {
-    val task = taskManager.create("Run local builder by remote distribution",
+  def runBuilderByRemoteDistribution(arguments: Seq[String])(implicit log: Logger): TaskId = {
+    val task = taskManager.create("Run builder by remote distribution",
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, arguments)
@@ -114,7 +114,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
             if (terminationStatus) {
               result.success()
             } else {
-              result.failure(throw new IOException(s"Remote builder is failed"))
+              result.failure(new IOException(s"Remote builder is failed"))
             }
           }
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
