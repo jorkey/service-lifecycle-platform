@@ -206,6 +206,10 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
           val l = line
           if (l.line.level == "INFO") {
             log.info(l.line.message)
+          } else if (l.line.level == "WARN") {
+            log.warn(l.line.message)
+          } else if (l.line.level == "ERROR") {
+            log.error(l.line.message)
           }
           for (terminationStatus <- l.line.terminationStatus) {
             if (!terminationStatus) {

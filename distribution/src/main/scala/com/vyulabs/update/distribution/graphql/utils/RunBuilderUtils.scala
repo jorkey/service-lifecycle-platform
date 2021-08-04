@@ -65,10 +65,10 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
         lines => {
           val logLines = lines.map(line => {
             try {
-              val array = line._1.split(" ", 6)
+              val array = line._1.split(" ", 5)
               val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
               val date = dateFormat.parse(s"${array(0)} ${array(1)}")
-              LogLine(date, array(2), array(3), array(5), None)
+              LogLine(date, array(2), array(3), array(4), None)
             } catch {
               case e: ParseException =>
                 LogLine(new Date, "INFO", "", line._1, None)
