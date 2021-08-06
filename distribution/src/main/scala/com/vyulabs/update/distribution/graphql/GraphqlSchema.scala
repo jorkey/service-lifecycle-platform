@@ -31,7 +31,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
   protected val clientVersionUtils = this
   protected val stateUtils = this
   protected val runBuilderUtils = this
-  protected val accountUtils = this
+  protected val accountsUtils = this
 }
 
 case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)

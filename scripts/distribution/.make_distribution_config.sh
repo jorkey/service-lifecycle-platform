@@ -2,11 +2,11 @@
 set -e
 
 function exitUsage() {
-  >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port> <builderDistribution>"
+  >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port> <url> <builderDistribution>"
   exit 1
 }
 
-if [ $# -ne 7 ]; then
+if [ $# -ne 8 ]; then
   exitUsage
 fi
 
@@ -16,7 +16,8 @@ distributionTitle=$3
 mongoDbName=$4
 mongoDbTemporary=$5
 port=$6
-builderDistribution=$7
+url=$7
+builderDistribution=$8
 
 jwtSecret=`openssl rand -base64 32`
 
@@ -32,7 +33,7 @@ else
   exit 1
 fi
 
-jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port} | .builder.distribution=\"${builderDistribution}\"" >distribution.json <<EOF
+jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port} | .network.url=\"${url}\" | .builder.distribution=\"${builderDistribution}\"" >distribution.json <<EOF
 {
   "distribution": "undefined",
   "title": "undefined",
@@ -44,7 +45,8 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
     "test": false
   },
   "network": {
-    "port" : 8000
+    "port" : 8000,
+    "url": "undefined"
   },
   "builder": {
     "distribution": "undefined"

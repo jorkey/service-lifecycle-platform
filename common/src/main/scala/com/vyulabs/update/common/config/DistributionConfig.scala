@@ -16,10 +16,10 @@ object MongoDbConfig {
   implicit val mongoDbConfigJson = jsonFormat3(MongoDbConfig.apply)
 }
 
-case class NetworkConfig(port: Int, ssl: Option[SslConfig])
+case class NetworkConfig(port: Int, ssl: Option[SslConfig], url: String)
 
 object NetworkConfig {
-  implicit val networkConfigJson = jsonFormat2(NetworkConfig.apply)
+  implicit val networkConfigJson = jsonFormat3(NetworkConfig.apply)
 }
 
 case class BuilderConfig(distribution: DistributionId)

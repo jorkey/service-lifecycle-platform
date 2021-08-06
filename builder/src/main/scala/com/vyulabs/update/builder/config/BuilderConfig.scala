@@ -7,16 +7,10 @@ import spray.json._
 
 import java.io.File
 
-case class DistributionLink(distribution: DistributionId, distributionUrl: String)
-
-object DistributionLink extends DefaultJsonProtocol {
-  implicit val distributionLinkJson = jsonFormat2(DistributionLink.apply)
-}
-
-case class BuilderConfig(instance: InstanceId, distributionLinks: Seq[DistributionLink])
+case class BuilderConfig(instance: InstanceId)
 
 object BuilderConfig extends DefaultJsonProtocol {
-  implicit val builderConfigJson = jsonFormat2(BuilderConfig.apply)
+  implicit val builderConfigJson = jsonFormat1(BuilderConfig.apply)
 
   def apply()(implicit log: Logger): Option[BuilderConfig] = {
     val configFile = new File("builder.json")

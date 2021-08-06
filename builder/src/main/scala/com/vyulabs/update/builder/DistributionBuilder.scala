@@ -39,15 +39,14 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private val initialClientVersion = ClientDistributionVersion.from(DeveloperDistributionVersion(distribution, Build.initialBuild), 0)
 
   private var adminDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
-  private var developerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
-  private var builderDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
+  private var installerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
+  private var providerAdminClient = Option.empty[SyncDistributionClient[SyncSource]]
 
   private var distributionConfig = Option.empty[DistributionConfig]
 
   private var providerDistributionName = Option.empty[DistributionId]
-  private var providerBuilderClient = Option.empty[SyncDistributionClient[SyncSource]]
 
-  def buildDistributionFromSources(): Boolean = {
+  def buildDistributionFromSources(distributionUrl: String): Boolean = {
     log.info("")
     log.info(s"########################### Generate initial versions of services")
     log.info("")
@@ -61,7 +60,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Install distribution service")
     log.info("")
-    if (!installDistributionService(initialClientVersion, initialClientVersion, distribution)) {
+    if (!installDistributionService(initialClientVersion, initialClientVersion, distributionUrl, distribution)) {
       log.error("Can't install distribution service")
       return false
     }
@@ -74,11 +73,12 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def addDistributionAccounts(): Boolean = {
     log.info(s"--------------------------- Add distribution accounts")
-    if (!addServiceAccount(Common.InstallerServiceName, "Temporary install account", AccountRole.Developer) ||
-        !addServiceAccount(Common.BuilderServiceName, "Builder service account", AccountRole.Builder) ||
-        !addServiceAccount(Common.UpdaterServiceName, "Updater service account", AccountRole.Updater)) {
+    if (!addServiceAccount(Common.InstallerServiceName, "Temporary install account", Seq(AccountRole.Developer, AccountRole.Builder)) ||
+        !addServiceAccount(Common.UpdaterServiceName, "Updater service account", Seq(AccountRole.Updater))) {
       return false
     }
+    installerDistributionClient = Some(new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl(makeUrlWithCredentials(Common.InstallerServiceName))), FiniteDuration(60, TimeUnit.SECONDS)))
     true
   }
 
@@ -91,27 +91,28 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def buildFromProviderDistribution(provider: DistributionId, providerURL: String,
-                                    providerBuilderPassword: String, providerConsumerPassword: String,
+                                    providerAdminPassword: String, providerConsumerPassword: String,
+                                    distributionUrl: String,
                                     servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Boolean = {
     this.providerDistributionName = Some(provider)
-    providerBuilderClient = Some(new SyncDistributionClient(
+    providerAdminClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(
-        Utils.addCredentialsToUrl(providerURL, Common.BuilderServiceName, providerBuilderPassword))), FiniteDuration(60, TimeUnit.SECONDS)))
+        Utils.addCredentialsToUrl(providerURL, Common.AdminAccount, providerAdminPassword))), FiniteDuration(60, TimeUnit.SECONDS)))
 
     log.info("")
     log.info(s"########################### Download and generate client versions")
     log.info("")
-    val scriptsVersion = downloadAndGenerateClientVersion(providerBuilderClient.get, Common.ScriptsServiceName).getOrElse {
+    val scriptsVersion = downloadAndGenerateClientVersion(providerAdminClient.get, Common.ScriptsServiceName).getOrElse {
       return false
     }
-    val distributionVersion = downloadAndGenerateClientVersion(providerBuilderClient.get, Common.DistributionServiceName).getOrElse {
+    val distributionVersion = downloadAndGenerateClientVersion(providerAdminClient.get, Common.DistributionServiceName).getOrElse {
       return false
     }
 
     log.info("")
     log.info(s"########################### Install distribution service")
     log.info("")
-    if (!installDistributionService(scriptsVersion, distributionVersion, provider)) {
+    if (!installDistributionService(scriptsVersion, distributionVersion, distributionUrl, provider)) {
       log.error("Can't install distribution service")
       return false
     }
@@ -268,8 +269,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     log.info(s"--------------------------- Create builder config")
-    val distributionLinks = Seq(DistributionLink(distribution, makeDistributionUrl("builder")))
-    if (!IoUtils.writeJsonToFile(new File(distributionDirectory.getBuilderDir(), Common.BuilderConfigFileName), BuilderConfig(config.instance, distributionLinks))) {
+    if (!IoUtils.writeJsonToFile(new File(distributionDirectory.getBuilderDir(), Common.BuilderConfigFileName), BuilderConfig(config.instance))) {
       return false
     }
 
@@ -316,7 +316,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   private def installDistributionService(scriptsVersion: ClientDistributionVersion,
                                          distributionVersion: ClientDistributionVersion,
-                                         builderDistribution: DistributionId): Boolean = {
+                                         distributionUrl: String, builderDistribution: DistributionId): Boolean = {
     if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory.directory) ||
       !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory.directory, Common.UpdateSh)) ||
       !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDirectory.directory)) {
@@ -337,7 +337,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
     log.info(s"--------------------------- Make distribution config file")
     val arguments = Seq(cloudProvider, distribution, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString,
-      builderDistribution)
+      distributionUrl, builderDistribution)
     if (!ProcessUtils.runProcess("/bin/sh", ".make_distribution_config.sh" +: arguments, Map.empty,
       distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
@@ -351,7 +351,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     adminDistributionClient = Some(new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(makeDistributionUrl("admin"))), FiniteDuration(60, TimeUnit.SECONDS)))
+      new DistributionClient(new HttpClientImpl(makeUrlWithCredentials("admin"))), FiniteDuration(60, TimeUnit.SECONDS)))
     log.info(s"--------------------------- Start distribution service")
     if (!startDistributionService()) {
       log.error("Can't start distribution service")
@@ -361,19 +361,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def addServiceAccount(user: AccountId, name: String, role: AccountRole): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(user,
-        name, user, Seq(role))).getOrElse {
+  def addServiceAccount(user: AccountId, name: String, roles: Seq[AccountRole]): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(user, name, user, roles)).getOrElse {
       return false
-    }
-    role match {
-      case AccountRole.Developer =>
-        developerDistributionClient = Some(new SyncDistributionClient(
-          new DistributionClient(new HttpClientImpl(makeDistributionUrl(user))), FiniteDuration(60, TimeUnit.SECONDS)))
-      case AccountRole.Builder =>
-        builderDistributionClient = Some(new SyncDistributionClient(
-          new DistributionClient(new HttpClientImpl(makeDistributionUrl(user))), FiniteDuration(60, TimeUnit.SECONDS)))
-      case _ =>
     }
     true
   }
@@ -404,7 +394,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private def uploadDeveloperVersions(versions: Map[ServiceId, DeveloperDistributionVersion], author: String): Boolean = {
     log.info(s"--------------------------- Upload developer images of services ${versions.keySet}")
     versions.foreach { case (service, version) =>
-      if (!developerBuilder.uploadDeveloperVersion(builderDistributionClient.get, service, version, author)) {
+      if (!developerBuilder.uploadDeveloperVersion(installerDistributionClient.get, service, version, author)) {
         log.error(s"Can't upload developer version ${version} of service ${service}")
         return false
       }
@@ -422,7 +412,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private def uploadClientVersions(versions: Map[ServiceId, ClientDistributionVersion], author: String): Boolean = {
     log.info(s"--------------------------- Upload client images of services")
     versions.foreach { case (service, version) =>
-      if (!clientBuilder.uploadClientVersion(builderDistributionClient.get, service, version, author)) {
+      if (!clientBuilder.uploadClientVersion(installerDistributionClient.get, service, version, author)) {
         log.error(s"Can't upload developer version ${version} of service ${service}")
         return false
       }
@@ -465,7 +455,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private def downloadAndGenerateClientVersion(developerDistributionClient: SyncDistributionClient[SyncSource],
                                                service: ServiceId): Option[ClientDistributionVersion] = {
     log.info(s"--------------------------- Get developer desired version of service ${service}")
-    val desiredVersion = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions(Seq(service))).getOrElse(Seq.empty).headOption.getOrElse {
+    val desiredVersion = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions(Seq(service)))
+        .getOrElse(Seq.empty).headOption.getOrElse {
       log.error(s"Can't get developer desired version of service ${service}")
       return None
     }
@@ -488,13 +479,11 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     Some(clientVersion)
   }
 
-  private def makeDistributionUrl(user: AccountId): String = {
+  private def makeUrlWithCredentials(user: AccountId): String = {
     val config = distributionConfig.getOrElse {
       sys.error("No distribution config")
     }
-    val protocol = if (config.network.ssl.isDefined) "https" else "http"
-    val port = config.network.port
-    Utils.addCredentialsToUrl(s"${protocol}://localhost:${port}", user, user)
+    Utils.addCredentialsToUrl(config.network.url, user, user)
   }
 
   private def startDistributionService(): Boolean = {

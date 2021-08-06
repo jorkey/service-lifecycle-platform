@@ -8,7 +8,7 @@ import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.LogLine
+import com.vyulabs.update.common.info.{AccessToken, AccountRole, LogLine}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.common.AkkaTimer
@@ -16,19 +16,20 @@ import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
-import spray.json._
 
 import java.io.IOException
 import java.text.ParseException
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success}
 
-trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
+trait RunBuilderUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
   protected val taskManager: TaskManager
+
+  protected val accountsUtils: AccountsUtils
+  protected val stateUtils: StateUtils
 
   protected implicit val executionContext: ExecutionContext
   protected implicit val system: ActorSystem
@@ -38,10 +39,13 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
   implicit val timer = new AkkaTimer(system.scheduler)
 
   def runBuilder(task: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    val args = arguments :+
+      config.network.url :+
+      s"${accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName, Seq(AccountRole.Builder), None))}"
     if (config.distribution == config.builder.distribution) {
-      runLocalBuilder(task, arguments)
+      runLocalBuilder(task, args)
     } else {
-      runRemoteBuilder(task, arguments, config.builder.distribution)
+      runRemoteBuilder(task, args, config.builder.distribution)
     }
   }
 
@@ -56,6 +60,7 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
 
   private def runLocalBuilder(task: TaskId, arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    val outputFinishedPromise = Promise[Unit]
     @volatile var logOutputFuture = Option.empty[Future[Unit]]
     val process = for {
       process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments,
@@ -75,23 +80,24 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
             }
           })
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            addServiceLogs(config.distribution, Common.BuilderServiceName,
+            stateUtils.addServiceLogs(config.distribution, Common.BuilderServiceName,
               Some(task), config.instance, process.getHandle().pid().toString, directory.getBuilderDir().toString, logLines).map(_ => ())
           })
         },
         exitCode => {
           logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            addServiceLogs(config.distribution, Common.BuilderServiceName,
+            stateUtils.addServiceLogs(config.distribution, Common.BuilderServiceName,
               Some(task), config.instance, process.getHandle().pid().toString, directory.getBuilderDir().toString,
               Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
-          }
+          }.andThen { case _ => outputFinishedPromise.success(Unit) }
         })
       process
     }
-    (process.map(_.onTermination().map {
+    val future = outputFinishedPromise.future.flatMap(_ => process.map(_.onTermination().map {
       case 0 => ()
       case error => throw new IOException(s"Builder process terminated with status ${error}")
-    }).flatten, Some(() => process.map(_.terminate())))
+    }).flatten)
+    (future, Some(() => process.map(_.terminate())))
   }
 
   private def runRemoteBuilder(task: TaskId, arguments: Seq[String], distribution: DistributionId)
@@ -110,17 +116,17 @@ trait RunBuilderUtils extends StateUtils with SprayJsonSupport {
         val result = Promise[Unit]()
         @volatile var logOutputFuture = Option.empty[Future[Unit]]
         logSource.map(line => {
-          for (terminationStatus <- line.line.terminationStatus) {
-            if (terminationStatus) {
-              result.success()
-            } else {
-              result.failure(new IOException(s"Remote builder is failed"))
-            }
-          }
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            addServiceLogs(config.distribution, Common.DistributionServiceName,
+            stateUtils.addServiceLogs(config.distribution, Common.DistributionServiceName,
               Some(task), config.instance, 0.toString, "", Seq(line.line)).map(_ => ())
           })
+          for (terminationStatus <- line.line.terminationStatus) {
+            if (terminationStatus) {
+              logOutputFuture.foreach(_.andThen { case _ => result.success() })
+            } else {
+              logOutputFuture.foreach(_.andThen { case _ => result.failure(new IOException(s"Remote builder is failed")) })
+            }
+          }
         }).run()
         result.future
       }

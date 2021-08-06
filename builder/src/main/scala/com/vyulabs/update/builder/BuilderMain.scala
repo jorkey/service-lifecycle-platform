@@ -30,12 +30,13 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
-    "      [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionTitle=?> <mongoDbName=?> <author=?>\n" +
-    "      <provider=?> <providerUrl=?> <providerBuilderPassword=?> <providerConsumerPassword=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
-    "    buildDeveloperVersion <distribution=?> <service=?> <version=?> <sources=?> <comment=?>\n" +
-    "    buildClientVersion <distribution=?> <service=?> <developerVersion=?> <clientVersion=?>"
+    "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionUrl=?>\n" +
+    "       <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
+    "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionUrl=?>\n" +
+    "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
+    "       <providerAdminPassword=?> <providerConsumerPassword=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
+    "    buildDeveloperVersion <distributionUrl> <accessToken> <service=?> <version=?> <sources=?> <comment=?>\n" +
+    "    buildClientVersion <distributionUrl> <accessToken> <service=?> <developerVersion=?> <clientVersion=?>"
 
   if (args.size < 1) Utils.error(usage())
 
@@ -49,6 +50,7 @@ object BuilderMain extends App {
         val cloudProvider = arguments.getValue("cloudProvider")
         val distributionDirectory = arguments.getValue("distributionDirectory")
         val distribution = arguments.getValue("distribution")
+        val distributionUrl = arguments.getValue("distributionUrl")
         val distributionTitle = arguments.getValue("distributionTitle")
         val mongoDbName = arguments.getValue("mongoDbName")
         val author = arguments.getValue("author")
@@ -63,7 +65,7 @@ object BuilderMain extends App {
           new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false, port)
 
         if (command == "buildProviderDistribution") {
-          if (!distributionBuilder.buildDistributionFromSources() ||
+          if (!distributionBuilder.buildDistributionFromSources(distributionUrl) ||
               !distributionBuilder.addUpdateServicesSources() ||
               !distributionBuilder.addDistributionAccounts() ||
               !distributionBuilder.generateAndUploadInitialVersions(author) ||
@@ -76,12 +78,13 @@ object BuilderMain extends App {
         } else {
           val provider = arguments.getValue("provider")
           val providerURL = arguments.getValue("providerUrl")
-          val providerBuilderPassword = arguments.getValue("providerBuilderPassword")
+          val providerAdminPassword = arguments.getValue("providerAdminPassword")
           val providerConsumerPassword = arguments.getValue("providerConsumerPassword")
           val servicesProfile = arguments.getValue("servicesProfile")
           val testConsumerMatch = arguments.getOptionValue("testConsumerMatch")
           if (!distributionBuilder.buildFromProviderDistribution(
-                provider, providerURL, providerBuilderPassword, providerConsumerPassword,
+                provider, providerURL, providerAdminPassword, providerConsumerPassword,
+                distributionUrl,
                 servicesProfile, testConsumerMatch) ||
               !distributionBuilder.installBuilder(None) ||
               !distributionBuilder.updateDistributionFromProvider()) {
@@ -89,16 +92,17 @@ object BuilderMain extends App {
           }
         }
       case _ =>
-        val arguments = Arguments.parse(args.drop(1), Set.empty)
+        val distributionUrl = args(1)
+        val accessToken = args(2)
+
+        val arguments = Arguments.parse(args.drop(3), Set.empty)
 
         val config = BuilderConfig().getOrElse {
           Utils.error("No config")
         }
-        val distribution = arguments.getValue("distribution")
-        val distributionUrl = config.distributionLinks.find(_.distribution == distribution).map(_.distributionUrl).getOrElse {
-          Utils.error(s"Unknown URL to distribution ${distribution}")
-        }
-        val asyncDistributionClient = new DistributionClient(new HttpClientImpl(distributionUrl))
+        val httpClient = new HttpClientImpl(distributionUrl)
+        httpClient.accessToken = Some(accessToken)
+        val asyncDistributionClient = new DistributionClient(httpClient)
         val distributionClient = new SyncDistributionClient(asyncDistributionClient, FiniteDuration(60, TimeUnit.SECONDS))
 
         command match {
@@ -108,7 +112,7 @@ object BuilderMain extends App {
             val version = DeveloperVersion.parse(arguments.getValue("version"))
             val comment = arguments.getValue("comment")
             val sourceBranches = arguments.getValue("sources").parseJson.convertTo[Seq[SourceConfig]]
-            val developerBuilder = new DeveloperBuilder(new File("."), distribution)
+            val developerBuilder = new DeveloperBuilder(new File("."), distributionUrl)
             if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {
               Utils.error("Developer version is not generated")
             }
@@ -117,7 +121,7 @@ object BuilderMain extends App {
             val service = arguments.getValue("service")
             val version = ClientDistributionVersion.parse(arguments.getValue("version"))
             val buildArguments = Map("distribDirectoryUrl" -> distributionUrl, "version" -> version.toString)
-            val clientBuilder = new ClientBuilder(new File("."), distribution)
+            val clientBuilder = new ClientBuilder(new File("."), distributionUrl)
             if (!clientBuilder.buildClientVersion(distributionClient, service, version, author, buildArguments)) {
               Utils.error("Client version is not generated")
             }

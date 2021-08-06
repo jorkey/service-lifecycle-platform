@@ -65,12 +65,12 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                 workspace.getAccessToken()(log) { case token =>
                   path(developerVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Consumer)) {
+                      authorize(token.hasRole(AccountRole.Administrator) || token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Consumer)) {
                         getFromFile(workspace.directory.getDeveloperVersionImageFile(service,
                           DeveloperDistributionVersion.parse(version)))
                       }
                     } ~ post {
-                      authorize(token.hasRole(AccountRole.Builder)) {
+                      authorize(token.hasRole(AccountRole.Administrator) || token.hasRole(AccountRole.Builder)) {
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getDeveloperVersionImageFile(service, DeveloperDistributionVersion.parse(version)).toPath)
@@ -81,11 +81,11 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                     }
                   } ~ path(clientVersionImagePath / ".*".r / ".*".r) { (service, version) =>
                     get {
-                      authorize(token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Updater)) {
+                      authorize(token.hasRole(AccountRole.Administrator) || token.hasRole(AccountRole.Builder) || token.hasRole(AccountRole.Updater)) {
                         getFromFile(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)))
                       }
                     } ~ post {
-                      authorize(token.hasRole(AccountRole.Builder)) {
+                      authorize(token.hasRole(AccountRole.Administrator) || token.hasRole(AccountRole.Builder)) {
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
@@ -96,11 +96,11 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                     }
                   } ~ path(faultReportPath / ".*".r) { faultId =>
                     get {
-                      authorize(token.hasRole(AccountRole.Developer) || token.hasRole(AccountRole.Administrator)) {
+                      authorize(token.hasRole(AccountRole.Administrator) || token.hasRole(AccountRole.Developer)) {
                         getFromFile(workspace.directory.getFaultReportFile(faultId))
                       }
                     } ~ post {
-                      authorize(token.hasRole(AccountRole.Updater) || token.hasRole(AccountRole.Consumer)) {
+                      authorize(token.hasRole(AccountRole.Administrator) || token.hasRole(AccountRole.Updater) || token.hasRole(AccountRole.Consumer)) {
                         fileUpload(faultReportPath) {
                           case (fileInfo, byteSource) =>
                             log.info(s"Receive fault report file from client ${workspace.config.distribution}")

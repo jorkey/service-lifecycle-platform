@@ -77,7 +77,7 @@ class SimpleLifecycle {
   }
 
   def makeAndRunDistribution(): Unit = {
-    if (!distributionBuilder.buildDistributionFromSources()) {
+    if (!distributionBuilder.buildDistributionFromSources("http://localhost:8000")) {
       sys.error("Can't build distribution server")
     }
     Thread.sleep(5000)

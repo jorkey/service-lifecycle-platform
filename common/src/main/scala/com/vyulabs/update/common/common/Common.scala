@@ -18,6 +18,8 @@ object Common {
 
   val Pm2DescFileName = "pm2_desc.json"
 
+  val AdminAccount = "admin"
+
   val InstallerServiceName = "installer"
   val ScriptsServiceName = "scripts"
   val DistributionServiceName = "distribution"

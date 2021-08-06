@@ -47,7 +47,11 @@ function graphqlQuery() {
   local tmpFile=`mktemp`
   local http_code
 
-  if ! http_code=`curl -X POST -H "Content-Type: application/json" --data '{ "query": "{ '${query}' }" }' ${url} \
+  if [[ ! -z ${accessToken} ]]; then
+    local bearerOption="-H Authorization: Bearer ${accessToken}"
+  fi
+
+  if ! http_code=`curl -X POST ${bearerOption} -H "Content-Type: application/json" --data '{ "query": "{ '${query}' }" }' ${url} \
       --output ${tmpFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
     rm -f ${tmpFile}
     exit 1

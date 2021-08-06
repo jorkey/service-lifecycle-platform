@@ -43,7 +43,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val builderDirectory = new File(distributionDirectory, "builder"); builderDirectory.mkdir()
 
   def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, true)
-  def networkConfig = NetworkConfig(0, None)
+  def networkConfig = NetworkConfig(0, None, "http://localhost:0")
   def builderConfig = BuilderConfig("test")
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
