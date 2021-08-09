@@ -17,8 +17,9 @@ function download {
   local url=$1
   local outputFile=$2
   rm -f ${outputFile}
+
   local http_code
-  if ! http_code=`curl ${url} --output ${outputFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
+  if ! http_code=`curl ${url} ${accessToken:+"-H"+"Authorization: Bearer ${accessToken}"}  --output ${outputFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
     rm -f ${outputFile}
     exit 1
   elif [[ ${url} == http* ]] && [[ $http_code != "200" ]]; then
@@ -47,11 +48,7 @@ function graphqlQuery() {
   local tmpFile=`mktemp`
   local http_code
 
-  if [[ ! -z ${accessToken} ]]; then
-    local bearerOption="-H Authorization: Bearer ${accessToken}"
-  fi
-
-  if ! http_code=`curl -X POST ${bearerOption} -H "Content-Type: application/json" --data '{ "query": "{ '${query}' }" }' ${url} \
+  if ! http_code=`curl -X POST ${accessToken:+"-H"+"Authorization: Bearer ${accessToken}"} -H "Content-Type: application/json" --data '{ "query": "{ '${query}' }" }' ${url} \
       --output ${tmpFile} --write-out "%{http_code}" --connect-timeout 5 --silent --show-error`; then
     rm -f ${tmpFile}
     exit 1
