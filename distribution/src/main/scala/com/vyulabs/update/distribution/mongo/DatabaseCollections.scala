@@ -24,6 +24,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   private implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
+    classOf[HumanInfo],
+    classOf[ConsumerInfo],
     classOf[ServerAccountInfo],
     classOf[AccountCredentials],
     classOf[PasswordHash],
@@ -45,7 +47,6 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[InstallInfo],
     classOf[DistributionProviderInfo],
     classOf[ServicesProfile],
-    classOf[DistributionConsumerInfo],
     classOf[DistributionServiceState],
     classOf[InstanceServiceState],
     classOf[ServiceState],
@@ -153,7 +154,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     } yield {
       if (adminRecords.isEmpty) {
         Accounts.insert(ServerAccountInfo("admin", "Administrator", PasswordHash("admin"),
-          Seq(AccountRole.Administrator.toString), None, None, Seq.empty))
+          Seq(AccountRole.Administrator.toString), None, None))
       } else {
         Future()
       }

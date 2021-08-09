@@ -9,7 +9,7 @@ import com.mongodb.client.model.{Filters, Updates}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{AccessToken, AccountRole}
+import com.vyulabs.update.common.info.{AccessToken, AccountRole, ConsumerInfo}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.common.AkkaTimer
@@ -17,7 +17,7 @@ import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, Graphql
 import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
-import com.vyulabs.update.distribution.accounts.{PasswordHash, ServerAccountInfo, AccountCredentials}
+import com.vyulabs.update.distribution.accounts.{AccountCredentials, PasswordHash, ServerAccountInfo}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
@@ -43,7 +43,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val builderDirectory = new File(distributionDirectory, "builder"); builderDirectory.mkdir()
 
   def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, true)
-  def networkConfig = NetworkConfig(0, None, "http://localhost:0")
+  def networkConfig = NetworkConfig(0, None)
   def builderConfig = BuilderConfig("test")
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
@@ -84,13 +84,11 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val updaterContext = GraphqlContext(Some(AccessToken("updater", Seq(AccountRole.Updater), None)), workspace)
 
   result(for {
-    _ <- collections.Accounts.insert(ServerAccountInfo(adminHttpCredentials.username, "Test Administrator", adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None, None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(developerHttpCredentials.username, "Test Developer", developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None, None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(builderHttpCredentials.username, "Test Builder", builderCredentials.passwordHash, builderCredentials.roles.map(_.toString), None, None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(distributionHttpCredentials.username, "Test Distribution", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString),
-      Some(Common.CommonServiceProfile), None, Seq.empty))
-    _ <- collections.Accounts.insert(ServerAccountInfo(updaterHttpCredentials.username, "Test Updater", updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString),
-      None,  None, Seq.empty))
+    _ <- collections.Accounts.insert(ServerAccountInfo(adminHttpCredentials.username, "Test Administrator", adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None, None))
+    _ <- collections.Accounts.insert(ServerAccountInfo(developerHttpCredentials.username, "Test Developer", developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None, None))
+    _ <- collections.Accounts.insert(ServerAccountInfo(distributionHttpCredentials.username, "Test Consumer", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString),
+        human = None, consumer = Some(ConsumerInfo(profile = Common.CommonServiceProfile, url = "http://localhost:8001"))))
+    _ <- collections.Accounts.insert(ServerAccountInfo(updaterHttpCredentials.username, "Test Updater", updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString), None,  None))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0))

@@ -9,8 +9,8 @@ import java.io.File
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.01.20.
   * Copyright FanDate, Inc.
   */
-class InstallSettingsDirectory(builderDirectory: File, distribution: DistributionId) {
-  private val directory = new File(builderDirectory, s"install.${distribution}")
+class InstallSettingsDirectory(builderDirectory: File) {
+  private val directory = new File(builderDirectory, s"install")
   private val servicesDir = new File(directory, "services")
 
   private val serviceSettingsDirName = "settings"

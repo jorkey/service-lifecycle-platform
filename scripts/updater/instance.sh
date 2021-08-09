@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -e
 
-distribDirectoryUrl=$3
+distributionUrl=$3
 serviceToSetup=updater
 . update.sh
 

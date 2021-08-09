@@ -30,7 +30,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   private val developerDir = makeDir(new File(builderDir, "developer"))
   private val servicesDir = makeDir(new File(developerDir, "services"))
 
-  private val settingsDirectory = new InstallSettingsDirectory(builderDir, distribution)
+  private val settingsDirectory = new InstallSettingsDirectory(builderDir)
 
   def developerServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def developerBuildDir(service: ServiceId) = makeDir(new File(developerServiceDir(service), "build"))

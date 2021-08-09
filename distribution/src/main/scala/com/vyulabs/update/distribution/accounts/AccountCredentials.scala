@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.accounts
 import com.typesafe.config.Config
 import com.vyulabs.update.common.common.Common.{AccountId, ServicesProfileId}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
+import com.vyulabs.update.common.info.{ConsumerInfo, HumanInfo}
 import spray.json._
 
 import java.security.SecureRandom
@@ -45,4 +46,4 @@ case class AccountCredentials(roles: Seq[AccountRole], profile: Option[ServicesP
 
 // We can't use enumeration role because mongodb does not have codec for enumerations.
 case class ServerAccountInfo(account: AccountId, name: String, passwordHash: PasswordHash,
-                             roles: Seq[String], profile: Option[ServicesProfileId], email: Option[String], notifications: Seq[String])
+                             roles: Seq[String], human: Option[HumanInfo], consumer: Option[ConsumerInfo])

@@ -71,7 +71,8 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
   def requests[Source[_]](adminClient: SyncDistributionClient[Source], updaterClient: SyncDistributionClient[Source],
                           builderClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "execute add/remove account requests" in {
-      assert(adminClient.graphqlRequest(administratorMutations.addAccount("account1", "account1", "account1", Seq(AccountRole.Developer))).getOrElse(false))
+      assert(adminClient.graphqlRequest(administratorMutations.addAccount("account1", "account1", "account1",
+        Seq(AccountRole.Developer))).getOrElse(false))
 
       assert(!adminClient.graphqlRequest(administratorMutations.addAccount("account1", "account1", "account1", Seq(AccountRole.Developer))).getOrElse(false))
 

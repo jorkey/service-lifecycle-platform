@@ -67,12 +67,15 @@ object GraphqlSchema {
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
   val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
+  val AccessTokenArg = Argument("accessToken", StringType)
   val SourcesArg = Argument("sources", ListInputType(SourceConfigInputType))
   val UrlArg = Argument("url", StringType)
   val CommentArg = Argument("comment", StringType)
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
 
+  val OptionHumanInfoArg = Argument("human", OptionInputType(HumanInfoInputType))
+  val OptionConsumerInfoArg = Argument("consumer", OptionInputType(ConsumerInfoInputType))
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
@@ -212,11 +215,11 @@ object GraphqlSchema {
 
       // Accounts management
       Field("addAccount", BooleanType,
-        arguments = AccountArg :: NameArg :: PasswordArg :: AccountRolesArg :: OptionProfileArg ::
-          OptionEmailArg :: OptionNotificationsArg :: Nil,
+        arguments = AccountArg :: NameArg :: PasswordArg :: AccountRolesArg ::
+          OptionHumanInfoArg :: OptionConsumerInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addAccount(c.arg(AccountArg), c.arg(NameArg),
-          c.arg(PasswordArg), c.arg(AccountRolesArg), c.arg(OptionProfileArg), c.arg(OptionEmailArg), c.arg(OptionNotificationsArg)).map(_ => true) }),
+          c.arg(PasswordArg), c.arg(AccountRolesArg), c.arg(OptionHumanInfoArg), c.arg(OptionConsumerInfoArg)).map(_ => true) }),
       Field("removeAccount", BooleanType,
         arguments = AccountArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
@@ -375,9 +378,10 @@ object GraphqlSchema {
 
       // Run builder remotely
       Field("runBuilder", StringType,
-        arguments = ArgumentsArg :: Nil,
+        arguments = AccessTokenArg :: ArgumentsArg :: Nil,
         tags = Authorized(AccountRole.Consumer) :: Nil,
-        resolve = c => { c.ctx.workspace.runBuilderByRemoteDistribution(c.arg(ArgumentsArg)) }),
+        resolve = c => { c.ctx.workspace.runBuilderByRemoteDistribution(c.ctx.accessToken.get.account,
+          c.arg(AccessTokenArg), c.arg(ArgumentsArg)) }),
 
       // Cancel tasks
       Field("cancelTask", BooleanType,

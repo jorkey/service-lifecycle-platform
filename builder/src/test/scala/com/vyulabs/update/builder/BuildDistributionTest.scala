@@ -2,6 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.ConsumerInfo
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -52,13 +53,13 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       "None", () => startService(providerDistributionDir), new DistributionDirectory(providerDistributionDir),
       providerDistributionName, "Test developer distribution server",
       providerMongoDbName,true, 8000)
-    assert(providerDistributionBuilder.buildDistributionFromSources("http://localhost:8000"))
+    assert(providerDistributionBuilder.buildDistributionFromSources())
     assert(providerDistributionBuilder.addDistributionAccounts())
     assert(providerDistributionBuilder.generateAndUploadInitialVersions("ak"))
     assert(providerDistributionBuilder.addCommonServicesProfile())
     assert(providerDistributionBuilder.addOwnServicesProfile())
-    assert(providerDistributionBuilder.installBuilderFromSources())
-    assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName, "Distribution Consumer", Common.CommonConsumerProfile))
+    assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName,
+      "Distribution Consumer", ConsumerInfo(Common.CommonServiceProfile, "http://localhost:8001")))
 
     log.info("")
     log.info(s"########################### Build consumer distribution from provider distribution")
@@ -69,10 +70,9 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       consumerMongoDbName,true, 8001)
 
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
-      "http://localhost:8000", Common.AdminAccount, consumerDistributionName, "http://localhost:8001",
+      "http://localhost:8000", Common.AdminAccount, consumerDistributionName,
       Common.CommonConsumerProfile, None))
     assert(consumerDistributionBuilder.addDistributionAccounts())
-    assert(consumerDistributionBuilder.installBuilder(None))
     assert(consumerDistributionBuilder.updateDistributionFromProvider())
   }
 

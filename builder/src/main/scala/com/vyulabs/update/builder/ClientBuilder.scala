@@ -27,7 +27,7 @@ class ClientBuilder(builderDir: File, val distribution: DistributionId) {
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
-  private val settingsDirectory = new InstallSettingsDirectory(builderDir, distribution)
+  private val settingsDirectory = new InstallSettingsDirectory(builderDir)
 
   def clientServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def clientBuildDir(service: ServiceId) = makeDir(new File(clientServiceDir(service), "build"))

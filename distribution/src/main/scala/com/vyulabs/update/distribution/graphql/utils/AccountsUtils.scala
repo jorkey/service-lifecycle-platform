@@ -10,10 +10,10 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{AccountId, ServicesProfileId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.AccountRole.AccountRole
-import com.vyulabs.update.common.info.{AccessToken, AccountInfo, AccountRole}
+import com.vyulabs.update.common.info.{AccessToken, AccountInfo, AccountRole, ConsumerInfo, HumanInfo}
 import com.vyulabs.update.distribution.graphql.{AuthenticationException, NotFoundException}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.accounts.{PasswordHash, ServerAccountInfo, AccountCredentials}
+import com.vyulabs.update.distribution.accounts.{AccountCredentials, PasswordHash, ServerAccountInfo}
 import org.bson.BsonDocument
 import org.janjaali.sprayjwt.Jwt
 import org.janjaali.sprayjwt.algorithms.HS256
@@ -36,13 +36,12 @@ trait AccountsUtils extends SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   def addAccount(account: AccountId, name: String, password: String,
-                 roles: Seq[AccountRole], profiles: Option[ServicesProfileId],
-                 email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Unit] = {
+                 roles: Seq[AccountRole], human: Option[HumanInfo], consumer: Option[ConsumerInfo])
+                (implicit log: Logger): Future[Unit] = {
     log.info(s"Add account ${account} with roles ${roles}")
     for {
       result <- {
-        val document = ServerAccountInfo(account, name, PasswordHash(password),
-          roles.map(_.toString), profiles, email, notifications.getOrElse(Seq.empty))
+        val document = ServerAccountInfo(account, name, PasswordHash(password), roles.map(_.toString), human, consumer)
         collections.Accounts.insert(document).map(_ => ())
       }
     } yield result
@@ -69,10 +68,7 @@ trait AccountsUtils extends SprayJsonSupport {
         if (name.isDefined) name.get else r.name,
         password.map(PasswordHash(_)).getOrElse(r.passwordHash),
         roles.map(_.map(_.toString)).getOrElse(r.roles),
-        profiles,
-        if (email.isDefined) (if (email.get.isEmpty) None else email) else r.email,
-        notifications.map(_.map(_.toString)).getOrElse(r.notifications),
-      )
+        r.human, r.consumer)
     }).map(_ > 0)
   }
 
@@ -145,7 +141,7 @@ trait AccountsUtils extends SprayJsonSupport {
   def getAccountCredentials(account: AccountId)(implicit log: Logger): Future[Option[AccountCredentials]] = {
     val filters = Filters.eq("account", account)
     collections.Accounts.find(filters).map(_.map(info => AccountCredentials(
-      info.roles.map(AccountRole.withName(_)), info.profile, info.passwordHash)).headOption)
+      info.roles.map(AccountRole.withName(_)), info.consumer.map(_.profile), info.passwordHash)).headOption)
   }
 
   def getAccountsInfo(account: Option[AccountId] = None)(implicit log: Logger): Future[Seq[AccountInfo]] = {
@@ -153,6 +149,10 @@ trait AccountsUtils extends SprayJsonSupport {
     val args = accountArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Accounts.find(filters).map(_.map(info => AccountInfo(info.account,
-      info.name, info.roles.map(AccountRole.withName(_)), info.profile, info.email, info.notifications)))
+      info.name, info.roles.map(AccountRole.withName(_)), info.human, info.consumer)))
+  }
+
+  def getAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[AccountInfo]] = {
+    getAccountsInfo(Some(account)).map(_.headOption)
   }
 }

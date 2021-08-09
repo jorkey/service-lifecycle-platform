@@ -2,11 +2,11 @@
 set -e
 
 function exitUsage() {
-  >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port> <url> <builderDistribution>"
+  >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port> <builderDistribution>"
   exit 1
 }
 
-if [ $# -ne 8 ]; then
+if [ $# -ne 7 ]; then
   exitUsage
 fi
 
@@ -16,8 +16,7 @@ distributionTitle=$3
 mongoDbName=$4
 mongoDbTemporary=$5
 port=$6
-url=$7
-builderDistribution=$8
+builderDistribution=$7
 
 jwtSecret=`openssl rand -base64 32`
 
@@ -45,8 +44,7 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
     "test": false
   },
   "network": {
-    "port" : 8000,
-    "url": "undefined"
+    "port" : 8000
   },
   "builder": {
     "distribution": "undefined"

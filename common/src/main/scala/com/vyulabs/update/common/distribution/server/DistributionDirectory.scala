@@ -90,4 +90,10 @@ class DistributionDirectory(val directory: File) {
   def getBuilderDir(): File = {
     builderDir
   }
+
+  def getBuilderDir(distribution: DistributionId): File = {
+    val dir = new File(builderDir, distribution)
+    if (!dir.exists()) dir.mkdir()
+    dir
+  }
 }

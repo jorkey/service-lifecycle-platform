@@ -1,6 +1,5 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.builder.config.BuilderConfig
 import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
 import com.vyulabs.update.common.config.SourceConfig
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
@@ -30,13 +29,13 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionUrl=?>\n" +
+    "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?>\n" +
     "       <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?> <distributionUrl=?>\n" +
+    "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?>n" +
     "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
     "       <providerAdminPassword=?> <providerConsumerPassword=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
-    "    buildDeveloperVersion <distributionUrl> <accessToken> <service=?> <version=?> <sources=?> <comment=?>\n" +
-    "    buildClientVersion <distributionUrl> <accessToken> <service=?> <developerVersion=?> <clientVersion=?>"
+    "    buildDeveloperVersion <service=?> <version=?> <sources=?> <comment=?>\n" +
+    "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
 
   if (args.size < 1) Utils.error(usage())
 
@@ -50,7 +49,6 @@ object BuilderMain extends App {
         val cloudProvider = arguments.getValue("cloudProvider")
         val distributionDirectory = arguments.getValue("distributionDirectory")
         val distribution = arguments.getValue("distribution")
-        val distributionUrl = arguments.getValue("distributionUrl")
         val distributionTitle = arguments.getValue("distributionTitle")
         val mongoDbName = arguments.getValue("mongoDbName")
         val author = arguments.getValue("author")
@@ -65,13 +63,12 @@ object BuilderMain extends App {
           new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false, port)
 
         if (command == "buildProviderDistribution") {
-          if (!distributionBuilder.buildDistributionFromSources(distributionUrl) ||
+          if (!distributionBuilder.buildDistributionFromSources() ||
               !distributionBuilder.addUpdateServicesSources() ||
               !distributionBuilder.addDistributionAccounts() ||
               !distributionBuilder.generateAndUploadInitialVersions(author) ||
               !distributionBuilder.addCommonServicesProfile() ||
               !distributionBuilder.addOwnServicesProfile() ||
-              !distributionBuilder.installBuilderFromSources() ||
               !distributionBuilder.removeTemporaryDistributionAccounts()) {
             Utils.error("Build distribution error")
           }
@@ -84,22 +81,23 @@ object BuilderMain extends App {
           val testConsumerMatch = arguments.getOptionValue("testConsumerMatch")
           if (!distributionBuilder.buildFromProviderDistribution(
                 provider, providerURL, providerAdminPassword, providerConsumerPassword,
-                distributionUrl,
                 servicesProfile, testConsumerMatch) ||
-              !distributionBuilder.installBuilder(None) ||
               !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }
         }
       case _ =>
-        val distributionUrl = args(1)
-        val accessToken = args(2)
+        val distributionUrl = System.getenv("distributionUrl")
+        if (distributionUrl == null) {
+          Utils.error("Environment variable distributionUrl is not defined")
+        }
+        val accessToken = System.getenv("accessToken")
+        if (accessToken == null) {
+          Utils.error("Environment variable accessToken is not defined")
+        }
 
         val arguments = Arguments.parse(args.drop(3), Set.empty)
 
-        val config = BuilderConfig().getOrElse {
-          Utils.error("No config")
-        }
         val httpClient = new HttpClientImpl(distributionUrl)
         httpClient.accessToken = Some(accessToken)
         val asyncDistributionClient = new DistributionClient(httpClient)

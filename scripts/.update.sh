@@ -3,7 +3,7 @@ set -e
 
 ######## Update utilities script.
 # input:
-#   $distribDirectoryUrl - distribution URL.
+#   $distributionUrl - distribution URL.
 #   $serviceToRun - service to update and run.
 #   $serviceToSetup - service to setup.
 ########
@@ -95,12 +95,12 @@ function getDesiredVersion {
   local storedDesiredVersionFile=`getServiceDesiredVersionFile $1`
   if [ -f ${storedDesiredVersionFile} ]; then
     jq -c . ${storedDesiredVersionFile}
-  elif [[ -z ${distribDirectoryUrl} ]]; then
-    >&2 echo "Variable distribDirectoryUrl is not defined"
+  elif [[ -z ${distributionUrl} ]]; then
+    >&2 echo "Variable distributionUrl is not defined"
     exit 1
-  elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
+  elif [[ ${distributionUrl} == http://* ]] || [[ ${distributionUrl} == https://* ]]; then
     local tmpFile=`mktemp`
-    graphqlQuery ${distribDirectoryUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version{distribution,developerBuild,clientBuild}}" "clientDesiredVersions[0].version" ${tmpFile}
+    graphqlQuery ${distributionUrl} "clientDesiredVersions(services:[\\\"${service}\\\"]){version{distribution,developerBuild,clientBuild}}" "clientDesiredVersions[0].version" ${tmpFile}
     version=`jq -c . ${tmpFile}`
     rm -f ${tmpFile}
     if [[ ${version} == "null" ]]; then
@@ -109,7 +109,7 @@ function getDesiredVersion {
     fi
     echo ${version}
   else
-    >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"
+    >&2 echo "Invalid distribution directory URL ${distributionUrl}"
     exit 1
   fi
 }
@@ -124,13 +124,13 @@ function downloadVersionImage {
   local service=$1
   local version=`clientVersionToString $2`
   local outputFile=$3
-  if [[ -z ${distribDirectoryUrl} ]]; then
-    >&2 echo "Variable distribDirectoryUrl is not defined"
+  if [[ -z ${distributionUrl} ]]; then
+    >&2 echo "Variable distributionUrl is not defined"
     exit 1
-  elif [[ ${distribDirectoryUrl} == http://* ]] || [[ ${distribDirectoryUrl} == https://* ]]; then
-    download ${distribDirectoryUrl}/load/client-version-image/${service}/${version} ${outputFile}
+  elif [[ ${distributionUrl} == http://* ]] || [[ ${distributionUrl} == https://* ]]; then
+    download ${distributionUrl}/load/client-version-image/${service}/${version} ${outputFile}
   else
-    >&2 echo "Invalid distribution directory URL ${distribDirectoryUrl}"; exit 1
+    >&2 echo "Invalid distribution directory URL ${distributionUrl}"; exit 1
   fi
 }
 

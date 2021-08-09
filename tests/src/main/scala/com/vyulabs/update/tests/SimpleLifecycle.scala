@@ -77,7 +77,7 @@ class SimpleLifecycle {
   }
 
   def makeAndRunDistribution(): Unit = {
-    if (!distributionBuilder.buildDistributionFromSources("http://localhost:8000")) {
+    if (!distributionBuilder.buildDistributionFromSources()) {
       sys.error("Can't build distribution server")
     }
     Thread.sleep(5000)
@@ -95,8 +95,7 @@ class SimpleLifecycle {
     if (!distributionBuilder.addUpdateServicesSources() ||
         !distributionBuilder.generateAndUploadInitialVersions(author) ||
         !distributionBuilder.addCommonServicesProfile() ||
-        !distributionBuilder.addOwnServicesProfile() ||
-        !distributionBuilder.installBuilderFromSources()) {
+        !distributionBuilder.addOwnServicesProfile()) {
       sys.error("Can't initialize distribution")
     }
     println()

@@ -2,7 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.SourceConfig
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo, DistributionFaultReport, DistributionProviderInfo, DistributionServiceState, InstanceServiceState, LogLine, SequencedLogLine, SequencedServiceLogLine, ServiceFaultReport}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientVersionInfo, ConsumerInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo, DistributionFaultReport, DistributionProviderInfo, DistributionServiceState, HumanInfo, InstanceServiceState, LogLine, SequencedLogLine, SequencedServiceLogLine, ServiceFaultReport}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -102,10 +102,13 @@ trait SourcesAdministrationCoder {
 }
 
 trait AccountsAdministrationCoder {
-  def addAccount(account: AccountId, name: String, password: String, roles: Seq[AccountRole], profile: Option[ServicesProfileId] = None) =
+  def addAccount(account: AccountId, name: String, password: String, roles: Seq[AccountRole],
+                 human: Option[HumanInfo] = None, consumer: Option[ConsumerInfo] = None) =
     GraphqlMutation[Boolean]("addAccount", Seq(GraphqlArgument("account" -> account),
       GraphqlArgument("name" -> name), GraphqlArgument("password" -> password),
-      GraphqlArgument("roles" -> roles, "[AccountRole!]")) ++ profile.map(profile => GraphqlArgument("profile" -> profile)))
+      GraphqlArgument("roles" -> roles, "[AccountRole!]")) ++
+      human.map(human => GraphqlArgument("human" -> human, "HumanInfoInput")) ++
+      consumer.map(consumer => GraphqlArgument("consumer" -> consumer, "ConsumerInfoInput")))
   def removeAccount(account: AccountId) =
     GraphqlMutation[Boolean]("removeAccount", Seq(GraphqlArgument("account" -> account)))
 }

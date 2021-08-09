@@ -7,9 +7,10 @@ import com.vyulabs.update.common.common.Common.{DistributionId, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, GraphqlArgument, GraphqlMutation}
-import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
 import com.vyulabs.update.common.info.{AccessToken, AccountRole, LogLine}
 import com.vyulabs.update.common.process.ChildProcess
+import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
@@ -17,7 +18,8 @@ import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
-import java.io.IOException
+import java.io.{File, IOException}
+import java.nio.file.Files
 import java.text.ParseException
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -30,42 +32,59 @@ trait RunBuilderUtils extends SprayJsonSupport {
 
   protected val accountsUtils: AccountsUtils
   protected val stateUtils: StateUtils
+  protected val distributionProvidersUtils: DistributionProvidersUtils
+  protected val clientVersionUtils: ClientVersionUtils
 
   protected implicit val executionContext: ExecutionContext
   protected implicit val system: ActorSystem
 
-  protected val distributionProvidersUtils: DistributionProvidersUtils
-
   implicit val timer = new AkkaTimer(system.scheduler)
 
-  def runBuilder(task: TaskId, arguments: Seq[String])(implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    val args = arguments :+
-      config.network.url :+
-      s"${accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName, Seq(AccountRole.Builder), None))}"
+  def runBuilder(task: TaskId, arguments: Seq[String])
+                (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName, Seq(AccountRole.Builder), None))
     if (config.distribution == config.builder.distribution) {
-      runLocalBuilder(task, args)
+      runLocalBuilder(task, config.builder.distribution, accessToken, arguments)
     } else {
-      runRemoteBuilder(task, args, config.builder.distribution)
+      runRemoteBuilder(task, config.builder.distribution, accessToken, arguments)
     }
   }
 
-  def runBuilderByRemoteDistribution(arguments: Seq[String])(implicit log: Logger): TaskId = {
+  def runBuilderByRemoteDistribution(distribution: DistributionId, accessToken: String,
+                                     arguments: Seq[String])(implicit log: Logger): TaskId = {
     val task = taskManager.create("Run builder by remote distribution",
       (task, logger) => {
         implicit val log = logger
-        runLocalBuilder(task, arguments)
+        runLocalBuilder(task, distribution, accessToken, arguments)
       })
     task.task
   }
 
-  private def runLocalBuilder(task: TaskId, arguments: Seq[String])
+  private def runLocalBuilder(task: TaskId, distribution: DistributionId,
+                              accessToken: String, arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    val outputFinishedPromise = Promise[Unit]
-    @volatile var logOutputFuture = Option.empty[Future[Unit]]
     val process = for {
+      _ <- prepareBuilder(distribution)
+      distributionUrl <- {
+        if (config.distribution != distribution) {
+          for {
+            account <- accountsUtils.getAccountInfo(distribution)
+          } yield {
+            val customerInfo = account.map(_.customer)
+              .flatten.getOrElse(throw new IOException(s"Consumer account ${distribution} is not found"))
+            customerInfo.url
+          }
+        } else {
+          Future(s"http://localhost:${config.network.port}")
+        }
+      }
       process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments,
-        Map.empty, directory.getBuilderDir())
+        Map.empty[String, String] +
+          ("distributionUrl" -> distributionUrl) +
+          ("accessToken" -> accessToken), directory.getBuilderDir(distribution))
     } yield {
+      val outputFinishedPromise = Promise[Unit]
+      @volatile var logOutputFuture = Option.empty[Future[Unit]]
       process.readOutput(
         lines => {
           val logLines = lines.map(line => {
@@ -91,16 +110,20 @@ trait RunBuilderUtils extends SprayJsonSupport {
               Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
           }.andThen { case _ => outputFinishedPromise.success(Unit) }
         })
-      process
+      (process, outputFinishedPromise.future)
     }
-    val future = outputFinishedPromise.future.flatMap(_ => process.map(_.onTermination().map {
-      case 0 => ()
-      case error => throw new IOException(s"Builder process terminated with status ${error}")
-    }).flatten)
-    (future, Some(() => process.map(_.terminate())))
+    val future = for {
+      result <- process
+        .flatMap { case (process, outputFinished) => outputFinished.map(_ => process) }
+        .map(_.onTermination().map {
+          case 0 => ()
+          case error => throw new IOException(s"Builder process terminated with status ${error}")
+        }).flatten
+    } yield result
+    (future, Some(() => process.map(_._1.terminate())))
   }
 
-  private def runRemoteBuilder(task: TaskId, arguments: Seq[String], distribution: DistributionId)
+  private def runRemoteBuilder(task: TaskId, distribution: DistributionId, accessToken: String, arguments: Seq[String])
                               (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     @volatile var distributionClient = Option.empty[DistributionClient[AkkaHttpClient.AkkaSource]]
     @volatile var remoteTaskId = Option.empty[TaskId]
@@ -108,7 +131,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       client <- distributionProvidersUtils.getDistributionProviderInfo(distribution).map(provider => {
         new DistributionClient(new AkkaHttpClient(provider.url)) })
       remoteTask <- client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder",
-        Seq(GraphqlArgument("arguments" -> arguments, "[String!]"))))
+        Seq(GraphqlArgument("accessToken" -> accessToken), GraphqlArgument("arguments" -> arguments, "[String!]"))))
       logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
       end <- {
         distributionClient = Some(client)
@@ -135,5 +158,45 @@ trait RunBuilderUtils extends SprayJsonSupport {
       remoteTaskId.map(remoteTaskId => distributionClient.foreach(
         _.graphqlRequest(GraphqlMutation[Boolean]("cancelTask", Seq(GraphqlArgument("task" -> remoteTaskId)))).map(_ => ())))
     }))
+  }
+
+  private def prepareBuilder(distribution: DistributionId)
+                                  (implicit log: Logger): Future[Unit] = {
+    val builderDir = directory.getBuilderDir(distribution)
+    if (new File(directory.getBuilderDir(distribution), Common.BuilderSh).exists()) {
+      Future()
+    } else {
+      log.info(s"--------------------------- Initialize builder directory ${builderDir}")
+      for {
+        desiredVersion <- clientVersionUtils.getClientDesiredVersion(Common.ScriptsServiceName)
+        status <- {
+          Future[Unit] {
+            desiredVersion match {
+              case Some(desiredVersion) =>
+                val image = directory.getClientVersionImageFile(Common.ScriptsServiceName, desiredVersion)
+                val tmpDir = Files.createTempDirectory("builder").toFile
+                if (ZipUtils.unzip(image, tmpDir)) {
+                  if (!IoUtils.copyFile(new File(tmpDir, "builder"), builderDir) ||
+                    !IoUtils.copyFile(new File(tmpDir, Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
+                    throw new IOException("Can't find updater script files")
+                  } else {
+                    log.info(s"--------------------------- Set execution permission")
+                    if (!builderDir.listFiles().forall { file => !file.getName.endsWith(".sh") || IoUtils.setExecuteFilePermissions(file) }) {
+                      throw new IOException("Can't set execution permissions")
+                    } else {
+                      log.info(s"--------------------------- Create settings directory")
+                      new InstallSettingsDirectory(builderDir)
+                    }
+                  }
+                } else {
+                  throw new IOException("Can't unzip scripts version image file")
+                }
+              case None =>
+                throw new IOException(s"There is no client desired version for service ${Common.ScriptsServiceName}")
+            }
+          }
+        }
+      } yield status
+    }
   }
 }
