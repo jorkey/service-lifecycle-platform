@@ -6,7 +6,7 @@ import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.DistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, GraphqlArgument, GraphqlMutation}
+import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
 import com.vyulabs.update.common.info.{AccessToken, AccountRole, LogLine}
 import com.vyulabs.update.common.process.ChildProcess
@@ -33,7 +33,6 @@ trait RunBuilderUtils extends SprayJsonSupport {
   protected val accountsUtils: AccountsUtils
   protected val stateUtils: StateUtils
   protected val distributionProvidersUtils: DistributionProvidersUtils
-  protected val clientVersionUtils: ClientVersionUtils
 
   protected implicit val executionContext: ExecutionContext
   protected implicit val system: ActorSystem
@@ -64,7 +63,6 @@ trait RunBuilderUtils extends SprayJsonSupport {
                               accessToken: String, arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
-      _ <- prepareBuilder(distribution)
       distributionUrl <- {
         if (config.distribution != distribution) {
           for {
@@ -78,10 +76,14 @@ trait RunBuilderUtils extends SprayJsonSupport {
           Future(s"http://localhost:${config.network.port}")
         }
       }
-      process <- ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments,
-        Map.empty[String, String] +
-          ("distributionUrl" -> distributionUrl) +
-          ("accessToken" -> accessToken), directory.getBuilderDir(distribution))
+      _ <- prepareBuilder(distribution, distributionUrl, accessToken)
+      process <- {
+        log.info(s"--------------------------- Start builder")
+        ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments,
+          Map.empty[String, String] +
+            ("distributionUrl" -> distributionUrl) +
+            ("accessToken" -> accessToken), directory.getBuilderDir(distribution))
+      }
     } yield {
       val outputFinishedPromise = Promise[Unit]
       @volatile var logOutputFuture = Option.empty[Future[Unit]]
@@ -160,39 +162,43 @@ trait RunBuilderUtils extends SprayJsonSupport {
     }))
   }
 
-  private def prepareBuilder(distribution: DistributionId)
-                                  (implicit log: Logger): Future[Unit] = {
+  private def prepareBuilder(distribution: DistributionId, distributionUrl: String, accessToken: String)
+                             (implicit log: Logger): Future[Unit] = {
     val builderDir = directory.getBuilderDir(distribution)
     if (new File(directory.getBuilderDir(distribution), Common.BuilderSh).exists()) {
       Future()
     } else {
       log.info(s"--------------------------- Initialize builder directory ${builderDir}")
+      val httpClient = new AkkaHttpClient(distributionUrl)
+      httpClient.accessToken = Some(accessToken)
+      val distributionClient = new DistributionClient(httpClient)
       for {
-        desiredVersion <- clientVersionUtils.getClientDesiredVersion(Common.ScriptsServiceName)
+        desiredVersion <- {
+          distributionClient.graphqlRequest(BuilderQueriesCoder.getClientDesiredVersions(Seq(Common.ScriptsServiceName)))
+            .map(_.headOption.getOrElse(throw new IOException("Client desired version for scripts is not defined")).version)
+        }
+        imageFile <- {
+          val tmpFile = Files.createTempFile("", "").toFile
+          distributionClient.downloadClientVersionImage(Common.ScriptsServiceName, desiredVersion, tmpFile).map(_ => tmpFile)
+        }
         status <- {
           Future[Unit] {
-            desiredVersion match {
-              case Some(desiredVersion) =>
-                val image = directory.getClientVersionImageFile(Common.ScriptsServiceName, desiredVersion)
-                val tmpDir = Files.createTempDirectory("builder").toFile
-                if (ZipUtils.unzip(image, tmpDir)) {
-                  if (!IoUtils.copyFile(new File(tmpDir, "builder"), builderDir) ||
-                    !IoUtils.copyFile(new File(tmpDir, Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
-                    throw new IOException("Can't find updater script files")
-                  } else {
-                    log.info(s"--------------------------- Set execution permission")
-                    if (!builderDir.listFiles().forall { file => !file.getName.endsWith(".sh") || IoUtils.setExecuteFilePermissions(file) }) {
-                      throw new IOException("Can't set execution permissions")
-                    } else {
-                      log.info(s"--------------------------- Create settings directory")
-                      new InstallSettingsDirectory(builderDir)
-                    }
-                  }
+            val tmpDir = Files.createTempDirectory("builder").toFile
+            if (ZipUtils.unzip(imageFile, tmpDir)) {
+              if (!IoUtils.copyFile(new File(tmpDir, "builder"), builderDir) ||
+                !IoUtils.copyFile(new File(tmpDir, Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
+                throw new IOException("Can't find updater script files")
+              } else {
+                log.info(s"--------------------------- Set execution permission")
+                if (!builderDir.listFiles().forall { file => !file.getName.endsWith(".sh") || IoUtils.setExecuteFilePermissions(file) }) {
+                  throw new IOException("Can't set execution permissions")
                 } else {
-                  throw new IOException("Can't unzip scripts version image file")
+                  log.info(s"--------------------------- Create settings directory")
+                  new InstallSettingsDirectory(builderDir)
                 }
-              case None =>
-                throw new IOException(s"There is no client desired version for service ${Common.ScriptsServiceName}")
+              }
+            } else {
+              throw new IOException("Can't unzip scripts version image file")
             }
           }
         }

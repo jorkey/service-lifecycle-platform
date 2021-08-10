@@ -71,7 +71,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
 
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
       "http://localhost:8000", Common.AdminAccount, consumerDistributionName,
-      Common.CommonConsumerProfile, None))
+      Common.CommonConsumerProfile, None, "ak"))
     assert(consumerDistributionBuilder.addDistributionAccounts())
     assert(consumerDistributionBuilder.updateDistributionFromProvider())
   }

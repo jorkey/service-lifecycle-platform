@@ -7,7 +7,7 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.Utils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 import spray.json._
 
@@ -68,8 +68,7 @@ object BuilderMain extends App {
               !distributionBuilder.addDistributionAccounts() ||
               !distributionBuilder.generateAndUploadInitialVersions(author) ||
               !distributionBuilder.addCommonServicesProfile() ||
-              !distributionBuilder.addOwnServicesProfile() ||
-              !distributionBuilder.removeTemporaryDistributionAccounts()) {
+              !distributionBuilder.addOwnServicesProfile()) {
             Utils.error("Build distribution error")
           }
         } else {
@@ -81,7 +80,7 @@ object BuilderMain extends App {
           val testConsumerMatch = arguments.getOptionValue("testConsumerMatch")
           if (!distributionBuilder.buildFromProviderDistribution(
                 provider, providerURL, providerAdminPassword, providerConsumerPassword,
-                servicesProfile, testConsumerMatch) ||
+                servicesProfile, testConsumerMatch, author) ||
               !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }
@@ -96,7 +95,7 @@ object BuilderMain extends App {
           Utils.error("Environment variable accessToken is not defined")
         }
 
-        val arguments = Arguments.parse(args.drop(3), Set.empty)
+        val arguments = Arguments.parse(args.drop(1), Set.empty)
 
         val httpClient = new HttpClientImpl(distributionUrl)
         httpClient.accessToken = Some(accessToken)

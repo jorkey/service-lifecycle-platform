@@ -20,7 +20,6 @@ object Common {
 
   val AdminAccount = "admin"
 
-  val InstallerServiceName = "installer"
   val ScriptsServiceName = "scripts"
   val DistributionServiceName = "distribution"
   val BuilderServiceName = "builder"

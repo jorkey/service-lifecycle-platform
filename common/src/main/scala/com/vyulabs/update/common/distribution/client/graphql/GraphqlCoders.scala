@@ -2,8 +2,8 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.SourceConfig
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientVersionInfo, ConsumerInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DeveloperVersionInfo, DistributionFaultReport, DistributionProviderInfo, DistributionServiceState, HumanInfo, InstanceServiceState, LogLine, SequencedLogLine, SequencedServiceLogLine, ServiceFaultReport}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
+import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
@@ -251,7 +251,7 @@ object DistributionGraphqlCoder {
   val distributionMutations = DistributionMutationsCoder
 }
 
-object BuilderQueriesCoder extends DeveloperVersionsInfoCoder {}
+object BuilderQueriesCoder extends DeveloperVersionsInfoCoder with ClientDesiredVersionsCoder {}
 object BuilderMutationsCoder extends AddDeveloperVersionInfoCoder with AddClientVersionInfoCoder {}
 object BuilderSubscriptionsCoder extends SubscribeTaskLogsCoder {}
 

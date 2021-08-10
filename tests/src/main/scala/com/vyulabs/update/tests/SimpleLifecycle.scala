@@ -31,7 +31,7 @@ class SimpleLifecycle {
   private val distribution = "test-distribution"
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
-  private val developerDistributionUrl = s"http://${Common.InstallerServiceName}:${Common.InstallerServiceName}@localhost:8000"
+  private val adminDistributionUrl = s"http://${Common.AdminAccount}:${Common.AdminAccount}@localhost:8000"
   private val builderDistributionUrl = s"http://${Common.BuilderServiceName}:${Common.BuilderServiceName}@localhost:8000"
   private val updaterDistributionUrl = s"http://${Common.UpdaterServiceName}:${Common.UpdaterServiceName}@localhost:8000"
   private val testServiceName = "test"
@@ -44,8 +44,8 @@ class SimpleLifecycle {
 
   private val builderClient = new SyncDistributionClient(
     new DistributionClient(new HttpClientImpl(builderDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
-  private val developerClient = new SyncDistributionClient(
-    new DistributionClient(new HttpClientImpl(developerDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
+  private val adminClient = new SyncDistributionClient(
+    new DistributionClient(new HttpClientImpl(adminDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
   private var processes = Set.empty[ChildProcess]
 
@@ -123,7 +123,7 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make test service version")
-    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild),
+    buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild),
       Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
@@ -159,7 +159,7 @@ class SimpleLifecycle {
     }
 
     println(s"--------------------------- Make fixed test service version")
-    buildTestServiceVersions(developerClient, DeveloperVersion(Build.initialBuild).next,
+    buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild).next,
       Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
 
     println()
@@ -183,7 +183,7 @@ class SimpleLifecycle {
     Thread.sleep(10000)
     distributionBuilder.waitForServerAvailable()
     Thread.sleep(5000)
-    val states = developerClient.graphqlRequest(developerQueries.getServiceStates(distribution = Some(distribution),
+    val states = adminClient.graphqlRequest(developerQueries.getServiceStates(distribution = Some(distribution),
       service = Some(Common.DistributionServiceName))).getOrElse {
       sys.error("Can't get version of distribution server")
     }

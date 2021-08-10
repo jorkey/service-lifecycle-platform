@@ -6,7 +6,7 @@ import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, Servi
 import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.process.ProcessUtils
@@ -37,8 +37,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private val initialClientVersion = ClientDistributionVersion.from(DeveloperDistributionVersion(distribution, Build.initialBuild), 0)
 
   private var adminDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
-  private var installerDistributionClient = Option.empty[SyncDistributionClient[SyncSource]]
-  private var providerAdminClient = Option.empty[SyncDistributionClient[SyncSource]]
+  private var adminProviderClient = Option.empty[SyncDistributionClient[SyncSource]]
 
   private var distributionConfig = Option.empty[DistributionConfig]
 
@@ -71,18 +70,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def addDistributionAccounts(): Boolean = {
     log.info(s"--------------------------- Add distribution accounts")
-    if (!addServiceAccount(Common.InstallerServiceName, "Temporary install account", Seq(AccountRole.Developer, AccountRole.Builder)) ||
-        !addServiceAccount(Common.UpdaterServiceName, "Updater service account", Seq(AccountRole.Updater))) {
-      return false
-    }
-    installerDistributionClient = Some(new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(makeUrlWithCredentials(Common.InstallerServiceName))), FiniteDuration(60, TimeUnit.SECONDS)))
-    true
-  }
-
-  def removeTemporaryDistributionAccounts(): Boolean = {
-    log.info(s"--------------------------- Remove temporary distribution users")
-    if (!removeAccount(Common.InstallerServiceName)) {
+    if (!addServiceAccount(Common.UpdaterServiceName, "Updater service account", Seq(AccountRole.Updater))) {
       return false
     }
     true
@@ -90,19 +78,23 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def buildFromProviderDistribution(provider: DistributionId, providerURL: String,
                                     providerAdminPassword: String, providerConsumerPassword: String,
-                                    servicesProfile: ServicesProfileId, testDistributionMatch: Option[String]): Boolean = {
+                                    servicesProfile: ServicesProfileId, testDistributionMatch: Option[String],
+                                    author: String): Boolean = {
     this.providerDistributionName = Some(provider)
-    providerAdminClient = Some(new SyncDistributionClient(
+    adminProviderClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(
         Utils.addCredentialsToUrl(providerURL, Common.AdminAccount, providerAdminPassword))), FiniteDuration(60, TimeUnit.SECONDS)))
 
     log.info("")
     log.info(s"########################### Download and generate client versions")
     log.info("")
-    val scriptsVersion = downloadAndGenerateClientVersion(providerAdminClient.get, Common.ScriptsServiceName).getOrElse {
+    val scriptsVersion = downloadAndGenerateClientVersion(adminProviderClient.get, Common.ScriptsServiceName).getOrElse {
       return false
     }
-    val distributionVersion = downloadAndGenerateClientVersion(providerAdminClient.get, Common.DistributionServiceName).getOrElse {
+    val distributionVersion = downloadAndGenerateClientVersion(adminProviderClient.get, Common.DistributionServiceName).getOrElse {
+      return false
+    }
+    val builderVersion = downloadAndGenerateClientVersion(adminProviderClient.get, Common.BuilderServiceName).getOrElse {
       return false
     }
 
@@ -111,6 +103,17 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     if (!installDistributionService(scriptsVersion, distributionVersion, provider)) {
       log.error("Can't install distribution service")
+      return false
+    }
+
+    log.info("")
+    log.info(s"########################### Upload versions")
+    log.info("")
+    if (!uploadDeveloperAndClientVersions(Map(
+          Common.ScriptsServiceName -> scriptsVersion.original,
+          Common.DistributionServiceName -> distributionVersion.original,
+          Common.BuilderServiceName -> builderVersion.original), author)) {
+      log.error("Can't upload versions")
       return false
     }
 
@@ -126,6 +129,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info("")
     log.info(s"########################### Distribution service is ready")
     log.info("")
+
     true
   }
 
@@ -351,7 +355,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private def uploadDeveloperVersions(versions: Map[ServiceId, DeveloperDistributionVersion], author: String): Boolean = {
     log.info(s"--------------------------- Upload developer images of services ${versions.keySet}")
     versions.foreach { case (service, version) =>
-      if (!developerBuilder.uploadDeveloperVersion(installerDistributionClient.get, service, version, author)) {
+      if (!developerBuilder.uploadDeveloperVersion(adminDistributionClient.get, service, version, author)) {
         log.error(s"Can't upload developer version ${version} of service ${service}")
         return false
       }
@@ -369,7 +373,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private def uploadClientVersions(versions: Map[ServiceId, ClientDistributionVersion], author: String): Boolean = {
     log.info(s"--------------------------- Upload client images of services")
     versions.foreach { case (service, version) =>
-      if (!clientBuilder.uploadClientVersion(installerDistributionClient.get, service, version, author)) {
+      if (!clientBuilder.uploadClientVersion(adminDistributionClient.get, service, version, author)) {
         log.error(s"Can't upload developer version ${version} of service ${service}")
         return false
       }

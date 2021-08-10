@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.versions.developer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
-import com.vyulabs.update.common.info.{DistributionConsumerInfo, ServicesProfile}
+import com.vyulabs.update.common.info.{ServicesProfile}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
