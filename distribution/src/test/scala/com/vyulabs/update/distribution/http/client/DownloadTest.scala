@@ -24,37 +24,37 @@ class DownloadTest extends TestEnvironment with ScalatestRouteTest {
   server.bind(route)
 
   def httpDownload(): Unit = {
-    val builderClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl("http://builder:builder@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl("http://admin:admin@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl("http://updater:updater@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
-    val distribClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl("http://distribution:distribution@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
-    download(builderClient, updaterClient, distribClient)
+    val consumerClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl("http://consumer:consumer@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
+    download(adminClient, updaterClient, consumerClient)
   }
 
   def akkaHttpDownload(): Unit = {
-    val builderClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient("http://builder:builder@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(new AkkaHttpClient("http://admin:admin@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient("http://updater:updater@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
-    val distribClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient("http://distribution:distribution@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
-    download(builderClient, updaterClient, distribClient)
+    val consumerClient = new SyncDistributionClient(
+      new DistributionClient(new AkkaHttpClient("http://consumer:consumer@localhost:8082")), FiniteDuration(15, TimeUnit.SECONDS))
+    download(adminClient, updaterClient, consumerClient)
   }
 
   override def dbName = super.dbName + "-client"
 
-  def download[Source[_]](builderClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
+  def download[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], consumerClient: SyncDistributionClient[Source]): Unit = {
     it should "download developer version image" in {
       IoUtils.writeBytesToFile(distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")),
         "qwerty123".getBytes("utf8"))
       val outFile = File.createTempFile("load-test", "zip")
-      assert(builderClient.downloadDeveloperVersionImage("service1",
+      assert(adminClient.downloadDeveloperVersionImage("service1",
         DeveloperDistributionVersion.parse("test-1.1.1"), outFile))
       assertResult(9)(outFile.length())
       outFile.delete()
-      assert(distribClient.downloadDeveloperVersionImage("service1",
+      assert(consumerClient.downloadDeveloperVersionImage("service1",
         DeveloperDistributionVersion.parse("test-1.1.1"), outFile))
       assertResult(9)(outFile.length())
     }

@@ -39,9 +39,6 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   def dbName = getClass.getSimpleName
 
-  val distributionDirectory = Files.createTempDirectory("distribution-").toFile
-  val builderDirectory = new File(distributionDirectory, "builder"); builderDirectory.mkdir()
-
   def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, true)
   def networkConfig = NetworkConfig(0, None)
   def builderConfig = BuilderConfig("test")
@@ -55,6 +52,8 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val distributionName = config.distribution
   val instance = config.instance
 
+  val distributionDirectory = Files.createTempDirectory("distribution-").toFile
+
   val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), createIndices)
   val distributionDir = new DistributionDirectory(distributionDirectory)
@@ -67,26 +66,27 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   val adminHttpCredentials = BasicHttpCredentials("admin", "admin")
   val developerHttpCredentials = BasicHttpCredentials("developer", "developer")
-  val distributionHttpCredentials = BasicHttpCredentials("distribution", "distribution")
-  val builderHttpCredentials = BasicHttpCredentials("builder", "builder")
+  val consumerHttpCredentials = BasicHttpCredentials("consumer", "consumer")
   val updaterHttpCredentials = BasicHttpCredentials("updater", "updater")
 
   val adminCredentials = AccountCredentials(Seq(AccountRole.Administrator), None, PasswordHash(adminHttpCredentials.password))
   val developerCredentials = AccountCredentials(Seq(AccountRole.Developer), None, PasswordHash(developerHttpCredentials.password))
-  val distributionCredentials = AccountCredentials(Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile), PasswordHash(distributionHttpCredentials.password))
-  val builderCredentials = AccountCredentials(Seq(AccountRole.Builder), None, PasswordHash(builderHttpCredentials.password))
+  val distributionCredentials = AccountCredentials(Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile), PasswordHash(consumerHttpCredentials.password))
   val updaterCredentials = AccountCredentials(Seq(AccountRole.Updater), None, PasswordHash(updaterHttpCredentials.password))
 
   val adminContext = GraphqlContext(Some(AccessToken("admin", Seq(AccountRole.Administrator), None)), workspace)
   val developerContext = GraphqlContext(Some(AccessToken("developer", Seq(AccountRole.Developer), None)), workspace)
-  val distributionContext = GraphqlContext(Some(AccessToken("distribution", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
+  val consumerContext = GraphqlContext(Some(AccessToken("consumer", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
   val builderContext = GraphqlContext(Some(AccessToken("builder", Seq(AccountRole.Builder), None)), workspace)
   val updaterContext = GraphqlContext(Some(AccessToken("updater", Seq(AccountRole.Updater), None)), workspace)
+
+  val builderDirectory = new File(distributionDirectory, "builder/" + config.distribution); builderDirectory.mkdirs()
+  val consumerBuilderDirectory = new File(distributionDirectory, "builder/consumer"); consumerBuilderDirectory.mkdirs()
 
   result(for {
     _ <- collections.Accounts.insert(ServerAccountInfo(adminHttpCredentials.username, "Test Administrator", adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None, None))
     _ <- collections.Accounts.insert(ServerAccountInfo(developerHttpCredentials.username, "Test Developer", developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None, None))
-    _ <- collections.Accounts.insert(ServerAccountInfo(distributionHttpCredentials.username, "Test Consumer", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString),
+    _ <- collections.Accounts.insert(ServerAccountInfo(consumerHttpCredentials.username, "Test Consumer", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString),
         human = None, consumer = Some(ConsumerInfo(profile = Common.CommonServiceProfile, url = "http://localhost:8001"))))
     _ <- collections.Accounts.insert(ServerAccountInfo(updaterHttpCredentials.username, "Test Updater", updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString), None,  None))
   } yield {})

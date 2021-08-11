@@ -203,9 +203,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     for (repository <- sourceRepositories) {
       log.info(s"Mark source repository with version ${version}")
       val tag = service + "-" + version.toString
-      if (!repository.setTag(tag, Some(comment))) {
-        return false
-      }
+      repository.setTag(tag, Some(comment))
       if (!repository.push(Seq(new RefSpec(tag)))) {
         return false
       }

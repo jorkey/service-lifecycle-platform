@@ -150,7 +150,7 @@ trait BuildClientVersionCoder {
   def buildClientVersion(service: ServiceId, version: ClientDistributionVersion) =
     GraphqlMutation[String]("buildClientVersion", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("clientVersion" -> version, "ClientDistributionVersionInput")))
+      GraphqlArgument("version" -> version, "ClientDistributionVersionInput")))
 }
 
 trait RemoveClientVersionCoder {
@@ -233,7 +233,8 @@ object DeveloperGraphqlCoder {
 
 object AdministratorQueriesCoder extends DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
-object AdministratorMutationsCoder extends SourcesAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder with BuildClientVersionCoder
+object AdministratorMutationsCoder extends SourcesAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
+  with AddDeveloperVersionInfoCoder with AddClientVersionInfoCoder  with BuildClientVersionCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
 object AdministratorSubscriptionsCoder extends SubscribeTaskLogsCoder {}
 
@@ -243,12 +244,12 @@ object AdministratorGraphqlCoder {
   val administratorSubscriptions = AdministratorSubscriptionsCoder
 }
 
-object DistributionQueriesCoder extends DeveloperVersionsInfoCoder with DeveloperDesiredVersionsCoder {}
-object DistributionMutationsCoder extends SetServiceStatesCoder with AddFaultReportInfoCoder with SetTestedVersionsCoder with SetInstalledDesiredVersionsCoder {}
+object ConsumerQueriesCoder extends DeveloperVersionsInfoCoder with DeveloperDesiredVersionsCoder {}
+object ConsumerMutationsCoder extends SetServiceStatesCoder with AddFaultReportInfoCoder with SetTestedVersionsCoder with SetInstalledDesiredVersionsCoder {}
 
-object DistributionGraphqlCoder {
-  val distributionQueries = DistributionQueriesCoder
-  val distributionMutations = DistributionMutationsCoder
+object ConsumerGraphqlCoder {
+  val distributionQueries = ConsumerQueriesCoder
+  val distributionMutations = ConsumerMutationsCoder
 }
 
 object BuilderQueriesCoder extends DeveloperVersionsInfoCoder with ClientDesiredVersionsCoder {}

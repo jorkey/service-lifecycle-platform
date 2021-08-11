@@ -29,13 +29,19 @@ class BuildClientVersionTest extends TestEnvironment {
     ex.printStackTrace(); log.error("Uncatched exception", ex)
   })
 
-  val dummyBuilder = new File(builderDirectory, "builder.sh")
-  IoUtils.writeBytesToFile(dummyBuilder,
-    ("echo \"2021-03-23 19:12:19.146 INFO Unit1 - Builder started\"\n" +
+  IoUtils.writeBytesToFile(new File(builderDirectory, "builder.sh"),
+    ("echo \"2021-03-23 19:12:19.146 INFO Unit1 Builder started\"\n" +
       "sleep 1\n" +
-      "echo \"2021-03-23 19:12:20.150 INFO Unit2 - Builder continued\"\n" +
+      "echo \"2021-03-23 19:12:20.150 INFO Unit2 Builder continued\"\n" +
       "sleep 1\n" +
-      "echo \"2021-03-23 19:12:21.100 INFO Unit3 - Builder finished\"").getBytes)
+      "echo \"2021-03-23 19:12:21.100 INFO Unit3 Builder finished\"").getBytes)
+
+  IoUtils.writeBytesToFile(new File(consumerBuilderDirectory, "builder.sh"),
+    ("echo \"2021-03-23 19:12:19.146 INFO Unit1 Builder started\"\n" +
+      "sleep 1\n" +
+      "echo \"2021-03-23 19:12:20.150 INFO Unit2 Builder continued\"\n" +
+      "sleep 1\n" +
+      "echo \"2021-03-23 19:12:21.100 INFO Unit3 Builder finished\"").getBytes)
 
   it should "build client version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
@@ -92,6 +98,7 @@ class BuildClientVersionTest extends TestEnvironment {
 
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}"""))
+    logInput.requestNext()
     logInput.requestNext(
       ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sources=[], comment=Test version) in directory ${builderDirectory}"}}}}"""))
     logInput.requestNext()
@@ -109,9 +116,9 @@ class BuildClientVersionTest extends TestEnvironment {
   it should "run builder" in {
     setSequence("state.serviceLogs", 20)
 
-    val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
+    val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
         mutation {
-          runBuilder (arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin", "sources=[]"])
+          runBuilder (accessToken: "qwe", arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin", "sources=[]"])
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -124,9 +131,10 @@ class BuildClientVersionTest extends TestEnvironment {
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` started"}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Run builder by remote distribution` started"}}}}"""))
+    logInput.requestNext()
     logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]) in directory ${builderDirectory}"}}}}"""))
+      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]) in directory ${consumerBuilderDirectory}"}}}}"""))
     logInput.requestNext()
     logInput.requestNext()
     logInput.requestNext(
@@ -139,7 +147,7 @@ class BuildClientVersionTest extends TestEnvironment {
     logInput.requestNext(
       ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
     logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Run local builder by remote distribution` finished successfully"}}}}"""))
+      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Run builder by remote distribution` finished successfully"}}}}"""))
 
     expectComplete(logInput)
   }

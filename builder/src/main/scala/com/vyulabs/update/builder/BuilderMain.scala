@@ -29,9 +29,9 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildProviderDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?>\n" +
+    "    buildProviderDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
     "       <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildConsumerDistribution <cloudProvider=?> <distributionDirectory=?> <distribution=?>n" +
+    "    buildConsumerDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
     "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
     "       <providerAdminPassword=?> <providerConsumerPassword=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
     "    buildDeveloperVersion <service=?> <version=?> <sources=?> <comment=?>\n" +
@@ -86,6 +86,10 @@ object BuilderMain extends App {
           }
         }
       case _ =>
+        val distribution = System.getenv("distribution")
+        if (distribution == null) {
+          Utils.error("Environment variable distribution is not defined")
+        }
         val distributionUrl = System.getenv("distributionUrl")
         if (distributionUrl == null) {
           Utils.error("Environment variable distributionUrl is not defined")
@@ -109,7 +113,7 @@ object BuilderMain extends App {
             val version = DeveloperVersion.parse(arguments.getValue("version"))
             val comment = arguments.getValue("comment")
             val sourceBranches = arguments.getValue("sources").parseJson.convertTo[Seq[SourceConfig]]
-            val developerBuilder = new DeveloperBuilder(new File("."), distributionUrl)
+            val developerBuilder = new DeveloperBuilder(new File("."), distribution)
             if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {
               Utils.error("Developer version is not generated")
             }
@@ -117,8 +121,8 @@ object BuilderMain extends App {
             val author = arguments.getValue("author")
             val service = arguments.getValue("service")
             val version = ClientDistributionVersion.parse(arguments.getValue("version"))
-            val buildArguments = Map("distribDirectoryUrl" -> distributionUrl, "version" -> version.toString)
-            val clientBuilder = new ClientBuilder(new File("."), distributionUrl)
+            val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> version.toString)
+            val clientBuilder = new ClientBuilder(new File("."), distribution)
             if (!clientBuilder.buildClientVersion(distributionClient, service, version, author, buildArguments)) {
               Utils.error("Client version is not generated")
             }

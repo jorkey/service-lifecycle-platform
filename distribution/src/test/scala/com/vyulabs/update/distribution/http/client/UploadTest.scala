@@ -25,32 +25,32 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
   server.bind(route)
 
   def httpUpload(): Unit = {
-    val builderClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl("http://builder:builder@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl("http://admin:admin@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl("http://updater:updater@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
-    val distribClient = new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl("http://distribution:distribution@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
-    upload(builderClient, updaterClient, distribClient)
+    val consumerClient = new SyncDistributionClient(
+      new DistributionClient(new HttpClientImpl("http://consumer:consumer@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
+    upload(adminClient, updaterClient, consumerClient)
   }
 
   def akkaHttpUpload(): Unit = {
-    val builderClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient("http://builder:builder@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
+    val adminClient = new SyncDistributionClient(
+      new DistributionClient(new AkkaHttpClient("http://admin:admin@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
     val updaterClient = new SyncDistributionClient(
       new DistributionClient(new AkkaHttpClient("http://updater:updater@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
-    val distribClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient("http://distribution:distribution@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
-    upload(builderClient, updaterClient, distribClient)
+    val consumerClient = new SyncDistributionClient(
+      new DistributionClient(new AkkaHttpClient("http://consumer:consumer@localhost:8083")), FiniteDuration(15, TimeUnit.SECONDS))
+    upload(adminClient, updaterClient, consumerClient)
   }
 
   override def dbName = super.dbName + "-client"
 
-  def upload[Source[_]](builderClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
+  def upload[Source[_]](adminClient: SyncDistributionClient[Source], serviceClient: SyncDistributionClient[Source], distribClient: SyncDistributionClient[Source]): Unit = {
     it should "upload developer version image" in {
       val file = File.createTempFile("load-test", "zip")
       assert(IoUtils.writeBytesToFile(file, "developer version content".getBytes("utf8")))
-      assert(builderClient.uploadDeveloperVersionImage("service1", DeveloperDistributionVersion.parse("test-1.1.1"), file))
+      assert(adminClient.uploadDeveloperVersionImage("service1", DeveloperDistributionVersion.parse("test-1.1.1"), file))
       assertResult(25)(
         distributionDir.getDeveloperVersionImageFile("service1", DeveloperDistributionVersion.parse("test-1.1.1")).length())
     }
@@ -58,7 +58,7 @@ class UploadTest extends TestEnvironment with ScalatestRouteTest {
     it should "upload client version image" in {
       val file = File.createTempFile("load-test", "zip")
       assert(IoUtils.writeBytesToFile(file, "client version content".getBytes("utf8")))
-      assert(builderClient.uploadClientVersionImage("service1", ClientDistributionVersion.parse("test-1.1.1_1"), file))
+      assert(adminClient.uploadClientVersionImage("service1", ClientDistributionVersion.parse("test-1.1.1_1"), file))
       assertResult(22)(
         distributionDir.getClientVersionImageFile("service1", ClientDistributionVersion.parse("test-1.1.1_1")).length())
     }

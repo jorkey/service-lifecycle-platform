@@ -32,7 +32,6 @@ class SimpleLifecycle {
   private val distributionDir = Files.createTempDirectory("distribution").toFile
   private val builderDir = new File(distributionDir, "builder")
   private val adminDistributionUrl = s"http://${Common.AdminAccount}:${Common.AdminAccount}@localhost:8000"
-  private val builderDistributionUrl = s"http://${Common.BuilderServiceName}:${Common.BuilderServiceName}@localhost:8000"
   private val updaterDistributionUrl = s"http://${Common.UpdaterServiceName}:${Common.UpdaterServiceName}@localhost:8000"
   private val testServiceName = "test"
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
@@ -42,8 +41,6 @@ class SimpleLifecycle {
     new DistributionDirectory(distributionDir), distribution, "Test distribution server", "test", false, 8000)
   private val clientBuilder = new ClientBuilder(builderDir, distribution)
 
-  private val builderClient = new SyncDistributionClient(
-    new DistributionClient(new HttpClientImpl(builderDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
   private val adminClient = new SyncDistributionClient(
     new DistributionClient(new HttpClientImpl(adminDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
 
@@ -172,7 +169,7 @@ class SimpleLifecycle {
     println(s"########################### Upload new client version of distribution of version ${newVersion}")
     println()
     val newDistributionVersion = ClientDistributionVersion.from(distribution, newVersion)
-    if (!clientBuilder.uploadClientVersion(builderClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
+    if (!clientBuilder.uploadClientVersion(adminClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
       sys.error(s"Can't write distribution version")
     }
     if (!distributionBuilder.setClientDesiredVersions(Seq(ClientDesiredVersionDelta(Common.DistributionServiceName, Some(newDistributionVersion))))) {

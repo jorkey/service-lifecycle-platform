@@ -31,7 +31,7 @@ class AccountsTest extends TestEnvironment {
           addAccount (
             account: "distribution2",
             name: "Second Distribution",
-            roles: [Distribution],
+            roles: [Consumer],
             password: "password1"
           )
         }

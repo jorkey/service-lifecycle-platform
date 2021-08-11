@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.DistributionGraphqlCoder.distributionQueries
+import com.vyulabs.update.common.distribution.client.graphql.ConsumerGraphqlCoder.distributionQueries
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{ClientDesiredVersion, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DistributionProviderInfo}
 import com.vyulabs.update.common.version.DeveloperDistributionVersion

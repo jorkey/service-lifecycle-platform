@@ -21,7 +21,7 @@ import java.io.{File, FileInputStream}
 import java.security.{KeyStore, SecureRandom}
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext}
 
 /**
@@ -52,7 +52,7 @@ object DistributionMain extends App {
     val taskManager = new TaskManager(task => new LogStorekeeper(config.distribution, Common.DistributionServiceName, Some(task),
       config.instance, collections.State_ServiceLogs))
 
-    Await.result(collections.init(), FiniteDuration(10, TimeUnit.SECONDS))
+    Await.result(collections.init(), Duration.Inf)
 
     TraceAppender.handleLogs("Distribution server", "PROCESS",
       new LogStorekeeper(config.distribution, Common.DistributionServiceName, None, config.instance, collections.State_ServiceLogs))

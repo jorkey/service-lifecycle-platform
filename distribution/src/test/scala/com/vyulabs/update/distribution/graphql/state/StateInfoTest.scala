@@ -29,7 +29,7 @@ class StateInfoTest extends TestEnvironment {
   it should "set tested versions" in {
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
         mutation {
           setTestedVersions (
             versions: [
@@ -45,7 +45,7 @@ class StateInfoTest extends TestEnvironment {
     assertResult(Seq(TestedDesiredVersions("common", Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2))),
       DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", Seq(2, 1, 2)))),
-      Seq(TestSignature("distribution", date)))))(result(collections.Developer_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
+      Seq(TestSignature("consumer", date)))))(result(collections.Developer_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
         v.servicesProfile, v.versions, v.signatures.map(s => TestSignature(s.distribution, date)))))))
     result(collections.Developer_TestedVersions.drop())
   }
@@ -53,7 +53,7 @@ class StateInfoTest extends TestEnvironment {
   it should "set/get installed desired versions" in {
     assertResult((OK,
       ("""{"data":{"setInstalledDesiredVersions":true}}""").parseJson))(
-      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, distributionContext, graphql"""
+      result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
         mutation {
           setInstalledDesiredVersions (
             versions: [
@@ -68,21 +68,21 @@ class StateInfoTest extends TestEnvironment {
       ("""{"data":{"installedDesiredVersions":[{"service":"service1","version":{"distribution":"test","developerBuild":[1,1,1],"clientBuild":0}},{"service":"service2","version":{"distribution":"test","developerBuild":[2,1,1],"clientBuild":0}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
-          installedDesiredVersions (distribution: "distribution") {
+          installedDesiredVersions (distribution: "consumer") {
             service
             version { distribution, developerBuild, clientBuild }
           }
         }
       """)))
 
-    result(collections.Consumers_InstalledDesiredVersions.find().map(assertResult(Seq(InstalledDesiredVersions("distribution", Seq(
+    result(collections.Consumers_InstalledDesiredVersions.find().map(assertResult(Seq(InstalledDesiredVersions("consumer", Seq(
       ClientDesiredVersion("service1", ClientDistributionVersion("test", Seq(1, 1, 1), 0)),
       ClientDesiredVersion("service2", ClientDistributionVersion("test", Seq(2, 1, 1), 0))))))(_)))
     result(collections.Consumers_InstalledDesiredVersions.drop())
   }
 
   it should "set services state" in {
-    val distributionContext = GraphqlContext(Some(AccessToken("distribution", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
+    val distributionContext = GraphqlContext(Some(AccessToken("consumer", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(
@@ -116,7 +116,7 @@ class StateInfoTest extends TestEnvironment {
       ("""{"data":{"serviceStates":[{"instance":{"instance":"instance1","state":{"version":{"distribution":"test","developerBuild":[1,2,4],"clientBuild":0}}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
-          serviceStates (distribution: "distribution", service: "service1") {
+          serviceStates (distribution: "consumer", service: "service1") {
             instance {
               instance
               state {

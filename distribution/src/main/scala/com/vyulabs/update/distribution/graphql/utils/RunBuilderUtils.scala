@@ -81,6 +81,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         log.info(s"--------------------------- Start builder")
         ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments,
           Map.empty[String, String] +
+            ("distribution" -> distribution) +
             ("distributionUrl" -> distributionUrl) +
             ("accessToken" -> accessToken), directory.getBuilderDir(distribution))
       }
