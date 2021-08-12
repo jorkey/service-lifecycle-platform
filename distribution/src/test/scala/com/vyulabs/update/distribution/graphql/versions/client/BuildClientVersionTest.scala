@@ -58,29 +58,13 @@ class BuildClientVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Build client version test-1.1.1 of service service1` started"}}}}"""))
-//    logInput.requestNext(
-//      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildClientVersion, distribution=test, service=service1, version=test-1.1.1, author=admin) in directory ${builderDirectory}"}}}}"""))
-//    logInput.requestNext()
-//    logInput.requestNext()
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Builder started"}}}}"""))
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Builder continued"}}}}"""))
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Builder finished"}}}}"""))
-    logInput.requestNext()
-//    logInput.requestNext(
-//      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
-//    logInput.requestNext(
-//      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Build client version test-1.1.1 of service service1` finished successfully"}}}}"""))
+    expectMessage(logInput, "`Build client version test-1.1.1 of service service1` finished successfully")
 
     expectComplete(logInput)
   }
 
   it should "cancel of building developer version" in {
-    setSequence("state.serviceLogs", 10)
+    setSequence("state.serviceLogs", 100)
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
@@ -96,13 +80,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Build developer version 1.1.1 of service service1` started"}}}}"""))
-    logInput.requestNext()
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments List(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=developer, sources=[], comment=Test version) in directory ${builderDirectory}"}}}}"""))
-    logInput.requestNext()
-    logInput.requestNext()
+    expectMessage(logInput, "Builder started")
 
     assertResult((OK, ("""{"data":{"cancelTask":true}}""").parseJson))(result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation CancelTask($$task: String!) {
@@ -114,7 +92,7 @@ class BuildClientVersionTest extends TestEnvironment {
   }
 
   it should "run builder" in {
-    setSequence("state.serviceLogs", 20)
+    setSequence("state.serviceLogs", 200)
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
         mutation {
@@ -130,24 +108,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Run builder by remote distribution` started"}}}}"""))
-    logInput.requestNext()
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Start command /bin/sh with arguments Vector(./builder.sh, buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]) in directory ${consumerBuilderDirectory}"}}}}"""))
-    logInput.requestNext()
-    logInput.requestNext()
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Builder started"}}}}"""))
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Builder continued"}}}}"""))
-    logInput.requestNext(
-      ServerSentEvent(s"""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"Builder finished"}}}}"""))
-    logInput.requestNext()
-    logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"","message":"Builder process terminated with status 0"}}}}"""))
-    logInput.requestNext(
-      ServerSentEvent("""{"data":{"subscribeTaskLogs":{"line":{"level":"INFO","message":"`Run builder by remote distribution` finished successfully"}}}}"""))
+    expectMessage(logInput, "`Run builder by remote distribution` finished successfully")
 
     expectComplete(logInput)
   }
@@ -166,6 +127,20 @@ class BuildClientVersionTest extends TestEnvironment {
           }
         }
       """, variables = JsObject("task" -> JsString(task))))
+  }
+
+  @tailrec
+  private def expectMessage(input: TestSubscriber.Probe[ServerSentEvent], message: String): Unit = {
+    val e = input.requestNext()
+    val json = e.data.parseJson
+    val msg = json.asJsObject.fields.get("data").get
+      .asJsObject.fields.get("subscribeTaskLogs").get
+      .asJsObject.fields.get("line").get
+      .asJsObject.fields.get("message").get
+      .asInstanceOf[JsString].value
+    if (msg != message) {
+      expectMessage(input, message)
+    }
   }
 
   @tailrec
