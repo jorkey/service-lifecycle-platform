@@ -226,7 +226,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeAccount(c.arg(AccountArg)) }),
       Field("changeAccount", BooleanType,
         arguments = OptionAccountArg :: OptionNameArg :: OptionOldPasswordArg :: OptionPasswordArg ::
-          OptionAccountRolesArg :: OptionProfileArg :: OptionEmailArg :: OptionNotificationsArg :: Nil,
+          OptionAccountRolesArg :: OptionHumanInfoArg :: OptionConsumerInfoArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => {
           val token = c.ctx.accessToken.get
@@ -240,8 +240,8 @@ object GraphqlSchema {
             }
           }
           c.ctx.workspace.changeAccount(account, c.arg(OptionNameArg),
-            c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionAccountRolesArg), c.arg(OptionProfileArg),
-            c.arg(OptionEmailArg), c.arg(OptionNotificationsArg))
+            c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionAccountRolesArg),
+            c.arg(OptionHumanInfoArg), c.arg(OptionConsumerInfoArg))
         }),
 
       // Sources

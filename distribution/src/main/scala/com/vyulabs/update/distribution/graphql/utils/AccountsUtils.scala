@@ -54,8 +54,8 @@ trait AccountsUtils extends SprayJsonSupport {
   }
 
   def changeAccount(account: AccountId, name: Option[String], oldPassword: Option[String], password: Option[String],
-                    roles: Option[Seq[AccountRole]], profiles: Option[ServicesProfileId],
-                    email: Option[String], notifications: Option[Seq[String]])(implicit log: Logger): Future[Boolean] = {
+                    roles: Option[Seq[AccountRole]], human: Option[HumanInfo], consumer: Option[ConsumerInfo])
+                   (implicit log: Logger): Future[Boolean] = {
     log.info(s"Change account ${account}")
     val filters = Filters.eq("account", account)
     collections.Accounts.change(filters, r => {
@@ -68,7 +68,8 @@ trait AccountsUtils extends SprayJsonSupport {
         if (name.isDefined) name.get else r.name,
         password.map(PasswordHash(_)).getOrElse(r.passwordHash),
         roles.map(_.map(_.toString)).getOrElse(r.roles),
-        r.human, r.consumer)
+        if (human.isDefined) human else r.human,
+        if (consumer.isDefined) consumer else r.consumer)
     }).map(_ > 0)
   }
 

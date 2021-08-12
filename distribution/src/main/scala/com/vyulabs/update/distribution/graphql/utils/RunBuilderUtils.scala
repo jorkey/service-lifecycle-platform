@@ -68,7 +68,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
           for {
             account <- accountsUtils.getAccountInfo(distribution)
           } yield {
-            val customerInfo = account.map(_.customer)
+            val customerInfo = account.map(_.consumer)
               .flatten.getOrElse(throw new IOException(s"Consumer account ${distribution} is not found"))
             customerInfo.url
           }

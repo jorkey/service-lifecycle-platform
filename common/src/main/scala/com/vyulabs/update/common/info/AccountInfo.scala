@@ -17,7 +17,7 @@ object ConsumerInfo extends DefaultJsonProtocol {
 }
 
 case class AccountInfo(account: AccountId, name: String, roles: Seq[AccountRole],
-                       human: Option[HumanInfo], customer: Option[ConsumerInfo])
+                       human: Option[HumanInfo], consumer: Option[ConsumerInfo])
 
 object AccountInfo extends DefaultJsonProtocol {
   implicit val accountInfoJson = jsonFormat5(AccountInfo.apply)

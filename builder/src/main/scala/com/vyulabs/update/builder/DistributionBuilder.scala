@@ -31,8 +31,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val developerBuilder = new DeveloperBuilder(distributionDirectory.getBuilderDir(), distribution)
-  private val clientBuilder = new ClientBuilder(distributionDirectory.getBuilderDir(), distribution)
+  private val developerBuilder = new DeveloperBuilder(distributionDirectory.getBuilderDir(distribution), distribution)
+  private val clientBuilder = new ClientBuilder(distributionDirectory.getBuilderDir(distribution), distribution)
 
   private val initialClientVersion = ClientDistributionVersion.from(DeveloperDistributionVersion(distribution, Build.initialBuild), 0)
 

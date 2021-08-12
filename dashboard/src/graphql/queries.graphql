@@ -70,8 +70,8 @@ query installedDesiredVersions ($distribution: String!) {
     }
 }
 
-mutation buildClientVersion ($service: String!, $developerVersion: DeveloperDistributionVersionInput!, $clientVersion: ClientDistributionVersionInput!) {
-    buildClientVersion (service: $service, developerVersion: $developerVersion, clientVersion: $clientVersion)
+mutation buildClientVersion ($service: String!, $version: ClientDistributionVersionInput!) {
+    buildClientVersion (service: $service, version: $version)
 }
 
 mutation addClientVersionInfo ($info: ClientVersionInfoInput!) {
@@ -113,19 +113,19 @@ query accountsList {
 }
 
 query accountsInfo {
-    accountsInfo { account, name, roles, profile, email, notifications }
+    accountsInfo { account, name, roles, human { email, notifications }, consumer { profile, url } }
 }
 
 query accountInfo ($account: String!) {
-    accountsInfo (account: $account) { account, name, roles, profile, email, notifications }
+    accountsInfo (account: $account) { account, name, roles, human { email, notifications }, consumer { profile, url } }
 }
 
-mutation addAccount ($account: String!, $name: String!, $password: String!, $roles: [AccountRole!]!, $profile: String, $email: String, $notifications: [String!]) {
-    addAccount (account: $account, name: $name, password: $password, roles: $roles, profile: $profile, email: $email, notifications: $notifications)
+mutation addAccount ($account: String!, $name: String!, $password: String!, $roles: [AccountRole!]!, $human: HumanInfoInput, $consumer: ConsumerInfoInput) {
+    addAccount (account: $account, name: $name, password: $password, roles: $roles, human: $human, consumer: $consumer)
 }
 
-mutation changeAccount ($account: String!, $name: String, $oldPassword: String, $password: String, $roles: [AccountRole!], $profile: String, $email: String, $notifications: [String!]) {
-    changeAccount (account: $account, name: $name, oldPassword: $oldPassword, password: $password, roles: $roles, profile: $profile, email: $email, notifications: $notifications)
+mutation changeAccount ($account: String!, $name: String, $oldPassword: String, $password: String, $roles: [AccountRole!], $human: HumanInfoInput, $consumer: ConsumerInfoInput) {
+    changeAccount (account: $account, name: $name, oldPassword: $oldPassword, password: $password, roles: $roles, human: $human, consumer: $consumer)
 }
 
 mutation removeAccount ($account: String!) {
@@ -201,10 +201,6 @@ query providerDesiredVersions ($distribution: String!) {
     providerDesiredVersions (distribution: $distribution) {
         service, version { distribution, build }
     }
-}
-
-mutation downloadProviderVersion ($distribution: String!, $service: String!, $version: DeveloperDistributionVersionInput!) {
-    downloadProviderVersion (distribution: $distribution, service: $service, version: $version)
 }
 
 # Subscriptions
