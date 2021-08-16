@@ -41,7 +41,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
 
   def runBuilder(task: TaskId, arguments: Seq[String])
                 (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName, Seq(AccountRole.Builder), None))
+    val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName))
     if (config.distribution == config.builder.distribution) {
       runLocalBuilder(task, config.builder.distribution, accessToken, arguments)
     } else {
@@ -66,11 +66,9 @@ trait RunBuilderUtils extends SprayJsonSupport {
       distributionUrl <- {
         if (config.distribution != distribution) {
           for {
-            account <- accountsUtils.getAccountInfo(distribution)
+            accountInfo <- accountsUtils.getConsumerAccountInfo(distribution)
           } yield {
-            val customerInfo = account.map(_.consumer)
-              .flatten.getOrElse(throw new IOException(s"Consumer account ${distribution} is not found"))
-            customerInfo.url
+            accountInfo.getOrElse(throw new IOException(s"No consumer account ${distribution}")).properties.url
           }
         } else {
           Future(s"http://localhost:${config.network.port}")

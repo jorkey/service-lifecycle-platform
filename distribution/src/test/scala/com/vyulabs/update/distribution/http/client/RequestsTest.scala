@@ -2,6 +2,7 @@ package com.vyulabs.update.distribution.http.client
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.vyulabs.update.common.accounts.UserAccountProperties
 import com.vyulabs.update.common.config.{GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder._
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.developerSubscriptions
@@ -66,10 +67,11 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
   def requests[Source[_]](adminClient: SyncDistributionClient[Source], updaterClient: SyncDistributionClient[Source],
                           consumerClient: SyncDistributionClient[Source]): Unit = {
     it should "execute add/remove account requests" in {
-      assert(adminClient.graphqlRequest(administratorMutations.addAccount("account1", "account1", "account1",
-        Seq(AccountRole.Developer))).getOrElse(false))
+      assert(adminClient.graphqlRequest(administratorMutations.addUserAccount("account1", "account1", AccountRole.Developer,
+        "account1", UserAccountProperties(None, Seq.empty))).getOrElse(false))
 
-      assert(!adminClient.graphqlRequest(administratorMutations.addAccount("account1", "account1", "account1", Seq(AccountRole.Developer))).getOrElse(false))
+      assert(!adminClient.graphqlRequest(administratorMutations.addUserAccount("account1", "account1", AccountRole.Developer,
+        "account1", UserAccountProperties(None, Seq.empty))).getOrElse(false))
 
       assert(adminClient.graphqlRequest(administratorMutations.removeAccount("account1")).getOrElse(false))
     }

@@ -56,7 +56,7 @@ trait GraphqlWebSocketSupport {
                 val init = query.convertTo[ConnectionInit]
                 workspace.getOptionalAccessToken(init.payload.Authorization).onComplete {
                   case Success(accessToken) =>
-                    context = Some(GraphqlContext(accessToken, workspace))
+                    context = Some(GraphqlContext(accessToken, None, workspace))
                     singleReply(ConnectionAck())
                   case Failure(ex) =>
                     log.error("Getting access token error", ex)

@@ -2,8 +2,10 @@ package com.vyulabs.update.distribution.graphql
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
 import com.vyulabs.update.distribution.graphql.utils._
@@ -34,16 +36,18 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
   protected val accountsUtils = this
 }
 
-case class GraphqlContext(accessToken: Option[AccessToken], workspace: GraphqlWorkspace)
+case class GraphqlContext(accessToken: Option[AccessToken], accountInfo: Option[AccountInfo], workspace: GraphqlWorkspace)
 
 object GraphqlSchema {
   // Arguments
 
   val AccountArg = Argument("account", StringType)
+  val UserInfoArg = Argument("info", UserInfoInputType)
+  val ConsumerInfoArg = Argument("info", ConsumerInfoInputType)
   val NameArg = Argument("name", StringType)
   val OldPasswordArg = Argument("oldPassword", StringType)
   val PasswordArg = Argument("password", StringType)
-  val AccountRolesArg = Argument("roles", ListInputType(AccountRoleType))
+  val AccountRoleArg = Argument("role", AccountRoleType)
   val DistributionArg = Argument("distribution", StringType)
   val InstanceArg = Argument("instance", StringType)
   val ProcessArg = Argument("process", StringType)
@@ -74,13 +78,13 @@ object GraphqlSchema {
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
 
-  val OptionHumanInfoArg = Argument("human", OptionInputType(HumanInfoInputType))
-  val OptionConsumerInfoArg = Argument("consumer", OptionInputType(ConsumerInfoInputType))
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
-  val OptionAccountRolesArg = Argument("roles", OptionInputType(ListInputType(AccountRoleType)))
+  val OptionAccountRoleArg = Argument("role", OptionInputType(AccountRoleType))
+  val OptionUserInfoArg = Argument("info", OptionInputType(UserInfoInputType))
+  val OptionConsumerInfoArg = Argument("info", OptionInputType(ConsumerInfoInputType))
   val OptionEmailArg = Argument("email", OptionInputType(StringType))
   val OptionNotificationsArg = Argument("notifications", OptionInputType(ListInputType(StringType)))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -113,15 +117,23 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getDistributionInfo() }),
 
       // Own account operations
-      Field("whoAmI", AccountInfoType,
+      Field("whoAmI", UserAccountInfoType,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.account) }),
 
       // Accounts
-      Field("accountsInfo", ListType(AccountInfoType),
+      Field("userAccountsInfo", ListType(UserAccountInfoType),
         arguments = OptionAccountArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getAccountsInfo(c.arg(OptionAccountArg)) }),
+        resolve = c => { c.ctx.workspace.getUserAccountsInfo(c.arg(OptionAccountArg)) }),
+      Field("serviceAccountsInfo", ListType(ServiceAccountInfoType),
+        arguments = OptionAccountArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getServiceAccountsInfo(c.arg(OptionAccountArg)) }),
+      Field("consumerAccountsInfo", ListType(ConsumerAccountInfoType),
+        arguments = OptionAccountArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getConsumerAccountsInfo(c.arg(OptionAccountArg)) }),
 
       // Sources
       Field("developerServices", ListType(StringType),
@@ -141,18 +153,18 @@ object GraphqlSchema {
       // Developer versions
       Field("developerVersionsInProcess", ListType(DeveloperVersionInProcessInfoType),
         arguments = OptionServiceArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer, AccountRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = OptionServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer, AccountRole.Builder) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInfo(c.arg(OptionServiceArg), c.arg(OptionDistributionArg), version = c.arg(OptionDeveloperVersionArg)) }),
       Field("developerDesiredVersions", ListType(DeveloperDesiredVersionType),
         arguments = OptionTestConsumerArg :: OptionServicesArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(AccountRole.Consumer)) {
-            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accessToken.get.profile.get,
+          if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) {
+            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile,
               c.arg(OptionTestConsumerArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           } else {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
@@ -214,35 +226,59 @@ object GraphqlSchema {
           .map(c.ctx.workspace.encodeAccessToken(_)) }),
 
       // Accounts management
-      Field("addAccount", BooleanType,
-        arguments = AccountArg :: NameArg :: PasswordArg :: AccountRolesArg ::
-          OptionHumanInfoArg :: OptionConsumerInfoArg :: Nil,
+      Field("addUserAccount", BooleanType,
+        arguments = AccountArg :: NameArg :: AccountRoleArg :: PasswordArg :: UserInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addAccount(c.arg(AccountArg), c.arg(NameArg),
-          c.arg(PasswordArg), c.arg(AccountRolesArg), c.arg(OptionHumanInfoArg), c.arg(OptionConsumerInfoArg)).map(_ => true) }),
-      Field("removeAccount", BooleanType,
-        arguments = AccountArg :: Nil,
+        resolve = c => { c.ctx.workspace.addUserAccount(c.arg(AccountArg), c.arg(NameArg),
+          c.arg(AccountRoleArg), c.arg(PasswordArg), c.arg(UserInfoArg)).map(_ => true) }),
+      Field("addServiceAccount", BooleanType,
+        arguments = AccountArg :: NameArg :: AccountRoleArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeAccount(c.arg(AccountArg)) }),
-      Field("changeAccount", BooleanType,
-        arguments = OptionAccountArg :: OptionNameArg :: OptionOldPasswordArg :: OptionPasswordArg ::
-          OptionAccountRolesArg :: OptionHumanInfoArg :: OptionConsumerInfoArg :: Nil,
+        resolve = c => { c.ctx.workspace.addServiceAccount(c.arg(AccountArg), c.arg(NameArg),
+          c.arg(AccountRoleArg)).map(_ => true) }),
+      Field("addConsumerAccount", BooleanType,
+        arguments = AccountArg :: NameArg :: AccountRoleArg :: ConsumerInfoArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.addConsumerAccount(c.arg(AccountArg), c.arg(NameArg),
+          c.arg(AccountRoleArg), c.arg(ConsumerInfoArg)).map(_ => true) }),
+      Field("changeUserAccount", BooleanType,
+        arguments = OptionAccountArg :: OptionNameArg :: OptionAccountRoleArg ::
+          OptionOldPasswordArg :: OptionPasswordArg :: OptionUserInfoArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => {
-          val token = c.ctx.accessToken.get
-          val account = c.arg(OptionAccountArg).getOrElse(token.account)
-          if (!token.hasRole(AccountRole.Administrator)) {
-            if (token.account != account) {
+          val account = c.arg(OptionAccountArg).getOrElse(c.ctx.accountInfo.get.account)
+          if (c.ctx.accountInfo.get.role != AccountRole.Administrator) {
+            if (c.ctx.accessToken.get.account != account) {
               throw AuthorizationException(s"You can change only self account")
             }
             if (!c.arg(OptionOldPasswordArg).isDefined) {
               throw AuthorizationException(s"Old password is not specified")
             }
           }
-          c.ctx.workspace.changeAccount(account, c.arg(OptionNameArg),
-            c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg), c.arg(OptionAccountRolesArg),
-            c.arg(OptionHumanInfoArg), c.arg(OptionConsumerInfoArg))
+          c.ctx.workspace.changeUserAccount(account, c.arg(OptionNameArg),
+            c.arg(OptionAccountRoleArg),
+            c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg),
+            c.arg(OptionUserInfoArg))
         }),
+      Field("changeServiceAccount", BooleanType,
+        arguments = OptionAccountArg :: OptionNameArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => {
+          val account = c.arg(OptionAccountArg).getOrElse(c.ctx.accountInfo.get.account)
+          c.ctx.workspace.changeServiceAccount(account, c.arg(OptionNameArg), c.arg(OptionAccountRoleArg))
+        }),
+      Field("changeConsumerAccount", BooleanType,
+        arguments = OptionAccountArg :: OptionNameArg :: OptionConsumerInfoArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => {
+          val account = c.arg(OptionAccountArg).getOrElse(c.ctx.accountInfo.get.account)
+          c.ctx.workspace.changeConsumerAccount(account, c.arg(OptionNameArg),
+            c.arg(OptionAccountRoleArg), c.arg(OptionConsumerInfoArg))
+        }),
+      Field("removeAccount", BooleanType,
+        arguments = AccountArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.removeAccount(c.arg(AccountArg)) }),
 
       // Sources
       Field("addServiceSources", BooleanType,
@@ -334,20 +370,20 @@ object GraphqlSchema {
       // Distribution consumers operations
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        tags = Authorized(AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
         resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.account,
-          c.ctx.accessToken.get.profile.get, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
+          c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
 
       // State
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,
-        tags = Authorized(AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
         resolve = c => { c.ctx.workspace.setConsumerInstalledDesiredVersions(c.ctx.accessToken.get.account, c.arg(ClientDesiredVersionsArg)).map(_ => true) }),
       Field("setServiceStates", BooleanType,
         arguments = InstanceServiceStatesArg :: Nil,
-        tags = Authorized(AccountRole.Updater, AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
+          if (c.ctx.accountInfo.get.role == AccountRole.Updater) {
             c.ctx.workspace.setServiceStates(c.ctx.workspace.config.distribution, c.arg(InstanceServiceStatesArg)).map(_ => true)
           } else {
             c.ctx.workspace.setServiceStates(c.ctx.accessToken.get.account, c.arg(InstanceServiceStatesArg)).map(_ => true)
@@ -355,9 +391,9 @@ object GraphqlSchema {
         }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
-        tags = Authorized(AccountRole.Updater, AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
+          if (c.ctx.accountInfo.get.role == AccountRole.Updater) {
             c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distribution,
               c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
           } else {
@@ -367,9 +403,9 @@ object GraphqlSchema {
         }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
-        tags = Authorized(AccountRole.Updater, AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.Updater, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
-          if (c.ctx.accessToken.get.roles.contains(AccountRole.Updater)) {
+          if (c.ctx.accountInfo.get.role == AccountRole.Updater) {
             c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distribution, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
           } else {
             c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.account, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
@@ -379,14 +415,14 @@ object GraphqlSchema {
       // Run builder remotely
       Field("runBuilder", StringType,
         arguments = AccessTokenArg :: ArgumentsArg :: Nil,
-        tags = Authorized(AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
         resolve = c => { c.ctx.workspace.runBuilderByRemoteDistribution(c.ctx.accessToken.get.account,
           c.arg(AccessTokenArg), c.arg(ArgumentsArg)) }),
 
       // Cancel tasks
       Field("cancelTask", BooleanType,
         arguments = TaskArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => { c.ctx.workspace.taskManager.cancel(c.arg(TaskArg)) })
     )
   )
@@ -401,7 +437,7 @@ object GraphqlSchema {
           c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromArg))),
       Field.subs("subscribeTaskLogs", SequencedLogLineType,
         arguments = TaskArg :: OptionFromArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Consumer) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeTaskLogs(c.arg(TaskArg), c.arg(OptionFromArg))),
       Field.subs("testSubscription", StringType,
         tags = Authorized(AccountRole.Developer) :: Nil,

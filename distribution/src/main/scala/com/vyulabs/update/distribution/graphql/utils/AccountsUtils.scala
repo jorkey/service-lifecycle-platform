@@ -7,13 +7,13 @@ import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{AccountId, ServicesProfileId}
+import com.vyulabs.update.common.common.Common.AccountId
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.AccountRole.AccountRole
-import com.vyulabs.update.common.info.{AccessToken, AccountInfo, AccountRole, ConsumerInfo, HumanInfo}
+import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.{AuthenticationException, NotFoundException}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.accounts.{AccountCredentials, PasswordHash, ServerAccountInfo}
+import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties, PasswordHash, ServerAccountInfo, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
 import org.bson.BsonDocument
 import org.janjaali.sprayjwt.Jwt
 import org.janjaali.sprayjwt.algorithms.HS256
@@ -35,16 +35,91 @@ trait AccountsUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def addAccount(account: AccountId, name: String, password: String,
-                 roles: Seq[AccountRole], human: Option[HumanInfo], consumer: Option[ConsumerInfo])
-                (implicit log: Logger): Future[Unit] = {
-    log.info(s"Add account ${account} with roles ${roles}")
+  def addUserAccount(account: AccountId, name: String, role: AccountRole, password: String, info: UserAccountProperties)
+                     (implicit log: Logger): Future[Unit] = {
+    log.info(s"Add user account ${account} with role ${role}")
     for {
       result <- {
-        val document = ServerAccountInfo(account, name, PasswordHash(password), roles.map(_.toString), human, consumer)
+        val document = ServerAccountInfo(ServerAccountInfo.TypeUser,
+          account, name, role.toString, Some(PasswordHash(password)), user = Some(info), None)
         collections.Accounts.insert(document).map(_ => ())
       }
     } yield result
+  }
+
+  def addServiceAccount(account: AccountId, name: String, role: AccountRole)
+                       (implicit log: Logger): Future[Unit] = {
+    log.info(s"Add service account ${account} with role ${role}")
+    for {
+      result <- {
+        val document = ServerAccountInfo(ServerAccountInfo.TypeService,
+          account, name, role.toString, None, None, None)
+        collections.Accounts.insert(document).map(_ => ())
+      }
+    } yield result
+  }
+
+  def addConsumerAccount(account: AccountId, name: String, role: AccountRole, info: ConsumerAccountProperties)
+                        (implicit log: Logger): Future[Unit] = {
+    log.info(s"Add consumer account ${account} with role ${role}")
+    for {
+      result <- {
+        val document = ServerAccountInfo(ServerAccountInfo.TypeConsumer,
+          account, name, role.toString, None, None, Some(info))
+        collections.Accounts.insert(document).map(_ => ())
+      }
+    } yield result
+  }
+
+  def changeUserAccount(account: AccountId, name: Option[String], role: Option[AccountRole],
+                        oldPassword: Option[String], password: Option[String],
+                        info: Option[UserAccountProperties])(implicit log: Logger): Future[Boolean] = {
+    log.info(s"Change user account ${account}")
+    val filters = Filters.eq("account", account)
+    collections.Accounts.change(filters, r => {
+      for (oldPassword <- oldPassword) {
+        if (r.passwordHash.get.hash != PasswordHash.generatePasswordHash(oldPassword, r.passwordHash.get.salt)) {
+          throw new IOException(s"Password verification error")
+        }
+      }
+      ServerAccountInfo(ServerAccountInfo.TypeUser,
+        r.account,
+        if (name.isDefined) name.get else r.name,
+        if (role.isDefined) role.get.toString else r.role,
+        if (password.isDefined) password.map(PasswordHash(_)) else r.passwordHash,
+        if (info.isDefined) info else r.user,
+        None)
+    }).map(_ > 0)
+  }
+
+  def changeServiceAccount(account: AccountId, name: Option[String], role: Option[AccountRole])
+                           (implicit log: Logger): Future[Boolean] = {
+    log.info(s"Change service account ${account}")
+    val filters = Filters.eq("account", account)
+    collections.Accounts.change(filters, r => {
+      ServerAccountInfo(ServerAccountInfo.TypeService,
+        r.account,
+        if (name.isDefined) name.get else r.name,
+        if (role.isDefined) role.get.toString else r.role,
+        None,
+        None,
+        None)
+    }).map(_ > 0)
+  }
+
+  def changeConsumerAccount(account: AccountId, name: Option[String],
+                            role: Option[AccountRole], info: Option[ConsumerAccountProperties])(implicit log: Logger): Future[Boolean] = {
+    log.info(s"Change user account ${account}")
+    val filters = Filters.eq("account", account)
+    collections.Accounts.change(filters, r => {
+      ServerAccountInfo(ServerAccountInfo.TypeConsumer,
+        r.account,
+        if (name.isDefined) name.get else r.name,
+        if (role.isDefined) role.get.toString else r.role,
+        None,
+        None,
+        if (info.isDefined) info else r.consumer)
+    }).map(_ > 0)
   }
 
   def removeAccount(account: AccountId)(implicit log: Logger): Future[Boolean] = {
@@ -53,37 +128,17 @@ trait AccountsUtils extends SprayJsonSupport {
     collections.Accounts.delete(filters).map(_ > 0)
   }
 
-  def changeAccount(account: AccountId, name: Option[String], oldPassword: Option[String], password: Option[String],
-                    roles: Option[Seq[AccountRole]], human: Option[HumanInfo], consumer: Option[ConsumerInfo])
-                   (implicit log: Logger): Future[Boolean] = {
-    log.info(s"Change account ${account}")
-    val filters = Filters.eq("account", account)
-    collections.Accounts.change(filters, r => {
-      for (oldPassword <- oldPassword) {
-        if (r.passwordHash.hash != PasswordHash.generatePasswordHash(oldPassword, r.passwordHash.salt)) {
-          throw new IOException(s"Password verification error")
-        }
-      }
-      ServerAccountInfo(r.account,
-        if (name.isDefined) name.get else r.name,
-        password.map(PasswordHash(_)).getOrElse(r.passwordHash),
-        roles.map(_.map(_.toString)).getOrElse(r.roles),
-        if (human.isDefined) human else r.human,
-        if (consumer.isDefined) consumer else r.consumer)
-    }).map(_ > 0)
-  }
-
   def login(account: AccountId, password: String)(implicit log: Logger): Future[AccessToken] = {
-    getAccountCredentials(account).map {
-      case Some(accountCredentials) if accountCredentials.passwordHash.hash == PasswordHash.generatePasswordHash(password, accountCredentials.passwordHash.salt) =>
-        AccessToken(account, accountCredentials.roles, accountCredentials.profile)
+    getServerAccountInfo(account).map {
+      case Some(accountInfo) if accountInfo.passwordHash.get.hash == PasswordHash.generatePasswordHash(password, accountInfo.passwordHash.get.salt) =>
+        AccessToken(account)
       case _ =>
         throw AuthenticationException("Authentication error")
     }
   }
 
-  def whoAmI(account: AccountId)(implicit log: Logger): Future[AccountInfo] = {
-    getAccountsInfo(Some(account)).map(_.headOption.getOrElse(throw NotFoundException()))
+  def whoAmI(account: AccountId)(implicit log: Logger): Future[UserAccountInfo] = {
+    getUserAccountsInfo(Some(account)).map(_.headOption.getOrElse(throw NotFoundException()))
   }
 
   def encodeAccessToken(token: AccessToken)(implicit log: Logger): String = {
@@ -101,6 +156,22 @@ trait AccountsUtils extends SprayJsonSupport {
       case Some(token) => provide(token)
       case None => complete(StatusCodes.Unauthorized)
     }
+  }
+
+  def getAccountInfo()(implicit log: Logger): Directive1[AccountInfo] = {
+    getOptionalAccessToken().flatMap {
+      case Some(token) =>
+        onSuccess(getAccountInfo(token.account)).flatMap {
+          case Some(info) => provide(info)
+          case None => complete(StatusCodes.Unauthorized)
+        }
+      case None =>
+        complete(StatusCodes.Unauthorized)
+    }
+  }
+
+  def getAccountRole()(implicit log: Logger): Directive1[AccountRole] = {
+    getAccountInfo().map(_.role)
   }
 
   def getOptionalAccessToken()(implicit log: Logger): Directive1[Option[AccessToken]] = {
@@ -139,21 +210,55 @@ trait AccountsUtils extends SprayJsonSupport {
     }
   }
 
-  def getAccountCredentials(account: AccountId)(implicit log: Logger): Future[Option[AccountCredentials]] = {
+  def getServerAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[ServerAccountInfo]] = {
     val filters = Filters.eq("account", account)
-    collections.Accounts.find(filters).map(_.map(info => AccountCredentials(
-      info.roles.map(AccountRole.withName(_)), info.consumer.map(_.profile), info.passwordHash)).headOption)
-  }
-
-  def getAccountsInfo(account: Option[AccountId] = None)(implicit log: Logger): Future[Seq[AccountInfo]] = {
-    val accountArg = account.map(Filters.eq("account", _))
-    val args = accountArg.toSeq
-    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Accounts.find(filters).map(_.map(info => AccountInfo(info.account,
-      info.name, info.roles.map(AccountRole.withName(_)), info.human, info.consumer)))
+    collections.Accounts.find(filters).map(_.headOption)
   }
 
   def getAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[AccountInfo]] = {
-    getAccountsInfo(Some(account)).map(_.headOption)
+    val filters = Filters.eq("account", account)
+    collections.Accounts.find(filters).map(_.headOption.map(_.toAccountInfo()))
+  }
+
+  def getUserAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[UserAccountInfo]] = {
+    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeUser)) ++
+      account.map(Filters.eq("account", _))
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    collections.Accounts.find(filters).map(_.headOption.map(_.toUserAccountInfo()))
+  }
+
+  def getServiceAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[ServiceAccountInfo]] = {
+    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeService)) ++
+      account.map(Filters.eq("account", _))
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    collections.Accounts.find(filters).map(_.headOption.map(_.toServiceAccountInfo()))
+  }
+
+  def getConsumerAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[ConsumerAccountInfo]] = {
+    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeConsumer)) ++
+      account.map(Filters.eq("account", _))
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    collections.Accounts.find(filters).map(_.headOption.map(_.toConsumerAccountInfo()))
+  }
+
+  def getUserAccountsInfo(account: Option[AccountId] = None)(implicit log: Logger): Future[Seq[UserAccountInfo]] = {
+    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeUser)) ++
+      account.map(Filters.eq("account", _))
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    collections.Accounts.find(filters).map(_.map(_.toUserAccountInfo()))
+  }
+
+  def getServiceAccountsInfo(account: Option[AccountId] = None)(implicit log: Logger): Future[Seq[ServiceAccountInfo]] = {
+    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeService)) ++
+      account.map(Filters.eq("account", _))
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    collections.Accounts.find(filters).map(_.map(_.toServiceAccountInfo()))
+  }
+
+  def getConsumerAccountsInfo(account: Option[AccountId] = None)(implicit log: Logger): Future[Seq[ConsumerAccountInfo]] = {
+    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeConsumer)) ++
+      account.map(Filters.eq("account", _))
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    collections.Accounts.find(filters).map(_.map(_.toConsumerAccountInfo()))
   }
 }

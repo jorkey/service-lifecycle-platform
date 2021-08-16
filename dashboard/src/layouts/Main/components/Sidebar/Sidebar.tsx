@@ -81,7 +81,7 @@ const Sidebar = (props:any) => {
           href: '/accounts/service',
         },
         {
-          title: 'Consumers',
+          title: 'Distribution Consumers',
           href: '/accounts/consumer',
         }
       ]

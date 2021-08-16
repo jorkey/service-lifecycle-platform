@@ -4,7 +4,7 @@ import spray.json.{JsString, JsValue, RootJsonFormat}
 
 object AccountRole extends Enumeration {
   type AccountRole = Value
-  val None, Developer, Administrator, Consumer, Builder, Updater = Value
+  val None, Developer, Administrator, DistributionConsumer, Builder, Updater = Value
 
   implicit object AccountRoleJsonFormat extends RootJsonFormat[AccountRole] {
     def write(value: AccountRole) = JsString(value.toString)

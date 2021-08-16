@@ -25,10 +25,10 @@ object AuthMiddleware extends MiddlewareBeforeField[GraphqlContext] {
   def beforeField(queryVal: QueryVal, mctx: MiddlewareQueryContext[GraphqlContext, _, _], c: Context[GraphqlContext, _]) = {
     c.field.tags.find(_.isInstanceOf[Authorized]).map(_.asInstanceOf[Authorized]) match {
       case Some(authorized) =>
-        c.ctx.accessToken match {
-          case Some(token) =>
-            if ((authorized.roles.toSet -- token.roles).size == authorized.roles.size) {
-              throw AuthException(s"Unauthorized access: query ${mctx.queryAst.toString}, authorized ${authorized}, access token ${token}")
+        c.ctx.accountInfo match {
+          case Some(accountInfo) =>
+            if ((authorized.roles.toSet - accountInfo.role).size == authorized.roles.size) {
+              throw AuthException(s"Unauthorized access: query ${mctx.queryAst.toString}, authorized ${authorized}, account info ${accountInfo}")
             }
           case None =>
             throw AuthException("Unauthorized access. No access token")

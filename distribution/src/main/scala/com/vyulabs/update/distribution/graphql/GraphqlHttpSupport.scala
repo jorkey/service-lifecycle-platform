@@ -35,7 +35,7 @@ trait GraphqlHttpSupport {
                             executionContext: ExecutionContext, log: Logger): Route = {
     QueryParser.parse(query) match {
       case Success(document) =>
-        val context = GraphqlContext(token, workspace)
+        val context = GraphqlContext(token, None, workspace)
         log.debug(s"Execute graphql query ${query}, operation ${operation}, variables ${variables}")
         document.operationType(operation) match {
           case Some(OperationType.Subscription) =>

@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.graphql.state
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats._
@@ -82,7 +83,9 @@ class StateInfoTest extends TestEnvironment {
   }
 
   it should "set services state" in {
-    val distributionContext = GraphqlContext(Some(AccessToken("consumer", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
+    val distributionContext = GraphqlContext(Some(AccessToken("consumer")),
+      Some(ConsumerAccountInfo("consumer", "Distribution Consumer", AccountRole.DistributionConsumer,
+        ConsumerAccountProperties(Common.CommonServiceProfile, "http://dummy"))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(

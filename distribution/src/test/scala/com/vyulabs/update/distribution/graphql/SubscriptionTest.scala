@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.scaladsl.TestSink
+import com.vyulabs.update.common.accounts.{UserAccountInfo, UserAccountProperties}
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.TestEnvironment
 import sangria.macros.LiteralGraphQLStringContext
@@ -29,7 +30,8 @@ class SubscriptionTest extends TestEnvironment with ScalatestRouteTest {
   override def dbName = super.dbName
 
   it should "test subscription" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("admin", Seq(AccountRole.Administrator), None)), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("admin")),
+      Some(UserAccountInfo("admin", "Administrator", AccountRole.Administrator, UserAccountProperties(None, Seq.empty))), workspace)
     val subscribeResponse = result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
       subscription {
         testSubscription

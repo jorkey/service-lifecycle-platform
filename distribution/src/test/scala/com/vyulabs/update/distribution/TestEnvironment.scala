@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestDuration
@@ -9,7 +9,7 @@ import com.mongodb.client.model.{Filters, Updates}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{AccessToken, AccountRole, ConsumerInfo}
+import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.common.AkkaTimer
@@ -17,15 +17,19 @@ import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, Graphql
 import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
-import com.vyulabs.update.distribution.accounts.{AccountCredentials, PasswordHash, ServerAccountInfo}
+import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, PasswordHash, ServerAccountInfo, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
+import org.janjaali.sprayjwt.Jwt
+import org.janjaali.sprayjwt.algorithms.HS256
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
+import spray.json.enrichAny
 
-import java.io.File
+import java.io.{File, IOException}
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
+import scala.util.{Failure, Success}
 
 abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec with Matchers with BeforeAndAfterAll {
   private implicit val system = ActorSystem("Distribution")
@@ -66,29 +70,39 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   val adminHttpCredentials = BasicHttpCredentials("admin", "admin")
   val developerHttpCredentials = BasicHttpCredentials("developer", "developer")
-  val consumerHttpCredentials = BasicHttpCredentials("consumer", "consumer")
-  val updaterHttpCredentials = BasicHttpCredentials("updater", "updater")
 
-  val adminCredentials = AccountCredentials(Seq(AccountRole.Administrator), None, PasswordHash(adminHttpCredentials.password))
-  val developerCredentials = AccountCredentials(Seq(AccountRole.Developer), None, PasswordHash(developerHttpCredentials.password))
-  val distributionCredentials = AccountCredentials(Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile), PasswordHash(consumerHttpCredentials.password))
-  val updaterCredentials = AccountCredentials(Seq(AccountRole.Updater), None, PasswordHash(updaterHttpCredentials.password))
+  val builderHttpCredentials = OAuth2BearerToken(encodeAccessToken(AccessToken("builder")))
+  val updaterHttpCredentials = OAuth2BearerToken(encodeAccessToken(AccessToken("updater")))
+  val consumerHttpCredentials = OAuth2BearerToken(encodeAccessToken(AccessToken("consumer")))
 
-  val adminContext = GraphqlContext(Some(AccessToken("admin", Seq(AccountRole.Administrator), None)), workspace)
-  val developerContext = GraphqlContext(Some(AccessToken("developer", Seq(AccountRole.Developer), None)), workspace)
-  val consumerContext = GraphqlContext(Some(AccessToken("consumer", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
-  val builderContext = GraphqlContext(Some(AccessToken("builder", Seq(AccountRole.Builder), None)), workspace)
-  val updaterContext = GraphqlContext(Some(AccessToken("updater", Seq(AccountRole.Updater), None)), workspace)
+  val adminAccountInfo = UserAccountInfo("admin", "Administrator", AccountRole.Administrator, UserAccountProperties(None, Seq.empty))
+  val developerAccountInfo = UserAccountInfo("developer", "Developer", AccountRole.Developer, UserAccountProperties(None, Seq.empty))
+  val consumerAccountInfo = ConsumerAccountInfo("consumer", "Distribution Consumer", AccountRole.DistributionConsumer,
+    ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8001"))
+
+  val adminContext = GraphqlContext(Some(AccessToken("admin")), Some(adminAccountInfo), workspace)
+  val developerContext = GraphqlContext(Some(AccessToken("developer")), Some(developerAccountInfo), workspace)
+  val builderContext = GraphqlContext(Some(AccessToken("builder")),
+    Some(ServiceAccountInfo("builder", "Builder", AccountRole.Builder)), workspace)
+  val updaterContext = GraphqlContext(Some(AccessToken("updater")),
+    Some(ServiceAccountInfo("updater", "Updater", AccountRole.Updater)), workspace)
+  val consumerContext = GraphqlContext(Some(AccessToken("consumer")), Some(consumerAccountInfo), workspace)
 
   val builderDirectory = new File(distributionDirectory, "builder/" + config.distribution); builderDirectory.mkdirs()
   val consumerBuilderDirectory = new File(distributionDirectory, "builder/consumer"); consumerBuilderDirectory.mkdirs()
 
   result(for {
-    _ <- collections.Accounts.insert(ServerAccountInfo(adminHttpCredentials.username, "Test Administrator", adminCredentials.passwordHash, adminCredentials.roles.map(_.toString), None, None))
-    _ <- collections.Accounts.insert(ServerAccountInfo(developerHttpCredentials.username, "Test Developer", developerCredentials.passwordHash, developerCredentials.roles.map(_.toString), None, None))
-    _ <- collections.Accounts.insert(ServerAccountInfo(consumerHttpCredentials.username, "Test Consumer", distributionCredentials.passwordHash, distributionCredentials.roles.map(_.toString),
-        human = None, consumer = Some(ConsumerInfo(profile = Common.CommonServiceProfile, url = "http://localhost:8001"))))
-    _ <- collections.Accounts.insert(ServerAccountInfo(updaterHttpCredentials.username, "Test Updater", updaterCredentials.passwordHash, updaterCredentials.roles.map(_.toString), None,  None))
+    _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeUser, "admin", "Test Administrator",
+        AccountRole.Administrator.toString, Some(PasswordHash(adminHttpCredentials.password)), Some(adminAccountInfo.properties), None))
+    _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeUser, developerHttpCredentials.username, "Test Developer",
+        AccountRole.Developer.toString,  Some(PasswordHash(developerHttpCredentials.password)), Some(developerAccountInfo.properties), None))
+    _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeService, "updater", "Test Updater",
+        AccountRole.Updater.toString, None, None,  None))
+    _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeService, "builder", "Test builder",
+        AccountRole.Builder.toString, None, None,  None))
+    _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeConsumer, "consumer", "Test Consumer",
+        AccountRole.DistributionConsumer.toString, None, None,
+      consumer = Some(ConsumerAccountProperties(profile = Common.CommonServiceProfile, url = "http://localhost:8001"))))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0))
@@ -104,4 +118,14 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   def setSequence(name: String, sequence: Long): Unit = {
     result(result(collections.Sequences).updateOne(Filters.eq("name", name), Updates.set("sequence", sequence)))
   }
+
+  def encodeAccessToken(token: AccessToken)(implicit log: Logger): String = {
+    Jwt.encode(token.toJson, config.jwtSecret, HS256) match {
+      case Success(value) =>
+        value
+      case Failure(ex) =>
+        throw new IOException(s"Authentication error: ${ex.toString}")
+    }
+  }
+
 }

@@ -1,5 +1,6 @@
 package com.vyulabs.update.distribution.graphql
 
+import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
 import com.vyulabs.update.common.config.{GitConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
@@ -78,9 +79,11 @@ object GraphqlTypes {
   implicit val ClientVersionInfoType = deriveObjectType[Unit, ClientVersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
   implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersions]()
-  implicit val AccountHumanInfoType = deriveObjectType[Unit, HumanInfo]()
-  implicit val AccountConsumerInfoType = deriveObjectType[Unit, ConsumerInfo]()
-  implicit val AccountInfoType = deriveObjectType[Unit, AccountInfo]()
+  implicit val AccountHumanInfoType = deriveObjectType[Unit, UserAccountProperties]()
+  implicit val AccountConsumerInfoType = deriveObjectType[Unit, ConsumerAccountProperties]()
+  implicit val UserAccountInfoType = deriveObjectType[Unit, UserAccountInfo]()
+  implicit val ServiceAccountInfoType = deriveObjectType[Unit, ServiceAccountInfo]()
+  implicit val ConsumerAccountInfoType = deriveObjectType[Unit, ConsumerAccountInfo]()
   implicit val UpdateErrorType = deriveObjectType[Unit, UpdateError]()
   implicit val ServiceStateType = deriveObjectType[Unit, ServiceState]()
   implicit val DirectoryServiceStateType = deriveObjectType[Unit, DirectoryServiceState]()
@@ -93,8 +96,8 @@ object GraphqlTypes {
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
   implicit val ProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
 
-  implicit val HumanInfoInputType = deriveInputObjectType[HumanInfo](InputObjectTypeName("HumanInfoInput"))
-  implicit val ConsumerInfoInputType = deriveInputObjectType[ConsumerInfo](InputObjectTypeName("ConsumerInfoInput"))
+  implicit val UserInfoInputType = deriveInputObjectType[UserAccountProperties](InputObjectTypeName("UserInfoInput"))
+  implicit val ConsumerInfoInputType = deriveInputObjectType[ConsumerAccountProperties](InputObjectTypeName("ConsumerInfoInput"))
   implicit val DeveloperVersionInputType = deriveInputObjectType[DeveloperVersion](InputObjectTypeName("DeveloperVersionInput"))
   implicit val ClientVersionInputType = deriveInputObjectType[ClientVersion](InputObjectTypeName("ClientVersionInput"))
   implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersionInput"))

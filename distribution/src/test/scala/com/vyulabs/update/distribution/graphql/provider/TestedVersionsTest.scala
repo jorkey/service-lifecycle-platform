@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.graphql.provider
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, UserAccountInfo}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
@@ -28,7 +29,9 @@ class TestedVersionsTest extends TestEnvironment {
   }
 
   it should "set/get tested versions" in {
-    val graphqlContext1 = GraphqlContext(Some(AccessToken("distribution1", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
+    val graphqlContext1 = GraphqlContext(Some(AccessToken("distribution1")),
+      Some(ConsumerAccountInfo("distribution1", "Test Consumer Distribution 1", AccountRole.DistributionConsumer,
+        ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8001"))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -43,7 +46,9 @@ class TestedVersionsTest extends TestEnvironment {
         }
       """)))
 
-    val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
+    val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2")),
+      Some(ConsumerAccountInfo("distribution2", "Test Consumer Distribution 2", AccountRole.DistributionConsumer,
+        ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8002"))), workspace)
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"service":"service1","version":{"distribution":"test","build":[1,1,1]}},{"service":"service2","version":{"distribution":"test","build":[2,1,1]}}]}}""").parseJson))(
@@ -60,7 +65,9 @@ class TestedVersionsTest extends TestEnvironment {
   }
 
   it should "return error if no tested versions for the client's profile" in {
-    val graphqlContext = GraphqlContext(Some(AccessToken("distribution2", Seq(AccountRole.Consumer), Some(Common.CommonServiceProfile))), workspace)
+    val graphqlContext = GraphqlContext(Some(AccessToken("distribution2")),
+      Some(ConsumerAccountInfo("distribution2", "Test Consumer Distribution", AccountRole.DistributionConsumer,
+        ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8002"))), workspace)
     assertResult((OK,
       ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""

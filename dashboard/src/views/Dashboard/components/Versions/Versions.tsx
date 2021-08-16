@@ -102,7 +102,7 @@ const Versions: React.FC<VersionsProps> = props => {
                 value={consumer}
               >
                 { accountsInfo?.accountsInfo
-                    .filter(account => account.roles.find(role => role == AccountRole.Distribution))
+                    .filter(account => account.roles.find(role => role == AccountRole.Consumer))
                     .map(consumer => <option key={consumer.account}>{consumer.account}</option>) }
               </Select>}
               label='Consumer'

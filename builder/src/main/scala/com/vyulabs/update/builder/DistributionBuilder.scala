@@ -1,6 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
+import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId}
 import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
@@ -70,7 +71,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def addDistributionAccounts(): Boolean = {
     log.info(s"--------------------------- Add distribution accounts")
-    if (!addServiceAccount(Common.UpdaterServiceName, "Updater service account", Seq(AccountRole.Updater))) {
+    if (!addServiceAccount(Common.UpdaterServiceName, "Updater service account", AccountRole.Updater)) {
       return false
     }
     true
@@ -313,25 +314,23 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def addServiceAccount(account: AccountId, name: String, roles: Seq[AccountRole]): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(account, name, account, roles,
-      None, None)).getOrElse {
+  def addUserAccount(account: AccountId, name: String, role: AccountRole, password: String, properties: UserAccountProperties): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addUserAccount(account, name, role, password, properties)).getOrElse {
       return false
     }
     true
   }
 
-  def addHumanAccount(account: AccountId, name: String, role: AccountRole, human: HumanInfo): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(account, name, account, Seq(role),
-        Some(human), None)).getOrElse {
+  def addServiceAccount(account: AccountId, name: String, role: AccountRole): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addServiceAccount(account, name, role)).getOrElse {
       return false
     }
     true
   }
 
-  def addConsumerAccount(distribution: AccountId, name: String, consumer: ConsumerInfo): Boolean = {
-    adminDistributionClient.get.graphqlRequest(administratorMutations.addAccount(distribution,
-        name, distribution, Seq(AccountRole.Consumer), None, Some(consumer))).getOrElse {
+  def addConsumerAccount(distribution: AccountId, name: String, consumer: ConsumerAccountProperties): Boolean = {
+    adminDistributionClient.get.graphqlRequest(administratorMutations.addConsumerAccount(distribution,
+        name, AccountRole.DistributionConsumer, consumer)).getOrElse {
       return false
     }
     true

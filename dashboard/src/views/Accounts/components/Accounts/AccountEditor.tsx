@@ -13,11 +13,11 @@ import {
   Checkbox,
   Divider,
   FormControlLabel,
-  FormGroup, MenuItem,
+  FormGroup,
   Select, Typography
 } from '@material-ui/core';
 import {
-  AccountRole,
+  AccountRole, ConsumerInfoInput, HumanInfoInput,
   useAccountInfoLazyQuery,
   useAccountsListQuery,
   useAddAccountMutation,
@@ -35,7 +35,7 @@ const useStyles = makeStyles(theme => ({
     marginTop: 25
   },
   profile: {
-    marginTop: 20
+    marginBottom: 20
   },
   profileTitle: {
     marginTop: 5,
@@ -45,6 +45,9 @@ const useStyles = makeStyles(theme => ({
   profileSelect: {
     width: '100%',
     height: 25
+  },
+  url: {
+    marginTop: 25
   },
   controls: {
     marginTop: 25,
@@ -85,8 +88,9 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
   const [oldPassword, setOldPassword] = useState();
   const [password, setPassword] = useState<string>();
   const [confirmPassword, setConfirmPassword] = useState<string>();
-  const [profile, setProfile] = useState<string>();
   const [email, setEmail] = useState<string>();
+  const [profile, setProfile] = useState<string>();
+  const [url, setUrl] = useState<string>();
 
   const [initialized, setInitialized] = useState(false);
 
@@ -108,11 +112,11 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
           setAccount(info.account)
           setName(info.name)
           setRoles(info.roles)
-          if (info.profile) {
-            setProfile(info.profile)
-          }
-          if (info.email) {
-            setEmail(info.email)
+          if (info.human) {
+            setEmail(info.human.email)
+          } else if (info.consumer) {
+            setProfile(info.consumer.profile)
+            setUrl(info.consumer.url)
           }
         }
         setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator) != undefined)
@@ -121,7 +125,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
     } else {
       setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator) != undefined)
       if (accountType == 'consumer') {
-        setRoles([AccountRole.Distribution])
+        setRoles([AccountRole.Consumer])
       }
       setInitialized(true)
     }
@@ -143,6 +147,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
 
   const validate: () => boolean = () => {
     return  !!account && !!name && roles.length != 0 &&
+            ((accountType == 'human') ? !!email : (accountType == 'consumer') ? !!profile && !!url && validateUrl(url) : true) &&
             (!!editAccount || !doesAccountExist(account)) &&
             (!!editAccount || !!password) &&
             (byAdmin || !!oldPassword) &&
@@ -151,10 +156,18 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
 
   const submit = () => {
     if (validate()) {
+      const human: HumanInfoInput | undefined = (accountType == 'human')?{ email: email!, notifications: [] }:undefined
+      const consumer: ConsumerInfoInput | undefined = (accountType == 'consumer')?{ profile: profile!, url: url! }:undefined
       if (editAccount) {
-        changeAccount({variables: { account: account!, name: name, oldPassword: oldPassword, password: password, roles: roles, email: email }} )
+          changeAccount({
+            variables: {
+              account: account!, name: name, oldPassword: oldPassword, password: password, roles: roles,
+              human: human, consumer: consumer
+            }
+          })
       } else {
-        addAccount({variables: { account: account!, name: name!, password: password!, roles: roles, email: email }})
+        addAccount({variables: { account: account!, name: name!, password: password!, roles: roles,
+          human: human, consumer: consumer }})
       }
     }
   }
@@ -166,22 +179,24 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
   const AccountCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={editAccount?'Edit Account':'New ' +
-          accountType=='human'?'Operator':accountType=='service'?'Service':accountType=='consumer'?'Consumer':'' + ' Account'}/>
+        <CardHeader title={(editAccount?'Edit ':'New ') +
+        (accountType=='human'?'Operator':accountType=='service'?'Service':accountType=='consumer'?'Consumer':'') +
+          ' Account' + (editAccount? ` '${account}'`:'')}/>
         <CardContent>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Account"
-            margin="normal"
-            value={account?account:''}
-            helperText={!editAccount && account && doesAccountExist(account) ? 'Account already exists': ''}
-            error={!account || (!editAccount && doesAccountExist(account))}
-            onChange={(e: any) => setAccount(e.target.value)}
-            disabled={editAccount !== undefined}
-            required
-            variant="outlined"
-          />
+          { !editAccount?
+            <TextField
+              autoFocus
+              fullWidth
+              label="Account"
+              margin="normal"
+              value={account?account:''}
+              helperText={!editAccount && account && doesAccountExist(account) ? 'Account already exists': ''}
+              error={!account || (!editAccount && doesAccountExist(account))}
+              onChange={(e: any) => setAccount(e.target.value)}
+              disabled={editAccount !== undefined}
+              required
+              variant="outlined"
+            />:null }
           <TextField
             fullWidth
             label="Name"
@@ -208,6 +223,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
                 <Select className={classes.profileSelect}
                         native
                         value={ profile ? profile : '' }
+                        error={ !profile }
                         onChange={(e: any) => { if (e.target.value) setProfile(e.target.value as string); else setProfile(undefined) }}
                 >
                   {
@@ -216,10 +232,24 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
                         ...profilesList?.serviceProfiles.map(profile => <option key={profile.profile}>{profile.profile}</option>)]:null
                   }
                 </Select>
+                <TextField
+                  className={classes.url}
+                  fullWidth
+                  label='URL'
+                  margin='normal'
+                  value={ url ? url : '' }
+                  error={ !url || !validateUrl(url) }
+                  onChange={(e: any) => setUrl(e.target.value)}
+                  variant='outlined'
+                />
               </FormGroup>) : null
           }
         </CardContent>
       </Card>)
+  }
+
+  const validateUrl = (url: string) => {
+    try { new URL(url); return true } catch { return false }
   }
 
   const PasswordCard = () => {

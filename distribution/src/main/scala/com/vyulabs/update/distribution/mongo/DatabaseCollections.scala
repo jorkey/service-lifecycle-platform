@@ -4,11 +4,10 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.{GitConfig, ServiceSourcesConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.accounts.{AccountCredentials, PasswordHash, ServerAccountInfo}
+import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties, PasswordHash, ServerAccountInfo}
 import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
@@ -24,10 +23,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   private implicit def codecRegistry = fromRegistries(fromProviders(MongoClientSettings.getDefaultCodecRegistry(),
     IterableCodecProvider.apply,
     classOf[SequenceDocument],
-    classOf[HumanInfo],
-    classOf[ConsumerInfo],
+    classOf[UserAccountProperties],
+    classOf[ConsumerAccountProperties],
     classOf[ServerAccountInfo],
-    classOf[AccountCredentials],
     classOf[PasswordHash],
     classOf[GitConfig],
     classOf[SourceConfig],
@@ -71,6 +69,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   val Accounts = new SequencedCollection[ServerAccountInfo]("accounts", for {
     collection <- db.getOrCreateCollection[BsonDocument]("accounts")
     _ <- if (createIndices) {
+      collection.createIndex(Indexes.ascending("type", "_archiveTime"), new IndexOptions().unique(true))
       collection.createIndex(Indexes.ascending("account", "_archiveTime"), new IndexOptions().unique(true))
     } else Future()
   } yield collection, Sequences, createIndex = createIndices)
@@ -153,8 +152,9 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
       adminRecords <- Accounts.find(filters)
     } yield {
       if (adminRecords.isEmpty) {
-        Accounts.insert(ServerAccountInfo("admin", "Administrator", PasswordHash("admin"),
-          Seq(AccountRole.Administrator.toString), None, None))
+        Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeUser, "admin", "Administrator",
+          AccountRole.Administrator.toString, Some(PasswordHash("admin")),
+          None, None))
       } else {
         Future()
       }

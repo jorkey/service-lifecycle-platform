@@ -1,8 +1,8 @@
 package com.vyulabs.update.builder
 
+import com.vyulabs.update.common.accounts.ConsumerAccountProperties
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.ConsumerInfo
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -59,7 +59,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     assert(providerDistributionBuilder.addCommonServicesProfile())
     assert(providerDistributionBuilder.addOwnServicesProfile())
     assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName,
-      "Distribution Consumer", ConsumerInfo(Common.CommonServiceProfile, "http://localhost:8001")))
+      "Distribution Consumer", ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8001")))
 
     log.info("")
     log.info(s"########################### Build consumer distribution from provider distribution")

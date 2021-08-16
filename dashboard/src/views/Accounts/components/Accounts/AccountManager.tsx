@@ -41,6 +41,8 @@ const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> 
   const classes = useStyles()
   const routeMatch = useRouteMatch();
 
+  console.log('accountType ' + accountType)
+
   return (
     <Card
       className={clsx(classes.root)}
@@ -62,7 +64,7 @@ const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> 
             </Button>
           </Box>
         }
-        title={accountType == 'human'? 'People' : 'Services'}
+        title={accountType == 'human'? 'People' : accountType == 'service' ? 'Services' : 'Distribution Consumers'}
       />
       <Divider/>
       <CardContent className={classes.content}>

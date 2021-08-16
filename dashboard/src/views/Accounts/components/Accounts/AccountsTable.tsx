@@ -34,6 +34,10 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  urlColumn: {
+    padding: '4px',
+    paddingLeft: '16px'
+  },
   actionsColumn: {
     width: '200px',
     padding: '4px',
@@ -104,6 +108,11 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
       name: 'profile',
       headerName: 'Profile',
       className: classes.profileColumn
+    },
+    {
+      name: 'url',
+      headerName: 'URL',
+      className: classes.urlColumn
     })
   }
 
@@ -123,7 +132,7 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
         } else if (accountType == 'service') {
           return account.roles.find(role => { return role == AccountRole.Builder || role == AccountRole.Updater})
         } else if (accountType == 'consumer') {
-          return account.roles.find(role => { return role == AccountRole.Distribution })
+          return account.roles.find(role => { return role == AccountRole.Consumer })
         } else {
           return false
         }
@@ -134,10 +143,11 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
         row.set('account', account.account)
         row.set('name', account.name)
         row.set('roles', account.roles.toString())
-        if (accountType == 'human' && account.email) {
-          row.set('email', account.email)
-        } else if (accountType == 'consumer' && account.profile) {
-          row.set('profile', account.profile)
+        if (accountType == 'human' && account.human) {
+          row.set('email', account.human.email)
+        } else if (accountType == 'consumer') {
+          row.set('profile', account.consumer!.profile)
+          row.set('url', account.consumer!.url)
         }
         row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(account.account) }>
             <DeleteIcon/>
