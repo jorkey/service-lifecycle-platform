@@ -353,14 +353,14 @@ object GraphqlSchema {
 
       // Distribution providers management
       Field("addProvider", BooleanType,
-        arguments = DistributionArg :: UrlArg :: OptionTestConsumerArg :: OptionUploadStateIntervalSecArg :: Nil,
+        arguments = DistributionArg :: UrlArg :: AccessTokenArg :: OptionTestConsumerArg :: OptionUploadStateIntervalSecArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg),
+        resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(AccessTokenArg),
           c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
       Field("changeProvider", BooleanType,
-        arguments = DistributionArg :: UrlArg :: OptionTestConsumerArg :: OptionUploadStateIntervalSecArg :: Nil,
+        arguments = DistributionArg :: UrlArg :: AccessTokenArg :: OptionTestConsumerArg :: OptionUploadStateIntervalSecArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg),
+        resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(AccessTokenArg),
           c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateIntervalSecArg)).map(_ => true) }),
       Field("removeProvider", BooleanType,
         arguments = DistributionArg :: Nil,

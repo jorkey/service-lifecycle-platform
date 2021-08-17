@@ -154,7 +154,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
       if (adminRecords.isEmpty) {
         Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeUser, "admin", "Administrator",
           AccountRole.Administrator.toString, Some(PasswordHash("admin")),
-          None, None))
+          Some(UserAccountProperties(None, Seq.empty)), None))
       } else {
         Future()
       }

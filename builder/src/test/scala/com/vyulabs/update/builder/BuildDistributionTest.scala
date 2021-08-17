@@ -1,8 +1,9 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.accounts.ConsumerAccountProperties
-import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.{Common, JWT}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.AccessToken
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -70,7 +71,8 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       consumerMongoDbName,true, 8001)
 
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
-      "http://localhost:8000", Common.AdminAccount, consumerDistributionName,
+      "http://localhost:8000", Common.AdminAccount,
+      JWT.encodeAccessToken(AccessToken(consumerDistributionName), providerDistributionBuilder.config.get.jwtSecret),
       Common.CommonConsumerProfile, None, "ak"))
     assert(consumerDistributionBuilder.addDistributionAccounts())
     assert(consumerDistributionBuilder.updateDistributionFromProvider())

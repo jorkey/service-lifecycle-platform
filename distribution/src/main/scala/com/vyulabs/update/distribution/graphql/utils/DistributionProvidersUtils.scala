@@ -34,16 +34,16 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  def addProvider(distribution: DistributionId, distributionUrl: String, testDistributionMatch: Option[String],
+  def addProvider(distribution: DistributionId, distributionUrl: String, accessKey: String, testDistributionMatch: Option[String],
                   uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
-      DistributionProviderInfo(distribution, distributionUrl, testDistributionMatch, uploadStateIntervalSec)).map(_ => ())
+      DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadStateIntervalSec)).map(_ => ())
   }
 
-  def changeProvider(distribution: DistributionId, distributionUrl: String, testDistributionMatch: Option[String],
+  def changeProvider(distribution: DistributionId, distributionUrl: String, accessKey: String, testDistributionMatch: Option[String],
                      uploadStateIntervalSec: Option[Int]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
-      (_) => DistributionProviderInfo(distribution, distributionUrl, testDistributionMatch, uploadStateIntervalSec)).map(_ => ())
+      (_) => DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadStateIntervalSec)).map(_ => ())
   }
 
   def removeProvider(distribution: DistributionId): Future[Unit] = {
@@ -104,7 +104,7 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
 
   private def getDistributionProviderClient(distribution: DistributionId): Future[DistributionClient[AkkaSource]] = {
     getProvidersInfo().map(_.find(_.distribution == distribution).headOption.map(
-      info => new DistributionClient(new AkkaHttpClient(info.url))).getOrElse(
+      info => new DistributionClient(new AkkaHttpClient(info.url, Some(info.accessToken)))).getOrElse(
         throw new IOException(s"Distribution provider server ${distribution} is not defined")))
   }
 }

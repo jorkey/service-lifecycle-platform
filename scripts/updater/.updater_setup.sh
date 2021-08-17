@@ -3,7 +3,7 @@ set -e
 
 if [ -z "$4" ]
 then
-  >&2 echo "Use: $0 <cloudProvider> <name> <services> <distributionUrl> [environment]"
+  >&2 echo "Use: $0 <cloudProvider> <name> <services> <distributionUrl> <accessToken> [environment]"
   exit 1
 fi
 
@@ -11,7 +11,8 @@ cloudProvider=$1
 name=$2
 services=$3
 distributionUrl=$4
-environment=$5
+accessToken=$5
+environment=$6
 
 serviceToSetup=updater
 . .update.sh
@@ -29,7 +30,8 @@ fi
 cat << EOF > updater.json
 {
   "instanceId" : "${instanceId}",
-  "clientDistributionUrl" : "${distributionUrl}"
+  "distributionUrl" : "${distributionUrl}",
+  "accessToken" : "${accessToken}"
 }
 EOF
 

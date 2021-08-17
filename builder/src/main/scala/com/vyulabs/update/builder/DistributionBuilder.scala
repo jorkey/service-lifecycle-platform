@@ -33,7 +33,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val developerBuilder = new DeveloperBuilder(distributionDirectory.getBuilderDir(distribution), distribution)
-  private val clientBuilder = new ClientBuilder(distributionDirectory.getBuilderDir(distribution), distribution)
+  private val clientBuilder = new ClientBuilder(distributionDirectory.getBuilderDir(distribution))
 
   private val initialClientVersion = ClientDistributionVersion.from(DeveloperDistributionVersion(distribution, Build.initialBuild), 0)
 
@@ -43,6 +43,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   private var distributionConfig = Option.empty[DistributionConfig]
 
   private var providerDistributionName = Option.empty[DistributionId]
+
+  def config = distributionConfig
 
   def buildDistributionFromSources(): Boolean = {
     log.info("")
@@ -81,7 +83,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
   }
 
   def buildFromProviderDistribution(provider: DistributionId, providerURL: String,
-                                    providerAdminPassword: String, providerConsumerPassword: String,
+                                    providerAdminPassword: String, consumerAccessToken: String,
                                     servicesProfile: ServicesProfileId, testDistributionMatch: Option[String],
                                     author: String): Boolean = {
     this.providerDistributionName = Some(provider)
@@ -125,7 +127,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info(s"########################### Add distribution provider to distribution server")
     log.info("")
     if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addProvider(provider,
-        Utils.addCredentialsToUrl(providerURL, distribution, providerConsumerPassword), None)).getOrElse(false)) {
+        providerURL, consumerAccessToken, None)).getOrElse(false)) {
       log.error(s"Can't add distribution provider")
       return false
     }
@@ -448,7 +450,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
     val protocol = if (config.network.ssl.isDefined) "https" else "http"
     val port = config.network.port
-    Utils.addCredentialsToUrl(s"${protocol}://localhost:${port}", user, user)  }
+    Utils.addCredentialsToUrl(s"${protocol}://localhost:${port}", user, user)
+  }
 
   private def startDistributionService(): Boolean = {
     log.info(s"--------------------------- Start service")

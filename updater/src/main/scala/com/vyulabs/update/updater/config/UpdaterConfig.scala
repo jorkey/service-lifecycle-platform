@@ -7,10 +7,10 @@ import spray.json.DefaultJsonProtocol
 
 import java.io.File
 
-case class UpdaterConfig(instance: InstanceId, clientDistributionUrl: String)
+case class UpdaterConfig(instance: InstanceId, distributionUrl: String, accessToken: String)
 
 object UpdaterConfig extends DefaultJsonProtocol {
-  implicit val updaterConfigJson = jsonFormat2(UpdaterConfig.apply)
+  implicit val updaterConfigJson = jsonFormat3(UpdaterConfig.apply)
 
   def apply()(implicit log: Logger): Option[UpdaterConfig] = {
     val configFile = new File("updater.json")

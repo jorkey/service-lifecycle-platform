@@ -21,8 +21,10 @@ import java.util.Date
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class ClientBuilder(builderDir: File, val distribution: DistributionId) {
+class ClientBuilder(builderDir: File) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
+
+  makeDir(builderDir)
 
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))

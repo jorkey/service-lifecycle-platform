@@ -2,13 +2,13 @@ package com.vyulabs.update.tests
 
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
-import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.{Common, JWT}
 import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.ClientDesiredVersionDelta
+import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersionDelta}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version._
@@ -17,7 +17,7 @@ import com.vyulabs.update.updater.config.UpdaterConfig
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 
-import java.io.File
+import java.io.{File, IOException}
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -30,16 +30,16 @@ class SimpleLifecycle {
 
   private val distribution = "test-distribution"
   private val distributionDir = Files.createTempDirectory("distribution").toFile
-  private val builderDir = new File(distributionDir, "builder")
+  private val builderDir = new File(distributionDir, s"builder/${distribution}"); builderDir.mkdirs()
   private val adminDistributionUrl = s"http://${Common.AdminAccount}:${Common.AdminAccount}@localhost:8000"
-  private val updaterDistributionUrl = s"http://${Common.UpdaterServiceName}:${Common.UpdaterServiceName}@localhost:8000"
+  private val updaterDistributionUrl = s"http://localhost:8000"
   private val testServiceName = "test"
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
   private val distributionBuilder = new DistributionBuilder("None", startDistribution,
     new DistributionDirectory(distributionDir), distribution, "Test distribution server", "test", false, 8000)
-  private val clientBuilder = new ClientBuilder(builderDir, distribution)
+  private val clientBuilder = new ClientBuilder(builderDir)
 
   private val adminClient = new SyncDistributionClient(
     new DistributionClient(new HttpClientImpl(adminDistributionUrl)), FiniteDuration(60, TimeUnit.SECONDS))
@@ -128,7 +128,8 @@ class SimpleLifecycle {
       !IoUtils.copyFile(new File("./scripts/.update.sh"), new File(testServiceInstanceDir, ".update.sh"))) {
       sys.error("Copying of updater scripts error")
     }
-    val updaterConfig = UpdaterConfig("Test", updaterDistributionUrl)
+    val updaterConfig = UpdaterConfig("Test", updaterDistributionUrl,
+      JWT.encodeAccessToken(AccessToken("updater"), distributionBuilder.config.get.jwtSecret))
     if (!IoUtils.writeJsonToFile(new File(testServiceInstanceDir, Common.UpdaterConfigFileName), updaterConfig)) {
       sys.error(s"Can't write ${Common.UpdaterConfigFileName}")
     }

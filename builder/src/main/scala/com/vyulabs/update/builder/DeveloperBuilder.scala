@@ -27,6 +27,8 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   private val builderLockFile = "builder.lock"
 
+  makeDir(builderDir)
+
   private val developerDir = makeDir(new File(builderDir, "developer"))
   private val servicesDir = makeDir(new File(developerDir, "services"))
 

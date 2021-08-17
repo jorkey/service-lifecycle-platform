@@ -131,7 +131,7 @@ trait AccountsUtils extends SprayJsonSupport {
 
   def login(account: AccountId, password: String)(implicit log: Logger): Future[AccessToken] = {
     getServerAccountInfo(account).map {
-      case Some(ServerAccountInfo(_, _, _, _, Some(passwordHash), Some(user), None)) if passwordHash.hash == PasswordHash.generatePasswordHash(password, passwordHash.salt) =>
+      case Some(ServerAccountInfo(_, _, _, _, Some(passwordHash), _, None)) if passwordHash.hash == PasswordHash.generatePasswordHash(password, passwordHash.salt) =>
         AccessToken(account)
       case _ =>
         throw AuthenticationException("Authentication error")
@@ -146,7 +146,7 @@ trait AccountsUtils extends SprayJsonSupport {
     try {
       JWT.encodeAccessToken(token, config.jwtSecret)
     } catch {
-      case ex =>
+      case ex: Exception =>
         throw AuthenticationException(s"Encode access token error: ${ex.toString}")
     }
   }
@@ -191,7 +191,7 @@ trait AccountsUtils extends SprayJsonSupport {
         try {
           Future(Some(JWT.decodeAccessToken(value, config.jwtSecret)))
         } catch {
-          case ex =>
+          case ex: Exception =>
             Future.failed(AuthenticationException(s"Decode access token error: ${ex.getMessage}"))
         }
       case basicTokenRx(value) =>

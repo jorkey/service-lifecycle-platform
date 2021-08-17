@@ -41,7 +41,7 @@ object UpdaterMain extends App { self =>
     Utils.error("No config")
   }
 
-  val distributionClient = new DistributionClient(new HttpClientImpl(config.clientDistributionUrl))
+  val distributionClient = new DistributionClient(new HttpClientImpl(config.distributionUrl, Some(config.accessToken)))
 
   TraceAppender.handleLogs("Updater", "PROCESS",
     new LogUploader[SyncSource](Common.DistributionServiceName, None, config.instance, distributionClient))

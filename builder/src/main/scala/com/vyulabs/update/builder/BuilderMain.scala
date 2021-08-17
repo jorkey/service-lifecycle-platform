@@ -33,7 +33,7 @@ object BuilderMain extends App {
     "       <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
     "    buildConsumerDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
     "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
-    "       <providerAdminPassword=?> <providerConsumerPassword=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
+    "       <providerAdminPassword=?> <consumerAccessToken=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
     "    buildDeveloperVersion <service=?> <version=?> <sources=?> <comment=?>\n" +
     "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -73,13 +73,13 @@ object BuilderMain extends App {
           }
         } else {
           val provider = arguments.getValue("provider")
-          val providerURL = arguments.getValue("providerUrl")
+          val providerUrl = arguments.getValue("providerUrl")
           val providerAdminPassword = arguments.getValue("providerAdminPassword")
-          val providerConsumerPassword = arguments.getValue("providerConsumerPassword")
+          val consumerAccessToken = arguments.getValue("consumerAccessToken")
           val servicesProfile = arguments.getValue("servicesProfile")
           val testConsumerMatch = arguments.getOptionValue("testConsumerMatch")
           if (!distributionBuilder.buildFromProviderDistribution(
-                provider, providerURL, providerAdminPassword, providerConsumerPassword,
+                provider, providerUrl, providerAdminPassword, consumerAccessToken,
                 servicesProfile, testConsumerMatch, author) ||
               !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
@@ -122,7 +122,7 @@ object BuilderMain extends App {
             val service = arguments.getValue("service")
             val version = ClientDistributionVersion.parse(arguments.getValue("version"))
             val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> version.toString)
-            val clientBuilder = new ClientBuilder(new File("."), distribution)
+            val clientBuilder = new ClientBuilder(new File(".", distribution))
             if (!clientBuilder.buildClientVersion(distributionClient, service, version, author, buildArguments)) {
               Utils.error("Client version is not generated")
             }

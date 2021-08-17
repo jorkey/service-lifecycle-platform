@@ -118,7 +118,7 @@ trait AccountsAdministrationCoder {
       GraphqlArgument("role" -> role, "AccountRole")))
 
   def addConsumerAccount(account: AccountId, name: String, role: AccountRole, consumer: ConsumerAccountProperties) =
-    GraphqlMutation[Boolean]("addServiceAccount", Seq(
+    GraphqlMutation[Boolean]("addConsumerAccount", Seq(
       GraphqlArgument("account" -> account),
       GraphqlArgument("name" -> name),
       GraphqlArgument("role" -> role, "AccountRole"),
@@ -135,9 +135,9 @@ trait ConsumersAdministrationCoder {
   def removeServicesProfile(servicesProfile: ServicesProfileId) =
     GraphqlMutation[Boolean]("removeServicesProfile", Seq(GraphqlArgument("profile" -> servicesProfile)))
 
-  def addProvider(distribution: DistributionId, distributionUrl: String, uploadStateInterval: Option[FiniteDuration]) =
+  def addProvider(distribution: DistributionId, distributionUrl: String, accessToken: String, uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addProvider", Seq(GraphqlArgument("distribution" -> distribution),
-      GraphqlArgument("url" -> distributionUrl), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
+      GraphqlArgument("url" -> distributionUrl), GraphqlArgument("accessToken" -> accessToken), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
   def removeProvider(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeProvider", Seq(GraphqlArgument("distribution" -> distribution)))
 }

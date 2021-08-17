@@ -130,7 +130,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
     @volatile var remoteTaskId = Option.empty[TaskId]
     val future = for {
       client <- distributionProvidersUtils.getDistributionProviderInfo(distribution).map(provider => {
-        new DistributionClient(new AkkaHttpClient(provider.url)) })
+        new DistributionClient(new AkkaHttpClient(provider.url, Some(provider.accessToken))) })
       remoteTask <- client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder",
         Seq(GraphqlArgument("accessToken" -> accessToken), GraphqlArgument("arguments" -> arguments, "[String!]"))))
       logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
