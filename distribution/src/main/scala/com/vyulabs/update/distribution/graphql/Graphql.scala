@@ -36,7 +36,7 @@ class Graphql()(implicit executionContext: ExecutionContext) extends SprayJsonSu
       QueryReducer.collectTags[GraphqlContext, AccountRole] {
     case Authorized(name) => name
   } { (roles, ctx) =>
-    if (roles.nonEmpty && account.isDefined && ctx.accountInfo.isEmpty) {
+    if (account.isDefined && ctx.accountInfo.isEmpty) {
       val accountInfo = ctx.workspace.getAccountInfo(account.get)
         .map(_.getOrElse(throw new IOException(s"Account ${account.get} is not found")))
       accountInfo.map(accountInfo => ctx.copy(accountInfo = Some(accountInfo)))

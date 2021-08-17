@@ -14,6 +14,7 @@ import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.{AuthenticationException, NotFoundException}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties, PasswordHash, ServerAccountInfo, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
+import com.vyulabs.update.common.common.JWT
 import org.bson.BsonDocument
 import org.janjaali.sprayjwt.Jwt
 import org.janjaali.sprayjwt.algorithms.HS256
@@ -130,7 +131,7 @@ trait AccountsUtils extends SprayJsonSupport {
 
   def login(account: AccountId, password: String)(implicit log: Logger): Future[AccessToken] = {
     getServerAccountInfo(account).map {
-      case Some(accountInfo) if accountInfo.passwordHash.get.hash == PasswordHash.generatePasswordHash(password, accountInfo.passwordHash.get.salt) =>
+      case Some(ServerAccountInfo(_, _, _, _, Some(passwordHash), Some(user), None)) if passwordHash.hash == PasswordHash.generatePasswordHash(password, passwordHash.salt) =>
         AccessToken(account)
       case _ =>
         throw AuthenticationException("Authentication error")
@@ -142,12 +143,11 @@ trait AccountsUtils extends SprayJsonSupport {
   }
 
   def encodeAccessToken(token: AccessToken)(implicit log: Logger): String = {
-    Jwt.encode(token.toJson, config.jwtSecret, HS256) match {
-      case Success(value) =>
-        value
-      case Failure(ex) =>
-        log.error("Jwt encoding error", ex)
-        throw AuthenticationException(s"Authentication error: ${ex.toString}")
+    try {
+      JWT.encodeAccessToken(token, config.jwtSecret)
+    } catch {
+      case ex =>
+        throw AuthenticationException(s"Encode access token error: ${ex.toString}")
     }
   }
 
@@ -189,15 +189,12 @@ trait AccountsUtils extends SprayJsonSupport {
     authorization match {
       case bearerTokenRx(value) =>
         try {
-          Jwt.decode(value, config.jwtSecret) match {
-            case Success(jsonValue) ⇒ Future(Some(jsonValue.convertTo[AccessToken]))
-            case Failure(_) ⇒ Future(None)
-          }
+          Future(Some(JWT.decodeAccessToken(value, config.jwtSecret)))
         } catch {
-          case _: InvalidSignatureException =>
-            Future(None)
+          case ex =>
+            Future.failed(AuthenticationException(s"Decode access token error: ${ex.getMessage}"))
         }
-      case basicTokenRx(value) ⇒
+      case basicTokenRx(value) =>
         val authTokenRx = "(.*):(.*)".r
         new String(Base64.getDecoder.decode(value), "utf8") match {
           case authTokenRx(account, password) =>
@@ -221,23 +218,17 @@ trait AccountsUtils extends SprayJsonSupport {
   }
 
   def getUserAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[UserAccountInfo]] = {
-    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeUser)) ++
-      account.map(Filters.eq("account", _))
-    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    val filters = Filters.and(Filters.eq("account", account), Filters.eq("type", ServerAccountInfo.TypeUser))
     collections.Accounts.find(filters).map(_.headOption.map(_.toUserAccountInfo()))
   }
 
   def getServiceAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[ServiceAccountInfo]] = {
-    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeService)) ++
-      account.map(Filters.eq("account", _))
-    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    val filters = Filters.and(Filters.eq("account", account), Filters.eq("type", ServerAccountInfo.TypeService))
     collections.Accounts.find(filters).map(_.headOption.map(_.toServiceAccountInfo()))
   }
 
   def getConsumerAccountInfo(account: AccountId)(implicit log: Logger): Future[Option[ConsumerAccountInfo]] = {
-    val args = Seq(Filters.eq("type", ServerAccountInfo.TypeConsumer)) ++
-      account.map(Filters.eq("account", _))
-    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
+    val filters = Filters.and(Filters.eq("account", account), Filters.eq("type", ServerAccountInfo.TypeConsumer))
     collections.Accounts.find(filters).map(_.headOption.map(_.toConsumerAccountInfo()))
   }
 

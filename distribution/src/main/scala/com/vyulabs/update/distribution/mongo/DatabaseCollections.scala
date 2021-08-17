@@ -69,7 +69,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   val Accounts = new SequencedCollection[ServerAccountInfo]("accounts", for {
     collection <- db.getOrCreateCollection[BsonDocument]("accounts")
     _ <- if (createIndices) {
-      collection.createIndex(Indexes.ascending("type", "_archiveTime"), new IndexOptions().unique(true))
+      collection.createIndex(Indexes.ascending("type", "_archiveTime"))
       collection.createIndex(Indexes.ascending("account", "_archiveTime"), new IndexOptions().unique(true))
     } else Future()
   } yield collection, Sequences, createIndex = createIndices)

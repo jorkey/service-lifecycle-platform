@@ -4,8 +4,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
-import com.vyulabs.update.common.common.ThreadTimer
+import com.vyulabs.update.common.common.{JWT, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl}
+import com.vyulabs.update.common.info.AccessToken
 import com.vyulabs.update.common.logger.{LogBuffer, LogUploader, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
@@ -27,7 +28,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
   var server = Http().newServerAt("0.0.0.0", 8084).adaptSettings(s => s.withTransparentHeadRequests(true))
   server.bind(route)
 
-  val httpClient = new HttpClientImpl("http://updater:updater@localhost:8084")
+  val httpClient = new HttpClientImpl("http://localhost:8084", Some(JWT.encodeAccessToken(AccessToken("updater"), config.jwtSecret)))
   val distributionClient = new DistributionClient(httpClient)
 
   val sender = new LogUploader("service1", None, "instance1", distributionClient)

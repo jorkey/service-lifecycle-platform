@@ -17,8 +17,11 @@ trait SyncSource[T] {
   def next(): Option[T]
 }
 
-class HttpClientImpl(val distributionUrl: String, connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
+class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String] = None,
+                     connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
                     (implicit executionContext: ExecutionContext) extends HttpClient[SyncSource] {
+  accessToken = initAccessToken
+
   def graphql[Response](request: GraphqlRequest[Response])
                        (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
     Future {

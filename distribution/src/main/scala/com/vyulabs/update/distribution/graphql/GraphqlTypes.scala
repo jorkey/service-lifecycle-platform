@@ -96,8 +96,8 @@ object GraphqlTypes {
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
   implicit val ProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
 
-  implicit val UserInfoInputType = deriveInputObjectType[UserAccountProperties](InputObjectTypeName("UserInfoInput"))
-  implicit val ConsumerInfoInputType = deriveInputObjectType[ConsumerAccountProperties](InputObjectTypeName("ConsumerInfoInput"))
+  implicit val UserAccountPropertiesInputType = deriveInputObjectType[UserAccountProperties](InputObjectTypeName("UserAccountPropertiesInput"))
+  implicit val ConsumerAccountPropertiesInputType = deriveInputObjectType[ConsumerAccountProperties](InputObjectTypeName("ConsumerAccountPropertiesInput"))
   implicit val DeveloperVersionInputType = deriveInputObjectType[DeveloperVersion](InputObjectTypeName("DeveloperVersionInput"))
   implicit val ClientVersionInputType = deriveInputObjectType[ClientVersion](InputObjectTypeName("ClientVersionInput"))
   implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersionInput"))

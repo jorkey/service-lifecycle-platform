@@ -6,7 +6,7 @@ import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestDuration
 import com.mongodb.client.model.{Filters, Updates}
-import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.{Common, JWT}
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
@@ -18,18 +18,14 @@ import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
 import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, PasswordHash, ServerAccountInfo, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import org.janjaali.sprayjwt.Jwt
-import org.janjaali.sprayjwt.algorithms.HS256
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import org.slf4j.{Logger, LoggerFactory}
-import spray.json.enrichAny
+import org.slf4j.{LoggerFactory}
 
-import java.io.{File, IOException}
+import java.io.{File}
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
-import scala.util.{Failure, Success}
 
 abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec with Matchers with BeforeAndAfterAll {
   private implicit val system = ActorSystem("Distribution")
@@ -71,9 +67,9 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val adminHttpCredentials = BasicHttpCredentials("admin", "admin")
   val developerHttpCredentials = BasicHttpCredentials("developer", "developer")
 
-  val builderHttpCredentials = OAuth2BearerToken(encodeAccessToken(AccessToken("builder")))
-  val updaterHttpCredentials = OAuth2BearerToken(encodeAccessToken(AccessToken("updater")))
-  val consumerHttpCredentials = OAuth2BearerToken(encodeAccessToken(AccessToken("consumer")))
+  val builderHttpCredentials = OAuth2BearerToken(JWT.encodeAccessToken(AccessToken("builder"), config.jwtSecret))
+  val updaterHttpCredentials = OAuth2BearerToken(JWT.encodeAccessToken(AccessToken("updater"), config.jwtSecret))
+  val consumerHttpCredentials = OAuth2BearerToken(JWT.encodeAccessToken(AccessToken("consumer"), config.jwtSecret))
 
   val adminAccountInfo = UserAccountInfo("admin", "Administrator", AccountRole.Administrator, UserAccountProperties(None, Seq.empty))
   val developerAccountInfo = UserAccountInfo("developer", "Developer", AccountRole.Developer, UserAccountProperties(None, Seq.empty))
@@ -100,7 +96,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
         AccountRole.Updater.toString, None, None,  None))
     _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeService, "builder", "Test builder",
         AccountRole.Builder.toString, None, None,  None))
-    _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeConsumer, "consumer", "Test Consumer",
+    _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeConsumer, "consumer", "Test Distribution Consumer",
         AccountRole.DistributionConsumer.toString, None, None,
       consumer = Some(ConsumerAccountProperties(profile = Common.CommonServiceProfile, url = "http://localhost:8001"))))
   } yield {})
@@ -118,14 +114,4 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   def setSequence(name: String, sequence: Long): Unit = {
     result(result(collections.Sequences).updateOne(Filters.eq("name", name), Updates.set("sequence", sequence)))
   }
-
-  def encodeAccessToken(token: AccessToken)(implicit log: Logger): String = {
-    Jwt.encode(token.toJson, config.jwtSecret, HS256) match {
-      case Success(value) =>
-        value
-      case Failure(ex) =>
-        throw new IOException(s"Authentication error: ${ex.toString}")
-    }
-  }
-
 }

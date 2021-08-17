@@ -33,7 +33,7 @@ class AccountsTest extends TestEnvironment {
             name: "Test User",
             role: Developer,
             password: "password1",
-            info: {
+            properties: {
               email: "http://test.com",
               notifications: []
             }

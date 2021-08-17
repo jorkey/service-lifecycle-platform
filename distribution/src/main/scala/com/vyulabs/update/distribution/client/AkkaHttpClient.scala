@@ -22,8 +22,10 @@ import java.io.{File, IOException}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Random, Success}
 
-class AkkaHttpClient(val distributionUrl: String)
+class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String] = None)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
+  accessToken = initAccessToken
+
   def graphql[Response](request: GraphqlRequest[Response])
                        (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
     val queryJson = request.encodeRequest()

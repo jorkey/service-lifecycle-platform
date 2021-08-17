@@ -68,7 +68,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
           for {
             accountInfo <- accountsUtils.getConsumerAccountInfo(distribution)
           } yield {
-            accountInfo.getOrElse(throw new IOException(s"No consumer account ${distribution}")).properties.url
+            accountInfo.getOrElse(throw new IOException(s"No consumer account '${distribution}''")).properties.url
           }
         } else {
           Future(s"http://localhost:${config.network.port}")

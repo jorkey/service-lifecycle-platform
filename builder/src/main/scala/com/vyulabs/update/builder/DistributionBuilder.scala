@@ -74,6 +74,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     if (!addServiceAccount(Common.UpdaterServiceName, "Updater service account", AccountRole.Updater)) {
       return false
     }
+    if (!addServiceAccount(Common.BuilderServiceName, "Builder service account", AccountRole.Builder)) {
+      return false
+    }
     true
   }
 

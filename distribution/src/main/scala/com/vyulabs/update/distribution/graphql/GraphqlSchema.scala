@@ -42,8 +42,8 @@ object GraphqlSchema {
   // Arguments
 
   val AccountArg = Argument("account", StringType)
-  val UserInfoArg = Argument("info", UserInfoInputType)
-  val ConsumerInfoArg = Argument("info", ConsumerInfoInputType)
+  val UserAccountPropertiesArg = Argument("properties", UserAccountPropertiesInputType)
+  val ConsumerAccountPropertiesArg = Argument("properties", ConsumerAccountPropertiesInputType)
   val NameArg = Argument("name", StringType)
   val OldPasswordArg = Argument("oldPassword", StringType)
   val PasswordArg = Argument("password", StringType)
@@ -83,8 +83,8 @@ object GraphqlSchema {
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
   val OptionAccountRoleArg = Argument("role", OptionInputType(AccountRoleType))
-  val OptionUserInfoArg = Argument("info", OptionInputType(UserInfoInputType))
-  val OptionConsumerInfoArg = Argument("info", OptionInputType(ConsumerInfoInputType))
+  val OptionUserInfoArg = Argument("info", OptionInputType(UserAccountPropertiesInputType))
+  val OptionConsumerInfoArg = Argument("info", OptionInputType(ConsumerAccountPropertiesInputType))
   val OptionEmailArg = Argument("email", OptionInputType(StringType))
   val OptionNotificationsArg = Argument("notifications", OptionInputType(ListInputType(StringType)))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -227,20 +227,20 @@ object GraphqlSchema {
 
       // Accounts management
       Field("addUserAccount", BooleanType,
-        arguments = AccountArg :: NameArg :: AccountRoleArg :: PasswordArg :: UserInfoArg :: Nil,
+        arguments = AccountArg :: NameArg :: AccountRoleArg :: PasswordArg :: UserAccountPropertiesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addUserAccount(c.arg(AccountArg), c.arg(NameArg),
-          c.arg(AccountRoleArg), c.arg(PasswordArg), c.arg(UserInfoArg)).map(_ => true) }),
+          c.arg(AccountRoleArg), c.arg(PasswordArg), c.arg(UserAccountPropertiesArg)).map(_ => true) }),
       Field("addServiceAccount", BooleanType,
         arguments = AccountArg :: NameArg :: AccountRoleArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addServiceAccount(c.arg(AccountArg), c.arg(NameArg),
           c.arg(AccountRoleArg)).map(_ => true) }),
       Field("addConsumerAccount", BooleanType,
-        arguments = AccountArg :: NameArg :: AccountRoleArg :: ConsumerInfoArg :: Nil,
+        arguments = AccountArg :: NameArg :: AccountRoleArg :: ConsumerAccountPropertiesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addConsumerAccount(c.arg(AccountArg), c.arg(NameArg),
-          c.arg(AccountRoleArg), c.arg(ConsumerInfoArg)).map(_ => true) }),
+          c.arg(AccountRoleArg), c.arg(ConsumerAccountPropertiesArg)).map(_ => true) }),
       Field("changeUserAccount", BooleanType,
         arguments = OptionAccountArg :: OptionNameArg :: OptionAccountRoleArg ::
           OptionOldPasswordArg :: OptionPasswordArg :: OptionUserInfoArg :: Nil,
