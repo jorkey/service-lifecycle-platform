@@ -1,6 +1,9 @@
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
-import {AccountRole, useAccountsInfoQuery, useRemoveAccountMutation} from '../../../../generated/graphql';
+import {
+  useConsumerAccountsInfoQuery,
+  useRemoveAccountMutation,
+} from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
@@ -26,15 +29,11 @@ const useStyles = makeStyles(theme => ({
     width: '300px',
     padding: '4px'
   },
-  emailColumn: {
+  urlColumn: {
     padding: '4px',
     paddingLeft: '16px'
   },
   profileColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  urlColumn: {
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -49,12 +48,10 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface AccountsTableProps {
-  accountType: 'human' | 'service' | 'consumer'
+interface ConsumerAccountsTableProps {
 }
 
-const AccountsTable: React.FC<AccountsTableProps> = props => {
-  const { accountType } = props
+const ConsumerAccountsTable: React.FC<ConsumerAccountsTableProps> = props => {
   const [ startEdit, setStartEdit ] = React.useState('')
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
@@ -62,7 +59,7 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
 
   const [error, setError] = useState<string>()
 
-  const { data: accountsInfo, refetch: getAccountsInfo } = useAccountsInfoQuery({
+  const { data: accountsInfo, refetch: getAccountsInfo } = useConsumerAccountsInfoQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query accounts info error ' + err.message) },
     onCompleted() { setError(undefined) }
@@ -91,30 +88,21 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
       className: classes.nameColumn
     },
     {
-      name: 'roles',
-      headerName: 'Roles',
+      name: 'role',
+      headerName: 'Role',
       className: classes.rolesColumn
-    }
-  ]
-
-  if (accountType == 'human') {
-    columns.push({
-      name: 'email',
-      headerName: 'E-Mail',
-      className: classes.emailColumn
-    })
-  } else if (accountType == 'consumer') {
-    columns.push({
-      name: 'profile',
-      headerName: 'Profile',
-      className: classes.profileColumn
     },
     {
       name: 'url',
       headerName: 'URL',
       className: classes.urlColumn
-    })
-  }
+    },
+    {
+      name: 'profile',
+      headerName: 'Profile',
+      className: classes.profileColumn
+    }
+  ]
 
   columns.push({
     name: 'actions',
@@ -125,30 +113,15 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
 
   const rows = new Array<Map<string, GridTableColumnValue>>()
   if (accountsInfo) {
-    [...accountsInfo.accountsInfo]
-      .filter(account => {
-        if (accountType == 'human') {
-          return account.roles.find(role => { return role == AccountRole.Administrator || role == AccountRole.Developer})
-        } else if (accountType == 'service') {
-          return account.roles.find(role => { return role == AccountRole.Builder || role == AccountRole.Updater})
-        } else if (accountType == 'consumer') {
-          return account.roles.find(role => { return role == AccountRole.Consumer })
-        } else {
-          return false
-        }
-      })
+    [...accountsInfo.consumerAccountsInfo]
       .sort((u1,u2) =>  (u1.account > u2.account ? 1 : -1))
       .forEach(account => {
         const row = new Map<string, GridTableColumnValue>()
         row.set('account', account.account)
         row.set('name', account.name)
-        row.set('roles', account.roles.toString())
-        if (accountType == 'human' && account.human) {
-          row.set('email', account.human.email)
-        } else if (accountType == 'consumer') {
-          row.set('profile', account.consumer!.profile)
-          row.set('url', account.consumer!.url)
-        }
+        row.set('role', account.role.toString())
+        row.set('profile', account.properties.profile)
+        row.set('url', account.properties.url)
         row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(account.account) }>
             <DeleteIcon/>
           </Button>])
@@ -180,4 +153,4 @@ const AccountsTable: React.FC<AccountsTableProps> = props => {
   </>)
 }
 
-export default AccountsTable;
+export default ConsumerAccountsTable;

@@ -17,11 +17,12 @@ import {
   Select, Typography
 } from '@material-ui/core';
 import {
-  AccountRole, ConsumerInfoInput, HumanInfoInput,
-  useAccountInfoLazyQuery,
+  AccountRole,
   useAccountsListQuery,
-  useAddAccountMutation,
-  useChangeAccountMutation, useServiceProfilesQuery,
+  useAddUserAccountMutation,
+  useChangeUserAccountMutation, UserAccountProperties,
+  useServiceProfilesQuery,
+  useUserAccountInfoLazyQuery,
   useWhoAmIQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
@@ -46,9 +47,6 @@ const useStyles = makeStyles(theme => ({
     width: '100%',
     height: 25
   },
-  url: {
-    marginTop: 25
-  },
   controls: {
     marginTop: 25,
     display: 'flex',
@@ -65,7 +63,6 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface AccountRouteParams {
-  type: 'human' | 'service' | 'consumer',
   account?: string
 }
 
@@ -76,28 +73,23 @@ interface AccountEditorParams extends RouteComponentProps<AccountRouteParams> {
 const AccountEditor: React.FC<AccountEditorParams> = props => {
   const whoAmI = useWhoAmIQuery()
   const {data: accountsList} = useAccountsListQuery()
-  const {data: profilesList} = useServiceProfilesQuery()
-  const [getAccountInfo, accountInfo] = useAccountInfoLazyQuery()
+  const [getAccountInfo, accountInfo] = useUserAccountInfoLazyQuery()
 
   const classes = useStyles()
 
   const [account, setAccount] = useState<string>();
   const [name, setName] = useState<string>();
-  const [roles, setRoles] = useState(new Array<AccountRole>());
+  const [role, setRole] = useState<AccountRole>();
   const [changePassword, setChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState();
   const [password, setPassword] = useState<string>();
   const [confirmPassword, setConfirmPassword] = useState<string>();
   const [email, setEmail] = useState<string>();
-  const [profile, setProfile] = useState<string>();
-  const [url, setUrl] = useState<string>();
 
   const [initialized, setInitialized] = useState(false);
 
   const editAccount = props.match.params.account
   const [byAdmin, setByAdmin] = useState(false)
-
-  const accountType = props.match.params.type
 
   const history = useHistory()
 
@@ -107,47 +99,38 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
         getAccountInfo({variables: {account: editAccount}})
       }
       if (accountInfo.data) {
-        const info = accountInfo.data.accountsInfo[0]
+        const info = accountInfo.data.userAccountsInfo[0]
         if (info) {
           setAccount(info.account)
           setName(info.name)
-          setRoles(info.roles)
-          if (info.human) {
-            setEmail(info.human.email)
-          } else if (info.consumer) {
-            setProfile(info.consumer.profile)
-            setUrl(info.consumer.url)
-          }
+          setRole(info.role)
+          setEmail(info.properties.email?info.properties.email:undefined)
         }
-        setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator) != undefined)
+        setByAdmin(whoAmI.data.whoAmI.role == AccountRole.Administrator)
         setInitialized(true)
       }
     } else {
-      setByAdmin(whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator) != undefined)
-      if (accountType == 'consumer') {
-        setRoles([AccountRole.Consumer])
-      }
+      setByAdmin(whoAmI.data.whoAmI.role == AccountRole.Administrator)
       setInitialized(true)
     }
   }
 
   const [addAccount, { data: addAccountData, error: addAccountError }] =
-    useAddAccountMutation({
+    useAddUserAccountMutation({
       onError(err) { console.log(err) }
     })
 
   const [changeAccount, { data: changeAccountData, error: changeAccountError }] =
-    useChangeAccountMutation({
+    useChangeUserAccountMutation({
       onError(err) { console.log(err) }
     })
 
   if (addAccountData || changeAccountData) {
-    history.push(props.fromUrl + '/' + props.match.params.type)
+    history.push(props.fromUrl)
   }
 
   const validate: () => boolean = () => {
-    return  !!account && !!name && roles.length != 0 &&
-            ((accountType == 'human') ? !!email : (accountType == 'consumer') ? !!profile && !!url && validateUrl(url) : true) &&
+    return  !!account && !!name && !!role && !!email &&
             (!!editAccount || !doesAccountExist(account)) &&
             (!!editAccount || !!password) &&
             (byAdmin || !!oldPassword) &&
@@ -156,31 +139,30 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
 
   const submit = () => {
     if (validate()) {
-      const human: HumanInfoInput | undefined = (accountType == 'human')?{ email: email!, notifications: [] }:undefined
-      const consumer: ConsumerInfoInput | undefined = (accountType == 'consumer')?{ profile: profile!, url: url! }:undefined
+      const properties: UserAccountProperties = { email: email!, notifications: [] }
       if (editAccount) {
           changeAccount({
             variables: {
-              account: account!, name: name, oldPassword: oldPassword, password: password, roles: roles,
-              human: human, consumer: consumer
+              account: account!, name: name, role: role!, oldPassword: oldPassword, password: password,
+              properties: properties
             }
           })
       } else {
-        addAccount({variables: { account: account!, name: name!, password: password!, roles: roles,
-          human: human, consumer: consumer }})
+        addAccount({
+          variables: { account: account!, name: name!, role: role!, password: password!, properties: properties }
+        })
       }
     }
   }
 
   const doesAccountExist: (account: string) => boolean = (account) => {
-    return accountsList?!!accountsList.accountsInfo.find(info => info.account == account):false
+    return accountsList?!!accountsList.accountsList.find(acc => acc == account):false
   }
 
   const AccountCard = () => {
     return (
       <Card className={classes.card}>
-        <CardHeader title={(editAccount?'Edit ':'New ') +
-        (accountType=='human'?'Operator':accountType=='service'?'Service':accountType=='consumer'?'Consumer':'') +
+        <CardHeader title={(editAccount?'Edit ':'New User') +
           ' Account' + (editAccount? ` '${account}'`:'')}/>
         <CardContent>
           { !editAccount?
@@ -208,8 +190,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
             variant="outlined"
             autoComplete="off"
           />
-          { accountType == 'human' ?
-            (<TextField
+          <TextField
               fullWidth
               label="E-Mail"
               autoComplete="email"
@@ -217,44 +198,14 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
               value={ email ? email : '' }
               onChange={(e: any) => setEmail(e.target.value)}
               variant="outlined"
-            />) : accountType == 'consumer' ?
-              (<FormGroup row className={classes.profile}>
-                <Typography className={classes.profileTitle}>Services Profile</Typography>
-                <Select className={classes.profileSelect}
-                        native
-                        value={ profile ? profile : '' }
-                        error={ !profile }
-                        onChange={(e: any) => { if (e.target.value) setProfile(e.target.value as string); else setProfile(undefined) }}
-                >
-                  {
-                    profilesList?.serviceProfiles?
-                      [<option key='0'></option>,
-                        ...profilesList?.serviceProfiles.map(profile => <option key={profile.profile}>{profile.profile}</option>)]:null
-                  }
-                </Select>
-                <TextField
-                  className={classes.url}
-                  fullWidth
-                  label='URL'
-                  margin='normal'
-                  value={ url ? url : '' }
-                  error={ !url || !validateUrl(url) }
-                  onChange={(e: any) => setUrl(e.target.value)}
-                  variant='outlined'
-                />
-              </FormGroup>) : null
-          }
+          />
         </CardContent>
       </Card>)
   }
 
-  const validateUrl = (url: string) => {
-    try { new URL(url); return true } catch { return false }
-  }
-
   const PasswordCard = () => {
     if (whoAmI.data) {
-      const admin = whoAmI.data.whoAmI.roles.find(role => role == AccountRole.Administrator)
+      const admin = whoAmI.data.whoAmI.role == AccountRole.Administrator
       const self = whoAmI.data.whoAmI.account == editAccount
       return (
         <Card className={classes.card}>
@@ -306,75 +257,34 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
     }
   }
 
-  const checkRole = (role: AccountRole, checked: boolean) => {
-    if (checked) {
-      setRoles(previousRoles => {
-        if (previousRoles.find(r => r == role)) return previousRoles
-        const roles = [...previousRoles]
-        roles.push(role)
-        return roles
-      })
-    } else {
-      setRoles(previousRoles => {
-        return previousRoles.filter(r => r != role)
-      })
-    }
-  }
-
   const RolesCard = () => {
-    return accountType != 'consumer' ? (<Card className={classes.card}>
+    return <Card className={classes.card}>
       <CardHeader title='Roles'/>
       <CardContent>
         <FormGroup row>
-          { accountType == 'human' ? (
-            <>
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    color="primary"
-                    checked={roles.find(role => role == AccountRole.Developer) != undefined}
-                    onChange={ event => checkRole(AccountRole.Developer, event.target.checked) }
-                  />
-                )}
-                label="Developer"
+          <FormControlLabel
+            control={(
+              <Checkbox
+                color="primary"
+                checked={role == AccountRole.Developer}
+                onChange={ event => setRole(event.target.checked ? AccountRole.Developer : undefined) }
               />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    color="primary"
-                    checked={roles.find(role => role == AccountRole.Administrator) != undefined}
-                    onChange={ event => checkRole(AccountRole.Administrator, event.target.checked) }
-                  />
-                )}
-                label="Administrator"
+            )}
+            label="Developer"
+          />
+          <FormControlLabel
+            control={(
+              <Checkbox
+                color="primary"
+                checked={role == AccountRole.Administrator}
+                onChange={ event => setRole(event.target.checked ? AccountRole.Administrator : undefined) }
               />
-            </> ) : accountType == 'service' ? (
-            <>
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    color="primary"
-                    checked={roles.find(role => role == AccountRole.Builder) != undefined}
-                    onChange={ event => checkRole(AccountRole.Builder, event.target.checked) }
-                  />
-                )}
-                label="Builder"
-              />
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    color="primary"
-                    checked={roles.find(role => role == AccountRole.Updater) != undefined}
-                    onChange={ event => checkRole(AccountRole.Updater, event.target.checked) }
-                  />
-                )}
-                label="Updater"
-              />
-            </>
-          ) : null }
+            )}
+            label="Administrator"
+          />
         </FormGroup>
       </CardContent>
-    </Card>) : null
+    </Card>
   }
 
   const error = addAccountError?addAccountError.message:changeAccountError?changeAccountError.message:''
@@ -395,7 +305,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
             color="primary"
             variant="contained"
             component={RouterLink}
-            to={props.fromUrl + '/' + props.match.params.type}
+            to={props.fromUrl}
           >
             Cancel
           </Button>

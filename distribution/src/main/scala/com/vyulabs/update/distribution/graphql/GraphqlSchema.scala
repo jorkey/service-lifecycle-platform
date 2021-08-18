@@ -83,8 +83,8 @@ object GraphqlSchema {
   val OptionOldPasswordArg = Argument("oldPassword", OptionInputType(StringType))
   val OptionPasswordArg = Argument("password", OptionInputType(StringType))
   val OptionAccountRoleArg = Argument("role", OptionInputType(AccountRoleType))
-  val OptionUserInfoArg = Argument("info", OptionInputType(UserAccountPropertiesInputType))
-  val OptionConsumerInfoArg = Argument("info", OptionInputType(ConsumerAccountPropertiesInputType))
+  val OptionUserAccountPropertiesArg = Argument("properties", OptionInputType(UserAccountPropertiesInputType))
+  val OptionConsumerAccountPropertiesArg = Argument("properties", OptionInputType(ConsumerAccountPropertiesInputType))
   val OptionEmailArg = Argument("email", OptionInputType(StringType))
   val OptionNotificationsArg = Argument("notifications", OptionInputType(ListInputType(StringType)))
   val OptionTaskArg = Argument("task", OptionInputType(StringType))
@@ -122,6 +122,9 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.whoAmI(c.ctx.accessToken.get.account) }),
 
       // Accounts
+      Field("accountsList", ListType(StringType),
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getAccountsInfo().map(_.map(_.account)) }),
       Field("userAccountsInfo", ListType(UserAccountInfoType),
         arguments = OptionAccountArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
@@ -134,6 +137,10 @@ object GraphqlSchema {
         arguments = OptionAccountArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getConsumerAccountsInfo(c.arg(OptionAccountArg)) }),
+      Field("accessToken", StringType,
+        arguments = AccountArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getAccessToken(c.arg(AccountArg)) }),
 
       // Sources
       Field("developerServices", ListType(StringType),
@@ -243,7 +250,7 @@ object GraphqlSchema {
           c.arg(AccountRoleArg), c.arg(ConsumerAccountPropertiesArg)).map(_ => true) }),
       Field("changeUserAccount", BooleanType,
         arguments = OptionAccountArg :: OptionNameArg :: OptionAccountRoleArg ::
-          OptionOldPasswordArg :: OptionPasswordArg :: OptionUserInfoArg :: Nil,
+          OptionOldPasswordArg :: OptionPasswordArg :: OptionUserAccountPropertiesArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => {
           val account = c.arg(OptionAccountArg).getOrElse(c.ctx.accountInfo.get.account)
@@ -258,22 +265,21 @@ object GraphqlSchema {
           c.ctx.workspace.changeUserAccount(account, c.arg(OptionNameArg),
             c.arg(OptionAccountRoleArg),
             c.arg(OptionOldPasswordArg), c.arg(OptionPasswordArg),
-            c.arg(OptionUserInfoArg))
+            c.arg(OptionUserAccountPropertiesArg))
         }),
       Field("changeServiceAccount", BooleanType,
-        arguments = OptionAccountArg :: OptionNameArg :: Nil,
+        arguments = OptionAccountArg :: OptionNameArg :: OptionAccountRoleArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => {
           val account = c.arg(OptionAccountArg).getOrElse(c.ctx.accountInfo.get.account)
           c.ctx.workspace.changeServiceAccount(account, c.arg(OptionNameArg), c.arg(OptionAccountRoleArg))
         }),
       Field("changeConsumerAccount", BooleanType,
-        arguments = OptionAccountArg :: OptionNameArg :: OptionConsumerInfoArg :: Nil,
+        arguments = OptionAccountArg :: OptionNameArg :: OptionConsumerAccountPropertiesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => {
           val account = c.arg(OptionAccountArg).getOrElse(c.ctx.accountInfo.get.account)
-          c.ctx.workspace.changeConsumerAccount(account, c.arg(OptionNameArg),
-            c.arg(OptionAccountRoleArg), c.arg(OptionConsumerInfoArg))
+          c.ctx.workspace.changeConsumerAccount(account, c.arg(OptionNameArg), c.arg(OptionConsumerAccountPropertiesArg))
         }),
       Field("removeAccount", BooleanType,
         arguments = AccountArg :: Nil,

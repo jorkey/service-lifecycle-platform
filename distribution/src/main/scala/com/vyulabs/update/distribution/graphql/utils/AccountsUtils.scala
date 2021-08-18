@@ -232,6 +232,10 @@ trait AccountsUtils extends SprayJsonSupport {
     collections.Accounts.find(filters).map(_.headOption.map(_.toConsumerAccountInfo()))
   }
 
+  def getAccountsInfo()(implicit log: Logger): Future[Seq[AccountInfo]] = {
+    collections.Accounts.find().map(_.map(_.toAccountInfo()))
+  }
+
   def getUserAccountsInfo(account: Option[AccountId] = None)(implicit log: Logger): Future[Seq[UserAccountInfo]] = {
     val args = Seq(Filters.eq("type", ServerAccountInfo.TypeUser)) ++
       account.map(Filters.eq("account", _))
@@ -251,5 +255,11 @@ trait AccountsUtils extends SprayJsonSupport {
       account.map(Filters.eq("account", _))
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Accounts.find(filters).map(_.map(_.toConsumerAccountInfo()))
+  }
+
+  def getAccessToken(account: AccountId)(implicit log: Logger): Future[String] = {
+    val filter = Filters.eq("account", account)
+    collections.Accounts.find(filter).map(accounts => JWT.encodeAccessToken(AccessToken(accounts.headOption.getOrElse(
+      throw NotFoundException()).account), config.jwtSecret))
   }
 }

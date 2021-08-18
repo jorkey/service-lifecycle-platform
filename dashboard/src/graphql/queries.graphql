@@ -7,7 +7,7 @@ mutation login($account: String!, $password: String!) {
 # Info
 
 query whoAmI {
-    whoAmI { account, roles }
+    whoAmI { account, role }
 }
 
 query distributionInfo {
@@ -106,26 +106,58 @@ query taskLogs ($task: String!) {
     }
 }
 
-# Services
+# Accounts
 
 query accountsList {
-    accountsInfo { account }
+    accountsList
 }
 
-query accountsInfo {
-    accountsInfo { account, name, roles, human { email, notifications }, consumer { profile, url } }
+query userAccountsInfo {
+    userAccountsInfo { account, name, role, properties { email, notifications } }
 }
 
-query accountInfo ($account: String!) {
-    accountsInfo (account: $account) { account, name, roles, human { email, notifications }, consumer { profile, url } }
+query userAccountInfo ($account: String!) {
+    userAccountsInfo (account: $account) { account, name, role, properties { email, notifications } }
 }
 
-mutation addAccount ($account: String!, $name: String!, $password: String!, $roles: [AccountRole!]!, $human: HumanInfoInput, $consumer: ConsumerInfoInput) {
-    addAccount (account: $account, name: $name, password: $password, roles: $roles, human: $human, consumer: $consumer)
+query serviceAccountsInfo {
+    serviceAccountsInfo { account, name, role }
 }
 
-mutation changeAccount ($account: String!, $name: String, $oldPassword: String, $password: String, $roles: [AccountRole!], $human: HumanInfoInput, $consumer: ConsumerInfoInput) {
-    changeAccount (account: $account, name: $name, oldPassword: $oldPassword, password: $password, roles: $roles, human: $human, consumer: $consumer)
+query serviceAccountInfo ($account: String!) {
+    serviceAccountsInfo (account: $account) { account, name, role }
+}
+
+query consumerAccountsInfo {
+    consumerAccountsInfo { account, name, role, properties { url, profile } }
+}
+
+query consumerAccountInfo ($account: String!) {
+    consumerAccountsInfo (account: $account) { account, name, role, properties { url, profile } }
+}
+
+mutation addUserAccount ($account: String!, $name: String!, $role: AccountRole!, $password: String!, $properties: UserAccountPropertiesInput!) {
+    addUserAccount (account: $account, name: $name, role: $role, password: $password, properties: $properties)
+}
+
+mutation changeUserAccount ($account: String!, $name: String, $role: AccountRole!, $oldPassword: String, $password: String, $properties: UserAccountPropertiesInput) {
+    changeUserAccount (account: $account, name: $name, role: $role, oldPassword: $oldPassword, password: $password, properties: $properties)
+}
+
+mutation addServiceAccount ($account: String!, $name: String!, $role: AccountRole!) {
+    addServiceAccount (account: $account, name: $name, role: $role)
+}
+
+mutation changeServiceAccount ($account: String!, $name: String, $role: AccountRole!) {
+    changeServiceAccount (account: $account, name: $name, role: $role)
+}
+
+mutation addConsumerAccount ($account: String!, $name: String!, $role: AccountRole!, $properties: ConsumerAccountPropertiesInput!) {
+    addConsumerAccount (account: $account, name: $name, role: $role, properties: $properties)
+}
+
+mutation changeConsumerAccount ($account: String!, $name: String, $role: AccountRole!, $properties: ConsumerAccountPropertiesInput) {
+    changeConsumerAccount (account: $account, name: $name, role: $role, properties: $properties)
 }
 
 mutation removeAccount ($account: String!) {
@@ -185,12 +217,12 @@ query providersInfo {
     }
 }
 
-mutation addProvider ($distribution: String!, $url: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
-    addProvider (distribution: $distribution, url: $url, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
+mutation addProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
+    addProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
 }
 
-mutation changeProvider ($distribution: String!, $url: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
-    changeProvider (distribution: $distribution, url: $url, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
+mutation changeProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
+    changeProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
 }
 
 mutation removeProvider ($distribution: String!) {

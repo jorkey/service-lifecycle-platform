@@ -9,7 +9,7 @@ import {
   Divider, Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import AccountsTable from './AccountsTable';
+import ConsumerAccountsTable from './ConsumerAccountsTable';
 import {RouteComponentProps, useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
 
@@ -69,7 +69,7 @@ const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> 
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <AccountsTable accountType={accountType}/>
+          <ConsumerAccountsTable accountType={accountType}/>
         </div>
       </CardContent>
     </Card>
