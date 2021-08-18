@@ -122,7 +122,7 @@ object BuilderMain extends App {
             val service = arguments.getValue("service")
             val version = ClientDistributionVersion.parse(arguments.getValue("version"))
             val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> version.toString)
-            val clientBuilder = new ClientBuilder(new File(".", distribution))
+            val clientBuilder = new ClientBuilder(new File("."))
             if (!clientBuilder.buildClientVersion(distributionClient, service, version, author, buildArguments)) {
               Utils.error("Client version is not generated")
             }

@@ -28,7 +28,7 @@ trait DistributionProvidersCoder {
   def getDistributionProvidersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionProviderInfo]]("providersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
-      subSelection = "{ distribution, url, testConsumer, uploadStateIntervalSec }")
+      subSelection = "{ distribution, url, accessToken, testConsumer, uploadStateIntervalSec }")
 
   def getDistributionProviderDesiredVersions(distribution: DistributionId) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("providerDesiredVersions",
