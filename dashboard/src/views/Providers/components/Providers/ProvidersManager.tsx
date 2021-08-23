@@ -39,6 +39,11 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px',
   },
+  accessTokenColumn: {
+    padding: '4px',
+    paddingLeft: '16px',
+    width: '100px'
+  },
   testConsumerColumn: {
     padding: '4px',
     paddingLeft: '16px',
@@ -130,6 +135,12 @@ const ProvidersManager = () => {
       }
     },
     {
+      name: 'accessToken',
+      headerName: 'Access Token',
+      className: classes.accessTokenColumn,
+      editable: true
+    },
+    {
       name: 'testConsumer',
       headerName: 'Test Consumer',
       className: classes.testConsumerColumn,
@@ -164,6 +175,7 @@ const ProvidersManager = () => {
   providers?.providersInfo.forEach(provider => { rows.push(new Map<string, GridTableColumnValue>([
     ['distribution', provider.distribution],
     ['url', provider.url],
+    ['accessToken', provider.accessToken],
     ['testConsumer', provider.testConsumer?provider.testConsumer:''],
     ['uploadStateInterval', provider.uploadStateIntervalSec?provider.uploadStateIntervalSec.toString():''],
     ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
@@ -207,6 +219,7 @@ const ProvidersManager = () => {
               addProvider({ variables: {
                 distribution: String(row.get('distribution')!),
                 url: String(row.get('url')!),
+                accessToken: String(row.get('accessToken')!),
                 testConsumer: row.get('testConsumer')?String(row.get('testConsumer')!):undefined,
                 uploadStateIntervalSec: Number(row.get('uploadStateInterval')!)
               }}).then(() => refetchProviders())
@@ -216,6 +229,7 @@ const ProvidersManager = () => {
               return changeProvider({ variables: {
                   distribution: String(values.get('distribution')!),
                   url: String(values.get('url')!),
+                  accessToken: String(values.get('accessToken')!),
                   uploadStateIntervalSec: Number(values.get('uploadStateInterval')!)
                 }}).then(() => refetchProviders().then(() => {}))}}
           />

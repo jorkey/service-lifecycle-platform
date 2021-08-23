@@ -1,16 +1,18 @@
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {
-  useConsumerAccountsInfoQuery,
   useRemoveAccountMutation, useServiceAccountsInfoQuery,
 } from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
+import AccessTokenIcon from '@material-ui/icons/VpnKey';
 import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
+import {ServiceStatePopup} from "../../../Dashboard/components/Versions/ServiceState";
+import AccessTokenPopup from "./AccessTokenPopup";
 
 const useStyles = makeStyles(theme => ({
   accountsTable: {
@@ -30,10 +32,13 @@ const useStyles = makeStyles(theme => ({
     padding: '4px'
   },
   actionsColumn: {
-    width: '200px',
+    width: '100px',
     padding: '4px',
-    paddingRight: '40px',
-    textAlign: 'right'
+    // paddingRight: '40px',
+    textAlign: 'center'
+  },
+  action: {
+    padding: '0 0 0 0',
   },
   alert: {
     marginTop: 25
@@ -83,15 +88,14 @@ const ServiceAccountsTable: React.FC<ServiceAccountsTableProps> = props => {
       name: 'role',
       headerName: 'Role',
       className: classes.rolesColumn
+    },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
     }
   ]
-
-  columns.push({
-    name: 'actions',
-    headerName: 'Actions',
-    type: 'elements',
-    className: classes.actionsColumn
-  })
 
   const rows = new Array<Map<string, GridTableColumnValue>>()
   if (accountsInfo) {
@@ -102,9 +106,16 @@ const ServiceAccountsTable: React.FC<ServiceAccountsTableProps> = props => {
         row.set('account', account.account)
         row.set('name', account.name)
         row.set('role', account.role.toString())
-        row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(account.account) }>
+        row.set('actions', [
+          <span key='0' className={classes.action}>
+            <AccessTokenPopup account={account.account}/>
+          </span>,
+          <Button key='1' className={classes.action}
+                  onClick={ () => setDeleteConfirm(account.account) }
+          >
             <DeleteIcon/>
-          </Button>])
+          </Button>
+        ])
         rows.push(row)
       })
   }

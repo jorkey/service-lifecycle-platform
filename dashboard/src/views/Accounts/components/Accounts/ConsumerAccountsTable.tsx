@@ -41,7 +41,7 @@ const useStyles = makeStyles(theme => ({
     width: '200px',
     padding: '4px',
     paddingRight: '40px',
-    textAlign: 'right'
+    textAlign: 'center'
   },
   alert: {
     marginTop: 25

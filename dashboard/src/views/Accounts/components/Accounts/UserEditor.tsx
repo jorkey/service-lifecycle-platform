@@ -70,7 +70,7 @@ interface AccountEditorParams extends RouteComponentProps<AccountRouteParams> {
   fromUrl: string
 }
 
-const AccountEditor: React.FC<AccountEditorParams> = props => {
+const UserEditor: React.FC<AccountEditorParams> = props => {
   const whoAmI = useWhoAmIQuery()
   const {data: accountsList} = useAccountsListQuery()
   const [getAccountInfo, accountInfo] = useUserAccountInfoLazyQuery()
@@ -130,7 +130,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
   }
 
   const validate: () => boolean = () => {
-    return  !!account && !!name && !!role && !!email &&
+    return  !!account && !!name && !!role &&
             (!!editAccount || !doesAccountExist(account)) &&
             (!!editAccount || !!password) &&
             (byAdmin || !!oldPassword) &&
@@ -322,4 +322,4 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
   );
 }
 
-export default AccountEditor;
+export default UserEditor;

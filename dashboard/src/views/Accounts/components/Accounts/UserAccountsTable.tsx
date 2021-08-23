@@ -37,7 +37,7 @@ const useStyles = makeStyles(theme => ({
     width: '200px',
     padding: '4px',
     paddingRight: '40px',
-    textAlign: 'right'
+    textAlign: 'center'
   },
   alert: {
     marginTop: 25
@@ -143,4 +143,4 @@ const UserAccountsTable: React.FC<UserAccountsTableProps> = props => {
   </>)
 }
 
-export default AccountsTable;
+export default UserAccountsTable;

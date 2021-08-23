@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
@@ -12,6 +12,8 @@ import AddIcon from '@material-ui/icons/Add';
 import ConsumerAccountsTable from './ConsumerAccountsTable';
 import {RouteComponentProps, useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
+import UserAccountsTable from "./UserAccountsTable";
+import ServiceAccountsTable from "./ServiceAccountsTable";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -32,16 +34,14 @@ const useStyles = makeStyles((theme:any) => ({
 }));
 
 interface AccountsManagerRouteParams {
-  type: 'human' | 'service' | 'consumer'
+  type: 'users' | 'services' | 'consumers'
 }
 
 const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> = props => {
-  const accountType = props.match.params.type
+  const accountsType = props.match.params.type
 
   const classes = useStyles()
   const routeMatch = useRouteMatch();
-
-  console.log('accountType ' + accountType)
 
   return (
     <Card
@@ -64,12 +64,18 @@ const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> 
             </Button>
           </Box>
         }
-        title={accountType == 'human'? 'People' : accountType == 'service' ? 'Services' : 'Distribution Consumers'}
+        title={accountsType == 'users'? 'Users'
+             : accountsType == 'services' ? 'Services'
+             : accountsType == 'consumers' ? 'Distribution Consumers'
+             : ''}
       />
       <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <ConsumerAccountsTable accountType={accountType}/>
+          { accountsType == 'users'? <UserAccountsTable/>
+            : accountsType == 'services'? <ServiceAccountsTable/>
+            : accountsType == 'consumers'? <ConsumerAccountsTable/>
+            : null }
         </div>
       </CardContent>
     </Card>

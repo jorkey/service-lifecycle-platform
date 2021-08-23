@@ -14,7 +14,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
   AccountRole,
-  useClientDesiredVersionsLazyQuery, useConsumerAccountInfoQuery,
+  useClientDesiredVersionsLazyQuery, useConsumerAccountInfoQuery, useConsumerAccountsInfoQuery,
   useDeveloperDesiredVersionsLazyQuery,
   useInstalledDesiredVersionsLazyQuery,
   useServiceStatesLazyQuery
@@ -64,7 +64,7 @@ const Versions: React.FC<VersionsProps> = props => {
       getVersions(consumer)
   }, [consumer]);
 
-  const { data: consumerAccountsInfo } = useConsumerAccountInfoQuery({
+  const { data: consumerAccountsInfo } = useConsumerAccountsInfoQuery({
     fetchPolicy: 'no-cache',
   })
   const [getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery()

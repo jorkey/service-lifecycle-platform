@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.StatusCode
-import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK}
+import akka.http.scaladsl.model.StatusCodes.{BadRequest, InternalServerError, OK, Unauthorized}
 import akka.http.scaladsl.model.sse.ServerSentEvent
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -18,7 +18,7 @@ import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError, _}
 import sangria.marshalling.sprayJson._
 import sangria.schema.Schema
 import sangria.slowlog.SlowLog
-import spray.json.{JsObject, JsValue}
+import spray.json.{JsObject, JsString, JsValue, enrichAny}
 
 import java.io.IOException
 import scala.concurrent.{ExecutionContext, Future}

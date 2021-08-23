@@ -73,16 +73,16 @@ const Sidebar = (props:any) => {
       icon: <PeopleIcon />,
       pages: [
         {
-          title: 'People',
-          href: '/accounts/human',
+          title: 'Users',
+          href: '/accounts/users',
         },
         {
           title: 'Services',
-          href: '/accounts/service',
+          href: '/accounts/services',
         },
         {
           title: 'Distribution Consumers',
-          href: '/accounts/consumer',
+          href: '/accounts/consumers',
         }
       ]
     },

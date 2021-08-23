@@ -28,20 +28,7 @@ const Profile = props => {
 
   const { data } = useWhoAmIQuery();
 
-  let name = '';
-  let roles = '';
-
-  if (data) {
-    name = data.whoAmI.name
-    data.whoAmI.roles.forEach(role => {
-      if (roles.length !== 0) {
-        roles += ', '
-      }
-      roles += role
-    })
-  }
-
-  return (
+  return data ?
     <div
       {...rest}
       className={clsx(classes.root, className)}
@@ -50,11 +37,10 @@ const Profile = props => {
         className={classes.name}
         variant='h4'
       >
-        {name}
+        {data.whoAmI.name}
       </Typography>
-      <Typography variant='body2'>{roles}</Typography>
-    </div>
-  );
+      <Typography variant='body2'>{data.whoAmI.role.toString()}</Typography>
+    </div> : null
 };
 
 Profile.propTypes = {

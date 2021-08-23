@@ -20,7 +20,7 @@ import {
   AccountRole,
   useAccountsListQuery, useAddServiceAccountMutation,
   useAddUserAccountMutation, useChangeServiceAccountMutation,
-  useChangeUserAccountMutation, UserAccountProperties,
+  useChangeUserAccountMutation, UserAccountProperties, useServiceAccountInfoLazyQuery,
   useServiceProfilesQuery,
   useUserAccountInfoLazyQuery,
   useWhoAmIQuery
@@ -73,7 +73,7 @@ interface AccountEditorParams extends RouteComponentProps<AccountRouteParams> {
 const AccountEditor: React.FC<AccountEditorParams> = props => {
   const whoAmI = useWhoAmIQuery()
   const {data: accountsList} = useAccountsListQuery()
-  const [getAccountInfo, accountInfo] = useUserAccountInfoLazyQuery()
+  const [getAccountInfo, accountInfo] = useServiceAccountInfoLazyQuery()
 
   const classes = useStyles()
 
@@ -93,7 +93,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
         getAccountInfo({variables: {account: editAccount}})
       }
       if (accountInfo.data) {
-        const info = accountInfo.data.userAccountsInfo[0]
+        const info = accountInfo.data.serviceAccountsInfo[0]
         if (info) {
           setAccount(info.account)
           setName(info.name)
@@ -193,17 +193,17 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
                 onChange={ event => setRole(event.target.checked ? AccountRole.Updater : undefined) }
               />
             )}
-            label="Developer"
+            label="Updater"
           />
           <FormControlLabel
             control={(
               <Checkbox
                 color="primary"
-                checked={role == AccountRole.Administrator}
-                onChange={ event => setRole(event.target.checked ? AccountRole.Administrator : undefined) }
+                checked={role == AccountRole.Builder}
+                onChange={ event => setRole(event.target.checked ? AccountRole.Builder : undefined) }
               />
             )}
-            label="Administrator"
+            label="Builder"
           />
         </FormGroup>
       </CardContent>

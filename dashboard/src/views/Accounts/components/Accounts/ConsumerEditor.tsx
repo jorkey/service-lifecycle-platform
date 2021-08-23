@@ -80,7 +80,6 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
 
   const [account, setAccount] = useState<string>();
   const [name, setName] = useState<string>();
-  const [role, setRole] = useState<AccountRole>();
   const [url, setUrl] = useState<string>();
   const [profile, setProfile] = useState<string>();
 
@@ -100,7 +99,6 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
         if (info) {
           setAccount(info.account)
           setName(info.name)
-          setRole(info.role)
           setUrl(info.properties.url)
           setProfile(info.properties.profile)
         }
@@ -126,7 +124,7 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
   }
 
   const validate: () => boolean = () => {
-    return  !!account && !!name && !!role &&
+    return  !!account && !!name &&
             !!profile && !!url && validateUrl(url) &&
             (!!editAccount || !doesAccountExist(account))
   }
@@ -141,13 +139,13 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
       if (editAccount) {
           changeAccount({
             variables: {
-              account: account!, name: name, role: role!,
+              account: account!, name: name,
               properties: properties
             }
           })
       } else {
         addAccount({
-          variables: { account: account!, name: name!, role: role!, properties: properties }
+          variables: { account: account!, name: name!, properties: properties }
         })
       }
     }

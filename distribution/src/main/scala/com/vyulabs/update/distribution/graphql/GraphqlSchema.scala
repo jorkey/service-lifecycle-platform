@@ -244,10 +244,10 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.addServiceAccount(c.arg(AccountArg), c.arg(NameArg),
           c.arg(AccountRoleArg)).map(_ => true) }),
       Field("addConsumerAccount", BooleanType,
-        arguments = AccountArg :: NameArg :: AccountRoleArg :: ConsumerAccountPropertiesArg :: Nil,
+        arguments = AccountArg :: NameArg :: ConsumerAccountPropertiesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addConsumerAccount(c.arg(AccountArg), c.arg(NameArg),
-          c.arg(AccountRoleArg), c.arg(ConsumerAccountPropertiesArg)).map(_ => true) }),
+          c.arg(ConsumerAccountPropertiesArg)).map(_ => true) }),
       Field("changeUserAccount", BooleanType,
         arguments = OptionAccountArg :: OptionNameArg :: OptionAccountRoleArg ::
           OptionOldPasswordArg :: OptionPasswordArg :: OptionUserAccountPropertiesArg :: Nil,

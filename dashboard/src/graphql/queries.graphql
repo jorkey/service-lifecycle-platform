@@ -7,7 +7,7 @@ mutation login($account: String!, $password: String!) {
 # Info
 
 query whoAmI {
-    whoAmI { account, role }
+    whoAmI { account, name, role }
 }
 
 query distributionInfo {
@@ -136,6 +136,10 @@ query consumerAccountInfo ($account: String!) {
     consumerAccountsInfo (account: $account) { account, name, role, properties { url, profile } }
 }
 
+query accessToken ($account: String!) {
+    accessToken (account: $account)
+}
+
 mutation addUserAccount ($account: String!, $name: String!, $role: AccountRole!, $password: String!, $properties: UserAccountPropertiesInput!) {
     addUserAccount (account: $account, name: $name, role: $role, password: $password, properties: $properties)
 }
@@ -152,12 +156,12 @@ mutation changeServiceAccount ($account: String!, $name: String, $role: AccountR
     changeServiceAccount (account: $account, name: $name, role: $role)
 }
 
-mutation addConsumerAccount ($account: String!, $name: String!, $role: AccountRole!, $properties: ConsumerAccountPropertiesInput!) {
-    addConsumerAccount (account: $account, name: $name, role: $role, properties: $properties)
+mutation addConsumerAccount ($account: String!, $name: String!, $properties: ConsumerAccountPropertiesInput!) {
+    addConsumerAccount (account: $account, name: $name, properties: $properties)
 }
 
-mutation changeConsumerAccount ($account: String!, $name: String, $role: AccountRole!, $properties: ConsumerAccountPropertiesInput) {
-    changeConsumerAccount (account: $account, name: $name, role: $role, properties: $properties)
+mutation changeConsumerAccount ($account: String!, $name: String, $properties: ConsumerAccountPropertiesInput) {
+    changeConsumerAccount (account: $account, name: $name, properties: $properties)
 }
 
 mutation removeAccount ($account: String!) {
@@ -213,7 +217,7 @@ mutation removeServicesProfile ($profile: String!) {
 
 query providersInfo {
     providersInfo {
-        distribution, url, testConsumer, uploadStateIntervalSec
+        distribution, url, accessToken, testConsumer, uploadStateIntervalSec
     }
 }
 

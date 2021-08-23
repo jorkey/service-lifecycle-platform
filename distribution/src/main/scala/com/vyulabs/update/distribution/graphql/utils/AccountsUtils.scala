@@ -60,13 +60,13 @@ trait AccountsUtils extends SprayJsonSupport {
     } yield result
   }
 
-  def addConsumerAccount(account: AccountId, name: String, role: AccountRole, info: ConsumerAccountProperties)
+  def addConsumerAccount(account: AccountId, name: String, info: ConsumerAccountProperties)
                         (implicit log: Logger): Future[Unit] = {
-    log.info(s"Add consumer account ${account} with role ${role}")
+    log.info(s"Add consumer account ${account}")
     for {
       result <- {
         val document = ServerAccountInfo(ServerAccountInfo.TypeConsumer,
-          account, name, role.toString, None, None, Some(info))
+          account, name, AccountRole.DistributionConsumer.toString, None, None, Some(info))
         collections.Accounts.insert(document).map(_ => ())
       }
     } yield result
@@ -109,14 +109,14 @@ trait AccountsUtils extends SprayJsonSupport {
   }
 
   def changeConsumerAccount(account: AccountId, name: Option[String],
-                            role: Option[AccountRole], info: Option[ConsumerAccountProperties])(implicit log: Logger): Future[Boolean] = {
+                            info: Option[ConsumerAccountProperties])(implicit log: Logger): Future[Boolean] = {
     log.info(s"Change user account ${account}")
     val filters = Filters.eq("account", account)
     collections.Accounts.change(filters, r => {
       ServerAccountInfo(ServerAccountInfo.TypeConsumer,
         r.account,
         if (name.isDefined) name.get else r.name,
-        if (role.isDefined) role.get.toString else r.role,
+        AccountRole.DistributionConsumer.toString,
         None,
         None,
         if (info.isDefined) info else r.consumer)
@@ -188,12 +188,13 @@ trait AccountsUtils extends SprayJsonSupport {
     val basicTokenRx = "Basic (.*)".r
     authorization match {
       case bearerTokenRx(value) =>
-        try {
-          Future(Some(JWT.decodeAccessToken(value, config.jwtSecret)))
-        } catch {
-          case ex: Exception =>
-            Future.failed(AuthenticationException(s"Decode access token error: ${ex.getMessage}"))
-        }
+        Future(
+          try {
+            Some(JWT.decodeAccessToken(value, config.jwtSecret))
+          } catch {
+            case ex: Exception =>
+              None
+        })
       case basicTokenRx(value) =>
         val authTokenRx = "(.*):(.*)".r
         new String(Base64.getDecoder.decode(value), "utf8") match {
