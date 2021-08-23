@@ -15,9 +15,9 @@ const useStyles = makeStyles(theme => ({
   input: {
     width: '100%'
   },
-  selectColumn: {
-    width: '50px'
-  }
+  // selectColumn: {
+  //   width: '50px'
+  // }
 }));
 
 export interface GridTableRowParams {
@@ -126,7 +126,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
       </TableCell>))
 
   return (<TableRow selected={selected}>{ select ?
-            <TableCell className={classes.selectColumn} padding="checkbox" key={-1}>
+            <TableCell padding='checkbox' key={-1}>
               <Checkbox
                 checked={selected}
                 onChange={(event) => {

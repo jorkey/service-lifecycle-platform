@@ -12,9 +12,9 @@ import {GridTableRow} from "./GridTableRow";
 import {makeStyles} from "@material-ui/styles";
 
 const useStyles = makeStyles((theme:any) => ({
-  selectColumn: {
-    width: '50px'
-  }
+  // selectColumn: {
+  //   width: '50px'
+  // }
 }));
 
 interface GridParams {
@@ -49,7 +49,7 @@ export const GridTable = (props: GridParams) => {
         <TableHead>
           <TableRow>
             { select ?
-              <TableCell className={classes.selectColumn} padding="checkbox">
+              <TableCell padding='checkbox'>
                 <Checkbox
                   indeterminate={selectedRows && selectedRows.size > 0 && selectedRows.size < rows.length}
                   checked={rows.length > 0 && selectedRows && selectedRows.size === rows.length}
