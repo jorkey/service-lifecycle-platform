@@ -105,7 +105,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   }
 
   def makeAndRunDistributionFromProvider(provider: SimpleLifecycle): Unit = {
-    assert(provider.distributionBuilder.addConsumerAccount(provider.distribution,
+    assert(provider.distributionBuilder.addConsumerAccount(distribution,
       "Distribution Consumer", ConsumerAccountProperties(Common.CommonServiceProfile, s"http://localhost:${provider.distributionPort}")))
 
     val config = DistributionConfig.readFromFile(new DistributionDirectory(provider.distributionDir).getConfigFile()).getOrElse {
