@@ -117,11 +117,10 @@ trait AccountsAdministrationCoder {
       GraphqlArgument("name" -> name),
       GraphqlArgument("role" -> role, "AccountRole")))
 
-  def addConsumerAccount(account: AccountId, name: String, role: AccountRole, consumer: ConsumerAccountProperties) =
+  def addConsumerAccount(account: AccountId, name: String, consumer: ConsumerAccountProperties) =
     GraphqlMutation[Boolean]("addConsumerAccount", Seq(
       GraphqlArgument("account" -> account),
       GraphqlArgument("name" -> name),
-      GraphqlArgument("role" -> role, "AccountRole"),
       GraphqlArgument("properties" -> consumer, "ConsumerAccountPropertiesInput")))
 
   def removeAccount(account: AccountId) =
@@ -135,9 +134,12 @@ trait ConsumersAdministrationCoder {
   def removeServicesProfile(servicesProfile: ServicesProfileId) =
     GraphqlMutation[Boolean]("removeServicesProfile", Seq(GraphqlArgument("profile" -> servicesProfile)))
 
-  def addProvider(distribution: DistributionId, distributionUrl: String, accessToken: String, uploadStateInterval: Option[FiniteDuration]) =
+  def addProvider(distribution: DistributionId, distributionUrl: String, accessToken: String,
+                  testConsumer: Option[String], uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addProvider", Seq(GraphqlArgument("distribution" -> distribution),
-      GraphqlArgument("url" -> distributionUrl), GraphqlArgument("accessToken" -> accessToken), GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
+      GraphqlArgument("url" -> distributionUrl), GraphqlArgument("accessToken" -> accessToken),
+      GraphqlArgument("testConsumer" -> testConsumer.map(_.toJson.toString())),
+      GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
   def removeProvider(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeProvider", Seq(GraphqlArgument("distribution" -> distribution)))
 }

@@ -2,8 +2,9 @@ package com.vyulabs.update.tests
 
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
+import com.vyulabs.update.common.accounts.ConsumerAccountProperties
 import com.vyulabs.update.common.common.{Common, JWT}
-import com.vyulabs.update.common.common.Common.TaskId
+import com.vyulabs.update.common.common.Common.{DistributionId, ServicesProfileId, TaskId}
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
@@ -24,21 +25,23 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.{Failure, Success}
 
-class SimpleLifecycle {
+class SimpleLifecycle(val distribution: DistributionId, val distributionPort: Int) {
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val distribution = "test-distribution"
-  private val distributionDir = Files.createTempDirectory("distribution").toFile
+  private val distributionDir = Files.createTempDirectory(distribution).toFile
   private val builderDir = new File(distributionDir, s"builder/${distribution}"); builderDir.mkdirs()
-  private val adminDistributionUrl = s"http://${Common.AdminAccount}:${Common.AdminAccount}@localhost:8000"
-  private val updaterDistributionUrl = s"http://localhost:8000"
+  private val adminDistributionUrl = s"http://${Common.AdminAccount}:${Common.AdminAccount}@localhost:${distributionPort}"
+  private val updaterDistributionUrl = s"http://localhost:${distributionPort}"
   private val testServiceName = "test"
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
+  private val dbName = s"${distribution}-test"
+
   private val distributionBuilder = new DistributionBuilder("None", startDistribution,
-    new DistributionDirectory(distributionDir), distribution, "Test distribution server", "test", false, 8000)
+    new DistributionDirectory(distributionDir), distribution, "Test distribution server",
+    dbName, false, distributionPort)
   private val clientBuilder = new ClientBuilder(builderDir)
 
   private val adminClient = new SyncDistributionClient(
@@ -65,7 +68,7 @@ class SimpleLifecycle {
     true
   }
 
-  Await.result(new MongoDb("test").dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
+  Await.result(new MongoDb(dbName).dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
 
   def close(): Unit = {
     synchronized {
@@ -95,9 +98,26 @@ class SimpleLifecycle {
         !distributionBuilder.addOwnServicesProfile()) {
       sys.error("Can't initialize distribution")
     }
+
     println()
     println(s"########################### Distribution server is initialized")
     println()
+  }
+
+  def makeAndRunDistributionFromProvider(provider: SimpleLifecycle): Unit = {
+    assert(provider.distributionBuilder.addConsumerAccount(provider.distribution,
+      "Distribution Consumer", ConsumerAccountProperties(Common.CommonServiceProfile, s"http://localhost:${provider.distributionPort}")))
+
+    val config = DistributionConfig.readFromFile(new DistributionDirectory(provider.distributionDir).getConfigFile()).getOrElse {
+      sys.error("Can't read provider distribution config file")
+    }
+    val consumerAccessToken = JWT.encodeAccessToken(AccessToken(distribution), config.jwtSecret)
+    if (!distributionBuilder.buildFromProviderDistribution(provider.distribution,
+        s"http://localhost:${provider.distributionPort}", "admin", consumerAccessToken,
+        Some(Common.CommonServiceProfile), "ak")) {
+      sys.error("Can't build distribution server")
+    }
+    Thread.sleep(5000)
   }
 
   def installTestService(buggy: Boolean = false): Unit = {

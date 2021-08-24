@@ -107,7 +107,7 @@ const BuildClient = () => {
     if (provider) {
       getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
     }
-  }, [ 'provider' ])
+  }, [ provider ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()

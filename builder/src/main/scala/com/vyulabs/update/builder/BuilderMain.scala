@@ -76,11 +76,9 @@ object BuilderMain extends App {
           val providerUrl = arguments.getValue("providerUrl")
           val providerAdminPassword = arguments.getValue("providerAdminPassword")
           val consumerAccessToken = arguments.getValue("consumerAccessToken")
-          val servicesProfile = arguments.getValue("servicesProfile")
-          val testConsumerMatch = arguments.getOptionValue("testConsumerMatch")
+          val testConsumer = arguments.getOptionValue("testConsumer")
           if (!distributionBuilder.buildFromProviderDistribution(
-                provider, providerUrl, providerAdminPassword, consumerAccessToken,
-                servicesProfile, testConsumerMatch, author) ||
+                provider, providerUrl, providerAdminPassword, consumerAccessToken, testConsumer, author) ||
               !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }

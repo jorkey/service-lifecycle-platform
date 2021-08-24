@@ -36,7 +36,7 @@ trait GraphqlHttpSupport {
     QueryParser.parse(query) match {
       case Success(document) =>
         val context = GraphqlContext(token, None, workspace)
-        log.debug(s"Execute graphql query ${query}, operation ${operation}, variables ${variables}")
+        log.debug(s"Execute graphql ${query}, operation ${operation}, variables ${variables}")
         document.operationType(operation) match {
           case Some(OperationType.Subscription) =>
             complete(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, context, document, operation, variables))

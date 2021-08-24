@@ -84,8 +84,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def buildFromProviderDistribution(provider: DistributionId, providerURL: String,
                                     providerAdminPassword: String, consumerAccessToken: String,
-                                    servicesProfile: ServicesProfileId, testDistributionMatch: Option[String],
-                                    author: String): Boolean = {
+                                    testConsumer: Option[String], author: String): Boolean = {
     this.providerDistributionName = Some(provider)
     adminProviderClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(
@@ -127,7 +126,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info(s"########################### Add distribution provider to distribution server")
     log.info("")
     if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addProvider(provider,
-        providerURL, consumerAccessToken, None)).getOrElse(false)) {
+        providerURL, consumerAccessToken, testConsumer, None)).getOrElse(false)) {
       log.error(s"Can't add distribution provider")
       return false
     }
@@ -335,7 +334,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def addConsumerAccount(distribution: AccountId, name: String, consumer: ConsumerAccountProperties): Boolean = {
     adminDistributionClient.get.graphqlRequest(administratorMutations.addConsumerAccount(distribution,
-        name, AccountRole.DistributionConsumer, consumer)).getOrElse {
+        name, consumer)).getOrElse {
       return false
     }
     true
