@@ -1,8 +1,10 @@
 package com.vyulabs.update.common.info
 
-import com.vyulabs.update.common.common.Common.{AccountId, ServiceId}
-import com.vyulabs.update.common.version.{ClientDistributionVersion}
+import com.vyulabs.update.common.common.Common.{AccountId, ServiceId, TaskId}
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import spray.json.DefaultJsonProtocol
+
+import java.util.Date
 
 case class ClientVersionInfo(service: ServiceId, version: ClientDistributionVersion, buildInfo: BuildInfo, installInfo: InstallInfo)
 
@@ -20,5 +22,5 @@ object ClientVersionsInfoJson extends DefaultJsonProtocol {
   implicit val clientVersionsInfoJson = jsonFormat1(ClientVersionsInfo.apply)
 }
 
-case class ClientVersionsInProcessInfo(services: Seq[ServiceId], author: AccountId,
-                                       downloadUpdates: Boolean, rebuildWithNewConfig: Boolean)
+case class ClientUpdateInProcessInfo(services: Seq[ServiceId], author: AccountId, rebuildWithNewConfig: Option[Boolean],
+                                     task: TaskId, startTime: Date)

@@ -2,15 +2,16 @@ import React, {useCallback, useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
+  Box,
   Card,
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
-  DistributionProviderInfo,
+  DistributionProviderInfo, useBuildClientVersionMutation,
   useClientVersionsInfoQuery,
   useDeveloperVersionsInfoQuery,
   useProviderDesiredVersionsLazyQuery,
-  useProvidersInfoQuery
+  useProvidersInfoQuery, useUpdateClientVersionsMutation
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -19,7 +20,7 @@ import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox";
+import Button from "@material-ui/core/Button";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -37,12 +38,6 @@ const useStyles = makeStyles((theme:any) => ({
     width: '150px',
     paddingRight: '2px'
   },
-  downloadUpdates: {
-    paddingRight: '2px'
-  },
-  rebuildWithNewConfig: {
-    paddingRight: '2px'
-  },
   versionsTable: {
     marginTop: '20px'
   },
@@ -53,6 +48,12 @@ const useStyles = makeStyles((theme:any) => ({
   versionColumn: {
     padding: 'normal',
     paddingLeft: '16px'
+  },
+  controls: {
+    marginTop: 25,
+    display: 'flex',
+    justifyContent: 'flex-end',
+    p: 2
   },
   control: {
     paddingLeft: '10px',
@@ -67,8 +68,6 @@ const BuildClient = () => {
   const classes = useStyles()
 
   const [provider, setProvider] = useState<DistributionProviderInfo>()
-  const [downloadUpdates, setDownloadUpdates] = useState<boolean>(true)
-  const [rebuildWithNewConfig, setRebuildWithNewConfig] = useState<boolean>(false)
   const [selectedRows, setSelectedRows] = useState(new Set<number>())
 
   const [error, setError] = useState<string>()
@@ -76,7 +75,12 @@ const BuildClient = () => {
   const { data: providers } = useProvidersInfoQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query providers info error ' + err.message) },
-    onCompleted() { setError(undefined) }
+    onCompleted() {
+      setError(undefined)
+      if (providers?.providersInfo?.length) {
+        setProvider(providers.providersInfo[0])
+      }
+    }
   })
   const [ getProviderDesiredVersions, providerDesiredVersions ] = useProviderDesiredVersionsLazyQuery({
     fetchPolicy: 'no-cache',
@@ -94,16 +98,16 @@ const BuildClient = () => {
     onCompleted() { setError(undefined) }
   })
 
-  // useBuildClientVersionMutation({
-  //   fetchPolicy: 'no-cache',
-  //   variables: {
-  //     service:
-  //     developerVersion
-  //     clientVersion
-  //   }
-  // })
+  const [ updateClientVersions ] = useUpdateClientVersionsMutation({
+      fetchPolicy: 'no-cache'
+  })
+
+  const [ buildClientVersion ] = useBuildClientVersionMutation({
+    fetchPolicy: 'no-cache'
+  })
 
   React.useEffect(() => {
+    setSelectedRows(new Set())
     if (provider) {
       getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
     }
@@ -112,7 +116,7 @@ const BuildClient = () => {
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
 
-    if (providerDesiredVersions.data) {
+    if (provider && providerDesiredVersions.data) {
       providerDesiredVersions.data.providerDesiredVersions.forEach(
         version => servicesSet.add(version.service)
       )
@@ -131,6 +135,10 @@ const BuildClient = () => {
     }
 
     return Array.from(servicesSet)
+  }
+
+  const validate = () => {
+    return selectedRows.size
   }
 
   const services = makeServicesList()
@@ -171,6 +179,14 @@ const BuildClient = () => {
       ])
     })
 
+  const allSelected = provider && !provider.testConsumer
+
+  if (allSelected) {
+    if (selectedRows.size != rows.length) {
+      setSelectedRows(new Set(rows.map((value, index) => index)))
+    }
+  }
+
   return (
     <Card
       className={clsx(classes.root)}
@@ -198,27 +214,8 @@ const BuildClient = () => {
                         .map((provider, index) => <option key={index}>{provider}</option>)}
                   </Select>
                 }
-                label='Provider'
+                label='Update From Provider'
               /> : null }
-            { provider ?
-              <FormControlLabel
-                className={classes.control}
-                control={<Checkbox
-                  checked={downloadUpdates}
-                  className={classes.downloadUpdates}
-                  onChange={event => setDownloadUpdates(event.target.checked)}
-                />}
-                label='Download Updates'
-              /> : null }
-            <FormControlLabel
-              className={classes.control}
-              control={<Checkbox
-                checked={rebuildWithNewConfig}
-                className={classes.rebuildWithNewConfig}
-                onChange={event => setRebuildWithNewConfig(event.target.checked)}
-              />}
-              label='Rebuild With New Config'
-            />
             <RefreshControl
               className={classes.control}
               refresh={ () => {
@@ -230,7 +227,7 @@ const BuildClient = () => {
             />
           </FormGroup>
         }
-        title='Build Client Service Version'
+        title={provider?'Update Client Services':'Build Client Services'}
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
@@ -238,11 +235,9 @@ const BuildClient = () => {
              className={classes.versionsTable}
              columns={columns}
              rows={rows?rows:[]}
-             select={!provider?.testConsumer || rebuildWithNewConfig}
-             selectedRows={
-               (!provider?.testConsumer || rebuildWithNewConfig) ? selectedRows :
-                 new Set(rows.map((row, num) => num))
-             }
+             selectColumn={true}
+             disableManualSelect={allSelected}
+             selectedRows={selectedRows}
              onRowSelected={(row, columns) => {
                setSelectedRows(new Set(selectedRows.add(row)))
              }}
@@ -252,6 +247,16 @@ const BuildClient = () => {
              }}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
+          <Box className={classes.controls}>
+            <Button className={classes.control}
+                    color="primary"
+                    variant="contained"
+                    disabled={!validate()}
+                    // onClick={() => buildDeveloperVersion()}
+            >
+              Update Client
+            </Button>
+          </Box>
         </div>
       </CardContent>
     </Card>

@@ -70,6 +70,10 @@ query installedDesiredVersions ($distribution: String!) {
     }
 }
 
+mutation updateClientVersions ($distribution: String!, $versions: [ DeveloperDesiredVersionInput!]!) {
+    updateClientVersions (distribution: $distribution, versions: $versions)
+}
+
 mutation buildClientVersion ($service: String!, $version: ClientDistributionVersionInput!) {
     buildClientVersion (service: $service, version: $version)
 }

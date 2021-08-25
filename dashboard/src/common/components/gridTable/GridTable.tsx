@@ -21,7 +21,8 @@ interface GridParams {
   className: string,
   columns: GridTableColumnParams[],
   rows: Map<string, GridTableColumnValue>[],
-  select?: boolean,
+  selectColumn?: boolean,
+  disableManualSelect?: boolean,
   selectedRows?: Set<number>,
   addNewRow?: boolean,
   onClick?: (row: number, values: Map<string, GridTableColumnValue>) => void,
@@ -35,7 +36,7 @@ interface GridParams {
 }
 
 export const GridTable = (props: GridParams) => {
-  const { className, columns, rows, select, selectedRows, addNewRow,
+  const { className, columns, rows, selectColumn, disableManualSelect, selectedRows, addNewRow,
     onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowSelected, onRowUnselected } = props
 
   const classes = useStyles()
@@ -48,11 +49,12 @@ export const GridTable = (props: GridParams) => {
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            { select ?
+            { selectColumn ?
               <TableCell padding='checkbox'>
                 <Checkbox
                   indeterminate={selectedRows && selectedRows.size > 0 && selectedRows.size < rows.length}
                   checked={rows.length > 0 && selectedRows && selectedRows.size === rows.length}
+                  disabled={disableManualSelect}
                   onChange={(event) => {
                     if (event.target.checked) {
                       rows.forEach((row, index) => onRowSelected?.(index, row))
@@ -76,7 +78,8 @@ export const GridTable = (props: GridParams) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row}
                                       adding={false}
                                       editing={rowNum == editingRow}
-                                      select={select}
+                                      selectColumn={selectColumn}
+                                      disableManualSelect={disableManualSelect}
                                       selected={selectedRows?.has(rowNum)}
                                       onClick={() => {
                                         onClick?.(rowNum, row)

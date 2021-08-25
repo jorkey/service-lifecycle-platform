@@ -158,10 +158,6 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getServiceProfiles(c.arg(OptionProfileArg)) }),
 
       // Developer versions
-      Field("developerVersionsInProcess", ListType(DeveloperVersionInProcessInfoType),
-        arguments = OptionServiceArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
       Field("developerVersionsInfo", ListType(DeveloperVersionInfoType),
         arguments = OptionServiceArg :: OptionDistributionArg :: OptionDeveloperVersionArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer, AccountRole.Builder) :: Nil,
@@ -177,6 +173,10 @@ object GraphqlSchema {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           }
         }),
+      Field("developerVersionsInProcess", ListType(DeveloperVersionInProcessInfoType),
+        arguments = OptionServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer, AccountRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
 
       // Client versions
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
@@ -187,6 +187,9 @@ object GraphqlSchema {
         arguments = OptionServicesArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+      Field("clientUpdateInProcess", OptionType(ClientUpdateInProcessInfoType),
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getClientUpdateInProcessInfo() }),
 
       // Distribution providers
       Field("providersInfo", ListType(ProviderInfoType),

@@ -23,7 +23,8 @@ const useStyles = makeStyles(theme => ({
 export interface GridTableRowParams {
   columns: Array<GridTableColumnParams>,
   values: Map<string, GridTableColumnValue>,
-  select?: boolean,
+  selectColumn?: boolean,
+  disableManualSelect?: boolean,
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
@@ -38,7 +39,7 @@ export interface GridTableRowParams {
 }
 
 export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, select, adding, editing, selected,
+  const { rowNum, columns, values, selectColumn, disableManualSelect, adding, editing, selected,
     onClick, onBeginEditing, onSubmitted, onCanceled, onSelect, onUnselect } = params
 
   const [editColumn, setEditColumn] = useState<string>()
@@ -63,7 +64,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
                         setEditOldValues(new Map(values))
                         setEditValues(new Map(values))
                       }
-                    } else if (select) {
+                    } else if (selectColumn) {
                       if (!selected) {
                         onSelect?.()
                       } else {
@@ -125,10 +126,11 @@ export const GridTableRow = (params: GridTableRowParams) => {
       }
       </TableCell>))
 
-  return (<TableRow selected={selected}>{ select ?
+  return (<TableRow selected={selected}>{ selectColumn ?
             <TableCell padding='checkbox' key={-1}>
               <Checkbox
                 checked={selected}
+                disabled={disableManualSelect}
                 onChange={(event) => {
                   if (event.target.checked) {
                     onSelect?.()
