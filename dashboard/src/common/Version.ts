@@ -29,6 +29,40 @@ export class Version {
       `${version.distribution}-${Version.buildToString(version.developerBuild)}_${version.clientBuild}`
   }
 
+  static compareDeveloperDistributionVersions(version1: DeveloperDistributionVersion, version2: DeveloperDistributionVersion): number {
+    let result = Version.compareBuilds(version1.build, version2.build)
+    if (result != 0) {
+      return result
+    }
+    if (version1.distribution < version2.distribution) {
+      return -1;
+    }
+    if (version1.distribution > version2.distribution) {
+      return 1;
+    }
+    return 0;
+  }
+
+  static compareClientDistributionVersions(version1: ClientDistributionVersion, version2: ClientDistributionVersion): number {
+    let result = Version.compareBuilds(version1.developerBuild, version2.developerBuild)
+    if (result != 0) {
+      return result
+    }
+    if (version1.clientBuild < version2.clientBuild) {
+      return -1;
+    }
+    if (version1.clientBuild > version2.clientBuild) {
+      return 1;
+    }
+    if (version1.distribution < version2.distribution) {
+      return -1;
+    }
+    if (version1.distribution > version2.distribution) {
+      return 1;
+    }
+    return 0;
+  }
+
   static compareBuilds(build1: Array<number>, build2: Array<number>): number {
     let i=0
     for (; i < build1.length; i++) {

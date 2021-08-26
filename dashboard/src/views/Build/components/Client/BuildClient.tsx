@@ -164,9 +164,16 @@ const BuildClient = () => {
 
   const rows = services.sort().map(
     service => {
-      const providerVersion = providerDesiredVersions.data?.providerDesiredVersions.find(version => version.service == service)
-      const developerVersion = developerVersions?.developerVersionsInfo.find(version => version.service == service)
-      const clientVersion = clientVersions?.clientVersionsInfo.find(version => version.service == service)
+      const providerVersion = providerDesiredVersions.data?.providerDesiredVersions
+        .find(version => version.service == service)
+      const developerVersion = developerVersions?.developerVersionsInfo
+        .sort((v1, v2) => Version.compareDeveloperDistributionVersions(v1.version, v2.version))
+        .reverse()
+        .find(version => version.service == service)
+      const clientVersion = clientVersions?.clientVersionsInfo
+        .sort((v1, v2) => Version.compareClientDistributionVersions(v1.version, v2.version))
+        .reverse()
+        .find(version => version.service == service)
       return new Map<string, GridTableColumnValue>([
         ['service', service],
         ['providerVersion', providerVersion?Version.developerDistributionVersionToString(providerVersion.version):''],
@@ -175,7 +182,7 @@ const BuildClient = () => {
       ])
     })
 
-  const allSelected = provider && !provider.testConsumer
+  const allSelected = provider && !!provider.testConsumer
 
   if (allSelected) {
     if (selectedRows.size != rows.length) {
