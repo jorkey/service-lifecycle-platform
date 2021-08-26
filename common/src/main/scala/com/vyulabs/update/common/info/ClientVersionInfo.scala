@@ -22,5 +22,4 @@ object ClientVersionsInfoJson extends DefaultJsonProtocol {
   implicit val clientVersionsInfoJson = jsonFormat1(ClientVersionsInfo.apply)
 }
 
-case class ClientUpdateInProcessInfo(services: Seq[ServiceId], author: AccountId, rebuildWithNewConfig: Option[Boolean],
-                                     task: TaskId, startTime: Date)
+case class ClientVersionsInProcessInfo(versions: Seq[DeveloperDesiredVersion], author: AccountId, task: TaskId, startTime: Date)

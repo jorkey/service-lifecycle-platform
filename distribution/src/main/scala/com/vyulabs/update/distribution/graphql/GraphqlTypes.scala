@@ -76,7 +76,7 @@ object GraphqlTypes {
   implicit val DeveloperVersionInProcessInfoType = deriveObjectType[Unit, DeveloperVersionInProcessInfo]()
   implicit val DeveloperVersionInfoType = deriveObjectType[Unit, DeveloperVersionInfo]()
   implicit val InstallInfoType = deriveObjectType[Unit, InstallInfo]()
-  implicit val ClientUpdateInProcessInfoType = deriveObjectType[Unit, ClientUpdateInProcessInfo]()
+  implicit val ClientVersionsInProcessInfoType = deriveObjectType[Unit, ClientVersionsInProcessInfo]()
   implicit val ClientVersionInfoType = deriveObjectType[Unit, ClientVersionInfo]()
   implicit val VersionsInfoType = deriveObjectType[Unit, DeveloperVersionsInfo]()
   implicit val InstalledDesiredVersionsType = deriveObjectType[Unit, InstalledDesiredVersions]()

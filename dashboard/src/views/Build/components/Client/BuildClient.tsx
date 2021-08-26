@@ -7,11 +7,11 @@ import {
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
-  DistributionProviderInfo, useBuildClientVersionMutation,
-  useClientVersionsInfoQuery,
+  DistributionProviderInfo, useBuildClientVersionsMutation,
+  useClientVersionsInfoQuery, useClientVersionsInProcessQuery,
   useDeveloperVersionsInfoQuery,
   useProviderDesiredVersionsLazyQuery,
-  useProvidersInfoQuery, useUpdateClientVersionsMutation
+  useProvidersInfoQuery
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -98,12 +98,8 @@ const BuildClient = () => {
     onCompleted() { setError(undefined) }
   })
 
-  const [ updateClientVersions ] = useUpdateClientVersionsMutation({
+  const [ buildClientVersions ] = useBuildClientVersionsMutation({
       fetchPolicy: 'no-cache'
-  })
-
-  const [ buildClientVersion ] = useBuildClientVersionMutation({
-    fetchPolicy: 'no-cache'
   })
 
   React.useEffect(() => {

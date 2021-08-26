@@ -16,12 +16,6 @@ query distributionInfo {
 
 # Developer Versions
 
-query developerVersionsInProcess ($service: String) {
-    developerVersionsInProcess (service: $service) {
-        service, version { build }, author, sources { name, git { url, branch, cloneSubmodules } }, comment, task, startTime
-    }
-}
-
 query developerVersionsInfo ($service: String, $version: DeveloperVersionInput) {
     developerVersionsInfo (service: $service, version: $version) {
         service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }
@@ -52,6 +46,12 @@ mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaIn
     setDeveloperDesiredVersions (versions: $versions)
 }
 
+query developerVersionsInProcess ($service: String) {
+    developerVersionsInProcess (service: $service) {
+        service, version { build }, author, sources { name, git { url, branch, cloneSubmodules } }, comment, task, startTime
+    }
+}
+
 # Client Versions
 
 query clientVersionsInfo ($service: String, $version: ClientVersionInput) {
@@ -70,12 +70,8 @@ query installedDesiredVersions ($distribution: String!) {
     }
 }
 
-mutation updateClientVersions ($distribution: String!, $versions: [ DeveloperDesiredVersionInput!]!) {
-    updateClientVersions (distribution: $distribution, versions: $versions)
-}
-
-mutation buildClientVersion ($service: String!, $version: ClientDistributionVersionInput!) {
-    buildClientVersion (service: $service, version: $version)
+mutation buildClientVersions ($versions: [DeveloperDesiredVersionInput!]!) {
+    buildClientVersions (versions: $versions)
 }
 
 mutation addClientVersionInfo ($info: ClientVersionInfoInput!) {
@@ -88,6 +84,12 @@ mutation removeClientVersion ($service: String!, $version: ClientDistributionVer
 
 mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!) {
     setClientDesiredVersions (versions: $versions)
+}
+
+query clientVersionsInProcess {
+    clientVersionsInProcess {
+        versions { service, version { distribution, build } }, author, task, startTime
+    }
 }
 
 # States and logs

@@ -187,9 +187,9 @@ object GraphqlSchema {
         arguments = OptionServicesArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
-      Field("clientUpdateInProcess", OptionType(ClientUpdateInProcessInfoType),
+      Field("clientVersionsInProcess", OptionType(ClientVersionsInProcessInfoType),
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientUpdateInProcessInfo() }),
+        resolve = c => { c.ctx.workspace.getClientVersionsInProcessInfo() }),
 
       // Distribution providers
       Field("providersInfo", ListType(ProviderInfoType),
@@ -337,16 +337,10 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionDeltasArg)).map(_ => true) }),
 
       // Client versions
-      Field("updateClientVersions", StringType,
-        arguments = DistributionArg :: DeveloperDesiredVersionsArg :: Nil,
+      Field("buildClientVersions", StringType,
+        arguments = DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.updateClientVersions(c.arg(DistributionArg), c.arg(DeveloperDesiredVersionsArg),
-          c.ctx.accessToken.get.account) }),
-      Field("buildClientVersion", StringType,
-        arguments = ServiceArg :: ClientDistributionVersionArg :: Nil,
-        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.buildClientVersion(c.arg(ServiceArg), c.arg(ClientDistributionVersionArg),
-          c.ctx.accessToken.get.account) }),
+        resolve = c => { c.ctx.workspace.buildClientVersions(c.arg(DeveloperDesiredVersionsArg), c.ctx.accessToken.get.account) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
