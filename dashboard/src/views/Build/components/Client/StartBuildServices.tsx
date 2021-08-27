@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, {useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
@@ -7,8 +7,10 @@ import {
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
+  ClientDistributionVersion, DeveloperDesiredVersionInput,
+  DeveloperDistributionVersion,
   DistributionProviderInfo, useBuildClientVersionsMutation,
-  useClientVersionsInfoQuery, useClientVersionsInProcessQuery,
+  useClientVersionsInfoQuery,
   useDeveloperVersionsInfoQuery,
   useProviderDesiredVersionsLazyQuery,
   useProvidersInfoQuery
@@ -21,6 +23,7 @@ import {RefreshControl} from "../../../../common/components/refreshControl/Refre
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Button from "@material-ui/core/Button";
+import {RouteComponentProps, useHistory} from "react-router-dom";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -64,12 +67,25 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-const BuildClient = () => {
+interface RowData {
+  selected: boolean
+  service: string
+  providerVersion?: DeveloperDistributionVersion
+  developerVersion?: DeveloperDistributionVersion
+  clientVersion?: ClientDistributionVersion
+}
+
+interface BuildRouteParams {
+}
+
+interface BuildServiceParams extends RouteComponentProps<BuildRouteParams> {
+  fromUrl: string
+}
+
+const StartBuildServices: React.FC<BuildServiceParams> = props => {
   const classes = useStyles()
 
   const [provider, setProvider] = useState<DistributionProviderInfo>()
-  const [selectedRows, setSelectedRows] = useState(new Set<number>())
-
   const [error, setError] = useState<string>()
 
   const { data: providers } = useProvidersInfoQuery({
@@ -82,7 +98,7 @@ const BuildClient = () => {
       }
     }
   })
-  const [ getProviderDesiredVersions, providerDesiredVersions ] = useProviderDesiredVersionsLazyQuery({
+  const [ getProviderVersions, providerVersions ] = useProviderDesiredVersionsLazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query provider desired versions error ' + err.message) },
     onCompleted() { setError(undefined) }
@@ -98,22 +114,37 @@ const BuildClient = () => {
     onCompleted() { setError(undefined) }
   })
 
+  const [ rows, setRows ] = useState<RowData[]>([])
+
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
-      fetchPolicy: 'no-cache'
+    variables: {
+      versions: rows.filter(row => row.selected).map(row => {
+        return { service: row.service, version: row.developerVersion } as DeveloperDesiredVersionInput })
+    },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Build version error ' + err.message) },
+    onCompleted(data) {
+      history.push(props.fromUrl + '/monitor')
+    }
   })
 
+  const history = useHistory()
+
   React.useEffect(() => {
-    setSelectedRows(new Set())
     if (provider) {
-      getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
+      getProviderVersions({ variables: { distribution: provider.distribution } })
     }
   }, [ provider ])
+
+  React.useEffect(() => {
+    setRows(makeRowsData())
+  }, [ providerVersions, developerVersions, clientVersions ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
 
-    if (provider && providerDesiredVersions.data) {
-      providerDesiredVersions.data.providerDesiredVersions.forEach(
+    if (provider && providerVersions.data) {
+      providerVersions.data.providerDesiredVersions.forEach(
         version => servicesSet.add(version.service)
       )
     }
@@ -133,11 +164,38 @@ const BuildClient = () => {
     return Array.from(servicesSet)
   }
 
-  const validate = () => {
-    return selectedRows.size
+  const makeRowsData: () => RowData[] = () => {
+    const services = makeServicesList()
+    return services.sort().map(
+      service => {
+        var selected = false
+        const providerVersion = providerVersions.data?.providerDesiredVersions
+          .find(version => version.service == service)
+        const developerVersion = developerVersions?.developerVersionsInfo
+          .sort((v1, v2) => Version.compareDeveloperDistributionVersions(v1.version, v2.version))
+          .reverse()
+          .find(version => version.service == service)
+        const clientVersion = clientVersions?.clientVersionsInfo
+          .sort((v1, v2) => Version.compareClientDistributionVersions(v1.version, v2.version))
+          .reverse()
+          .find(version => version.service == service)
+        if (Version.compareDeveloperDistributionVersions(developerVersion?.version, providerVersion?.version) != 0) {
+          selected = true
+        }
+        if (Version.compareBuilds(developerVersion?.version.build, clientVersion?.version.developerBuild) != 0) {
+          selected = true
+        }
+        return {
+          selected: selected,
+          service: service,
+          providerVersion: providerVersion?.version,
+          developerVersion: developerVersion?.version,
+          clientVersion: clientVersion?.version
+        } as RowData
+      })
   }
 
-  const services = makeServicesList()
+  const validate = () => !!rowsView.find(value => value.get("selected"))
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -162,33 +220,15 @@ const BuildClient = () => {
     }
   ].filter(c => provider || c.name != 'providerVersion')
 
-  const rows = services.sort().map(
-    service => {
-      const providerVersion = providerDesiredVersions.data?.providerDesiredVersions
-        .find(version => version.service == service)
-      const developerVersion = developerVersions?.developerVersionsInfo
-        .sort((v1, v2) => Version.compareDeveloperDistributionVersions(v1.version, v2.version))
-        .reverse()
-        .find(version => version.service == service)
-      const clientVersion = clientVersions?.clientVersionsInfo
-        .sort((v1, v2) => Version.compareClientDistributionVersions(v1.version, v2.version))
-        .reverse()
-        .find(version => version.service == service)
-      return new Map<string, GridTableColumnValue>([
-        ['service', service],
-        ['providerVersion', providerVersion?Version.developerDistributionVersionToString(providerVersion.version):''],
-        ['developerVersion', developerVersion?Version.developerDistributionVersionToString(developerVersion.version):''],
-        ['clientVersion', clientVersion?Version.clientDistributionVersionToString(clientVersion.version):'']
-      ])
-    })
-
-  const allSelected = provider && !!provider.testConsumer
-
-  if (allSelected) {
-    if (selectedRows.size != rows.length) {
-      setSelectedRows(new Set(rows.map((value, index) => index)))
-    }
-  }
+  const rowsView = rows.map(row =>
+    new Map<string, GridTableColumnValue>([
+      ['selected', row.selected],
+      ['service', row.service],
+      ['providerVersion', row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):''],
+      ['developerVersion', row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):''],
+      ['clientVersion', row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):'']
+    ])
+  )
 
   return (
     <Card
@@ -223,7 +263,7 @@ const BuildClient = () => {
               className={classes.control}
               refresh={ () => {
                 if (provider) {
-                  getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
+                  getProviderVersions({ variables: { distribution: provider.distribution } })
                 }
                 getDeveloperVersions()
                 getClientVersions() }}
@@ -237,16 +277,18 @@ const BuildClient = () => {
           <GridTable
              className={classes.versionsTable}
              columns={columns}
-             rows={rows?rows:[]}
+             rows={rowsView?rowsView:[]}
              selectColumn={true}
-             disableManualSelect={allSelected}
-             selectedRows={selectedRows}
-             onRowSelected={(row, columns) => {
-               setSelectedRows(new Set(selectedRows.add(row)))
+             disableManualSelect={provider && !!provider.testConsumer}
+             onRowSelected={(rowNum, columns) => {
+               setRows(rows.map((row, index) => { return {
+                 selected: (rowNum == index)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
+                 developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))
              }}
-             onRowUnselected={(row, columns) => {
-               selectedRows.delete(row)
-               setSelectedRows(new Set(selectedRows))
+             onRowUnselected={(rowNum, columns) => {
+               setRows(rows.map((row, index) => { return {
+                 selected: (rowNum == index)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
+                 developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))
              }}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
@@ -255,7 +297,7 @@ const BuildClient = () => {
                     color="primary"
                     variant="contained"
                     disabled={!validate()}
-                    // onClick={() => buildDeveloperVersion()}
+                    onClick={() => buildClientVersions()}
             >
               Update Client
             </Button>
@@ -266,4 +308,4 @@ const BuildClient = () => {
   );
 }
 
-export default BuildClient
+export default StartBuildServices

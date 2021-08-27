@@ -14,10 +14,7 @@ import {GridTableColumnParams, GridTableColumnValue} from "./GridTableColumn";
 const useStyles = makeStyles(theme => ({
   input: {
     width: '100%'
-  },
-  // selectColumn: {
-  //   width: '50px'
-  // }
+  }
 }));
 
 export interface GridTableRowParams {
@@ -29,7 +26,6 @@ export interface GridTableRowParams {
   adding?: boolean,
   editing?: boolean,
   changingInProgress?: boolean,
-  selected?: boolean,
   onClick?: () => void,
   onBeginEditing?: () => boolean,
   onSubmitted?: (values: Map<string, GridTableColumnValue>, oldValues: Map<string, GridTableColumnValue>) => void,
@@ -39,7 +35,7 @@ export interface GridTableRowParams {
 }
 
 export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, selectColumn, disableManualSelect, adding, editing, selected,
+  const { rowNum, columns, values, selectColumn, disableManualSelect, adding, editing,
     onClick, onBeginEditing, onSubmitted, onCanceled, onSelect, onUnselect } = params
 
   const [editColumn, setEditColumn] = useState<string>()
@@ -53,6 +49,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
     setEditOldValues(new Map())
     setEditValues(new Map())
   }
+
+  const selected = values.get('selected') as boolean
 
   const valuesColumns =
     columns.map((column, index) =>

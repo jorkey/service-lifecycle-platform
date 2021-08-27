@@ -29,7 +29,10 @@ export class Version {
       `${version.distribution}-${Version.buildToString(version.developerBuild)}_${version.clientBuild}`
   }
 
-  static compareDeveloperDistributionVersions(version1: DeveloperDistributionVersion, version2: DeveloperDistributionVersion): number {
+  static compareDeveloperDistributionVersions(version1?: DeveloperDistributionVersion, version2?: DeveloperDistributionVersion): number {
+    if (version1 == undefined || version2 == undefined) {
+      return version1 == version2 ? 0 : version1 ? 1 : -1
+    }
     let result = Version.compareBuilds(version1.build, version2.build)
     if (result != 0) {
       return result
@@ -43,7 +46,10 @@ export class Version {
     return 0;
   }
 
-  static compareClientDistributionVersions(version1: ClientDistributionVersion, version2: ClientDistributionVersion): number {
+  static compareClientDistributionVersions(version1?: ClientDistributionVersion, version2?: ClientDistributionVersion): number {
+    if (version1 == undefined || version2 == undefined) {
+      return version1 == version2 ? 0 : version1 ? 1 : -1
+    }
     let result = Version.compareBuilds(version1.developerBuild, version2.developerBuild)
     if (result != 0) {
       return result
@@ -63,7 +69,10 @@ export class Version {
     return 0;
   }
 
-  static compareBuilds(build1: Array<number>, build2: Array<number>): number {
+  static compareBuilds(build1?: Array<number>, build2?: Array<number>): number {
+    if (build1 == undefined || build2 == undefined) {
+      return build1 == build2 ? 0 : build1 ? 1 : -1
+    }
     let i=0
     for (; i < build1.length; i++) {
       if (build2.length <= i || build1[i] > build2[i]) {

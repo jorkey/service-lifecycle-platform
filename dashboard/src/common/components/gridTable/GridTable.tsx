@@ -11,19 +11,12 @@ import {GridTableColumnParams, GridTableColumnValue} from "./GridTableColumn";
 import {GridTableRow} from "./GridTableRow";
 import {makeStyles} from "@material-ui/styles";
 
-const useStyles = makeStyles((theme:any) => ({
-  // selectColumn: {
-  //   width: '50px'
-  // }
-}));
-
 interface GridParams {
   className: string,
   columns: GridTableColumnParams[],
   rows: Map<string, GridTableColumnValue>[],
   selectColumn?: boolean,
   disableManualSelect?: boolean,
-  selectedRows?: Set<number>,
   addNewRow?: boolean,
   onClick?: (row: number, values: Map<string, GridTableColumnValue>) => void,
   onRowAdded?: (values: Map<string, GridTableColumnValue>) => Promise<void> | void,
@@ -36,13 +29,13 @@ interface GridParams {
 }
 
 export const GridTable = (props: GridParams) => {
-  const { className, columns, rows, selectColumn, disableManualSelect, selectedRows, addNewRow,
+  const { className, columns, rows, selectColumn, disableManualSelect, addNewRow,
     onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowSelected, onRowUnselected } = props
-
-  const classes = useStyles()
 
   const [editingRow, setEditingRow] = useState(-1)
   const [changingInProgress, setChangingInProgress] = useState(false)
+
+  const selectedRowsCount = rows.map(row => row.get("selected") as boolean).filter(v => v).length
 
   return (
     <TableContainer className={className}>
@@ -52,8 +45,8 @@ export const GridTable = (props: GridParams) => {
             { selectColumn ?
               <TableCell padding='checkbox'>
                 <Checkbox
-                  indeterminate={selectedRows && selectedRows.size > 0 && selectedRows.size < rows.length}
-                  checked={rows.length > 0 && selectedRows && selectedRows.size === rows.length}
+                  indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
+                  checked={rows.length > 0 && selectedRowsCount === rows.length}
                   disabled={disableManualSelect}
                   onChange={(event) => {
                     if (event.target.checked) {
@@ -80,7 +73,6 @@ export const GridTable = (props: GridParams) => {
                                       editing={rowNum == editingRow}
                                       selectColumn={selectColumn}
                                       disableManualSelect={disableManualSelect}
-                                      selected={selectedRows?.has(rowNum)}
                                       onClick={() => {
                                         onClick?.(rowNum, row)
                                       }}
