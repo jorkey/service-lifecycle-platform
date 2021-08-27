@@ -82,7 +82,7 @@ interface BuildServiceParams extends RouteComponentProps<BuildRouteParams> {
   fromUrl: string
 }
 
-const StartBuildServices: React.FC<BuildServiceParams> = props => {
+const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   const classes = useStyles()
 
   const [provider, setProvider] = useState<DistributionProviderInfo>()
@@ -308,4 +308,4 @@ const StartBuildServices: React.FC<BuildServiceParams> = props => {
   );
 }
 
-export default StartBuildServices
+export default StartBuildClientServices

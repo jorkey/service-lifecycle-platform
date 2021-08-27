@@ -55,7 +55,7 @@ interface BuildServiceParams extends RouteComponentProps<BuildRouteParams> {
   fromUrl: string
 }
 
-const StartBuildService: React.FC<BuildServiceParams> = props => {
+const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const classes = useStyles()
 
   const service = props.match.params.service
@@ -233,4 +233,4 @@ const StartBuildService: React.FC<BuildServiceParams> = props => {
   );
 }
 
-export default StartBuildService;
+export default StartBuildDeveloperService;

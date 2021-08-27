@@ -50,7 +50,7 @@ interface MonitorBuildServicesParams extends RouteComponentProps<MonitorBuildSer
   fromUrl: string
 }
 
-const MonitorBuildServices = (props: MonitorBuildServicesParams) => {
+const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
   const classes = useStyles()
 
   const [task, setTask] = useState<string>()
@@ -191,4 +191,4 @@ const MonitorBuildServices = (props: MonitorBuildServicesParams) => {
   )
 }
 
-export default MonitorBuildServices;
+export default MonitorBuildClientServices;

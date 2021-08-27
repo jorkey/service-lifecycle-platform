@@ -4,9 +4,11 @@ import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import BuildDeveloper from "./components/Developer/BuildDeveloper";
-import StartBuildService from "./components/Developer/StartBuildService";
-import MonitorBuildService from "./components/Developer/MonitorBuildService";
-import StartBuildServices from "./components/Client/StartBuildServices";
+import StartBuildDeveloperService from "./components/Developer/StartBuildDeveloperService";
+import MonitorBuildDeveloperService from "./components/Developer/MonitorBuildDeveloperService";
+import StartBuildClientServices from "./components/Client/StartBuildClientServices";
+import BuildClient from "./components/Client/BuildClient";
+import MonitorBuildClientServices from "./components/Client/MonitorBuildClientServices";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -31,13 +33,20 @@ const Build = () => {
             <Route exact path={`${routeMatch.url}/developer`}
                    component={BuildDeveloper}/>
             <Route exact path={`${routeMatch.url}/developer/start/:service`}
-                   render={(props) => <StartBuildService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
+                   render={(props) => <StartBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
             </Route>
             <Route exact path={`${routeMatch.url}/developer/monitor/:service`}
-                   render={(props) => <MonitorBuildService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
+                   render={(props) => <MonitorBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
             </Route>
+
             <Route exact path={`${routeMatch.url}/client`}
-                   component={StartBuildServices}/>
+                   component={BuildClient}/>
+            <Route exact path={`${routeMatch.url}/client/start/:service`}
+                   render={(props) => <StartBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
+            </Route>
+            <Route exact path={`${routeMatch.url}/client/monitor/:service`}
+                   render={(props) => <MonitorBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
+            </Route>
           </Switch>
         </Grid>
       </Grid>

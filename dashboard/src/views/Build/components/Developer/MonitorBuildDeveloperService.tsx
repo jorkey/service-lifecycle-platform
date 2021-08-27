@@ -54,7 +54,7 @@ interface MonitorBuildServiceParams extends RouteComponentProps<MonitorBuildServ
   fromUrl: string
 }
 
-const MonitorBuildService = (props: MonitorBuildServiceParams) => {
+const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   const classes = useStyles()
 
   const service = props.match.params.service
@@ -215,4 +215,4 @@ const MonitorBuildService = (props: MonitorBuildServiceParams) => {
   )
 }
 
-export default MonitorBuildService;
+export default MonitorBuildDeveloperService;
