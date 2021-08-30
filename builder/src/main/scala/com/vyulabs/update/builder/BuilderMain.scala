@@ -63,12 +63,7 @@ object BuilderMain extends App {
           new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false, port)
 
         if (command == "buildProviderDistribution") {
-          if (!distributionBuilder.buildDistributionFromSources() ||
-              !distributionBuilder.addUpdateServicesSources() ||
-              !distributionBuilder.addDistributionAccounts() ||
-              !distributionBuilder.generateAndUploadInitialVersions(author) ||
-              !distributionBuilder.addCommonServicesProfile() ||
-              !distributionBuilder.addOwnServicesProfile()) {
+          if (!distributionBuilder.buildDistributionFromSources(author)) {
             Utils.error("Build distribution error")
           }
         } else {

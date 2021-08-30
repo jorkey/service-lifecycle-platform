@@ -2,7 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
-import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.{Common, JWT}
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId}
 import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
@@ -46,7 +46,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
   def config = distributionConfig
 
-  def buildDistributionFromSources(): Boolean = {
+  def buildDistributionFromSources(author: String): Boolean = {
     log.info("")
     log.info(s"########################### Generate initial versions of services")
     log.info("")
@@ -66,19 +66,26 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     log.info("")
+    log.info(s"########################### Setup distribution service")
+    log.info("")
+
+    if (!addDistributionAccounts()) {
+      log.error("Can't create distribution accounts")
+      return false
+    }
+
+    if (!addUpdateServicesSources() ||
+        !generateAndUploadInitialVersions(author) ||
+        !addCommonServicesProfile() ||
+        !addOwnServicesProfile()) {
+      log.error("Can't initialize distribution")
+      return false
+    }
+
+    log.info("")
     log.info(s"########################### Distribution service is ready")
     log.info("")
-    true
-  }
 
-  def addDistributionAccounts(): Boolean = {
-    log.info(s"--------------------------- Add distribution accounts")
-    if (!addServiceAccount(Common.UpdaterServiceName, "Updater service account", AccountRole.Updater)) {
-      return false
-    }
-    if (!addServiceAccount(Common.BuilderServiceName, "Builder service account", AccountRole.Builder)) {
-      return false
-    }
     true
   }
 
@@ -132,9 +139,29 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
 
     log.info("")
+    log.info(s"########################### Setup distribution service")
+    log.info("")
+
+    if (!addDistributionAccounts()) {
+      log.error("Can't create distribution accounts")
+      return false
+    }
+
+    log.info("")
     log.info(s"########################### Distribution service is ready")
     log.info("")
 
+    true
+  }
+
+  def addDistributionAccounts(): Boolean = {
+    log.info(s"--------------------------- Add distribution accounts")
+    if (!addServiceAccount(Common.UpdaterServiceName, "Updater service account", AccountRole.Updater)) {
+      return false
+    }
+    if (!addServiceAccount(Common.BuilderServiceName, "Builder service account", AccountRole.Builder)) {
+      return false
+    }
     true
   }
 
@@ -197,7 +224,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     log.info(s"--------------------------- Versions for update ${versionsForUpdate}")
     versionsForUpdate.foreach { case (service, version) =>
       log.info(s"--------------------------- Install version ${version} of service ${service}")
-      val task = adminDistributionClient.get.graphqlRequest(administratorMutations.updateClientVersions(providerDistributionName.get,
+      val task = adminDistributionClient.get.graphqlRequest(administratorMutations.buildClientVersions(
           Seq(DeveloperDesiredVersion(service, version)))).getOrElse {
         log.error(s"Can't install provider developer version ${version} of service ${service}")
         return false

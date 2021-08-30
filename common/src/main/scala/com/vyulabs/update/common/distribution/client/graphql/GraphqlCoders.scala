@@ -160,14 +160,9 @@ trait RemoveDeveloperVersionCoder {
 }
 
 trait BuildClientVersionCoder {
-  def updateClientVersions(distribution: DistributionId, versions: Seq[DeveloperDesiredVersion]) =
-    GraphqlMutation[String]("updateClientVersions", Seq(
-      GraphqlArgument("distribution" -> distribution),
+  def buildClientVersions(versions: Seq[DeveloperDesiredVersion]) =
+    GraphqlMutation[String]("buildClientVersions", Seq(
       GraphqlArgument("versions" -> versions, "[DeveloperDesiredVersionInput!]")))
-  def buildClientVersion(service: ServiceId, version: ClientDistributionVersion) =
-    GraphqlMutation[String]("buildClientVersion", Seq(
-      GraphqlArgument("service" -> service),
-      GraphqlArgument("version" -> version, "ClientDistributionVersionInput")))
 }
 
 trait RemoveClientVersionCoder {

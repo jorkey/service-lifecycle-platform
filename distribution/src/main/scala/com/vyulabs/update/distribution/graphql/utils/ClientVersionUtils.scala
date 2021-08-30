@@ -40,8 +40,13 @@ trait ClientVersionUtils {
           implicit val log = logger
           (for {
             _ <- Future.sequence(versions
-              .map(version => distributionProvidersUtils.downloadProviderVersion(
-                version.version.distribution, version.service, version.version)))
+              .map(version =>
+                if (version.version.distribution != config.distribution) {
+                  distributionProvidersUtils.downloadProviderVersion(
+                    version.version.distribution, version.service, version.version)
+                } else {
+                  Future()
+                }))
             _ <- {
               val results = versions
                 .map(version => for {

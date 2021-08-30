@@ -119,7 +119,11 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
     variables: {
       versions: rows.filter(row => row.selected).map(row => {
-        return { service: row.service, version: row.developerVersion } as DeveloperDesiredVersionInput })
+        const version = row.developerVersion?row.developerVersion:row.providerVersion!
+        return { service: row.service, version: {
+          distribution: version.distribution,
+          build: version.build
+        } } as DeveloperDesiredVersionInput })
     },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Build version error ' + err.message) },

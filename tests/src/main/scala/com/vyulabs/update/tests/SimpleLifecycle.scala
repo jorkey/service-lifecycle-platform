@@ -9,7 +9,7 @@ import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersionDelta}
+import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersionDelta, DeveloperDesiredVersion}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version._
@@ -76,37 +76,16 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     }
   }
 
-  def makeAndRunDistribution(): Unit = {
-    if (!distributionBuilder.buildDistributionFromSources()) {
+  def makeAndRunDistribution(author: String): Unit = {
+    if (!distributionBuilder.buildDistributionFromSources(author)) {
       sys.error("Can't build distribution server")
     }
     Thread.sleep(5000)
   }
 
-  def initializeDistribution(author: String): Unit = {
-    println()
-    println("########################### Initialize distribution")
-    println()
-
-    if (!distributionBuilder.addDistributionAccounts()) {
-      sys.error("Can't create distribution accounts")
-    }
-
-    if (!distributionBuilder.addUpdateServicesSources() ||
-        !distributionBuilder.generateAndUploadInitialVersions(author) ||
-        !distributionBuilder.addCommonServicesProfile() ||
-        !distributionBuilder.addOwnServicesProfile()) {
-      sys.error("Can't initialize distribution")
-    }
-
-    println()
-    println(s"########################### Distribution server is initialized")
-    println()
-  }
-
   def makeAndRunDistributionFromProvider(provider: SimpleLifecycle): Unit = {
     assert(provider.distributionBuilder.addConsumerAccount(distribution,
-      "Distribution Consumer", ConsumerAccountProperties(Common.CommonServiceProfile, s"http://localhost:${provider.distributionPort}")))
+      "Distribution Consumer", ConsumerAccountProperties(Common.CommonServiceProfile, s"http://localhost:${distributionPort}")))
 
     val config = DistributionConfig.readFromFile(new DistributionDirectory(provider.distributionDir).getConfigFile()).getOrElse {
       sys.error("Can't read provider distribution config file")
@@ -226,8 +205,8 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     }
 
     println("--------------------------- Build client version of test service")
-    val task1 = developerClient.graphqlRequest(developerMutations.buildClientVersion(testServiceName,
-        ClientDistributionVersion.from(distribution, version, 0))).getOrElse {
+    val task1 = developerClient.graphqlRequest(developerMutations.buildClientVersions(
+        Seq(DeveloperDesiredVersion(testServiceName, DeveloperDistributionVersion(distribution, version.build))))).getOrElse {
       sys.error("Can't execute build client version task")
     }
     if (!subscribeTask(developerClient, task1)) {

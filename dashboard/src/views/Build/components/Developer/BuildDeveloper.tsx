@@ -78,8 +78,8 @@ const useStyles = makeStyles((theme:any) => ({
 const BuildDeveloper = () => {
   const classes = useStyles()
 
-  const [error, setError] = useState<string>()
   const history = useHistory()
+  const [error, setError] = useState<string>()
 
   const { data: services, refetch: getServices } = useDeveloperServicesQuery({
     fetchPolicy: 'no-cache',

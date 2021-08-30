@@ -9,6 +9,7 @@ const useStyles = makeStyles(theme => ({
     display: 'relative'
   },
   logsTable: {
+    // height: '300px'
     height: 'calc(100vh - 550px)',
   },
   timeColumn: {

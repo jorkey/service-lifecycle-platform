@@ -167,7 +167,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
     if (new File(directory.getBuilderDir(distribution), Common.BuilderSh).exists()) {
       Future()
     } else {
-      log.info(s"--------------------------- Initialize builder directory ${builderDir}")
+      log.info(s"Initialize builder directory ${builderDir}")
       val httpClient = new AkkaHttpClient(distributionUrl)
       httpClient.accessToken = Some(accessToken)
       val distributionClient = new DistributionClient(httpClient)
@@ -188,11 +188,11 @@ trait RunBuilderUtils extends SprayJsonSupport {
                 !IoUtils.copyFile(new File(tmpDir, Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
                 throw new IOException("Can't find updater script files")
               } else {
-                log.info(s"--------------------------- Set execution permission")
+                log.info(s"Set execution permission")
                 if (!builderDir.listFiles().forall { file => !file.getName.endsWith(".sh") || IoUtils.setExecuteFilePermissions(file) }) {
                   throw new IOException("Can't set execution permissions")
                 } else {
-                  log.info(s"--------------------------- Create settings directory")
+                  log.info(s"Create settings directory")
                   new InstallSettingsDirectory(builderDir)
                 }
               }
