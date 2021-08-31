@@ -43,6 +43,7 @@ export interface Page {
 
 export interface BarItem {
   title: string,
+  href: string,
   icon: React.ReactElement
 }
 
@@ -70,6 +71,7 @@ const Sidebar = (props:any) => {
     {
       kind: 'title',
       title: 'Accounts',
+      href: '/accounts/',
       icon: <PeopleIcon />,
       pages: [
         {
@@ -89,6 +91,7 @@ const Sidebar = (props:any) => {
     {
       kind: 'title',
       title: 'Services',
+      href: '/services/',
       icon: <BubbleChartIcon />,
       pages: [
         {
@@ -104,6 +107,7 @@ const Sidebar = (props:any) => {
     {
       kind: 'title',
       title: 'Build',
+      href: '/build/',
       icon: <BuildIcon />,
       pages: [
         {

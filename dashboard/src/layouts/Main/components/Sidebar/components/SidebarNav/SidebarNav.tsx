@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { NavLink as RouterLink } from 'react-router-dom';
+import {NavLink as RouterLink, useLocation} from 'react-router-dom';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {List, ListItem, Button, colors, ListItemIcon, ListItemText, Collapse} from '@material-ui/core';
@@ -65,6 +65,12 @@ const SidebarNav: React.FC<SidebarNavProps> = props => {
 
   const classes = useStyles();
 
+  const location = useLocation()
+
+  const isOpened = (index: number, href: string) => {
+    return openIndex.get(index) || openIndex.get(index) == undefined && location.pathname.startsWith(href)
+  }
+
   return (
     <List className={clsx(classes.root, className)} >
       {pages.map((page, index) => (
@@ -85,19 +91,19 @@ const SidebarNav: React.FC<SidebarNavProps> = props => {
                 {page.title}
               </Button>) :
               (<Button
-                className={classes.button}
+                className={location.pathname.startsWith(page.href)?classes.active:classes.button}
                 onClick={() => {
-                  const opened = !openIndex.get(index)
+                  const opened = !isOpened(index, page.href)
                   setOpenIndex(new Map(openIndex.set(index, opened)))
                 }}
               >
                 <ListItemIcon className={classes.icon}>{page.icon}</ListItemIcon>
                 {page.title}
-                {openIndex.get(index) ? <ExpandLess/> : <ExpandMore/>}
+                {isOpened(index, page.href) ? <ExpandLess/> : <ExpandMore/>}
               </Button>)
             }
           </ListItem>
-          {(page.kind == 'title')?<Collapse in={openIndex.get(index)} timeout="auto" unmountOnExit>
+          {(page.kind == 'title')?<Collapse in={isOpened(index, page.href)} timeout="auto" unmountOnExit>
             <List component="div">
               {page.pages.map((page, index) =>
                 (<ListItem button className={classes.nestedItem} key={index}>
