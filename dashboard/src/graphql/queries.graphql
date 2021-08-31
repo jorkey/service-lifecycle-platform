@@ -30,8 +30,9 @@ query providerDesiredVersions ($distribution: String!) {
     providerDesiredVersions (distribution: $distribution) { service, version { distribution, build } }
 }
 
-mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!, $sources: [SourceConfigInput!]!, $comment: String!) {
-    buildDeveloperVersion (service: $service, version: $version, sources: $sources, comment: $comment)
+mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!, $sources: [SourceConfigInput!]!,
+                                $comment: String!, $buildClientVersion: Boolean!) {
+    buildDeveloperVersion (service: $service, version: $version, sources: $sources, comment: $comment, buildClientVersion: $buildClientVersion)
 }
 
 mutation addDeveloperVersionInfo ($info: DeveloperVersionInfoInput!) {

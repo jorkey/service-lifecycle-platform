@@ -169,7 +169,7 @@ class WebSocketLink extends ApolloLink {
 }
 
 const wsLink = new WebSocketLink({
-  url: 'ws://localhost:8000/graphql/websocket',
+  url: 'ws://localhost:8001/graphql/websocket',
   connectionParams: () => {
     const token = localStorage.getItem('token');
     return {

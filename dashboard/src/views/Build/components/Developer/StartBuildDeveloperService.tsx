@@ -64,7 +64,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const [author, setAuthor] = useState('');
   const [sources, setSources] = useState<SourceConfig[]>([]);
   const [comment, setComment] = useState('');
-  const [allowBuildClientVersion, setAllowBuildClientVersion] = useState(true);
+  const [buildClientVersion, setBuildClientVersion] = useState(true);
 
   const [initialized, setInitialized] = useState(false)
 
@@ -96,7 +96,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   })
   const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
     variables: { service: service, version: { build: Version.parseBuild(version) },
-      sources: sources, comment: comment },
+      sources: sources, comment: comment, buildClientVersion: buildClientVersion },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
@@ -188,8 +188,8 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
               control={(
                 <Checkbox
                   color="primary"
-                  checked={allowBuildClientVersion}
-                  onChange={ event => setAllowBuildClientVersion(event.target.checked) }
+                  checked={buildClientVersion}
+                  onChange={ event => setBuildClientVersion(event.target.checked) }
                 />
               )}
               label="Build Client Version"

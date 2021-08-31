@@ -77,6 +77,7 @@ object GraphqlSchema {
   val CommentArg = Argument("comment", StringType)
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
+  val BuildClientVersionArg = Argument("buildClientVersion", BooleanType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -319,10 +320,11 @@ object GraphqlSchema {
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,
-        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg :: Nil,
+        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg :: BuildClientVersionArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.buildDeveloperVersion(c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.account,
-          c.arg(SourcesArg), c.arg(CommentArg)) }),
+        resolve = c => { c.ctx.workspace.buildDeveloperVersion(
+          c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.account,
+          c.arg(SourcesArg), c.arg(CommentArg), c.arg(BuildClientVersionArg)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,

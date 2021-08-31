@@ -18,19 +18,19 @@ interface GridParams {
   selectColumn?: boolean,
   disableManualSelect?: boolean,
   addNewRow?: boolean,
-  onClick?: (row: number, values: Map<string, GridTableColumnValue>) => void,
+  onClick?: (row: number) => void,
   onRowAdded?: (values: Map<string, GridTableColumnValue>) => Promise<void> | void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
   onRowChanged?: (row: number, values: Map<string, GridTableColumnValue>,
                   oldValues: Map<string, GridTableColumnValue>) => Promise<void> | void,
-  onRowSelected?: (row: number, values: Map<string, GridTableColumnValue>) => void
-  onRowUnselected?: (row: number, values: Map<string, GridTableColumnValue>) => void
+  onRowsSelected?: (rows: number[]) => void
+  onRowsUnselected?: (rows: number[]) => void
 }
 
 export const GridTable = (props: GridParams) => {
   const { className, columns, rows, selectColumn, disableManualSelect, addNewRow,
-    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowSelected, onRowUnselected } = props
+    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected } = props
 
   const [editingRow, setEditingRow] = useState(-1)
   const [changingInProgress, setChangingInProgress] = useState(false)
@@ -50,9 +50,9 @@ export const GridTable = (props: GridParams) => {
                   disabled={disableManualSelect}
                   onChange={(event) => {
                     if (event.target.checked) {
-                      rows.forEach((row, index) => onRowSelected?.(index, row))
+                      onRowsSelected?.(rows.map((row, index) => index))
                     } else {
-                      rows.forEach((row, index) => onRowUnselected?.(index, row))
+                      onRowsUnselected?.(rows.map((row, index) => index))
                     }
                   }}
                 />
@@ -74,13 +74,13 @@ export const GridTable = (props: GridParams) => {
                                       selectColumn={selectColumn}
                                       disableManualSelect={disableManualSelect}
                                       onClick={() => {
-                                        onClick?.(rowNum, row)
+                                        onClick?.(rowNum)
                                       }}
                                       onSelect={() => {
-                                        onRowSelected?.(rowNum, row)
+                                        onRowsSelected?.([rowNum])
                                       }}
                                       onUnselect={() => {
-                                        onRowUnselected?.(rowNum, row)
+                                        onRowsUnselected?.([rowNum])
                                       }}
                                       onBeginEditing={() => {
                                         if (!changingInProgress) {

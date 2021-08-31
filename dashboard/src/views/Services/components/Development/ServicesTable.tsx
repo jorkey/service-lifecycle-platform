@@ -90,8 +90,8 @@ const ServicesTable = () => {
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
-      onClick={ (row, values) =>
-        setStartEdit(values.get('service')! as string)
+      onClick={ (row) =>
+        setStartEdit(rows[row].get('service')! as string)
       }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}

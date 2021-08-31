@@ -36,7 +36,8 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
   private var versionsInProcess = Seq.empty[DeveloperVersionInProcessInfo]
 
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: AccountId,
-                            sources: Seq[SourceConfig], comment: String)(implicit log: Logger): TaskId = {
+                            sources: Seq[SourceConfig], comment: String, buildClientVersion: Boolean)
+                           (implicit log: Logger): TaskId = {
     synchronized {
       if (versionsInProcess.exists(_.service == service)) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
@@ -46,7 +47,7 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
           implicit val log = logger
           val arguments = Seq("buildDeveloperVersion",
             s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
-            s"sources=${sources.toJson.compactPrint}", s"comment=${comment}")
+            s"sources=${sources.toJson.compactPrint}", s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
           val (builderFuture, cancel) = runBuilderUtils.runBuilder(task, arguments)
           val future = builderFuture.flatMap(_ => {
             setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,

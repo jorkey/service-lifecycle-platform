@@ -34,7 +34,7 @@ object BuilderMain extends App {
     "    buildConsumerDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
     "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
     "       <providerAdminPassword=?> <consumerAccessToken=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
-    "    buildDeveloperVersion <service=?> <version=?> <sources=?> <comment=?>\n" +
+    "    buildDeveloperVersion <service=?> <version=?> <sources=?> [buildClientVersion=true/false] <comment=?>\n" +
     "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
 
   if (args.size < 1) Utils.error(usage())
@@ -104,11 +104,20 @@ object BuilderMain extends App {
             val author = arguments.getValue("author")
             val service = arguments.getValue("service")
             val version = DeveloperVersion.parse(arguments.getValue("version"))
+            val buildClientVersion = arguments.getOptionBooleanValue("buildClientVersion").getOrElse(false)
             val comment = arguments.getValue("comment")
             val sourceBranches = arguments.getValue("sources").parseJson.convertTo[Seq[SourceConfig]]
             val developerBuilder = new DeveloperBuilder(new File("."), distribution)
             if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {
               Utils.error("Developer version is not generated")
+            }
+            if (buildClientVersion) {
+              val clientBuilder = new ClientBuilder(new File("."))
+              val clientVersion = ClientDistributionVersion.from(distribution, version, 0)
+              val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> clientVersion.toString)
+              if (!clientBuilder.buildClientVersion(distributionClient, service, clientVersion, author, buildArguments)) {
+                Utils.error("Client version is not generated")
+              }
             }
           case "buildClientVersion" =>
             val author = arguments.getValue("author")

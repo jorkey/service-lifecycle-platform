@@ -192,7 +192,7 @@ const BuildDeveloper = () => {
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}
-           onClick={(row, values) => handleOnClick(values.get('service')! as string)}
+           onClick={(row) => { if (rows) handleOnClick(rows[row].get('service')! as string) }}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>

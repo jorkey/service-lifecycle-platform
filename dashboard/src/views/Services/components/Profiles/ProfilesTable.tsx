@@ -87,8 +87,8 @@ const ProfilesTable = () => {
       className={classes.profileTable}
       columns={columns}
       rows={rows}
-      onClick={ (row, values) =>
-        setStartEdit(values.get('profile')! as string) }
+      onClick={ (row) =>
+        setStartEdit(rows[row].get('profile')! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

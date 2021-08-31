@@ -145,12 +145,16 @@ trait ConsumersAdministrationCoder {
 }
 
 trait BuildDeveloperVersionCoder {
-  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, sources: Seq[SourceConfig], comment: String) =
+  def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion,
+                            sources: Seq[SourceConfig], comment: String,
+                            buildClientVersion: Boolean) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("version" -> version, "DeveloperVersionInput"),
       GraphqlArgument("sources" -> sources, "[SourceConfigInput!]"),
-      GraphqlArgument("comment" -> comment)))
+      GraphqlArgument("comment" -> comment),
+      GraphqlArgument("buildClientVersion" -> buildClientVersion)
+    ))
 }
 
 trait RemoveDeveloperVersionCoder {

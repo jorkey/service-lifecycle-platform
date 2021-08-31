@@ -134,8 +134,8 @@ const ConsumerAccountsTable: React.FC<ConsumerAccountsTableProps> = props => {
       className={classes.accountsTable}
       columns={columns}
       rows={rows}
-      onClick={ (row, values) =>
-        setStartEdit(values.get('account')! as string) }
+      onClick={ (row) =>
+        setStartEdit(rows[row].get('account')! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

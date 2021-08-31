@@ -195,22 +195,14 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
   private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
                                        version: DeveloperVersion, sources: Seq[SourceConfig]): Unit = {
-    println("--------------------------- Build developer version of test service")
+    println("--------------------------- Build developer and client version of test service")
     val task = developerClient.graphqlRequest(
-        developerMutations.buildDeveloperVersion(testServiceName, version, sources, "Test service version")).getOrElse {
-      sys.error("Can't execute build developer version task")
+        developerMutations.buildDeveloperVersion(testServiceName, version, sources,
+          "Test service version", true)).getOrElse {
+      sys.error("Can't execute build developer and client version task")
     }
     if (!subscribeTask(developerClient, task)) {
-      sys.error("Execution of build developer version task error")
-    }
-
-    println("--------------------------- Build client version of test service")
-    val task1 = developerClient.graphqlRequest(developerMutations.buildClientVersions(
-        Seq(DeveloperDesiredVersion(testServiceName, DeveloperDistributionVersion(distribution, version.build))))).getOrElse {
-      sys.error("Can't execute build client version task")
-    }
-    if (!subscribeTask(developerClient, task1)) {
-      sys.error("Execution of build client version task error")
+      sys.error("Execution of build developer and client version task error")
     }
 
     println("--------------------------- Set client desired versions")

@@ -53,7 +53,8 @@ const useStyles = makeStyles((theme:any) => ({
     paddingLeft: '16px'
   },
   controls: {
-    marginTop: 25,
+    marginTop: '25px',
+    paddingRight: '25px',
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2
@@ -118,8 +119,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
     variables: {
-      versions: rows.filter(row => row.selected).map(row => {
-        const version = row.developerVersion?row.developerVersion:row.providerVersion!
+      versions: rows.filter(row => row.selected && (row.providerVersion || row.developerVersion)).map(row => {
+        const version = row.providerVersion?row.providerVersion:row.developerVersion!
         return { service: row.service, version: {
           distribution: version.distribution,
           build: version.build
@@ -183,7 +184,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           .sort((v1, v2) => Version.compareClientDistributionVersions(v1.version, v2.version))
           .reverse()
           .find(version => version.service == service)
-        if (Version.compareDeveloperDistributionVersions(developerVersion?.version, providerVersion?.version) != 0) {
+        if (providerVersion && Version.compareDeveloperDistributionVersions(developerVersion?.version, providerVersion?.version) != 0) {
           selected = true
         }
         if (Version.compareBuilds(developerVersion?.version.build, clientVersion?.version.developerBuild) != 0) {
@@ -284,14 +285,14 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
              rows={rowsView?rowsView:[]}
              selectColumn={true}
              disableManualSelect={provider && !!provider.testConsumer}
-             onRowSelected={(rowNum, columns) => {
+             onRowsSelected={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
-                 selected: (rowNum == index)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
+                 selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
                  developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))
              }}
-             onRowUnselected={(rowNum, columns) => {
+             onRowsUnselected={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
-                 selected: (rowNum == index)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
+                 selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
                  developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))
              }}
           />
