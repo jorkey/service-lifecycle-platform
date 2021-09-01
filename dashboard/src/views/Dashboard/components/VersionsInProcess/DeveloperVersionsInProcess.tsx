@@ -119,10 +119,11 @@ const DeveloperVersionsInProcess = () => {
         title='Developer Versions In Process'/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          <GridTable
-           className={classes.versionsTable}
-           columns={columns}
-           rows={rows?rows:[]}/>
+          {rows?.length?
+            <GridTable
+             className={classes.versionsTable}
+             columns={columns}
+             rows={rows?rows:[]}/>:null}
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
       </CardContent>

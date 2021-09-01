@@ -51,7 +51,10 @@ trait ClientVersionUtils {
               val results = versions
                 .map(version => for {
                   clientVersion <- getClientVersionsInfo(Some(version.service), Some(version.version.distribution)).map(versions =>
-                                    versions.map(_.version).find(v => DeveloperDistributionVersion.from(v) == version.version)
+                                    versions.map(_.version)
+                                      .sorted(ClientDistributionVersion.ordering)
+                                      .reverse
+                                      .find(v => DeveloperDistributionVersion.from(v) == version.version)
                                       .map(version => new ClientDistributionVersion(version.distribution, version.developerBuild, version.clientBuild+1))
                                       .getOrElse(ClientDistributionVersion.from(version.version, 0)))
                   } yield {

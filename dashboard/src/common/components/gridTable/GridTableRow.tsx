@@ -62,12 +62,6 @@ export const GridTableRow = (params: GridTableRowParams) => {
                         setEditOldValues(new Map(values))
                         setEditValues(new Map(values))
                       }
-                    } else if (selectColumn) {
-                      if (!selected) {
-                        onSelect?.()
-                      } else {
-                        onUnselect?.()
-                      }
                     } else if (column.type != 'elements') {
                       onClick?.()
                     }

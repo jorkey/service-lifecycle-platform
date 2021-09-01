@@ -12,6 +12,7 @@ import ShareIcon from '@material-ui/icons/Share';
 import BuildIcon from '@material-ui/icons/Build';
 
 import { Profile, SidebarNav } from './components';
+import {useDeveloperServicesQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme?: any) => ({
   drawer: {
@@ -57,9 +58,34 @@ export interface PageTitle extends BarItem {
 }
 
 const Sidebar = (props:any) => {
-  const { open, variant, onClose, className, ...rest } = props;
+  const { open, variant, onClose, className, ...rest } = props
 
-  const classes = useStyles();
+  const classes = useStyles()
+
+  const { data: developerServices } = useDeveloperServicesQuery()
+  const development = !!developerServices?.developerServices?.length
+
+  const buildPages: SinglePage|PageTitle = development ? {
+    kind: 'title',
+    title: 'Build',
+    href: '/build/',
+    icon: <BuildIcon />,
+    pages: [
+      {
+        title: 'Developer',
+        href: '/build/developer',
+      },
+      {
+        title: 'Client',
+        href: '/build/client',
+      }
+    ]
+  } : {
+    kind: 'single',
+    title: 'Build',
+    href: '/build/client',
+    icon: <BuildIcon />
+  }
 
   const pages: Array<SinglePage|PageTitle> = [
     {
@@ -104,22 +130,7 @@ const Sidebar = (props:any) => {
         }
       ]
     },
-    {
-      kind: 'title',
-      title: 'Build',
-      href: '/build/',
-      icon: <BuildIcon />,
-      pages: [
-        {
-          title: 'Developer',
-          href: '/build/developer',
-        },
-        {
-          title: 'Client',
-          href: '/build/client',
-        }
-      ]
-    },
+    buildPages,
     {
       kind: 'single',
       title: 'Providers',

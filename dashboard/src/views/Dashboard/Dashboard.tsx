@@ -6,6 +6,7 @@ import DeveloperVersionsInProcess from "./components/VersionsInProcess/Developer
 import Versions from "./components/Versions/Versions";
 import ClientVersionsInProcess from "./components/VersionsInProcess/ClientVersionsInProcess";
 import LastClientVersions from "./components/LastVersions/LastClientVersions";
+import {useDeveloperServicesQuery} from "../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -17,7 +18,10 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = props => {
-  const classes = useStyles();
+  const classes = useStyles()
+
+  const { data: developerServices } = useDeveloperServicesQuery()
+  const development = !!developerServices?.developerServices?.length
 
   return (
     <div className={classes.root}>
@@ -25,15 +29,15 @@ const Dashboard: React.FC<DashboardProps> = props => {
         <Grid item xs={12}>
           <Versions/>
         </Grid>
-        <Grid item xs={12}>
+        {development?<Grid item xs={12}>
           <DeveloperVersionsInProcess/>
-        </Grid>
+        </Grid>:null}
         <Grid item xs={12}>
           <ClientVersionsInProcess/>
         </Grid>
-        <Grid item xs={12}>
+        {development?<Grid item xs={12}>
           <LastDeveloperVersions/>
-        </Grid>
+        </Grid>:null}
         <Grid item xs={12}>
           <LastClientVersions/>
         </Grid>
