@@ -1,9 +1,11 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { Grid } from '@material-ui/core';
-import LastVersions from "./components/LastVersions/LastVersions";
-import VersionsInProcess from "./components/VersionsInProcess/VersionsInProcess";
+import LastDeveloperVersions from "./components/LastVersions/LastDeveloperVersions";
+import DeveloperVersionsInProcess from "./components/VersionsInProcess/DeveloperVersionsInProcess";
 import Versions from "./components/Versions/Versions";
+import ClientVersionsInProcess from "./components/VersionsInProcess/ClientVersionsInProcess";
+import LastClientVersions from "./components/LastVersions/LastClientVersions";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -24,10 +26,16 @@ const Dashboard: React.FC<DashboardProps> = props => {
           <Versions/>
         </Grid>
         <Grid item xs={12}>
-          <VersionsInProcess/>
+          <DeveloperVersionsInProcess/>
         </Grid>
         <Grid item xs={12}>
-          <LastVersions/>
+          <ClientVersionsInProcess/>
+        </Grid>
+        <Grid item xs={12}>
+          <LastDeveloperVersions/>
+        </Grid>
+        <Grid item xs={12}>
+          <LastClientVersions/>
         </Grid>
       </Grid>
     </div>

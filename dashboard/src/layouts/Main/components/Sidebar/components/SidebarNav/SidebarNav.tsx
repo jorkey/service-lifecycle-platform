@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import {NavLink as RouterLink, useLocation} from 'react-router-dom';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
-import {List, ListItem, Button, colors, ListItemIcon, ListItemText, Collapse} from '@material-ui/core';
+import {List, ListItem, Button, colors, ListItemIcon, Collapse} from '@material-ui/core';
 import {PageTitle, SinglePage} from "../../Sidebar";
 import {ExpandLess, ExpandMore} from "@material-ui/icons";
 
@@ -38,6 +38,7 @@ const useStyles = makeStyles((theme: any) => ({
   },
   active: {
     color: theme.palette.primary.main,
+    textTransform: 'none',
     fontWeight: theme.typography.fontWeightMedium,
     '& $icon': {
       color: theme.palette.primary.main

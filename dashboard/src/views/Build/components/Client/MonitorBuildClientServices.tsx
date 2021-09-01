@@ -100,22 +100,22 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
             <Grid item md={1} xs={12}>
               <Typography>Versions</Typography>
             </Grid>
-            <Grid item md={8} xs={12}>
-              <Typography>{versions?.map(version => { return version.service + ':' +
-                Version.developerDistributionVersionToString(version.version) })}</Typography>
+            <Grid item md={11} xs={12}>
+              { versions?.map(version => (<Typography>{ version.service + ':' +
+                  Version.developerDistributionVersionToString(version.version) }</Typography>)) }
             </Grid>
 
             <Grid item md={1} xs={12}>
               <Typography>Author</Typography>
             </Grid>
-            <Grid item md={2} xs={12}>
+            <Grid item md={11} xs={12}>
               <Typography>{author}</Typography>
             </Grid>
 
             <Grid item md={1} xs={12}>
               <Typography>Status</Typography>
             </Grid>
-            <Grid item md={2} xs={12}>
+            <Grid item md={11} xs={12}>
               <Typography>{status == Status.InProcess ? 'In Process': status == Status.Success ? 'Success' : 'Error'}</Typography>
             </Grid>
 
@@ -124,7 +124,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
                 <Grid item md={1} xs={12}>
                   <Typography>Start</Typography>
                 </Grid>
-                <Grid item md={8} xs={12}>
+                <Grid item md={11} xs={12}>
                   <Typography>{startTime.toLocaleString()}</Typography>
                 </Grid>
               </> : (startTime && endTime) ?
@@ -132,11 +132,10 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
                 <Grid item md={1} xs={12}>
                   <Typography>Start / End</Typography>
                 </Grid>
-                <Grid item md={8} xs={12}>
+                <Grid item md={11} xs={12}>
                   <Typography>{startTime.toLocaleString() + ' / ' + endTime.toLocaleString()}</Typography>
                 </Grid>
-              </> :
-              <Grid item md={9} xs={12}/>
+              </> : null
             }
           </Grid>
         </CardContent>

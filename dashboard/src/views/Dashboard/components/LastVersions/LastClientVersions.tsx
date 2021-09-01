@@ -2,10 +2,12 @@ import React, {useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
-  Card, CardContent, CardHeader,
+  Card,
+  CardContent, CardHeader,
 } from '@material-ui/core';
 import {
-  useDeveloperVersionsInProcessLazyQuery, useDeveloperVersionsInProcessQuery,
+  useClientVersionsInfoQuery,
+  useDeveloperVersionsInfoQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -41,7 +43,15 @@ const useStyles = makeStyles((theme:any) => ({
   commentColumn: {
     padding: '4px',
   },
-  startTimeColumn: {
+  creationTime: {
+    width: '150px',
+    padding: '4px',
+  },
+  installedByColumn: {
+    width: '150px',
+    padding: '4px',
+  },
+  installTimeColumn: {
     width: '150px',
     padding: '4px',
   },
@@ -51,17 +61,17 @@ const useStyles = makeStyles((theme:any) => ({
   },
   alert: {
     marginTop: 25
-  },
+  }
 }));
 
-const VersionsInProcess = () => {
+const LastClientVersions = () => {
   const classes = useStyles()
 
   const [error, setError] = useState<string>()
 
-  const { data: versionsInProcess, refetch: getVersionsInProcess } = useDeveloperVersionsInProcessQuery({
+  const {data:clientVersionsInfo, refetch:getClientVersionsInfo} = useClientVersionsInfoQuery({
     fetchPolicy: 'no-cache',
-    onError(err) { setError('Query developer versions in process error ' + err.message) },
+    onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
@@ -82,26 +92,42 @@ const VersionsInProcess = () => {
       className: classes.authorColumn,
     },
     {
-      name: 'startTime',
+      name: 'creationTime',
+      headerName: 'Creation Time',
       type: 'date',
-      headerName: 'Start Time',
-      className: classes.startTimeColumn,
+      className: classes.creationTime,
     },
     {
       name: 'comment',
       headerName: 'Comment',
       className: classes.commentColumn,
-    }
+    },
+    {
+      name: 'installedBy',
+      headerName: 'Installed By',
+      className: classes.installedByColumn,
+    },
+    {
+      name: 'installTime',
+      headerName: 'Install Time',
+      type: 'date',
+      className: classes.installTimeColumn,
+    },
   ]
 
-  const rows = versionsInProcess?.developerVersionsInProcess.map(
-      version => new Map<string, GridTableColumnValue>([
-    ['service', version.service],
-    ['version', Version.developerVersionToString(version.version)],
-    ['author', version.author],
-    ['comment', version.comment?version.comment:''],
-    ['startTime', version.startTime]
-  ]))
+  const rows = clientVersionsInfo?.clientVersionsInfo
+    .sort((v1, v2) =>
+      Version.compareClientDistributionVersions(v2.version, v1.version))
+    .map(
+        version => new Map<string, GridTableColumnValue>([
+      ['service', version.service],
+      ['version', Version.clientDistributionVersionToString(version.version)],
+      ['author', version.buildInfo.author],
+      ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
+      ['creationTime', version.buildInfo.time],
+      ['installedBy', version.installInfo.account],
+      ['installTime', version.installInfo.time],
+    ]))
 
   return (
     <Card
@@ -112,11 +138,12 @@ const VersionsInProcess = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={() => getVersionsInProcess()}
+              refresh={() => getClientVersionsInfo()}
             />
           </FormGroup>
         }
-        title='Versions In Process'/>
+        title='Last Client Versions'
+      />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <GridTable
@@ -130,4 +157,4 @@ const VersionsInProcess = () => {
   );
 }
 
-export default VersionsInProcess
+export default LastClientVersions

@@ -2,11 +2,10 @@ import React, {useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
-  Card,
-  CardContent, CardHeader,
+  Card, CardContent, CardHeader,
 } from '@material-ui/core';
 import {
-  useDeveloperVersionsInfoQuery,
+  useDeveloperVersionsInProcessQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -52,17 +51,17 @@ const useStyles = makeStyles((theme:any) => ({
   },
   alert: {
     marginTop: 25
-  }
+  },
 }));
 
-const LastVersions = () => {
+const DeveloperVersionsInProcess = () => {
   const classes = useStyles()
 
   const [error, setError] = useState<string>()
 
-  const {data:developerVersionsInfo, refetch:getDeveloperVersionsInfo} = useDeveloperVersionsInfoQuery({
+  const { data: versionsInProcess, refetch: getVersionsInProcess } = useDeveloperVersionsInProcessQuery({
     fetchPolicy: 'no-cache',
-    onError(err) { setError('Query developer versions error ' + err.message) },
+    onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
@@ -83,29 +82,26 @@ const LastVersions = () => {
       className: classes.authorColumn,
     },
     {
-      name: 'creationTime',
-      headerName: 'Creation Time',
+      name: 'startTime',
       type: 'date',
+      headerName: 'Start Time',
       className: classes.startTimeColumn,
     },
     {
       name: 'comment',
       headerName: 'Comment',
       className: classes.commentColumn,
-    },
+    }
   ]
 
-  const rows = developerVersionsInfo?.developerVersionsInfo
-    .sort((v1, v2) =>
-      Version.compareBuilds(v2.version.build, v1.version.build))
-    .map(
-        version => new Map<string, GridTableColumnValue>([
-      ['service', version.service],
-      ['version', Version.buildToString(version.version.build)],
-      ['author', version.buildInfo.author],
-      ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-      ['creationTime', version.buildInfo.time]
-    ]))
+  const rows = versionsInProcess?.developerVersionsInProcess.map(
+      version => new Map<string, GridTableColumnValue>([
+    ['service', version.service],
+    ['version', Version.developerVersionToString(version.version)],
+    ['author', version.author],
+    ['comment', version.comment?version.comment:''],
+    ['startTime', version.startTime]
+  ]))
 
   return (
     <Card
@@ -116,12 +112,11 @@ const LastVersions = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={() => getDeveloperVersionsInfo()}
+              refresh={() => getVersionsInProcess()}
             />
           </FormGroup>
         }
-        title='Last Versions'
-      />
+        title='Developer Versions In Process'/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <GridTable
@@ -135,4 +130,4 @@ const LastVersions = () => {
   );
 }
 
-export default LastVersions
+export default DeveloperVersionsInProcess
