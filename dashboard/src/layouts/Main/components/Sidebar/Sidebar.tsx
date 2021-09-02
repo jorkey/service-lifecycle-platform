@@ -5,11 +5,14 @@ import { makeStyles } from '@material-ui/styles';
 import {Divider, Drawer} from '@material-ui/core';
 import DashboardIcon from '@material-ui/icons/Dashboard';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
+import AccountsIcon from '@material-ui/icons/AccountBox';
 import PeopleIcon from '@material-ui/icons/People';
 import ListIcon from '@material-ui/icons/List';
 import ErrorIcon from '@material-ui/icons/Error';
-import ShareIcon from '@material-ui/icons/Share';
+import SettingsIcon from '@material-ui/icons/Settings';
 import BuildIcon from '@material-ui/icons/Build';
+import DistributionIcon from '@material-ui/icons/Share';
+import ProfilesIcon from '@material-ui/icons/FilterList';
 
 import { Profile, SidebarNav } from './components';
 import {useDeveloperServicesQuery} from "../../../../generated/graphql";
@@ -38,23 +41,10 @@ const useStyles = makeStyles((theme?: any) => ({
 }));
 
 export interface Page {
-  title: string,
+  title: string
   href: string
-}
-
-export interface BarItem {
-  title: string,
-  href: string,
-  icon: React.ReactElement
-}
-
-export interface SinglePage extends BarItem, Page {
-  kind: 'single'
-}
-
-export interface PageTitle extends BarItem {
-  kind: 'title'
-  pages: Array<Page>
+  icon?: React.ReactElement
+  pages?: Array<Page>
 }
 
 const Sidebar = (props:any) => {
@@ -65,8 +55,7 @@ const Sidebar = (props:any) => {
   const { data: developerServices } = useDeveloperServicesQuery()
   const development = !!developerServices?.developerServices?.length
 
-  const buildPages: SinglePage|PageTitle = development ? {
-    kind: 'title',
+  const buildPages: Page = development ? {
     title: 'Build',
     href: '/build/',
     icon: <BuildIcon />,
@@ -81,73 +70,78 @@ const Sidebar = (props:any) => {
       }
     ]
   } : {
-    kind: 'single',
     title: 'Build',
     href: '/build/client',
     icon: <BuildIcon />
   }
 
-  const pages: Array<SinglePage|PageTitle> = [
+  const pages: Array<Page> = [
     {
-      kind: 'single',
       title: 'Dashboard',
       href: '/dashboard',
-      icon: <DashboardIcon />
-    },
-    {
-      kind: 'title',
-      title: 'Accounts',
-      href: '/accounts/',
-      icon: <PeopleIcon />,
-      pages: [
-        {
-          title: 'Users',
-          href: '/accounts/users',
-        },
-        {
-          title: 'Services',
-          href: '/accounts/services',
-        },
-        {
-          title: 'Distribution Consumers',
-          href: '/accounts/consumers',
-        }
-      ]
-    },
-    {
-      kind: 'title',
-      title: 'Services',
-      href: '/services/',
-      icon: <BubbleChartIcon />,
-      pages: [
-        {
-          title: 'Development',
-          href: '/services/development',
-        },
-        {
-          title: 'Profiles',
-          href: '/services/profiles',
-        }
-      ]
+      icon: <DashboardIcon/>
     },
     buildPages,
     {
-      kind: 'single',
-      title: 'Providers',
-      href: '/providers',
-      icon: <ShareIcon />
-    },
-    {
-      kind: 'single',
       title: 'Logging',
       href: '/logging',
-      icon: <ListIcon />
+      icon: <ListIcon/>
     },
     {
-      kind: 'single',
       title: 'Failures',
       href: '/failures',
-      icon: <ErrorIcon />
+      icon: <ErrorIcon/>
+    },
+    {
+      title: 'Settings',
+      href: '/settings/',
+      icon: <SettingsIcon/>,
+      pages: [
+        {
+          title: 'Accounts',
+          href: '/settings/accounts/',
+          icon: <AccountsIcon/>,
+          pages: [
+            {
+              title: 'Users',
+              href: '/settings/accounts/users',
+              icon: <PeopleIcon/>,
+            },
+            {
+              title: 'Services',
+              href: '/settings/accounts/services',
+              icon: <BubbleChartIcon/>,
+            },
+            {
+              title: 'Distribution Consumers',
+              href: '/settings/accounts/consumers',
+              icon: <DistributionIcon/>,
+            }
+          ]
+        },
+        {
+          title: 'Services',
+          href: '/settings/services/',
+          icon: <BubbleChartIcon/>,
+          pages: [
+            {
+              title: 'Development',
+              href: '/settings/services/development',
+              icon: <BuildIcon/>,
+            },
+            {
+              title: 'Profiles',
+              href: '/settings/services/profiles',
+              icon: <ProfilesIcon/>,
+            }
+          ]
+        },
+        {
+          title: 'Providers',
+          href: '/settings/providers',
+          icon: <DistributionIcon/>,
+        }
+      ]
     }
   ];
 

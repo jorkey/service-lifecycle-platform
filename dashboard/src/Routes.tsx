@@ -46,27 +46,9 @@ const Routes: React.FC<RoutesProps> = props => {
         {...props}
       />
       <RouteWithLayout
-        component={AccountsView}
-        layout={MainLayout}
-        path='/accounts'
-        {...props}
-      />
-      <RouteWithLayout
-        component={ServicesView}
-        layout={MainLayout}
-        path='/services'
-        {...props}
-      />
-      <RouteWithLayout
         component={BuildView}
         layout={MainLayout}
         path='/build'
-        {...props}
-      />
-      <RouteWithLayout
-        component={ProvidersView}
-        layout={MainLayout}
-        path='/providers'
         {...props}
       />
       <RouteWithLayout
@@ -81,6 +63,24 @@ const Routes: React.FC<RoutesProps> = props => {
         layout={MainLayout}
         path='/failures'
         exact
+        {...props}
+      />
+      <RouteWithLayout
+        component={AccountsView}
+        layout={MainLayout}
+        path='/settings/accounts'
+        {...props}
+      />
+      <RouteWithLayout
+        component={ServicesView}
+        layout={MainLayout}
+        path='/settings/services'
+        {...props}
+      />
+      <RouteWithLayout
+        component={ProvidersView}
+        layout={MainLayout}
+        path='/settings/providers'
         {...props}
       />
       <RouteWithLayout
