@@ -103,6 +103,16 @@ class SequencedCollection[T: ClassTag](val name: String,
     }
   }
 
+  def distinctField[T](fieldName: String, filters: Bson = new BsonDocument())
+                      (implicit classTag: ClassTag[T]): Future[Seq[T]] = {
+    for {
+      collection <- collection
+      docs <- collection.distinct[T](fieldName, Filters.and(filters,
+        Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true))))
+    } yield docs
+  }
+
+
   def update(filters: Bson, modify: Option[T] => Option[T]): Future[Int] = {
     def update(): Future[Int] = {
       for {

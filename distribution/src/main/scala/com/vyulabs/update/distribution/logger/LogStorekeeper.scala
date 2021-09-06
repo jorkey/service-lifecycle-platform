@@ -14,7 +14,7 @@ class LogStorekeeper(distribution: DistributionId, service: ServiceId,
                     (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  private val processId = ProcessHandle.current.pid.toString
+  private val process = ProcessHandle.current.pid.toString
   private val directory = new java.io.File(".").getCanonicalPath()
 
   @volatile private var logOutputFuture = Option.empty[Future[Unit]]
@@ -22,7 +22,7 @@ class LogStorekeeper(distribution: DistributionId, service: ServiceId,
   override def receiveLogLines(logs: Seq[LogLine]): Future[Unit] = {
     logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
       collection.insert(logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => {
-        seq :+ ServiceLogLine(distribution, service, task, instance, processId, directory, line)
+        seq :+ ServiceLogLine(distribution, service, task, instance, process, directory, line)
       })).map(_ => ())
     })
     logOutputFuture.get

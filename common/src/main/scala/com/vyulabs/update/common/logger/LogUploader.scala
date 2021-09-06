@@ -13,13 +13,13 @@ class LogUploader[Source[_]](service: ServiceId, task: Option[TaskId], instance:
                             (implicit executionContext: ExecutionContext) extends LogReceiver {
   private implicit val log = NOPLogger.NOP_LOGGER
 
-  private val processId = ProcessHandle.current.pid
+  private val process = ProcessHandle.current.pid
   private val directory = new java.io.File(".").getCanonicalPath()
 
   private val coder = new AddServiceLogsCoder() {}
 
   override def receiveLogLines(lines: Seq[LogLine]): Future[Unit] = {
     client.graphqlRequest(
-      coder.addServiceLogs(service, instance, processId.toString, task, directory, lines)).map(_ => ())
+      coder.addServiceLogs(service, instance, process.toString, task, directory, lines)).map(_ => ())
   }
 }

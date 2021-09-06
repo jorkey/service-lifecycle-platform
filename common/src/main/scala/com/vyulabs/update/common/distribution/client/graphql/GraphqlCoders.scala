@@ -204,10 +204,10 @@ trait AddClientVersionInfoCoder {
 }
 
 trait AddServiceLogsCoder {
-  def addServiceLogs(service: ServiceId, instance: InstanceId, processId: ProcessId, task: Option[TaskId],
+  def addServiceLogs(service: ServiceId, instance: InstanceId, process: ProcessId, task: Option[TaskId],
                      serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
     GraphqlMutation[Boolean]("addServiceLogs",
-      Seq(GraphqlArgument("service" -> service), GraphqlArgument("instance" -> instance), GraphqlArgument("process" -> processId),
+      Seq(GraphqlArgument("service" -> service), GraphqlArgument("instance" -> instance), GraphqlArgument("process" -> process),
         GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ task.map(task => GraphqlArgument("task" -> task)))
 }
 

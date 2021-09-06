@@ -113,6 +113,14 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T])
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
+  def distinct[T](fieldName: String, filters: Bson = new BsonDocument())
+                 (implicit classTag: ClassTag[T]): Future[Seq[T]] = {
+    val distinct = collection.distinct(fieldName, filters, classTag.runtimeClass.asInstanceOf[Class[T]])
+    Source.fromPublisher(distinct)
+      .log(s"Distinct ${fieldName} in Mongo DB collection ${name} with filters ${filters}")
+      .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
+  }
+
   def updateOne(filters: Bson, update: Bson, options: UpdateOptions = new UpdateOptions().upsert(true)): Future[UpdateResult] = {
     Source.fromPublisher(collection.updateOne(filters, update, options))
       .log(s"Update Mongo DB collection ${name} with filters ${filters}")

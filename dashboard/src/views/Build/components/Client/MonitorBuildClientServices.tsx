@@ -101,7 +101,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
               <Typography>Versions</Typography>
             </Grid>
             <Grid item md={11} xs={12}>
-              { versions?.map(version => (<Typography>{ version.service + ':' +
+              { versions?.map((version, index) => (<Typography key={index}>{ version.service + ':' +
                   Version.developerDistributionVersionToString(version.version) }</Typography>)) }
             </Grid>
 

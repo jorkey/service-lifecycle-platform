@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from "react";
-import {LogLine, useSubscribeTaskLogsSubscription} from "../../../generated/graphql";
+import React from "react";
+import {LogLine} from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
-import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
 import {makeStyles} from "@material-ui/core/styles";
+import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -62,8 +62,6 @@ export const LogsTable = (props: LogsTableParams) => {
     ['unit', line.unit],
     ['message', line.message]
   ]))
-
-  console.log('rows ' + rows.length)
 
   return <GridTable
     className={classes.logsTable}

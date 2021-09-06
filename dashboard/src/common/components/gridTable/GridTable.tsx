@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useRef, useState} from "react";
 import {
   Checkbox,
   Table,
@@ -10,6 +10,7 @@ import {
 import {GridTableColumnParams, GridTableColumnValue} from "./GridTableColumn";
 import {GridTableRow} from "./GridTableRow";
 import {makeStyles} from "@material-ui/styles";
+import ReactDOM from "react-dom";
 
 interface GridParams {
   className: string,
@@ -26,11 +27,14 @@ interface GridParams {
                   oldValues: Map<string, GridTableColumnValue>) => Promise<void> | void,
   onRowsSelected?: (rows: number[]) => void
   onRowsUnselected?: (rows: number[]) => void
+  onScrollTop?: () => void
+  onScrollBottom?: () => void
 }
 
 export const GridTable = (props: GridParams) => {
   const { className, columns, rows, selectColumn, disableManualSelect, addNewRow,
-    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected } = props
+    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected,
+    onScrollTop, onScrollBottom  } = props
 
   const [editingRow, setEditingRow] = useState(-1)
   const [changingInProgress, setChangingInProgress] = useState(false)
@@ -38,7 +42,16 @@ export const GridTable = (props: GridParams) => {
   const selectedRowsCount = rows.map(row => row.get("selected") as boolean).filter(v => v).length
 
   return (
-    <TableContainer className={className}>
+    <TableContainer className={className}
+                    onScroll={e =>  {
+                      let element = e.target as HTMLTableElement
+                      if (element.scrollTop == 0) {
+                        onScrollTop?.()
+                      }
+                      if (element.scrollHeight - element.scrollTop === element.clientHeight) {
+                        onScrollBottom?.()
+                      }
+                    }}>
       <Table stickyHeader>
         <TableHead>
           <TableRow>
@@ -61,7 +74,7 @@ export const GridTable = (props: GridParams) => {
               <TableCell key={index} className={column.className}>{column.headerName}</TableCell>) }
           </TableRow>
         </TableHead>
-        { <TableBody>
+        { <TableBody onScroll={e => console.log('on scroll ' + e)}>
             { (addNewRow ?
               (<GridTableRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
                              onSubmitted={(values, oldValues) =>
