@@ -233,14 +233,11 @@ class SequencedCollection[T: ClassTag](val name: String,
     for {
       collection <- collection
       docs <- collection.find(Filters.and(filters,
-        Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true))), sort)
+        Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true))),
+          sort, limit)
     } yield {
       val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_id").asInt64())
       docs.filter(doc => { !doc.containsKey("_replacedBy") || !notReplaced.contains(doc.get("_replacedBy").asInt64()) })
-      limit match {
-        case Some(limit) => docs.take(limit)
-        case None => docs
-      }
     }
   }
 

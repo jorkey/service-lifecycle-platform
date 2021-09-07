@@ -136,7 +136,7 @@ trait StateUtils extends SprayJsonSupport {
                      process: ProcessId, directory: ServiceDirectory,
                      fromSequence: Option[Long], toSequence: Option[Long],
                      fromTime: Option[Date], toTime: Option[Date],
-                     findText: Option[String])
+                     findText: Option[String], limit: Option[Int])
                     (implicit log: Logger): Future[Seq[SequencedLogLine]] = {
     val distributionArg = Filters.eq("distribution", distribution)
     val serviceArg = Filters.eq("service", service)
@@ -151,7 +151,9 @@ trait StateUtils extends SprayJsonSupport {
     val args = Seq(distributionArg, serviceArg, instanceArg, processArg, directoryArg) ++
       fromSequenceArg ++ toSequenceArg ++ fromTimeArg ++ toTimeArg ++ findTextArg
     val filters = Filters.and(args.asJava)
-    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
+    val sort = Sorts.ascending("line.time")
+    collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
+      .map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
   }
 
   def getTaskLogs(task: TaskId)(implicit log: Logger): Future[Seq[SequencedLogLine]] = {

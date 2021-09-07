@@ -105,6 +105,7 @@ object GraphqlSchema {
   val OptionFromDateArg = Argument("fromDate", OptionInputType(GraphQLDate))
   val OptionToDateArg = Argument("toDate", OptionInputType(GraphQLDate))
   val OptionFindTextArg = Argument("findText", OptionInputType(StringType))
+  val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
 
@@ -231,13 +232,13 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg)) }),
       Field("serviceLogs", ListType(SequencedLogLineType),
         arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg ::
-          OptionFromSequenceArg :: OptionToSequenceArg :: OptionFromDateArg :: OptionToDateArg :: Nil,
+          OptionFromSequenceArg :: OptionToSequenceArg :: OptionFromDateArg :: OptionToDateArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(DistributionArg), c.arg(ServiceArg),
           c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg),
           c.arg(OptionFromSequenceArg), c.arg(OptionToSequenceArg),
           c.arg(OptionFromDateArg), c.arg(OptionToDateArg),
-          c.arg(OptionFindTextArg)) }),
+          c.arg(OptionFindTextArg), c.arg(OptionLimitArg)) }),
       Field("taskLogs", ListType(SequencedLogLineType),
         arguments = TaskArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
