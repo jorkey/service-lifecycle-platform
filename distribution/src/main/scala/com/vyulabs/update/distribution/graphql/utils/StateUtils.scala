@@ -88,57 +88,45 @@ trait StateUtils extends SprayJsonSupport {
     getServicesState(distribution, service, instance, directory).map(_.map(_.instance))
   }
 
-  def addServiceLogs(distribution: DistributionId, service: ServiceId, task: Option[TaskId],
+  def addServiceLogs(service: ServiceId, task: Option[TaskId],
                      instance: InstanceId, process: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
     val documents = logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
-      ServiceLogLine(distribution, service, task, instance, process, directory, line) })
+      ServiceLogLine(service, task, instance, process, directory, line) })
     collections.State_ServiceLogs.insert(documents).map(_ => ())
   }
 
-  def getLogDistributions()(implicit log: Logger): Future[Seq[DistributionId]] = {
-    collections.State_ServiceLogs.distinctField[String]("distribution")
+  def getLogServices()(implicit log: Logger): Future[Seq[ServiceId]] = {
+    collections.State_ServiceLogs.distinctField[String]("service")
   }
 
-  def getLogServices(distribution: DistributionId)
-                    (implicit log: Logger): Future[Seq[ServiceId]] = {
-    val distributionArg = Filters.eq("distribution", distribution)
-    collections.State_ServiceLogs.distinctField[String]("service", distributionArg)
-  }
-
-  def getLogInstances(distribution: DistributionId, service: ServiceId)
-                     (implicit log: Logger): Future[Seq[InstanceId]] = {
-    val distributionArg = Filters.eq("distribution", distribution)
+  def getLogInstances(service: ServiceId)(implicit log: Logger): Future[Seq[InstanceId]] = {
     val serviceArg = Filters.eq("service", service)
-    val filters = Filters.and(Seq(distributionArg, serviceArg).asJava)
+    val filters = Filters.and(Seq(serviceArg).asJava)
     collections.State_ServiceLogs.distinctField[String]("instance", filters)
   }
 
-  def getLogDirectories(distribution: DistributionId, service: ServiceId, instance: InstanceId)
-                       (implicit log: Logger): Future[Seq[ServiceDirectory]] = {
-    val distributionArg = Filters.eq("distribution", distribution)
+  def getLogDirectories(service: ServiceId, instance: InstanceId)(implicit log: Logger): Future[Seq[ServiceDirectory]] = {
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
-    val filters = Filters.and(Seq(distributionArg, serviceArg, instanceArg).asJava)
+    val filters = Filters.and(Seq(serviceArg, instanceArg).asJava)
     collections.State_ServiceLogs.distinctField[String]("directory", filters)
   }
 
-  def getLogProcesses(distribution: DistributionId, service: ServiceId, instance: InstanceId,
-                      directory: ServiceDirectory)(implicit log: Logger): Future[Seq[ProcessId]] = {
-    val distributionArg = Filters.eq("distribution", distribution)
+  def getLogProcesses(service: ServiceId, instance: InstanceId, directory: ServiceDirectory)
+                     (implicit log: Logger): Future[Seq[ProcessId]] = {
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
-    val directoryArg = Filters.eq("directory", instance)
-    val filters = Filters.and(Seq(distributionArg, serviceArg, instanceArg, directoryArg).asJava)
+    val directoryArg = Filters.eq("directory", directory)
+    val filters = Filters.and(Seq(serviceArg, instanceArg, directoryArg).asJava)
     collections.State_ServiceLogs.distinctField[String]("process", filters)
   }
 
-  def getServiceLogs(distribution: DistributionId, service: ServiceId, instance: InstanceId,
+  def getServiceLogs(service: ServiceId, instance: InstanceId,
                      process: ProcessId, directory: ServiceDirectory,
                      fromSequence: Option[Long], toSequence: Option[Long],
                      fromTime: Option[Date], toTime: Option[Date],
                      findText: Option[String], limit: Option[Int])
                     (implicit log: Logger): Future[Seq[SequencedLogLine]] = {
-    val distributionArg = Filters.eq("distribution", distribution)
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
     val processArg = Filters.eq("process", process)
@@ -148,7 +136,7 @@ trait StateUtils extends SprayJsonSupport {
     val fromTimeArg = fromTime.map(time => Filters.gte("line.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("line.time", time))
     val findTextArg = findText.map(text => Filters.text(text))
-    val args = Seq(distributionArg, serviceArg, instanceArg, processArg, directoryArg) ++
+    val args = Seq(serviceArg, instanceArg, processArg, directoryArg) ++
       fromSequenceArg ++ toSequenceArg ++ fromTimeArg ++ toTimeArg ++ findTextArg
     val filters = Filters.and(args.asJava)
     val sort = Sorts.ascending("line.time")
@@ -162,18 +150,16 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
   }
 
-  def subscribeServiceLogs(distribution: DistributionId, service: ServiceId,
+  def subscribeServiceLogs(service: ServiceId,
                            instance: InstanceId, process: ProcessId, directory: ServiceDirectory,
                            fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedLogLine], NotUsed] = {
-    val distributionArg = Filters.eq("distribution", distribution)
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
     val processArg = Filters.eq("process", process)
     val directoryArg = Filters.eq("directory", directory)
-    val args = Seq(distributionArg, serviceArg, instanceArg, processArg, directoryArg)
+    val args = Seq(serviceArg, instanceArg, processArg, directoryArg)
     val filters = Filters.and(args.asJava)
     val source = collections.State_ServiceLogs.subscribe(filters, fromSequence)
-      .filter(_.document.distribution == distribution)
       .filter(_.document.service == service)
       .filter(_.document.instance == instance)
       .filter(_.document.process == process)

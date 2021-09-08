@@ -57,7 +57,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), createIndices)
   val distributionDir = new DistributionDirectory(distributionDirectory)
-  val taskManager = new TaskManager(task => new LogStorekeeper(distributionName, Common.DistributionServiceName, Some(task),
+  val taskManager = new TaskManager(task => new LogStorekeeper(Common.DistributionServiceName, Some(task),
     instance, collections.State_ServiceLogs))
 
   val graphql = new Graphql()

@@ -102,8 +102,8 @@ object GraphqlSchema {
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromSequenceArg = Argument("fromSequence", OptionInputType(LongType))
   val OptionToSequenceArg = Argument("toSequence", OptionInputType(LongType))
-  val OptionFromDateArg = Argument("fromDate", OptionInputType(GraphQLDate))
-  val OptionToDateArg = Argument("toDate", OptionInputType(GraphQLDate))
+  val OptionFromTimeArg = Argument("fromTime", OptionInputType(GraphQLDate))
+  val OptionToTimeArg = Argument("toTime", OptionInputType(GraphQLDate))
   val OptionFindTextArg = Argument("findText", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
@@ -216,28 +216,25 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
-      Field("logDistributions", ListType(StringType),
-        resolve = c => { c.ctx.workspace.getLogDistributions() }),
       Field("logServices", ListType(StringType),
-        arguments = DistributionArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogServices(c.arg(DistributionArg)) }),
+        resolve = c => { c.ctx.workspace.getLogServices() }),
       Field("logInstances", ListType(StringType),
-        arguments = DistributionArg :: ServiceArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogInstances(c.arg(DistributionArg), c.arg(ServiceArg)) }),
+        arguments = ServiceArg :: Nil,
+        resolve = c => { c.ctx.workspace.getLogInstances(c.arg(ServiceArg)) }),
       Field("logDirectories", ListType(StringType),
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogDirectories(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg)) }),
+        arguments = ServiceArg :: InstanceArg :: Nil,
+        resolve = c => { c.ctx.workspace.getLogDirectories(c.arg(ServiceArg), c.arg(InstanceArg)) }),
       Field("logProcesses", ListType(StringType),
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: DirectoryArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg)) }),
+        arguments = ServiceArg :: InstanceArg :: DirectoryArg :: Nil,
+        resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg)) }),
       Field("serviceLogs", ListType(SequencedLogLineType),
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg ::
-          OptionFromSequenceArg :: OptionToSequenceArg :: OptionFromDateArg :: OptionToDateArg :: OptionLimitArg :: Nil,
+        arguments = ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg ::
+          OptionFromSequenceArg :: OptionToSequenceArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(DistributionArg), c.arg(ServiceArg),
+        resolve = c => { c.ctx.workspace.getServiceLogs(c.arg(ServiceArg),
           c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg),
           c.arg(OptionFromSequenceArg), c.arg(OptionToSequenceArg),
-          c.arg(OptionFromDateArg), c.arg(OptionToDateArg),
+          c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
           c.arg(OptionFindTextArg), c.arg(OptionLimitArg)) }),
       Field("taskLogs", ListType(SequencedLogLineType),
         arguments = TaskArg :: Nil,
@@ -419,15 +416,10 @@ object GraphqlSchema {
         }),
       Field("addServiceLogs", BooleanType,
         arguments = ServiceArg :: InstanceArg :: ProcessArg :: OptionTaskArg :: DirectoryArg :: LogLinesArg :: Nil,
-        tags = Authorized(AccountRole.Updater, AccountRole.DistributionConsumer) :: Nil,
+        tags = Authorized(AccountRole.Updater) :: Nil,
         resolve = c => {
-          if (c.ctx.accountInfo.get.role == AccountRole.Updater) {
-            c.ctx.workspace.addServiceLogs(c.ctx.workspace.config.distribution,
-              c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
-          } else {
-            c.ctx.workspace.addServiceLogs(c.ctx.accessToken.get.account,
-              c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
-          }
+          c.ctx.workspace.addServiceLogs(
+            c.arg(ServiceArg), c.arg(OptionTaskArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(LogLinesArg)).map(_ => true)
         }),
       Field("addFaultReportInfo", BooleanType,
         arguments = ServiceFaultReportInfoArg :: Nil,
@@ -459,10 +451,10 @@ object GraphqlSchema {
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeServiceLogs", SequencedLogLineType,
-        arguments = DistributionArg :: ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromSequenceArg :: Nil,
+        arguments = ServiceArg :: InstanceArg :: ProcessArg :: DirectoryArg :: OptionFromSequenceArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeServiceLogs(
-          c.arg(DistributionArg), c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromSequenceArg))),
+          c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg), c.arg(DirectoryArg), c.arg(OptionFromSequenceArg))),
       Field.subs("subscribeTaskLogs", SequencedLogLineType,
         arguments = TaskArg :: OptionFromSequenceArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,

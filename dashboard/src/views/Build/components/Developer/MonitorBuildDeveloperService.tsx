@@ -20,9 +20,8 @@ import {
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
-import BranchesTable from "./BranchesTable";
 import {Version} from "../../../../common";
-import {TaskLogs} from "../../../../common/components/logsTable/TaskLogs";
+import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -168,12 +167,13 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
       <Card className={classes.card}>
         <CardHeader title={`Task logs`}/>
         <CardContent>
-          { <TaskLogs task={task!} onTerminated={
-            (date, stat) => {
-              setStatus(stat ? Status.Success: Status.Error)
-              setEndTime(date)
-              setTerminatedStatus(stat)
-            }
+          { <LogsTable params={ task= task! }
+                       onComplete={
+                        (time, stat) => {
+                          setStatus(stat ? Status.Success: Status.Error)
+                          setEndTime(time)
+                          setTerminatedStatus(stat)
+                        }
           }/> }
         </CardContent>
       </Card>

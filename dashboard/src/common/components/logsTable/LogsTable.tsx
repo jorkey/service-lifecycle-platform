@@ -29,13 +29,12 @@ const useStyles = makeStyles(theme => ({
 }))
 
 interface LogsTableParams {
-  lines: LogLine[]
+  params: ServiceLogsParams | TaskLogsParams
+  onComplete: (time: Date, status: boolean) => void
 }
 
 export const LogsTable = (props: LogsTableParams) => {
-  const { lines } = props
-
-  const classes = useStyles();
+  const classes = useStyles()
 
   const columns: GridTableColumnParams[] = [
     {

@@ -101,8 +101,26 @@ query serviceStates ($distribution: String!) {
     }
 }
 
-query serviceLogs ($distribution: String!, $service: String!, $instance: String!, $process: String!, $directory: String!) {
-    serviceLogs (distribution: $distribution, service: $service, instance: $instance, process: $process, directory: $directory) {
+query logServices {
+    logServices
+}
+
+query logInstances($service: String!) {
+    logInstances (service: $service)
+}
+
+query logDirectories($service: String!, $instance: String!) {
+    logDirectories (service: $service, instance: $instance)
+}
+
+query logProcesses($service: String!, $instance: String!, $directory: String!) {
+    logProcesses (service: $service, instance: $instance, directory: $directory)
+}
+
+query serviceLogs ($service: String!, $instance: String!, $process: String!, $directory: String!,
+                   $fromSequence: Long, $toSequence: Long, $fromTime: Date, $toTime: Date, $limit: Int) {
+    serviceLogs (service: $service, instance: $instance, process: $process, directory: $directory,
+                 fromSequence: $fromSequence, toSequence: $toSequence, fromTime: $fromTime, toTime: $toTime, limit: $limit) {
         sequence, line { time, level, unit, message, terminationStatus }
     }
 }
@@ -248,16 +266,16 @@ query providerDesiredVersions ($distribution: String!) {
 
 # Subscriptions
 
-subscription subscribeTaskLogs ($task: String!, $from: Long) {
-    subscribeTaskLogs (task: $task, from: $from) {
+subscription subscribeTaskLogs ($task: String!, $fromSequence: Long) {
+    subscribeTaskLogs (task: $task, fromSequence: $fromSequence) {
         sequence, line { time, level, unit, message, terminationStatus }
     }
 }
 
-subscription subscribeServiceLogs ($distribution: String!, $service: String!, $instance: String!, $process: String!,
-        $directory: String!, $from: Long!) {
-    subscribeServiceLogs (distribution: $distribution, service: $service, instance: $instance, process: $process,
-            directory: $directory, from: $from) {
+subscription subscribeServiceLogs ($service: String!, $instance: String!, $process: String!,
+        $directory: String!, $fromSequence: Long!) {
+    subscribeServiceLogs (service: $service, instance: $instance, process: $process,
+            directory: $directory, fromSequence: $fromSequence) {
         sequence, line { time, level, unit, message, terminationStatus }
     }
 }
