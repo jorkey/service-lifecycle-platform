@@ -3,14 +3,13 @@ import {LogLine, SequencedLogLine} from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
-import {FindLogsDashboardParams} from "./LogsGetter";
+import {FindLogsDashboardParams, LogsGetter} from "./LogsGetter";
 
 const useStyles = makeStyles(theme => ({
   div: {
     display: 'relative'
   },
   logsTable: {
-    // height: '300px'
     height: 'calc(100vh - 550px)',
   },
   timeColumn: {
@@ -66,9 +65,29 @@ export const LogsTable = (props: LogsTableParams) => {
     ['message', line.message]
   ]))
 
-  return <GridTable
-    className={classes.logsTable}
-    columns={columns}
-    rows={rows}
-  />;
+  const addLines = (receivedLines: SequencedLogLine[]) => {
+    if (lines.length) {
+      const begin = lines[0].sequence
+      const insert = receivedLines.filter(line => line.sequence < begin)
+      let newLines = new Array(...insert, ...lines)
+      const end = lines.length == 1 ? begin : lines[lines.length-1].sequence
+      const append = receivedLines.filter(line => line.sequence > end)
+      newLines = new Array(...newLines, ...append)
+      setLines(newLines)
+    }
+  }
+
+  return <>
+    <GridTable
+      className={classes.logsTable}
+      columns={columns}
+      rows={rows}
+    />
+    <LogsGetter
+      {...props}
+      onLines={ lines => { addLines(lines) }}
+      onError={ (message) => {} }
+      onComplete={ () => {} }
+    />
+  </>
 }

@@ -11,6 +11,7 @@ export interface FindLogsDashboardParams {
   task?: string
   fromTime?: Date
   toTime?: Date
+  subscribe?: boolean
 }
 
 interface FindLogsParams extends FindLogsDashboardParams {
@@ -18,14 +19,13 @@ interface FindLogsParams extends FindLogsDashboardParams {
   to?: number
 }
 
-interface ServiceLogsGetterParams extends FindLogsParams {
-  subscribe?: boolean,
+interface LogsGetterParams extends FindLogsParams {
   onLines: (lines: SequencedLogLine[]) => void
   onComplete: () => void
   onError: (message: string) => void
 }
 
-export const ServiceLogsGetter = (props: ServiceLogsGetterParams) => {
+export const LogsGetter = (props: LogsGetterParams) => {
   const { service, instance, process, directory, task, from, to, fromTime, toTime,
     subscribe, onLines, onComplete, onError } = props
 
@@ -47,7 +47,7 @@ export const ServiceLogsGetter = (props: ServiceLogsGetterParams) => {
 
   return (subscribe ? <>
     { (logs && logs?.logs && logs.logs.length) ?
-      <ServiceLogsSubscription
+      <LogsSubscription
         {...props}
         from={ logs?.logs[logs.logs.length-1].sequence+1 }
         onLine={ line => onLines([line]) }
@@ -63,7 +63,7 @@ interface LogsSubscriptionParams extends FindLogsParams {
   onComplete: () => void
 }
 
-const ServiceLogsSubscription = (props: LogsSubscriptionParams) => {
+const LogsSubscription = (props: LogsSubscriptionParams) => {
   const { service, instance, process, directory, task, from, onLine, onComplete } = props
 
   useSubscribeLogsSubscription({

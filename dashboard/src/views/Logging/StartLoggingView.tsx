@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
@@ -11,9 +11,8 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps, useHistory} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery,
-  useLogServicesLazyQuery,
-  useLogsLazyQuery
+  useLogInstancesLazyQuery, useLogProcessesLazyQuery,
+  useLogServicesQuery, useLogsLazyQuery
 } from "../../generated/graphql";
 import {LogsTable} from "../../common/components/logsTable/LogsTable";
 
@@ -75,7 +74,22 @@ const StartLoggingView: React.FC<StartLoggingViewParams> = props => {
 
   const [error, setError] = useState<string>()
 
-  const [ getServices, services ] = useLogServicesLazyQuery({
+  useEffect(() => {
+    getInstances()
+    setInstance(undefined)
+  }, [ service ])
+
+  useEffect(() => {
+    getDirectories()
+    setDirectory(undefined)
+  }, [ instance ])
+
+  useEffect(() => {
+    getProcesses()
+    setProcess(undefined)
+  }, [ directory ])
+
+  const { data: services } = useLogServicesQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log services error ' + err.message) },
     onCompleted() { setError(undefined) }
@@ -92,6 +106,13 @@ const StartLoggingView: React.FC<StartLoggingViewParams> = props => {
     variables: { service: service!, instance: instance! },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log directories error ' + err.message) },
+    onCompleted() { setError(undefined) }
+  })
+
+  const [ getProcesses, processes ] = useLogProcessesLazyQuery({
+    variables: { service: service!, instance: instance!, directory: directory! },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query log pocesses error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
@@ -112,46 +133,91 @@ const StartLoggingView: React.FC<StartLoggingViewParams> = props => {
       <CardHeader
         action={
           <FormGroup row>
-            { services?.providersInfo.length ?
-              <FormControlLabel
-                className={classes.control}
-                control={
-                  <Select
-                    className={classes.providerSelect}
-                    native
-                    onChange={(event) => {
-                      const distribution = providers?.providersInfo.find(provider => provider.distribution == event.target.value as string)
-                      setProvider(distribution)
-                    }}
-                    title='Select provider'
-                    value={provider?.distribution}
-                  >
-                    <option key={-1}/>
-                    { providers?.providersInfo
-                        .map((provider) => provider.distribution)
-                        .map((provider, index) => <option key={index}>{provider}</option>)}
-                  </Select>
-                }
-                label='Update From Provider'
-              /> : null }
-            <RefreshControl
+            { services?.logServices? <FormControlLabel
               className={classes.control}
-              refresh={ () => {
-                if (provider) {
-                  getProviderVersions({ variables: { distribution: provider.distribution } })
-                }
-                getDeveloperVersions()
-                getClientVersions() }}
-            />
+              control={
+                <Select
+                  className={classes.serviceSelect}
+                  native
+                  onChange={(event) => {
+                    setService(event.target.value as string)
+                  }}
+                  title='Select service'
+                  value={service}
+                >
+                  <option key={-1}/>
+                  { services.logServices
+                      .map((service, index) => <option key={index}>{service}</option>)}
+                </Select>
+              }
+              label='Service'
+            /> : null }
+            { service && !instances.loading && instances.data? <FormControlLabel
+              className={classes.control}
+              control={
+                <Select
+                  className={classes.instanceSelect}
+                  native
+                  onChange={(event) => {
+                    setService(event.target.value as string)
+                  }}
+                  title='Select instance'
+                  value={service}
+                >
+                  <option key={-1}/>
+                  { instances.data.logInstances
+                    .map((instance, index) => <option key={index}>{instance}</option>)}
+                </Select>
+              }
+              label='Instance'
+            /> : null }
+            { instance && !directories.loading && directories.data? <FormControlLabel
+              className={classes.control}
+              control={
+                <Select
+                  className={classes.directorySelect}
+                  native
+                  onChange={(event) => {
+                    setService(event.target.value as string)
+                  }}
+                  title='Select directory'
+                  value={service}
+                >
+                  <option key={-1}/>
+                  { directories.data.logDirectories
+                    .map((directory, index) => <option key={index}>{directory}</option>)}
+                </Select>
+              }
+              label='Directory'
+            /> : null }
+            { directory && !processes.loading && processes.data? <FormControlLabel
+              className={classes.control}
+              control={
+                <Select
+                  className={classes.processSelect}
+                  native
+                  onChange={(event) => {
+                    setService(event.target.value as string)
+                  }}
+                  title='Select process'
+                  value={service}
+                >
+                  <option key={-1}/>
+                  { processes.data.logProcesses
+                    .map((process, index) => <option key={index}>{process}</option>)}
+                </Select>
+              }
+              label='Process'
+            /> : null }
           </FormGroup>
         }
-        title={provider?'Update Client Services':'Build Client Services'}
+        title={'Logs of services'}
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <LogsTable service={service} instance={instance} directory={directory} process={process}
                      fromTime={fromTime} toTime={toTime}
-                     onComplete={}
+                     onComplete={() => {}}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>
