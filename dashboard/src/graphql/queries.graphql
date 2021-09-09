@@ -117,16 +117,10 @@ query logProcesses($service: String!, $instance: String!, $directory: String!) {
     logProcesses (service: $service, instance: $instance, directory: $directory)
 }
 
-query serviceLogs ($service: String!, $instance: String!, $process: String!, $directory: String!,
-                   $fromSequence: Long, $toSequence: Long, $fromTime: Date, $toTime: Date, $limit: Int) {
-    serviceLogs (service: $service, instance: $instance, process: $process, directory: $directory,
-                 fromSequence: $fromSequence, toSequence: $toSequence, fromTime: $fromTime, toTime: $toTime, limit: $limit) {
-        sequence, line { time, level, unit, message, terminationStatus }
-    }
-}
-
-query taskLogs ($task: String!) {
-    taskLogs (task: $task) {
+query logs ($service: String, $instance: String, $process: String, $directory: String, $task: String,
+            $from: Long, $to: Long, $fromTime: Date, $toTime: Date, $limit: Int) {
+    logs (service: $service, instance: $instance, process: $process, directory: $directory, task: $task,
+          from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, limit: $limit) {
         sequence, line { time, level, unit, message, terminationStatus }
     }
 }
@@ -266,16 +260,10 @@ query providerDesiredVersions ($distribution: String!) {
 
 # Subscriptions
 
-subscription subscribeTaskLogs ($task: String!, $fromSequence: Long) {
-    subscribeTaskLogs (task: $task, fromSequence: $fromSequence) {
-        sequence, line { time, level, unit, message, terminationStatus }
-    }
-}
-
-subscription subscribeServiceLogs ($service: String!, $instance: String!, $process: String!,
-        $directory: String!, $fromSequence: Long!) {
-    subscribeServiceLogs (service: $service, instance: $instance, process: $process,
-            directory: $directory, fromSequence: $fromSequence) {
+subscription subscribeLogs ($service: String, $instance: String, $process: String,
+        $directory: String, $task: String, $from: Long!) {
+    subscribeLogs (service: $service, instance: $instance, process: $process,
+                   directory: $directory, task: $task, from: $from) {
         sequence, line { time, level, unit, message, terminationStatus }
     }
 }

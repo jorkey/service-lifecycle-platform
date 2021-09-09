@@ -83,8 +83,8 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   private def uploadServiceStates(): Future[Unit] = {
     log.debug("Upload service states")
     for {
-      fromSequence <- getLastUploadSequence(collections.State_ServiceStates.name)
-      newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
+      from <- getLastUploadSequence(collections.State_ServiceStates.name)
+      newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("_id", from), sort = Some(Sorts.ascending("_id")))
       newStates <- Future(newStatesDocuments)
     } yield {
       if (!newStates.isEmpty) {
@@ -104,8 +104,8 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   private def uploadFaultReports(): Future[Unit] = {
     log.debug("Upload fault reports")
     for {
-      fromSequence <- getLastUploadSequence(collections.State_FaultReportsInfo.name)
-      newReportsDocuments <- collections.State_FaultReportsInfo.findSequenced(Filters.gt("_id", fromSequence), sort = Some(Sorts.ascending("_id")))
+      from <- getLastUploadSequence(collections.State_FaultReportsInfo.name)
+      newReportsDocuments <- collections.State_FaultReportsInfo.findSequenced(Filters.gt("_id", from), sort = Some(Sorts.ascending("_id")))
       newReports <- Future(newReportsDocuments)
     } yield {
       if (!newReports.isEmpty) {

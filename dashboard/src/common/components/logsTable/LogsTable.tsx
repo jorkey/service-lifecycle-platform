@@ -1,8 +1,9 @@
-import React from "react";
-import {LogLine} from "../../../generated/graphql";
+import React, {useState} from "react";
+import {LogLine, SequencedLogLine} from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
+import {FindLogsDashboardParams} from "./LogsGetter";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -28,13 +29,14 @@ const useStyles = makeStyles(theme => ({
   },
 }))
 
-interface LogsTableParams {
-  params: ServiceLogsParams | TaskLogsParams
+interface LogsTableParams extends FindLogsDashboardParams {
   onComplete: (time: Date, status: boolean) => void
 }
 
 export const LogsTable = (props: LogsTableParams) => {
   const classes = useStyles()
+
+  const [ lines, setLines ] = useState<SequencedLogLine[]>([])
 
   const columns: GridTableColumnParams[] = [
     {
@@ -55,7 +57,9 @@ export const LogsTable = (props: LogsTableParams) => {
     },
   ]
 
-  const rows = lines.map(line => new Map<string, GridTableColumnValue>([
+  const rows = lines
+      .map(line => line.line)
+      .map(line => new Map<string, GridTableColumnValue>([
     ['time', line.time],
     ['level', line.level],
     ['unit', line.unit],

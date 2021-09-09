@@ -18,7 +18,7 @@ import java.util.Date
 import scala.concurrent.ExecutionContext
 
 class ServiceLogsTest extends TestEnvironment {
-  behavior of "Service Logs Requests"
+  behavior of "Service Requests"
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
@@ -27,18 +27,18 @@ class ServiceLogsTest extends TestEnvironment {
   override def dbName = super.dbName + "-administrator"
 
   it should "add/get service logs" in {
-    addServiceLogLine("INFO", "unit1", "line1")
-    addServiceLogLine("DEBUG", "unit1", "line2")
-    addServiceLogLine("ERROR", "unit2", "line3")
+    addLogLine("INFO", "unit1", "line1")
+    addLogLine("DEBUG", "unit1", "line2")
+    addLogLine("ERROR", "unit2", "line3")
 
     assertResult((OK,
-      ("""{"data":{"serviceLogs":[""" +
+      ("""{"data":{"logs":[""" +
        """{"line":{"level":"INFO","message":"line1"}},""" +
        """{"line":{"level":"DEBUG","message":"line2"}},""" +
        """{"line":{"level":"ERROR","message":"line3"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
-        query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
-          serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
+        query logs($$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
+          logs (service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             line {
               level
               message
@@ -46,7 +46,6 @@ class ServiceLogsTest extends TestEnvironment {
           }
         }
       """, variables = JsObject(
-        "distribution" -> JsString("test"),
         "service" -> JsString("service1"),
         "instance" -> JsString("instance1"),
         "process" -> JsString("process1"),
@@ -54,30 +53,30 @@ class ServiceLogsTest extends TestEnvironment {
     )
   }
 
-  it should "subscribe service logs" in {
+  it should "subscribe logs" in {
     setSequence("state.serviceLogs", 10)
 
-    addServiceLogLine("INFO", "unit1", "line1")
+    addLogLine("INFO", "unit1", "line1")
 
-    val response1 = subscribeServiceLogs(13)
+    val response1 = subscribeLogs(13)
     val source1 = response1.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val input1 = source1.runWith(TestSink.probe[ServerSentEvent])
 
-    addServiceLogLine("INFO", "unit1", "line2")
-    addServiceLogLine("DEBUG", "unit2", "line3")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":13,"line":{"level":"DEBUG","message":"line3"}}}}"""))
+    addLogLine("INFO", "unit1", "line2")
+    addLogLine("DEBUG", "unit2", "line3")
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":13,"line":{"level":"DEBUG","message":"line3"}}}}"""))
 
-    addServiceLogLine("ERROR", "unit1", "line4")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":14,"line":{"level":"ERROR","message":"line4"}}}}"""))
+    addLogLine("ERROR", "unit1", "line4")
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":14,"line":{"level":"ERROR","message":"line4"}}}}"""))
 
-    val response2 = subscribeServiceLogs(11)
+    val response2 = subscribeLogs(11)
     val source2 = response2.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val input2 = source2.runWith(TestSink.probe[ServerSentEvent])
 
-    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":11,"line":{"level":"INFO","message":"line1"}}}}"""))
-    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":12,"line":{"level":"INFO","message":"line2"}}}}"""))
-    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":13,"line":{"level":"DEBUG","message":"line3"}}}}"""))
-    input2.requestNext(ServerSentEvent("""{"data":{"subscribeServiceLogs":{"sequence":14,"line":{"level":"ERROR","message":"line4"}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":11,"line":{"level":"INFO","message":"line1"}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":12,"line":{"level":"INFO","message":"line2"}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":13,"line":{"level":"DEBUG","message":"line3"}}}}"""))
+    input2.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":14,"line":{"level":"ERROR","message":"line4"}}}}"""))
   }
 
   it should "subscribe task logs" in {
@@ -91,22 +90,22 @@ class ServiceLogsTest extends TestEnvironment {
 
     addTaskLogLine("DEBUG", "unit2", "line2")
 
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":21,"line":{"level":"INFO","message":"line1"}}}}"""))
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":22,"line":{"level":"DEBUG","message":"line2"}}}}"""))
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":21,"line":{"level":"INFO","message":"line1"}}}}"""))
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":22,"line":{"level":"DEBUG","message":"line2"}}}}"""))
 
-    addServiceLogLine("ERROR", "unit1", "line1")
+    addLogLine("ERROR", "unit1", "line1")
     input1.expectNoMessage()
 
     addTaskLogLine("DEBUG", "unit1", "line3")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeTaskLogs":{"sequence":24,"line":{"level":"DEBUG","message":"line3"}}}}"""))
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":{"sequence":24,"line":{"level":"DEBUG","message":"line3"}}}}"""))
   }
 
-  def addServiceLogLine(level: String, unit: String, message: String): Unit = {
+  def addLogLine(level: String, unit: String, message: String): Unit = {
     assertResult((OK,
-      ("""{"data":{"addServiceLogs":true}}""").parseJson))(
+      ("""{"data":{"addLogs":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, updaterContext, graphql"""
-        mutation AddServiceLogs($$time: Date!, $$level: String!, $$unit: String!, $$message: String!) {
-          addServiceLogs (
+        mutation AddLogs($$time: Date!, $$level: String!, $$unit: String!, $$message: String!) {
+          addLogs (
             service: "service1",
             instance: "instance1",
             process: "process1",
@@ -119,11 +118,10 @@ class ServiceLogsTest extends TestEnvironment {
       """, variables = JsObject("time" -> new Date().toJson, "level" -> JsString(level), "unit" -> JsString(unit), "message" -> JsString(message)))))
   }
 
-  def subscribeServiceLogs(from: Long): ToResponseMarshallable = {
+  def subscribeLogs(from: Long): ToResponseMarshallable = {
     result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
-        subscription SubscribeServiceLogs($$from: Long!) {
-          subscribeServiceLogs (
-            distribution: "test",
+        subscription SubscribeLogs($$from: Long!) {
+          subscribeLogs (
             service: "service1",
             instance: "instance1",
             process: "process1",
@@ -142,10 +140,10 @@ class ServiceLogsTest extends TestEnvironment {
 
   def addTaskLogLine(level: String, unit: String, message: String): Unit = {
     assertResult((OK,
-      ("""{"data":{"addServiceLogs":true}}""").parseJson))(
+      ("""{"data":{"addLogs":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, updaterContext, graphql"""
-        mutation AddServiceLogs($$time: Date!, $$level: String!, $$unit: String!, $$message: String!) {
-          addServiceLogs (
+        mutation AddLogs($$time: Date!, $$level: String!, $$unit: String!, $$message: String!) {
+          addLogs (
             service: "service2",
             task: "task1",
             instance: "instance2",
@@ -161,8 +159,8 @@ class ServiceLogsTest extends TestEnvironment {
 
   def subscribeTaskLogs(from: Long): ToResponseMarshallable = {
     result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
-        subscription SubscribeTaskLogs($$from: Long!) {
-          subscribeTaskLogs (
+        subscription SubscribeLogs($$from: Long!) {
+          subscribeLogs (
             task: "task1",
             from: $$from
           ) {

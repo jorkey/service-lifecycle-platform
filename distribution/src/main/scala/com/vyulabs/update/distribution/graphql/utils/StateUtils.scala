@@ -88,8 +88,8 @@ trait StateUtils extends SprayJsonSupport {
     getServicesState(distribution, service, instance, directory).map(_.map(_.instance))
   }
 
-  def addServiceLogs(service: ServiceId, task: Option[TaskId],
-                     instance: InstanceId, process: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
+  def addLogs(service: ServiceId, task: Option[TaskId],
+              instance: InstanceId, process: ProcessId, directory: ServiceDirectory, logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
     val documents = logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
       ServiceLogLine(service, task, instance, process, directory, line) })
     collections.State_ServiceLogs.insert(documents).map(_ => ())
@@ -121,60 +121,47 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.distinctField[String]("process", filters)
   }
 
-  def getServiceLogs(service: ServiceId, instance: InstanceId,
-                     process: ProcessId, directory: ServiceDirectory,
-                     fromSequence: Option[Long], toSequence: Option[Long],
-                     fromTime: Option[Date], toTime: Option[Date],
-                     findText: Option[String], limit: Option[Int])
-                    (implicit log: Logger): Future[Seq[SequencedLogLine]] = {
-    val serviceArg = Filters.eq("service", service)
-    val instanceArg = Filters.eq("instance", instance)
-    val processArg = Filters.eq("process", process)
-    val directoryArg = Filters.eq("directory", directory)
-    val fromSequenceArg = fromSequence.map(sequence => Filters.gte("_id", sequence))
-    val toSequenceArg = toSequence.map(sequence => Filters.lte("_id", sequence))
+  def getLogs(service: Option[ServiceId], instance: Option[InstanceId],
+              process: Option[ProcessId], directory: Option[ServiceDirectory],
+              task: Option[TaskId],
+              from: Option[Long], to: Option[Long],
+              fromTime: Option[Date], toTime: Option[Date],
+              findText: Option[String], limit: Option[Int])
+             (implicit log: Logger): Future[Seq[SequencedLogLine]] = {
+    val serviceArg = service.map(Filters.eq("service", _))
+    val instanceArg = instance.map(Filters.eq("instance", _))
+    val processArg = process.map(Filters.eq("process", _))
+    val directoryArg = directory.map(Filters.eq("directory", _))
+    val taskArg = task.map(Filters.eq("task", _))
+    val fromArg = from.map(sequence => Filters.gte("_id", sequence))
+    val toArg = to.map(sequence => Filters.lte("_id", sequence))
     val fromTimeArg = fromTime.map(time => Filters.gte("line.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("line.time", time))
     val findTextArg = findText.map(text => Filters.text(text))
-    val args = Seq(serviceArg, instanceArg, processArg, directoryArg) ++
-      fromSequenceArg ++ toSequenceArg ++ fromTimeArg ++ toTimeArg ++ findTextArg
+    val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg ++
+      fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ findTextArg
     val filters = Filters.and(args.asJava)
     val sort = Sorts.ascending("line.time")
     collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
       .map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
   }
 
-  def getTaskLogs(task: TaskId)(implicit log: Logger): Future[Seq[SequencedLogLine]] = {
-    val taskArg = Filters.eq("task", task)
-    val filters = Filters.and(Seq(taskArg).asJava)
-    collections.State_ServiceLogs.findSequenced(filters).map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
-  }
-
-  def subscribeServiceLogs(service: ServiceId,
-                           instance: InstanceId, process: ProcessId, directory: ServiceDirectory,
-                           fromSequence: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedLogLine], NotUsed] = {
-    val serviceArg = Filters.eq("service", service)
-    val instanceArg = Filters.eq("instance", instance)
-    val processArg = Filters.eq("process", process)
-    val directoryArg = Filters.eq("directory", directory)
-    val args = Seq(serviceArg, instanceArg, processArg, directoryArg)
+  def subscribeLogs(service: Option[ServiceId],
+                    instance: Option[InstanceId], process: Option[ProcessId], directory: Option[ServiceDirectory],
+                    task: Option[TaskId], from: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedLogLine], NotUsed] = {
+    val serviceArg = service.map(Filters.eq("service", _))
+    val instanceArg = instance.map(Filters.eq("instance", _))
+    val processArg = process.map(Filters.eq("process", _))
+    val directoryArg = directory.map(Filters.eq("directory", _))
+    val taskArg = task.map(Filters.eq("task", _))
+    val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg
     val filters = Filters.and(args.asJava)
-    val source = collections.State_ServiceLogs.subscribe(filters, fromSequence)
-      .filter(_.document.service == service)
-      .filter(_.document.instance == instance)
-      .filter(_.document.process == process)
-      .filter(_.document.directory == directory)
-      .takeWhile(!_.document.line.terminationStatus.isDefined, true)
-      .map(line => Action(SequencedLogLine(line.sequence, line.document.line)))
-      .buffer(250, OverflowStrategy.fail)
-    source.mapMaterializedValue(_ => NotUsed)
-  }
-
-  def subscribeTaskLogs(task: TaskId, fromSequence: Option[Long])
-                       (implicit log: Logger): Source[Action[Nothing, SequencedLogLine], NotUsed] = {
-    val filters = Filters.eq("task", task)
-    val source = collections.State_ServiceLogs.subscribe(filters, fromSequence)
-      .filter(_.document.task.contains(task))
+    val source = collections.State_ServiceLogs.subscribe(filters, from)
+      .filter(log => service.isEmpty || service.contains(log.document.service))
+      .filter(log => instance.isEmpty || instance.contains(log.document.instance))
+      .filter(log => process.isEmpty || process.contains(log.document.process))
+      .filter(log => directory.isEmpty || directory.contains(log.document.directory))
+      .filter(log => task.isEmpty || task == log.document.task)
       .takeWhile(!_.document.line.terminationStatus.isDefined, true)
       .map(line => Action(SequencedLogLine(line.sequence, line.document.line)))
       .buffer(250, OverflowStrategy.fail)

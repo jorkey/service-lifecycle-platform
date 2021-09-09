@@ -203,12 +203,12 @@ trait AddClientVersionInfoCoder {
     GraphqlMutation[Boolean]("addClientVersionInfo", Seq(GraphqlArgument("info" -> versionInfo, "ClientVersionInfoInput")))
 }
 
-trait AddServiceLogsCoder {
-  def addServiceLogs(service: ServiceId, instance: InstanceId, process: ProcessId, task: Option[TaskId],
-                     serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
-    GraphqlMutation[Boolean]("addServiceLogs",
+trait AddLogsCoder {
+  def addLogs(service: ServiceId, instance: InstanceId, process: ProcessId, task: Option[TaskId],
+              serviceDirectory: ServiceDirectory, logs: Seq[LogLine]) =
+    GraphqlMutation[Boolean]("addLogs",
       Seq(GraphqlArgument("service" -> service), GraphqlArgument("instance" -> instance), GraphqlArgument("process" -> process),
-        GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ task.map(task => GraphqlArgument("task" -> task)))
+          GraphqlArgument("directory" -> serviceDirectory), GraphqlArgument("logs" -> logs, "[LogLineInput!]")) ++ task.map(task => GraphqlArgument("task" -> task)))
 }
 
 trait SetServiceStatesCoder {
@@ -222,7 +222,7 @@ trait AddFaultReportInfoCoder {
 }
 
 
-trait SubscribeTaskLogsCoder {
+trait SubscribeLogsCoder {
   def subscribeTaskLogs(task: TaskId) =
     GraphqlSubscription[SequencedLogLine]("subscribeTaskLogs", Seq(GraphqlArgument("task" -> task, "String")),
       "{ sequence, line { time, level, unit, message, terminationStatus } }")
@@ -239,7 +239,7 @@ object DeveloperQueriesCoder extends DistributionProvidersCoder with DeveloperVe
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
 object DeveloperMutationsCoder extends BuildDeveloperVersionCoder with RemoveDeveloperVersionCoder
   with BuildClientVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
-object DeveloperSubscriptionsCoder extends SubscribeTaskLogsCoder with TestSubscriptionCoder {}
+object DeveloperSubscriptionsCoder extends SubscribeLogsCoder with TestSubscriptionCoder {}
 
 object DeveloperGraphqlCoder {
   val developerQueries = DeveloperQueriesCoder
@@ -252,7 +252,7 @@ object AdministratorQueriesCoder extends DistributionProvidersCoder with Develop
 object AdministratorMutationsCoder extends SourcesAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
   with AddDeveloperVersionInfoCoder with AddClientVersionInfoCoder  with BuildClientVersionCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
-object AdministratorSubscriptionsCoder extends SubscribeTaskLogsCoder {}
+object AdministratorSubscriptionsCoder extends SubscribeLogsCoder {}
 
 object AdministratorGraphqlCoder {
   val administratorQueries = AdministratorQueriesCoder
@@ -270,7 +270,7 @@ object ConsumerGraphqlCoder {
 
 object BuilderQueriesCoder extends DeveloperVersionsInfoCoder with ClientDesiredVersionsCoder {}
 object BuilderMutationsCoder extends AddDeveloperVersionInfoCoder with AddClientVersionInfoCoder {}
-object BuilderSubscriptionsCoder extends SubscribeTaskLogsCoder {}
+object BuilderSubscriptionsCoder extends SubscribeLogsCoder {}
 
 object BuilderGraphqlCoder {
   val builderQueries = BuilderQueriesCoder
@@ -279,7 +279,7 @@ object BuilderGraphqlCoder {
 }
 
 object UpdaterQueriesCoder extends ClientDesiredVersionsCoder {}
-object UpdaterMutationsCoder extends AddServiceLogsCoder with SetServiceStatesCoder with AddFaultReportInfoCoder {}
+object UpdaterMutationsCoder extends AddLogsCoder with SetServiceStatesCoder with AddFaultReportInfoCoder {}
 
 object UpdaterGraphqlCoder {
   val updaterQueries = UpdaterQueriesCoder

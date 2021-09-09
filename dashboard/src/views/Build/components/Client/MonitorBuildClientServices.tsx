@@ -19,7 +19,7 @@ import {
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 import {Version} from "../../../../common";
-import {TaskLogs} from "../../../../common/components/logsTable/TaskLogs";
+import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -143,13 +143,15 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
       <Card className={classes.card}>
         <CardHeader title={`Task logs`}/>
         <CardContent>
-          { <TaskLogs task={task!} onTerminated={
-            (date, stat) => {
-              setStatus(stat ? Status.Success: Status.Error)
-              setEndTime(date)
-              setTerminatedStatus(stat)
-            }
-          }/> }
+          { <LogsTable task={task!}
+                       onComplete={
+                          (date, stat) => {
+                            setStatus(stat ? Status.Success: Status.Error)
+                            setEndTime(date)
+                            setTerminatedStatus(stat)
+                          }
+                       }
+          /> }
         </CardContent>
       </Card>
     </>)

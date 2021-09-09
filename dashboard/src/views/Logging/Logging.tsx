@@ -3,10 +3,8 @@ import React, {useState} from 'react';
 import {RouteComponentProps, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
-import {
-  useClientVersionsInProcessQuery,
-} from '../../../../generated/graphql';
 import Alert from "@material-ui/lab/Alert";
+import {useClientVersionsInProcessQuery} from "../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {

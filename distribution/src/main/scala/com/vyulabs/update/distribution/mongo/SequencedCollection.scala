@@ -206,15 +206,15 @@ class SequencedCollection[T: ClassTag](val name: String,
     } yield result
   }
 
-  def subscribe(filters: Bson = new BsonDocument(), fromSequence: Option[Long] = None)
+  def subscribe(filters: Bson = new BsonDocument(), from: Option[Long] = None)
                (implicit log: Logger): Source[Sequenced[T], NotUsed] = {
-    val filtersArg = Filters.and(filters, fromSequence.map(sequence => Filters.gte("_id", sequence)).getOrElse(new BsonDocument()))
+    val filtersArg = Filters.and(filters, from.map(sequence => Filters.gte("_id", sequence)).getOrElse(new BsonDocument()))
     val source = for {
       storedDocuments <- findSequenced(filtersArg, Some(Sorts.ascending("_id")))
     } yield {
       val bufferSource = Source.fromIterator(() => synchronized { publisherBuffer.iterator })
       val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
-      var sequence = fromSequence.getOrElse(0L)
+      var sequence = from.getOrElse(0L)
       Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))
         .buffer(1000, OverflowStrategy.fail)
         .filter(doc => {

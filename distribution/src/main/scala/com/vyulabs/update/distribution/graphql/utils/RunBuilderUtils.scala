@@ -100,13 +100,13 @@ trait RunBuilderUtils extends SprayJsonSupport {
             }
           })
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            stateUtils.addServiceLogs(Common.BuilderServiceName,
+            stateUtils.addLogs(Common.BuilderServiceName,
               Some(task), config.instance, process.getHandle().pid().toString, directory.getBuilderDir().toString, logLines).map(_ => ())
           })
         },
         exitCode => {
           logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            stateUtils.addServiceLogs(Common.BuilderServiceName,
+            stateUtils.addLogs(Common.BuilderServiceName,
               Some(task), config.instance, process.getHandle().pid().toString, directory.getBuilderDir().toString,
               Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
           }.andThen { case _ => outputFinishedPromise.success(Unit) }
@@ -141,7 +141,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         @volatile var logOutputFuture = Option.empty[Future[Unit]]
         logSource.map(line => {
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            stateUtils.addServiceLogs(Common.DistributionServiceName,
+            stateUtils.addLogs(Common.DistributionServiceName,
               Some(task), config.instance, 0.toString, "", Seq(line.line)).map(_ => ())
           })
           for (terminationStatus <- line.line.terminationStatus) {
