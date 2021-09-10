@@ -173,8 +173,9 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
                           setStatus(stat ? Status.Success: Status.Error)
                           setEndTime(time)
                           setTerminatedStatus(stat)
-                        }
-          }/> }
+                        }}
+                       onError={message => setError(message)}
+          /> }
         </CardContent>
       </Card>
     </>)

@@ -28,13 +28,14 @@ interface GridParams {
   onRowsSelected?: (rows: number[]) => void
   onRowsUnselected?: (rows: number[]) => void
   onScrollTop?: () => void
+  onScrollMiddle?: () => void
   onScrollBottom?: () => void
 }
 
 export const GridTable = (props: GridParams) => {
   const { className, columns, rows, selectColumn, disableManualSelect, addNewRow,
     onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected,
-    onScrollTop, onScrollBottom  } = props
+    onScrollTop, onScrollMiddle, onScrollBottom  } = props
 
   const [editingRow, setEditingRow] = useState(-1)
   const [changingInProgress, setChangingInProgress] = useState(false)
@@ -47,9 +48,10 @@ export const GridTable = (props: GridParams) => {
                       let element = e.target as HTMLTableElement
                       if (element.scrollTop == 0) {
                         onScrollTop?.()
-                      }
-                      if (element.scrollHeight - element.scrollTop === element.clientHeight) {
+                      } else if (element.scrollHeight - element.scrollTop === element.clientHeight) {
                         onScrollBottom?.()
+                      } else {
+                        onScrollMiddle?.()
                       }
                     }}>
       <Table stickyHeader>

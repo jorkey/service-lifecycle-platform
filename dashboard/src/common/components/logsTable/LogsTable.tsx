@@ -1,9 +1,12 @@
 import React, {useState} from "react";
-import {LogLine, SequencedLogLine} from "../../../generated/graphql";
+import {
+  SequencedLogLine,
+  useLogsLazyQuery,
+} from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
-import {FindLogsDashboardParams, LogsGetter} from "./LogsGetter";
+import {LogsSubscriber} from "./LogsSubscriber";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -28,14 +31,44 @@ const useStyles = makeStyles(theme => ({
   },
 }))
 
+export interface FindLogsDashboardParams {
+  service?: string
+  instance?: string
+  process?: string
+  directory?: string
+  task?: string
+  fromTime?: Date
+  toTime?: Date
+  subscribe?: boolean
+}
+
 interface LogsTableParams extends FindLogsDashboardParams {
   onComplete: (time: Date, status: boolean) => void
+  onError: (message: string) => void
 }
 
 export const LogsTable = (props: LogsTableParams) => {
-  const classes = useStyles()
+  const { service, instance, process, directory, task, fromTime, toTime,
+    subscribe, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<SequencedLogLine[]>([])
+
+  const sliceRowsCount = 50
+  const maxRowsCount = 150
+
+  const [ getLogs, logs ] = useLogsLazyQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) {
+      onError(err.message)
+    },
+    onCompleted() {
+      if (logs.data && logs.data.logs) {
+        addLines(logs.data.logs)
+      }
+    }
+  })
+
+  const classes = useStyles()
 
   const columns: GridTableColumnParams[] = [
     {
@@ -65,16 +98,37 @@ export const LogsTable = (props: LogsTableParams) => {
     ['message', line.message]
   ]))
 
+  const getLogsRange = (from?: number, to?: number) => {
+    getLogs({ variables: {
+        service: service, instance: instance, process: process, directory: directory, task: task,
+        fromTime: fromTime, toTime: toTime,
+        from: from, to: to, limit: sliceRowsCount
+      }})
+  }
+
   const addLines = (receivedLines: SequencedLogLine[]) => {
     if (lines.length) {
       const begin = lines[0].sequence
       const insert = receivedLines.filter(line => line.sequence < begin)
       let newLines = new Array(...insert, ...lines)
+      if (newLines.length > maxRowsCount) {
+        newLines = newLines.slice(0, maxRowsCount)
+      }
       const end = lines.length == 1 ? begin : lines[lines.length-1].sequence
       const append = receivedLines.filter(line => line.sequence > end)
       newLines = new Array(...newLines, ...append)
+      if (newLines.length > maxRowsCount) {
+        newLines = newLines.slice(newLines.length - maxRowsCount)
+      }
       setLines(newLines)
+      if (newLines.length && newLines[0].line.terminationStatus != undefined) {
+        onComplete(newLines[0].line.time, newLines[0].line.terminationStatus)
+      }
     }
+  }
+
+  if (!logs.data) {
+    getLogsRange()
   }
 
   return <>
@@ -82,12 +136,23 @@ export const LogsTable = (props: LogsTableParams) => {
       className={classes.logsTable}
       columns={columns}
       rows={rows}
+      onScrollTop={() => {
+        if (lines.length) {
+          getLogsRange(undefined, lines[0].sequence)
+        }
+      }}
+      onScrollBottom={() => {
+        if (!subscribe && lines.length && lines[lines.length - 1].line.terminationStatus == undefined) {
+          getLogsRange(lines[lines.length - 1].sequence, undefined)
+        }
+      }}
     />
-    <LogsGetter
-      {...props}
-      onLines={ lines => { addLines(lines) }}
-      onError={ (message) => {} }
-      onComplete={ () => {} }
-    />
+    {subscribe && logs.loading! ?
+      <LogsSubscriber
+        {...props}
+        from={logs.data?.logs.length?logs.data.logs[logs.data.logs.length-1].sequence:0}
+        onLine={line => addLines([line])}
+        onComplete={() => { onError("Unexpected close of subscription connection") }}
+      /> : null}
   </>
 }

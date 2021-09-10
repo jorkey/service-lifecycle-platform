@@ -218,6 +218,7 @@ const StartLoggingView: React.FC<StartLoggingViewParams> = props => {
           <LogsTable service={service} instance={instance} directory={directory} process={process}
                      fromTime={fromTime} toTime={toTime}
                      onComplete={() => {}}
+                     onError={message => {}}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>

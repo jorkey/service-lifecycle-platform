@@ -151,6 +151,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
                             setTerminatedStatus(stat)
                           }
                        }
+                       onError={message => setError(message)}
           /> }
         </CardContent>
       </Card>

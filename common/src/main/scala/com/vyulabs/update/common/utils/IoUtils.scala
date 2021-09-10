@@ -299,15 +299,15 @@ object IoUtils {
     None
   }
 
-  def getUsedSpace(file: File): Long = {
+  def getUsedSpace(file: File, except: Set[File]): Long = {
     if (file.isFile) {
       file.length()
     } else {
       var space = 0L
-      val contents = file.listFiles()
+      val contents = file.listFiles().filterNot(except.contains(_))
       if (contents != null) {
         for (file <- contents) {
-          space += getUsedSpace(file)
+          space += getUsedSpace(file, except)
         }
       }
       space
@@ -316,7 +316,7 @@ object IoUtils {
 
   @tailrec
   def maybeFreeSpace(dir: File, maxCapacity: Long, except: Set[File])(implicit log: Logger): Unit = {
-    val used = getUsedSpace(dir)
+    val used = getUsedSpace(dir, except)
     if (used > maxCapacity) {
       log.info(s"Directory ${dir} takes ${used} of space that is large than limit ${maxCapacity} - delete old files")
       val files = dir.listFiles().filterNot(except.contains(_))
