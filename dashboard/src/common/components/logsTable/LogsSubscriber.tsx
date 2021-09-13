@@ -23,6 +23,8 @@ interface LogsSubscriptionParams extends FindLogsDashboardParams {
 export const LogsSubscriber = (props: LogsSubscriptionParams) => {
   const { service, instance, process, directory, task, from, onLine, onComplete } = props
 
+  console.log(`LogsSubscriber task ${task} from ${from}`)
+
   useSubscribeLogsSubscription({
     variables: { service, instance, process, directory, task, from },
     fetchPolicy: 'no-cache',

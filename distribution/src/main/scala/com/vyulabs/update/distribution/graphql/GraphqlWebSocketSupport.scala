@@ -3,14 +3,12 @@ package com.vyulabs.update.distribution.graphql
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.ws._
-import akka.stream.Materializer
+import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import akka.stream.scaladsl._
 import org.slf4j.Logger
 import sangria.parser.QueryParser
 import spray.json._
 
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util._
 
@@ -24,6 +22,9 @@ trait GraphqlWebSocketSupport {
     val output = MergeHub.source[TextMessage.Strict](perProducerBufferSize = 16)
     var sink = Option.empty[Sink[TextMessage.Strict, NotUsed]]
     var context = Option.empty[GraphqlContext]
+
+    @volatile
+    var subscriptionKills = Map.empty[String, UniqueKillSwitch]
 
     if (log.isDebugEnabled) log.debug(s"Handle websocket")
 
@@ -72,13 +73,17 @@ trait GraphqlWebSocketSupport {
                             GraphqlSchema.SchemaDefinition, context, document, subscribe.payload.operationName,
                             subscribe.payload.variables.getOrElse(JsObject.empty), tracing)
                           for (sink <- sink) {
-                            Source.combine(querySource.flatMapConcat(msg => {
-                              Source.single(serializeMessage(Next(id = subscribe.id, payload = msg.asJsObject))) }),
+                            val killSwitch = Source.combine(querySource
+                              .flatMapConcat(msg => {
+                                Source.single(serializeMessage(Next(id = subscribe.id, payload = msg.asJsObject))) }),
                               Source.single(serializeMessage(Complete(id = subscribe.id))))(Concat(_))
                               .map(msg => {
                                 if (log.isDebugEnabled) log.debug(s"Send websocket message ${msg}"); msg
                               })
+                              .watchTermination()( (_, _) => { subscriptionKills -= subscribe.id })
+                              .viaMat(KillSwitches.single)(Keep.right)
                               .to(sink).run()
+                            subscriptionKills += (subscribe.id -> killSwitch)
                           }
                         case None =>
                           sendError(subscribe.id, "Connection is not initialized")
@@ -93,6 +98,9 @@ trait GraphqlWebSocketSupport {
                 }
               case Ping.`type` =>
                 singleReply(Pong())
+              case Complete.`type` =>
+                val complete = query.convertTo[Complete]
+                subscriptionKills.get(complete.`type`).foreach(_.shutdown())
               case _ =>
                 log.error("Invalid query: " + query.compactPrint)
             }

@@ -144,6 +144,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
         <CardHeader title={`Task logs`}/>
         <CardContent>
           { <LogsTable task={task!}
+                       subscribe={true}
                        onComplete={
                           (date, stat) => {
                             setStatus(stat ? Status.Success: Status.Error)

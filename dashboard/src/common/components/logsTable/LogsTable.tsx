@@ -53,6 +53,9 @@ export const LogsTable = (props: LogsTableParams) => {
 
   const [ lines, setLines ] = useState<SequencedLogLine[]>([])
 
+  const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
+  const [ subscribeFrom, setSubscribeFrom ] = useState<number>()
+
   const sliceRowsCount = 50
   const maxRowsCount = 150
 
@@ -107,28 +110,37 @@ export const LogsTable = (props: LogsTableParams) => {
   }
 
   const addLines = (receivedLines: SequencedLogLine[]) => {
-    if (lines.length) {
-      const begin = lines[0].sequence
-      const insert = receivedLines.filter(line => line.sequence < begin)
-      let newLines = new Array(...insert, ...lines)
-      if (newLines.length > maxRowsCount) {
+    const begin = lines.length ? lines[0].sequence : 0
+    const insert = receivedLines.filter(line => line.sequence < begin)
+    let newLines = new Array(...lines)
+    if (insert.length) {
+      newLines = new Array(...insert, ...lines)
+      if (!subscribe && newLines.length > maxRowsCount) {
         newLines = newLines.slice(0, maxRowsCount)
       }
-      const end = lines.length == 1 ? begin : lines[lines.length-1].sequence
-      const append = receivedLines.filter(line => line.sequence > end)
+    }
+    const end = lines.length ? lines[lines.length-1].sequence : 0
+    const append = receivedLines.filter(line => line.sequence > end)
+    if (append.length) {
       newLines = new Array(...newLines, ...append)
       if (newLines.length > maxRowsCount) {
         newLines = newLines.slice(newLines.length - maxRowsCount)
       }
-      setLines(newLines)
-      if (newLines.length && newLines[0].line.terminationStatus != undefined) {
-        onComplete(newLines[0].line.time, newLines[0].line.terminationStatus)
-      }
+    }
+    setLines(newLines)
+    if (newLines.length && newLines[0].line.terminationStatus != undefined) {
+      console.log('terminated ' + newLines[0].line.terminationStatus)
+      setTerminationStatus(newLines[0].line.terminationStatus)
+      onComplete(newLines[0].line.time, newLines[0].line.terminationStatus)
     }
   }
 
-  if (!logs.data) {
+  if (!logs.data && !logs.loading) {
     getLogsRange()
+  }
+
+  if (subscribe && !logs.loading && !subscribeFrom) {
+    setSubscribeFrom(lines.length?lines[lines.length-1].sequence:0)
   }
 
   return <>
@@ -147,12 +159,18 @@ export const LogsTable = (props: LogsTableParams) => {
         }
       }}
     />
-    {subscribe && logs.loading! ?
+    {subscribeFrom != undefined ?
       <LogsSubscriber
         {...props}
-        from={logs.data?.logs.length?logs.data.logs[logs.data.logs.length-1].sequence:0}
+        from={lines.length?lines[lines.length-1].sequence:0}
         onLine={line => addLines([line])}
-        onComplete={() => { onError("Unexpected close of subscription connection") }}
+        onComplete={() => {
+          console.log('completed')
+          setSubscribeFrom(undefined)
+          if (terminationStatus != undefined) {
+            onError("Unexpected close of subscription connection")
+          }
+        }}
       /> : null}
   </>
 }
