@@ -128,10 +128,12 @@ export const LogsTable = (props: LogsTableParams) => {
       }
     }
     setLines(newLines)
-    if (newLines.length && newLines[0].line.terminationStatus != undefined) {
-      console.log('terminated ' + newLines[0].line.terminationStatus)
-      setTerminationStatus(newLines[0].line.terminationStatus)
-      onComplete(newLines[0].line.time, newLines[0].line.terminationStatus)
+    if (newLines.length) {
+      const status = newLines[newLines.length-1].line.terminationStatus
+      if (status != undefined) {
+        setTerminationStatus(status)
+        onComplete(newLines[0].line.time, status)
+      }
     }
   }
 
@@ -139,7 +141,7 @@ export const LogsTable = (props: LogsTableParams) => {
     getLogsRange()
   }
 
-  if (subscribe && !logs.loading && !subscribeFrom) {
+  if (subscribe && subscribeFrom == undefined && terminationStatus == undefined && !logs.loading) {
     setSubscribeFrom(lines.length?lines[lines.length-1].sequence:0)
   }
 
@@ -162,12 +164,11 @@ export const LogsTable = (props: LogsTableParams) => {
     {subscribeFrom != undefined ?
       <LogsSubscriber
         {...props}
-        from={lines.length?lines[lines.length-1].sequence:0}
+        from={subscribeFrom}
         onLine={line => addLines([line])}
         onComplete={() => {
-          console.log('completed')
           setSubscribeFrom(undefined)
-          if (terminationStatus != undefined) {
+          if (terminationStatus == undefined) {
             onError("Unexpected close of subscription connection")
           }
         }}

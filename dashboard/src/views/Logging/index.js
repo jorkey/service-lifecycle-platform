@@ -1,1 +1,1 @@
-export { default } from './Logging';
+export { default } from './LoggingView';

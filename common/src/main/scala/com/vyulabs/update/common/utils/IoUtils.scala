@@ -333,7 +333,7 @@ object IoUtils {
   }
 
   def maybeDeleteExcessFiles(dir: File, maxCount: Int, except: Set[File])(implicit log: Logger): Unit = {
-    val files = dir.listFiles().filter(_.isFile)
+    val files = dir.listFiles()
     if (files.length > maxCount) {
       for (file <- files.sortBy(_.lastModified()).take(files.length - maxCount)) {
         if (!except.contains(file) && !deleteFileRecursively(file)) {
@@ -344,7 +344,7 @@ object IoUtils {
   }
 
   def maybeDeleteOldFiles(dir: File, beforeTime: Long, except: Set[File])(implicit log: Logger): Unit = {
-    val files = dir.listFiles().filter(_.isFile)
+    val files = dir.listFiles()
       for (file <- files.filter(_.lastModified() < beforeTime)) {
         if (!except.contains(file) && !deleteFileRecursively(file)) {
           log.error(s"Can't delete ${file}")

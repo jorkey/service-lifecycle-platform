@@ -55,11 +55,11 @@ const useStyles = makeStyles((theme:any) => ({
 interface LoggingRouteParams {
 }
 
-interface StartLoggingViewParams extends RouteComponentProps<LoggingRouteParams> {
+interface LoggingViewParams extends RouteComponentProps<LoggingRouteParams> {
   fromUrl: string
 }
 
-const StartLoggingView: React.FC<StartLoggingViewParams> = props => {
+const LoggingView: React.FC<LoggingViewParams> = props => {
   const classes = useStyles()
 
   const [service, setService] = useState<string>()
@@ -227,4 +227,4 @@ const StartLoggingView: React.FC<StartLoggingViewParams> = props => {
   )
 }
 
-export default StartLoggingView
+export default LoggingView
