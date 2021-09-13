@@ -29,7 +29,9 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
   private val maxClientServiceReportsCount = 100
   private val maxClientServiceDirectoryCapacity = 1024L * 1024 * 1024
 
-  private var downloadingFiles = Set.empty[File]
+  @volatile
+  private var newFiles = Set.empty[File]
+
   private val expirationPeriod = TimeUnit.DAYS.toMillis(30)
 
   def receiveFault(clientName: ClientName, serviceName: ServiceName, fileName: String, source: Source[ByteString, Any]): Route = {
@@ -43,7 +45,7 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
       return failWith(new IOException(s"Can't make directory ${clientDir}"))
     }
     val file = new File(clientDir, fileName)
-    self.synchronized { downloadingFiles += file }
+    self.synchronized { newFiles += file }
     val sink = FileIO.toPath(file.toPath)
     val result = source.runWith(sink)
     onSuccess(result) { result =>
@@ -61,6 +63,7 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
     implicit val log = LoggerFactory.getLogger(getClass)
 
     override def run(): Unit = {
+      var faultFile = Some(file)
       if (file.getName.endsWith(".zip")) {
         val faultDir = new File(dir, file.getName.substring(0, file.getName.length - 4))
         if (faultDir.exists()) {
@@ -69,16 +72,19 @@ class DeveloperFaultUploader(dir: DeveloperDistributionDirectory)
         if (faultDir.mkdir()) {
           if (ZipUtils.unzip(file, faultDir)) {
             file.delete()
+            newFiles -= file
+            newFiles += faultDir
+            faultFile = Some(faultDir)
           }
         } else {
           log.error(s"Can't make directory ${faultDir}")
         }
       }
       self.synchronized {
-        IOUtils.maybeDeleteOldFiles(dir, System.currentTimeMillis() - expirationPeriod, downloadingFiles)
-        IOUtils.maybeDeleteExcessFiles(dir, maxClientServiceReportsCount, downloadingFiles)
-        IOUtils.maybeFreeSpace(dir, maxClientServiceDirectoryCapacity, downloadingFiles)
-        downloadingFiles -= file
+        IOUtils.maybeDeleteOldFiles(dir, System.currentTimeMillis() - expirationPeriod, newFiles)
+        IOUtils.maybeDeleteExcessFiles(dir, maxClientServiceReportsCount, newFiles)
+        IOUtils.maybeFreeSpace(dir, maxClientServiceDirectoryCapacity, newFiles)
+        newFiles --= faultFile
       }
     }
   }
