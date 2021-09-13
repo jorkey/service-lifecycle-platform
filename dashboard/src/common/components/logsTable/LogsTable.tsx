@@ -12,16 +12,15 @@ const useStyles = makeStyles(theme => ({
   div: {
     display: 'relative'
   },
-  logsTable: {
-    height: 'calc(100vh - 550px)',
-  },
   timeColumn: {
     width: '200px',
+    minWidth: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
   levelColumn: {
     width: '100px',
+    minWidth: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -32,6 +31,7 @@ const useStyles = makeStyles(theme => ({
 }))
 
 export interface FindLogsDashboardParams {
+  className: string
   service?: string
   instance?: string
   process?: string
@@ -48,7 +48,7 @@ interface LogsTableParams extends FindLogsDashboardParams {
 }
 
 export const LogsTable = (props: LogsTableParams) => {
-  const { service, instance, process, directory, task, fromTime, toTime,
+  const { className, service, instance, process, directory, task, fromTime, toTime,
     subscribe, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<SequencedLogLine[]>([])
@@ -115,17 +115,17 @@ export const LogsTable = (props: LogsTableParams) => {
     let newLines = new Array(...lines)
     if (insert.length) {
       newLines = new Array(...insert, ...lines)
-      if (!subscribe && newLines.length > maxRowsCount) {
-        newLines = newLines.slice(0, maxRowsCount)
-      }
+      // if (!subscribe && newLines.length > maxRowsCount) {
+      //   newLines = newLines.slice(0, maxRowsCount)
+      // }
     }
     const end = lines.length ? lines[lines.length-1].sequence : 0
     const append = receivedLines.filter(line => line.sequence > end)
     if (append.length) {
       newLines = new Array(...newLines, ...append)
-      if (newLines.length > maxRowsCount) {
-        newLines = newLines.slice(newLines.length - maxRowsCount)
-      }
+      // if (newLines.length > maxRowsCount) {
+      //   newLines = newLines.slice(newLines.length - maxRowsCount)
+      // }
     }
     setLines(newLines)
     if (newLines.length) {
@@ -147,7 +147,7 @@ export const LogsTable = (props: LogsTableParams) => {
 
   return <>
     <GridTable
-      className={classes.logsTable}
+      className={className}
       columns={columns}
       rows={rows}
       onScrollTop={() => {
@@ -156,6 +156,7 @@ export const LogsTable = (props: LogsTableParams) => {
         }
       }}
       onScrollBottom={() => {
+        console.log('onScrollBottom')
         if (!subscribe && lines.length && lines[lines.length - 1].line.terminationStatus == undefined) {
           getLogsRange(lines[lines.length - 1].sequence, undefined)
         }

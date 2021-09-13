@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
   Card,
-  CardContent, CardHeader, Select,
+  CardContent, CardHeader, Grid, Select,
 } from '@material-ui/core';
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme:any) => ({
     paddingRight: '2px'
   },
   logsTable: {
-    marginTop: '20px'
+    height: 'calc(100vh - 180px)',
   },
   control: {
     paddingLeft: '10px',
@@ -124,106 +124,115 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
     onCompleted() { setError(undefined) }
   })
 
-  const history = useHistory()
-
   return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <FormGroup row>
-            { services?.logServices? <FormControlLabel
-              className={classes.control}
-              control={
-                <Select
-                  className={classes.serviceSelect}
-                  native
-                  onChange={(event) => {
-                    setService(event.target.value as string)
-                  }}
-                  title='Select service'
-                  value={service}
-                >
-                  <option key={-1}/>
-                  { services.logServices
-                      .map((service, index) => <option key={index}>{service}</option>)}
-                </Select>
+    <div className={classes.root}>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Card
+            className={clsx(classes.root)}
+          >
+            <CardHeader
+              action={
+                <FormGroup row>
+                  <FormControlLabel
+                    className={classes.control}
+                    disabled={!services?.logServices}
+                    control={
+                      <Select
+                        className={classes.serviceSelect}
+                        native
+                        onChange={(event) => {
+                          setService(event.target.value as string)
+                        }}
+                        title='Select service'
+                        value={service}
+                      >
+                        <option key={-1}/>
+                        { services?.logServices
+                            .map((service, index) => <option key={index}>{service}</option>)}
+                      </Select>
+                    }
+                    label='Service'
+                  />
+                  <FormControlLabel
+                    className={classes.control}
+                    disabled={!service || instances.loading || !instances.data}
+                    control={
+                      <Select
+                        className={classes.instanceSelect}
+                        native
+                        onChange={(event) => {
+                          setService(event.target.value as string)
+                        }}
+                        title='Select instance'
+                        value={service}
+                      >
+                        <option key={-1}/>
+                        { service && !instances.loading && instances.data ? instances.data.logInstances
+                          .map((instance, index) => <option key={index}>{instance}</option>) : null }
+                      </Select>
+                    }
+                    label='Instance'
+                  />
+                  <FormControlLabel
+                    className={classes.control}
+                    disabled={!instance || directories.loading || !directories.data}
+                    control={
+                      <Select
+                        className={classes.directorySelect}
+                        native
+                        onChange={(event) => {
+                          setService(event.target.value as string)
+                        }}
+                        title='Select directory'
+                        value={service}
+                      >
+                        <option key={-1}/>
+                        { instance && !directories.loading && directories.data ? directories.data.logDirectories
+                          .map((directory, index) => <option key={index}>{directory}</option>) : null }
+                      </Select>
+                    }
+                    label='Directory'
+                  />
+                  <FormControlLabel
+                    className={classes.control}
+                    disabled={!directory || processes.loading || !processes.data }
+                    control={
+                      <Select
+                        className={classes.processSelect}
+                        native
+                        onChange={(event) => {
+                          setService(event.target.value as string)
+                        }}
+                        title='Select process'
+                        value={service}
+                      >
+                        <option key={-1}/>
+                        { directory && !processes.loading && processes.data ? processes.data.logProcesses
+                          .map((process, index) => <option key={index}>{process}</option>) : null }
+                      </Select>
+                    }
+                    label='Process'
+                  />
+                </FormGroup>
               }
-              label='Service'
-            /> : null }
-            { service && !instances.loading && instances.data? <FormControlLabel
-              className={classes.control}
-              control={
-                <Select
-                  className={classes.instanceSelect}
-                  native
-                  onChange={(event) => {
-                    setService(event.target.value as string)
-                  }}
-                  title='Select instance'
-                  value={service}
-                >
-                  <option key={-1}/>
-                  { instances.data.logInstances
-                    .map((instance, index) => <option key={index}>{instance}</option>)}
-                </Select>
-              }
-              label='Instance'
-            /> : null }
-            { instance && !directories.loading && directories.data? <FormControlLabel
-              className={classes.control}
-              control={
-                <Select
-                  className={classes.directorySelect}
-                  native
-                  onChange={(event) => {
-                    setService(event.target.value as string)
-                  }}
-                  title='Select directory'
-                  value={service}
-                >
-                  <option key={-1}/>
-                  { directories.data.logDirectories
-                    .map((directory, index) => <option key={index}>{directory}</option>)}
-                </Select>
-              }
-              label='Directory'
-            /> : null }
-            { directory && !processes.loading && processes.data? <FormControlLabel
-              className={classes.control}
-              control={
-                <Select
-                  className={classes.processSelect}
-                  native
-                  onChange={(event) => {
-                    setService(event.target.value as string)
-                  }}
-                  title='Select process'
-                  value={service}
-                >
-                  <option key={-1}/>
-                  { processes.data.logProcesses
-                    .map((process, index) => <option key={index}>{process}</option>)}
-                </Select>
-              }
-              label='Process'
-            /> : null }
-          </FormGroup>
-        }
-        title={'Logs of services'}
-      />
-      <CardContent className={classes.content}>
-        <div className={classes.inner}>
-          <LogsTable service={service} instance={instance} directory={directory} process={process}
-                     fromTime={fromTime} toTime={toTime}
-                     onComplete={() => {}}
-                     onError={message => {}}
-          />
-          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-        </div>
-      </CardContent>
-    </Card>
+              title={'Logs of services'}
+            />
+            <CardContent className={classes.content}>
+              <div className={classes.inner}>
+                <LogsTable className={classes.logsTable}
+                           service={service} instance={instance} directory={directory} process={process}
+                           fromTime={fromTime} toTime={toTime}
+                           onComplete={() => {}}
+                           onError={message => {}}
+                />
+                {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
+              </div>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </div>
   )
 }
 

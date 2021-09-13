@@ -27,6 +27,9 @@ const useStyles = makeStyles(theme => ({
   root: {
     padding: theme.spacing(4)
   },
+  logsTable: {
+    height: 'calc(100vh - 550px)',
+  },
   card: {
     marginTop: 25
   },
@@ -167,7 +170,8 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
       <Card className={classes.card}>
         <CardHeader title={`Task logs`}/>
         <CardContent>
-          { <LogsTable task={task!}
+          { <LogsTable className={classes.logsTable}
+                       task={task!}
                        subscribe={true}
                        onComplete={
                         (time, stat) => {
