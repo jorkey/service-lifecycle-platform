@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
   SequencedLogLine,
   useLogsLazyQuery, useLogsQuery,
@@ -42,6 +42,7 @@ export interface FindLogsDashboardParams {
   task?: string
   fromTime?: Date
   toTime?: Date
+  findText?: string
   subscribe?: boolean
 }
 
@@ -51,7 +52,7 @@ interface LogsTableParams extends FindLogsDashboardParams {
 }
 
 export const LogsTable = (props: LogsTableParams) => {
-  const { className, service, instance, process, directory, task, fromTime, toTime,
+  const { className, service, instance, process, directory, task, fromTime, toTime, findText,
     subscribe, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<SequencedLogLine[]>([])
@@ -62,10 +63,13 @@ export const LogsTable = (props: LogsTableParams) => {
   const sliceRowsCount = 50
   const maxRowsCount = 150
 
+  useEffect(() => { setLines([]) },
+    [ service, instance, process, directory, task, fromTime, toTime, findText ])
+
   const { data: initialLogs } = useLogsQuery({
     variables: {
       service: service, instance: instance, process: process, directory: directory, task: task,
-        fromTime: fromTime, toTime: toTime,
+        fromTime: fromTime, toTime: toTime, findText: findText,
         from: 0, limit: sliceRowsCount
     },
     fetchPolicy: 'no-cache',
@@ -124,7 +128,7 @@ export const LogsTable = (props: LogsTableParams) => {
   const getLogsRange = (from?: number, to?: number) => {
     getLogs({ variables: {
         service: service, instance: instance, process: process, directory: directory, task: task,
-        fromTime: fromTime, toTime: toTime,
+        fromTime: fromTime, toTime: toTime, findText: findText,
         from: from, to: to, limit: sliceRowsCount
       }})
   }

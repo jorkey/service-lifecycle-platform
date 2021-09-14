@@ -118,9 +118,9 @@ query logProcesses($service: String!, $instance: String!, $directory: String!) {
 }
 
 query logs ($service: String, $instance: String, $process: String, $directory: String, $task: String,
-            $from: Long, $to: Long, $fromTime: Date, $toTime: Date, $limit: Int) {
+            $from: Long, $to: Long, $fromTime: Date, $toTime: Date, $findText: String, $limit: Int) {
     logs (service: $service, instance: $instance, process: $process, directory: $directory, task: $task,
-          from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, limit: $limit) {
+          from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, findText: $findText, limit: $limit) {
         sequence, line { time, level, unit, message, terminationStatus }
     }
 }

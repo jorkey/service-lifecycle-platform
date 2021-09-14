@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
   Card,
-  CardContent, CardHeader, Grid, Select,
+  CardContent, CardHeader, Grid, Select, TextField,
 } from '@material-ui/core';
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
@@ -38,6 +38,9 @@ const useStyles = makeStyles((theme:any) => ({
   processSelect: {
     width: '150px',
   },
+  findText: {
+    width: '200px',
+  },
   logsTable: {
     height: 'calc(100vh - 20px)',
   },
@@ -66,6 +69,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   const [process, setProcess] = useState<string>()
   const [fromTime, setFromTime] = useState<Date>()
   const [toTime, setToTime] = useState<Date>()
+  const [findText, setFindText] = useState<string>('')
 
   const [from, setFrom] = useState<number>()
   const [to, setTo] = useState<number>()
@@ -118,6 +122,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log processes error ' + err.message) },
   })
+
+  console.log('find text `' + findText + '`')
 
   return (
     <div className={classes.root}>
@@ -207,6 +213,21 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                     }
                     label='Process'
                   />
+                  <FormControlLabel
+                    className={classes.control}
+                    disabled={!service}
+                    control={
+                      <TextField
+                        className={classes.findText}
+                        onChange={(event) => {
+                          setFindText(event.target.value)
+                        }}
+                        title='Find Text'
+                        value={findText}
+                      />
+                    }
+                    label='Find Text'
+                  />
                 </FormGroup>
               }
               title={'Logs of services'}
@@ -216,6 +237,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                 <LogsTable className={classes.logsTable}
                            service={service} instance={instance} directory={directory} process={process}
                            fromTime={fromTime} toTime={toTime}
+                           findText={findText != ''?findText:undefined}
                            onComplete={() => {}}
                            onError={message => {}}
                 />
