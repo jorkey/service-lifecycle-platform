@@ -8,7 +8,7 @@ import {
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
-import {RouteComponentProps, useHistory} from "react-router-dom";
+import {RouteComponentProps} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
   useLogInstancesLazyQuery, useLogProcessesLazyQuery,
@@ -17,7 +17,9 @@ import {
 import {LogsTable} from "../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {},
+  root: {
+    padding: theme.spacing(2)
+  },
   content: {
     padding: 0
   },
@@ -26,25 +28,21 @@ const useStyles = makeStyles((theme:any) => ({
   },
   serviceSelect: {
     width: '150px',
-    paddingRight: '2px'
   },
   instanceSelect: {
     width: '150px',
-    paddingRight: '2px'
   },
   directorySelect: {
-    width: '150px',
-    paddingRight: '2px'
+    width: '300px',
   },
   processSelect: {
     width: '150px',
-    paddingRight: '2px'
   },
   logsTable: {
-    height: 'calc(100vh - 180px)',
+    height: 'calc(100vh - 20px)',
   },
   control: {
-    paddingLeft: '10px',
+    paddingLeft: '30px',
     textTransform: 'none'
   },
   alert: {
@@ -75,62 +73,57 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   const [error, setError] = useState<string>()
 
   useEffect(() => {
-    getInstances()
+    if (service) {
+      getInstances({
+        variables: { service: service! },
+      })
+    }
     setInstance(undefined)
   }, [ service ])
 
   useEffect(() => {
-    getDirectories()
+    if (service && instance) {
+      getDirectories({
+        variables: { service: service!, instance: instance! },
+      })
+    }
     setDirectory(undefined)
   }, [ instance ])
 
   useEffect(() => {
-    getProcesses()
+    if (service && instance && directory) {
+      getProcesses({
+        variables: { service: service!, instance: instance!, directory: directory! },
+      })
+    }
     setProcess(undefined)
   }, [ directory ])
 
   const { data: services } = useLogServicesQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log services error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
 
   const [ getInstances, instances ] = useLogInstancesLazyQuery({
-    variables: { service: service! },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log instances error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
 
   const [ getDirectories, directories ] = useLogDirectoriesLazyQuery({
-    variables: { service: service!, instance: instance! },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log directories error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
 
   const [ getProcesses, processes ] = useLogProcessesLazyQuery({
-    variables: { service: service!, instance: instance!, directory: directory! },
     fetchPolicy: 'no-cache',
-    onError(err) { setError('Query log pocesses error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
-
-  useLogsLazyQuery({
-    variables: { service: service, instance: instance, directory: directory, process: process,
-      fromTime: fromTime, toTime: toTime, from: from, to: to },
-    fetchPolicy: 'no-cache',
-    onError(err) { setError('Query log directories error ' + err.message) },
-    onCompleted() { setError(undefined) }
+    onError(err) { setError('Query log processes error ' + err.message) },
   })
 
   return (
     <div className={classes.root}>
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Card
-            className={clsx(classes.root)}
-          >
+          <Card>
             <CardHeader
               action={
                 <FormGroup row>
@@ -162,10 +155,10 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         className={classes.instanceSelect}
                         native
                         onChange={(event) => {
-                          setService(event.target.value as string)
+                          setInstance(event.target.value as string)
                         }}
                         title='Select instance'
-                        value={service}
+                        value={instance}
                       >
                         <option key={-1}/>
                         { service && !instances.loading && instances.data ? instances.data.logInstances
@@ -182,10 +175,10 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         className={classes.directorySelect}
                         native
                         onChange={(event) => {
-                          setService(event.target.value as string)
+                          setDirectory(event.target.value as string)
                         }}
                         title='Select directory'
-                        value={service}
+                        value={directory}
                       >
                         <option key={-1}/>
                         { instance && !directories.loading && directories.data ? directories.data.logDirectories
@@ -202,10 +195,10 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         className={classes.processSelect}
                         native
                         onChange={(event) => {
-                          setService(event.target.value as string)
+                          setProcess(event.target.value as string)
                         }}
                         title='Select process'
-                        value={service}
+                        value={process}
                       >
                         <option key={-1}/>
                         { directory && !processes.loading && processes.data ? processes.data.logProcesses

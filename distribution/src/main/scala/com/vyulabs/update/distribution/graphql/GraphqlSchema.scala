@@ -226,7 +226,7 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getLogDirectories(c.arg(ServiceArg), c.arg(InstanceArg)) }),
       Field("logProcesses", ListType(StringType),
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(ServiceArg), c.arg(InstanceArg), c.arg(ProcessArg)) }),
+        resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg)) }),
       Field("logs", ListType(SequencedLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg ::
           OptionFromArg :: OptionToArg :: OptionFromTimeArg :: OptionToTimeArg ::

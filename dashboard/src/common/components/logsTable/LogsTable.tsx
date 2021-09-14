@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {
   SequencedLogLine,
-  useLogsLazyQuery,
+  useLogsLazyQuery, useLogsQuery,
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
@@ -28,6 +28,9 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  inProgress: {
+    cursor: 'progress',
+  }
 }))
 
 export interface FindLogsDashboardParams {
@@ -58,6 +61,23 @@ export const LogsTable = (props: LogsTableParams) => {
 
   const sliceRowsCount = 50
   const maxRowsCount = 150
+
+  const { data: initialLogs } = useLogsQuery({
+    variables: {
+      service: service, instance: instance, process: process, directory: directory, task: task,
+        fromTime: fromTime, toTime: toTime,
+        from: 0, limit: sliceRowsCount
+    },
+    fetchPolicy: 'no-cache',
+    onError(err) {
+      onError(err.message)
+    },
+    onCompleted() {
+      if (initialLogs) {
+        addLines(initialLogs.logs)
+      }
+    }
+  })
 
   const [ getLogs, logs ] = useLogsLazyQuery({
     fetchPolicy: 'no-cache',
@@ -137,17 +157,13 @@ export const LogsTable = (props: LogsTableParams) => {
     }
   }
 
-  if (!logs.data && !logs.loading) {
-    getLogsRange()
-  }
-
   if (subscribe && subscribeFrom == undefined && terminationStatus == undefined && !logs.loading) {
     setSubscribeFrom(lines.length?lines[lines.length-1].sequence:0)
   }
 
   return <>
     <GridTable
-      className={className}
+      className={className + (logs.loading ? ' ' + classes.inProgress : '')}
       columns={columns}
       rows={rows}
       onScrollTop={() => {
@@ -156,7 +172,6 @@ export const LogsTable = (props: LogsTableParams) => {
         }
       }}
       onScrollBottom={() => {
-        console.log('onScrollBottom')
         if (!subscribe && lines.length && lines[lines.length - 1].line.terminationStatus == undefined) {
           getLogsRange(lines[lines.length - 1].sequence, undefined)
         }
