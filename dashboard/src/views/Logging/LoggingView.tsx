@@ -9,10 +9,9 @@ import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
-  AccountRole,
   useLogDirectoriesLazyQuery,
   useLogInstancesLazyQuery, useLogProcessesLazyQuery,
-  useLogServicesQuery, useLogsLazyQuery
+  useLogServicesQuery
 } from "../../generated/graphql";
 import {LogsTable} from "../../common/components/logsTable/LogsTable";
 
@@ -247,18 +246,19 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                   />
                 </FormGroup>
               }
-              title={'Logs of services'}
+              title={'Logs of service'}
             />
             <CardContent className={classes.content}>
               <div className={classes.inner}>
-                <LogsTable className={classes.logsTable}
-                           service={service} instance={instance} directory={directory} process={process}
-                           fromTime={fromTime} toTime={toTime}
-                           findText={findText != ''?findText:undefined}
-                           follow={follow}
-                           onComplete={() => {}}
-                           onError={message => {}}
-                />
+                { service ?
+                  <LogsTable className={classes.logsTable}
+                             service={service} instance={instance} directory={directory} process={process}
+                             fromTime={fromTime} toTime={toTime}
+                             findText={findText != ''?findText:undefined}
+                             follow={follow}
+                             onComplete={() => {}}
+                             onError={message => {}}
+                  /> : null }
                 {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
               </div>
             </CardContent>

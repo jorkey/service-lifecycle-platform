@@ -19,6 +19,18 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  instanceColumn: {
+    width: '200px',
+    minWidth: '200px',
+    padding: '4px',
+    paddingLeft: '16px'
+  },
+  processColumn: {
+    width: '100px',
+    minWidth: '100px',
+    padding: '4px',
+    paddingLeft: '16px'
+  },
   levelColumn: {
     width: '100px',
     minWidth: '100px',
@@ -105,6 +117,16 @@ export const LogsTable = (props: LogsTableParams) => {
       name: 'level',
       headerName: 'Level',
       className: classes.levelColumn
+    },
+    {
+      name: 'instance',
+      headerName: 'Instance',
+      className: classes.instanceColumn
+    },
+    {
+      name: 'process',
+      headerName: 'Process',
+      className: classes.processColumn
     },
     {
       name: 'message',
