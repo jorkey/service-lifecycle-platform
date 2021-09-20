@@ -116,9 +116,9 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   def subscribeTaskLogs(task: TaskId): ToResponseMarshallable = {
     result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         subscription SubscribeTaskLogs($$task: String!) {
-          subscribeTaskLogs (
+          subscribeLogs (
             task: $$task,
-            from: 1
+            from: "1"
           ) {
             sequence
             line {
@@ -135,7 +135,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val e = input.requestNext()
     val json = e.data.parseJson
     val msg = json.asJsObject.fields.get("data").get
-                      .asJsObject.fields.get("subscribeTaskLogs").get
+                      .asJsObject.fields.get("subscribeLogs").get
                       .asJsObject.fields.get("line").get
                       .asJsObject.fields.get("message").get
                       .asInstanceOf[JsString].value

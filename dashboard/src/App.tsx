@@ -17,11 +17,21 @@ import DateFnsUtils from "@date-io/date-fns";
 import {MuiPickersUtilsProvider} from "@material-ui/pickers";
 import {withScalars} from "apollo-link-scalars";
 import introspectionResult from "./generated/graphql.schema.json";
-import {buildClientSchema, ExecutionResult, GraphQLError, GraphQLScalarType, IntrospectionQuery, print} from "graphql"
+import {
+  buildClientSchema,
+  ExecutionResult,
+  GraphQLError,
+  GraphQLObjectType,
+  GraphQLScalarType,
+  IntrospectionQuery, Kind,
+  print
+} from "graphql"
 import {stripProperty} from "./common/Graphql";
 import {NextLink} from "@apollo/client/link/core/types";
 import {getMainDefinition, Observable} from '@apollo/client/utilities';
 import {Client, ClientOptions, createClient} from 'graphql-ws'
+import BigInt from "apollo-type-bigint";
+
 
 const browserHistory = createBrowserHistory();
 
@@ -59,7 +69,7 @@ const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
   }
 
   if (networkError) {
-    console.log(`Network error: ${JSON.stringify(networkError)}`);
+    console.log(`Network error: ${networkError.message}`);
     if ((networkError as ServerError).statusCode === 401) {
       localStorage.removeItem('token')
       window.location.replace('/')
@@ -80,10 +90,13 @@ const dateScalar = new GraphQLScalarType({
   }
 });
 
+const bigIntScalar = new BigInt("")
+
 const scalarsLink = withScalars({
   schema,
   typesMap: {
-    Date: dateScalar
+    Date: dateScalar,
+    BigInt: bigIntScalar
   }
 });
 

@@ -7,6 +7,7 @@ import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
 import {LogsSubscriber} from "./LogsSubscriber";
+import BigInt from "apollo-type-bigint";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -43,7 +44,7 @@ export interface FindLogsDashboardParams {
   fromTime?: Date
   toTime?: Date
   findText?: string
-  subscribe?: boolean
+  follow?: boolean
 }
 
 interface LogsTableParams extends FindLogsDashboardParams {
@@ -53,35 +54,23 @@ interface LogsTableParams extends FindLogsDashboardParams {
 
 export const LogsTable = (props: LogsTableParams) => {
   const { className, service, instance, process, directory, task, fromTime, toTime, findText,
-    subscribe, onComplete, onError } = props
+    follow, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<SequencedLogLine[]>([])
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
-  const [ subscribeFrom, setSubscribeFrom ] = useState<number>()
+  const [ subscribeFrom, setSubscribeFrom ] = useState<string>()
 
   const sliceRowsCount = 50
-  const maxRowsCount = 150
+  const maxRowsCount = 100
 
-  useEffect(() => { setLines([]) },
-    [ service, instance, process, directory, task, fromTime, toTime, findText ])
-
-  const { data: initialLogs } = useLogsQuery({
-    variables: {
+  const getLogsVariables = (from?: string, to?: string) => {
+    return {
       service: service, instance: instance, process: process, directory: directory, task: task,
-        fromTime: fromTime, toTime: toTime, findText: findText,
-        from: 0, limit: sliceRowsCount
-    },
-    fetchPolicy: 'no-cache',
-    onError(err) {
-      onError(err.message)
-    },
-    onCompleted() {
-      if (initialLogs) {
-        addLines(initialLogs.logs)
-      }
+      fromTime: fromTime, toTime: toTime, findText: findText,
+      from: from, to: to, limit: sliceRowsCount
     }
-  })
+  }
 
   const [ getLogs, logs ] = useLogsLazyQuery({
     fetchPolicy: 'no-cache',
@@ -89,11 +78,19 @@ export const LogsTable = (props: LogsTableParams) => {
       onError(err.message)
     },
     onCompleted() {
-      if (logs.data && logs.data.logs) {
+      if (logs.data?.logs) {
         addLines(logs.data.logs)
       }
     }
   })
+
+  useEffect(() => {
+      setLines([])
+      getLogs({ variables: getLogsVariables(
+          follow?undefined:'0',
+          follow?'9223372036854775807':undefined) })
+    },
+    [ service, instance, process, directory, task, fromTime, toTime, findText, follow ])
 
   const classes = useStyles()
 
@@ -125,14 +122,6 @@ export const LogsTable = (props: LogsTableParams) => {
     ['message', line.message]
   ]))
 
-  const getLogsRange = (from?: number, to?: number) => {
-    getLogs({ variables: {
-        service: service, instance: instance, process: process, directory: directory, task: task,
-        fromTime: fromTime, toTime: toTime, findText: findText,
-        from: from, to: to, limit: sliceRowsCount
-      }})
-  }
-
   const addLines = (receivedLines: SequencedLogLine[]) => {
     const begin = lines.length ? lines[0].sequence : 0
     const insert = receivedLines.filter(line => line.sequence < begin)
@@ -161,8 +150,8 @@ export const LogsTable = (props: LogsTableParams) => {
     }
   }
 
-  if (subscribe && subscribeFrom == undefined && terminationStatus == undefined && !logs.loading) {
-    setSubscribeFrom(lines.length?lines[lines.length-1].sequence:0)
+  if (follow && subscribeFrom == undefined && terminationStatus == undefined && !logs.loading) {
+    setSubscribeFrom(lines.length?lines[lines.length-1].sequence:'0')
   }
 
   return <>
@@ -172,12 +161,14 @@ export const LogsTable = (props: LogsTableParams) => {
       rows={rows}
       onScrollTop={() => {
         if (lines.length) {
-          getLogsRange(undefined, lines[0].sequence)
+          getLogs({ variables: getLogsVariables(undefined, lines[0].sequence)})
         }
       }}
       onScrollBottom={() => {
-        if (!subscribe && lines.length && lines[lines.length - 1].line.terminationStatus == undefined) {
-          getLogsRange(lines[lines.length - 1].sequence, undefined)
+        console.log('--- bottom')
+        if (!follow && lines.length && lines[lines.length - 1].line.terminationStatus == undefined) {
+          console.log('--- getLogs ' + lines[lines.length - 1].sequence)
+          getLogs({ variables: getLogsVariables(lines[lines.length - 1].sequence, undefined) })
         }
       }}
     />

@@ -1,15 +1,15 @@
 import React, {useEffect, useState} from 'react';
-import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
   Card,
-  CardContent, CardHeader, Grid, Select, TextField,
+  CardContent, CardHeader, Checkbox, Grid, Select, TextField,
 } from '@material-ui/core';
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
+  AccountRole,
   useLogDirectoriesLazyQuery,
   useLogInstancesLazyQuery, useLogProcessesLazyQuery,
   useLogServicesQuery, useLogsLazyQuery
@@ -36,16 +36,16 @@ const useStyles = makeStyles((theme:any) => ({
     width: '300px',
   },
   processSelect: {
-    width: '150px',
+    width: '100px',
   },
   findText: {
     width: '200px',
   },
   logsTable: {
-    height: 'calc(100vh - 20px)',
+    height: 'calc(100vh - 250px)',
   },
   control: {
-    paddingLeft: '30px',
+    paddingLeft: '5px',
     textTransform: 'none'
   },
   alert: {
@@ -70,6 +70,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   const [fromTime, setFromTime] = useState<Date>()
   const [toTime, setToTime] = useState<Date>()
   const [findText, setFindText] = useState<string>('')
+  const [follow, setFollow] = useState<boolean>()
 
   const [from, setFrom] = useState<number>()
   const [to, setTo] = useState<number>()
@@ -123,8 +124,6 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
     onError(err) { setError('Query log processes error ' + err.message) },
   })
 
-  console.log('find text `' + findText + '`')
-
   return (
     <div className={classes.root}>
       <Grid container spacing={3}>
@@ -135,6 +134,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                 <FormGroup row>
                   <FormControlLabel
                     className={classes.control}
+                    labelPlacement={'top'}
                     disabled={!services?.logServices}
                     control={
                       <Select
@@ -155,6 +155,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                   />
                   <FormControlLabel
                     className={classes.control}
+                    labelPlacement={'top'}
                     disabled={!service || instances.loading || !instances.data}
                     control={
                       <Select
@@ -175,6 +176,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                   />
                   <FormControlLabel
                     className={classes.control}
+                    labelPlacement={'top'}
                     disabled={!instance || directories.loading || !directories.data}
                     control={
                       <Select
@@ -195,6 +197,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                   />
                   <FormControlLabel
                     className={classes.control}
+                    labelPlacement={'top'}
                     disabled={!directory || processes.loading || !processes.data }
                     control={
                       <Select
@@ -215,6 +218,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                   />
                   <FormControlLabel
                     className={classes.control}
+                    labelPlacement={'top'}
                     disabled={!service}
                     control={
                       <TextField
@@ -228,6 +232,19 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                     }
                     label='Find Text'
                   />
+                  <FormControlLabel
+                    className={classes.control}
+                    labelPlacement={'top'}
+                    control={
+                      <Checkbox
+                        className={classes.findText}
+                        onChange={ event => setFollow(event.target.checked) }
+                        title='Follow'
+                        value={follow}
+                      />
+                    }
+                    label='Follow'
+                  />
                 </FormGroup>
               }
               title={'Logs of services'}
@@ -238,6 +255,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                            service={service} instance={instance} directory={directory} process={process}
                            fromTime={fromTime} toTime={toTime}
                            findText={findText != ''?findText:undefined}
+                           follow={follow}
                            onComplete={() => {}}
                            onError={message => {}}
                 />

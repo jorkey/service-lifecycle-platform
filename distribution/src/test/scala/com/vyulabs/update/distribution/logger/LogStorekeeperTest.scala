@@ -38,7 +38,7 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
     Thread.sleep(5000)
 
     assertResult((OK,
-      ("""{"data":{"serviceLogs":[""" +
+      ("""{"data":{"logs":[""" +
         """{"line":{"level":"INFO","message":"`Test` started"}},""" +
         """{"line":{"level":"INFO","message":"log line 1"}},""" +
         """{"line":{"level":"WARN","message":"log line 2"}},""" +
@@ -46,8 +46,8 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
         """{"line":{"level":"WARN","message":"log line 4"}},""" +
         """{"line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
-        query ServiceLogs($$distribution: String!, $$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
-          serviceLogs (distribution: $$distribution, service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
+        query ServiceLogs($$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
+          logs (service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
             line {
               level
               message
@@ -55,7 +55,6 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
           }
         }
       """, variables = JsObject(
-        "distribution" -> JsString("test"),
         "service" -> JsString("service1"),
         "instance" -> JsString("instance1"),
         "process" -> JsString(ProcessHandle.current.pid.toString),

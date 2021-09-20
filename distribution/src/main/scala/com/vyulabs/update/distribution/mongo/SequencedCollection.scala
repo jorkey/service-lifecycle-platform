@@ -37,6 +37,8 @@ class SequencedCollection[T: ClassTag](val name: String,
   private var nextSequenceInProcess = Option.empty[Future[Long]]
 
   if (createIndex) {
+    collection.map(_.createIndex(Indexes.ascending("_sequence")))
+    collection.map(_.createIndex(Indexes.descending("_sequence")))
     collection.map(_.createIndex(Indexes.ascending("_archiveTime"),
       new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS)))
   }

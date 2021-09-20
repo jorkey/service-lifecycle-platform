@@ -46,19 +46,17 @@ class BuildClientVersionTest extends TestEnvironment {
   it should "build client version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         mutation {
-          buildClientVersion (service: "service1", version: { distribution: "test", developerBuild: [1,1,1], clientBuild: 0 })
+          buildClientVersions (versions: [{ service: "service1", version: { distribution: "test", build: [1,1,1] } }])
         }
       """))
     assertResult(OK)(buildResponse._1)
     val fields = buildResponse._2.asJsObject.fields
     val data = fields.get("data").get.asJsObject
-    val task = data.fields.get("buildClientVersion").get.toString().drop(1).dropRight(1)
+    val task = data.fields.get("buildClientVersions").get.toString().drop(1).dropRight(1)
 
     val subscribeResponse = subscribeTaskLogs(task)
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
-
-    expectMessage(logInput, "`Build client version test-1.1.1 of service service1` finished successfully")
 
     expectComplete(logInput)
   }
@@ -116,9 +114,9 @@ class BuildClientVersionTest extends TestEnvironment {
   def subscribeTaskLogs(task: TaskId): ToResponseMarshallable = {
     result(graphql.executeSubscriptionQueryToSSE(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         subscription SubscribeTaskLogs($$task: String!) {
-          subscribeTaskLogs (
+          subscribeLogs (
             task: $$task,
-            from: 1
+            from: "1"
           ) {
             line {
               level
@@ -134,7 +132,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val e = input.requestNext()
     val json = e.data.parseJson
     val msg = json.asJsObject.fields.get("data").get
-      .asJsObject.fields.get("subscribeTaskLogs").get
+      .asJsObject.fields.get("subscribeLogs").get
       .asJsObject.fields.get("line").get
       .asJsObject.fields.get("message").get
       .asInstanceOf[JsString].value

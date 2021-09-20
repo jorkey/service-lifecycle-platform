@@ -15,15 +15,13 @@ export interface FindLogsDashboardParams {
 }
 
 interface LogsSubscriptionParams extends FindLogsDashboardParams {
-  from: number
+  from: string
   onLine: (line: SequencedLogLine) => void
   onComplete: () => void
 }
 
 export const LogsSubscriber = (props: LogsSubscriptionParams) => {
   const { service, instance, process, directory, task, from, onLine, onComplete } = props
-
-  console.log(`LogsSubscriber task ${task} from ${from}`)
 
   useSubscribeLogsSubscription({
     variables: { service, instance, process, directory, task, from },

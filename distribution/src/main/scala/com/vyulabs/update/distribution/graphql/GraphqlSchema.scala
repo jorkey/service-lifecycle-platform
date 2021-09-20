@@ -77,7 +77,6 @@ object GraphqlSchema {
   val CommentArg = Argument("comment", StringType)
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
-  val BuildClientVersionArg = Argument("buildClientVersion", BooleanType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -100,14 +99,15 @@ object GraphqlSchema {
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientVersionInputType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
-  val OptionFromArg = Argument("from", OptionInputType(LongType))
-  val OptionToArg = Argument("to", OptionInputType(LongType))
+  val OptionFromArg = Argument("from", OptionInputType(StringType))
+  val OptionToArg = Argument("to", OptionInputType(StringType))
   val OptionFromTimeArg = Argument("fromTime", OptionInputType(GraphQLDate))
   val OptionToTimeArg = Argument("toTime", OptionInputType(GraphQLDate))
   val OptionFindTextArg = Argument("findText", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
+  val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
 
   // Queries
 
@@ -234,7 +234,7 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getLogs(c.arg(OptionServiceArg),
           c.arg(OptionInstanceArg), c.arg(OptionProcessArg), c.arg(OptionDirectoryArg), c.arg(OptionTaskArg),
-          c.arg(OptionFromArg), c.arg(OptionToArg),
+          c.arg(OptionFromArg).map(_.toLong), c.arg(OptionToArg).map(_.toLong),
           c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
           c.arg(OptionFindTextArg), c.arg(OptionLimitArg)) }),
       Field("faultReports", ListType(DistributionFaultReportType),
@@ -337,11 +337,11 @@ object GraphqlSchema {
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,
-        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg :: BuildClientVersionArg :: Nil,
+        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg :: OptionBuildClientVersionArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildDeveloperVersion(
           c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.account,
-          c.arg(SourcesArg), c.arg(CommentArg), c.arg(BuildClientVersionArg)) }),
+          c.arg(SourcesArg), c.arg(CommentArg), c.arg(OptionBuildClientVersionArg).getOrElse(false)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
@@ -453,7 +453,7 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeLogs(
           c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionProcessArg), c.arg(OptionDirectoryArg), c.arg(OptionTaskArg),
-          c.arg(OptionFromArg))),
+          c.arg(OptionFromArg).map(_.toLong))),
       Field.subs("testSubscription", StringType,
         tags = Authorized(AccountRole.Developer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
