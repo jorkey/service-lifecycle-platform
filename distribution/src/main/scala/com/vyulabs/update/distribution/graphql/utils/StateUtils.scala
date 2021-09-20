@@ -141,8 +141,9 @@ trait StateUtils extends SprayJsonSupport {
     val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg ++
       fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ findTextArg
     val filters = Filters.and(args.asJava)
-    val sort = Sorts.ascending("line.time")
+    val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_id") else Sorts.descending("_id")
     collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
+      .map(_.sortBy(_.sequence))
       .map(_.map(line => SequencedLogLine("%019d".format(line.sequence), line.document.line)))
   }
 

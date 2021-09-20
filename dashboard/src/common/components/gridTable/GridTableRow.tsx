@@ -91,7 +91,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
                     }}
           />
           : column.type == 'date' ?
-            values.get(column.name)?(values.get(column.name) as Date).toLocaleString():''
+            values.get(column.name)?
+              ((values.get(column.name) as Date).toLocaleString()+'.'+(values.get(column.name) as Date).getMilliseconds()):''
           : column.type == 'elements' ?
               (column.name == 'actions' ?
                 <GridActions adding={adding}
