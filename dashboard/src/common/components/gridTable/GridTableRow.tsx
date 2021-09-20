@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {
   Checkbox,
   Input,
@@ -26,6 +26,7 @@ export interface GridTableRowParams {
   adding?: boolean,
   editing?: boolean,
   changingInProgress?: boolean,
+  scrollInto?: boolean,
   onClick?: () => void,
   onBeginEditing?: () => boolean,
   onSubmitted?: (values: Map<string, GridTableColumnValue>, oldValues: Map<string, GridTableColumnValue>) => void,
@@ -34,8 +35,11 @@ export interface GridTableRowParams {
   onUnselect?: () => void
 }
 
+// @ts-ignore
+const useMountEffect = fun => useEffect(fun, [])
+
 export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, selectColumn, disableManualSelect, adding, editing,
+  const { rowNum, columns, values, selectColumn, disableManualSelect, adding, editing, scrollInto,
     onClick, onBeginEditing, onSubmitted, onCanceled, onSelect, onUnselect } = params
 
   const [editColumn, setEditColumn] = useState<string>()
@@ -43,6 +47,12 @@ export const GridTableRow = (params: GridTableRowParams) => {
   const [editValues, setEditValues] = useState<Map<string, GridTableColumnValue>>(new Map())
 
   const classes = useStyles()
+
+  const myRef = useRef(null)
+
+  // @ts-ignore
+  const executeScroll = () => { if (scrollInto) myRef.current.scrollIntoView() }
+  useMountEffect(executeScroll)
 
   if (!editing && editColumn) {
     setEditColumn(undefined)
@@ -118,7 +128,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
       }
       </TableCell>))
 
-  return (<TableRow selected={selected}>{ selectColumn ?
+  return (<TableRow ref={myRef} selected={selected}>{ selectColumn ?
             <TableCell padding='checkbox' key={-1}>
               <Checkbox
                 checked={selected}

@@ -19,6 +19,7 @@ interface GridParams {
   selectColumn?: boolean,
   disableManualSelect?: boolean,
   addNewRow?: boolean,
+  scrollToLastRow?: boolean,
   onClick?: (row: number) => void,
   onRowAdded?: (values: Map<string, GridTableColumnValue>) => Promise<void> | void,
   onRowAddCancelled?: () => void,
@@ -33,7 +34,7 @@ interface GridParams {
 }
 
 export const GridTable = (props: GridParams) => {
-  const { className, columns, rows, selectColumn, disableManualSelect, addNewRow,
+  const { className, columns, rows, selectColumn, disableManualSelect, addNewRow, scrollToLastRow,
     onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected,
     onScrollTop, onScrollMiddle, onScrollBottom  } = props
 
@@ -88,6 +89,9 @@ export const GridTable = (props: GridParams) => {
                                       editing={rowNum == editingRow}
                                       selectColumn={selectColumn}
                                       disableManualSelect={disableManualSelect}
+                                      scrollInto={
+                                        scrollToLastRow && rowNum==rows.length-1
+                                      }
                                       onClick={() => {
                                         onClick?.(rowNum)
                                       }}

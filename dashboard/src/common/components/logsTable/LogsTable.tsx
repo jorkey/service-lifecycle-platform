@@ -159,15 +159,14 @@ export const LogsTable = (props: LogsTableParams) => {
       className={className + (logs.loading ? ' ' + classes.inProgress : '')}
       columns={columns}
       rows={rows}
+      scrollToLastRow={follow}
       onScrollTop={() => {
         if (lines.length) {
           getLogs({ variables: getLogsVariables(undefined, lines[0].sequence)})
         }
       }}
       onScrollBottom={() => {
-        console.log('--- bottom')
         if (!follow && lines.length && lines[lines.length - 1].line.terminationStatus == undefined) {
-          console.log('--- getLogs ' + lines[lines.length - 1].sequence)
           getLogs({ variables: getLogsVariables(lines[lines.length - 1].sequence, undefined) })
         }
       }}
