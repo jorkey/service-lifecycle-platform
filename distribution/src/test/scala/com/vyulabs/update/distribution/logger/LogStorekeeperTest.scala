@@ -12,6 +12,8 @@ import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
+import java.io.IOException
+
 class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
   behavior of "Log trace writer"
 
@@ -31,7 +33,7 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
   it should "store log records" in {
     log.info("log line 1")
     log.warn("log line 2")
-    log.error("log line 3")
+    log.error("log line 3", new IOException())
     log.warn("log line 4")
     log.info("log line 5")
 
