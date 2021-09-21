@@ -5,7 +5,6 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
 import com.vyulabs.update.distribution.graphql.utils._
@@ -13,7 +12,7 @@ import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.Logger
 import sangria.marshalling.sprayJson._
-import sangria.schema.{Field, _}
+import sangria.schema._
 import sangria.streaming.akkaStreams._
 
 import scala.concurrent.ExecutionContext
@@ -99,10 +98,10 @@ object GraphqlSchema {
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientVersionInputType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
   val OptionLastArg = Argument("last", OptionInputType(IntType))
-  val OptionFromArg = Argument("from", OptionInputType(StringType))
-  val OptionToArg = Argument("to", OptionInputType(StringType))
-  val OptionFromTimeArg = Argument("fromTime", OptionInputType(GraphQLDate))
-  val OptionToTimeArg = Argument("toTime", OptionInputType(GraphQLDate))
+  val OptionFromArg = Argument("from", OptionInputType(BigintType))
+  val OptionToArg = Argument("to", OptionInputType(BigintType))
+  val OptionFromTimeArg = Argument("fromTime", OptionInputType(GraphQLDateType))
+  val OptionToTimeArg = Argument("toTime", OptionInputType(GraphQLDateType))
   val OptionFindTextArg = Argument("findText", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))

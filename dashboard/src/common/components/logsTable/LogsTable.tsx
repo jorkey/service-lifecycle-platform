@@ -7,7 +7,6 @@ import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
 import {LogsSubscriber} from "./LogsSubscriber";
-import BigInt from "apollo-type-bigint";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -71,12 +70,12 @@ export const LogsTable = (props: LogsTableParams) => {
   const [ lines, setLines ] = useState<SequencedLogLine[]>([])
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
-  const [ subscribeFrom, setSubscribeFrom ] = useState<string>()
+  const [ subscribeFrom, setSubscribeFrom ] = useState<BigInt>()
 
   const sliceRowsCount = 50
   const maxRowsCount = 100
 
-  const getLogsVariables = (from?: string, to?: string) => {
+  const getLogsVariables = (from?: BigInt, to?: BigInt) => {
     return {
       service: service, instance: instance, process: process, directory: directory, task: task,
       fromTime: fromTime, toTime: toTime, findText: findText,
@@ -99,8 +98,8 @@ export const LogsTable = (props: LogsTableParams) => {
   useEffect(() => {
       setLines([])
       getLogs({ variables: getLogsVariables(
-          follow?undefined:'0',
-          follow?'9223372036854775807':undefined) })
+          follow?undefined:BigInt(0),
+          follow?BigInt('9223372036854775807'):undefined) })
     },
     [ service, instance, process, directory, task, fromTime, toTime, findText, follow ])
 
@@ -145,7 +144,7 @@ export const LogsTable = (props: LogsTableParams) => {
   ]))
 
   const addLines = (receivedLines: SequencedLogLine[]) => {
-    const begin = lines.length ? lines[0].sequence : 0
+    const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
     let newLines = new Array(...lines)
     if (insert.length) {
@@ -154,7 +153,7 @@ export const LogsTable = (props: LogsTableParams) => {
       //   newLines = newLines.slice(0, maxRowsCount)
       // }
     }
-    const end = lines.length ? lines[lines.length-1].sequence : 0
+    const end = lines.length ? lines[lines.length-1].sequence : BigInt(0)
     const append = receivedLines.filter(line => line.sequence > end)
     if (append.length) {
       newLines = new Array(...newLines, ...append)
@@ -173,7 +172,7 @@ export const LogsTable = (props: LogsTableParams) => {
   }
 
   if (follow && subscribeFrom == undefined && terminationStatus == undefined && !logs.loading) {
-    setSubscribeFrom(lines.length?lines[lines.length-1].sequence:'0')
+    setSubscribeFrom(lines.length?lines[lines.length-1].sequence:BigInt(0))
   }
 
   return <>

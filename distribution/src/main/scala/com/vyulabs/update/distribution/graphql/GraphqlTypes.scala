@@ -8,10 +8,11 @@ import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
+import sangria.ast
 import sangria.ast.StringValue
 import sangria.macros.derive._
-import sangria.schema._
-import sangria.validation.Violation
+import sangria.schema.{ScalarType, valueOutput}
+import sangria.validation.{Violation}
 import spray.json._
 
 import java.net.URL
@@ -23,7 +24,7 @@ object GraphqlTypes {
     override def errorMessage: String = "Error during parsing Date"
   }
 
-  implicit val GraphQLDate = ScalarType[Date]("Date",
+  implicit val GraphQLDateType = ScalarType[Date]("Date",
     coerceOutput = (date, _) => serializeISO8601Date(date),
     coerceInput = {
       case StringValue(value, _, _, _, _) => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
@@ -33,6 +34,28 @@ object GraphqlTypes {
       case value: String => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)
       case _ => Left(DateCoerceViolation)
     })
+
+  implicit val BigintType = ScalarType[BigInt]("BigInt",
+    description = Some(
+      "The `BigInt` scalar type represents non-fractional signed whole numeric values. " +
+        "BigInt can represent arbitrary big values."),
+    coerceOutput = valueOutput,
+    coerceInput = {
+      case ast.IntValue(i, _, _) => Right(i)
+      case ast.BigIntValue(i, _, _) => Right(i)
+      case StringValue(value, _, _, _, _) => Right(BigInt(value))
+      case _ => Left(VersionViolation)
+    },
+    coerceUserInput = {
+      case i: Int => Right(BigInt(i))
+      case i: Long => Right(BigInt(i))
+      case i: BigInt => Right(i)
+      case d: Double if d.isWhole => Right(BigInt(d.toLong))
+      case d: BigDecimal if d.isWhole => Right(d.toBigInt)
+      case value: String => Right(BigInt(value))
+      case _ => Left(VersionViolation)
+    }
+  )
 
   implicit val FiniteDurationType = ScalarType[FiniteDuration]("FiniteDuration",
     coerceOutput = (duration, _) => duration.toJson.compactPrint,

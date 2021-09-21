@@ -144,7 +144,7 @@ trait StateUtils extends SprayJsonSupport {
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_id") else Sorts.descending("_id")
     collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
       .map(_.sortBy(_.sequence))
-      .map(_.map(line => SequencedLogLine("%019d".format(line.sequence), line.document.line)))
+      .map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
   }
 
   def subscribeLogs(service: Option[ServiceId],
@@ -164,7 +164,7 @@ trait StateUtils extends SprayJsonSupport {
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
       .filter(log => task.isEmpty || task == log.document.task)
       .takeWhile(!_.document.line.terminationStatus.isDefined, true)
-      .map(line => Action(SequencedLogLine("%019d".format(line.sequence), line.document.line)))
+      .map(line => Action(SequencedLogLine(line.sequence, line.document.line)))
       .buffer(1000, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
   }

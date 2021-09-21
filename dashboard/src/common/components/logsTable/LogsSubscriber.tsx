@@ -15,7 +15,7 @@ export interface FindLogsDashboardParams {
 }
 
 interface LogsSubscriptionParams extends FindLogsDashboardParams {
-  from: string
+  from: BigInt
   onLine: (line: SequencedLogLine) => void
   onComplete: () => void
 }

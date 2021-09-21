@@ -5,6 +5,8 @@ config:
     URL: "string"
     Long: "number"
     Date: "Date"
+#    BigInt: "../common#BigInt"
+    BigInt: "BigInt"
 documents: "**/*.graphql"
 generates:
   src/generated/graphql.tsx:

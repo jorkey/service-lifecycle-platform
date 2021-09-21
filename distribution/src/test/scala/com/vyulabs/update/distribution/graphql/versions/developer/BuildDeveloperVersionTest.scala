@@ -118,7 +118,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
         subscription SubscribeTaskLogs($$task: String!) {
           subscribeLogs (
             task: $$task,
-            from: "1"
+            from: 1
           ) {
             sequence
             line {

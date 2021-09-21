@@ -90,7 +90,7 @@ const dateScalar = new GraphQLScalarType({
   }
 });
 
-const bigIntScalar = new BigInt("")
+const bigIntScalar = new BigInt("bigInt")
 
 const scalarsLink = withScalars({
   schema,
