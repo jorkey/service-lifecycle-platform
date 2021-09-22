@@ -102,7 +102,8 @@ object GraphqlSchema {
   val OptionToArg = Argument("to", OptionInputType(BigintType))
   val OptionFromTimeArg = Argument("fromTime", OptionInputType(GraphQLDateType))
   val OptionToTimeArg = Argument("toTime", OptionInputType(GraphQLDateType))
-  val OptionFindTextArg = Argument("findText", OptionInputType(StringType))
+  val OptionLevelArg = Argument("level", OptionInputType(StringType))
+  val OptionFindArg = Argument("find", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
@@ -226,16 +227,20 @@ object GraphqlSchema {
       Field("logProcesses", ListType(StringType),
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: Nil,
         resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg)) }),
+      Field("logLevels", ListType(StringType),
+        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
+        resolve = c => { c.ctx.workspace.getLogLevels(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
+          c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
       Field("logs", ListType(SequencedLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg ::
           OptionFromArg :: OptionToArg :: OptionFromTimeArg :: OptionToTimeArg ::
-          OptionFindTextArg :: OptionLimitArg :: Nil,
+          OptionLevelArg :: OptionFindArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getLogs(c.arg(OptionServiceArg),
-          c.arg(OptionInstanceArg), c.arg(OptionProcessArg), c.arg(OptionDirectoryArg), c.arg(OptionTaskArg),
-          c.arg(OptionFromArg).map(_.toLong), c.arg(OptionToArg).map(_.toLong),
+          c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg),
+          c.arg(OptionFromArg), c.arg(OptionToArg),
           c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
-          c.arg(OptionFindTextArg), c.arg(OptionLimitArg)) }),
+          c.arg(OptionLevelArg), c.arg(OptionFindArg), c.arg(OptionLimitArg)) }),
       Field("faultReports", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,

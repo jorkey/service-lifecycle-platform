@@ -153,7 +153,7 @@ class WebSocketLink extends ApolloLink {
         {
           next: sink.next.bind(sink),
           complete: sink.complete.bind(sink),
-          error: (err) => {
+          error: (err: any) => {
             if (err instanceof Error) {
               return sink.error(err);
             }

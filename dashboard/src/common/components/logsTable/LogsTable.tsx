@@ -55,7 +55,8 @@ export interface FindLogsDashboardParams {
   task?: string
   fromTime?: Date
   toTime?: Date
-  findText?: string
+  level?: string
+  find?: string
   follow?: boolean
 }
 
@@ -65,7 +66,7 @@ interface LogsTableParams extends FindLogsDashboardParams {
 }
 
 export const LogsTable = (props: LogsTableParams) => {
-  const { className, service, instance, process, directory, task, fromTime, toTime, findText,
+  const { className, service, instance, process, directory, task, fromTime, toTime, level, find,
     follow, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<SequencedLogLine[]>([])
@@ -79,7 +80,7 @@ export const LogsTable = (props: LogsTableParams) => {
   const getLogsVariables = (from?: BigInt, to?: BigInt) => {
     return {
       service: service, instance: instance, process: process, directory: directory, task: task,
-      fromTime: fromTime, toTime: toTime, findText: findText,
+      fromTime: fromTime, toTime: toTime, level: level, find: find,
       from: from, to: to, limit: sliceRowsCount
     }
   }
@@ -102,7 +103,7 @@ export const LogsTable = (props: LogsTableParams) => {
           follow?undefined:BigInt(0),
           follow?BigInt('9223372036854775807'):undefined) })
     },
-    [ service, instance, process, directory, task, fromTime, toTime, findText, follow ])
+    [ service, instance, process, directory, task, fromTime, toTime, level, find, follow ])
 
   const classes = useStyles()
 

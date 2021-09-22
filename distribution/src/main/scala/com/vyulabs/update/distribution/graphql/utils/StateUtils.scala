@@ -121,25 +121,38 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.distinctField[String]("process", filters)
   }
 
+  def getLogLevels(service: Option[ServiceId], instance: Option[InstanceId],
+                   directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
+             (implicit log: Logger): Future[Seq[String]] = {
+    val serviceArg = service.map(Filters.eq("service", _))
+    val instanceArg = instance.map(Filters.eq("instance", _))
+    val directoryArg = directory.map(Filters.eq("directory", _))
+    val processArg = process.map(Filters.eq("process", _))
+    val taskArg = task.map(Filters.eq("task", _))
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
+    val filters = Filters.and(args.asJava)
+    collections.State_ServiceLogs.distinctField[String]("line.level", filters)
+  }
+
   def getLogs(service: Option[ServiceId], instance: Option[InstanceId],
-              process: Option[ProcessId], directory: Option[ServiceDirectory],
-              task: Option[TaskId],
-              from: Option[Long], to: Option[Long],
+              directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId],
+              from: Option[BigInt], to: Option[BigInt],
               fromTime: Option[Date], toTime: Option[Date],
-              findText: Option[String], limit: Option[Int])
+              level: Option[String], find: Option[String], limit: Option[Int])
              (implicit log: Logger): Future[Seq[SequencedLogLine]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val processArg = process.map(Filters.eq("process", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val fromArg = from.map(sequence => Filters.gte("_id", sequence))
-    val toArg = to.map(sequence => Filters.lte("_id", sequence))
+    val fromArg = from.map(sequence => Filters.gte("_id", sequence.toLong))
+    val toArg = to.map(sequence => Filters.lte("_id", sequence.toLong))
     val fromTimeArg = fromTime.map(time => Filters.gte("line.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("line.time", time))
-    val findTextArg = findText.map(text => Filters.text(text))
+    val levelArg = level.map(level => Filters.eq("line.level", level))
+    val findArg = find.map(text => Filters.text(text))
     val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg ++
-      fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ findTextArg
+      fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ levelArg ++ findArg
     val filters = Filters.and(args.asJava)
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_id") else Sorts.descending("_id")
     collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
