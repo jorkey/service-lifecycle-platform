@@ -37,6 +37,7 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: '16px'
   },
   messageColumn: {
+    whiteSpace: 'pre',
     padding: '4px',
     paddingLeft: '16px'
   },
