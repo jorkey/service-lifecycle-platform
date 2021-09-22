@@ -226,7 +226,7 @@ object GraphqlSchema {
       Field("logProcesses", ListType(StringType),
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: Nil,
         resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg)) }),
-      Field("logs", ListType(SequencedLogLineType),
+      Field("logs", ListType(SequencedServiceLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg ::
           OptionFromArg :: OptionToArg :: OptionFromTimeArg :: OptionToTimeArg ::
           OptionFindTextArg :: OptionLimitArg :: Nil,
@@ -446,7 +446,7 @@ object GraphqlSchema {
   def Subscriptions(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Subscription",
     fields[GraphqlContext, Unit](
-      Field.subs("subscribeLogs", SequencedLogLineType,
+      Field.subs("subscribeLogs", SequencedServiceLogLineType,
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg
           :: OptionFromArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,

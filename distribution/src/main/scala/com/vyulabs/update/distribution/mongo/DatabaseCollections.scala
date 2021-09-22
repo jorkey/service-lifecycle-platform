@@ -123,8 +123,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.serviceStates")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance.instance")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance.service.date"), new IndexOptions()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.instance")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.service.date"), new IndexOptions()
       .expireAfter(instanceStateExpireTimeout.length, instanceStateExpireTimeout.unit)) else Future()
     _ <- collection.dropItems()
   } yield collection, Sequences, createIndex = createIndices)
@@ -136,14 +136,14 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.text("line.message")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.text("payload.message")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val State_FaultReportsInfo = new SequencedCollection[DistributionFaultReport]("state.faultReports", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.faultReports")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("report.faultId")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("report.info.service")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.faultId")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.service")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val State_UploadStatus = for {

@@ -8,4 +8,4 @@ case class SequenceDocument(name: String, sequence: Long)
 case class InstalledDesiredVersions(distribution: DistributionId, versions: Seq[ClientDesiredVersion])
 
 case class UploadStatus(lastUploadSequence: Option[Long], lastError: Option[String])
-case class UploadStatusDocument(component: String, status: UploadStatus)
+case class UploadStatusDocument(component: String, payload: UploadStatus)

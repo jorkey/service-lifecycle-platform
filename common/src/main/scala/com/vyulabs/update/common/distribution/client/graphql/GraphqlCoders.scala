@@ -224,8 +224,8 @@ trait AddFaultReportInfoCoder {
 
 trait SubscribeLogsCoder {
   def subscribeTaskLogs(task: TaskId) =
-    GraphqlSubscription[SequencedLogLine]("subscribeLogs", Seq(GraphqlArgument("task" -> task, "String")),
-      "{ sequence, line { time, level, unit, message, terminationStatus } }")
+    GraphqlSubscription[SequencedServiceLogLine]("subscribeLogs", Seq(GraphqlArgument("task" -> task, "String")),
+      "{ sequence, line { service, task, instance, process, directory, line { time, level, unit, message, terminationStatus } } }")
 }
 
 trait TestSubscriptionCoder {

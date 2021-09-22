@@ -25,7 +25,7 @@ trait SourceUtils extends SprayJsonSupport {
 
   def getServiceSources(service: ServiceId)(implicit log: Logger): Future[Seq[SourceConfig]] = {
     val filters = Filters.eq("service", service)
-    collections.Sources.find(filters).map(_.headOption.map(_.sources).getOrElse(Seq.empty))
+    collections.Sources.find(filters).map(_.headOption.map(_.payload).getOrElse(Seq.empty))
   }
 
   def addServiceSources(service: ServiceId, sources: Seq[SourceConfig])

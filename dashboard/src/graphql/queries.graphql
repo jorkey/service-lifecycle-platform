@@ -97,7 +97,7 @@ query clientVersionsInProcess {
 
 query serviceStates ($distribution: String!) {
     serviceStates (distribution: $distribution) {
-        distribution, instance { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+        distribution, payload { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }
 

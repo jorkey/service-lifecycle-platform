@@ -110,10 +110,10 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
     } yield {
       if (!newReports.isEmpty) {
         Future.sequence(newReports.filter(_.document.distribution == distribution).map(report => {
-          val file = distributionDirectory.getFaultReportFile(report.document.report.faultId)
+          val file = distributionDirectory.getFaultReportFile(report.document.payload.faultId)
           val infoUpload = for {
-            _ <- client.uploadFaultReport(report.document.report.faultId, file)
-            _ <- client.graphqlRequest(GraphqlMutation[Boolean]("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.document.report.toJson))))
+            _ <- client.uploadFaultReport(report.document.payload.faultId, file)
+            _ <- client.graphqlRequest(GraphqlMutation[Boolean]("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.document.payload.toJson))))
           } yield {}
           infoUpload.
             andThen {
@@ -132,7 +132,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   private def getLastUploadSequence(component: String): Future[Long] = {
     for {
       uploadStatus <- collections.State_UploadStatus
-      sequence <- uploadStatus.find(Filters.eq("component", component)).map(_.headOption.map(_.status.lastUploadSequence).flatten.getOrElse(-1L))
+      sequence <- uploadStatus.find(Filters.eq("component", component)).map(_.headOption.map(_.payload.lastUploadSequence).flatten.getOrElse(-1L))
     } yield sequence
   }
 

@@ -65,9 +65,9 @@ trait StateUtils extends SprayJsonSupport {
     Future.sequence(documents.map(doc => {
       val filters = Filters.and(
         Filters.eq("distribution", distribution),
-        Filters.eq("instance.service", doc.instance.service),
-        Filters.eq("instance.instance", doc.instance.instance),
-        Filters.eq("instance.directory", doc.instance.directory))
+        Filters.eq("instance.service", doc.payload.service),
+        Filters.eq("instance.instance", doc.payload.instance),
+        Filters.eq("instance.directory", doc.payload.directory))
       collections.State_ServiceStates.update(filters, _ => Some(doc))
     })).map(_ => ())
   }
@@ -85,7 +85,7 @@ trait StateUtils extends SprayJsonSupport {
 
   def getInstanceServiceStates(distribution: Option[DistributionId], service: Option[ServiceId],
                                instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
-    getServicesState(distribution, service, instance, directory).map(_.map(_.instance))
+    getServicesState(distribution, service, instance, directory).map(_.map(_.payload))
   }
 
   def addLogs(service: ServiceId, task: Option[TaskId],
@@ -127,7 +127,7 @@ trait StateUtils extends SprayJsonSupport {
               from: Option[Long], to: Option[Long],
               fromTime: Option[Date], toTime: Option[Date],
               findText: Option[String], limit: Option[Int])
-             (implicit log: Logger): Future[Seq[SequencedLogLine]] = {
+             (implicit log: Logger): Future[Seq[SequencedServiceLogLine]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val processArg = process.map(Filters.eq("process", _))
@@ -144,12 +144,12 @@ trait StateUtils extends SprayJsonSupport {
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_id") else Sorts.descending("_id")
     collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
       .map(_.sortBy(_.sequence))
-      .map(_.map(line => SequencedLogLine(line.sequence, line.document.line)))
+      .map(_.map(line => SequencedServiceLogLine(line.sequence, line.document)))
   }
 
   def subscribeLogs(service: Option[ServiceId],
                     instance: Option[InstanceId], process: Option[ProcessId], directory: Option[ServiceDirectory],
-                    task: Option[TaskId], from: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedLogLine], NotUsed] = {
+                    task: Option[TaskId], from: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val processArg = process.map(Filters.eq("process", _))
@@ -163,8 +163,8 @@ trait StateUtils extends SprayJsonSupport {
       .filter(log => process.isEmpty || process.contains(log.document.process))
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
       .filter(log => task.isEmpty || task == log.document.task)
-      .takeWhile(!_.document.line.terminationStatus.isDefined, true)
-      .map(line => Action(SequencedLogLine(line.sequence, line.document.line)))
+      .takeWhile(!_.document.payload.terminationStatus.isDefined, true)
+      .map(line => Action(SequencedServiceLogLine(line.sequence, line.document)))
       .buffer(1000, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
   }
@@ -198,8 +198,8 @@ trait StateUtils extends SprayJsonSupport {
       reports <- collections.State_FaultReportsInfo.findSequenced()
       result <- {
         val remainReports = reports
-          .sortBy(_.document.report.info.time)
-          .filter(_.document.report.info.time.getTime +
+          .sortBy(_.document.payload.info.time)
+          .filter(_.document.payload.info.time.getTime +
             config.faultReports.expirationTimeout.toMillis >= System.currentTimeMillis())
           .takeRight(config.faultReports.maxReportsCount)
         deleteReports(collections.State_FaultReportsInfo, reports.toSet -- remainReports.toSet)
@@ -211,7 +211,7 @@ trait StateUtils extends SprayJsonSupport {
                            (implicit log: Logger): Future[Unit] = {
     Future.sequence(reports.map { report =>
       log.debug(s"Delete fault report ${report.sequence}")
-      val faultFile = directory.getFaultReportFile(report.document.report.faultId)
+      val faultFile = directory.getFaultReportFile(report.document.payload.faultId)
       faultFile.delete()
       collection.delete(Filters.and(Filters.eq("_id", report.sequence)))
     }).map(_ => Unit)

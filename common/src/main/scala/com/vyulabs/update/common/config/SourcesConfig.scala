@@ -15,4 +15,4 @@ object SourceConfig extends DefaultJsonProtocol {
   implicit val sourceConfigJson = jsonFormat2(SourceConfig.apply)
 }
 
-case class ServiceSourcesConfig(service: ServiceId, sources: Seq[SourceConfig])
+case class ServiceSourcesConfig(service: ServiceId, payload: Seq[SourceConfig])
