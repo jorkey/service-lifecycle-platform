@@ -121,7 +121,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
             from: 1
           ) {
             sequence
-            line {
+            payload {
               level
               message
             }
@@ -136,7 +136,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val json = e.data.parseJson
     val msg = json.asJsObject.fields.get("data").get
                       .asJsObject.fields.get("subscribeLogs").get
-                      .asJsObject.fields.get("line").get
+                      .asJsObject.fields.get("payload").get
                       .asJsObject.fields.get("message").get
                       .asInstanceOf[JsString].value
     if (msg != message) {

@@ -12,15 +12,16 @@ object LogLine extends DefaultJsonProtocol {
   implicit val logLineJson = jsonFormat5(LogLine.apply)
 }
 
-case class ServiceLogLine(service: ServiceId, task: Option[TaskId],
-                          instance: InstanceId, process: ProcessId, directory: ServiceDirectory, payload: LogLine)
+case class ServiceLogLine(service: ServiceId, instance: InstanceId, directory: ServiceDirectory, process: ProcessId,
+                          task: Option[TaskId], payload: LogLine)
 
 object ServiceLogLine extends DefaultJsonProtocol {
   implicit val serviceLogLineJson = jsonFormat6(ServiceLogLine.apply)
 }
 
-case class SequencedServiceLogLine(sequence: BigInt, payload: ServiceLogLine)
+case class SequencedServiceLogLine(sequence: BigInt, instance: InstanceId, directory: ServiceDirectory, process: ProcessId,
+                                   payload: LogLine)
 
 object SequencedServiceLogLine extends DefaultJsonProtocol {
-  implicit val sequencedServiceLogLineJson = jsonFormat2(SequencedServiceLogLine.apply)
+  implicit val sequencedServiceLogLineJson = jsonFormat5(SequencedServiceLogLine.apply)
 }

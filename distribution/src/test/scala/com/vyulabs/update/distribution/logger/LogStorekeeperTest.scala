@@ -4,15 +4,12 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.qos.logback.classic.Level
 import com.vyulabs.update.common.common.ThreadTimer
-import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.common.logger.{LogBuffer, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
-
-import java.io.IOException
 
 class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
   behavior of "Log trace writer"
@@ -33,7 +30,7 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
   it should "store log records" in {
     log.info("log line 1")
     log.warn("log line 2")
-    log.error("log line 3", new IOException())
+    log.error("log line 3")
     log.warn("log line 4")
     log.info("log line 5")
 
@@ -41,16 +38,16 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
 
     assertResult((OK,
       ("""{"data":{"logs":[""" +
-        """{"line":{"level":"INFO","message":"`Test` started"}},""" +
-        """{"line":{"level":"INFO","message":"log line 1"}},""" +
-        """{"line":{"level":"WARN","message":"log line 2"}},""" +
-        """{"line":{"level":"ERROR","message":"log line 3"}},""" +
-        """{"line":{"level":"WARN","message":"log line 4"}},""" +
-        """{"line":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
+        """{"payload":{"level":"INFO","message":"`Test` started"}},""" +
+        """{"payload":{"level":"INFO","message":"log line 1"}},""" +
+        """{"payload":{"level":"WARN","message":"log line 2"}},""" +
+        """{"payload":{"level":"ERROR","message":"log line 3"}},""" +
+        """{"payload":{"level":"WARN","message":"log line 4"}},""" +
+        """{"payload":{"level":"INFO","message":"log line 5"}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query ServiceLogs($$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           logs (service: $$service, instance: $$instance, process: $$process, directory: $$directory) {
-            line {
+            payload {
               level
               message
             }

@@ -136,6 +136,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.level")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("payload.message")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 

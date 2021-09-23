@@ -10,7 +10,7 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery, useLogProcessesLazyQuery,
+  useLogInstancesLazyQuery, useLogLevelsQuery, useLogProcessesLazyQuery,
   useLogServicesQuery
 } from "../../generated/graphql";
 import {LogsTable} from "../../common/components/logsTable/LogsTable";
@@ -37,8 +37,11 @@ const useStyles = makeStyles((theme:any) => ({
   processSelect: {
     width: '100px',
   },
-  findText: {
+  find: {
     width: '200px',
+  },
+  level: {
+    width: '100px',
   },
   logsTable: {
     height: 'calc(100vh - 250px)',
@@ -68,7 +71,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   const [process, setProcess] = useState<string>()
   const [fromTime, setFromTime] = useState<Date>()
   const [toTime, setToTime] = useState<Date>()
-  const [findText, setFindText] = useState<string>('')
+  const [level, setLevel] = useState<string>()
+  const [find, setFind] = useState<string>('')
   const [follow, setFollow] = useState<boolean>()
 
   const [from, setFrom] = useState<number>()
@@ -121,6 +125,12 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   const [ getProcesses, processes ] = useLogProcessesLazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log processes error ' + err.message) },
+  })
+
+  const { data: levels } = useLogLevelsQuery({
+    variables: { service: service, instance: instance, directory: directory, process: process },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query log levels error ' + err.message) },
   })
 
   return (
@@ -220,13 +230,34 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                     labelPlacement={'top'}
                     disabled={!service}
                     control={
-                      <TextField
-                        className={classes.findText}
+                      <Select
+                        className={classes.level}
+                        native
                         onChange={(event) => {
-                          setFindText(event.target.value)
+                          setLevel(event.target.value as string)
+                        }}
+                        title='Select level'
+                        value={process}
+                      >
+                        <option key={-1}/>
+                        { levels ? levels.logLevels
+                          .map((level, index) => <option key={index}>{level}</option>) : null }
+                      </Select>
+                    }
+                    label='Level'
+                  />
+                  <FormControlLabel
+                    className={classes.control}
+                    labelPlacement={'top'}
+                    disabled={!service}
+                    control={
+                      <TextField
+                        className={classes.find}
+                        onChange={(event) => {
+                          setFind(event.target.value)
                         }}
                         title='Find Text'
-                        value={findText}
+                        value={find}
                       />
                     }
                     label='Find Text'
@@ -236,7 +267,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                     labelPlacement={'top'}
                     control={
                       <Checkbox
-                        className={classes.findText}
+                        className={classes.find}
                         onChange={ event => setFollow(event.target.checked) }
                         title='Follow'
                         value={follow}
@@ -254,7 +285,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                   <LogsTable className={classes.logsTable}
                              service={service} instance={instance} directory={directory} process={process}
                              fromTime={fromTime} toTime={toTime}
-                             findText={findText != ''?findText:undefined}
+                             level={level}
+                             find={find != ''?find:undefined}
                              follow={follow}
                              onComplete={() => {}}
                              onError={message => {}}

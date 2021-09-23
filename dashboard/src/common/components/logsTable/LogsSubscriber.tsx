@@ -1,6 +1,8 @@
 import React from "react";
 import {
-  SequencedLogLine, useSubscribeLogsSubscription
+  LogLine,
+  Scalars,
+  SequencedServiceLogLine, useSubscribeLogsSubscription
 } from "../../../generated/graphql";
 
 export interface FindLogsDashboardParams {
@@ -16,7 +18,7 @@ export interface FindLogsDashboardParams {
 
 interface LogsSubscriptionParams extends FindLogsDashboardParams {
   from: BigInt
-  onLine: (line: SequencedLogLine) => void
+  onLine: (line: { sequence: BigInt; payload: { payload: LogLine } }) => void
   onComplete: () => void
 }
 

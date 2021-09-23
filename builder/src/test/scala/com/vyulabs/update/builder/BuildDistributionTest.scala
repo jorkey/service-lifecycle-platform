@@ -70,7 +70,6 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       "http://localhost:8000", Common.AdminAccount,
       JWT.encodeAccessToken(AccessToken(consumerDistributionName), providerDistributionBuilder.config.get.jwtSecret),
       Some(Common.CommonConsumerProfile), "ak"))
-    assert(consumerDistributionBuilder.addDistributionAccounts())
     assert(consumerDistributionBuilder.updateDistributionFromProvider())
   }
 

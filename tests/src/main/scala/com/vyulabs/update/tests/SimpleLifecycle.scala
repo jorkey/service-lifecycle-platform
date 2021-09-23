@@ -220,8 +220,8 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
       val log = source.next().getOrElse {
         sys.error("Unexpected end of subscription")
       }
-      println(log.payload.payload.message)
-      for (terminationStatus <- log.payload.payload.terminationStatus) {
+      println(log.payload.message)
+      for (terminationStatus <- log.payload.terminationStatus) {
         println(s"Build developer version termination status is ${terminationStatus}")
         return terminationStatus
       }

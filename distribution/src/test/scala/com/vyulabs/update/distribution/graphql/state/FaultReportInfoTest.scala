@@ -33,13 +33,13 @@ class FaultReportInfoTest extends TestEnvironment {
     addFaultReportInfo("fault2", "service2", 2, new Date())
 
     assertResult((OK,
-      ("""{"data":{"faultReports":[{"distribution":"consumer","report":{"faultId":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
+      ("""{"data":{"faultReports":[{"distribution":"consumer","payload":{"faultId":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
         adminContext, graphql"""
           query FaultsQuery($$service: String!) {
             faultReports (service: $$service) {
               distribution
-              report {
+              payload {
                 faultId
                 info {
                   service
@@ -122,11 +122,11 @@ class FaultReportInfoTest extends TestEnvironment {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("consumer",
         ServiceFaultReport(faultId, FaultInfo(time, "instance1", service, "directory1", "Common", ServiceState(time, None, None, None, None, None, None, None), Seq("line1", "line2")), Seq("core", "log/service.log")))))
-    )(result(faultsInfoCollection.findSequenced(Filters.eq("report.faultId", faultId))))
+    )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.faultId", faultId))))
   }
 
   def checkReportNotExists(faultId: FaultId): Unit = {
-    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("report.faultId", faultId))))
+    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("payload.faultId", faultId))))
     assert(!distributionDir.getFaultReportFile(faultId).exists())
   }
 

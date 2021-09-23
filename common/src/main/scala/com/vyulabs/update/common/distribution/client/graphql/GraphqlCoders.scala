@@ -74,13 +74,13 @@ trait StateCoder {
     GraphqlQuery[Seq[DistributionServiceState]]("serviceStates",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service),
         GraphqlArgument("instance" -> instance), GraphqlArgument("directory" -> directory)).filter(_.value != JsNull),
-      "{ distribution instance { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } } }"
+      "{ distribution payload { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } } }"
     )
 
   def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], last: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faultReports",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
-      "{ distribution, report { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
+      "{ distribution, payload { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 }
 
 // Mutations
@@ -225,7 +225,7 @@ trait AddFaultReportInfoCoder {
 trait SubscribeLogsCoder {
   def subscribeTaskLogs(task: TaskId) =
     GraphqlSubscription[SequencedServiceLogLine]("subscribeLogs", Seq(GraphqlArgument("task" -> task, "String")),
-      "{ sequence, line { service, task, instance, process, directory, line { time, level, unit, message, terminationStatus } } }")
+      "{ sequence, instance, directory, process, payload { time, level, unit, message, terminationStatus } }")
 }
 
 trait TestSubscriptionCoder {

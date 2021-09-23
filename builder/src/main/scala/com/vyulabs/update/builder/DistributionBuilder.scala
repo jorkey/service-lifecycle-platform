@@ -238,14 +238,14 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
         line = source.next()
         line.foreach(line => {
           val l = line.payload
-          if (l.payload.level == "INFO") {
-            log.info(l.payload.message)
-          } else if (l.payload.level == "WARN") {
-            log.warn(l.payload.message)
-          } else if (l.payload.level == "ERROR") {
-            log.error(l.payload.message)
+          if (l.level == "INFO") {
+            log.info(l.message)
+          } else if (l.level == "WARN") {
+            log.warn(l.message)
+          } else if (l.level == "ERROR") {
+            log.error(l.message)
           }
-          for (terminationStatus <- l.payload.terminationStatus) {
+          for (terminationStatus <- l.terminationStatus) {
             if (!terminationStatus) {
               log.error(s"Install version ${version} of service ${service} error")
               return false

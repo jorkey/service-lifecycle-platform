@@ -117,11 +117,15 @@ query logProcesses($service: String!, $instance: String!, $directory: String!) {
     logProcesses (service: $service, instance: $instance, directory: $directory)
 }
 
-query logs ($service: String, $instance: String, $process: String, $directory: String, $task: String,
-            $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $findText: String, $limit: Int) {
-    logs (service: $service, instance: $instance, process: $process, directory: $directory, task: $task,
-          from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, findText: $findText, limit: $limit) {
-        sequence, line { time, level, unit, message, terminationStatus }
+query logLevels($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logLevels (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+}
+
+query logs ($service: String, $instance: String, $directory: String, $process: String, $task: String,
+            $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $level: String, $find: String, $limit: Int) {
+    logs (service: $service, instance: $instance, directory: $directory, process: $process, task: $task,
+          from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, level: $level, find: $find, limit: $limit) {
+        sequence, payload { service, instance, directory, process, task, payload { time, level, unit, message, terminationStatus } }
     }
 }
 
@@ -213,7 +217,6 @@ mutation removeServiceSources ($service: String!) {
 
 query serviceProfiles {
     serviceProfiles { profile }
-    serviceProfiles { profile }
 }
 
 query profileServices ($profile: String!) {
@@ -264,7 +267,7 @@ subscription subscribeLogs ($service: String, $instance: String, $process: Strin
         $directory: String, $task: String, $from: BigInt!) {
     subscribeLogs (service: $service, instance: $instance, process: $process,
                    directory: $directory, task: $task, from: $from) {
-        sequence, line { time, level, unit, message, terminationStatus }
+        sequence, payload { payload { time, level, unit, message, terminationStatus } }
     }
 }
 

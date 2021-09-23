@@ -140,7 +140,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
     for {
       uploadStatus <- collections.State_UploadStatus
       result <- uploadStatus.updateOne(Filters.eq("component", component),
-        Updates.combine(Updates.set("status.lastUploadSequence", sequence), Updates.unset("status.lastError")))
+        Updates.combine(Updates.set("payload.lastUploadSequence", sequence), Updates.unset("payload.lastError")))
         .map(r => r.getModifiedCount > 0)
     } yield result
   }
@@ -149,7 +149,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
     for {
       uploadStatus <- collections.State_UploadStatus
       _ <- uploadStatus.updateOne(Filters.eq("component", component),
-        Updates.set("status.lastError", error))
+        Updates.set("payload.lastError", error))
         .map(r => r.getModifiedCount > 0)
     } yield {}
   }

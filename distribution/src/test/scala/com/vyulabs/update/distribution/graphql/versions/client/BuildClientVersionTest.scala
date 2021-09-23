@@ -118,7 +118,7 @@ class BuildClientVersionTest extends TestEnvironment {
             task: $$task,
             from: 1
           ) {
-            line {
+            payload {
               level
               message
             }
@@ -133,7 +133,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val json = e.data.parseJson
     val msg = json.asJsObject.fields.get("data").get
       .asJsObject.fields.get("subscribeLogs").get
-      .asJsObject.fields.get("line").get
+      .asJsObject.fields.get("payload").get
       .asJsObject.fields.get("message").get
       .asInstanceOf[JsString].value
     if (msg != message) {

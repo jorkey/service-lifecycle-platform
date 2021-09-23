@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {
-  SequencedLogLine,
+  SequencedServiceLogLine,
   useLogsLazyQuery, useLogsQuery,
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
@@ -55,7 +55,8 @@ export interface FindLogsDashboardParams {
   task?: string
   fromTime?: Date
   toTime?: Date
-  findText?: string
+  level?: string
+  find?: string
   follow?: boolean
 }
 
@@ -65,10 +66,10 @@ interface LogsTableParams extends FindLogsDashboardParams {
 }
 
 export const LogsTable = (props: LogsTableParams) => {
-  const { className, service, instance, process, directory, task, fromTime, toTime, findText,
+  const { className, service, instance, process, directory, task, fromTime, toTime, level, find,
     follow, onComplete, onError } = props
 
-  const [ lines, setLines ] = useState<SequencedLogLine[]>([])
+  const [ lines, setLines ] = useState<SequencedServiceLogLine[]>([])
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
   const [ subscribeFrom, setSubscribeFrom ] = useState<BigInt>()
@@ -79,7 +80,7 @@ export const LogsTable = (props: LogsTableParams) => {
   const getLogsVariables = (from?: BigInt, to?: BigInt) => {
     return {
       service: service, instance: instance, process: process, directory: directory, task: task,
-      fromTime: fromTime, toTime: toTime, findText: findText,
+      fromTime: fromTime, toTime: toTime, level: level, find: find,
       from: from, to: to, limit: sliceRowsCount
     }
   }
@@ -102,7 +103,7 @@ export const LogsTable = (props: LogsTableParams) => {
           follow?undefined:BigInt(0),
           follow?BigInt('9223372036854775807'):undefined) })
     },
-    [ service, instance, process, directory, task, fromTime, toTime, findText, follow ])
+    [ service, instance, process, directory, task, fromTime, toTime, level, find, follow ])
 
   const classes = useStyles()
 
@@ -144,7 +145,7 @@ export const LogsTable = (props: LogsTableParams) => {
     ['message', line.message]
   ]))
 
-  const addLines = (receivedLines: SequencedLogLine[]) => {
+  const addLines = (receivedLines: SequencedServiceLogLine[]) => {
     const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
     let newLines = new Array(...lines)
