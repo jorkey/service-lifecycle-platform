@@ -223,7 +223,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       headerName: 'Client Version',
       className: classes.versionColumn,
     }
-  ].filter(c => provider || c.name != 'providerVersion')
+  ].filter(c => true)
 
   const rowsView = rows.map(row =>
     new Map<string, GridTableColumnValue>([

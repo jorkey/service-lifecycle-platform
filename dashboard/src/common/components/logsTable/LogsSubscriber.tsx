@@ -18,7 +18,7 @@ export interface FindLogsDashboardParams {
 
 interface LogsSubscriptionParams extends FindLogsDashboardParams {
   from: BigInt
-  onLine: (line: { sequence: BigInt; payload: { payload: LogLine } }) => void
+  onLine: (sequence: BigInt, line: LogLine) => void
   onComplete: () => void
 }
 
@@ -30,7 +30,7 @@ export const LogsSubscriber = (props: LogsSubscriptionParams) => {
     fetchPolicy: 'no-cache',
     onSubscriptionData(data) {
       if (data.subscriptionData.data) {
-        onLine(data.subscriptionData.data.subscribeLogs)
+        onLine(data.subscriptionData.data.subscribeLogs.sequence, data.subscriptionData.data.subscribeLogs.payload)
       }
     },
     onSubscriptionComplete() {
