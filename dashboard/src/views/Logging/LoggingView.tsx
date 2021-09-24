@@ -133,6 +133,37 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
     onError(err) { setError('Query log levels error ' + err.message) },
   })
 
+  const sortLevels = () => {
+    return levels ? levels.logLevels.sort((l1, l2) => {
+      const level1 = l1.toUpperCase()
+      const level2 = l2.toUpperCase()
+      if (level1 == level2) return 0
+      if (level1 == "TRACE") return -1
+      if (level2 == "TRACE") return 1
+      if (level1 == "DEBUG") return -1
+      if (level2 == "DEBUG") return 1
+      if (level1 == "INFO") return -1
+      if (level2 == "INFO") return 1
+      if (level1 == "WARN") return -1
+      if (level2 == "WARN") return 1
+      if (level1 == "WARNING") return -1
+      if (level2 == "WARNING") return 1
+      if (level1 == "ERROR") return -1
+      if (level2 == "ERROR") return 1
+      return 0
+    }) : []
+  }
+
+  const levelWithSubLevels = () => {
+    if (levels && level) {
+      const sortedLevels = sortLevels()
+      const index = sortedLevels.indexOf(level)
+      return index != undefined ? sortedLevels.slice(index) : undefined
+    } else {
+      return undefined
+    }
+  }
+
   return (
     <div className={classes.root}>
       <Grid container spacing={3}>
@@ -237,11 +268,11 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                           setLevel(event.target.value as string)
                         }}
                         title='Select level'
-                        value={process}
+                        value={level}
                       >
                         <option key={-1}/>
-                        { levels ? levels.logLevels
-                          .map((level, index) => <option key={index}>{level}</option>) : null }
+                        { sortLevels()
+                          .map((level, index) => <option key={index}>{level}</option>) }
                       </Select>
                     }
                     label='Level'
@@ -285,7 +316,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                   <LogsTable className={classes.logsTable}
                              service={service} instance={instance} directory={directory} process={process}
                              fromTime={fromTime} toTime={toTime}
-                             level={level}
+                             levels={levelWithSubLevels()}
                              find={find != ''?find:undefined}
                              follow={follow}
                              onComplete={() => {}}

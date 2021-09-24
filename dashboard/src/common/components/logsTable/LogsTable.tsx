@@ -56,7 +56,7 @@ export interface FindLogsDashboardParams {
   task?: string
   fromTime?: Date
   toTime?: Date
-  level?: string
+  levels?: string[]
   find?: string
   follow?: boolean
 }
@@ -75,7 +75,7 @@ interface Line {
 }
 
 export const LogsTable = (props: LogsTableParams) => {
-  const { className, service, instance, process, directory, task, fromTime, toTime, level, find,
+  const { className, service, instance, process, directory, task, fromTime, toTime, levels, find,
     follow, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<Line[]>([])
@@ -113,7 +113,7 @@ export const LogsTable = (props: LogsTableParams) => {
 
   const getCommonVariables = (from?: BigInt, to?: BigInt) => {
     return {
-      fromTime: fromTime, toTime: toTime, level: level, find: find,
+      fromTime: fromTime, toTime: toTime, levels: levels, find: find,
       from: from, to: to, limit: sliceRowsCount
     }
   }
@@ -134,7 +134,7 @@ export const LogsTable = (props: LogsTableParams) => {
       setLines([])
       getLogs(follow?undefined:BigInt(0), follow?BigInt('9223372036854775807'):undefined)
     },
-    [ service, instance, directory, process, task, fromTime, toTime, level, find, follow ])
+    [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
   const classes = useStyles()
 
@@ -165,8 +165,8 @@ export const LogsTable = (props: LogsTableParams) => {
       headerName: 'Line',
       className: classes.messageColumn
     },
-  ].filter(column => column.name != 'instance' || !instance)
-   .filter(column => column.name != 'process' || !process) as GridTableColumnParams[]
+  ].filter(column => column.name != 'instance' || (!instance && !task))
+   .filter(column => column.name != 'process' || (!process && !task)) as GridTableColumnParams[]
 
   const rows = lines
     .map(line => {

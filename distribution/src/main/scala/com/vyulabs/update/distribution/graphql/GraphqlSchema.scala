@@ -102,7 +102,7 @@ object GraphqlSchema {
   val OptionToArg = Argument("to", OptionInputType(BigintType))
   val OptionFromTimeArg = Argument("fromTime", OptionInputType(GraphQLDateType))
   val OptionToTimeArg = Argument("toTime", OptionInputType(GraphQLDateType))
-  val OptionLevelArg = Argument("level", OptionInputType(StringType))
+  val OptionLevelsArg = Argument("levels", OptionInputType(ListInputType(StringType)))
   val OptionFindArg = Argument("find", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
@@ -234,13 +234,13 @@ object GraphqlSchema {
       Field("logs", ListType(SequencedServiceLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg ::
           OptionFromArg :: OptionToArg :: OptionFromTimeArg :: OptionToTimeArg ::
-          OptionLevelArg :: OptionFindArg :: OptionLimitArg :: Nil,
+          OptionLevelsArg :: OptionFindArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getLogs(c.arg(OptionServiceArg),
           c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg),
           c.arg(OptionFromArg), c.arg(OptionToArg),
           c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
-          c.arg(OptionLevelArg), c.arg(OptionFindArg), c.arg(OptionLimitArg)) }),
+          c.arg(OptionLevelsArg), c.arg(OptionFindArg), c.arg(OptionLimitArg)) }),
       Field("faultReports", ListType(DistributionFaultReportType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,

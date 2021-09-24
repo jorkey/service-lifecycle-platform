@@ -131,14 +131,14 @@ trait StateUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = Filters.and(args.asJava)
-    collections.State_ServiceLogs.distinctField[String]("line.level", filters)
+    collections.State_ServiceLogs.distinctField[String]("payload.level", filters)
   }
 
   def getLogs(service: Option[ServiceId], instance: Option[InstanceId],
               directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId],
               from: Option[BigInt], to: Option[BigInt],
               fromTime: Option[Date], toTime: Option[Date],
-              level: Option[String], find: Option[String], limit: Option[Int])
+              levels: Option[Seq[String]], find: Option[String], limit: Option[Int])
              (implicit log: Logger): Future[Seq[SequencedServiceLogLine]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
@@ -149,10 +149,11 @@ trait StateUtils extends SprayJsonSupport {
     val toArg = to.map(sequence => Filters.lte("_id", sequence.toLong))
     val fromTimeArg = fromTime.map(time => Filters.gte("payload.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("payload.time", time))
-    val levelArg = level.map(level => Filters.eq("payload.level", level))
+    val levelsArg = levels.map(levels =>
+      Filters.or(levels.map(level => Filters.eq("payload.level", level)).asJava))
     val findArg = find.map(text => Filters.text(text))
     val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg ++
-      fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ levelArg ++ findArg
+      fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ levelsArg ++ findArg
     val filters = Filters.and(args.asJava)
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_id") else Sorts.descending("_id")
     collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
