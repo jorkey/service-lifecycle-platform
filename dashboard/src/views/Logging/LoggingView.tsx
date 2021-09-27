@@ -14,6 +14,7 @@ import {
   useLogServicesQuery
 } from "../../generated/graphql";
 import {LogsTable} from "../../common/components/logsTable/LogsTable";
+import {DateTimePicker} from "@material-ui/pickers";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -26,31 +27,43 @@ const useStyles = makeStyles((theme:any) => ({
     minWidth: 800
   },
   serviceSelect: {
+    marginLeft: '10px',
     width: '150px',
   },
   instanceSelect: {
+    marginLeft: '10px',
     width: '150px',
   },
   directorySelect: {
+    marginLeft: '10px',
     width: '300px',
   },
   processSelect: {
+    marginLeft: '10px',
     width: '100px',
   },
   find: {
-    width: '200px',
+    marginLeft: '10px',
+    width: '300px',
   },
   follow: {
+    marginLeft: '10px',
     width: '100px',
   },
   level: {
+    marginLeft: '10px',
     width: '100px',
+  },
+  date: {
+    marginLeft: '10px',
+    width: '200px'
   },
   logsTable: {
     height: 'calc(100vh - 250px)',
   },
   control: {
     paddingLeft: '5px',
+    paddingRight: '15px',
     textTransform: 'none'
   },
   alert: {
@@ -174,142 +187,176 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
           <Card>
             <CardHeader
               action={
-                <FormGroup row>
-                  <FormControlLabel
-                    className={classes.control}
-                    labelPlacement={'top'}
-                    disabled={!services?.logServices}
-                    control={
-                      <Select
-                        className={classes.serviceSelect}
-                        native
-                        onChange={(event) => {
-                          setService(event.target.value as string)
-                        }}
-                        title='Select service'
-                        value={service}
-                      >
-                        <option key={-1}/>
-                        { services?.logServices
-                            .map((service, index) => <option key={index}>{service}</option>)}
-                      </Select>
-                    }
-                    label='Service'
-                  />
-                  <FormControlLabel
-                    className={classes.control}
-                    labelPlacement={'top'}
-                    disabled={!service || instances.loading || !instances.data}
-                    control={
-                      <Select
-                        className={classes.instanceSelect}
-                        native
-                        onChange={(event) => {
-                          setInstance(event.target.value as string)
-                        }}
-                        title='Select instance'
-                        value={instance}
-                      >
-                        <option key={-1}/>
-                        { service && !instances.loading && instances.data ? instances.data.logInstances
-                          .map((instance, index) => <option key={index}>{instance}</option>) : null }
-                      </Select>
-                    }
-                    label='Instance'
-                  />
-                  <FormControlLabel
-                    className={classes.control}
-                    labelPlacement={'top'}
-                    disabled={!instance || directories.loading || !directories.data}
-                    control={
-                      <Select
-                        className={classes.directorySelect}
-                        native
-                        onChange={(event) => {
-                          setDirectory(event.target.value as string)
-                        }}
-                        title='Select directory'
-                        value={directory}
-                      >
-                        <option key={-1}/>
-                        { instance && !directories.loading && directories.data ? directories.data.logDirectories
-                          .map((directory, index) => <option key={index}>{directory}</option>) : null }
-                      </Select>
-                    }
-                    label='Directory'
-                  />
-                  <FormControlLabel
-                    className={classes.control}
-                    labelPlacement={'top'}
-                    disabled={!directory || processes.loading || !processes.data }
-                    control={
-                      <Select
-                        className={classes.processSelect}
-                        native
-                        onChange={(event) => {
-                          setProcess(event.target.value as string)
-                        }}
-                        title='Select process'
-                        value={process}
-                      >
-                        <option key={-1}/>
-                        { directory && !processes.loading && processes.data ? processes.data.logProcesses
-                          .map((process, index) => <option key={index}>{process}</option>) : null }
-                      </Select>
-                    }
-                    label='Process'
-                  />
-                  <FormControlLabel
-                    className={classes.control}
-                    labelPlacement={'top'}
-                    disabled={!service}
-                    control={
-                      <Select
-                        className={classes.level}
-                        native
-                        onChange={(event) => {
-                          setLevel(event.target.value as string)
-                        }}
-                        title='Select level'
-                        value={level}
-                      >
-                        <option key={-1}/>
-                        { sortLevels()
-                          .map((level, index) => <option key={index}>{level}</option>) }
-                      </Select>
-                    }
-                    label='Level'
-                  />
-                  {!follow ? <FormControlLabel
-                    className={classes.control}
-                    labelPlacement={'top'}
-                    disabled={!service}
-                    control={
-                      <TextField
-                        className={classes.find}
-                        onChange={(event) => {
-                          setFind(event.target.value)
-                        }}
-                        title='Find Text'
-                        value={find}
-                      />
-                    }
-                    label='Find Text'
-                  /> : null}
-                  <FormControlLabel
-                    className={classes.control}
-                    labelPlacement={'top'}
-                    control={
-                      <Checkbox
-                        className={classes.follow}
-                        onChange={ event => setFollow(event.target.checked) }
-                        title='Follow'
-                        value={follow}
-                      />
-                    }
-                    label='Follow'
-                  />
-                </FormGroup>
+                <>
+                  <FormGroup row>
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!services?.logServices}
+                      control={
+                        <Select
+                          className={classes.serviceSelect}
+                          native
+                          onChange={(event) => {
+                            setService(event.target.value as string)
+                          }}
+                          title='Select service'
+                          value={service}
+                        >
+                          <option key={-1}/>
+                          { services?.logServices
+                              .map((service, index) => <option key={index}>{service}</option>)}
+                        </Select>
+                      }
+                      label='Service'
+                    />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!service || instances.loading || !instances.data}
+                      control={
+                        <Select
+                          className={classes.instanceSelect}
+                          native
+                          onChange={(event) => {
+                            setInstance(event.target.value as string)
+                          }}
+                          title='Select instance'
+                          value={instance}
+                        >
+                          <option key={-1}/>
+                          { service && !instances.loading && instances.data ? instances.data.logInstances
+                            .map((instance, index) => <option key={index}>{instance}</option>) : null }
+                        </Select>
+                      }
+                      label='Instance'
+                    />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!instance || directories.loading || !directories.data}
+                      control={
+                        <Select
+                          className={classes.directorySelect}
+                          native
+                          onChange={(event) => {
+                            setDirectory(event.target.value as string)
+                          }}
+                          title='Select directory'
+                          value={directory}
+                        >
+                          <option key={-1}/>
+                          { instance && !directories.loading && directories.data ? directories.data.logDirectories
+                            .map((directory, index) => <option key={index}>{directory}</option>) : null }
+                        </Select>
+                      }
+                      label='Directory'
+                    />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!directory || processes.loading || !processes.data }
+                      control={
+                        <Select
+                          className={classes.processSelect}
+                          native
+                          onChange={(event) => {
+                            setProcess(event.target.value as string)
+                          }}
+                          title='Select process'
+                          value={process}
+                        >
+                          <option key={-1}/>
+                          { directory && !processes.loading && processes.data ? processes.data.logProcesses
+                            .map((process, index) => <option key={index}>{process}</option>) : null }
+                        </Select>
+                      }
+                      label='Process'
+                    />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      control={
+                        <Checkbox
+                          className={classes.follow}
+                          onChange={ event => setFollow(event.target.checked) }
+                          title='Follow'
+                          value={follow}
+                        />
+                      }
+                      label='Follow'
+                    />
+                  </FormGroup>
+                  <FormGroup row>
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!service}
+                      control={
+                        <Select
+                          className={classes.level}
+                          native
+                          onChange={(event) => {
+                            setLevel(event.target.value as string)
+                          }}
+                          title='Select level'
+                          value={level}
+                        >
+                          <option key={-1}/>
+                          { sortLevels()
+                            .map((level, index) => <option key={index}>{level}</option>) }
+                        </Select>
+                      }
+                      label='Level'
+                    />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!service || instances.loading || !instances.data}
+                      control={
+                        <DateTimePicker
+                          className={classes.date}
+                          // renderInput={(props) => <TextField {...props} />}
+                          value={undefined}
+                          onChange={(newValue) => {
+                            // setValue(newValue);
+                          }}
+                        />                    }
+                      label='From'
+                    />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!service || instances.loading || !instances.data}
+                      control={
+                        <DateTimePicker
+                          className={classes.date}
+                          // renderInput={(props) => <TextField {...props} />}
+                          value={undefined}
+                          onChange={(newValue) => {
+                            // setValue(newValue);
+                          }}
+                        />                    }
+                      label='To'
+                    />
+                    {!follow ? <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!service}
+                      control={
+                        <TextField
+                          className={classes.find}
+                          onChange={(event) => {
+                            setFind(event.target.value)
+                          }}
+                          title='Find Text'
+                          value={find}
+                        />
+                      }
+                      label='Find Text'
+                    /> : null}
+                  </FormGroup>
+                </>
               }
               title={'Logs of service'}
             />
