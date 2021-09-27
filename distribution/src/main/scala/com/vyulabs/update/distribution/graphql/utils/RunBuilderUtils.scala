@@ -139,12 +139,12 @@ trait RunBuilderUtils extends SprayJsonSupport {
         remoteTaskId = Some(remoteTask)
         val result = Promise[Unit]()
         @volatile var logOutputFuture = Option.empty[Future[Unit]]
-        logSource.map(line => {
+        logSource.map(lines => {
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
             stateUtils.addLogs(Common.DistributionServiceName,
-              config.instance, "", 0.toString, Some(task), Seq(line.payload)).map(_ => ())
+              config.instance, "", 0.toString, Some(task), lines.map(_.payload)).map(_ => ())
           })
-          for (terminationStatus <- line.payload.terminationStatus) {
+          for (terminationStatus <- lines.lastOption.map(_.payload.terminationStatus).flatten) {
             if (terminationStatus) {
               logOutputFuture.foreach(_.andThen { case _ => result.success() })
             } else {

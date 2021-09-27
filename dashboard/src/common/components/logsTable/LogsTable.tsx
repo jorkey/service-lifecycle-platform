@@ -8,6 +8,7 @@ import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
 import {LogsSubscriber} from "./LogsSubscriber";
+import {subscribe} from "graphql";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -66,7 +67,7 @@ interface LogsTableParams extends FindLogsDashboardParams {
   onError: (message: string) => void
 }
 
-interface Line {
+export interface LogRecord {
   sequence: BigInt
   instance?: string
   directory?: string
@@ -74,14 +75,25 @@ interface Line {
   payload: LogLine
 }
 
+export interface FindLogsDashboardParams {
+  service?: string
+  instance?: string
+  process?: string
+  directory?: string
+  task?: string
+  levels?: string[]
+  fromTime?: Date
+  toTime?: Date
+  subscribe?: boolean
+}
+
 export const LogsTable = (props: LogsTableParams) => {
   const { className, service, instance, process, directory, task, fromTime, toTime, levels, find,
     follow, onComplete, onError } = props
 
-  const [ lines, setLines ] = useState<Line[]>([])
+  const [ lines, setLines ] = useState<LogRecord[]>([])
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
-  const [ subscribeFrom, setSubscribeFrom ] = useState<BigInt>()
 
   const sliceRowsCount = 50
 
@@ -131,10 +143,11 @@ export const LogsTable = (props: LogsTableParams) => {
   }
 
   useEffect(() => {
-      setLines([])
-      getLogs(follow?undefined:BigInt(0), follow?BigInt('9223372036854775807'):undefined)
-    },
-    [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
+    setLines([])
+    if (!follow) {
+      getLogs(BigInt(0))
+    }
+  },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
   const classes = useStyles()
 
@@ -180,7 +193,7 @@ export const LogsTable = (props: LogsTableParams) => {
         ['message', line.payload.message]
       ]) })
 
-  const addLines = (receivedLines: Line[]) => {
+  const addLines = (receivedLines: LogRecord[]) => {
     const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
     let newLines = new Array(...lines)
@@ -192,6 +205,9 @@ export const LogsTable = (props: LogsTableParams) => {
     if (append.length) {
       newLines = new Array(...newLines, ...append)
     }
+    if (follow && newLines.length > 50) {
+      newLines.slice(newLines.length - 50)
+    }
     setLines(newLines)
     if (newLines.length) {
       const status = newLines[newLines.length-1].payload.terminationStatus
@@ -200,10 +216,6 @@ export const LogsTable = (props: LogsTableParams) => {
         onComplete(newLines[0].payload.time, status)
       }
     }
-  }
-
-  if (follow && subscribeFrom == undefined && terminationStatus == undefined && !isLoading()) {
-    setSubscribeFrom(lines.length?lines[lines.length-1].sequence:BigInt(0))
   }
 
   return <>
@@ -223,13 +235,11 @@ export const LogsTable = (props: LogsTableParams) => {
         }
       }}
     />
-    {subscribeFrom != undefined ?
+    {follow ?
       <LogsSubscriber
         {...props}
-        from={subscribeFrom}
-        onLine={(sequence, line) => addLines([{ sequence: sequence, payload: line }])}
+        onLines={(lines) => addLines(lines)}
         onComplete={() => {
-          setSubscribeFrom(undefined)
           if (terminationStatus == undefined) {
             onError("Unexpected close of subscription connection")
           }

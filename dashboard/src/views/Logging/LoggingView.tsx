@@ -40,6 +40,9 @@ const useStyles = makeStyles((theme:any) => ({
   find: {
     width: '200px',
   },
+  follow: {
+    width: '100px',
+  },
   level: {
     width: '100px',
   },
@@ -277,7 +280,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                     }
                     label='Level'
                   />
-                  <FormControlLabel
+                  {!follow ? <FormControlLabel
                     className={classes.control}
                     labelPlacement={'top'}
                     disabled={!service}
@@ -292,13 +295,13 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                       />
                     }
                     label='Find Text'
-                  />
+                  /> : null}
                   <FormControlLabel
                     className={classes.control}
                     labelPlacement={'top'}
                     control={
                       <Checkbox
-                        className={classes.find}
+                        className={classes.follow}
                         onChange={ event => setFollow(event.target.checked) }
                         title='Follow'
                         value={follow}

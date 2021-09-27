@@ -217,14 +217,16 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
       sys.error("Can't subscribe build developer version task")
     }
     while (true) {
-      val log = source.next().getOrElse {
+      val logs = source.next().getOrElse {
         sys.error("Unexpected end of subscription")
       }
-      println(log.payload.message)
-      for (terminationStatus <- log.payload.terminationStatus) {
-        println(s"Build developer version termination status is ${terminationStatus}")
-        return terminationStatus
-      }
+      logs.foreach(log => {
+        println(log.payload.message)
+        for (terminationStatus <- log.payload.terminationStatus) {
+          println(s"Build developer version termination status is ${terminationStatus}")
+          return terminationStatus
+        }
+      })
     }
     false
   }

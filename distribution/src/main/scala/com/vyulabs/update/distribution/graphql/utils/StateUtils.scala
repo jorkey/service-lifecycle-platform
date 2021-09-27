@@ -163,8 +163,9 @@ trait StateUtils extends SprayJsonSupport {
   }
 
   def subscribeLogs(service: Option[ServiceId],
-                    instance: Option[InstanceId], process: Option[ProcessId], directory: Option[ServiceDirectory],
-                    task: Option[TaskId], from: Option[Long])(implicit log: Logger): Source[Action[Nothing, SequencedServiceLogLine], NotUsed] = {
+                    instance: Option[InstanceId], directory: Option[ServiceDirectory], process: Option[ProcessId],
+                    task: Option[TaskId], from: Option[Long], prefetch: Option[Int], levels: Option[Seq[String]])
+                   (implicit log: Logger): Source[Action[Nothing, Seq[SequencedServiceLogLine]], NotUsed] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val processArg = process.map(Filters.eq("process", _))
@@ -172,16 +173,18 @@ trait StateUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg
     val filters = Filters.and(args.asJava)
-    val source = collections.State_ServiceLogs.subscribe(filters, from)
+    val source = collections.State_ServiceLogs.subscribe(filters, from, prefetch)
       .filter(log => service.isEmpty || service.contains(log.document.service))
       .filter(log => instance.isEmpty || instance.contains(log.document.instance))
       .filter(log => process.isEmpty || process.contains(log.document.process))
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
       .filter(log => task.isEmpty || task == log.document.task)
+      .filter(log => levels.isEmpty || levels.get.contains(log.document.payload.level))
       .takeWhile(!_.document.payload.terminationStatus.isDefined, true)
-      .map(line => Action(SequencedServiceLogLine(line.sequence,
-        line.document.instance, line.document.directory, line.document.process, line.document.payload)))
-      .buffer(1000, OverflowStrategy.fail)
+      .groupedWeightedWithin(25, FiniteDuration.apply(100, TimeUnit.MILLISECONDS))(_ => 1)
+      .map(lines => Action(lines.map(line => SequencedServiceLogLine(line.sequence,
+        line.document.instance, line.document.directory, line.document.process, line.document.payload))))
+      .buffer(100, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
   }
 

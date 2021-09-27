@@ -105,6 +105,7 @@ object GraphqlSchema {
   val OptionLevelsArg = Argument("levels", OptionInputType(ListInputType(StringType)))
   val OptionFindArg = Argument("find", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
+  val OptionPrefetchArg = Argument("prefetch", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
@@ -451,13 +452,13 @@ object GraphqlSchema {
   def Subscriptions(implicit materializer: Materializer, executionContext: ExecutionContext, log: Logger) = ObjectType(
     "Subscription",
     fields[GraphqlContext, Unit](
-      Field.subs("subscribeLogs", SequencedServiceLogLineType,
-        arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg
-          :: OptionFromArg :: Nil,
+      Field.subs("subscribeLogs", ListType(SequencedServiceLogLineType),
+        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg
+          :: OptionFromArg :: OptionPrefetchArg :: OptionLevelsArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeLogs(
-          c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionProcessArg), c.arg(OptionDirectoryArg), c.arg(OptionTaskArg),
-          c.arg(OptionFromArg).map(_.toLong))),
+          c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg),
+          c.arg(OptionFromArg).map(_.toLong), c.arg(OptionPrefetchArg), c.arg(OptionLevelsArg))),
       Field.subs("testSubscription", StringType,
         tags = Authorized(AccountRole.Developer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())

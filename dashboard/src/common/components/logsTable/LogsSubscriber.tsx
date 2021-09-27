@@ -1,36 +1,23 @@
 import React from "react";
 import {
-  LogLine,
-  Scalars,
-  SequencedServiceLogLine, useSubscribeLogsSubscription
+  useSubscribeLogsSubscription
 } from "../../../generated/graphql";
-
-export interface FindLogsDashboardParams {
-  service?: string
-  instance?: string
-  process?: string
-  directory?: string
-  task?: string
-  fromTime?: Date
-  toTime?: Date
-  subscribe?: boolean
-}
+import {FindLogsDashboardParams, LogRecord} from "./LogsTable";
 
 interface LogsSubscriptionParams extends FindLogsDashboardParams {
-  from: BigInt
-  onLine: (sequence: BigInt, line: LogLine) => void
+  onLines: (lines: LogRecord[]) => void
   onComplete: () => void
 }
 
 export const LogsSubscriber = (props: LogsSubscriptionParams) => {
-  const { service, instance, process, directory, task, from, onLine, onComplete } = props
+  const { service, instance, process, directory, task, levels, onLines, onComplete } = props
 
   useSubscribeLogsSubscription({
-    variables: { service, instance, process, directory, task, from },
+    variables: { service, instance, process, directory, task, prefetch: 100, levels },
     fetchPolicy: 'no-cache',
     onSubscriptionData(data) {
       if (data.subscriptionData.data) {
-        onLine(data.subscriptionData.data.subscribeLogs.sequence, data.subscriptionData.data.subscribeLogs.payload)
+        onLines(data.subscriptionData.data.subscribeLogs)
       }
     },
     onSubscriptionComplete() {

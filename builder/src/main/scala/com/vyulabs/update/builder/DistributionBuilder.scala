@@ -233,26 +233,27 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
         log.error(s"Can't subscribe to task ${task} logs")
         return false
       }
-      var line = Option.empty[SequencedServiceLogLine]
+      var lines = Option.empty[Seq[SequencedServiceLogLine]]
       do {
-        line = source.next()
-        line.foreach(line => {
-          val l = line.payload
-          if (l.level == "INFO") {
-            log.info(l.message)
-          } else if (l.level == "WARN") {
-            log.warn(l.message)
-          } else if (l.level == "ERROR") {
-            log.error(l.message)
-          }
-          for (terminationStatus <- l.terminationStatus) {
-            if (!terminationStatus) {
-              log.error(s"Install version ${version} of service ${service} error")
-              return false
+        for (lines <- source.next()) {
+          lines.foreach(line => {
+            val l = line.payload
+            if (l.level == "INFO") {
+              log.info(l.message)
+            } else if (l.level == "WARN") {
+              log.warn(l.message)
+            } else if (l.level == "ERROR") {
+              log.error(l.message)
             }
-          }
-        })
-      } while (line.isDefined)
+            for (terminationStatus <- l.terminationStatus) {
+              if (!terminationStatus) {
+                log.error(s"Install version ${version} of service ${service} error")
+                return false
+              }
+            }
+          })
+        }
+      } while (lines.isDefined)
     }
     log.info(s"--------------------------- Consumer distribution server is updated successfully")
     true
