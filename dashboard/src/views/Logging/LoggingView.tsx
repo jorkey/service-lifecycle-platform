@@ -324,7 +324,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                       }
                       label='Level'
                     />
-                    <FormControlLabel
+                    {!follow ? <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
@@ -340,8 +340,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         />
                       }
                       label='From'
-                    />
-                    <FormControlLabel
+                    /> : null}
+                    {!follow ? <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
@@ -357,7 +357,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         />
                       }
                       label='To'
-                    />
+                    /> : null}
                     {!follow ? <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
