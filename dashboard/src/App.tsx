@@ -83,10 +83,10 @@ const dateScalar = new GraphQLScalarType({
   name: 'Date',
   description: 'Date custom scalar type',
   serialize(value) {
-    return value.getTime();
+    return value.toISOString()
   },
   parseValue(value) {
-    return new Date(value);
+    return new Date(value)
   }
 });
 

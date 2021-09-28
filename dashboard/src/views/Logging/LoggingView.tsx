@@ -160,7 +160,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   const { data: maxTime } = useLogMaxTimeQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
     fetchPolicy: 'no-cache',
-    onCompleted(data) { if (data.logMaxTime) setFromTime(data.logMaxTime) },
+    onCompleted(data) { if (data.logMaxTime) setToTime(data.logMaxTime) },
     onError(err) { setError('Query log max time error ' + err.message) },
   })
 
@@ -194,8 +194,6 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
       return undefined
     }
   }
-
-  console.log('min date ' + new Date(new Date().getTime()-1000*60*60))
 
   return (
     <div className={classes.root}>
@@ -335,8 +333,9 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                           className={classes.date}
                           value={fromTime}
                           minDate={minTime}
+                          maxDate={maxTime}
                           onChange={(newValue) => {
-                            // setToTime(newValue?newValue:undefined)
+                            setFromTime(newValue?newValue:undefined)
                           }}
                         />
                       }
@@ -350,9 +349,10 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         <DateTimePicker
                           className={classes.date}
                           value={toTime}
+                          minDate={minTime}
                           maxDate={maxTime}
                           onChange={(newValue) => {
-                            // setToTime(newValue?newValue:undefined)
+                            setToTime(newValue?newValue:undefined)
                           }}
                         />
                       }
