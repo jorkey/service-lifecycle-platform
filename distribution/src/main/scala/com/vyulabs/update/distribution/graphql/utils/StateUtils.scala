@@ -134,9 +134,9 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.distinctField[String]("payload.level", filters)
   }
 
-  def getLogTimes(service: Option[ServiceId], instance: Option[InstanceId],
-                  directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
-                  (implicit log: Logger): Future[Seq[Date]] = {
+  def getLogMinTime(service: Option[ServiceId], instance: Option[InstanceId],
+                    directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
+                    (implicit log: Logger): Future[Option[Date]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
@@ -144,7 +144,22 @@ trait StateUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = Filters.and(args.asJava)
-    collections.State_ServiceLogs.distinctField[Date]("payload.time", filters)
+    val sort = Sorts.ascending("payload.time")
+    collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
+  }
+
+  def getLogMaxTime(service: Option[ServiceId], instance: Option[InstanceId],
+                    directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
+                    (implicit log: Logger): Future[Option[Date]] = {
+    val serviceArg = service.map(Filters.eq("service", _))
+    val instanceArg = instance.map(Filters.eq("instance", _))
+    val directoryArg = directory.map(Filters.eq("directory", _))
+    val processArg = process.map(Filters.eq("process", _))
+    val taskArg = task.map(Filters.eq("task", _))
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
+    val filters = Filters.and(args.asJava)
+    val sort = Sorts.descending("payload.time")
+    collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
   }
 
   def getLogs(service: Option[ServiceId], instance: Option[InstanceId],

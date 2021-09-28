@@ -10,7 +10,7 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery, useLogLevelsQuery, useLogProcessesLazyQuery,
+  useLogInstancesLazyQuery, useLogLevelsQuery, useLogMaxTimeQuery, useLogMinTimeQuery, useLogProcessesLazyQuery,
   useLogServicesQuery
 } from "../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
@@ -148,6 +148,20 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
     variables: { service: service, instance: instance, directory: directory, process: process },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log levels error ' + err.message) },
+  })
+
+  const { data: minTime } = useLogMinTimeQuery({
+    variables: { service: service, instance: instance, directory: directory, process: process },
+    fetchPolicy: 'no-cache',
+    onCompleted(data) { if (data.logMinTime) setFromTime(data.logMinTime) },
+    onError(err) { setError('Query log min time error ' + err.message) },
+  })
+
+  const { data: maxTime } = useLogMaxTimeQuery({
+    variables: { service: service, instance: instance, directory: directory, process: process },
+    fetchPolicy: 'no-cache',
+    onCompleted(data) { if (data.logMaxTime) setFromTime(data.logMaxTime) },
+    onError(err) { setError('Query log max time error ' + err.message) },
   })
 
   const sortLevels = () => {
@@ -317,17 +331,14 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
                       control={
-                        // <LocalizationProvider dateAdapter={AdapterDateFns}>
-                          <DateTimePicker
-                            // renderInput={(props) => <TextField value={'ewewew'} {...props} />}
-                            className={classes.date}
-                            minDate={new Date(new Date().getTime()-1000*60*60)}
-                            value={undefined}
-                            onChange={(newValue) => {
-                              // setToTime(newValue?newValue:undefined)
-                            }}
-                          />
-                        // </LocalizationProvider>
+                        <DateTimePicker
+                          className={classes.date}
+                          value={fromTime}
+                          minDate={minTime}
+                          onChange={(newValue) => {
+                            // setToTime(newValue?newValue:undefined)
+                          }}
+                        />
                       }
                       label='From'
                     />
@@ -336,16 +347,14 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
                       control={
-                        // <LocalizationProvider dateAdapter={AdapterDateFns}>
-                          <DateTimePicker
-                            // renderInput={(props) => <TextField {...props} />}
-                            className={classes.date}
-                            value={toTime}
-                            onChange={(newValue) => {
-                              // setToTime(newValue?newValue:undefined)
-                            }}
-                          />
-                        // </LocalizationProvider>
+                        <DateTimePicker
+                          className={classes.date}
+                          value={toTime}
+                          maxDate={maxTime}
+                          onChange={(newValue) => {
+                            // setToTime(newValue?newValue:undefined)
+                          }}
+                        />
                       }
                       label='To'
                     />

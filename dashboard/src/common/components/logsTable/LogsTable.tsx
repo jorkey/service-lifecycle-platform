@@ -96,9 +96,6 @@ export const LogsTable = (props: LogsTableParams) => {
 
   const sliceRowsCount = 50
 
-  console.log('from time ' + fromTime)
-  console.log('to time ' + fromTime)
-
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { onError(err.message) },
