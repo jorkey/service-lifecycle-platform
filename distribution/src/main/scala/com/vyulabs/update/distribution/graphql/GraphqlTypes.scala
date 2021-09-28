@@ -24,7 +24,7 @@ object GraphqlTypes {
     override def errorMessage: String = "Error during parsing Date"
   }
 
-  implicit val GraphQLDateType = ScalarType[Date]("Date",
+  implicit val DateType = ScalarType[Date]("Date",
     coerceOutput = (date, _) => serializeISO8601Date(date),
     coerceInput = {
       case StringValue(value, _, _, _, _) => Utils.parseISO8601Date(value).toRight(DateCoerceViolation)

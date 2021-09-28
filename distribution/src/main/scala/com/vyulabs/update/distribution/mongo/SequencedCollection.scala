@@ -55,7 +55,7 @@ class SequencedCollection[T: ClassTag](val name: String,
         var seq = sequence - documents.size + 1
         val docs = documents.map { document =>
           val doc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
-          doc.append("_id", new BsonInt64(seq)); seq += 1
+          doc.append("_sequence", new BsonInt64(seq)); seq += 1
           doc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
           doc
         }
@@ -100,7 +100,7 @@ class SequencedCollection[T: ClassTag](val name: String,
     } yield {
       docs.map(doc => {
         val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-        Sequenced[T](doc.getInt64("_id").getValue, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
+        Sequenced[T](doc.getInt64("_sequence").getValue, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
       })
     }
   }
@@ -131,7 +131,7 @@ class SequencedCollection[T: ClassTag](val name: String,
 
     def insert(collection: MongoDbCollection[BsonDocument], document: T, sequence: Long): Future[Unit] = {
       val newDoc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
-      newDoc.append("_id", new BsonInt64(sequence))
+      newDoc.append("_sequence", new BsonInt64(sequence))
       newDoc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
       collection.insert(newDoc).map(_ => ())
     }
@@ -144,16 +144,16 @@ class SequencedCollection[T: ClassTag](val name: String,
           doc match {
             case Some(doc) =>
               val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-              val docId = doc.getInt64("_id")
+              val docId = doc.getInt64("_sequence")
               val document = codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build())
               modify(Some(document)) match {
                 case Some(document) =>
                   for {
-                    _ <- collection.updateOne(Filters.eq("_id", docId),
+                    _ <- collection.updateOne(Filters.eq("_sequence", docId),
                       Updates.combine(Updates.set("_replacedBy", new BsonInt64(sequence)),
                         Updates.set("_archiveTime", new BsonDateTime(System.currentTimeMillis()))))
                     result <- insert(collection, document, sequence).map(_ => 1)
-                    _ <- collection.updateOne(Filters.eq("_id", docId),
+                    _ <- collection.updateOne(Filters.eq("_sequence", docId),
                       Updates.unset("_replacedBy"))
                   } yield result
                 case None =>
@@ -211,8 +211,8 @@ class SequencedCollection[T: ClassTag](val name: String,
   def subscribe(filters: Bson = new BsonDocument(), from: Option[Long] = None, startLimit: Option[Int])
                (implicit log: Logger): Source[Sequenced[T], NotUsed] = {
     val filtersArg = Filters.and(filters,
-      from.map(sequence => Filters.gte("_id", sequence)).getOrElse(new BsonDocument()))
-    val sort = if (!from.isEmpty || startLimit.isEmpty) Sorts.ascending("_id") else Sorts.descending("_id")
+      from.map(sequence => Filters.gte("_sequence", sequence)).getOrElse(new BsonDocument()))
+    val sort = if (!from.isEmpty || startLimit.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
     val source = for {
       storedDocuments <- findSequenced(filtersArg, Some(sort), startLimit)
         .map(_.sortBy(_.sequence))
@@ -241,7 +241,7 @@ class SequencedCollection[T: ClassTag](val name: String,
         Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true))),
           sort, limit)
     } yield {
-      val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_id").asInt64())
+      val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_sequence").asInt64())
       docs.filter(doc => { !doc.containsKey("_replacedBy") || !notReplaced.contains(doc.get("_replacedBy").asInt64()) })
     }
   }

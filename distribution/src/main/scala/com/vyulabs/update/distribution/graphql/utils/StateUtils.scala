@@ -134,6 +134,19 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.distinctField[String]("payload.level", filters)
   }
 
+  def getLogTimes(service: Option[ServiceId], instance: Option[InstanceId],
+                  directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
+                  (implicit log: Logger): Future[Seq[Date]] = {
+    val serviceArg = service.map(Filters.eq("service", _))
+    val instanceArg = instance.map(Filters.eq("instance", _))
+    val directoryArg = directory.map(Filters.eq("directory", _))
+    val processArg = process.map(Filters.eq("process", _))
+    val taskArg = task.map(Filters.eq("task", _))
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
+    val filters = Filters.and(args.asJava)
+    collections.State_ServiceLogs.distinctField[Date]("payload.time", filters)
+  }
+
   def getLogs(service: Option[ServiceId], instance: Option[InstanceId],
               directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId],
               from: Option[BigInt], to: Option[BigInt],
@@ -145,8 +158,8 @@ trait StateUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val fromArg = from.map(sequence => Filters.gte("_id", sequence.toLong))
-    val toArg = to.map(sequence => Filters.lte("_id", sequence.toLong))
+    val fromArg = from.map(sequence => Filters.gte("_sequence", sequence.toLong))
+    val toArg = to.map(sequence => Filters.lte("_sequence", sequence.toLong))
     val fromTimeArg = fromTime.map(time => Filters.gte("payload.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("payload.time", time))
     val levelsArg = levels.map(levels =>
@@ -155,7 +168,7 @@ trait StateUtils extends SprayJsonSupport {
     val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg ++
       fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ levelsArg ++ findArg
     val filters = Filters.and(args.asJava)
-    val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_id") else Sorts.descending("_id")
+    val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
     collections.State_ServiceLogs.findSequenced(filters, Some(sort), limit)
       .map(_.sortBy(_.sequence))
       .map(_.map(line => SequencedServiceLogLine(line.sequence,
@@ -208,7 +221,7 @@ trait StateUtils extends SprayJsonSupport {
     val args = clientArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
-    val sort = last.map { last => Sorts.descending("_id") }
+    val sort = last.map { last => Sorts.descending("_sequence") }
     collections.State_FaultReportsInfo.find(filters, sort, last)
   }
 
@@ -232,7 +245,7 @@ trait StateUtils extends SprayJsonSupport {
       log.debug(s"Delete fault report ${report.sequence}")
       val faultFile = directory.getFaultReportFile(report.document.payload.faultId)
       faultFile.delete()
-      collection.delete(Filters.and(Filters.eq("_id", report.sequence)))
+      collection.delete(Filters.and(Filters.eq("_sequence", report.sequence)))
     }).map(_ => Unit)
   }
 }

@@ -8,7 +8,6 @@ import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
 import {LogsSubscriber} from "./LogsSubscriber";
-import {subscribe} from "graphql";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -96,6 +95,9 @@ export const LogsTable = (props: LogsTableParams) => {
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
 
   const sliceRowsCount = 50
+
+  console.log('from time ' + fromTime)
+  console.log('to time ' + fromTime)
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache',

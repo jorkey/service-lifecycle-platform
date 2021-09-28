@@ -100,8 +100,8 @@ object GraphqlSchema {
   val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(BigintType))
   val OptionToArg = Argument("to", OptionInputType(BigintType))
-  val OptionFromTimeArg = Argument("fromTime", OptionInputType(GraphQLDateType))
-  val OptionToTimeArg = Argument("toTime", OptionInputType(GraphQLDateType))
+  val OptionFromTimeArg = Argument("fromTime", OptionInputType(DateType))
+  val OptionToTimeArg = Argument("toTime", OptionInputType(DateType))
   val OptionLevelsArg = Argument("levels", OptionInputType(ListInputType(StringType)))
   val OptionFindArg = Argument("find", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
@@ -231,6 +231,10 @@ object GraphqlSchema {
       Field("logLevels", ListType(StringType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
         resolve = c => { c.ctx.workspace.getLogLevels(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
+          c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
+      Field("logTimes", ListType(DateType),
+        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
+        resolve = c => { c.ctx.workspace.getLogTimes(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
           c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
       Field("logs", ListType(SequencedServiceLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg ::

@@ -13,8 +13,12 @@ import {
   useLogInstancesLazyQuery, useLogLevelsQuery, useLogProcessesLazyQuery,
   useLogServicesQuery
 } from "../../generated/graphql";
-import {LogsTable} from "../../common/components/logsTable/LogsTable";
 import {DateTimePicker} from "@material-ui/pickers";
+import {LogsTable} from "../../common/components/logsTable/LogsTable";
+// import {LogsTable} from "../../common/components/logsTable/LogsTable";
+// import {DateTimePicker, LocalizationProvider} from "@mui/lab";
+// import {TextField} from "@mui/material";
+// import AdapterDateFns from '@mui/lab/AdapterDateFns'
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -44,11 +48,11 @@ const useStyles = makeStyles((theme:any) => ({
   },
   find: {
     marginLeft: '10px',
-    width: '300px',
+    width: '270px',
   },
   follow: {
     marginLeft: '10px',
-    width: '100px',
+    width: '50px',
   },
   level: {
     marginLeft: '10px',
@@ -90,9 +94,6 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   const [level, setLevel] = useState<string>()
   const [find, setFind] = useState<string>('')
   const [follow, setFollow] = useState<boolean>()
-
-  const [from, setFrom] = useState<number>()
-  const [to, setTo] = useState<number>()
 
   const [error, setError] = useState<string>()
 
@@ -179,6 +180,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
       return undefined
     }
   }
+
+  console.log('min date ' + new Date(new Date().getTime()-1000*60*60))
 
   return (
     <div className={classes.root}>
@@ -314,14 +317,18 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
                       control={
-                        <DateTimePicker
-                          className={classes.date}
-                          // renderInput={(props) => <TextField {...props} />}
-                          value={undefined}
-                          onChange={(newValue) => {
-                            // setValue(newValue);
-                          }}
-                        />                    }
+                        // <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DateTimePicker
+                            // renderInput={(props) => <TextField value={'ewewew'} {...props} />}
+                            className={classes.date}
+                            minDate={new Date(new Date().getTime()-1000*60*60)}
+                            value={undefined}
+                            onChange={(newValue) => {
+                              // setToTime(newValue?newValue:undefined)
+                            }}
+                          />
+                        // </LocalizationProvider>
+                      }
                       label='From'
                     />
                     <FormControlLabel
@@ -329,14 +336,17 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
                       control={
-                        <DateTimePicker
-                          className={classes.date}
-                          // renderInput={(props) => <TextField {...props} />}
-                          value={undefined}
-                          onChange={(newValue) => {
-                            // setValue(newValue);
-                          }}
-                        />                    }
+                        // <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DateTimePicker
+                            // renderInput={(props) => <TextField {...props} />}
+                            className={classes.date}
+                            value={toTime}
+                            onChange={(newValue) => {
+                              // setToTime(newValue?newValue:undefined)
+                            }}
+                          />
+                        // </LocalizationProvider>
+                      }
                       label='To'
                     />
                     {!follow ? <FormControlLabel

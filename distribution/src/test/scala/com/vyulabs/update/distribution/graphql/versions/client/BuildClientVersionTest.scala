@@ -131,12 +131,11 @@ class BuildClientVersionTest extends TestEnvironment {
   private def expectMessage(input: TestSubscriber.Probe[ServerSentEvent], message: String): Unit = {
     val e = input.requestNext()
     val json = e.data.parseJson
-    val msg = json.asJsObject.fields.get("data").get
-      .asJsObject.fields.get("subscribeLogs").get
-      .asJsObject.fields.get("payload").get
-      .asJsObject.fields.get("message").get
-      .asInstanceOf[JsString].value
-    if (msg != message) {
+    val messages = json.asJsObject.fields.get("data").get
+      .asJsObject.fields.get("subscribeLogs").get.asInstanceOf[JsArray]
+        .elements.map(_.asJsObject.fields.get("payload").get.asJsObject
+          .fields.get("message").get.asInstanceOf[JsString].value)
+    if (!messages.contains(message)) {
       expectMessage(input, message)
     }
   }
