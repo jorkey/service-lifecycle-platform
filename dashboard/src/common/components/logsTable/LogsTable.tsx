@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {ForwardedRef, forwardRef, useEffect, useImperativeHandle, useState} from "react";
 import {
   LogLine,
   useDirectoryLogsLazyQuery, useInstanceLogsLazyQuery,
@@ -66,6 +66,11 @@ interface LogsTableParams extends FindLogsDashboardParams {
   onError: (message: string) => void
 }
 
+export interface LogsTableEvents {
+  toTop: () => void
+  toBottom: () => void
+}
+
 export interface LogRecord {
   sequence: BigInt
   instance?: string
@@ -85,14 +90,26 @@ export interface FindLogsDashboardParams {
   toTime?: Date
   subscribe?: boolean
 }
-
-export const LogsTable = (props: LogsTableParams) => {
+export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<LogsTableEvents>) => {
   const { className, service, instance, process, directory, task, fromTime, toTime, levels, find,
     follow, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<LogRecord[]>([])
 
+  const [ toBottom, setToBottom ] = useState<boolean>()
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
+
+  useImperativeHandle(ref, () => ({
+    toTop: () => {
+      setLines([])
+      getLogs(BigInt(0))
+    },
+    toBottom: () => {
+      setLines([])
+      setToBottom(true)
+      getLogs(undefined, BigInt('9223372036854775807'))
+    }
+  }))
 
   const sliceRowsCount = 100
 
@@ -217,12 +234,16 @@ export const LogsTable = (props: LogsTableParams) => {
     }
   }
 
+  if (toBottom) {
+    setToBottom(false)
+  }
+
   return <>
     <GridTable
       className={className + (isLoading() ? ' ' + classes.inProgress : '')}
       columns={columns}
       rows={rows}
-      scrollToLastRow={follow}
+      scrollToLastRow={follow || toBottom}
       onScrollTop={() => {
         if (lines.length) {
           getLogs(undefined, lines[0].sequence)
@@ -245,4 +266,4 @@ export const LogsTable = (props: LogsTableParams) => {
         }}
       /> : null}
   </>
-}
+})

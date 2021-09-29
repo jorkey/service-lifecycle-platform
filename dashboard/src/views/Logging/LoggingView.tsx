@@ -1,6 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {
+  Button,
   Card,
   CardContent, CardHeader, Checkbox, Grid, Select, TextField,
 } from '@material-ui/core';
@@ -14,11 +15,7 @@ import {
   useLogServicesQuery
 } from "../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
-import {LogsTable} from "../../common/components/logsTable/LogsTable";
-// import {LogsTable} from "../../common/components/logsTable/LogsTable";
-// import {DateTimePicker, LocalizationProvider} from "@mui/lab";
-// import {TextField} from "@mui/material";
-// import AdapterDateFns from '@mui/lab/AdapterDateFns'
+import {LogsTable, LogsTableEvents} from "../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -48,11 +45,21 @@ const useStyles = makeStyles((theme:any) => ({
   },
   find: {
     marginLeft: '10px',
-    width: '270px',
+    width: '230px',
   },
   follow: {
     marginLeft: '10px',
     width: '50px',
+  },
+  top: {
+    marginLeft: '10px',
+    width: '50px',
+    textTransform: 'none',
+  },
+  bottom: {
+    marginLeft: '10px',
+    width: '50px',
+    textTransform: 'none',
   },
   level: {
     marginLeft: '10px',
@@ -97,6 +104,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
 
   const [error, setError] = useState<string>()
 
+  const tableRef = useRef<LogsTableEvents>(null)
+
   useEffect(() => {
     if (service) {
       getInstances({
@@ -104,6 +113,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
       })
     }
     setInstance(undefined)
+    setFromTime(undefined)
+    setToTime(undefined)
   }, [ service ])
 
   useEffect(() => {
@@ -291,6 +302,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                     <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
+                      disabled={!service}
                       control={
                         <Checkbox
                           className={classes.follow}
@@ -376,6 +388,24 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                       }
                       label='Find Text'
                     /> : null}
+                    {!follow ? <Button
+                      className={classes.top}
+                      color="primary"
+                      variant="contained"
+                      disabled={!service}
+                      onClick={() => tableRef.current?.toTop()}
+                    >
+                      Top
+                    </Button> : null}
+                    {!follow ? <Button
+                      className={classes.bottom}
+                      color="primary"
+                      variant="contained"
+                      disabled={!service}
+                      onClick={() => tableRef.current?.toBottom()}
+                    >
+                      Bottom
+                    </Button> : null}
                   </FormGroup>
                 </>
               }
@@ -383,8 +413,9 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
             />
             <CardContent className={classes.content}>
               <div className={classes.inner}>
-                { service ?
-                  <LogsTable className={classes.logsTable}
+                { service && levels && fromTime && toTime ?
+                  <LogsTable ref={tableRef}
+                             className={classes.logsTable}
                              service={service} instance={instance} directory={directory} process={process}
                              fromTime={fromTime} toTime={toTime}
                              levels={levelWithSubLevels()}
