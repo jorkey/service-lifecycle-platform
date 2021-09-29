@@ -334,6 +334,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                           value={fromTime}
                           minDate={minTime}
                           maxDate={maxTime}
+                          ampm={false}
                           onChange={(newValue) => {
                             setFromTime(newValue?newValue:undefined)
                           }}
@@ -351,6 +352,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                           value={toTime}
                           minDate={minTime}
                           maxDate={maxTime}
+                          ampm={false}
                           onChange={(newValue) => {
                             setToTime(newValue?newValue:undefined)
                           }}

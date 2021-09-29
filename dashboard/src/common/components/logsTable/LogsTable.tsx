@@ -94,7 +94,7 @@ export const LogsTable = (props: LogsTableParams) => {
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
 
-  const sliceRowsCount = 50
+  const sliceRowsCount = 100
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache',
