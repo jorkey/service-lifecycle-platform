@@ -96,7 +96,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const [ lines, setLines ] = useState<LogRecord[]>([])
 
-  const [ toBottom, setToBottom ] = useState<boolean>()
+  const [ toBottomState, setToBottomState ] = useState(0)
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
 
   useImperativeHandle(ref, () => ({
@@ -106,8 +106,8 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     },
     toBottom: () => {
       setLines([])
-      setToBottom(true)
-      getLogs(undefined, BigInt('9223372036854775807'))
+      setToBottomState(1)
+      getLogs(undefined, BigInt('0x7FFFFFFFFFFFFFFF'))
     }
   }))
 
@@ -197,18 +197,6 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   ].filter(column => column.name != 'instance' || (!instance && !task))
    .filter(column => column.name != 'process' || (!process && !task)) as GridTableColumnParams[]
 
-  const rows = lines
-    .map(line => {
-      return new Map<string, GridTableColumnValue>([
-        ['time', line.payload.time],
-        ['level', line.payload.level],
-        ['instance', line.instance?line.instance:''],
-        ['process', line.process?line.process:''],
-        ['level', line.payload.level],
-        ['unit', line.payload.unit],
-        ['message', line.payload.message]
-      ]) })
-
   const addLines = (receivedLines: LogRecord[]) => {
     const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
@@ -232,18 +220,31 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         onComplete(newLines[0].payload.time, status)
       }
     }
+    if (toBottomState == 1) {
+      setToBottomState(2)
+    } else if (toBottomState == 2) {
+      setToBottomState(0)
+    }
   }
 
-  if (toBottom) {
-    setToBottom(false)
-  }
+  const rows = lines
+    .map(line => {
+      return new Map<string, GridTableColumnValue>([
+        ['time', line.payload.time],
+        ['level', line.payload.level],
+        ['instance', line.instance?line.instance:''],
+        ['process', line.process?line.process:''],
+        ['level', line.payload.level],
+        ['unit', line.payload.unit],
+        ['message', line.payload.message]
+      ]) })
 
   return <>
     <GridTable
       className={className + (isLoading() ? ' ' + classes.inProgress : '')}
       columns={columns}
       rows={rows}
-      scrollToLastRow={follow || toBottom}
+      scrollToLastRow={follow || toBottomState == 2}
       onScrollTop={() => {
         if (lines.length) {
           getLogs(undefined, lines[0].sequence)

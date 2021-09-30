@@ -134,9 +134,9 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.distinctField[String]("payload.level", filters)
   }
 
-  def getLogMinTime(service: Option[ServiceId], instance: Option[InstanceId],
-                    directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
-                    (implicit log: Logger): Future[Option[Date]] = {
+  def getLogStartTime(service: Option[ServiceId], instance: Option[InstanceId],
+                      directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
+                     (implicit log: Logger): Future[Option[Date]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
@@ -148,9 +148,9 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
   }
 
-  def getLogMaxTime(service: Option[ServiceId], instance: Option[InstanceId],
+  def getLogEndTime(service: Option[ServiceId], instance: Option[InstanceId],
                     directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
-                    (implicit log: Logger): Future[Option[Date]] = {
+                   (implicit log: Logger): Future[Option[Date]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
@@ -159,7 +159,8 @@ trait StateUtils extends SprayJsonSupport {
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = Filters.and(args.asJava)
     val sort = Sorts.descending("payload.time")
-    collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
+    collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption
+      .find(_.payload.terminationStatus.isDefined).map(_.payload.time))
   }
 
   def getLogs(service: Option[ServiceId], instance: Option[InstanceId],

@@ -121,12 +121,12 @@ query logLevels($service: String, $instance: String, $directory: String, $proces
     logLevels (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
 }
 
-query logMinTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
-    logMinTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+query logStartTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logStartTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
 }
 
-query logMaxTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
-    logMaxTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+query logEndTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logEndTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
 }
 
 query serviceLogs ($service: String!,

@@ -11,7 +11,7 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery, useLogLevelsQuery, useLogMaxTimeQuery, useLogMinTimeQuery, useLogProcessesLazyQuery,
+  useLogInstancesLazyQuery, useLogLevelsQuery, useLogStartTimeQuery, useLogEndTimeQuery, useLogProcessesLazyQuery,
   useLogServicesQuery
 } from "../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
@@ -161,17 +161,17 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
     onError(err) { setError('Query log levels error ' + err.message) },
   })
 
-  const { data: minTime } = useLogMinTimeQuery({
+  const { data: startTime } = useLogStartTimeQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
     fetchPolicy: 'no-cache',
-    onCompleted(data) { if (data.logMinTime) setFromTime(data.logMinTime) },
+    onCompleted(data) { if (data.logStartTime) setFromTime(data.logStartTime) },
     onError(err) { setError('Query log min time error ' + err.message) },
   })
 
-  const { data: maxTime } = useLogMaxTimeQuery({
+  const { data: endTime } = useLogEndTimeQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
     fetchPolicy: 'no-cache',
-    onCompleted(data) { if (data.logMaxTime) setToTime(data.logMaxTime) },
+    onCompleted(data) { if (data.logEndTime) setToTime(data.logEndTime) },
     onError(err) { setError('Query log max time error ' + err.message) },
   })
 
@@ -344,8 +344,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         <DateTimePicker
                           className={classes.date}
                           value={fromTime}
-                          minDate={minTime}
-                          maxDate={maxTime}
+                          minDate={startTime}
+                          maxDate={endTime}
                           ampm={false}
                           onChange={(newValue) => {
                             setFromTime(newValue?newValue:undefined)
@@ -362,8 +362,8 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
                         <DateTimePicker
                           className={classes.date}
                           value={toTime}
-                          minDate={minTime}
-                          maxDate={maxTime}
+                          minDate={startTime}
+                          maxDate={endTime}
                           ampm={false}
                           onChange={(newValue) => {
                             setToTime(newValue?newValue:undefined)
@@ -413,7 +413,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
             />
             <CardContent className={classes.content}>
               <div className={classes.inner}>
-                { service && levels && fromTime && toTime ?
+                { service && levels && (startTime?.logStartTime !== undefined) && (endTime?.logEndTime !== undefined) ?
                   <LogsTable ref={tableRef}
                              className={classes.logsTable}
                              service={service} instance={instance} directory={directory} process={process}
