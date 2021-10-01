@@ -134,9 +134,9 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.distinctField[String]("payload.level", filters)
   }
 
-  def getLogStartTime(service: Option[ServiceId], instance: Option[InstanceId],
-                      directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
-                     (implicit log: Logger): Future[Option[Date]] = {
+  def getLogsStartTime(service: Option[ServiceId], instance: Option[InstanceId],
+                       directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
+                      (implicit log: Logger): Future[Option[Date]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
@@ -148,9 +148,9 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
   }
 
-  def getLogEndTime(service: Option[ServiceId], instance: Option[InstanceId],
-                    directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
-                   (implicit log: Logger): Future[Option[Date]] = {
+  def getLogsEndTime(service: Option[ServiceId], instance: Option[InstanceId],
+                     directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId])
+                    (implicit log: Logger): Future[Option[Date]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
@@ -229,16 +229,38 @@ trait StateUtils extends SprayJsonSupport {
     } yield result
   }
 
-  def getDistributionFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId],
-                                      last: Option[Int])(implicit log: Logger)
+  def getFaultDistributions()(implicit log: Logger): Future[Seq[DistributionId]] = {
+    collections.State_FaultReportsInfo.distinctField[String]("distribution")
+  }
+
+  def getFaultServices(distribution: DistributionId)(implicit log: Logger): Future[Seq[ServiceId]] = {
+    val distributionArg = Filters.eq("distribution", distribution)
+    collections.State_FaultReportsInfo.distinctField[String]("service", distributionArg)
+  }
+
+  def getFaultsStartTime(distribution: Option[ServiceId], service: Option[ServiceId])
+                       (implicit log: Logger): Future[Option[Date]] = {
+    val distributionArg = distribution.map(Filters.eq("distribution", _))
+    val serviceArg = service.map(Filters.eq("service", _))
+    val args = distributionArg ++ serviceArg
+    val filters = Filters.and(args.asJava)
+    val sort = Sorts.ascending("payload.time")
+    collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
+  }
+
+  def getFaults(distribution: Option[DistributionId], service: Option[ServiceId],
+                fromTime: Option[Date], toTime: Option[Date],
+                limit: Option[Int])(implicit log: Logger)
       : Future[Seq[DistributionFaultReport]] = {
     val clientArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
     val serviceArg = service.map { service => Filters.eq("payload.info.service", service) }
-    val args = clientArg ++ serviceArg
+    val fromTimeArg = fromTime.map(time => Filters.gte("payload.info.time", time))
+    val toTimeArg = toTime.map(time => Filters.lte("payload.info.time", time))
+    val args = clientArg ++ serviceArg ++ fromTimeArg ++ toTimeArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
-    val sort = last.map { last => Sorts.descending("_sequence") }
-    collections.State_FaultReportsInfo.find(filters, sort, last)
+    val sort = limit.map { _ => Sorts.descending("_sequence") }
+    collections.State_FaultReportsInfo.find(filters, sort, limit)
   }
 
   private def clearOldReports()(implicit log: Logger): Future[Unit] = {

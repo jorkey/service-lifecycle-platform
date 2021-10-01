@@ -11,7 +11,7 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery, useLogLevelsQuery, useLogStartTimeQuery, useLogEndTimeQuery, useLogProcessesLazyQuery,
+  useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
   useLogServicesQuery
 } from "../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
@@ -85,11 +85,11 @@ const useStyles = makeStyles((theme:any) => ({
 interface LoggingRouteParams {
 }
 
-interface LoggingViewParams extends RouteComponentProps<LoggingRouteParams> {
+interface LoggingParams extends RouteComponentProps<LoggingRouteParams> {
   fromUrl: string
 }
 
-const LoggingView: React.FC<LoggingViewParams> = props => {
+const Logging: React.FC<LoggingParams> = props => {
   const classes = useStyles()
 
   const [service, setService] = useState<string>()
@@ -161,17 +161,17 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
     onError(err) { setError('Query log levels error ' + err.message) },
   })
 
-  const { data: startTime } = useLogStartTimeQuery({
+  const { data: startTime } = useLogsStartTimeQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
     fetchPolicy: 'no-cache',
-    onCompleted(data) { if (data.logStartTime) setFromTime(data.logStartTime) },
+    onCompleted(data) { if (data.logsStartTime) setFromTime(data.logsStartTime) },
     onError(err) { setError('Query log min time error ' + err.message) },
   })
 
-  const { data: endTime } = useLogEndTimeQuery({
+  const { data: endTime } = useLogsEndTimeQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
     fetchPolicy: 'no-cache',
-    onCompleted(data) { if (data.logEndTime) setToTime(data.logEndTime) },
+    onCompleted(data) { if (data.logsEndTime) setToTime(data.logsEndTime) },
     onError(err) { setError('Query log max time error ' + err.message) },
   })
 
@@ -413,7 +413,7 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
             />
             <CardContent className={classes.content}>
               <div className={classes.inner}>
-                { service && levels && (startTime?.logStartTime !== undefined) && (endTime?.logEndTime !== undefined) ?
+                { service && levels && (startTime?.logsStartTime !== undefined) && (endTime?.logsEndTime !== undefined) ?
                   <LogsTable ref={tableRef}
                              className={classes.logsTable}
                              service={service} instance={instance} directory={directory} process={process}
@@ -434,4 +434,4 @@ const LoggingView: React.FC<LoggingViewParams> = props => {
   )
 }
 
-export default LoggingView
+export default Logging

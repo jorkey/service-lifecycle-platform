@@ -77,9 +77,9 @@ trait StateCoder {
       "{ distribution payload { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } } }"
     )
 
-  def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], last: Option[Int]) =
-    GraphqlQuery[Seq[DistributionFaultReport]]("faultReports",
-      Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("last" -> last, "Int")).filter(_.value != JsNull),
+  def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], limit: Option[Int]) =
+    GraphqlQuery[Seq[DistributionFaultReport]]("faults",
+      Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("limit" -> limit, "Int")).filter(_.value != JsNull),
       "{ distribution, payload { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
 }
 

@@ -121,12 +121,12 @@ query logLevels($service: String, $instance: String, $directory: String, $proces
     logLevels (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
 }
 
-query logStartTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
-    logStartTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+query logsStartTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logsStartTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
 }
 
-query logEndTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
-    logEndTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+query logsEndTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logsEndTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
 }
 
 query serviceLogs ($service: String!,
@@ -166,6 +166,24 @@ query taskLogs ($task: String!,
     logs (task: $task,
         from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
             sequence, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
+query faultDistributions {
+    faultDistributions
+}
+
+query faultServices ($distribution: String!) {
+    faultServices (distribution: $distribution)
+}
+
+query faultsStartTime ($disribution: String, $service: String) {
+    faultsStartTime
+}
+
+query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date, $limit: Int) {
+    faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime, limit: $limit) {
+        distribution, payload { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }
     }
 }
 

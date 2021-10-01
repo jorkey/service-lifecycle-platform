@@ -33,7 +33,7 @@ class FaultReportInfoTest extends TestEnvironment {
     addFaultReportInfo("fault2", "service2", 2, new Date())
 
     assertResult((OK,
-      ("""{"data":{"faultReports":[{"distribution":"consumer","payload":{"faultId":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
+      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"faultId":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
         adminContext, graphql"""
           query FaultsQuery($$service: String!) {

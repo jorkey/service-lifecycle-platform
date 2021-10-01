@@ -97,7 +97,6 @@ object GraphqlSchema {
   val OptionDeveloperVersionArg = Argument("version", OptionInputType(DeveloperVersionInputType))
   val OptionClientVersionArg = Argument("version", OptionInputType(ClientVersionInputType))
   val OptionMergedArg = Argument("merged", OptionInputType(BooleanType))
-  val OptionLastArg = Argument("last", OptionInputType(IntType))
   val OptionFromArg = Argument("from", OptionInputType(BigintType))
   val OptionToArg = Argument("to", OptionInputType(BigintType))
   val OptionFromTimeArg = Argument("fromTime", OptionInputType(DateType))
@@ -232,13 +231,13 @@ object GraphqlSchema {
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
         resolve = c => { c.ctx.workspace.getLogLevels(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
           c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
-      Field("logStartTime", OptionType(DateType),
+      Field("logsStartTime", OptionType(DateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogStartTime(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
+        resolve = c => { c.ctx.workspace.getLogsStartTime(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
           c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
-      Field("logEndTime", OptionType(DateType),
+      Field("logsEndTime", OptionType(DateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogEndTime(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
+        resolve = c => { c.ctx.workspace.getLogsEndTime(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
           c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
       Field("logs", ListType(SequencedServiceLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg ::
@@ -250,10 +249,21 @@ object GraphqlSchema {
           c.arg(OptionFromArg), c.arg(OptionToArg),
           c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
           c.arg(OptionLevelsArg), c.arg(OptionFindArg), c.arg(OptionLimitArg)) }),
-      Field("faultReports", ListType(DistributionFaultReportType),
-        arguments = OptionDistributionArg :: OptionServiceArg :: OptionLastArg :: Nil,
+      Field("faultDistributions", ListType(StringType),
+        resolve = c => { c.ctx.workspace.getFaultDistributions() }),
+      Field("faultServices", ListType(StringType),
+        arguments = DistributionArg :: Nil,
+        resolve = c => { c.ctx.workspace.getFaultServices(c.arg(DistributionArg)) }),
+      Field("faultsStartTime", OptionType(DateType),
+        arguments = OptionDistributionArg :: OptionServiceArg :: Nil,
+        resolve = c => { c.ctx.workspace.getFaultsStartTime(c.arg(OptionDistributionArg), c.arg(OptionServiceArg)) }),
+      Field("faults", ListType(DistributionFaultReportType),
+        arguments = OptionDistributionArg :: OptionServiceArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDistributionFaultReportsInfo(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionLastArg)) }),
+        resolve = c => { c.ctx.workspace.getFaults(
+          c.arg(OptionDistributionArg), c.arg(OptionServiceArg),
+          c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
+          c.arg(OptionLimitArg)) }),
     )
   )
 
