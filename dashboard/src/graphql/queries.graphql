@@ -177,12 +177,16 @@ query faultServices ($distribution: String!) {
     faultServices (distribution: $distribution)
 }
 
-query faultsStartTime ($disribution: String, $service: String) {
+query faultsStartTime ($distribution: String, $service: String) {
     faultsStartTime
 }
 
-query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date, $limit: Int) {
-    faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime, limit: $limit) {
+query faultsEndTime ($distribution: String, $service: String) {
+    faultsEndTime
+}
+
+query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date) {
+    faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime) {
         distribution, payload { faultId, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }
     }
 }

@@ -8,9 +8,9 @@ import com.vyulabs.update.common.utils.JsonFormats._
 
 case class FaultInfo(time: Date, instance: InstanceId,
                      service: ServiceId, serviceDirectory: ServiceDirectory, serviceProfile: ServiceInstanceProfile,
-                     state: ServiceState, logTail: Seq[String])
+                     state: ServiceState, logTail: Seq[LogLine])
 
 object FaultInfo extends DefaultJsonProtocol {
-  implicit val faultInfoJson = jsonFormat7((time: Date, instance: InstanceId, service: ServiceId, serviceDirectory: ServiceDirectory, serviceProfile: ServiceInstanceProfile, state: ServiceState, logTail: Seq[String]) =>
+  implicit val faultInfoJson = jsonFormat7((time: Date, instance: InstanceId, service: ServiceId, serviceDirectory: ServiceDirectory, serviceProfile: ServiceInstanceProfile, state: ServiceState, logTail: Seq[LogLine]) =>
     FaultInfo.apply(time, instance, service, serviceDirectory, serviceProfile, state, logTail))
 }

@@ -248,6 +248,16 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
   }
 
+  def getFaultsEndTime(distribution: Option[ServiceId], service: Option[ServiceId])
+                       (implicit log: Logger): Future[Option[Date]] = {
+    val distributionArg = distribution.map(Filters.eq("distribution", _))
+    val serviceArg = service.map(Filters.eq("service", _))
+    val args = distributionArg ++ serviceArg
+    val filters = Filters.and(args.asJava)
+    val sort = Sorts.descending("payload.time")
+    collections.State_ServiceLogs.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
+  }
+
   def getFaults(distribution: Option[DistributionId], service: Option[ServiceId],
                 fromTime: Option[Date], toTime: Option[Date],
                 limit: Option[Int])(implicit log: Logger)

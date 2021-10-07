@@ -5,10 +5,10 @@ import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.RunServiceConfig
 import com.vyulabs.update.common.info.{FaultInfo, LogLine, ProfiledServiceName}
 import com.vyulabs.update.common.logger.{LogBuffer, LogReceiver}
-import com.vyulabs.update.common.logs.LogWriter
+import com.vyulabs.update.common.logs.{LogFormat, LogWriter}
 import com.vyulabs.update.common.process.{ChildProcess, ProcessMonitor}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, Build}
+import com.vyulabs.update.common.version.{Build, DeveloperDistributionVersion}
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import org.slf4j.Logger
 
@@ -66,20 +66,9 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           (lines: Seq[(String, Boolean)]) => {
             lines.foreach {
               case (line, nl) =>
-                logWriter.writeLogLine(line)
+                val logLine = LogFormat.parse(line, logUnitName)
+                logWriter.writeLogLine(logLine)
                 logUploaderBuffer.foreach(uploaderBuffer => {
-                  val logLine = line match {
-                    case formattedLogRegex(date, level, unit, message) =>
-                      try {
-                        val logDate = dateFormat.parse(date)
-                        LogLine(logDate, level, unit, message, None)
-                      } catch {
-                        case _: ParseException =>
-                          LogLine(new Date(), "INFO", logUnitName, line, None)
-                      }
-                    case line =>
-                      LogLine(new Date(), "INFO", logUnitName, line, None)
-                  }
                   uploaderBuffer.append(logLine)
                 })
             }
@@ -170,7 +159,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
     }
   }
 
-  private def processExit(exitCode: Int, logTail: Queue[String]): Unit = {
+  private def processExit(exitCode: Int, logTail: Queue[LogLine]): Unit = {
     synchronized {
       state.failure(exitCode)
       saveLogs(true)

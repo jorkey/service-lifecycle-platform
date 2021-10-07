@@ -101,8 +101,16 @@ class FaultReportInfoTest extends TestEnvironment {
                   time: $$time
                 },
                 logTail: [
-                   "line1",
-                   "line2"
+                   { time: "1969-07-17T01:05:21.644Z"
+                     level: "INFO"
+                     unit: "unit1"
+                     message: "line1"
+                   },
+                   { time: "1973-06-29T02:03:11.678Z"
+                     level: "WARN"
+                     unit: "unit2"
+                     message: "line2"
+                   }
                 ]
               },
               files: [
@@ -121,7 +129,10 @@ class FaultReportInfoTest extends TestEnvironment {
   def checkReportExists(faultId: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("consumer",
-        ServiceFaultReport(faultId, FaultInfo(time, "instance1", service, "directory1", "Common", ServiceState(time, None, None, None, None, None, None, None), Seq("line1", "line2")), Seq("core", "log/service.log")))))
+        ServiceFaultReport(faultId, FaultInfo(time, "instance1", service, "directory1", "Common", ServiceState(time, None, None, None, None, None, None, None),
+          Seq(LogLine(new Date(), "INFO", "unit1", "line1", None),
+              LogLine(new Date(), "WARN", "unit2", "line2", Some(true)))),
+          Seq("core", "log/service.log")))))
     )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.faultId", faultId))))
   }
 

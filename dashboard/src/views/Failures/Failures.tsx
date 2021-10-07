@@ -1,16 +1,18 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {
   Card,
-  CardContent, CardHeader, Checkbox, Grid, Select, TextField,
+  CardContent, CardHeader, Grid, Select,
 } from '@material-ui/core';
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
-  useLogServicesQuery
+  useFaultDistributionsQuery, useFaultServicesLazyQuery, useFaultsQuery,
+  useFaultsStartTimeQuery
 } from "../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -42,6 +44,9 @@ const useStyles = makeStyles((theme:any) => ({
     paddingRight: '15px',
     textTransform: 'none'
   },
+  faultsTable: {
+    height: 'calc(100vh - 550px)',
+  },
   alert: {
     marginTop: 25
   }
@@ -65,42 +70,32 @@ const Failures: React.FC<FailuresParams> = props => {
   const [error, setError] = useState<string>()
 
   useEffect(() => {
-    if (service) {
-      getInstances({
-        variables: { service: service! },
-      })
+    if (distribution) {
+      getServices({variables: { distribution: distribution }})
     }
-    setInstance(undefined)
-    setFromTime(undefined)
-    setToTime(undefined)
-  }, [ service ])
+  }, [ distribution ])
 
-  useEffect(() => {
-    if (service && instance) {
-      getDirectories({
-        variables: { service: service!, instance: instance! },
-      })
-    }
-    setDirectory(undefined)
-  }, [ instance ])
-
-  const { data: services } = useLogServicesQuery({
+  const { data: distributions } = useFaultDistributionsQuery({
     fetchPolicy: 'no-cache',
-    onError(err) { setError('Query log services error ' + err.message) },
+    onError(err) { setError('Query fault distributions error ' + err.message) },
   })
 
-  const { data: startTime } = useLogStartTimeQuery({
-    variables: { service: service, instance: instance, directory: directory, process: process },
+  const [ getServices, services ] = useFaultServicesLazyQuery({
     fetchPolicy: 'no-cache',
-    onCompleted(data) { if (data.logStartTime) setFromTime(data.logStartTime) },
+    onError(err) { setError('Query fault services error ' + err.message) },
+  })
+
+  const { data: startTime } = useFaultsStartTimeQuery({
+    variables: { distribution: distribution, service: service },
+    fetchPolicy: 'no-cache',
+    onCompleted(data) { if (data.faultsStartTime) setFromTime(data.faultsStartTime) },
     onError(err) { setError('Query log min time error ' + err.message) },
   })
 
-  const { data: endTime } = useLogEndTimeQuery({
-    variables: { service: service, instance: instance, directory: directory, process: process },
+  const { data: faults } = useFaultsQuery({
+    variables: { distribution: distribution, service: service, fromTime: fromTime, toTime: toTime },
     fetchPolicy: 'no-cache',
-    onCompleted(data) { if (data.logEndTime) setToTime(data.logEndTime) },
-    onError(err) { setError('Query log max time error ' + err.message) },
+    onError(err) { setError(err.message) },
   })
 
   return (
@@ -115,7 +110,28 @@ const Failures: React.FC<FailuresParams> = props => {
                     <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
-                      disabled={!services?.logServices}
+                      disabled={!distributions?.faultDistributions}
+                      control={
+                        <Select
+                          className={classes.distributionSelect}
+                          native
+                          onChange={(event) => {
+                            setDistribution(event.target.value as string)
+                          }}
+                          title='Select distribution'
+                          value={service}
+                        >
+                          <option key={-1}/>
+                          { distributions?.faultDistributions
+                              .map((distribution, index) => <option key={index}>{distribution}</option>)}
+                        </Select>
+                      }
+                      label='Distribution'
+                    />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      disabled={!services?.data?.faultServices}
                       control={
                         <Select
                           className={classes.serviceSelect}
@@ -127,22 +143,21 @@ const Failures: React.FC<FailuresParams> = props => {
                           value={service}
                         >
                           <option key={-1}/>
-                          { services?.logServices
-                              .map((service, index) => <option key={index}>{service}</option>)}
+                          { services?.data?.faultServices
+                            .map((service, index) => <option key={index}>{service}</option>)}
                         </Select>
                       }
                       label='Service'
                     />
-                    {!follow ? <FormControlLabel
+                    <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
-                      disabled={!service || instances.loading || !instances.data}
+                      disabled={!service}
                       control={
                         <DateTimePicker
                           className={classes.date}
                           value={fromTime}
                           minDate={startTime}
-                          maxDate={endTime}
                           ampm={false}
                           onChange={(newValue) => {
                             setFromTime(newValue?newValue:undefined)
@@ -150,32 +165,15 @@ const Failures: React.FC<FailuresParams> = props => {
                         />
                       }
                       label='From'
-                    /> : null}
-                    {!follow ? <FormControlLabel
-                      className={classes.control}
-                      labelPlacement={'start'}
-                      disabled={!service || instances.loading || !instances.data}
-                      control={
-                        <DateTimePicker
-                          className={classes.date}
-                          value={toTime}
-                          minDate={startTime}
-                          maxDate={endTime}
-                          ampm={false}
-                          onChange={(newValue) => {
-                            setToTime(newValue?newValue:undefined)
-                          }}
-                        />
-                      }
-                      label='To'
-                    /> : null}
+                    />
                   </FormGroup>
                 </>
               }
-              title={'Logs of service'}
+              title={'Failures of service'}
             />
             <CardContent className={classes.content}>
               <div className={classes.inner}>
+                {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
               </div>
             </CardContent>
           </Card>

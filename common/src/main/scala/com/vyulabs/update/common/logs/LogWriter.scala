@@ -1,7 +1,8 @@
 package com.vyulabs.update.common.logs
 
-import java.io._
+import com.vyulabs.update.common.info.LogLine
 
+import java.io._
 import scala.collection.immutable.Queue
 
 /**
@@ -14,7 +15,7 @@ class LogWriter(directory: File,
 
   private var writer = Option.empty[BufferedWriter]
 
-  private var logTail = Queue.empty[String]
+  private var logTail = Queue.empty[LogLine]
   private val logTailSize = 500
 
   if (!directory.exists()) {
@@ -28,11 +29,11 @@ class LogWriter(directory: File,
     closeWriter()
   }
 
-  def writeLogLine(line: String, flush: Boolean = true): Unit = {
+  def writeLogLine(line: LogLine, flush: Boolean = true): Unit = {
     addLogLineToTail(line)
     for (writer <- writer) {
       try {
-        writer.write(line)
+        writer.write(LogFormat.serialize(line))
         writer.newLine()
         if (flush) {
           writer.flush()
@@ -99,7 +100,7 @@ class LogWriter(directory: File,
     }
   }
 
-  private def addLogLineToTail(line: String): Unit = {
+  private def addLogLineToTail(line: LogLine): Unit = {
     synchronized {
       logTail = logTail.enqueue(line)
       if (logTail.size > logTailSize) {
