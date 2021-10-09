@@ -2,6 +2,7 @@
 set -e
 
 serviceToRun=updater
-distributionUrl=`jq -r .clientDistributionUrl updater.json`
+distributionUrl=`jq -r .distributionUrl updater.json`
+accessToken=`jq -r .accessToken updater.json`
 
 . .update.sh
