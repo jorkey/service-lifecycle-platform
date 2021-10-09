@@ -49,8 +49,8 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.uploadClientVersionImage(service, version, file)).isDefined
   }
 
-  def uploadFaultReport(faultId: FaultId, faultReportFile: File): Boolean = {
-    result(client.uploadFaultReport(faultId, faultReportFile)).isDefined
+  def uploadFaultReport(id: FaultId, faultReportFile: File): Boolean = {
+    result(client.uploadFaultReport(id, faultReportFile)).isDefined
   }
 
   private def result[T](awaitable: Awaitable[T])(implicit log: Logger): Option[T] = {

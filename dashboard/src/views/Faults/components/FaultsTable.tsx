@@ -1,8 +1,8 @@
 import React from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import {DistributionFaultReport} from "../../generated/graphql";
-import {GridTableColumnParams, GridTableColumnValue} from "../../common/components/gridTable/GridTableColumn";
-import GridTable from "../../common/components/gridTable/GridTable";
+import {DistributionFaultReport} from "../../../generated/graphql";
+import {GridTableColumnParams, GridTableColumnValue} from "../../../common/components/gridTable/GridTableColumn";
+import GridTable from "../../../common/components/gridTable/GridTable";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -33,14 +33,14 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-interface FailuresTableParams {
+interface FaultsTableParams {
   className: string
   showDistribution?: boolean
   showService?: boolean
   faults: DistributionFaultReport[]
 }
 
-export const FailuresTable = (props: FailuresTableParams) => {
+export const FaultsTable = (props: FaultsTableParams) => {
   const { className, showDistribution, showService, faults } = props
 
   const classes = useStyles()
@@ -55,20 +55,20 @@ export const FailuresTable = (props: FailuresTableParams) => {
     {
       name: 'distribution',
       headerName: 'Distribution',
-      className: classes.distributionColumn
+      className: classes.distributionColumn,
     },
     {
       name: 'service',
       headerName: 'Service',
-      className: classes.serviceColumn
+      className: classes.serviceColumn,
     },
     {
       name: 'message',
       headerName: 'Line',
-      className: classes.messageColumn
+      className: classes.messageColumn,
     },
   ].filter(column => showDistribution || column.name != 'distribution')
-   .filter(column => showService || column.name != 'service')
+   .filter(column => showService || column.name != 'service') as GridTableColumnParams[]
 
   const rows = faults
     .map(fault => {

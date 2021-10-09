@@ -108,12 +108,12 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
       }
       val reportFiles = fault.reportFilesTmpDir.map(_.list().toSeq).getOrElse(Seq.empty[String])
       fault.reportFilesTmpDir.foreach(IoUtils.deleteFileRecursively(_))
-      val faultId = idGenerator.generateId(8)
-      if (!syncDistributionClient.uploadFaultReport(faultId, archiveFile)) {
+      val id = idGenerator.generateId(8)
+      if (!syncDistributionClient.uploadFaultReport(id, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }
-      if (!syncDistributionClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport(faultId, fault.info, reportFiles))).getOrElse(false)) {
+      if (!syncDistributionClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport(id, fault.info, reportFiles))).getOrElse(false)) {
         log.error(s"Can't upload service fault info")
         return false
       }

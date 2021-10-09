@@ -94,17 +94,17 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                         }
                       }
                     }
-                  } ~ path(faultReportPath / ".*".r) { faultId =>
+                  } ~ path(faultReportPath / ".*".r) { id =>
                     get {
                       authorize(role == AccountRole.Administrator || role == AccountRole.Developer) {
-                        getFromFile(workspace.directory.getFaultReportFile(faultId))
+                        getFromFile(workspace.directory.getFaultReportFile(id))
                       }
                     } ~ post {
                       authorize(role == AccountRole.Administrator || role == AccountRole.Updater || role == AccountRole.DistributionConsumer) {
                         fileUpload(faultReportPath) {
                           case (fileInfo, byteSource) =>
                             log.info(s"Receive fault report file from client ${workspace.config.distribution}")
-                            val file = workspace.directory.getFaultReportFile(faultId)
+                            val file = workspace.directory.getFaultReportFile(id)
                             val sink = FileIO.toPath(file.toPath)
                             val future = byteSource.runWith(sink)
                             onSuccess(future) { _ => complete(OK) }

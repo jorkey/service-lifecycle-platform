@@ -47,8 +47,8 @@ class DistributionDirectory(val directory: File) {
     service + "-" + version + ".zip"
   }
 
-  def getFaultReportFileName(faultId: String): String = {
-    faultId + "-fault.zip"
+  def getFaultReportFileName(id: String): String = {
+    id + "-fault.zip"
   }
 
   def drop(): Unit = {
@@ -83,8 +83,8 @@ class DistributionDirectory(val directory: File) {
     faultsDir
   }
 
-  def getFaultReportFile(faultId: String): File = {
-    new File(faultsDir, getFaultReportFileName(faultId))
+  def getFaultReportFile(id: String): File = {
+    new File(faultsDir, getFaultReportFileName(id))
   }
 
   def getBuilderDir(): File = {

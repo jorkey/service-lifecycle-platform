@@ -33,14 +33,14 @@ class FaultReportInfoTest extends TestEnvironment {
     addFaultReportInfo("fault2", "service2", 2, new Date())
 
     assertResult((OK,
-      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"faultId":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
+      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"id":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
         adminContext, graphql"""
           query FaultsQuery($$service: String!) {
-            faultReports (service: $$service) {
+            faults (service: $$service) {
               distribution
               payload {
-                faultId
+                id
                 info {
                   service
                   instance
@@ -83,14 +83,14 @@ class FaultReportInfoTest extends TestEnvironment {
     clear()
   }
 
-  def addFaultReportInfo(faultId: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
+  def addFaultReportInfo(id: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
-        mutation FaultReportInfo($$time: Date!, $$faultId: String!, $$service: String!) {
+        mutation FaultReportInfo($$time: Date!, $$id: String!, $$service: String!) {
           addFaultReportInfo (
             fault: {
-              faultId: $$faultId,
+              id: $$id,
               info: {
                 time: $$time,
                 instance: "instance1",
@@ -100,18 +100,7 @@ class FaultReportInfoTest extends TestEnvironment {
                 state: {
                   time: $$time
                 },
-                logTail: [
-                   { time: "1969-07-17T01:05:21.644Z"
-                     level: "INFO"
-                     unit: "unit1"
-                     message: "line1"
-                   },
-                   { time: "1973-06-29T02:03:11.678Z"
-                     level: "WARN"
-                     unit: "unit2"
-                     message: "line2"
-                   }
-                ]
+                logTail: []
               },
               files: [
                 "core",
@@ -120,25 +109,24 @@ class FaultReportInfoTest extends TestEnvironment {
             }
           )
         }
-      """, variables = JsObject("time" -> time.toJson, "faultId" -> JsString(faultId), "service" -> JsString(service)))))
-    assert(distributionDir.getFaultReportFile(faultId).createNewFile())
+      """, variables = JsObject("time" -> time.toJson, "id" -> JsString(id), "service" -> JsString(service)))))
+    assert(distributionDir.getFaultReportFile(id).createNewFile())
 
-    checkReportExists(faultId, service, sequence, time)
+    checkReportExists(id, service, sequence, time)
   }
 
-  def checkReportExists(faultId: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
+  def checkReportExists(id: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("consumer",
-        ServiceFaultReport(faultId, FaultInfo(time, "instance1", service, "directory1", "Common", ServiceState(time, None, None, None, None, None, None, None),
-          Seq(LogLine(new Date(), "INFO", "unit1", "line1", None),
-              LogLine(new Date(), "WARN", "unit2", "line2", Some(true)))),
+        ServiceFaultReport(id, FaultInfo(time, "instance1", service, "directory1", "Common", ServiceState(time, None, None, None, None, None, None, None),
+          Seq.empty),
           Seq("core", "log/service.log")))))
-    )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.faultId", faultId))))
+    )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.id", id))))
   }
 
-  def checkReportNotExists(faultId: FaultId): Unit = {
-    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("payload.faultId", faultId))))
-    assert(!distributionDir.getFaultReportFile(faultId).exists())
+  def checkReportNotExists(id: FaultId): Unit = {
+    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("payload.id", id))))
+    assert(!distributionDir.getFaultReportFile(id).exists())
   }
 
   def clear(): Unit = {

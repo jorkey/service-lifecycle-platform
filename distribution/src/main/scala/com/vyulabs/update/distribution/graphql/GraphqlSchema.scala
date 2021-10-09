@@ -103,6 +103,7 @@ object GraphqlSchema {
   val OptionToTimeArg = Argument("toTime", OptionInputType(DateType))
   val OptionLevelsArg = Argument("levels", OptionInputType(ListInputType(StringType)))
   val OptionFindArg = Argument("find", OptionInputType(StringType))
+  val OptionIdArg = Argument("id", OptionInputType(StringType))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionPrefetchArg = Argument("prefetch", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
@@ -261,12 +262,12 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: Nil,
         resolve = c => { c.ctx.workspace.getFaultsEndTime(c.arg(OptionDistributionArg), c.arg(OptionServiceArg)) }),
       Field("faults", ListType(DistributionFaultReportType),
-        arguments = OptionDistributionArg :: OptionServiceArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionLimitArg :: Nil,
+        arguments = OptionDistributionArg :: OptionServiceArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionIdArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getFaults(
           c.arg(OptionDistributionArg), c.arg(OptionServiceArg),
           c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
-          c.arg(OptionLimitArg)) }),
+          c.arg(OptionIdArg), c.arg(OptionLimitArg)) }),
     )
   )
 

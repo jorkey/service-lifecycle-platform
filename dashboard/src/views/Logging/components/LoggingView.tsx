@@ -13,9 +13,9 @@ import {
   useLogDirectoriesLazyQuery,
   useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
   useLogServicesQuery
-} from "../../generated/graphql";
+} from "../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
-import {LogsTable, LogsTableEvents} from "../../common/components/logsTable/LogsTable";
+import {LogsTable, LogsTableEvents} from "../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -89,7 +89,7 @@ interface LoggingParams extends RouteComponentProps<LoggingRouteParams> {
   fromUrl: string
 }
 
-const Logging: React.FC<LoggingParams> = props => {
+const LoggingView: React.FC<LoggingParams> = props => {
   const classes = useStyles()
 
   const [service, setService] = useState<string>()
@@ -434,4 +434,4 @@ const Logging: React.FC<LoggingParams> = props => {
   )
 }
 
-export default Logging
+export default LoggingView

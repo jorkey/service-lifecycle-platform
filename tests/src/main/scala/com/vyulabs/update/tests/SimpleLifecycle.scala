@@ -146,7 +146,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     println()
   }
 
-  def updateTestService(): Unit = {
+  def fixTestService(): Unit = {
     println()
     println(s"########################### Fix test service in directory ${testServiceInstanceDir}")
     println()

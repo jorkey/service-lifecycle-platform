@@ -88,8 +88,8 @@ const Sidebar = (props:any) => {
       icon: <ListIcon/>
     },
     {
-      title: 'Failures',
-      href: '/failures',
+      title: 'Faults',
+      href: '/faults',
       icon: <ErrorIcon/>
     },
     {

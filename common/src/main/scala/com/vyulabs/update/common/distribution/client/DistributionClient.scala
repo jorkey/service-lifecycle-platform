@@ -95,8 +95,8 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     login().map(_ => client.upload(clientVersionImagePath + "/" + service + "/" + version.toString, imageField, file)).flatten
   }
 
-  def uploadFaultReport(faultId: FaultId, faultReportFile: File)
+  def uploadFaultReport(id: FaultId, faultReportFile: File)
                        (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.upload(faultReportPath + "/" + faultId, faultReportField, faultReportFile)).flatten
+    login().map(_ => client.upload(faultReportPath + "/" + id, faultReportField, faultReportFile)).flatten
   }
 }

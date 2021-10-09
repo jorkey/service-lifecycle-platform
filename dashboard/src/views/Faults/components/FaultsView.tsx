@@ -8,11 +8,12 @@ import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
-  useFaultDistributionsQuery, useFaultServicesLazyQuery, useFaultsQuery,
+  useFaultDistributionsQuery, useFaultsEndTimeQuery, useFaultServicesLazyQuery, useFaultsQuery,
   useFaultsStartTimeQuery
-} from "../../generated/graphql";
+} from "../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
 import Alert from "@material-ui/lab/Alert";
+import {FaultsTable} from "./FaultsTable";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -52,14 +53,14 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-interface FailuresRouteParams {
+interface FaultsRouteParams {
 }
 
-interface FailuresParams extends RouteComponentProps<FailuresRouteParams> {
+interface FaultsParams extends RouteComponentProps<FaultsRouteParams> {
   fromUrl: string
 }
 
-const Failures: React.FC<FailuresParams> = props => {
+const FaultsView: React.FC<FaultsParams> = props => {
   const classes = useStyles()
 
   const [distribution, setDistribution] = useState<string>()
@@ -89,7 +90,14 @@ const Failures: React.FC<FailuresParams> = props => {
     variables: { distribution: distribution, service: service },
     fetchPolicy: 'no-cache',
     onCompleted(data) { if (data.faultsStartTime) setFromTime(data.faultsStartTime) },
-    onError(err) { setError('Query log min time error ' + err.message) },
+    onError(err) { setError('Query faults min time error ' + err.message) },
+  })
+
+  const { data: endTime } = useFaultsEndTimeQuery({
+    variables: { distribution: distribution, service: service },
+    fetchPolicy: 'no-cache',
+    onCompleted(data) { if (data.faultsEndTime) setToTime(data.faultsEndTime) },
+    onError(err) { setError('Query faults max time error ' + err.message) },
   })
 
   const { data: faults } = useFaultsQuery({
@@ -131,7 +139,6 @@ const Failures: React.FC<FailuresParams> = props => {
                     <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
-                      disabled={!services?.data?.faultServices}
                       control={
                         <Select
                           className={classes.serviceSelect}
@@ -152,7 +159,6 @@ const Failures: React.FC<FailuresParams> = props => {
                     <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
-                      disabled={!service}
                       control={
                         <DateTimePicker
                           className={classes.date}
@@ -166,13 +172,35 @@ const Failures: React.FC<FailuresParams> = props => {
                       }
                       label='From'
                     />
+                    <FormControlLabel
+                      className={classes.control}
+                      labelPlacement={'start'}
+                      control={
+                        <DateTimePicker
+                          className={classes.date}
+                          value={toTime}
+                          minDate={startTime}
+                          ampm={false}
+                          onChange={(newValue) => {
+                            setToTime(newValue?newValue:undefined)
+                          }}
+                        />
+                      }
+                      label='To'
+                    />
                   </FormGroup>
                 </>
               }
-              title={'Failures of service'}
+              title={'Failures of services'}
             />
             <CardContent className={classes.content}>
               <div className={classes.inner}>
+                {faults?.faults ?
+                  <FaultsTable className={classes.faultsTable}
+                               showDistribution={!distribution}
+                               showService={!service}
+                               faults={faults?.faults}
+                  /> : null }
                 {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
               </div>
             </CardContent>
@@ -183,4 +211,4 @@ const Failures: React.FC<FailuresParams> = props => {
   )
 }
 
-export default Failures
+export default FaultsView

@@ -259,14 +259,15 @@ trait StateUtils extends SprayJsonSupport {
   }
 
   def getFaults(distribution: Option[DistributionId], service: Option[ServiceId],
-                fromTime: Option[Date], toTime: Option[Date],
+                fromTime: Option[Date], toTime: Option[Date], id: Option[FaultId],
                 limit: Option[Int])(implicit log: Logger)
       : Future[Seq[DistributionFaultReport]] = {
     val clientArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
     val serviceArg = service.map { service => Filters.eq("payload.info.service", service) }
     val fromTimeArg = fromTime.map(time => Filters.gte("payload.info.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("payload.info.time", time))
-    val args = clientArg ++ serviceArg ++ fromTimeArg ++ toTimeArg
+    val idArg = id.map(id => Filters.lte("payload.id", id))
+    val args = clientArg ++ serviceArg ++ fromTimeArg ++ toTimeArg ++ idArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
     val sort = limit.map { _ => Sorts.descending("_sequence") }
@@ -291,7 +292,7 @@ trait StateUtils extends SprayJsonSupport {
                            (implicit log: Logger): Future[Unit] = {
     Future.sequence(reports.map { report =>
       log.debug(s"Delete fault report ${report.sequence}")
-      val faultFile = directory.getFaultReportFile(report.document.payload.faultId)
+      val faultFile = directory.getFaultReportFile(report.document.payload.id)
       faultFile.delete()
       collection.delete(Filters.and(Filters.eq("_sequence", report.sequence)))
     }).map(_ => Unit)

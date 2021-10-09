@@ -83,8 +83,8 @@ class FaultReportsUploadTest extends TestEnvironment {
     httpClient.waitForMutation("login", Seq(GraphqlArgument("account" -> "test"), GraphqlArgument("password" -> "test")))
   }
 
-  def waitForFaultReportUpload(faultId: FaultId): Promise[Unit] = {
-    httpClient.waitForUpload(faultReportPath + "/" + faultId, "fault-report")
+  def waitForFaultReportUpload(id: FaultId): Promise[Unit] = {
+    httpClient.waitForUpload(faultReportPath + "/" + id, "fault-report")
   }
 
   def waitForAddServiceFaultReportInfo(report: DistributionFaultReport): Promise[Boolean] = {

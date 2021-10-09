@@ -12,7 +12,7 @@ import {
   Providers as ProvidersView,
   Build as BuildView,
   Logging as LoggingView,
-  Failures as FailuresView,
+  Faults as FaultsView,
   NotFound as NotFoundView
 } from './views';
 import {DistributionInfo, useDistributionInfoQuery} from './generated/graphql';
@@ -59,9 +59,9 @@ const Routes: React.FC<RoutesProps> = props => {
         {...props}
       />
       <RouteWithLayout
-        component={FailuresView}
+        component={FaultsView}
         layout={MainLayout}
-        path='/failures'
+        path='/faults'
         exact
         {...props}
       />

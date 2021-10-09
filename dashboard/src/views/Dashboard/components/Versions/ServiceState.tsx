@@ -97,7 +97,7 @@ export const ServiceStatePopup: React.FC<ServiceStateProps> = (props) => {
             <TableCell className={classes.stateColumn}>{Version.clientDistributionVersionToString(state.updateToVersion)}</TableCell></TableRow>):null}
           {state.updateError?(<TableRow><TableCell className={classes.stateColumn}>{state.updateError.critical?'Critical Update Error':'Update Error'}</TableCell>
             <TableCell className={classes.stateColumn}>{state.updateError.error}</TableCell></TableRow>):null}
-          {state.failuresCount?(<TableRow><TableCell className={classes.stateColumn}>Failures Count</TableCell>
+          {state.failuresCount?(<TableRow><TableCell className={classes.stateColumn}>Faults Count</TableCell>
             <TableCell className={classes.stateColumn}>{state.failuresCount}</TableCell></TableRow>):null}
         </TableBody>
       </Table>
