@@ -26,7 +26,7 @@ object LogFormat {
   }
 
   def serialize(line: LogLine): String = {
-    "%s %s %s %s %s".format(dateFormat.format(line.time),
+    "%s %s %s %s".format(dateFormat.format(line.time),
       line.level, line.unit, line.message)
   }
 }

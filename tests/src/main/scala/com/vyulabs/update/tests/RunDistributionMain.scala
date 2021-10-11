@@ -14,8 +14,7 @@ object RunDistributionMain extends App {
   val consumer = new SimpleLifecycle("consumer", 8000)
   consumer.makeAndRunDistributionFromProvider(provider)
 
-  consumer.installTestService(true)
-  consumer.fixTestService()
+  consumer.installTestService()
 
   synchronized { wait() }
 }

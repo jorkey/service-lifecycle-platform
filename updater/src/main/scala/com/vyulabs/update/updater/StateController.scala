@@ -23,10 +23,13 @@ class ServiceStateController(directory: File, profiledServiceName: ProfiledServi
   val logHistoryDirectory = new File(serviceDirectory, "log.history")
 
   serviceDirectory.mkdirs()
-  currentServiceDirectory.mkdir()
-  faultsDirectory.mkdir()
-  newServiceDirectory.mkdir()
-  logHistoryDirectory.mkdir()
+
+  if (profiledServiceName.name != Common.UpdaterServiceName) {
+    currentServiceDirectory.mkdir()
+    faultsDirectory.mkdir()
+    newServiceDirectory.mkdir()
+    logHistoryDirectory.mkdir()
+  }
 
   @volatile private var installDate = Option.empty[Date]
   @volatile private var startDate = Option.empty[Date]

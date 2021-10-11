@@ -4,14 +4,14 @@ import org.slf4j.Logger
 
 import java.io.BufferedReader
 
-class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
-                        onOutput: Seq[(String, Boolean)] => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
-
+class OutputReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
+                         terminated: () => Boolean,
+                         onOutput: Seq[(String, Boolean)] => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
   override def run(): Unit = {
     val buffer = StringBuilder.newBuilder
     val chunk = new Array[Char](1024)
     try {
-      var cnt = input.read(chunk)
+      var cnt = safeRead(chunk)
       while (cnt != -1) {
         var lines = Seq.empty[(String, Boolean)]
         buffer.appendAll(chunk, 0, cnt)
@@ -44,11 +44,19 @@ class LinesReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int]
         if (!lines.isEmpty) {
           onOutput(lines)
         }
-        cnt = input.read(chunk)
+        cnt = safeRead(chunk)
       }
     } catch {
       case e: Exception =>
     }
     onEof()
+  }
+
+  // Darwin Kernel Version 19.6.0 hangs on output reading when process is terminated.
+  private def safeRead(buffer: Array[Char]): Int = {
+    while (!terminated() && !input.ready()) {
+      Thread.sleep(100)
+    }
+    input.read(buffer)
   }
 }

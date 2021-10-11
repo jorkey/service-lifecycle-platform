@@ -72,7 +72,8 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
     if (isUnix) {
       try {
         val proc = Runtime.getRuntime.exec(s"ps -o vsz= -p ${handle.pid()}", null, new File("."))
-        val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, ProcessUtils.Logging.None).getOrElse {
+        val stdOutput = ProcessUtils.readOutputToString(
+            proc, ProcessUtils.Logging.None).getOrElse {
           log.error(s"Get 'ps' output error")
           return None
         }
@@ -102,7 +103,7 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
     if (isUnix) {
       try {
         val proc = Runtime.getRuntime.exec(s"ps -o time= -p ${handle.pid()}", null, new File("."))
-        val stdOutput = ProcessUtils.readOutputToString(proc.getInputStream, ProcessUtils.Logging.None).getOrElse {
+        val stdOutput = ProcessUtils.readOutputToString(proc, ProcessUtils.Logging.None).getOrElse {
           log.error(s"Get 'ps' output error")
           return None
         }

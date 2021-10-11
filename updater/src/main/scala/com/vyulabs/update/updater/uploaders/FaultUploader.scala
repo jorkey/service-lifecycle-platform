@@ -4,9 +4,9 @@ import com.vyulabs.update.common.common.{Common, IdGenerator}
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.FaultInfo._
-import com.vyulabs.update.common.info.{FaultInfo, ProfiledServiceName, ServiceFaultReport}
+import com.vyulabs.update.common.info.{FaultInfo, FileInfo, ProfiledServiceName, ServiceFaultReport}
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, Build}
+import com.vyulabs.update.common.version.{Build, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json.enrichAny
 
@@ -106,14 +106,17 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
       } finally {
         IoUtils.deleteFileRecursively(tmpDirectory)
       }
-      val reportFiles = fault.reportFilesTmpDir.map(_.list().toSeq).getOrElse(Seq.empty[String])
+      val reportFiles = fault.reportFilesTmpDir.map(_.listFiles().toSeq
+          .map(file => FileInfo(file.getName, file.length())))
+        .getOrElse(Seq.empty[FileInfo])
       fault.reportFilesTmpDir.foreach(IoUtils.deleteFileRecursively(_))
       val id = idGenerator.generateId(8)
       if (!syncDistributionClient.uploadFaultReport(id, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }
-      if (!syncDistributionClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport(id, fault.info, reportFiles))).getOrElse(false)) {
+      if (!syncDistributionClient.graphqlRequest(
+          updaterMutations.addFaultReportInfo(ServiceFaultReport(id, fault.info, reportFiles))).getOrElse(false)) {
         log.error(s"Can't upload service fault info")
         return false
       }

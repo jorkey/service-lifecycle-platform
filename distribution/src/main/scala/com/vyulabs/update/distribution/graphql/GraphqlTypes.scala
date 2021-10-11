@@ -117,6 +117,7 @@ object GraphqlTypes {
   implicit val ServiceLogLineType = deriveObjectType[Unit, ServiceLogLine]()
   implicit val SequencedServiceLogLineType = deriveObjectType[Unit, SequencedServiceLogLine]()
   implicit val FaultInfoType = deriveObjectType[Unit, FaultInfo]()
+  implicit val FileInfoType = deriveObjectType[Unit, FileInfo]()
   implicit val ServiceFaultReportType = deriveObjectType[Unit, ServiceFaultReport]()
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
   implicit val ProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
@@ -143,5 +144,6 @@ object GraphqlTypes {
   implicit val InstanceServiceStateInputType = deriveInputObjectType[InstanceServiceState](InputObjectTypeName("InstanceServiceStateInput"))
   implicit val LogLineInputType = deriveInputObjectType[LogLine](InputObjectTypeName("LogLineInput"))
   implicit val FaultInfoInputType = deriveInputObjectType[FaultInfo](InputObjectTypeName("FaultInfoInput"))
+  implicit val FileInfoInputType = deriveInputObjectType[FileInfo](InputObjectTypeName("FileInfoInput"))
   implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
 }

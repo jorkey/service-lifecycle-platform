@@ -61,7 +61,6 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         }
         val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
-        val formattedLogRegex = "(.[^ ]* .[^ ]*) (.[^ ]*) (.[^ ]*) (.*)".r
         val onOutput = logWriter.map { logWriter =>
           (lines: Seq[(String, Boolean)]) => {
             lines.foreach {

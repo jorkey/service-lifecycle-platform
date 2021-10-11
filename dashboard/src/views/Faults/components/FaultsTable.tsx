@@ -3,6 +3,7 @@ import {makeStyles} from "@material-ui/core/styles";
 import {DistributionFaultReport} from "../../../generated/graphql";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../common/components/gridTable/GridTable";
+import {Version} from "../../../common";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -26,8 +27,9 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingLeft: '16px'
   },
-  messageColumn: {
-    whiteSpace: 'pre',
+  versionColumn: {
+    width: '100px',
+    minWidth: '100px',
     padding: '4px',
     paddingLeft: '16px'
   }
@@ -48,7 +50,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
   const columns: GridTableColumnParams[] = [
     {
       name: 'time',
-      headerName: 'Time',
+      headerName: 'Fault Time',
       className: classes.timeColumn,
       type: 'date',
     },
@@ -63,10 +65,10 @@ export const FaultsTable = (props: FaultsTableParams) => {
       className: classes.serviceColumn,
     },
     {
-      name: 'message',
-      headerName: 'Line',
-      className: classes.messageColumn,
-    },
+      name: 'version',
+      headerName: 'Version',
+      className: classes.versionColumn,
+    }
   ].filter(column => showDistribution || column.name != 'distribution')
    .filter(column => showService || column.name != 'service') as GridTableColumnParams[]
 
@@ -76,6 +78,8 @@ export const FaultsTable = (props: FaultsTableParams) => {
         ['time', fault.payload.info.time],
         ['distribution', fault.distribution],
         ['service', fault.payload.info.service],
+        ['version',
+          fault.payload.info.state.version?Version.clientDistributionVersionToString(fault.payload.info.state.version):''],
       ]) })
 
   return <GridTable

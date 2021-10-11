@@ -17,7 +17,8 @@ class ChildProcess(process: Process)(implicit executionContext: ExecutionContext
   private val input = new BufferedReader(new InputStreamReader(process.getInputStream))
 
   def readOutput(onOutput: Seq[(String, Boolean)] => Unit = _ => (), onExit: Int => Unit = _ => ()) {
-    new LinesReaderThread(input, None,
+    new OutputReaderThread(input, None,
+      () => !process.isAlive,
       lines => {
         onOutput(lines)
       },

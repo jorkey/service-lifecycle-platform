@@ -54,9 +54,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[TestedDesiredVersions],
     classOf[TestSignature],
     classOf[LogLine],
-    classOf[FaultInfo],
     classOf[UploadStatus],
     classOf[UploadStatusDocument],
+    classOf[FileInfo],
+    classOf[FaultInfo],
     classOf[ServiceFaultReport],
     fromCodecs(FiniteDurationCodec, URLCodec)
   ))

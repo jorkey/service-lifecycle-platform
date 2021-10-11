@@ -92,7 +92,7 @@ object ZipUtils {
   }
 
   def unzip(zipFile: File, outputFile: File, map: (String) => Option[String] = Some(_))(implicit log: Logger): Boolean = {
-    log.debug(s"Unzip to ${outputFile}")
+    if (log.isDebugEnabled) log.debug(s"Unzip to ${outputFile}")
     var zipInput: ZipInputStream = null
     try {
       if (log.isDebugEnabled) log.debug(s"Unzip ${zipFile} to ${outputFile}")
@@ -110,7 +110,6 @@ object ZipUtils {
   }
 
   def unzip(zipInput: ZipInputStream, outputFile: File, map: (String) => Option[String])(implicit log: Logger): Boolean = {
-    log.debug(s"Unzip to ${outputFile}")
     try {
       var entry = zipInput.getNextEntry
       while (entry != null) {

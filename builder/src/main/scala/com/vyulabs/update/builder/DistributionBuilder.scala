@@ -109,6 +109,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     val builderVersion = downloadAndGenerateClientVersion(adminProviderClient.get, Common.BuilderServiceName).getOrElse {
       return false
     }
+    val updaterVersion = downloadAndGenerateClientVersion(adminProviderClient.get, Common.UpdaterServiceName).getOrElse {
+      return false
+    }
 
     log.info("")
     log.info(s"########################### Install distribution service")
@@ -124,7 +127,9 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     if (!uploadDeveloperAndClientVersions(Map(
           Common.ScriptsServiceName -> scriptsVersion.original,
           Common.DistributionServiceName -> distributionVersion.original,
-          Common.BuilderServiceName -> builderVersion.original), author)) {
+          Common.BuilderServiceName -> builderVersion.original,
+          Common.UpdaterServiceName -> updaterVersion.original
+        ), author)) {
       log.error("Can't upload versions")
       return false
     }

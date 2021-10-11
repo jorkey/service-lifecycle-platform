@@ -73,7 +73,7 @@ object ProcessUtils {
       builder.directory(dir)
       val proc = builder.start()
       processToTerminate = Some(proc)
-      val output = readOutputToString(proc.getInputStream, logging).getOrElse {
+      val output = readOutputToString(proc, logging).getOrElse {
         log.error("Can't read process output")
         return false
       }
@@ -107,10 +107,12 @@ object ProcessUtils {
     }
   }
 
-  def readOutputToString(input: InputStream, logging: Logging)(implicit log: Logger): Option[String] = {
-    val stdInput = new BufferedReader(new InputStreamReader(input))
+  def readOutputToString(process: Process, logging: Logging)
+                        (implicit log: Logger): Option[String] = {
+    val stdInput = new BufferedReader(new InputStreamReader(process.getInputStream))
     val output = StringBuilder.newBuilder
-    val thread = new LinesReaderThread(stdInput, if (logging == Logging.Realtime) Some(1000) else None,
+    val thread = new OutputReaderThread(stdInput, if (logging == Logging.Realtime) Some(1000) else None,
+      () => !process.isAlive,
       lines => {
         lines.foreach { case (data, nl) =>
           if (logging != Logging.None) {
