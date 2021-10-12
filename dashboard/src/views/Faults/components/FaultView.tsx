@@ -27,78 +27,38 @@ const useStyles = makeStyles((theme:any) => ({
   inner: {
     minWidth: 800
   },
-  control: {
-    paddingLeft: '5px',
-    paddingRight: '15px',
-    textTransform: 'none'
-  },
-  alert: {
-    marginTop: 25
-  }
 }));
 
-interface FaultRouteParams {
-  id: string
-}
-
-interface FaultParams extends RouteComponentProps<FaultRouteParams> {
+interface FaultParams {
+  report: DistributionFaultReport
 }
 
 const FaultView: React.FC<FaultParams> = props => {
+  const { report } = props
+
   const classes = useStyles()
 
-  const [report, setReport] = useState<DistributionFaultReport>()
-  const [error, setError] = useState<string>()
-
-  useFaultQuery({
-    variables: { id: props.match.params.id },
-    fetchPolicy: 'no-cache',
-    onCompleted(data) {
-      if (data.faults.length) {
-        setReport(data.faults[0])
-      }
-    },
-    onError(err) {
-      setError('Query fault info error ' + err.message)
-    },
-  })
-
-  return (report ?
-    <div className={classes.root}>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Card>
-            <CardHeader title={'Fault Info'}/>
-            <CardContent className={classes.content}>
-              <div className={classes.inner}>
-                <TextField
-                  autoFocus
-                  fullWidth
-                  label="Distribution"
-                  margin="normal"
-                  value={report.distribution}
-                  disabled={true}
-                  required
-                  variant="outlined"
-                />
-                <TextField
-                  autoFocus
-                  fullWidth
-                  label="Service"
-                  margin="normal"
-                  value={report.payload.info.service}
-                  disabled={true}
-                  required
-                  variant="outlined"
-                />
-                {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-              </div>
-            </CardContent>
-          </Card>
-        </Grid>
+  const info = `Fault Id: ${report.payload.id}\n` +
+    `Instance: ${report.payload.info.instance}\n` +
+    (report.payload.info.state.installTime?`Install Time: ${report.payload.info.state.installTime.toString()}\n`:'') +
+    (report.payload.info.state.lastExitCode?`Last Exit Code: ${report.payload.info.state.lastExitCode}\n`:'') +
+    (report.payload.info.state.failuresCount?`Failures Count: ${report.payload.info.state.failuresCount}\n`:'') +
+    (report.payload.info.state.updateToVersion?`Updating To Version: ${report.payload.info.state.updateToVersion}\n`:'') +
+    (report.payload.info.state.updateError?`Update Error: ${report.payload.info.state.updateError}\n`:'')
+  return <div className={classes.root}>
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Card>
+          <CardHeader title={'Fault Info'}/>
+          <CardContent className={classes.content}>
+            <div className={classes.inner}>
+              <TextField>{info}</TextField>
+            </div>
+          </CardContent>
+        </Card>
       </Grid>
-    </div> : null
-  )
+    </Grid>
+  </div>
 }
 
 export default FaultView
