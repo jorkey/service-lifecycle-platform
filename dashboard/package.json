@@ -59,6 +59,7 @@
     "react-scripts": "^3.4.4",
     "recompose": "^0.30.0",
     "underscore": "^1.13.1",
+    "universal-cookie": "^4.0.4",
     "uuid": "^3.3.2",
     "validate.js": "^0.13.1",
     "ws": "^7.5.5"

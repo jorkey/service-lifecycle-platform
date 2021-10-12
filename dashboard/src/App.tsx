@@ -31,7 +31,7 @@ import {NextLink} from "@apollo/client/link/core/types";
 import {getMainDefinition, Observable} from '@apollo/client/utilities';
 import {Client, ClientOptions, createClient} from 'graphql-ws'
 import BigInt from "apollo-type-bigint";
-
+import Cookies from "universal-cookie";
 
 const browserHistory = createBrowserHistory();
 
@@ -40,13 +40,15 @@ validate.validators = {
   ...validators
 };
 
+export const cookies = new Cookies()
+
 const httpLink = createHttpLink({
   uri: '/graphql',
 });
 
 const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists
-  const token = localStorage.getItem('token');
+  const token = cookies.get('accessToken')
   // return the headers to the context so httpLink can read them
   if (token) {
     return {
@@ -71,7 +73,7 @@ const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
   if (networkError) {
     console.log(`Network error: ${networkError.message}`);
     if ((networkError as ServerError).statusCode === 401) {
-      localStorage.removeItem('token')
+      localStorage.removeItem('accessToken')
       window.location.replace('/')
     }
   }
@@ -109,7 +111,7 @@ const removeTypenameLink = new ApolloLink(
 
 // const sseLink = new ApolloLink(
 //   (operation: Operation, forward: NextLink) => {
-//     const token = localStorage.getItem('token');
+//     const token = cookies.get('accessToken');
 //     return operation.operationName.startsWith('subscribe') ?
 //       new Observable(observer => {
 //         const source = new EventSource('/graphql'
@@ -184,7 +186,7 @@ class WebSocketLink extends ApolloLink {
 const wsLink = new WebSocketLink({
   url: 'ws://localhost:8000/graphql/websocket',
   connectionParams: () => {
-    const token = localStorage.getItem('token');
+    const token = cookies.get('accessToken')
     return {
       Authorization: `Bearer ${token}`,
     };

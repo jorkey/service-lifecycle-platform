@@ -55,7 +55,7 @@ trait GraphqlWebSocketSupport {
             queryType match {
               case ConnectionInit.`type` =>
                 val init = query.convertTo[ConnectionInit]
-                workspace.getOptionalAccessToken(init.payload.Authorization).onComplete {
+                workspace.getOptionalAccessTokenFromHeader(init.payload.Authorization).onComplete {
                   case Success(accessToken) =>
                     context = Some(GraphqlContext(accessToken, None, workspace))
                     singleReply(ConnectionAck())

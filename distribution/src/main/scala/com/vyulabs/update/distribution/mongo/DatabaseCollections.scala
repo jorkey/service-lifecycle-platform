@@ -138,6 +138,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.level")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.time")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.time")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("payload.message")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
@@ -146,6 +148,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.id")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.service")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.time")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.info.time")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val State_UploadStatus = for {

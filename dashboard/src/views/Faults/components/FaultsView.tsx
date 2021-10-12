@@ -35,10 +35,7 @@ const useStyles = makeStyles((theme:any) => ({
   },
   date: {
     marginLeft: '10px',
-    width: '200px'
-  },
-  info: {
-    height: 'calc(100vh - 250px)',
+    width: '150px'
   },
   control: {
     paddingLeft: '5px',
@@ -46,7 +43,8 @@ const useStyles = makeStyles((theme:any) => ({
     textTransform: 'none'
   },
   faultsTable: {
-    height: 'calc(100vh - 550px)',
+    // height: 'calc(100vh - 550px)',
+    height: '300px'
   },
   alert: {
     marginTop: 25
@@ -71,9 +69,7 @@ const FaultsView: React.FC<FaultsParams> = props => {
   const [error, setError] = useState<string>()
 
   useEffect(() => {
-    if (distribution) {
-      getServices({variables: { distribution: distribution }})
-    }
+    getServices({variables: { distribution: distribution }})
   }, [ distribution ])
 
   const { data: distributions } = useFaultDistributionsQuery({
@@ -124,10 +120,10 @@ const FaultsView: React.FC<FaultsParams> = props => {
                           className={classes.distributionSelect}
                           native
                           onChange={(event) => {
-                            setDistribution(event.target.value as string)
+                            setDistribution(event.target.value?event.target.value as string:undefined)
                           }}
                           title='Select distribution'
-                          value={service}
+                          value={distribution}
                         >
                           <option key={-1}/>
                           { distributions?.faultDistributions
@@ -144,7 +140,7 @@ const FaultsView: React.FC<FaultsParams> = props => {
                           className={classes.serviceSelect}
                           native
                           onChange={(event) => {
-                            setService(event.target.value as string)
+                            setService(event.target.value?event.target.value as string:undefined)
                           }}
                           title='Select service'
                           value={service}

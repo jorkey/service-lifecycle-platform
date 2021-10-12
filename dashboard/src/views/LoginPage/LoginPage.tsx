@@ -7,6 +7,8 @@ import Alert from '@material-ui/lab/Alert';
 import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
 import {useLoginMutation} from "../../generated/graphql";
+import Cookies from "universal-cookie";
+import {cookies} from "../../App";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -30,7 +32,7 @@ interface LoginPageProps {
 const LoginPage: React.FC<LoginPageProps> = () => {
   const classes = useStyles();
 
-  useEffect(() => localStorage.removeItem('token'), []);
+  useEffect(() => localStorage.removeItem('accessToken'), []);
 
   const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
@@ -43,8 +45,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
       }})
 
   if (data) {
-    console.log('token ' + data.login)
-    localStorage.setItem('token', data.login)
+    cookies.set('accessToken', data.login, { path: '/' })
     window.location.replace('/')
   }
 

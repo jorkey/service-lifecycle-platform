@@ -4,14 +4,18 @@ import {DistributionFaultReport} from "../../../generated/graphql";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../common/components/gridTable/GridTable";
 import {Version} from "../../../common";
+import {Button} from "@material-ui/core";
+import DownloadIcon from '@material-ui/icons/CloudDownload';
+import {download} from "../../../common/Download";
+import Cookies from "universal-cookie";
 
 const useStyles = makeStyles(theme => ({
   div: {
     display: 'relative'
   },
   timeColumn: {
-    width: '200px',
-    minWidth: '200px',
+    width: '150px',
+    minWidth: '150px',
     padding: '4px',
     paddingLeft: '16px'
   },
@@ -28,6 +32,12 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: '16px'
   },
   versionColumn: {
+    width: '100px',
+    minWidth: '100px',
+    padding: '4px',
+    paddingLeft: '16px'
+  },
+  downloadColumn: {
     width: '100px',
     minWidth: '100px',
     padding: '4px',
@@ -67,7 +77,13 @@ export const FaultsTable = (props: FaultsTableParams) => {
     {
       name: 'version',
       headerName: 'Version',
+      className: classes.downloadColumn,
+    },
+    {
+      name: 'download',
+      headerName: 'Download',
       className: classes.versionColumn,
+      type: 'elements'
     }
   ].filter(column => showDistribution || column.name != 'distribution')
    .filter(column => showService || column.name != 'service') as GridTableColumnParams[]
@@ -80,6 +96,17 @@ export const FaultsTable = (props: FaultsTableParams) => {
         ['service', fault.payload.info.service],
         ['version',
           fault.payload.info.state.version?Version.clientDistributionVersionToString(fault.payload.info.state.version):''],
+        ['download', [
+          <Button key='0'
+                  onClick={
+                    () => {
+                      download('http://localhost:8000/load/fault-report/' + fault.payload.id,
+                `fault-${fault.payload.info.service}-${fault.payload.info.time.toString()}`)
+                    }
+                  }>
+            <DownloadIcon/>
+          </Button>
+        ] ]
       ]) })
 
   return <GridTable

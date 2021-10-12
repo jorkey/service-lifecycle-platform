@@ -233,9 +233,11 @@ trait StateUtils extends SprayJsonSupport {
     collections.State_FaultReportsInfo.distinctField[String]("distribution")
   }
 
-  def getFaultServices(distribution: DistributionId)(implicit log: Logger): Future[Seq[ServiceId]] = {
-    val distributionArg = Filters.eq("distribution", distribution)
-    collections.State_FaultReportsInfo.distinctField[String]("service", distributionArg)
+  def getFaultServices(distribution: Option[DistributionId])(implicit log: Logger): Future[Seq[ServiceId]] = {
+    val distributionArg = distribution.map(Filters.eq("distribution", _))
+    val filters = Filters.and(distributionArg.toSeq.asJava)
+    collections.State_FaultReportsInfo.distinctField[String](
+      "payload.info.service", filters)
   }
 
   def getFaultsStartTime(distribution: Option[ServiceId], service: Option[ServiceId])
@@ -244,7 +246,7 @@ trait StateUtils extends SprayJsonSupport {
     val serviceArg = service.map(Filters.eq("service", _))
     val args = distributionArg ++ serviceArg
     val filters = Filters.and(args.asJava)
-    val sort = Sorts.ascending("payload.time")
+    val sort = Sorts.ascending("payload.info.time")
     collections.State_FaultReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.info.time))
   }
 
@@ -254,7 +256,7 @@ trait StateUtils extends SprayJsonSupport {
     val serviceArg = service.map(Filters.eq("service", _))
     val args = distributionArg ++ serviceArg
     val filters = Filters.and(args.asJava)
-    val sort = Sorts.descending("payload.time")
+    val sort = Sorts.descending("payload.info.time")
     collections.State_FaultReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.info.time))
   }
 
@@ -269,8 +271,7 @@ trait StateUtils extends SprayJsonSupport {
     val idArg = id.map(id => Filters.lte("payload.id", id))
     val args = clientArg ++ serviceArg ++ fromTimeArg ++ toTimeArg ++ idArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    // https://stackoverflow.com/questions/4421207/how-to-get-the-last-n-records-in-mongodb
-    val sort = limit.map { _ => Sorts.descending("_sequence") }
+    val sort = Some(Sorts.descending("_sequence"))
     collections.State_FaultReportsInfo.find(filters, sort, limit)
   }
 

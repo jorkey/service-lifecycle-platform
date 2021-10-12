@@ -16,11 +16,12 @@ import {
   NotFound as NotFoundView
 } from './views';
 import {DistributionInfo, useDistributionInfoQuery} from './generated/graphql';
+import {cookies} from "./App";
 
 // @ts-ignore
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   <Route {...rest} render = { props => {
-    return localStorage.getItem('token')
+    return cookies.get('accessToken')
       ? <Component {...props} />
       : <Redirect to='/login'/>
   }} />

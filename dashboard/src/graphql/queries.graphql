@@ -173,7 +173,7 @@ query faultDistributions {
     faultDistributions
 }
 
-query faultServices ($distribution: String!) {
+query faultServices ($distribution: String) {
     faultServices (distribution: $distribution)
 }
 

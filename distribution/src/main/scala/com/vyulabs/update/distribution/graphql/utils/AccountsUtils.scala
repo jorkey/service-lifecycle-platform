@@ -1,32 +1,27 @@
 package com.vyulabs.update.distribution.graphql.utils
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.{complete, onSuccess, optionalHeaderValueByName, provide}
-import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.AccountId
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.AccountRole.AccountRole
-import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.{AuthenticationException, NotFoundException}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties, PasswordHash, ServerAccountInfo, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
 import com.vyulabs.update.common.common.JWT
 import org.bson.BsonDocument
-import org.janjaali.sprayjwt.Jwt
-import org.janjaali.sprayjwt.algorithms.HS256
-import org.janjaali.sprayjwt.exceptions.InvalidSignatureException
 import org.slf4j.Logger
-import spray.json._
-
 import java.io.IOException
 import java.util.Base64
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.{StatusCodes}
+import akka.http.scaladsl.server.Directives.{_}
+import akka.stream.Materializer
+import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 
 trait AccountsUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
@@ -177,13 +172,20 @@ trait AccountsUtils extends SprayJsonSupport {
   def getOptionalAccessToken()(implicit log: Logger): Directive1[Option[AccessToken]] = {
     optionalHeaderValueByName("Authorization").flatMap {
       case Some(authorization) =>
-        onSuccess(getOptionalAccessToken(authorization)).flatMap { token => provide(token) }
+        onSuccess(getOptionalAccessTokenFromHeader(authorization)).flatMap {
+          token => provide(token)
+        }
       case None =>
-        provide(None)
+        optionalCookie("accessToken").flatMap {
+          case Some(cookie) =>
+            provide(Some(JWT.decodeAccessToken(cookie.value, config.jwtSecret)))
+          case None =>
+            provide(None)
+        }
     }
   }
 
-  def getOptionalAccessToken(authorization: String)(implicit log: Logger): Future[Option[AccessToken]] = {
+  def getOptionalAccessTokenFromHeader(authorization: String)(implicit log: Logger): Future[Option[AccessToken]] = {
     val bearerTokenRx = "Bearer (.*)".r
     val basicTokenRx = "Basic (.*)".r
     authorization match {
