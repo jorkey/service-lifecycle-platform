@@ -283,14 +283,14 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
              className={classes.versionsTable}
              columns={columns}
              rows={rowsView?rowsView:[]}
-             selectColumn={true}
-             disableManualSelect={provider && !!provider.testConsumer}
-             onRowsSelected={(rowsNum) => {
+             checkBoxColumn={true}
+             disableManualCheck={provider && !!provider.testConsumer}
+             onRowsChecked={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
                  developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))
              }}
-             onRowsUnselected={(rowsNum) => {
+             onRowsUnchecked={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
                  developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))

@@ -20,8 +20,8 @@ const useStyles = makeStyles(theme => ({
 export interface GridTableRowParams {
   columns: Array<GridTableColumnParams>,
   values: Map<string, GridTableColumnValue>,
-  selectColumn?: boolean,
-  disableManualSelect?: boolean,
+  checkBoxColumn?: boolean,
+  disableManualCheck?: boolean,
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
@@ -31,16 +31,16 @@ export interface GridTableRowParams {
   onBeginEditing?: () => boolean,
   onSubmitted?: (values: Map<string, GridTableColumnValue>, oldValues: Map<string, GridTableColumnValue>) => void,
   onCanceled?: () => void,
-  onSelect?: () => void
-  onUnselect?: () => void
+  onChecked?: () => void
+  onUnchecked?: () => void
 }
 
 // @ts-ignore
 const useMountEffect = fun => useEffect(fun, [])
 
 export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, selectColumn, disableManualSelect, adding, editing, scrollInto,
-    onClick, onBeginEditing, onSubmitted, onCanceled, onSelect, onUnselect } = params
+  const { rowNum, columns, values, checkBoxColumn, disableManualCheck, adding, editing, scrollInto,
+    onClick, onBeginEditing, onSubmitted, onCanceled, onChecked, onUnchecked } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, GridTableColumnValue>>(new Map())
@@ -129,16 +129,16 @@ export const GridTableRow = (params: GridTableRowParams) => {
       }
       </TableCell>))
 
-  return (<TableRow ref={myRef} selected={selected}>{ selectColumn ?
+  return (<TableRow ref={myRef} selected={selected}>{ checkBoxColumn ?
             <TableCell padding='checkbox' key={-1}>
               <Checkbox
                 checked={selected}
-                disabled={disableManualSelect}
+                disabled={disableManualCheck}
                 onChange={(event) => {
                   if (event.target.checked) {
-                    onSelect?.()
+                    onChecked?.()
                   } else {
-                    onUnselect?.()
+                    onUnchecked?.()
                   }
                 }}
               />

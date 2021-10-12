@@ -16,8 +16,8 @@ interface GridParams {
   className: string,
   columns: GridTableColumnParams[],
   rows: Map<string, GridTableColumnValue>[],
-  selectColumn?: boolean,
-  disableManualSelect?: boolean,
+  checkBoxColumn?: boolean,
+  disableManualCheck?: boolean,
   addNewRow?: boolean,
   scrollToLastRow?: boolean,
   onClick?: (row: number) => void,
@@ -26,16 +26,16 @@ interface GridParams {
   onChanging?: boolean,
   onRowChanged?: (row: number, values: Map<string, GridTableColumnValue>,
                   oldValues: Map<string, GridTableColumnValue>) => Promise<void> | void,
-  onRowsSelected?: (rows: number[]) => void
-  onRowsUnselected?: (rows: number[]) => void
+  onRowsChecked?: (rows: number[]) => void
+  onRowsUnchecked?: (rows: number[]) => void
   onScrollTop?: () => void
   onScrollMiddle?: () => void
   onScrollBottom?: () => void
 }
 
 export const GridTable = (props: GridParams) => {
-  const { className, columns, rows, selectColumn, disableManualSelect, addNewRow, scrollToLastRow,
-    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected,
+  const { className, columns, rows, checkBoxColumn, disableManualCheck, addNewRow, scrollToLastRow,
+    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsChecked, onRowsUnchecked,
     onScrollTop, onScrollMiddle, onScrollBottom  } = props
 
   const [editingRow, setEditingRow] = useState(-1)
@@ -58,17 +58,17 @@ export const GridTable = (props: GridParams) => {
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            { selectColumn ?
+            { checkBoxColumn ?
               <TableCell padding='checkbox'>
                 <Checkbox
                   indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
                   checked={rows.length > 0 && selectedRowsCount === rows.length}
-                  disabled={disableManualSelect}
+                  disabled={disableManualCheck}
                   onChange={(event) => {
                     if (event.target.checked) {
-                      onRowsSelected?.(rows.map((row, index) => index))
+                      onRowsChecked?.(rows.map((row, index) => index))
                     } else {
-                      onRowsUnselected?.(rows.map((row, index) => index))
+                      onRowsUnchecked?.(rows.map((row, index) => index))
                     }
                   }}
                 />
@@ -87,19 +87,19 @@ export const GridTable = (props: GridParams) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row}
                                       adding={false}
                                       editing={rowNum == editingRow}
-                                      selectColumn={selectColumn}
-                                      disableManualSelect={disableManualSelect}
+                                      checkBoxColumn={checkBoxColumn}
+                                      disableManualCheck={disableManualCheck}
                                       scrollInto={
                                         scrollToLastRow && rowNum==rows.length-1
                                       }
                                       onClick={() => {
                                         onClick?.(rowNum)
                                       }}
-                                      onSelect={() => {
-                                        onRowsSelected?.([rowNum])
+                                      onChecked={() => {
+                                        onRowsChecked?.([rowNum])
                                       }}
-                                      onUnselect={() => {
-                                        onRowsUnselected?.([rowNum])
+                                      onUnchecked={() => {
+                                        onRowsUnchecked?.([rowNum])
                                       }}
                                       onBeginEditing={() => {
                                         if (!changingInProgress) {
