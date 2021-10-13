@@ -8,12 +8,15 @@ import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
+  DistributionFaultReport,
   useFaultDistributionsQuery, useFaultsEndTimeQuery, useFaultServicesLazyQuery, useFaultsQuery,
   useFaultsStartTimeQuery
 } from "../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
 import Alert from "@material-ui/lab/Alert";
 import {FaultsTable} from "./FaultsTable";
+import FaultInfo from "./FaultInfo";
+import FaultFiles from "./FaultFiles";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -43,8 +46,7 @@ const useStyles = makeStyles((theme:any) => ({
     textTransform: 'none'
   },
   faultsTable: {
-    // height: 'calc(100vh - 550px)',
-    height: '300px'
+    height: '250px'
   },
   alert: {
     marginTop: 25
@@ -65,6 +67,8 @@ const FaultsView: React.FC<FaultsParams> = props => {
   const [service, setService] = useState<string>()
   const [fromTime, setFromTime] = useState<Date>()
   const [toTime, setToTime] = useState<Date>()
+
+  const [selected, setSelected] = useState<DistributionFaultReport>()
 
   const [error, setError] = useState<string>()
 
@@ -196,11 +200,20 @@ const FaultsView: React.FC<FaultsParams> = props => {
                                showDistribution={!distribution}
                                showService={!service}
                                faults={faults?.faults}
+                               onSelected={selected => setSelected(selected)}
                   /> : null }
                 {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
               </div>
             </CardContent>
           </Card>
+        </Grid>
+        <Grid item xs={6}>
+          {selected?<FaultInfo report={selected}/>:null}
+          {selected && selected.payload.files.length?<FaultFiles files={selected.payload.files}/>:null}
+        </Grid>
+        <Grid item xs={6}>
+          {selected?<FaultInfo report={selected}/>:null}
+          {selected && selected.payload.files.length?<FaultFiles files={selected.payload.files}/>:null}
         </Grid>
       </Grid>
     </div>

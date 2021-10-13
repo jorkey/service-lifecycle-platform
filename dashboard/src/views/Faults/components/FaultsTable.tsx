@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import {DistributionFaultReport} from "../../../generated/graphql";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../common/components/gridTable/GridTableColumn";
@@ -7,7 +7,6 @@ import {Version} from "../../../common";
 import {Button} from "@material-ui/core";
 import DownloadIcon from '@material-ui/icons/CloudDownload';
 import {download} from "../../../common/Download";
-import Cookies from "universal-cookie";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -50,12 +49,19 @@ interface FaultsTableParams {
   showDistribution?: boolean
   showService?: boolean
   faults: DistributionFaultReport[]
+  onSelected: (fault: DistributionFaultReport|undefined) => void
 }
 
 export const FaultsTable = (props: FaultsTableParams) => {
-  const { className, showDistribution, showService, faults } = props
+  const { className, showDistribution, showService, faults, onSelected } = props
+
+  const [ selected, setSelected ] = useState(-1)
 
   const classes = useStyles()
+
+  useEffect(() => {
+    onSelected(selected!=-1?faults[selected]:undefined)
+  }, [selected])
 
   const columns: GridTableColumnParams[] = [
     {
@@ -89,7 +95,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
    .filter(column => showService || column.name != 'service') as GridTableColumnParams[]
 
   const rows = faults
-    .map(fault => {
+    .map((fault, row) => {
       return new Map<string, GridTableColumnValue>([
         ['time', fault.payload.info.time],
         ['distribution', fault.distribution],
@@ -106,12 +112,14 @@ export const FaultsTable = (props: FaultsTableParams) => {
                   }>
             <DownloadIcon/>
           </Button>
-        ] ]
+        ] ],
+        ['selected', row == selected]
       ]) })
 
   return <GridTable
       className={className}
       columns={columns}
       rows={rows}
+      onClick={row => setSelected(row)}
   />
 }
