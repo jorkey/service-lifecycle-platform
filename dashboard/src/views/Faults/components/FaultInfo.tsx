@@ -22,12 +22,12 @@ const useStyles = makeStyles((theme:any) => ({
   content: {
     padding: 0
   },
+  inner: {
+    minWidth: 800
+  },
   infoCell: {
     paddingTop: "2px",
     paddingBottom: "2px"
-  },
-  inner: {
-    minWidth: 800
   },
 }));
 

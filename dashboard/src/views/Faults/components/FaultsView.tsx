@@ -17,6 +17,7 @@ import Alert from "@material-ui/lab/Alert";
 import {FaultsTable} from "./FaultsTable";
 import FaultInfo from "./FaultInfo";
 import FaultFiles from "./FaultFiles";
+import {LogsTailTable} from "./LogsTailTable";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -46,6 +47,9 @@ const useStyles = makeStyles((theme:any) => ({
     textTransform: 'none'
   },
   faultsTable: {
+    height: '250px'
+  },
+  logsTable: {
     height: '250px'
   },
   alert: {
@@ -207,13 +211,13 @@ const FaultsView: React.FC<FaultsParams> = props => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={4}>
           {selected?<FaultInfo report={selected}/>:null}
           {selected && selected.payload.files.length?<FaultFiles files={selected.payload.files}/>:null}
         </Grid>
-        <Grid item xs={6}>
-          {selected?<FaultInfo report={selected}/>:null}
-          {selected && selected.payload.files.length?<FaultFiles files={selected.payload.files}/>:null}
+        <Grid item xs={8}>
+          {selected?<LogsTailTable className={classes.logsTable}
+                                   lines={selected.payload.info.logTail}/>:null}
         </Grid>
       </Grid>
     </div>
