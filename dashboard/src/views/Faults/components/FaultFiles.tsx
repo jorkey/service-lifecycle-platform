@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {
   Card,
-  CardContent, CardHeader, Grid, Select, TableBody, TableCell, TableRow,
+  CardContent, CardHeader, Grid, Select, Table, TableBody, TableCell, TableHead, TableRow,
 } from '@material-ui/core';
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
@@ -22,12 +22,13 @@ const useStyles = makeStyles((theme:any) => ({
   content: {
     padding: 0
   },
-  infoCell: {
+  lengthCell: {
+    // width: "50px",
     paddingTop: "2px",
     paddingBottom: "2px"
   },
   inner: {
-    minWidth: 800
+    // minWidth: 800
   },
 }));
 
@@ -44,14 +45,22 @@ const FaultFiles: React.FC<FaultFilesParams> = props => {
     <CardHeader title={'Fault Files'}/>
     <CardContent className={classes.content}>
       <div className={classes.inner}>
-        <TableBody>
-          {files.map(file =>
+        <Table>
+          <TableHead>
             <TableRow>
-              <TableCell className={classes.infoCell}>{file.path}</TableCell>
-              <TableCell className={classes.infoCell}>{file.length}</TableCell>
+              <TableCell>Path</TableCell>
+              <TableCell className={classes.lengthCell}>Length</TableCell>
             </TableRow>
-          )}
-        </TableBody>
+          </TableHead>
+          <TableBody>
+            {files.map((file, row) =>
+              <TableRow key={row}>
+                <TableCell>{file.path}</TableCell>
+                <TableCell className={classes.lengthCell}>{file.length}</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </CardContent>
   </Card>

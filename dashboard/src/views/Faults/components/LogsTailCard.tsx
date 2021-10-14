@@ -14,6 +14,9 @@ const useStyles = makeStyles(theme => ({
   inner: {
     minWidth: 800
   },
+  logsTable: {
+    height: '250px'
+  },
   timeColumn: {
     width: '200px',
     minWidth: '200px',
@@ -33,13 +36,12 @@ const useStyles = makeStyles(theme => ({
   },
 }))
 
-interface LogsTailTableParams {
-  className: string
+interface LogsTailCardParams {
   lines: LogLine[]
 }
 
-export const LogsTailTable = (props: LogsTailTableParams) => {
-  const { className, lines } = props
+export const LogsTailCard = (props: LogsTailCardParams) => {
+  const { lines } = props
 
   const classes = useStyles()
 
@@ -76,7 +78,7 @@ export const LogsTailTable = (props: LogsTailTableParams) => {
     <CardContent className={classes.content}>
       <div className={classes.inner}>
         <GridTable
-          className={className}
+          className={classes.logsTable}
           columns={columns}
           rows={rows}
           scrollToLastRow={true}
