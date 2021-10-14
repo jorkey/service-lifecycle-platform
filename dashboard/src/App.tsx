@@ -48,7 +48,7 @@ const httpLink = createHttpLink({
 
 const authLink = setContext((_, { headers }) => {
   // get the authentication token from local storage if it exists
-  const token = cookies.get('accessToken')
+  const token = localStorage.getItem('accessToken')
   // return the headers to the context so httpLink can read them
   if (token) {
     return {
@@ -111,7 +111,7 @@ const removeTypenameLink = new ApolloLink(
 
 // const sseLink = new ApolloLink(
 //   (operation: Operation, forward: NextLink) => {
-//     const token = cookies.get('accessToken');
+//     const token = localStorage.getItem('accessToken');
 //     return operation.operationName.startsWith('subscribe') ?
 //       new Observable(observer => {
 //         const source = new EventSource('/graphql'
@@ -186,7 +186,7 @@ class WebSocketLink extends ApolloLink {
 const wsLink = new WebSocketLink({
   url: 'ws://localhost:8000/graphql/websocket',
   connectionParams: () => {
-    const token = cookies.get('accessToken')
+    const token = localStorage.getItem('accessToken')
     return {
       Authorization: `Bearer ${token}`,
     };

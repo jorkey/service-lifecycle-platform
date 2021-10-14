@@ -46,6 +46,8 @@ const LoginPage: React.FC<LoginPageProps> = () => {
 
   if (data) {
     cookies.set('accessToken', data.login, { path: '/' })
+    localStorage.setItem('accessToken', data.login)
+    console.log('token ' + localStorage.getItem('accessToken'))
     window.location.replace('/')
   }
 
@@ -69,7 +71,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
     <div className={classes.root}>
       <Grid
         container
-        justify='center'
+        justifyContent='center'
         spacing={4}
       >
         <Grid

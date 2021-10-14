@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme:any) => ({
     textTransform: 'none'
   },
   faultsTable: {
-    height: '250px'
+    height: '300px'
   },
   logsTable: {
     height: '250px'
@@ -184,7 +184,7 @@ const FaultsCard: React.FC<FaultsCardParams> = props => {
           </FormGroup>
         </>
       }
-      title={'Failures of services'}
+      title={'Failures Of Services'}
     />
     <CardContent className={classes.content}>
       <div className={classes.inner}>

@@ -27,11 +27,11 @@ object JWT {
         case Success(jsonValue) =>
           jsonValue.convertTo[AccessToken]
         case Failure(ex) =>
-          throw new IOException(s"Decode access token error: ${ex.toString}")
+          throw new IOException(s"Decode access token ${token} error: ${ex.toString}")
       }
     } catch {
       case ex: InvalidSignatureException =>
-        throw new IOException(s"Decode access token error: ${ex.toString}")
+        throw new IOException(s"Decode access token ${token} error: ${ex.toString}")
     }
   }
 }

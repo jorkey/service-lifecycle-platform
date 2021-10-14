@@ -33,7 +33,7 @@ const useStyles = makeStyles(theme => ({
     paddingLeft: '16px'
   },
   downloadColumn: {
-    minWidth: '100px',
+    maxWidth: '50px',
     padding: '4px',
     paddingLeft: '16px'
   }

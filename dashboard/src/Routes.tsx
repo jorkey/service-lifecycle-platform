@@ -21,7 +21,7 @@ import {cookies} from "./App";
 // @ts-ignore
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   <Route {...rest} render = { props => {
-    return cookies.get('accessToken')
+    return localStorage.getItem('accessToken')
       ? <Component {...props} />
       : <Redirect to='/login'/>
   }} />
