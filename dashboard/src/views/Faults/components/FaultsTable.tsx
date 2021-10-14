@@ -13,31 +13,26 @@ const useStyles = makeStyles(theme => ({
     display: 'relative'
   },
   timeColumn: {
-    width: '150px',
-    minWidth: '150px',
+    minWidth: '250px',
     padding: '4px',
     paddingLeft: '16px'
   },
   distributionColumn: {
-    width: '100px',
     minWidth: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
   serviceColumn: {
-    width: '100px',
     minWidth: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
-    width: '100px',
-    minWidth: '100px',
+    minWidth: '250px',
     padding: '4px',
     paddingLeft: '16px'
   },
   downloadColumn: {
-    width: '100px',
     minWidth: '100px',
     padding: '4px',
     paddingLeft: '16px'
@@ -83,12 +78,12 @@ export const FaultsTable = (props: FaultsTableParams) => {
     {
       name: 'version',
       headerName: 'Version',
-      className: classes.downloadColumn,
+      className: classes.versionColumn,
     },
     {
       name: 'download',
       headerName: 'Download',
-      className: classes.versionColumn,
+      className: classes.downloadColumn,
       type: 'elements'
     }
   ].filter(column => showDistribution || column.name != 'distribution')

@@ -22,8 +22,12 @@ const useStyles = makeStyles((theme:any) => ({
   content: {
     padding: 0
   },
+  pathCell: {
+    paddingTop: "2px",
+    paddingBottom: "2px"
+  },
   lengthCell: {
-    // width: "50px",
+    width: "50px",
     paddingTop: "2px",
     paddingBottom: "2px"
   },
@@ -48,14 +52,14 @@ const FaultFiles: React.FC<FaultFilesParams> = props => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Path</TableCell>
+              <TableCell className={classes.pathCell}>Path</TableCell>
               <TableCell className={classes.lengthCell}>Length</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {files.map((file, row) =>
               <TableRow key={row}>
-                <TableCell>{file.path}</TableCell>
+                <TableCell className={classes.pathCell}>{file.path}</TableCell>
                 <TableCell className={classes.lengthCell}>{file.length}</TableCell>
               </TableRow>
             )}

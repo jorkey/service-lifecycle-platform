@@ -1,8 +1,6 @@
 import React, {useState} from 'react';
 import { makeStyles } from '@material-ui/styles';
-import {
-  Grid
-} from '@material-ui/core';
+import { Grid } from '@material-ui/core';
 import {RouteComponentProps} from "react-router-dom";
 import FaultInfoCard from "./FaultInfoCard";
 import FaultFiles from "./FaultFiles";
@@ -37,11 +35,11 @@ const FaultsView: React.FC<FaultsParams> = props => {
         {report?<>
           <Grid item xs={4}>
             <Grid container direction={'column'} spacing={3}>
-              <Grid item xs={report.payload.files.length?6:12}>
+              <Grid item xs={12}>
                 <FaultInfoCard report={report}/>
               </Grid>
               {report.payload.files.length?
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <FaultFiles files={report.payload.files}/>
                 </Grid>:null}
             </Grid>
