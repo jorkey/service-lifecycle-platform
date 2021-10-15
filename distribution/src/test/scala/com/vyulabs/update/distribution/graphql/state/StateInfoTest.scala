@@ -43,11 +43,11 @@ class StateInfoTest extends TestEnvironment {
 
     val date = new Date()
 
-    assertResult(Seq(TestedDesiredVersions("common", Seq(
+    assertResult(Seq(TestedVersions("common", "consumer", Seq(
       DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 2))),
       DeveloperDesiredVersion("service2", DeveloperDistributionVersion("test", Seq(2, 1, 2)))),
-      Seq(TestSignature("consumer", date)))))(result(collections.Developer_TestedVersions.find().map(_.map(v => TestedDesiredVersions(
-        v.servicesProfile, v.versions, v.signatures.map(s => TestSignature(s.distribution, date)))))))
+      date)))(result(collections.Developer_TestedVersions.find()
+        .map(_.map(v => TestedVersions(v.profile, v.consumerDistribution, v.versions, date)))))
     result(collections.Developer_TestedVersions.drop())
   }
 

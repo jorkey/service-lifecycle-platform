@@ -185,6 +185,14 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer, AccountRole.Builder) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
 
+      // Tested versions
+      Field("testedVersions", OptionType(ListType(DeveloperDesiredVersionType)),
+        tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
+        resolve = c => {
+          c.ctx.workspace.getTestedVersions(Some(c.ctx.accessToken.get.account),
+            Some(c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile))
+        }),
+
       // Client versions
       Field("clientVersionsInfo", ListType(ClientVersionInfoType),
         arguments = OptionServiceArg :: OptionDistributionArg :: OptionClientVersionArg :: Nil,

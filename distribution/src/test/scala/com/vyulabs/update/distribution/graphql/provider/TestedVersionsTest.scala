@@ -23,9 +23,9 @@ class TestedVersionsTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
   override def beforeAll() = {
-    val servicesProfileCollection = collections.Developer_ServiceProfiles
+    val profileCollection = collections.Developer_ServiceProfiles
 
-    result(servicesProfileCollection.insert(ServicesProfile("common", Seq("service1", "service2"))))
+    result(profileCollection.insert(ServicesProfile("common", Seq("service1", "service2"))))
   }
 
   it should "set/get tested versions" in {
@@ -64,12 +64,12 @@ class TestedVersionsTest extends TestEnvironment {
     result(collections.Developer_TestedVersions.drop())
   }
 
-  it should "return error if no tested versions for the client's profile" in {
+  it should "return empty list if no tested versions for the client's profile" in {
     val graphqlContext = GraphqlContext(Some(AccessToken("distribution2")),
       Some(ConsumerAccountInfo("distribution2", "Test Consumer Distribution", AccountRole.DistributionConsumer,
         ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8002"))), workspace)
     assertResult((OK,
-      ("""{"data":null,"errors":[{"message":"Desired versions for profile common are not tested","path":["developerDesiredVersions"],"locations":[{"column":11,"line":3}]}]}""").parseJson))(
+      ("""{"data":{"developerDesiredVersions":[]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""
         query DeveloperDesiredVersions($$testConsumer: String) {
           developerDesiredVersions(testConsumer: $$testConsumer) {
@@ -82,9 +82,9 @@ class TestedVersionsTest extends TestEnvironment {
 
   it should "return error if client required preliminary testing has personal desired versions" in {
     result(collections.Developer_TestedVersions.insert(
-      TestedDesiredVersions("common", Seq(
+      TestedVersions("common", "test-client", Seq(
         DeveloperDesiredVersion("service1", DeveloperDistributionVersion("test", Seq(1, 1, 0)))),
-        Seq(TestSignature("test-client", new Date())))))
+        new Date())))
     result(collections.Client_DesiredVersions.drop())
   }
 }

@@ -80,7 +80,7 @@ trait StateCoder {
   def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], limit: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faults",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("limit" -> limit, "Int")).filter(_.value != JsNull),
-      "{ distribution, payload { id, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail }, files }}")
+      "{ distribution, payload { id, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }}")
 }
 
 // Mutations
@@ -128,11 +128,11 @@ trait AccountsAdministrationCoder {
 }
 
 trait ConsumersAdministrationCoder {
-  def addServicesProfile(servicesProfile: ServicesProfileId, services: Seq[ServiceId]) =
-    GraphqlMutation[Boolean]("addServicesProfile", Seq(GraphqlArgument("profile" -> servicesProfile),
+  def addServicesProfile(profile: ServicesProfileId, services: Seq[ServiceId]) =
+    GraphqlMutation[Boolean]("addServicesProfile", Seq(GraphqlArgument("profile" -> profile),
       GraphqlArgument("services" -> services, "[String!]")))
-  def removeServicesProfile(servicesProfile: ServicesProfileId) =
-    GraphqlMutation[Boolean]("removeServicesProfile", Seq(GraphqlArgument("profile" -> servicesProfile)))
+  def removeServicesProfile(profile: ServicesProfileId) =
+    GraphqlMutation[Boolean]("removeServicesProfile", Seq(GraphqlArgument("profile" -> profile)))
 
   def addProvider(distribution: DistributionId, distributionUrl: String, accessToken: String,
                   testConsumer: Option[String], uploadStateInterval: Option[FiniteDuration]) =

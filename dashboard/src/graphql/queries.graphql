@@ -53,6 +53,16 @@ query developerVersionsInProcess ($service: String) {
     }
 }
 
+# Tested Versions
+
+mutation setTestedVersions ($versions: [DeveloperDesiredVersionInput!]!) {
+    setTestedVersions (versions: $versions)
+}
+
+query testedVersions {
+    testedVersions { service, version { distribution, build } }
+}
+
 # Client Versions
 
 query clientVersionsInfo ($service: String, $version: ClientVersionInput) {

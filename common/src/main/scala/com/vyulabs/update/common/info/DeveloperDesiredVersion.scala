@@ -26,8 +26,8 @@ object DeveloperDesiredVersions extends DefaultJsonProtocol {
   }
 }
 
-case class TestSignature(distribution: DistributionId, time: Date)
-case class TestedDesiredVersions(servicesProfile: ServicesProfileId, versions: Seq[DeveloperDesiredVersion], signatures: Seq[TestSignature])
+case class TestedVersions(profile: ServicesProfileId, consumerDistribution: DistributionId,
+                          versions: Seq[DeveloperDesiredVersion], time: Date)
 
 case class DeveloperDesiredVersionDelta(service: ServiceId, version: Option[DeveloperDistributionVersion])
 

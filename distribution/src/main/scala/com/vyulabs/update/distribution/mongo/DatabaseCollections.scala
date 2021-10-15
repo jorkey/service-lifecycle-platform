@@ -51,8 +51,7 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     classOf[UpdateError],
     classOf[ServiceLogLine],
     classOf[DistributionFaultReport],
-    classOf[TestedDesiredVersions],
-    classOf[TestSignature],
+    classOf[TestedVersions],
     classOf[LogLine],
     classOf[UploadStatus],
     classOf[UploadStatusDocument],
@@ -96,9 +95,10 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("profile", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Developer_TestedVersions = new SequencedCollection[TestedDesiredVersions]("developer.testedDesiredVersions", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.testedDesiredVersions")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("servicesProfile")) else Future()
+  val Developer_TestedVersions = new SequencedCollection[TestedVersions]("developer.testedVersions", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("developer.testedVersions")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("profile")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerDistribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Client_Versions = new SequencedCollection[ClientVersionInfo]("client.versions", for {

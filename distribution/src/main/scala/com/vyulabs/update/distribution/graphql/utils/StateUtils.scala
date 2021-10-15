@@ -31,29 +31,24 @@ trait StateUtils extends SprayJsonSupport {
 
   protected val config: DistributionConfig
 
-  def setTestedVersions(distribution: DistributionId, servicesProfile: ServicesProfileId,
+  def setTestedVersions(consumerDistribution: DistributionId, profile: ServicesProfileId,
                         desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
     for {
-      testedVersions <- getTestedVersions(servicesProfile)
       result <- {
-        val testRecord = TestSignature(distribution, new Date())
-        val testSignatures = testedVersions match {
-          case Some(testedVersions) if testedVersions.versions.equals(desiredVersions) =>
-            testedVersions.signatures :+ testRecord
-          case _ =>
-            Seq(testRecord)
-        }
-        val newTestedVersions = TestedDesiredVersions(servicesProfile, desiredVersions, testSignatures)
-        val profileArg = Filters.eq("servicesProfile", servicesProfile)
-        collections.Developer_TestedVersions.update(profileArg, _ =>
+        val newTestedVersions = TestedVersions(profile, consumerDistribution, desiredVersions, new Date())
+        val distributionArg = Filters.eq("consumerDistribution", consumerDistribution)
+        collections.Developer_TestedVersions.update(distributionArg, _ =>
           Some(newTestedVersions)).map(_ => ())
       }
     } yield result
   }
 
-  def getTestedVersions(servicesProfile: ServicesProfileId)(implicit log: Logger): Future[Option[TestedDesiredVersions]] = {
-    val profileArg = Filters.eq("servicesProfile", servicesProfile)
-    collections.Developer_TestedVersions.find(profileArg).map(_.headOption)
+  def getTestedVersions(consumerDistribution: Option[DistributionId], profile: Option[ServicesProfileId])
+                       (implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+    val distributionArg = consumerDistribution.map(Filters.eq("consumerDistribution", _))
+    val profileArg = profile.map(Filters.eq("profile", _))
+    val filters = Filters.and((distributionArg ++ profileArg).asJava)
+    collections.Developer_TestedVersions.find(filters).map(_.headOption.map(_.versions).getOrElse(Seq.empty))
   }
 
   def setSelfServiceStates(states: Seq[DirectoryServiceState])(implicit log: Logger): Future[Unit] = {

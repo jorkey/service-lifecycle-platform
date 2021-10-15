@@ -22,31 +22,31 @@ trait ServiceProfilesUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
 
-  def addServicesProfile(servicesProfileId: ServicesProfileId, services: Seq[ServiceId]): Future[Unit] = {
-    collections.Developer_ServiceProfiles.add(Filters.eq("profile", servicesProfileId),
-      ServicesProfile(servicesProfileId, services)).map(_ => ())
+  def addServicesProfile(profile: ServicesProfileId, services: Seq[ServiceId]): Future[Unit] = {
+    collections.Developer_ServiceProfiles.add(Filters.eq("profile", profile),
+      ServicesProfile(profile, services)).map(_ => ())
   }
 
-  def changeServicesProfile(servicesProfileId: ServicesProfileId, services: Seq[ServiceId]): Future[Unit] = {
-    collections.Developer_ServiceProfiles.change(Filters.eq("profile", servicesProfileId),
-      (_) => ServicesProfile(servicesProfileId, services)).map(_ => ())
+  def changeServicesProfile(profile: ServicesProfileId, services: Seq[ServiceId]): Future[Unit] = {
+    collections.Developer_ServiceProfiles.change(Filters.eq("profile", profile),
+      (_) => ServicesProfile(profile, services)).map(_ => ())
   }
 
-  def getServiceProfiles(servicesProfileId: Option[ServicesProfileId]): Future[Seq[ServicesProfile]] = {
-    val profileArg = servicesProfileId.map(Filters.eq("profile", _))
+  def getServiceProfiles(profile: Option[ServicesProfileId]): Future[Seq[ServicesProfile]] = {
+    val profileArg = profile.map(Filters.eq("profile", _))
     val args = profileArg.toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Developer_ServiceProfiles.find(filters)
   }
 
-  def getServicesProfile(servicesProfileId: ServicesProfileId): Future[ServicesProfile] = {
-    val filters = Filters.eq("profile", servicesProfileId)
+  def getServicesProfile(profile: ServicesProfileId): Future[ServicesProfile] = {
+    val filters = Filters.eq("profile", profile)
     collections.Developer_ServiceProfiles.find(filters)map(_.headOption.getOrElse {
-      throw NotFoundException(s"No consumer profile ${servicesProfileId}")
+      throw NotFoundException(s"No consumer profile ${profile}")
     })
   }
 
-  def removeServicesProfile(servicesProfileId: ServicesProfileId): Future[Unit] = {
-    collections.Developer_ServiceProfiles.delete(Filters.eq("profile", servicesProfileId)).map(_ => ())
+  def removeServicesProfile(profile: ServicesProfileId): Future[Unit] = {
+    collections.Developer_ServiceProfiles.delete(Filters.eq("profile", profile)).map(_ => ())
   }
 }

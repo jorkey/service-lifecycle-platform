@@ -33,7 +33,7 @@ class FaultReportInfoTest extends TestEnvironment {
     addFaultReportInfo("fault2", "service2", 2, new Date())
 
     assertResult((OK,
-      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"id":"fault2","info":{"service":"service2","instance":"instance1"},"files":["core","log/service.log"]}}]}}""").parseJson))(
+      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"id":"fault2","info":{"service":"service2","instance":"instance1"},"files":[{ "path": "core", "length": 123456789 }, { "path": "log/service.log", "length": 12345 }]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
         adminContext, graphql"""
           query FaultsQuery($$service: String!) {
@@ -45,7 +45,10 @@ class FaultReportInfoTest extends TestEnvironment {
                   service
                   instance
                 }
-                files
+                files {
+                  path
+                  length
+                }
               }
             }
           }
@@ -103,8 +106,8 @@ class FaultReportInfoTest extends TestEnvironment {
                 logTail: []
               },
               files: [
-                "core",
-                "log/service.log"
+                { path: "core", length: 123456789 },
+                { path: "log/service.log", length: 12345 }
               ]
             }
           )

@@ -149,8 +149,8 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       desiredVersions <- future
-      servicesProfile <- serviceProfilesUtils.getServicesProfile(profile)
-      versions <- Future(desiredVersions.filter(version => servicesProfile.services.contains(version.service)))
+      profile <- serviceProfilesUtils.getServicesProfile(profile)
+      versions <- Future(desiredVersions.filter(version => profile.services.contains(version.service)))
     } yield versions
   }
 
@@ -159,21 +159,7 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
     for {
       developerVersions <- testConsumer match {
         case Some(testDistributionConsumer) =>
-          for {
-            testedVersions <- stateUtils.getTestedVersions(profile).map(testedVersions => {
-              testedVersions match {
-                case Some(testedVersions) =>
-                  val testCondition = testedVersions.signatures.exists(signature => signature.distribution == testDistributionConsumer)
-                  if (testCondition) {
-                    testedVersions.versions
-                  } else {
-                    throw NotFoundException(s"Desired versions for profile ${profile} are not tested by clients ${testDistributionConsumer}")
-                  }
-                case None =>
-                  throw NotFoundException(s"Desired versions for profile ${profile} are not tested")
-              }
-            })
-          } yield testedVersions
+          stateUtils.getTestedVersions(Some(testDistributionConsumer), Some(profile))
         case None =>
           getDeveloperDesiredVersions(services)
       }
@@ -184,8 +170,9 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
     for {
       desiredVersion <- getDeveloperDesiredVersion(service)
       profiles <- serviceProfilesUtils.getServiceProfiles(None)
-      testedVersions <- Future.sequence(profiles.map(profile => stateUtils.getTestedVersions(profile.profile))).map(
-        _.flatten.map(_.versions.find(_.service == service).map(_.version)).flatten)
+      testedVersions <- Future.sequence(profiles.map(profile =>
+          stateUtils.getTestedVersions(None, Some(profile.profile)))).map(
+        _.flatten.find(_.service == service).map(_.version))
     } yield {
       (desiredVersion.toSet ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)
     }

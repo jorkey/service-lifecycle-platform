@@ -33,7 +33,7 @@ object BuilderMain extends App {
     "       <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
     "    buildConsumerDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
     "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
-    "       <providerAdminPassword=?> <consumerAccessToken=?> <servicesProfile=?> [testConsumerMatch=?]\n" +
+    "       <providerAdminPassword=?> <consumerAccessToken=?> <profile=?> [testConsumerMatch=?]\n" +
     "    buildDeveloperVersion <service=?> <version=?> <sources=?> [buildClientVersion=true/false] <comment=?>\n" +
     "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
 
