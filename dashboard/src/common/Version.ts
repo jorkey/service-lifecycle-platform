@@ -1,4 +1,9 @@
-import {ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion} from "../generated/graphql";
+import {
+  ClientDesiredVersion,
+  ClientDistributionVersion, ClientVersionInfo, DeveloperDesiredVersionInput,
+  DeveloperDistributionVersion,
+  DeveloperVersion
+} from "../generated/graphql";
 
 export class Version {
   static parseBuild(version: string): Array<number> {
@@ -95,5 +100,12 @@ export class Version {
       }
     }
     return nextBuild
+  }
+
+  static clientVersionToDeveloperVersion(version: ClientVersionInfo): DeveloperDesiredVersionInput {
+    return {
+      service: version.service,
+      version: { distribution: version.version.distribution, build: version.version.developerBuild }
+    }
   }
 }

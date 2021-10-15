@@ -15,8 +15,8 @@ import {
   useClientVersionsInfoQuery,
   useDeveloperVersionsInfoQuery,
   useProviderDesiredVersionsLazyQuery,
-  useProvidersInfoQuery,
-  useProviderTestedVersionsQuery, useSetProviderTestedVersionsMutation,
+  useProvidersInfoQuery, useProviderTestedVersionsLazyQuery,
+  useSetProviderTestedVersionsMutation,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -117,7 +117,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const { data: testedVersions, refetch: getTestedVersions } = useProviderTestedVersionsQuery({
+  const [ getTestedVersions, testedVersions ] = useProviderTestedVersionsLazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query tested versions error ' + err.message) },
   })
@@ -140,7 +140,9 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   })
 
   const [ signAsTested ] = useSetProviderTestedVersionsMutation({
-    onCompleted() { getTestedVersions() }
+    onCompleted() {
+      getTestedVersions({ variables: { distribution: provider!.distribution } })
+    }
   })
 
   const history = useHistory()
@@ -148,11 +150,14 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   React.useEffect(() => {
     if (provider) {
       getProviderVersions({ variables: { distribution: provider.distribution } })
+      getTestedVersions({ variables: { distribution: provider.distribution } })
     }
   }, [ provider ])
 
   React.useEffect(() => {
-    getTestedVersions()
+    if (provider) {
+      getTestedVersions({variables: {distribution: provider.distribution}})
+    }
   }, [ providerVersions ])
 
   React.useEffect(() => {
@@ -320,14 +325,21 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
             >
               Update Client
             </Button>
-            <Button className={classes.control}
+            {provider && clientVersions?<Button className={classes.control}
                     color="primary"
                     variant="contained"
-                    disabled={providerVersions.data?.providerDesiredVersions == testedVersions?.providerTestedVersions}
-                    onClick={() => signAsTested()}
+                    disabled={providerVersions.data?.providerDesiredVersions == testedVersions?.data?.providerTestedVersions}
+                    onClick={() => signAsTested({
+                      variables: {
+                        distribution: provider.distribution,
+                        versions: clientVersions.clientVersionsInfo.map(version =>
+                          Version.clientVersionToDeveloperVersion(version)
+                        )
+                      }
+                    })}
             >
               Sign As Tested
-            </Button>
+            </Button>:null}
           </Box>
         </div>
       </CardContent>
