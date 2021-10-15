@@ -7,13 +7,16 @@ import {
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
-  ClientDistributionVersion, DeveloperDesiredVersionInput,
+  ClientDistributionVersion,
+  DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
-  DistributionProviderInfo, useBuildClientVersionsMutation,
+  DistributionProviderInfo,
+  useBuildClientVersionsMutation,
   useClientVersionsInfoQuery,
   useDeveloperVersionsInfoQuery,
   useProviderDesiredVersionsLazyQuery,
-  useProvidersInfoQuery
+  useProvidersInfoQuery,
+  useProviderTestedVersionsQuery, useSetProviderTestedVersionsMutation,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -60,6 +63,7 @@ const useStyles = makeStyles((theme:any) => ({
     p: 2
   },
   control: {
+    marginLeft: '20px',
     paddingLeft: '10px',
     textTransform: 'none'
   },
@@ -88,6 +92,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const [provider, setProvider] = useState<DistributionProviderInfo>()
   const [error, setError] = useState<string>()
+  const [ rows, setRows ] = useState<RowData[]>([])
 
   const { data: providers } = useProvidersInfoQuery({
     fetchPolicy: 'no-cache',
@@ -102,21 +107,20 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   const [ getProviderVersions, providerVersions ] = useProviderDesiredVersionsLazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query provider desired versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
   const { data: developerVersions, refetch: getDeveloperVersions } = useDeveloperVersionsInfoQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
   const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-
-  const [ rows, setRows ] = useState<RowData[]>([])
-
+  const { data: testedVersions, refetch: getTestedVersions } = useProviderTestedVersionsQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query tested versions error ' + err.message) },
+  })
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
     variables: {
       versions: rows.filter(row => row.selected && (row.providerVersion || row.developerVersion)).map(row => {
@@ -127,10 +131,16 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
         } } as DeveloperDesiredVersionInput })
     },
     fetchPolicy: 'no-cache',
-    onError(err) { setError('Build version error ' + err.message) },
-    onCompleted(data) {
+    onError(err) {
+      setError('Build version error ' + err.message)
+    },
+    onCompleted() {
       history.push(props.fromUrl + '/monitor')
     }
+  })
+
+  const [ signAsTested ] = useSetProviderTestedVersionsMutation({
+    onCompleted() { getTestedVersions() }
   })
 
   const history = useHistory()
@@ -140,6 +150,10 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       getProviderVersions({ variables: { distribution: provider.distribution } })
     }
   }, [ provider ])
+
+  React.useEffect(() => {
+    getTestedVersions()
+  }, [ providerVersions ])
 
   React.useEffect(() => {
     setRows(makeRowsData())
@@ -305,6 +319,14 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                     onClick={() => buildClientVersions()}
             >
               Update Client
+            </Button>
+            <Button className={classes.control}
+                    color="primary"
+                    variant="contained"
+                    disabled={providerVersions.data?.providerDesiredVersions == testedVersions?.providerTestedVersions}
+                    onClick={() => signAsTested()}
+            >
+              Sign As Tested
             </Button>
           </Box>
         </div>

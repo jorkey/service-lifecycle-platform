@@ -215,6 +215,10 @@ object GraphqlSchema {
         arguments = DistributionArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getProviderDesiredVersions(c.arg(DistributionArg)) }),
+      Field("providerTestedVersions", ListType(DeveloperDesiredVersionType),
+        arguments = DistributionArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getProviderTestedVersions(c.arg(DistributionArg)) }),
 
       // State
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
@@ -425,6 +429,11 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeProvider(c.arg(DistributionArg)).map(_ => true) }),
 
       // Distribution consumers operations
+      Field("setProviderTestedVersions", BooleanType,
+        arguments = DistributionArg :: DeveloperDesiredVersionsArg :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
+        resolve = c => { c.ctx.workspace.setProviderTestedVersions(c.arg(DistributionArg),
+          c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(AccountRole.DistributionConsumer) :: Nil,

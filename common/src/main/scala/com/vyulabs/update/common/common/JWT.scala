@@ -21,17 +21,19 @@ object JWT {
     }
   }
 
-  def decodeAccessToken(token: String, secret: String): AccessToken = {
+  def decodeAccessToken(token: String, secret: String)(implicit log: Logger): Option[AccessToken] = {
     try {
       Jwt.decode(token, secret) match {
         case Success(jsonValue) =>
-          jsonValue.convertTo[AccessToken]
+          Some(jsonValue.convertTo[AccessToken])
         case Failure(ex) =>
-          throw new IOException(s"Decode access token ${token} error: ${ex.toString}")
+          log.warn(s"Decode access token ${token} error: ${ex.toString}")
+          None
       }
     } catch {
       case ex: InvalidSignatureException =>
-        throw new IOException(s"Decode access token ${token} error: ${ex.toString}")
+        log.warn(s"Decode access token ${token} error: ${ex.toString}")
+        None
     }
   }
 }

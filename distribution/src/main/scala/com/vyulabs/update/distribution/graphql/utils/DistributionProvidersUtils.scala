@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, TaskId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.ConsumerGraphqlCoder.distributionQueries
+import com.vyulabs.update.common.distribution.client.graphql.ConsumerGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DistributionProviderInfo}
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
@@ -21,6 +21,7 @@ import java.io.{File, IOException}
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
+import spray.json.DefaultJsonProtocol._
 
 trait DistributionProvidersUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
@@ -54,6 +55,21 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
     for {
       distributionProviderClient <- getDistributionProviderClient(distribution)
       desiredVersions <- distributionProviderClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
+    } yield desiredVersions
+  }
+
+  def setProviderTestedVersions(distribution: DistributionId,
+                                versions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
+    for {
+      distributionProviderClient <- getDistributionProviderClient(distribution)
+      result <- distributionProviderClient.graphqlRequest(distributionMutations.setTestedVersions(versions)).map(_ => ())
+    } yield result
+  }
+
+  def getProviderTestedVersions(distribution: DistributionId)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+    for {
+      distributionProviderClient <- getDistributionProviderClient(distribution)
+      desiredVersions <- distributionProviderClient.graphqlRequest(distributionQueries.getTestedVersions())
     } yield desiredVersions
   }
 

@@ -182,7 +182,7 @@ trait AccountsUtils extends SprayJsonSupport {
         optionalCookie("accessToken").flatMap {
           case Some(cookie) =>
             val token = URLDecoder.decode(cookie.value, "utf8")
-            provide(Some(JWT.decodeAccessToken(token, config.jwtSecret)))
+            provide(JWT.decodeAccessToken(token, config.jwtSecret))
           case None =>
             provide(None)
         }
@@ -196,7 +196,7 @@ trait AccountsUtils extends SprayJsonSupport {
       case bearerTokenRx(value) =>
         Future(
           try {
-            Some(JWT.decodeAccessToken(value, config.jwtSecret))
+            JWT.decodeAccessToken(value, config.jwtSecret)
           } catch {
             case ex: Exception =>
               None
