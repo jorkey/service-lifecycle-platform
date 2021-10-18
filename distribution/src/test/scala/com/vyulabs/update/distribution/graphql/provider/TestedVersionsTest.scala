@@ -31,7 +31,7 @@ class TestedVersionsTest extends TestEnvironment {
   it should "set/get tested versions" in {
     val graphqlContext1 = GraphqlContext(Some(AccessToken("distribution1")),
       Some(ConsumerAccountInfo("distribution1", "Test Consumer Distribution 1", AccountRole.DistributionConsumer,
-        ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8001"))), workspace)
+        ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8001"))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setTestedVersions":true}}""").parseJson))(
@@ -48,7 +48,7 @@ class TestedVersionsTest extends TestEnvironment {
 
     val graphqlContext2 = GraphqlContext(Some(AccessToken("distribution2")),
       Some(ConsumerAccountInfo("distribution2", "Test Consumer Distribution 2", AccountRole.DistributionConsumer,
-        ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8002"))), workspace)
+        ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8002"))), workspace)
 
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[{"service":"service1","version":{"distribution":"test","build":[1,1,1]}},{"service":"service2","version":{"distribution":"test","build":[2,1,1]}}]}}""").parseJson))(
@@ -67,7 +67,7 @@ class TestedVersionsTest extends TestEnvironment {
   it should "return empty list if no tested versions for the client's profile" in {
     val graphqlContext = GraphqlContext(Some(AccessToken("distribution2")),
       Some(ConsumerAccountInfo("distribution2", "Test Consumer Distribution", AccountRole.DistributionConsumer,
-        ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8002"))), workspace)
+        ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8002"))), workspace)
     assertResult((OK,
       ("""{"data":{"developerDesiredVersions":[]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, graphqlContext, graphql"""

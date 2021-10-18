@@ -16,7 +16,7 @@ import {
   useDeveloperVersionsInfoQuery,
   useProviderDesiredVersionsLazyQuery,
   useProvidersInfoQuery, useProviderTestedVersionsLazyQuery,
-  useSetProviderTestedVersionsMutation,
+  useSetProviderTestedVersionsMutation, useSetTestedVersionsMutation, useTestedVersionsLazyQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -118,9 +118,13 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const [ getTestedVersions, testedVersions ] = useProviderTestedVersionsLazyQuery({
+  const [ getTestedVersions, testedVersions ] = useTestedVersionsLazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query tested versions error ' + err.message) },
+  })
+  const [ getProviderTestedVersions, providerTestedVersions ] = useProviderTestedVersionsLazyQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query provider tested versions error ' + err.message) },
   })
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
     variables: {
@@ -140,9 +144,14 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     }
   })
 
-  const [ signAsTested ] = useSetProviderTestedVersionsMutation({
+  const [ setTestedVersions ] = useSetTestedVersionsMutation({
     onCompleted() {
-      getTestedVersions({ variables: { distribution: provider!.distribution } })
+      getTestedVersions()
+    }
+  })
+  const [ setProviderTestedVersions ] = useSetProviderTestedVersionsMutation({
+    onCompleted() {
+      getProviderTestedVersions({ variables: { distribution: provider!.distribution } })
     }
   })
 
@@ -151,19 +160,21 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   React.useEffect(() => {
     if (provider) {
       getProviderVersions({ variables: { distribution: provider.distribution } })
-      getTestedVersions({ variables: { distribution: provider.distribution } })
+      getProviderTestedVersions({ variables: { distribution: provider.distribution } })
+    } else {
+      getTestedVersions()
     }
   }, [ provider ])
 
   React.useEffect(() => {
     if (provider) {
-      getTestedVersions({variables: {distribution: provider.distribution}})
+      getProviderTestedVersions({ variables: {distribution: provider.distribution} })
     }
   }, [ providerVersions ])
 
   React.useEffect(() => {
     setRows(makeRowsData())
-  }, [ provider, providerVersions, developerVersions, clientVersions, testedVersions ])
+  }, [ provider, providerVersions, developerVersions, clientVersions, testedVersions, providerTestedVersions ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
@@ -202,7 +213,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           .sort((v1, v2) => Version.compareClientDistributionVersions(v1.version, v2.version))
           .reverse()
           .find(version => version.service == service)
-        const testedVersion = testedVersions?.data?.providerTestedVersions
+        const testedVersion = testedVersions?.data?.testedVersions?.find(version => version.service == service)
+        const providerTestedVersion = providerTestedVersions?.data?.providerTestedVersions
           .find(version => version.service == service)
 
         if (providerVersion && Version.compareDeveloperDistributionVersions(developerVersion?.version, providerVersion?.version) != 0) {
@@ -217,7 +229,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           providerVersion: providerVersion?.version,
           developerVersion: developerVersion?.version,
           clientVersion: clientVersion?.version,
-          testedVersion: testedVersion?.version
+          testedVersion: testedVersion?testedVersion?.version:providerTestedVersion?.version
         } as RowData
       })
   }
@@ -250,7 +262,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       headerName: 'Tested Developer Version',
       className: classes.versionColumn,
     }
-  ].filter(column => column.name != 'testedVersion' || !!testedVersions.data)
+  ].filter(column => column.name != 'providerVersion' || !!provider)
+   .filter(column => column.name != 'testedVersion' || !!providerTestedVersions.data || providerTestedVersions.loading)
 
   const rowsView = rows.map(row =>
     new Map<string, GridTableColumnValue>([
@@ -271,12 +284,17 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   }
 
   function isTested() {
-    const installedVersions = clientVersions?.clientVersionsInfo?.map(version =>
-      clientVersionToDeveloperVersion(version))
+    const installedVersions =
+      (provider?
+          clientVersions?.clientVersionsInfo?.filter(version => version.version.distribution == provider.distribution):
+          clientVersions?.clientVersionsInfo?.filter(version => version.version.distribution == localStorage.getItem('distribution')))
+      ?.map(version => clientVersionToDeveloperVersion(version))
     if (installedVersions) {
-      const markedAsTested = testedVersions?.data?.providerTestedVersions
+      const markedAsTested = provider?providerTestedVersions?.data?.providerTestedVersions:testedVersions?.data?.testedVersions
       return !installedVersions.find(version => {
-        const testedVersion = markedAsTested?.find(v => { return version.service == v.service })
+        const testedVersion = markedAsTested?.find(v => {
+          return version.service == v.service
+        })
         if (testedVersion) {
           return Version.compareDeveloperDistributionVersions(version.version, testedVersion.version) != 0
         } else {
@@ -303,7 +321,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                     className={classes.providerSelect}
                     native
                     onChange={(event) => {
-                      const distribution = providers?.providersInfo.find(provider => provider.distribution == event.target.value as string)
+                      const distribution = providers?.providersInfo
+                        .find(provider => provider.distribution == event.target.value as string)
                       setProvider(distribution)
                     }}
                     title='Select provider'
@@ -359,18 +378,30 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
             >
               Update Client
             </Button>
-            {provider && clientVersions?<Button className={classes.control}
+            {clientVersions?<Button className={classes.control}
                     color="primary"
                     variant="contained"
                     disabled={isTested()}
-                    onClick={() => signAsTested({
-                      variables: {
-                        distribution: provider.distribution,
-                        versions: clientVersions.clientVersionsInfo.map(version =>
-                          clientVersionToDeveloperVersion(version)
-                        )
-                      }
-                    })}
+                    onClick={() => {
+                      if (provider) {
+                        setProviderTestedVersions({
+                          variables: {
+                            distribution: provider.distribution,
+                            versions: clientVersions.clientVersionsInfo
+                              .filter(version => version.version.distribution == provider.distribution)
+                              .map(version => clientVersionToDeveloperVersion(version)
+                            )
+                          }
+                        })
+                      } else {
+                        setTestedVersions({
+                          variables: {
+                            versions: clientVersions.clientVersionsInfo
+                              .filter(version => version.version.distribution == localStorage.getItem('distribution'))
+                              .map(version => clientVersionToDeveloperVersion(version))
+                        }})
+                      }}
+                    }
             >
               Mark As Tested
             </Button>:null}

@@ -154,12 +154,12 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
     } yield versions
   }
 
-  def getDeveloperDesiredVersions(profile: ServicesProfileId, testConsumer: Option[String], services: Set[ServiceId])(implicit log: Logger)
+  def getDeveloperDesiredVersions(testConsumer: Option[String], services: Set[ServiceId])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       developerVersions <- testConsumer match {
         case Some(testDistributionConsumer) =>
-          stateUtils.getTestedVersions(Some(testDistributionConsumer), Some(profile))
+          stateUtils.getTestedVersions(Some(testDistributionConsumer))
         case None =>
           getDeveloperDesiredVersions(services)
       }
@@ -171,7 +171,7 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
       desiredVersion <- getDeveloperDesiredVersion(service)
       profiles <- serviceProfilesUtils.getServiceProfiles(None)
       testedVersions <- Future.sequence(profiles.map(profile =>
-          stateUtils.getTestedVersions(None, Some(profile.profile)))).map(
+          stateUtils.getTestedVersions(Some(profile.profile)))).map(
         _.flatten.find(_.service == service).map(_.version))
     } yield {
       (desiredVersion.toSet ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)

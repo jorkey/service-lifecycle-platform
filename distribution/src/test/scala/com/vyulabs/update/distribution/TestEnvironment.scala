@@ -74,7 +74,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val adminAccountInfo = UserAccountInfo("admin", "Administrator", AccountRole.Administrator, UserAccountProperties(None, Seq.empty))
   val developerAccountInfo = UserAccountInfo("developer", "Developer", AccountRole.Developer, UserAccountProperties(None, Seq.empty))
   val consumerAccountInfo = ConsumerAccountInfo("consumer", "Distribution Consumer", AccountRole.DistributionConsumer,
-    ConsumerAccountProperties(Common.CommonServiceProfile, "http://localhost:8001"))
+    ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8001"))
 
   val adminContext = GraphqlContext(Some(AccessToken("admin")), Some(adminAccountInfo), workspace)
   val developerContext = GraphqlContext(Some(AccessToken("developer")), Some(developerAccountInfo), workspace)
@@ -98,7 +98,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
         AccountRole.Builder.toString, None, None,  None))
     _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeConsumer, "consumer", "Test Distribution Consumer",
         AccountRole.DistributionConsumer.toString, None, None,
-      consumer = Some(ConsumerAccountProperties(profile = Common.CommonServiceProfile, url = "http://localhost:8001"))))
+      consumer = Some(ConsumerAccountProperties(profile = Common.CommonConsumerProfile, url = "http://localhost:8001"))))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0))

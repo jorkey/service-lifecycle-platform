@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.graphql
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
@@ -174,7 +175,7 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
           if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) {
-            c.ctx.workspace.getDeveloperDesiredVersions(c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile,
+            c.ctx.workspace.getDeveloperDesiredVersions(
               c.arg(OptionTestConsumerArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           } else {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
@@ -187,10 +188,10 @@ object GraphqlSchema {
 
       // Tested versions
       Field("testedVersions", OptionType(ListType(DeveloperDesiredVersionType)),
-        tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
-          c.ctx.workspace.getTestedVersions(Some(c.ctx.accessToken.get.account),
-            Some(c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile))
+          c.ctx.workspace.getTestedVersions(
+            Some(if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) c.ctx.accessToken.get.account else c.ctx.workspace.config.distribution))
         }),
 
       // Client versions
@@ -436,10 +437,11 @@ object GraphqlSchema {
           c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
       Field("setTestedVersions", BooleanType,
         arguments = DeveloperDesiredVersionsArg :: Nil,
-        tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
-        resolve = c => { c.ctx.workspace.setTestedVersions(c.ctx.accessToken.get.account,
-          c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile, c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
-
+        tags = Authorized(AccountRole.Administrator, AccountRole.Developer, AccountRole.DistributionConsumer) :: Nil,
+        resolve = c => { c.ctx.workspace.setTestedVersions(
+          if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) c.ctx.accessToken.get.account else c.ctx.workspace.config.distribution,
+          if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile else Common.OwnConsumerProfile,
+          c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
       // State
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,

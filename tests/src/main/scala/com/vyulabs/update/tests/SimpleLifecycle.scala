@@ -85,7 +85,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
   def makeAndRunDistributionFromProvider(provider: SimpleLifecycle): Unit = {
     assert(provider.distributionBuilder.addConsumerAccount(distribution,
-      "Distribution Consumer", ConsumerAccountProperties(Common.CommonServiceProfile, s"http://localhost:${distributionPort}")))
+      "Distribution Consumer", ConsumerAccountProperties(Common.CommonConsumerProfile, s"http://localhost:${distributionPort}")))
 
     val config = DistributionConfig.readFromFile(new DistributionDirectory(provider.distributionDir).getConfigFile()).getOrElse {
       sys.error("Can't read provider distribution config file")
@@ -93,7 +93,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     val consumerAccessToken = JWT.encodeAccessToken(AccessToken(distribution), config.jwtSecret)
     if (!distributionBuilder.buildFromProviderDistribution(provider.distribution,
         s"http://localhost:${provider.distributionPort}", "admin", consumerAccessToken,
-        Some(Common.CommonServiceProfile), "ak")) {
+        Some(Common.CommonConsumerProfile), "ak")) {
       sys.error("Can't build distribution server")
     }
     Thread.sleep(5000)

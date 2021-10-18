@@ -43,11 +43,10 @@ trait StateUtils extends SprayJsonSupport {
     } yield result
   }
 
-  def getTestedVersions(consumerDistribution: Option[DistributionId], profile: Option[ServicesProfileId])
+  def getTestedVersions(consumerDistribution: Option[DistributionId])
                        (implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     val distributionArg = consumerDistribution.map(Filters.eq("consumerDistribution", _))
-    val profileArg = profile.map(Filters.eq("profile", _))
-    val filters = Filters.and((distributionArg ++ profileArg).asJava)
+    val filters = Filters.and(distributionArg.toSeq.asJava)
     collections.Developer_TestedVersions.find(filters).map(_.headOption.map(_.versions).getOrElse(Seq.empty))
   }
 

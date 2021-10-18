@@ -85,7 +85,7 @@ class StateInfoTest extends TestEnvironment {
   it should "set services state" in {
     val distributionContext = GraphqlContext(Some(AccessToken("consumer")),
       Some(ConsumerAccountInfo("consumer", "Distribution Consumer", AccountRole.DistributionConsumer,
-        ConsumerAccountProperties(Common.CommonServiceProfile, "http://dummy"))), workspace)
+        ConsumerAccountProperties(Common.CommonConsumerProfile, "http://dummy"))), workspace)
 
     assertResult((OK,
       ("""{"data":{"setServiceStates":true}}""").parseJson))(

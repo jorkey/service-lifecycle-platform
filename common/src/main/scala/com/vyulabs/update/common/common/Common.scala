@@ -47,8 +47,6 @@ object Common {
   val CommonConsumerProfile = "common"
   val OwnConsumerProfile = "own"
 
-  val CommonServiceProfile = "common"
-
   val BuilderSh = "builder.sh"
   val UpdateSh = ".update.sh"
 

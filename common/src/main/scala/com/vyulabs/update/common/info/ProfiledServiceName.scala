@@ -1,11 +1,11 @@
 package com.vyulabs.update.common.info
 
-import com.vyulabs.update.common.common.Common.{CommonServiceProfile, ServiceId, ServiceInstanceProfile}
+import com.vyulabs.update.common.common.Common.{CommonConsumerProfile, ServiceId, ServiceInstanceProfile}
 import spray.json.{JsString, JsValue, RootJsonFormat}
 
 case class ProfiledServiceName(name: ServiceId, profile: ServiceInstanceProfile) {
   override def toString: String = {
-    if (profile != CommonServiceProfile) {
+    if (profile != CommonConsumerProfile) {
       name + "-" + profile
     } else {
       name
@@ -20,7 +20,7 @@ object ProfiledServiceName {
   }
 
   def apply(service: ServiceId): ProfiledServiceName = {
-    ProfiledServiceName(service, CommonServiceProfile)
+    ProfiledServiceName(service, CommonConsumerProfile)
   }
 
   def apply(service: ServiceId, serviceProfile: ServiceInstanceProfile): ProfiledServiceName = {
@@ -30,7 +30,7 @@ object ProfiledServiceName {
   def parse(name: String): ProfiledServiceName = {
     val fields = name.split("-")
     if (fields.size == 1) {
-      ProfiledServiceName(fields(0), CommonServiceProfile)
+      ProfiledServiceName(fields(0), CommonConsumerProfile)
     } else if (fields.size == 2) {
       ProfiledServiceName(fields(0), fields(1))
     } else {
