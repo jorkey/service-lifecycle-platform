@@ -7,7 +7,7 @@ import {
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
-  ClientDistributionVersion,
+  ClientDistributionVersion, ClientVersionInfo,
   DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
   DistributionProviderInfo,
@@ -78,6 +78,7 @@ interface RowData {
   providerVersion?: DeveloperDistributionVersion
   developerVersion?: DeveloperDistributionVersion
   clientVersion?: ClientDistributionVersion
+  testedVersion?: DeveloperDistributionVersion
 }
 
 interface BuildRouteParams {
@@ -92,7 +93,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const [provider, setProvider] = useState<DistributionProviderInfo>()
   const [error, setError] = useState<string>()
-  const [ rows, setRows ] = useState<RowData[]>([])
+  const [rows, setRows] = useState<RowData[]>([])
 
   const { data: providers } = useProvidersInfoQuery({
     fetchPolicy: 'no-cache',
@@ -162,26 +163,24 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   React.useEffect(() => {
     setRows(makeRowsData())
-  }, [ providerVersions, developerVersions, clientVersions ])
+  }, [ provider, providerVersions, developerVersions, clientVersions, testedVersions ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
 
-    if (provider && providerVersions.data) {
-      providerVersions.data.providerDesiredVersions.forEach(
-        version => servicesSet.add(version.service)
-      )
-    }
-
-    if (developerVersions?.developerVersionsInfo) {
+    if (provider) {
+      if (providerVersions.data) {
+        providerVersions.data.providerDesiredVersions.forEach(
+          version => servicesSet.add(version.service)
+        )
+      }
+    } else if (developerVersions?.developerVersionsInfo) {
       developerVersions.developerVersionsInfo.forEach(
-        version => servicesSet.add(version.service)
-      )
-    }
-
-    if (clientVersions?.clientVersionsInfo) {
-      clientVersions.clientVersionsInfo.forEach(
-        version => servicesSet.add(version.service)
+        version => {
+          if (version.version.distribution == localStorage.getItem('distribution')) {
+            servicesSet.add(version.service)
+          }
+        }
       )
     }
 
@@ -192,7 +191,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     const services = makeServicesList()
     return services.sort().map(
       service => {
-        var selected = false
+        let selected = false
         const providerVersion = providerVersions.data?.providerDesiredVersions
           .find(version => version.service == service)
         const developerVersion = developerVersions?.developerVersionsInfo
@@ -203,6 +202,9 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           .sort((v1, v2) => Version.compareClientDistributionVersions(v1.version, v2.version))
           .reverse()
           .find(version => version.service == service)
+        const testedVersion = testedVersions?.data?.providerTestedVersions
+          .find(version => version.service == service)
+
         if (providerVersion && Version.compareDeveloperDistributionVersions(developerVersion?.version, providerVersion?.version) != 0) {
           selected = true
         }
@@ -214,7 +216,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           service: service,
           providerVersion: providerVersion?.version,
           developerVersion: developerVersion?.version,
-          clientVersion: clientVersion?.version
+          clientVersion: clientVersion?.version,
+          testedVersion: testedVersion?.version
         } as RowData
       })
   }
@@ -241,8 +244,13 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       name: 'clientVersion',
       headerName: 'Client Version',
       className: classes.versionColumn,
+    },
+    {
+      name: 'testedVersion',
+      headerName: 'Tested Developer Version',
+      className: classes.versionColumn,
     }
-  ].filter(c => true)
+  ].filter(column => column.name != 'testedVersion' || !!testedVersions.data)
 
   const rowsView = rows.map(row =>
     new Map<string, GridTableColumnValue>([
@@ -250,9 +258,35 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       ['service', row.service],
       ['providerVersion', row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):''],
       ['developerVersion', row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):''],
-      ['clientVersion', row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):'']
+      ['clientVersion', row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):''],
+      ['testedVersion', row.testedVersion?Version.developerDistributionVersionToString(row.testedVersion):'']
     ])
   )
+
+  function clientVersionToDeveloperVersion(version: ClientVersionInfo): DeveloperDesiredVersionInput {
+    return {
+      service: version.service,
+      version: { distribution: version.version.distribution, build: version.version.developerBuild }
+    }
+  }
+
+  function isTested() {
+    const installedVersions = clientVersions?.clientVersionsInfo?.map(version =>
+      clientVersionToDeveloperVersion(version))
+    if (installedVersions) {
+      const markedAsTested = testedVersions?.data?.providerTestedVersions
+      return !installedVersions.find(version => {
+        const testedVersion = markedAsTested?.find(v => { return version.service == v.service })
+        if (testedVersion) {
+          return Version.compareDeveloperDistributionVersions(version.version, testedVersion.version) != 0
+        } else {
+          return true
+        }
+      })
+    } else {
+      return false
+    }
+  }
 
   return (
     <Card
@@ -307,12 +341,12 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
              onRowsChecked={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
-                 developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))
+                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion } as RowData }))
              }}
              onRowsUnchecked={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
-                 developerVersion: row.developerVersion, clientVersion: row.clientVersion } as RowData }))
+                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion } as RowData }))
              }}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
@@ -328,17 +362,17 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
             {provider && clientVersions?<Button className={classes.control}
                     color="primary"
                     variant="contained"
-                    disabled={providerVersions.data?.providerDesiredVersions == testedVersions?.data?.providerTestedVersions}
+                    disabled={isTested()}
                     onClick={() => signAsTested({
                       variables: {
                         distribution: provider.distribution,
                         versions: clientVersions.clientVersionsInfo.map(version =>
-                          Version.clientVersionToDeveloperVersion(version)
+                          clientVersionToDeveloperVersion(version)
                         )
                       }
                     })}
             >
-              Sign As Tested
+              Mark As Tested
             </Button>:null}
           </Box>
         </div>

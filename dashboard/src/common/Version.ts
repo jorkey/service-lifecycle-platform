@@ -101,11 +101,4 @@ export class Version {
     }
     return nextBuild
   }
-
-  static clientVersionToDeveloperVersion(version: ClientVersionInfo): DeveloperDesiredVersionInput {
-    return {
-      service: version.service,
-      version: { distribution: version.version.distribution, build: version.version.developerBuild }
-    }
-  }
 }
