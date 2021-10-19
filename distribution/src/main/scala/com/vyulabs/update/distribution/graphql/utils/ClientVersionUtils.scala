@@ -4,10 +4,10 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionsInProcessInfo, ClientVersionInfo, DeveloperDesiredVersion, DeveloperVersionInProcessInfo}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, ClientVersionsInProcessInfo, DeveloperDesiredVersion, DeveloperVersionInProcessInfo}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.TaskManager
+import com.vyulabs.update.distribution.task.{TaskAttribute, TaskManager}
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -35,7 +35,9 @@ trait ClientVersionUtils {
         throw new IOException(s"Build of client versions is already in process")
       }
       var cancels = Seq.empty[() => Unit]
-      val task = taskManager.create(s"Build client services from developer versions: ${versions}",
+      val task = taskManager.create("BuildClientVersions",
+        Seq(TaskAttribute("author", author),
+            TaskAttribute("versions", versions.toString())),
         (task, logger) => {
           implicit val log = logger
           (for {
@@ -66,9 +68,10 @@ trait ClientVersionUtils {
             }
           } yield {}, Some(() => cancels.foreach(cancel => cancel())))
         })
-      versionsInProcess = Some(ClientVersionsInProcessInfo(versions, author, task.task, new Date()))
+      versionsInProcess = Some(ClientVersionsInProcessInfo(versions, author, task.info.task, new Date()))
       task.future.andThen { case _ => synchronized { versionsInProcess = None } }
-      task.task
+      collections.State_TaskInfo.insert(task.info)
+      task.info.task
     }
   }
 

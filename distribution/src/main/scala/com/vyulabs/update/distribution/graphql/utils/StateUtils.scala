@@ -11,6 +11,7 @@ import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.mongo._
+import com.vyulabs.update.distribution.task.TaskInfo
 import org.bson.BsonDocument
 import org.slf4j.Logger
 import sangria.schema.Action
@@ -267,6 +268,14 @@ trait StateUtils extends SprayJsonSupport {
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Some(Sorts.descending("_sequence"))
     collections.State_FaultReportsInfo.find(filters, sort, limit)
+  }
+
+  def getTasks(taskType: Option[String], limit: Option[Int])(implicit log: Logger)
+      : Future[Seq[TaskInfo]] = {
+    val taskTypeArg = taskType.map { taskType => Filters.eq("taskType", taskType) }
+    val filters = Filters.and(taskTypeArg.toSeq.asJava)
+    val sort = Some(Sorts.descending("_sequence"))
+    collections.State_TaskInfo.find(filters, sort, limit)
   }
 
   private def clearOldReports()(implicit log: Logger): Future[Unit] = {

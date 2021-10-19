@@ -7,7 +7,8 @@ import com.mongodb.client.model._
 import com.vyulabs.update.common.config.{GitConfig, ServiceSourcesConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties, PasswordHash, ServerAccountInfo}
+import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, PasswordHash, ServerAccountInfo, UserAccountProperties}
+import com.vyulabs.update.distribution.task.TaskInfo
 import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
@@ -156,6 +157,13 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     collection <- db.getOrCreateCollection[UploadStatusDocument]("state.uploadStatus")
      _ <- if (createIndices) collection.createIndex(Indexes.ascending("component"), new IndexOptions().unique(true)) else Future()
   } yield collection
+
+  val State_TaskInfo = new SequencedCollection[TaskInfo]("state.taskInfo", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("state.taskInfo")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime")) else Future()
+  } yield collection, Sequences, createIndex = createIndices)
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
     val filters = Filters.eq("account", "admin")

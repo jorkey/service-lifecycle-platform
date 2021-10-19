@@ -6,7 +6,11 @@ import spray.json.DefaultJsonProtocol
 
 import java.util.Date
 
-case class DeveloperDesiredVersion(service: ServiceId, version: DeveloperDistributionVersion)
+case class DeveloperDesiredVersion(service: ServiceId, version: DeveloperDistributionVersion) {
+  override def toString(): String = {
+    s"${service} -> ${version.toString}"
+  }
+}
 
 object DeveloperDesiredVersion extends DefaultJsonProtocol {
   implicit val desiredVersionJson = jsonFormat2(DeveloperDesiredVersion.apply)

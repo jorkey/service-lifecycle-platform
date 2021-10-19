@@ -2,14 +2,14 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, TaskId, AccountId}
+import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId, TaskId}
 import com.vyulabs.update.common.config.{DistributionConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.TaskManager
+import com.vyulabs.update.distribution.task.{TaskAttribute, TaskManager}
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -42,7 +42,9 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
       if (versionsInProcess.exists(_.service == service)) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
       }
-      val task = taskManager.create(s"Build developer version ${version} of service ${service}",
+      val task = taskManager.create(s"BuildDeveloperVersion",
+        Seq(TaskAttribute("version", version.toString),
+            TaskAttribute("service", service)),
         (task, logger) => {
           implicit val log = logger
           val arguments = Seq("buildDeveloperVersion",
@@ -56,10 +58,11 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
           (future, cancel)
         })
       versionsInProcess = versionsInProcess.filter(_.service != service) :+ DeveloperVersionInProcessInfo(service, version, author, sources, comment,
-        task.task, new Date())
+        task.info.task, new Date())
       task.future.andThen { case _ => synchronized {
         versionsInProcess = versionsInProcess.filter(_.service != service) } }
-      task.task
+      collections.State_TaskInfo.insert(task.info)
+      task.info.task
     }
   }
 

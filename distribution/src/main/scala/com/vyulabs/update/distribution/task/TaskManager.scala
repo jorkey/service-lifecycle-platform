@@ -10,7 +10,11 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future}
 
-case class Task(task: TaskId, description: String, future: Future[Unit], cancel: Option[() => Unit]) {
+case class TaskAttribute(name: String, value: String)
+
+case class TaskInfo(task: TaskId, taskType: String, attributes: Seq[TaskAttribute], creationTime: Date)
+
+case class Task(info: TaskInfo, future: Future[Unit], cancel: Option[() => Unit]) {
   val startDate: Date = new Date
 }
 
@@ -20,9 +24,10 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
   private val idGenerator = new IdGenerator()
   private var activeTasks = Map.empty[TaskId, Task]
 
-  def create(description: String, run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): Task = {
+  def create(taskType: String, attributes: Seq[TaskAttribute], run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): Task = {
     val taskId = idGenerator.generateId(8)
-    log.info(s"Started task ${taskId} '${description}'")
+    val description = s"Started task ${taskId}, type ${taskType}, attributes '${attributes}'"
+    log.info(description)
     val appender = new TraceAppender()
     val logger = Utils.getLogbackLogger(Task.getClass)
     logger.addAppender(appender)
@@ -30,10 +35,10 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
     appender.addListener(buffer)
     appender.start()
     val (future, cancel) = run(taskId, logger)
-    val task = Task(taskId, description, future, cancel)
-    activeTasks += (task.task -> task)
+    val task = Task(TaskInfo(taskId, taskType, attributes, new Date()), future, cancel)
+    activeTasks += (task.info.task -> task)
     future.andThen { case status =>
-      log.info(s"Task ${task} '${description}' is finished with status ${status}")
+      log.info(s"Task ${task} is finished with status ${status}")
       if (status.isSuccess) {
         appender.setTerminationStatus(true, None)
       } else {
