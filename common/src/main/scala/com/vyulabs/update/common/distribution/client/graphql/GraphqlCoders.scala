@@ -142,8 +142,8 @@ trait ConsumersAdministrationCoder {
                   testConsumer: Option[String], uploadStateInterval: Option[FiniteDuration]) =
     GraphqlMutation[Boolean]("addProvider", Seq(GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("url" -> distributionUrl), GraphqlArgument("accessToken" -> accessToken),
-      GraphqlArgument("testConsumer" -> testConsumer.map(_.toJson.toString())),
-      GraphqlArgument("uploadStateInterval" -> uploadStateInterval.map(_.toJson.toString()), "[FiniteDuration!]")).filter(_.value != JsNull))
+      GraphqlArgument("testConsumer" -> testConsumer),
+      GraphqlArgument("uploadStateInterval" -> uploadStateInterval, "[FiniteDuration!]")).filter(_.value != JsNull))
   def removeProvider(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeProvider", Seq(GraphqlArgument("distribution" -> distribution)))
 }

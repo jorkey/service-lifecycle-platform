@@ -409,7 +409,7 @@ const LoggingView: React.FC<LoggingParams> = props => {
                   </FormGroup>
                 </>
               }
-              title={'Logs of service'}
+              title={'Logs Of Service'}
             />
             <CardContent className={classes.content}>
               <div className={classes.inner}>
@@ -422,7 +422,7 @@ const LoggingView: React.FC<LoggingParams> = props => {
                              find={find != ''?find:undefined}
                              follow={follow}
                              onComplete={() => {}}
-                             onError={message => {}}
+                             onError={error => {setError(error)}}
                   /> : null }
                 {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
               </div>

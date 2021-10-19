@@ -44,7 +44,7 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
   },
   creationTime: {
-    width: '150px',
+    width: '250px',
     padding: '4px',
   },
   installedByColumn: {
@@ -52,7 +52,7 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
   },
   installTimeColumn: {
-    width: '150px',
+    width: '250px',
     padding: '4px',
   },
   control: {

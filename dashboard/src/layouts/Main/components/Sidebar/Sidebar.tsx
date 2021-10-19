@@ -53,120 +53,125 @@ const Sidebar = (props:any) => {
   const classes = useStyles()
 
   const { data: developerServices } = useDeveloperServicesQuery()
-  const development = !!developerServices?.developerServices?.length
 
-  const buildPages: Page = development ? {
-    title: 'Build',
-    href: '/build/',
-    icon: <BuildIcon />,
-    pages: [
-      {
-        title: 'Developer',
-        href: '/build/developer',
-      },
-      {
-        title: 'Client',
-        href: '/build/client',
-      }
-    ]
-  } : {
-    title: 'Build',
-    href: '/build/client',
-    icon: <BuildIcon />
-  }
+  if (developerServices) {
+    const development = !!developerServices.developerServices?.length
 
-  const pages: Array<Page> = [
-    {
-      title: 'Dashboard',
-      href: '/dashboard',
-      icon: <DashboardIcon/>
-    },
-    buildPages,
-    {
-      title: 'Logging',
-      href: '/logging',
-      icon: <ListIcon/>
-    },
-    {
-      title: 'Faults',
-      href: '/faults',
-      icon: <ErrorIcon/>
-    },
-    {
-      title: 'Settings',
-      href: '/settings/',
-      icon: <SettingsIcon/>,
+    const buildPages: Page = development ? {
+      title: 'Build',
+      href: '/build/',
+      icon: <BuildIcon/>,
       pages: [
         {
-          title: 'Accounts',
-          href: '/settings/accounts/',
-          icon: <AccountsIcon/>,
-          pages: [
-            {
-              title: 'Users',
-              href: '/settings/accounts/users',
-              icon: <PeopleIcon/>,
-            },
-            {
-              title: 'Services',
-              href: '/settings/accounts/services',
-              icon: <BubbleChartIcon/>,
-            },
-            {
-              title: 'Distribution Consumers',
-              href: '/settings/accounts/consumers',
-              icon: <DistributionIcon/>,
-            }
-          ]
+          title: 'Developer',
+          href: '/build/developer',
         },
         {
-          title: 'Services',
-          href: '/settings/services/',
-          icon: <BubbleChartIcon/>,
-          pages: [
-            {
-              title: 'Development',
-              href: '/settings/services/development',
-              icon: <BuildIcon/>,
-            },
-            {
-              title: 'Profiles',
-              href: '/settings/services/profiles',
-              icon: <ProfilesIcon/>,
-            }
-          ]
-        },
-        {
-          title: 'Providers',
-          href: '/settings/providers',
-          icon: <DistributionIcon/>,
+          title: 'Client',
+          href: '/build/client',
         }
       ]
+    } : {
+      title: 'Build',
+      href: '/build/client',
+      icon: <BuildIcon/>
     }
-  ];
 
-  return (
-    <Drawer
-      anchor='left'
-      classes={{ paper: classes.drawer }}
-      onClose={onClose}
-      open={open}
-      variant={variant}
-    >
-      <div
-        {...rest}
-        className={clsx(classes.root, className)}
+    const pages: Array<Page> = [
+      {
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: <DashboardIcon/>
+      },
+      buildPages,
+      {
+        title: 'Logging',
+        href: '/logging',
+        icon: <ListIcon/>
+      },
+      {
+        title: 'Faults',
+        href: '/faults',
+        icon: <ErrorIcon/>
+      },
+      {
+        title: 'Settings',
+        href: '/settings/',
+        icon: <SettingsIcon/>,
+        pages: [
+          {
+            title: 'Accounts',
+            href: '/settings/accounts/',
+            icon: <AccountsIcon/>,
+            pages: [
+              {
+                title: 'Users',
+                href: '/settings/accounts/users',
+                icon: <PeopleIcon/>,
+              },
+              {
+                title: 'Services',
+                href: '/settings/accounts/services',
+                icon: <BubbleChartIcon/>,
+              },
+              {
+                title: 'Distribution Consumers',
+                href: '/settings/accounts/consumers',
+                icon: <DistributionIcon/>,
+              }
+            ]
+          },
+          {
+            title: 'Services',
+            href: '/settings/services/',
+            icon: <BubbleChartIcon/>,
+            pages: [
+              {
+                title: 'Development',
+                href: '/settings/services/development',
+                icon: <BuildIcon/>,
+              },
+              {
+                title: 'Profiles',
+                href: '/settings/services/profiles',
+                icon: <ProfilesIcon/>,
+              }
+            ]
+          },
+          {
+            title: 'Providers',
+            href: '/settings/providers',
+            icon: <DistributionIcon/>,
+          }
+        ]
+      }
+    ];
+
+    return (
+      <Drawer
+        anchor='left'
+        classes={{paper: classes.drawer}}
+        onClose={onClose}
+        open={open}
+        variant={variant}
       >
-        <Profile />
-        <Divider className={classes.divider} />
-        <SidebarNav
-          className={classes.nav}
-          pages={pages}
-        />
-      </div>
-    </Drawer>
-  );
-};
+        <div
+          {...rest}
+          className={clsx(classes.root, className)}
+        >
+          <Profile/>
+          <Divider className={classes.divider}/>
+          <SidebarNav
+            className={classes.nav}
+            pages={pages}
+          />
+        </div>
+      </Drawer>
+    )
+  } else {
+    return null
+  }
+}
 
 Sidebar.propTypes = {
   className: PropTypes.string,

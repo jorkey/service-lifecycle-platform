@@ -187,9 +187,9 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       }
     } else if (developerVersions?.developerVersionsInfo) {
       developerVersions.developerVersionsInfo.forEach(
-        version => {
-          if (version.version.distribution == localStorage.getItem('distribution')) {
-            servicesSet.add(version.service)
+        info => {
+          if (info.version.distribution == localStorage.getItem('distribution')) {
+            servicesSet.add(info.service)
           }
         }
       )
@@ -276,18 +276,18 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     ])
   )
 
-  function clientVersionToDeveloperVersion(version: ClientVersionInfo): DeveloperDesiredVersionInput {
+  function clientVersionToDeveloperVersion(info: ClientVersionInfo): DeveloperDesiredVersionInput {
     return {
-      service: version.service,
-      version: { distribution: version.version.distribution, build: version.version.developerBuild }
+      service: info.service,
+      version: { distribution: info.version.distribution, build: info.version.developerBuild }
     }
   }
 
   function isTested() {
     const installedVersions =
       (provider?
-          clientVersions?.clientVersionsInfo?.filter(version => version.version.distribution == provider.distribution):
-          clientVersions?.clientVersionsInfo?.filter(version => version.version.distribution == localStorage.getItem('distribution')))
+          clientVersions?.clientVersionsInfo?.filter(info => info.version.distribution == provider.distribution):
+          clientVersions?.clientVersionsInfo?.filter(info => info.version.distribution == localStorage.getItem('distribution')))
       ?.map(version => clientVersionToDeveloperVersion(version))
     if (installedVersions) {
       const markedAsTested = provider?providerTestedVersions?.data?.providerTestedVersions:testedVersions?.data?.testedVersions
@@ -388,7 +388,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                           variables: {
                             distribution: provider.distribution,
                             versions: clientVersions.clientVersionsInfo
-                              .filter(version => version.version.distribution == provider.distribution)
+                              .filter(info => info.version.distribution == provider.distribution)
                               .map(version => clientVersionToDeveloperVersion(version)
                             )
                           }
@@ -397,7 +397,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                         setTestedVersions({
                           variables: {
                             versions: clientVersions.clientVersionsInfo
-                              .filter(version => version.version.distribution == localStorage.getItem('distribution'))
+                              .filter(info => info.version.distribution == localStorage.getItem('distribution'))
                               .map(version => clientVersionToDeveloperVersion(version))
                         }})
                       }}
