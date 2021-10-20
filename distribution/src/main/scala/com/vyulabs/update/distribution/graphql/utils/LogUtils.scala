@@ -11,8 +11,6 @@ import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.mongo._
-import com.vyulabs.update.distribution.task.TaskInfo
-import org.bson.BsonDocument
 import org.slf4j.Logger
 import sangria.schema.Action
 
