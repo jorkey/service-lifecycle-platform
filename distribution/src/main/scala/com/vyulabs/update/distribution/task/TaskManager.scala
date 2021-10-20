@@ -20,10 +20,10 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
   private val idGenerator = new IdGenerator()
   private var activeTasks = Map.empty[TaskId, Task]
 
-  def create(run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): Task = {
+  def create(description: String,
+             run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): Task = {
     val taskId = idGenerator.generateId(8)
-    val description = s"Started task ${taskId}"
-    log.info(description)
+    log.info(s"${description} started")
     val appender = new TraceAppender()
     val logger = Utils.getLogbackLogger(Task.getClass)
     logger.addAppender(appender)

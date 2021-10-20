@@ -5,17 +5,20 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts}
 import com.vyulabs.update.common.common.Common._
+import com.vyulabs.update.common.common.Misc
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.mongo._
-import com.vyulabs.update.distribution.task.{TaskManager}
+import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.Logger
 
 import java.util.Date
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
-case class TaskAttribute(name: String, value: String)
+case class TaskAttribute(name: String, value: String) {
+  override def toString: String = s"${name}=${value}"
+}
 
 case class TaskInfo(taskId: TaskId, taskType: String, attributes: Seq[TaskAttribute],
                     creationTime: Date, active: Option[Boolean] = None)
@@ -38,7 +41,7 @@ trait TasksUtils extends SprayJsonSupport {
                  run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): TaskInfo = {
     synchronized {
       checkAllowToRun()
-      val task = taskManager.create(run)
+      val task = taskManager.create(s"Task ${taskType} with attributes: ${Misc.seqToCommaSeparatedString(attributes)}", run)
       val info = TaskInfo(task.taskId, taskType, attributes, new Date(), Some(true))
       activeTasks :+= info
       collections.Tasks_Info.insert(info.copy(active = None))
