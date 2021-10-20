@@ -8,13 +8,13 @@ import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
-import com.vyulabs.update.common.info.{AccessToken, AccountRole, LogLine}
+import com.vyulabs.update.common.info.{AccessToken, LogLine}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.{TaskAttribute, TaskManager}
+import com.vyulabs.update.distribution.task.{TaskManager}
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
@@ -28,10 +28,10 @@ trait RunBuilderUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
-  protected val taskManager: TaskManager
 
   protected val accountsUtils: AccountsUtils
-  protected val stateUtils: StateUtils
+  protected val logUtils: LogUtils
+  protected val tasksUtils: TasksUtils
   protected val distributionProvidersUtils: DistributionProvidersUtils
 
   protected implicit val executionContext: ExecutionContext
@@ -51,16 +51,16 @@ trait RunBuilderUtils extends SprayJsonSupport {
 
   def runBuilderByRemoteDistribution(distribution: DistributionId, accessToken: String,
                                      arguments: Seq[String])(implicit log: Logger): TaskId = {
-    val task = taskManager.create("RunBuilderByRemoteDistribution",
+    tasksUtils.createTask(
+      "RunBuilderByRemoteDistribution",
       Seq(TaskAttribute("distribution", distribution),
-          TaskAttribute("accessToken", accessToken),
-          TaskAttribute("arguments", arguments.toString())),
+        TaskAttribute("accessToken", accessToken),
+        TaskAttribute("arguments", arguments.toString())),
+      () => {},
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, distribution, accessToken, arguments)
-      })
-    collections.State_TaskInfo.insert(task.info)
-    task.info.task
+      }).taskId
   }
 
   private def runLocalBuilder(task: TaskId, distribution: DistributionId,
@@ -104,13 +104,13 @@ trait RunBuilderUtils extends SprayJsonSupport {
             }
           })
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            stateUtils.addLogs(Common.BuilderServiceName,
+            logUtils.addLogs(Common.BuilderServiceName,
               config.instance, directory.getBuilderDir().toString, process.getHandle().pid().toString, Some(task), logLines).map(_ => ())
           })
         },
         exitCode => {
           logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            stateUtils.addLogs(Common.BuilderServiceName,
+            logUtils.addLogs(Common.BuilderServiceName,
               config.instance, directory.getBuilderDir().toString, process.getHandle().pid().toString, Some(task),
               Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
           }.andThen { case _ => outputFinishedPromise.success(Unit) }
@@ -145,7 +145,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         @volatile var logOutputFuture = Option.empty[Future[Unit]]
         logSource.map(lines => {
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            stateUtils.addLogs(Common.DistributionServiceName,
+            logUtils.addLogs(Common.DistributionServiceName,
               config.instance, "", 0.toString, Some(task), lines.map(_.payload)).map(_ => ())
           })
           for (terminationStatus <- lines.lastOption.map(_.payload.terminationStatus).flatten) {

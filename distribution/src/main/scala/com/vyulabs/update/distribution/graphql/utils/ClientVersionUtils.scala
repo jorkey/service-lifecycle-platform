@@ -4,10 +4,10 @@ import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, ClientVersionsInProcessInfo, DeveloperDesiredVersion, DeveloperVersionInProcessInfo}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.{TaskAttribute, TaskManager}
+import com.vyulabs.update.distribution.task.{TaskManager}
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -24,55 +24,49 @@ trait ClientVersionUtils {
 
   protected val distributionProvidersUtils: DistributionProvidersUtils
   protected val runBuilderUtils: RunBuilderUtils
+  protected val tasksUtils: TasksUtils
 
   protected implicit val executionContext: ExecutionContext
 
-  private var versionsInProcess = Option.empty[ClientVersionsInProcessInfo]
-
   def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)(implicit log: Logger): TaskId = {
-    synchronized {
-      if (versionsInProcess.isDefined) {
-        throw new IOException(s"Build of client versions is already in process")
-      }
-      var cancels = Seq.empty[() => Unit]
-      val task = taskManager.create("BuildClientVersions",
-        Seq(TaskAttribute("author", author),
-            TaskAttribute("versions", versions.toString())),
-        (task, logger) => {
-          implicit val log = logger
-          (for {
-            _ <- Future.sequence(versions
-              .map(version =>
-                if (version.version.distribution != config.distribution) {
-                  distributionProvidersUtils.downloadProviderVersion(
-                    version.version.distribution, version.service, version.version)
-                } else {
-                  Future()
-                }))
-            _ <- {
-              val results = versions
-                .map(version => for {
-                  clientVersion <- getClientVersionsInfo(Some(version.service), Some(version.version.distribution)).map(versions =>
-                                    versions.map(_.version)
-                                      .sorted(ClientDistributionVersion.ordering)
-                                      .reverse
-                                      .find(v => DeveloperDistributionVersion.from(v) == version.version)
-                                      .map(version => new ClientDistributionVersion(version.distribution, version.developerBuild, version.clientBuild+1))
-                                      .getOrElse(ClientDistributionVersion.from(version.version, 0)))
-                  } yield {
-                    buildClientVersion(task, version.service, clientVersion, author)
-                  }
-                )
-              results.foreach(_.foreach(_._2.foreach(cancel => cancels :+= cancel)))
-              Future.sequence(results).map(results => Future.sequence(results.map(_._1))).flatten.map(_ => Unit)
-            }
-          } yield {}, Some(() => cancels.foreach(cancel => cancel())))
-        })
-      versionsInProcess = Some(ClientVersionsInProcessInfo(versions, author, task.info.task, new Date()))
-      task.future.andThen { case _ => synchronized { versionsInProcess = None } }
-      collections.State_TaskInfo.insert(task.info)
-      task.info.task
-    }
+    var cancels = Seq.empty[() => Unit]
+    tasksUtils.createTask(
+      "BuildClientVersions",
+      Seq(TaskAttribute("author", author),
+        TaskAttribute("versions", versions.toString())),
+      () => if (tasksUtils.getActiveTask("BuildClientVersions").isDefined) {
+          throw new IOException(s"Build of client versions is already in process")
+      },
+      (task, logger) => {
+        implicit val log = logger
+        (for {
+          _ <- Future.sequence(versions
+            .map(version =>
+              if (version.version.distribution != config.distribution) {
+                distributionProvidersUtils.downloadProviderVersion(
+                  version.version.distribution, version.service, version.version)
+              } else {
+                Future()
+              }))
+          _ <- {
+            val results = versions
+              .map(version => for {
+                clientVersion <- getClientVersionsInfo(Some(version.service), Some(version.version.distribution)).map(versions =>
+                                  versions.map(_.version)
+                                    .sorted(ClientDistributionVersion.ordering)
+                                    .reverse
+                                    .find(v => DeveloperDistributionVersion.from(v) == version.version)
+                                    .map(version => new ClientDistributionVersion(version.distribution, version.developerBuild, version.clientBuild+1))
+                                    .getOrElse(ClientDistributionVersion.from(version.version, 0)))
+                } yield {
+                  buildClientVersion(task, version.service, clientVersion, author)
+                }
+              )
+            results.foreach(_.foreach(_._2.foreach(cancel => cancels :+= cancel)))
+            Future.sequence(results).map(results => Future.sequence(results.map(_._1))).flatten.map(_ => Unit)
+          }
+        } yield {}, Some(() => cancels.foreach(cancel => cancel())))
+      }).taskId
   }
 
   private def buildClientVersion(task: TaskId, service: ServiceId,
@@ -163,9 +157,5 @@ trait ClientVersionUtils {
 
   private def getBusyVersions(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Set[ClientVersion]] = {
     getClientDesiredVersion(service).map(_.toSet.filter(_.distribution == distribution).map(_.clientVersion))
-  }
-
-  def getClientVersionsInProcessInfo(): Option[ClientVersionsInProcessInfo] = {
-    synchronized { versionsInProcess }
   }
 }

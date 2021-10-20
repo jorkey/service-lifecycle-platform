@@ -23,7 +23,7 @@ class FaultReportInfoTest extends TestEnvironment {
   implicit val materializer: Materializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
 
-  val faultsInfoCollection = collections.State_FaultReportsInfo
+  val faultsInfoCollection = collections.Faults_ReportsInfo
   val sequencesCollection = result(collections.Sequences)
 
   override def dbName = super.dbName + "-distribution"

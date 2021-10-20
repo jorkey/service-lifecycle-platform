@@ -35,7 +35,3 @@ case class InstallInfo(account: String, time: Date)
 object InstallInfo extends DefaultJsonProtocol {
   implicit val installInfoJson = jsonFormat2(InstallInfo.apply)
 }
-
-case class DeveloperVersionInProcessInfo(service: ServiceId, version: DeveloperVersion, author: AccountId,
-                                         sources: Seq[SourceConfig], comment: String,
-                                         task: TaskId, startTime: Date)

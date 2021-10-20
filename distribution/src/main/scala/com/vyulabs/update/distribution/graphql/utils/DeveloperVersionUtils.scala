@@ -7,9 +7,8 @@ import com.vyulabs.update.common.config.{DistributionConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.{TaskAttribute, TaskManager}
+import com.vyulabs.update.distribution.task.{TaskManager}
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -25,51 +24,39 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
-  protected val taskManager: TaskManager
 
   protected val serviceProfilesUtils: ServiceProfilesUtils
-  protected val stateUtils: StateUtils
+  protected val tasksUtils: TasksUtils
   protected val runBuilderUtils: RunBuilderUtils
 
   protected implicit val executionContext: ExecutionContext
 
-  private var versionsInProcess = Seq.empty[DeveloperVersionInProcessInfo]
-
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: AccountId,
                             sources: Seq[SourceConfig], comment: String, buildClientVersion: Boolean)
                            (implicit log: Logger): TaskId = {
-    synchronized {
-      if (versionsInProcess.exists(_.service == service)) {
+    tasksUtils.createTask(
+      "BuildDeveloperVersion",
+      Seq(TaskAttribute("service", service),
+        TaskAttribute("version", version.toString),
+        TaskAttribute("author", author),
+        TaskAttribute("sources", sources.toString()),
+        TaskAttribute("comment", comment),
+        TaskAttribute("buildClientVersion", buildClientVersion.toString)),
+      () => if (tasksUtils.getActiveTask("BuildDeveloperVersion", Some(TaskAttribute("service", service))).isDefined) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
-      }
-      val task = taskManager.create(s"BuildDeveloperVersion",
-        Seq(TaskAttribute("version", version.toString),
-            TaskAttribute("service", service)),
-        (task, logger) => {
-          implicit val log = logger
-          val arguments = Seq("buildDeveloperVersion",
-            s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
-            s"sources=${sources.toJson.compactPrint}", s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
-          val (builderFuture, cancel) = runBuilderUtils.runBuilder(task, arguments)
-          val future = builderFuture.flatMap(_ => {
-            setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
-              Some(DeveloperDistributionVersion(config.distribution, version.build)))))
-          })
-          (future, cancel)
+      },
+      (taskId, logger) => {
+        implicit val log = logger
+        val arguments = Seq("buildDeveloperVersion",
+          s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
+          s"sources=${sources.toJson.compactPrint}", s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
+        val (builderFuture, cancel) = runBuilderUtils.runBuilder(taskId, arguments)
+        val future = builderFuture.flatMap(_ => {
+          setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
+            Some(DeveloperDistributionVersion(config.distribution, version.build)))))
         })
-      versionsInProcess = versionsInProcess.filter(_.service != service) :+ DeveloperVersionInProcessInfo(service, version, author, sources, comment,
-        task.info.task, new Date())
-      task.future.andThen { case _ => synchronized {
-        versionsInProcess = versionsInProcess.filter(_.service != service) } }
-      collections.State_TaskInfo.insert(task.info)
-      task.info.task
-    }
-  }
-
-  def getDeveloperVersionsInProcess(service: Option[ServiceId]): Seq[DeveloperVersionInProcessInfo] = {
-    synchronized {
-      versionsInProcess.filter(version => { service.isEmpty || version.service == service.get } )
-    }
+        (future, cancel)
+      }).taskId
   }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
@@ -162,11 +149,30 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
     for {
       developerVersions <- testConsumer match {
         case Some(testDistributionConsumer) =>
-          stateUtils.getTestedVersions(Some(testDistributionConsumer))
+          getTestedVersions(Some(testDistributionConsumer))
         case None =>
           getDeveloperDesiredVersions(services)
       }
     } yield developerVersions
+  }
+
+  def setTestedVersions(consumerDistribution: DistributionId, profile: ServicesProfileId,
+                        desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger): Future[Unit] = {
+    for {
+      result <- {
+        val newTestedVersions = TestedVersions(profile, consumerDistribution, desiredVersions, new Date())
+        val distributionArg = Filters.eq("consumerDistribution", consumerDistribution)
+        collections.Developer_TestedVersions.update(distributionArg, _ =>
+          Some(newTestedVersions)).map(_ => ())
+      }
+    } yield result
+  }
+
+  def getTestedVersions(consumerDistribution: Option[DistributionId])
+                       (implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+    val distributionArg = consumerDistribution.map(Filters.eq("consumerDistribution", _))
+    val filters = Filters.and(distributionArg.toSeq.asJava)
+    collections.Developer_TestedVersions.find(filters).map(_.headOption.map(_.versions).getOrElse(Seq.empty))
   }
 
   private def getBusyVersions(distribution: DistributionId, service: ServiceId)(implicit log: Logger): Future[Set[DeveloperVersion]] = {
@@ -174,7 +180,7 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
       desiredVersion <- getDeveloperDesiredVersion(service)
       profiles <- serviceProfilesUtils.getServiceProfiles(None)
       testedVersions <- Future.sequence(profiles.map(profile =>
-          stateUtils.getTestedVersions(Some(profile.profile)))).map(
+          getTestedVersions(Some(profile.profile)))).map(
         _.flatten.find(_.service == service).map(_.version))
     } yield {
       (desiredVersion.toSet ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)

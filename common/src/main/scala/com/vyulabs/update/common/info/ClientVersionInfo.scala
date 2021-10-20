@@ -21,5 +21,3 @@ case class ClientVersionsInfo(versions: Seq[ClientVersionInfo])
 object ClientVersionsInfoJson extends DefaultJsonProtocol {
   implicit val clientVersionsInfoJson = jsonFormat1(ClientVersionsInfo.apply)
 }
-
-case class ClientVersionsInProcessInfo(versions: Seq[DeveloperDesiredVersion], author: AccountId, task: TaskId, startTime: Date)

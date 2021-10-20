@@ -8,7 +8,7 @@ import com.vyulabs.update.common.config.{GitConfig, ServiceSourcesConfig, Source
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, PasswordHash, ServerAccountInfo, UserAccountProperties}
-import com.vyulabs.update.distribution.task.TaskInfo
+import com.vyulabs.update.distribution.graphql.utils.TaskInfo
 import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
@@ -131,8 +131,13 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- collection.dropItems()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val State_ServiceLogs = new SequencedCollection[ServiceLogLine]("state.serviceLogs", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("state.serviceLogs")
+  val State_UploadStatus = for {
+    collection <- db.getOrCreateCollection[UploadStatusDocument]("state.uploadStatus")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("component"), new IndexOptions().unique(true)) else Future()
+  } yield collection
+
+  val Log_Lines = new SequencedCollection[ServiceLogLine]("log.lines", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("log.lines")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
@@ -144,8 +149,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.text("payload.message")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val State_FaultReportsInfo = new SequencedCollection[DistributionFaultReport]("state.faultReports", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("state.faultReports")
+  val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("faults.reports")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.id")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.service")) else Future()
@@ -153,13 +158,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.info.time")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val State_UploadStatus = for {
-    collection <- db.getOrCreateCollection[UploadStatusDocument]("state.uploadStatus")
-     _ <- if (createIndices) collection.createIndex(Indexes.ascending("component"), new IndexOptions().unique(true)) else Future()
-  } yield collection
-
-  val State_TaskInfo = new SequencedCollection[TaskInfo]("state.taskInfo", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("state.taskInfo")
+  val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime")) else Future()

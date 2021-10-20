@@ -50,12 +50,12 @@ object DistributionMain extends App {
     val collections = new DatabaseCollections(mongoDb, config.instanceState.expirationTimeout, true)
     val dir = new DistributionDirectory(new File("."))
     val taskManager = new TaskManager(task => new LogStorekeeper(Common.DistributionServiceName, Some(task),
-      config.instance, collections.State_ServiceLogs))
+      config.instance, collections.Log_Lines))
 
     Await.result(collections.init(), Duration.Inf)
 
     TraceAppender.handleLogs("Distribution server", "PROCESS",
-      new LogStorekeeper(Common.DistributionServiceName, None, config.instance, collections.State_ServiceLogs))
+      new LogStorekeeper(Common.DistributionServiceName, None, config.instance, collections.Log_Lines))
 
     val workspace = GraphqlWorkspace(config, collections, dir, taskManager)
     val distribution = new Distribution(workspace, graphql)

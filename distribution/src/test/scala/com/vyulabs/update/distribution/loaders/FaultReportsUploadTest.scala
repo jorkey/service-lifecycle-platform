@@ -43,14 +43,14 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", "directory", "profile1", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
       Seq(FileInfo("file1", 1234))))
-    result(collections.State_FaultReportsInfo.insert(report))
+    result(collections.Faults_ReportsInfo.insert(report))
     waitForFaultReportUpload("fault1").success()
     waitForAddServiceFaultReportInfo(report).success(true)
 
     Thread.sleep(500)
     uploader.stop()
 
-    result(collections.State_FaultReportsInfo.drop())
+    result(collections.Faults_ReportsInfo.drop())
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
  }
 
@@ -60,7 +60,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", "directory", "profile1", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
       Seq(FileInfo("file2", 1234))))
-    result(collections.State_FaultReportsInfo.insert(report1))
+    result(collections.Faults_ReportsInfo.insert(report1))
     waitForFaultReportUpload( "fault1").failure(new IOException("upload error"))
 
     Thread.sleep(500)
@@ -72,13 +72,13 @@ class FaultReportsUploadTest extends TestEnvironment {
 
     val report2 = DistributionFaultReport(distributionName, ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "service2", "directory", "profile2", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()),
       Seq(FileInfo("file2", 1234))))
-    result(collections.State_FaultReportsInfo.insert(report2))
+    result(collections.Faults_ReportsInfo.insert(report2))
     waitForFaultReportUpload( "fault2").success()
     waitForAddServiceFaultReportInfo(report2).success(true)
 
     uploader.stop()
 
-    result(collections.State_FaultReportsInfo.drop())
+    result(collections.Faults_ReportsInfo.drop())
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
   }
 

@@ -23,7 +23,8 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
     extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
-      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with RunBuilderUtils with AccountsUtils {
+      with DeveloperVersionUtils with ClientVersionUtils with StateUtils with LogUtils with FaultsUtils with TasksUtils
+      with RunBuilderUtils with AccountsUtils {
   protected val sourceUtils = this
   protected val distributionInfoUtils = this
   protected val serviceProfilesUtils = this
@@ -32,6 +33,9 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
   protected val developerVersionUtils = this
   protected val clientVersionUtils = this
   protected val stateUtils = this
+  protected val logUtils = this
+  protected val faultsUtils = this
+  protected val tasksUtils = this
   protected val runBuilderUtils = this
   protected val accountsUtils = this
 }
@@ -181,10 +185,6 @@ object GraphqlSchema {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           }
         }),
-      Field("developerVersionsInProcess", ListType(DeveloperVersionInProcessInfoType),
-        arguments = OptionServiceArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperVersionsInProcess(c.arg(OptionServiceArg)) }),
 
       // Tested versions
       Field("testedVersions", OptionType(ListType(DeveloperDesiredVersionType)),
@@ -203,9 +203,6 @@ object GraphqlSchema {
         arguments = OptionServicesArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
-      Field("clientVersionsInProcess", OptionType(ClientVersionsInProcessInfoType),
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientVersionsInProcessInfo() }),
 
       // Distribution providers
       Field("providersInfo", ListType(ProviderInfoType),

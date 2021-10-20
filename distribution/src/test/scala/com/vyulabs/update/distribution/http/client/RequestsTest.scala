@@ -208,7 +208,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
           Seq(FileInfo("fault2.info", 1234), FileInfo("core", 123456789)))))))(
         adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some("consumer"), Some("service1"), Some(2))))
 
-      result(collections.State_FaultReportsInfo.drop())
+      result(collections.Faults_ReportsInfo.drop())
     }
   }
 

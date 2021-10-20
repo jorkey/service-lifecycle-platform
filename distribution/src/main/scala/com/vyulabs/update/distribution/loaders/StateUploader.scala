@@ -104,8 +104,8 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   private def uploadFaultReports(): Future[Unit] = {
     log.debug("Upload fault reports")
     for {
-      from <- getLastUploadSequence(collections.State_FaultReportsInfo.name)
-      newReportsDocuments <- collections.State_FaultReportsInfo.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
+      from <- getLastUploadSequence(collections.Faults_ReportsInfo.name)
+      newReportsDocuments <- collections.Faults_ReportsInfo.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
       newReports <- Future(newReportsDocuments)
     } yield {
       if (!newReports.isEmpty) {
@@ -118,9 +118,9 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
           infoUpload.
             andThen {
               case Success(_) =>
-                setLastUploadSequence(collections.State_FaultReportsInfo.name, newReportsDocuments.last.sequence)
+                setLastUploadSequence(collections.Faults_ReportsInfo.name, newReportsDocuments.last.sequence)
               case Failure(ex) =>
-                setLastUploadError(collections.State_FaultReportsInfo.name, ex.getMessage)
+                setLastUploadError(collections.Faults_ReportsInfo.name, ex.getMessage)
             }
         }))
       } else {
