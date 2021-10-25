@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{DistributionId, TaskId}
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.client.DistributionClient
@@ -14,7 +14,7 @@ import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.{TaskManager}
+import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
@@ -53,14 +53,14 @@ trait RunBuilderUtils extends SprayJsonSupport {
                                      arguments: Seq[String])(implicit log: Logger): TaskId = {
     tasksUtils.createTask(
       "RunBuilderByRemoteDistribution",
-      Seq(TaskAttribute("distribution", distribution),
-        TaskAttribute("accessToken", accessToken),
-        TaskAttribute("arguments", arguments.toString())),
+      Seq(TaskParameter("distribution", distribution),
+        TaskParameter("accessToken", accessToken),
+        TaskParameter("arguments", Misc.seqToCommaSeparatedString(arguments))),
       () => {},
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, distribution, accessToken, arguments)
-      }).taskId
+      }).id
   }
 
   private def runLocalBuilder(task: TaskId, distribution: DistributionId,

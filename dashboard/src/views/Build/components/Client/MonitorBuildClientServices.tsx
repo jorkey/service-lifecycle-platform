@@ -14,7 +14,7 @@ import {
 } from '@material-ui/core';
 import {
   DeveloperDesiredVersion,
-  useCancelTaskMutation, useClientVersionsInProcessQuery,
+  useCancelTaskMutation, useTasksQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
@@ -57,9 +57,9 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
   const classes = useStyles()
 
   const [task, setTask] = useState<string>()
-  const [versions, setVersions] = useState<DeveloperDesiredVersion[]>([])
-  const [author, setAuthor] = useState<string>()
   const [startTime, setStartTime] = useState<Date>()
+  const [author, setAuthor] = useState<string>()
+  const [versions, setVersions] = useState<string>()
   const [endTime, setEndTime] = useState<Date>()
 
   const [initialized, setInitialized] = useState(false)
@@ -70,8 +70,9 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
   enum Status { InProcess, Success, Error}
   const [status, setStatus] = useState<Status>()
 
-  const { data: versionsInProcess } = useClientVersionsInProcessQuery({
+  const { data: tasksInProcess } = useTasksQuery({
     fetchPolicy: 'no-cache',
+    variables: { taskType: 'BuildClientVersions', onlyActive: true },
     onError(err) { setError('Query client versions in process error ' + err.message) },
   })
   const [ cancelTask ] = useCancelTaskMutation({
@@ -80,13 +81,13 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
     onError(err) { setError('Cancel task error ' + err.message) },
   })
 
-  if (!initialized && versionsInProcess?.clientVersionsInProcess) {
-    if (versionsInProcess.clientVersionsInProcess) {
-      const v = versionsInProcess.clientVersionsInProcess
-      setTask(v.task)
-      setVersions(v.versions)
-      setAuthor(v.author)
-      setStartTime(v.startTime)
+  if (!initialized && tasksInProcess?.tasks.length) {
+    if (tasksInProcess.tasks.length) {
+      const task = tasksInProcess.tasks[0]
+      setTask(task.id)
+      setStartTime(task.creationTime)
+      setAuthor(task.parameters.find(p => p.name == 'author')?.value)
+      setVersions(task.parameters.find(p => p.name == 'versions')?.value)
       setStatus(Status.InProcess)
     } else {
       setError(`Building of services is not in process now`)
@@ -103,10 +104,10 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
             <Grid item md={1} xs={12}>
               <Typography>Versions</Typography>
             </Grid>
-            <Grid item md={11} xs={12}>
-              { versions?.map((version, index) => (<Typography key={index}>{ version.service + ':' +
-                  Version.developerDistributionVersionToString(version.version) }</Typography>)) }
-            </Grid>
+            { versions?
+              <Grid item md={11} xs={12}>
+                <Typography>{ versions }</Typography>
+              </Grid> : null }
 
             <Grid item md={1} xs={12}>
               <Typography>Author</Typography>
@@ -128,7 +129,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
                   <Typography>Start</Typography>
                 </Grid>
                 <Grid item md={11} xs={12}>
-                  <Typography>{startTime.toLocaleString()}</Typography>
+                  <Typography>{startTime.toLocaleTimeString()}</Typography>
                 </Grid>
               </> : (startTime && endTime) ?
               <>
@@ -136,7 +137,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
                   <Typography>Start / End</Typography>
                 </Grid>
                 <Grid item md={11} xs={12}>
-                  <Typography>{startTime.toLocaleString() + ' / ' + endTime.toLocaleString()}</Typography>
+                  <Typography>{startTime.toLocaleTimeString() + ' / ' + endTime.toLocaleTimeString()}</Typography>
                 </Grid>
               </> : null
             }

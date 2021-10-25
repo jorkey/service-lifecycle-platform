@@ -40,6 +40,12 @@ object InstanceStateConfig {
   implicit val instanceStateConfigJson = jsonFormat1(InstanceStateConfig.apply)
 }
 
+case class LogsConfig(expirationTimeout: FiniteDuration)
+
+object LogsConfig {
+  implicit val logsConfigJson = jsonFormat1(LogsConfig.apply)
+}
+
 case class FaultReportsConfig(expirationTimeout: FiniteDuration, maxReportsCount: Int)
 
 object FaultReportsConfig {
@@ -48,15 +54,16 @@ object FaultReportsConfig {
 
 case class DistributionConfig(distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
                               mongoDb: MongoDbConfig, network: NetworkConfig, builder: BuilderConfig,
-                              versions: VersionsConfig, instanceState: InstanceStateConfig, faultReports: FaultReportsConfig)
+                              versions: VersionsConfig, instanceState: InstanceStateConfig,
+                              logs: LogsConfig, faultReports: FaultReportsConfig)
 
 object DistributionConfig {
-  implicit val distributionConfigJson = jsonFormat10((name: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
+  implicit val distributionConfigJson = jsonFormat11((distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
                                                       mongoDb: MongoDbConfig, network: NetworkConfig, builder: BuilderConfig,
                                                       versions: VersionsConfig, instanceState: InstanceStateConfig,
-                                                      faultReports: FaultReportsConfig) =>
-    DistributionConfig.apply(name, title, instance, jwtSecret, mongoDb, network, builder,
-      versions, instanceState, faultReports))
+                                                      logs: LogsConfig, faultReports: FaultReportsConfig) =>
+    DistributionConfig.apply(distribution, title, instance, jwtSecret, mongoDb, network, builder,
+      versions, instanceState, logs, faultReports))
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {
     val configFile = new File(Common.DistributionConfigFileName)

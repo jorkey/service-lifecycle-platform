@@ -77,7 +77,7 @@ class FaultReportInfoTest extends TestEnvironment {
     val time1 = new Date()
     addFaultReportInfo("fault1", "service1", 1, time1)
 
-    Thread.sleep(config.faultReports.expirationTimeout.toMillis)
+    Thread.sleep(config.faultReports.expirationTimeout.toMillis*2)
 
     val time2 = new Date()
     addFaultReportInfo("fault2", "service1", 2, time2)

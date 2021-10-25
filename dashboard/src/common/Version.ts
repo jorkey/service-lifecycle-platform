@@ -1,8 +1,6 @@
 import {
-  ClientDesiredVersion,
   ClientDistributionVersion, ClientVersionInfo, DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
-  DeveloperVersion
 } from "../generated/graphql";
 
 export class Version {
@@ -19,10 +17,6 @@ export class Version {
     let str = ''
     build.forEach(v => { if (str.length === 0) str += v; else str += `.${v}` })
     return str
-  }
-
-  static developerVersionToString(version: DeveloperVersion): string {
-    return Version.buildToString(version.build)
   }
 
   static developerDistributionVersionToString(version: DeveloperDistributionVersion): string {
@@ -100,5 +94,12 @@ export class Version {
       }
     }
     return nextBuild
+  }
+
+  static clientVersionInfoToDeveloperVersion(version: ClientVersionInfo): DeveloperDesiredVersionInput {
+    return {
+      service: version.service,
+      version: { distribution: version.version.distribution, build: version.version.developerBuild }
+    }
   }
 }

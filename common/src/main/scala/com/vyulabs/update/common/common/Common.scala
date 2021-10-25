@@ -11,6 +11,7 @@ object Common {
   type InstanceId = String
   type ProcessId = String
   type TaskId = String
+  type TaskType = String
   type ServicesProfileId = String
   type ServiceDirectory = String
   type FaultId = String

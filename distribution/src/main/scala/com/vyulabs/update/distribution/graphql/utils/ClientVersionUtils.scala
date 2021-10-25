@@ -2,12 +2,13 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, TaskId}
+import com.vyulabs.update.common.common.Misc
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.{TaskManager}
+import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -32,9 +33,9 @@ trait ClientVersionUtils {
     var cancels = Seq.empty[() => Unit]
     tasksUtils.createTask(
       "BuildClientVersions",
-      Seq(TaskAttribute("author", author),
-        TaskAttribute("versions", versions.toString())),
-      () => if (tasksUtils.getActiveTask("BuildClientVersions").isDefined) {
+      Seq(TaskParameter("author", author),
+          TaskParameter("versions", Misc.seqToCommaSeparatedString(versions))),
+      () => if (!tasksUtils.getActiveTasks(Some("BuildClientVersions")).isEmpty) {
           throw new IOException(s"Build of client versions is already in process")
       },
       (task, logger) => {
@@ -66,7 +67,7 @@ trait ClientVersionUtils {
             Future.sequence(results).map(results => Future.sequence(results.map(_._1))).flatten.map(_ => Unit)
           }
         } yield {}, Some(() => cancels.foreach(cancel => cancel())))
-      }).taskId
+      }).id
   }
 
   private def buildClientVersion(task: TaskId, service: ServiceId,

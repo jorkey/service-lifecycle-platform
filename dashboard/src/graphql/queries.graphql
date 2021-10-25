@@ -47,12 +47,6 @@ mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaIn
     setDeveloperDesiredVersions (versions: $versions)
 }
 
-query developerVersionsInProcess ($service: String) {
-    developerVersionsInProcess (service: $service) {
-        service, version { build }, author, sources { name, git { url, branch, cloneSubmodules } }, comment, task, startTime
-    }
-}
-
 # Tested Versions
 
 mutation setTestedVersions ($versions: [DeveloperDesiredVersionInput!]!) {
@@ -109,19 +103,15 @@ mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!
     setClientDesiredVersions (versions: $versions)
 }
 
-query clientVersionsInProcess {
-    clientVersionsInProcess {
-        versions { service, version { distribution, build } }, author, task, startTime
-    }
-}
-
-# States and logs
+# States
 
 query serviceStates ($distribution: String!) {
     serviceStates (distribution: $distribution) {
         distribution, payload { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
     }
 }
+
+# Logs
 
 query logServices {
     logServices
@@ -190,6 +180,8 @@ query taskLogs ($task: String!,
             sequence, payload { time, level, unit, message, terminationStatus }
     }
 }
+
+# Faults
 
 query faultDistributions {
     faultDistributions
@@ -361,7 +353,17 @@ subscription subscribeLogs ($service: String, $instance: String, $process: Strin
     }
 }
 
-# Cancel task
+# Tasks
+
+query taskTypes {
+    taskTypes
+}
+
+query tasks ($taskType: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
+    tasks (taskType: $taskType, parameters: $parameters, onlyActive: $onlyActive, limit: $limit) {
+        id, taskType, parameters { name, value }, creationTime, active
+    }
+}
 
 mutation cancelTask ($task: String!) {
     cancelTask (task: $task)

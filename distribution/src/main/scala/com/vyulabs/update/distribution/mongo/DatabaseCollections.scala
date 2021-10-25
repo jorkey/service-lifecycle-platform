@@ -17,7 +17,10 @@ import org.mongodb.scala.bson.codecs.Macros._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuration, createIndices: Boolean)
+class DatabaseCollections(db: MongoDb,
+                          instanceStateExpireTimeout: FiniteDuration,
+                          logLineExpireTimeout: FiniteDuration,
+                          createIndices: Boolean)
                          (implicit system: ActorSystem, executionContext: ExecutionContext) {
   private implicit val log = Logging(system, this.getClass)
 
@@ -144,7 +147,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.level")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.time")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.time"), new IndexOptions()
+      .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.time")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("payload.message")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
@@ -161,7 +165,8 @@ class DatabaseCollections(db: MongoDb, instanceStateExpireTimeout: FiniteDuratio
   val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
     collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType"), new IndexOptions()
+      .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 

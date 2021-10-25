@@ -3,10 +3,8 @@ import React, {useState} from 'react';
 import {RouteComponentProps, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
-import {
-  useClientVersionsInProcessQuery,
-} from '../../../../generated/graphql';
 import Alert from "@material-ui/lab/Alert";
+import {useTasksQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -30,10 +28,11 @@ const BuildClient = (props: BuildClientParams) => {
   const history = useHistory()
   const [error, setError] = useState<string>()
 
-  const { data } = useClientVersionsInProcessQuery({
+  useTasksQuery({
     fetchPolicy: 'no-cache',
-    onCompleted(clientVersionsInProcess) {
-      clientVersionsInProcess.clientVersionsInProcess?
+    variables: { taskType: 'BuildClientVersions', onlyActive: true },
+    onCompleted(tasks) {
+      tasks.tasks.length?
         history.push('client/monitor/'):
         history.push('client/start')
     },

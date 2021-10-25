@@ -44,10 +44,12 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   def builderConfig = BuilderConfig("test")
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
+  def logsConfig = LogsConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 
   val config = DistributionConfig("test", "Test distribution server", "instance1", "secret", mongoDbConfig,
-                                  networkConfig, builderConfig, versionsConfig, instanceStateConfig, faultReportsConfig)
+                                  networkConfig, builderConfig, versionsConfig,
+                                  instanceStateConfig, logsConfig, faultReportsConfig)
 
   val distributionName = config.distribution
   val instance = config.instance
@@ -55,7 +57,10 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   val distributionDirectory = Files.createTempDirectory("distribution-").toFile
 
   val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo, FiniteDuration(100, TimeUnit.SECONDS), createIndices)
+  val collections = new DatabaseCollections(mongo,
+    instanceStateConfig.expirationTimeout,
+    logsConfig.expirationTimeout,
+    createIndices)
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(task => new LogStorekeeper(Common.DistributionServiceName, Some(task),
     instance, collections.Log_Lines))

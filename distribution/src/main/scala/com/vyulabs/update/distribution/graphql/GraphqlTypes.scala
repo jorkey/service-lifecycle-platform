@@ -7,12 +7,13 @@ import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.distribution.graphql.utils.{TaskInfo, TaskParameter}
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import sangria.ast
 import sangria.ast.StringValue
 import sangria.macros.derive._
 import sangria.schema.{ScalarType, valueOutput}
-import sangria.validation.{Violation}
+import sangria.validation.Violation
 import spray.json._
 
 import java.net.URL
@@ -119,6 +120,8 @@ object GraphqlTypes {
   implicit val ServiceFaultReportType = deriveObjectType[Unit, ServiceFaultReport]()
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
   implicit val ProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
+  implicit val TaskParameterType = deriveObjectType[Unit, TaskParameter]()
+  implicit val TaskInfoType = deriveObjectType[Unit, TaskInfo]()
 
   implicit val UserAccountPropertiesInputType = deriveInputObjectType[UserAccountProperties](InputObjectTypeName("UserAccountPropertiesInput"))
   implicit val ConsumerAccountPropertiesInputType = deriveInputObjectType[ConsumerAccountProperties](InputObjectTypeName("ConsumerAccountPropertiesInput"))
@@ -144,4 +147,5 @@ object GraphqlTypes {
   implicit val FaultInfoInputType = deriveInputObjectType[FaultInfo](InputObjectTypeName("FaultInfoInput"))
   implicit val FileInfoInputType = deriveInputObjectType[FileInfo](InputObjectTypeName("FileInfoInput"))
   implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
+  implicit val TaskParameterInputType = deriveInputObjectType[TaskParameter](InputObjectTypeName("TaskParameterInput"))
 }

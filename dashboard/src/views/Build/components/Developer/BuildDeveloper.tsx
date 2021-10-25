@@ -8,7 +8,7 @@ import {
 } from '@material-ui/core';
 import {
   useDeveloperServicesQuery,
-  useDeveloperVersionsInfoQuery, useDeveloperVersionsInProcessQuery
+  useDeveloperVersionsInfoQuery, useTasksQuery
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -91,17 +91,19 @@ const BuildDeveloper = () => {
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const { data: versionsInProcess, refetch: getVersionsInProcess } = useDeveloperVersionsInProcessQuery({
+  const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
     fetchPolicy: 'no-cache',
+    variables: { taskType: 'BuildDeveloperVersion', onlyActive: true },
     onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const handleOnClick = useCallback((service: string) => {
-    versionsInProcess?.developerVersionsInProcess.find(version => version.service == service) ?
+    tasksInProcess?.tasks.find(task => task.parameters.find(p => {
+        return p.name == 'service' && p.value == service })) ?
       history.push('developer/monitor/' + service) :
       history.push('developer/start/' + service)
-  }, [ versionsInProcess, history ]);
+  }, [ tasksInProcess, history ]);
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -145,16 +147,17 @@ const BuildDeveloper = () => {
 
   const rows = services?.developerServices.map(
     service => {
-      const versionInProcess = versionsInProcess?.developerVersionsInProcess.find(version => version.service == service)
+      const versionInProcess = tasksInProcess?.tasks.find(task => task.parameters.find(p => {
+        return p.name == 'service' && p.value == service }))
       const completedVersion = completedVersions?.developerVersionsInfo?.filter(version => version.service == service)
         .sort((v1, v2) => Version.compareBuilds(v2.version.build, v1.version.build))[0]
-      const version = versionInProcess?Version.buildToString(versionInProcess.version.build):
+      const version = versionInProcess?versionInProcess.parameters.find(p => p.name == 'version')?.value:
         completedVersion?Version.buildToString(completedVersion.version.build):undefined
-      const author = versionInProcess?versionInProcess.author:
+      const author = versionInProcess?versionInProcess.parameters.find(p => p.name == 'author')?.value:
         completedVersion?completedVersion.buildInfo.author:undefined
-      const time = versionInProcess?versionInProcess.startTime:
+      const time = versionInProcess?versionInProcess.creationTime:
         completedVersion?completedVersion.buildInfo.time:undefined
-      const comment = versionInProcess?versionInProcess.comment:
+      const comment = versionInProcess?versionInProcess.parameters.find(p => p.name == 'comment')?.value:
         completedVersion?completedVersion.buildInfo.comment:undefined
       const status = versionInProcess?'In Process':
         completedVersion?'Completed':undefined
@@ -180,7 +183,7 @@ const BuildDeveloper = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={ () => { getServices(); getVersionsInProcess(); getCompletedVersions() }}
+              refresh={ () => { getServices(); getTasksInProcess(); getCompletedVersions() }}
             />
           </FormGroup>
         }

@@ -58,7 +58,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    expectMessage(logInput, "`Task BuildDeveloperVersion with attributes: service=service1, version=1.1.1, author=developer, sources=Vector(), comment=Test version, buildClientVersion=false` finished successfully")
+    expectMessage(logInput, "`Task BuildDeveloperVersion with parameters: service=service1, version=1.1.1, author=developer, sources=Vector(), comment=Test version, buildClientVersion=false` finished successfully")
 
     expectComplete(logInput)
   }
@@ -108,7 +108,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    expectMessage(logInput, "`Task RunBuilderByRemoteDistribution with attributes: distribution=consumer, accessToken=qwe, arguments=Vector(buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[])` finished successfully")
+    expectMessage(logInput, "`Task RunBuilderByRemoteDistribution with parameters: distribution=consumer, accessToken=qwe, arguments=Vector(buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[])` finished successfully")
 
     expectComplete(logInput)
   }

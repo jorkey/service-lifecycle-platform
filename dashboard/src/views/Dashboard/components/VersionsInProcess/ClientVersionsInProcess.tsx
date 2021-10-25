@@ -4,13 +4,10 @@ import { makeStyles } from '@material-ui/styles';
 import {
   Card, CardContent, CardHeader, Grid, Typography,
 } from '@material-ui/core';
-import {
-  useClientVersionsInProcessQuery,
-} from "../../../../generated/graphql";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import {Version} from "../../../../common";
+import {useTasksQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -37,8 +34,9 @@ const ClientVersionsInProcess = () => {
 
   const [error, setError] = useState<string>()
 
-  const { data: versionsInProcess, refetch: getVersionsInProcess } = useClientVersionsInProcessQuery({
+  const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
     fetchPolicy: 'no-cache',
+    variables: { taskType: 'BuildClientVersions', onlyActive: true },
     onError(err) { setError('Query client versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
@@ -52,14 +50,14 @@ const ClientVersionsInProcess = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={() => getVersionsInProcess()}
+              refresh={() => getTasksInProcess()}
             />
           </FormGroup>
         }
         title='Client Versions In Process'/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          {versionsInProcess?.clientVersionsInProcess?(
+          {tasksInProcess?.tasks.length?(
             <div>
               <CardContent>
                 <Grid container spacing={1}>
@@ -67,22 +65,24 @@ const ClientVersionsInProcess = () => {
                     <Typography>Versions</Typography>
                   </Grid>
                   <Grid item md={11} xs={12}>
-                    { versionsInProcess?.clientVersionsInProcess.versions?.map(version => (<Typography>{ version.service + ':' +
-                        Version.developerDistributionVersionToString(version.version) }</Typography>)) }
+                    { tasksInProcess?.tasks?.map(task => (<Typography>{
+                        task.parameters.find(p => p.name == 'versions')?.value }</Typography>)) }
                   </Grid>
 
                   <Grid item md={1} xs={12}>
                     <Typography>Author</Typography>
                   </Grid>
                   <Grid item md={11} xs={12}>
-                    <Typography>{versionsInProcess?.clientVersionsInProcess.author}</Typography>
+                    { tasksInProcess?.tasks?.map(task => (<Typography>{
+                        task.parameters.find(p => p.name == 'author')?.value }</Typography>)) }
                   </Grid>
 
                   <Grid item md={1} xs={12}>
                     <Typography>Start</Typography>
                   </Grid>
                   <Grid item md={11} xs={12}>
-                    <Typography>{versionsInProcess?.clientVersionsInProcess.startTime.toLocaleString()}</Typography>
+                    { tasksInProcess?.tasks?.map(task => (<Typography>{
+                        task.creationTime?.toLocaleString() }</Typography>)) }
                   </Grid>
                 </Grid>
               </CardContent>

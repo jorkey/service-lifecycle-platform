@@ -15,6 +15,7 @@ import org.slf4j.Logger
 import sangria.marshalling.sprayJson._
 import sangria.schema._
 import sangria.streaming.akkaStreams._
+import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.ExecutionContext
 
@@ -114,6 +115,9 @@ object GraphqlSchema {
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
+  val OptionTaskTypeArg = Argument("taskType", OptionInputType(StringType))
+  val OptionTaskParametersArg = Argument("parameters", OptionInputType(ListInputType(TaskParameterInputType)))
+  val OptionOnlyActiveArg = Argument("onlyActive", OptionInputType(BooleanType))
 
   // Queries
 
@@ -218,15 +222,19 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getProviderTestedVersions(c.arg(DistributionArg)) }),
 
-      // State
+      // Distribution consumers
       Field("installedDesiredVersions", ListType(ClientDesiredVersionType),
         arguments = DistributionArg :: OptionServicesArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getConsumerInstalledDesiredVersions(c.arg(DistributionArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+
+      // State
       Field("serviceStates", ListType(DistributionServiceStateType),
         arguments = OptionDistributionArg :: OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getServicesState(c.arg(OptionDistributionArg), c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg)) }),
+
+      // Logs
       Field("logServices", ListType(StringType),
         resolve = c => { c.ctx.workspace.getLogServices() }),
       Field("logInstances", ListType(StringType),
@@ -260,6 +268,8 @@ object GraphqlSchema {
           c.arg(OptionFromArg), c.arg(OptionToArg),
           c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
           c.arg(OptionLevelsArg), c.arg(OptionFindArg), c.arg(OptionLimitArg)) }),
+
+      // Faults
       Field("faultDistributions", ListType(StringType),
         resolve = c => { c.ctx.workspace.getFaultDistributions() }),
       Field("faultServices", ListType(StringType),
@@ -278,6 +288,15 @@ object GraphqlSchema {
           c.arg(OptionDistributionArg), c.arg(OptionServiceArg),
           c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
           c.arg(OptionIdArg), c.arg(OptionLimitArg)) }),
+
+      // Tasks
+      Field("taskTypes", ListType(StringType),
+        resolve = c => { c.ctx.workspace.getTaskTypes() }),
+      Field("tasks", ListType(TaskInfoType),
+        arguments = OptionTaskTypeArg :: OptionTaskParametersArg :: OptionOnlyActiveArg :: OptionLimitArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getTasks(
+          c.arg(OptionTaskTypeArg), c.arg(OptionTaskParametersArg).getOrElse(Seq.empty), c.arg(OptionOnlyActiveArg), c.arg(OptionLimitArg)) }),
     )
   )
 

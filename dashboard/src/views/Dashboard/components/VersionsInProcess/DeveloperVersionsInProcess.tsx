@@ -4,15 +4,12 @@ import { makeStyles } from '@material-ui/styles';
 import {
   Card, CardContent, CardHeader,
 } from '@material-ui/core';
-import {
-  useDeveloperVersionsInProcessQuery,
-} from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
-import {Version} from "../../../../common";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {useTasksQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -59,8 +56,9 @@ const DeveloperVersionsInProcess = () => {
 
   const [error, setError] = useState<string>()
 
-  const { data: versionsInProcess, refetch: getVersionsInProcess } = useDeveloperVersionsInProcessQuery({
+  const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
     fetchPolicy: 'no-cache',
+    variables: { taskType: 'BuildDeveloperVersion', onlyActive: true },
     onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
@@ -94,13 +92,13 @@ const DeveloperVersionsInProcess = () => {
     }
   ]
 
-  const rows = versionsInProcess?.developerVersionsInProcess.map(
-      version => new Map<string, GridTableColumnValue>([
-    ['service', version.service],
-    ['version', Version.developerVersionToString(version.version)],
-    ['author', version.author],
-    ['comment', version.comment?version.comment:''],
-    ['startTime', version.startTime]
+  const rows = tasksInProcess?.tasks.map(
+      task => new Map<string, GridTableColumnValue>([
+    ['service', task.parameters.find(p => p.name == 'service')?.value],
+    ['version', task.parameters.find(p => p.name == 'version')?.value],
+    ['author', task.parameters.find(p => p.name == 'author')?.value],
+    ['comment', task.parameters.find(p => p.name == 'comment')?.value],
+    ['startTime', task.creationTime]
   ]))
 
   return (
@@ -112,7 +110,7 @@ const DeveloperVersionsInProcess = () => {
           <FormGroup row>
             <RefreshControl
               className={classes.control}
-              refresh={() => getVersionsInProcess()}
+              refresh={() => getTasksInProcess()}
             />
           </FormGroup>
         }

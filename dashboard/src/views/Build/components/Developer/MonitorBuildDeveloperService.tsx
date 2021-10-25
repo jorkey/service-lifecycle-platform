@@ -15,8 +15,7 @@ import {
 } from '@material-ui/core';
 import {
   SourceConfig,
-  useCancelTaskMutation,
-  useDeveloperVersionsInProcessQuery,
+  useCancelTaskMutation, useTasksQuery,
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
@@ -77,8 +76,11 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   enum Status { InProcess, Success, Error}
   const [status, setStatus] = useState<Status>()
 
-  const { data: versionInProcess } = useDeveloperVersionsInProcessQuery({
-    variables: { service: service },
+  const { data: tasksInProcess } = useTasksQuery({
+    variables: {
+      taskType: 'BuildDeveloperVersion',
+      parameters: [ { name: 'service', value: service } ],
+      onlyActive: true },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions in process error ' + err.message) },
   })
@@ -88,15 +90,16 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
     onError(err) { setError('Cancel task error ' + err.message) },
   })
 
-  if (!initialized && versionInProcess?.developerVersionsInProcess) {
-    if (versionInProcess.developerVersionsInProcess.length) {
-      const v = versionInProcess.developerVersionsInProcess![0]
-      setTask(v.task)
-      setVersion(Version.buildToString(v.version.build))
-      setAuthor(v.author)
-      setSources(v.sources)
-      setComment(v.comment)
-      setStartTime(v.startTime)
+  if (!initialized && tasksInProcess?.tasks) {
+    if (tasksInProcess.tasks?.length) {
+      const task = tasksInProcess.tasks[0]
+      setTask(task.id)
+      setStartTime(task.creationTime)
+      setVersion(task.parameters.find(p => p.name == 'version')?.value)
+      setAuthor(task.parameters.find(p => p.name == 'author')?.value)
+      const sourcesStr = task.parameters.find(p => p.name == 'sources')?.value
+      setSources(sourcesStr?JSON.parse(sourcesStr):undefined)
+      setComment(task.parameters.find(p => p.name == 'comment')?.value)
       setStatus(Status.InProcess)
     } else {
       setError(`Building of service ${service} is not in process now`)
@@ -151,7 +154,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
                   <Typography>Start</Typography>
                 </Grid>
                 <Grid item md={8} xs={12}>
-                  <Typography>{startTime.toLocaleString()}</Typography>
+                  <Typography>{startTime.toLocaleTimeString()}</Typography>
                 </Grid>
               </> : (startTime && endTime) ?
               <>
@@ -159,7 +162,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
                   <Typography>Start / End</Typography>
                 </Grid>
                 <Grid item md={8} xs={12}>
-                  <Typography>{startTime.toLocaleString() + ' / ' + endTime.toLocaleString()}</Typography>
+                  <Typography>{startTime.toLocaleTimeString() + ' / ' + endTime.toLocaleTimeString()}</Typography>
                 </Grid>
               </> :
               <Grid item md={9} xs={12}/>

@@ -55,6 +55,9 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
   "instanceState": {
     "expirationTimeout": { "length": 60, "unit": "SECONDS" }
   },
+  "logs": {
+    "expirationTimeout": { "length": 7, "unit": "DAYS" }
+  },
   "faultReports": {
     "expirationTimeout": { "length": 7, "unit": "DAYS" },
     "maxReportsCount": 100

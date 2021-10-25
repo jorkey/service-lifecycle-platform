@@ -36,13 +36,13 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
                            (implicit log: Logger): TaskId = {
     tasksUtils.createTask(
       "BuildDeveloperVersion",
-      Seq(TaskAttribute("service", service),
-        TaskAttribute("version", version.toString),
-        TaskAttribute("author", author),
-        TaskAttribute("sources", sources.toString()),
-        TaskAttribute("comment", comment),
-        TaskAttribute("buildClientVersion", buildClientVersion.toString)),
-      () => if (tasksUtils.getActiveTask("BuildDeveloperVersion", Some(TaskAttribute("service", service))).isDefined) {
+      Seq(TaskParameter("service", service),
+          TaskParameter("version", version.toString),
+          TaskParameter("author", author),
+          TaskParameter("sources", sources.toJson.compactPrint),
+          TaskParameter("comment", comment),
+          TaskParameter("buildClientVersion", buildClientVersion.toString)),
+      () => if (!tasksUtils.getActiveTasks(Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
       },
       (taskId, logger) => {
@@ -56,7 +56,7 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
             Some(DeveloperDistributionVersion(config.distribution, version.build)))))
         })
         (future, cancel)
-      }).taskId
+      }).id
   }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
