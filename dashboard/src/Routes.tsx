@@ -16,7 +16,6 @@ import {
   NotFound as NotFoundView
 } from './views';
 import {DistributionInfo, useDistributionInfoQuery} from './generated/graphql';
-import {cookies} from "./App";
 
 // @ts-ignore
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (

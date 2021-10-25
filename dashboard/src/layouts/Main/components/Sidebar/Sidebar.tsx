@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import PropTypes, {instanceOf} from 'prop-types';
+import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import {Divider, Drawer} from '@material-ui/core';
 import DashboardIcon from '@material-ui/icons/Dashboard';
@@ -13,6 +13,7 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import BuildIcon from '@material-ui/icons/Build';
 import DistributionIcon from '@material-ui/icons/Share';
 import ProfilesIcon from '@material-ui/icons/FilterList';
+import TaskIcon from '@mui/icons-material/Task';
 
 import { Profile, SidebarNav } from './components';
 import {useDeveloperServicesQuery} from "../../../../generated/graphql";
@@ -87,7 +88,19 @@ const Sidebar = (props:any) => {
       {
         title: 'Logging',
         href: '/logging',
-        icon: <ListIcon/>
+        icon: <ListIcon/>,
+        pages: [
+          {
+            title: 'Tasks',
+            href: '/logging/tasks',
+            icon: <TaskIcon/>,
+          },
+          {
+            title: 'Services',
+            href: '/logging/services',
+            icon: <BubbleChartIcon/>,
+          },
+        ]
       },
       {
         title: 'Faults',

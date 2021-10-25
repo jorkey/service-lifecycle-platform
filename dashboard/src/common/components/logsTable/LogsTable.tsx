@@ -49,11 +49,11 @@ const useStyles = makeStyles(theme => ({
 
 export interface FindLogsDashboardParams {
   className: string
+  task?: string
   service?: string
   instance?: string
   process?: string
   directory?: string
-  task?: string
   fromTime?: Date
   toTime?: Date
   levels?: string[]

@@ -86,12 +86,14 @@ interface LoggingRouteParams {
 }
 
 interface LoggingParams extends RouteComponentProps<LoggingRouteParams> {
-  fromUrl: string
+  fromUrl?: string
+  task?: string
 }
 
 const LoggingView: React.FC<LoggingParams> = props => {
   const classes = useStyles()
 
+  const [task, setTask] = useState(props.task)
   const [service, setService] = useState<string>()
   const [instance, setInstance] = useState<string>()
   const [directory, setDirectory] = useState<string>()
@@ -236,7 +238,7 @@ const LoggingView: React.FC<LoggingParams> = props => {
                       }
                       label='Service'
                     />
-                    <FormControlLabel
+                    {!task?<FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
@@ -256,8 +258,8 @@ const LoggingView: React.FC<LoggingParams> = props => {
                         </Select>
                       }
                       label='Instance'
-                    />
-                    <FormControlLabel
+                    />:null}
+                    {!task?<FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!instance || directories.loading || !directories.data}
@@ -277,8 +279,8 @@ const LoggingView: React.FC<LoggingParams> = props => {
                         </Select>
                       }
                       label='Directory'
-                    />
-                    <FormControlLabel
+                    />:null}
+                    {!task?<FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!directory || processes.loading || !processes.data }
@@ -298,7 +300,7 @@ const LoggingView: React.FC<LoggingParams> = props => {
                         </Select>
                       }
                       label='Process'
-                    />
+                    />:null}
                     <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
@@ -416,6 +418,7 @@ const LoggingView: React.FC<LoggingParams> = props => {
                 { service && levels && (startTime?.logsStartTime !== undefined) && (endTime?.logsEndTime !== undefined) ?
                   <LogsTable ref={tableRef}
                              className={classes.logsTable}
+                             task={task}
                              service={service} instance={instance} directory={directory} process={process}
                              fromTime={fromTime} toTime={toTime}
                              levels={levelWithSubLevels()}
