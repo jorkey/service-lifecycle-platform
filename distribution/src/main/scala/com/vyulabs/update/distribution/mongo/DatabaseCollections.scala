@@ -8,7 +8,7 @@ import com.vyulabs.update.common.config.{GitConfig, ServiceSourcesConfig, Source
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, PasswordHash, ServerAccountInfo, UserAccountProperties}
-import com.vyulabs.update.distribution.graphql.utils.TaskInfo
+import com.vyulabs.update.distribution.graphql.utils.{TaskInfo, TaskParameter}
 import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
@@ -61,6 +61,8 @@ class DatabaseCollections(db: MongoDb,
     classOf[UploadStatusDocument],
     classOf[FileInfo],
     classOf[FaultInfo],
+    classOf[TaskInfo],
+    classOf[TaskParameter],
     classOf[ServiceFaultReport],
     fromCodecs(FiniteDurationCodec, URLCodec)
   ))
@@ -164,7 +166,8 @@ class DatabaseCollections(db: MongoDb,
 
   val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
     collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task"),
+      new IndexOptions().unique(true)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType"), new IndexOptions()
       .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime")) else Future()

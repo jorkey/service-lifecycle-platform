@@ -55,7 +55,6 @@ const Routes: React.FC<RoutesProps> = props => {
         component={LoggingView}
         layout={MainLayout}
         path='/logging'
-        exact
         {...props}
       />
       <RouteWithLayout

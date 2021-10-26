@@ -13,10 +13,10 @@ import {
   useLogDirectoriesLazyQuery,
   useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
   useLogServicesQuery, useTasksQuery, useTaskTypesQuery
-} from "../../../generated/graphql";
+} from "../../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
-import {LogsTable, LogsTableEvents} from "../../../common/components/logsTable/LogsTable";
-import {TasksTable} from "../../../common/components/tasksTable/TasksTable";
+import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
+import {TasksTable} from "../../../../common/components/tasksTable/TasksTable";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -71,7 +71,7 @@ const TasksView: React.FC<TasksParams> = props => {
   })
 
   const handleOnClick = useCallback((task: string) => {
-    history.push('logging/task/' + task)
+    history.push('tasks/' + task)
   }, [ history ]);
 
   return (
@@ -91,7 +91,7 @@ const TasksView: React.FC<TasksParams> = props => {
                           className={classes.taskTypeSelect}
                           native
                           onChange={(event) => {
-                            setTaskType(event.target.value as string)
+                            setTaskType(event.target.value? event.target.value as string: undefined)
                           }}
                           title='Task Type'
                           value={taskType}

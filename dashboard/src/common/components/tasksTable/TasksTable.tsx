@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  TaskInfo,
+  TaskInfo, TaskParameter,
   useTasksQuery,
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
@@ -12,31 +12,27 @@ const useStyles = makeStyles(theme => ({
     display: 'relative'
   },
   creationTimeColumn: {
-    width: '100px',
-    minWidth: '100px',
+    width: '200px',
     padding: '4px',
     paddingLeft: '16px'
   },
   idColumn: {
     width: '100px',
-    minWidth: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
   typeColumn: {
     width: '100px',
-    minWidth: '100px',
     padding: '4px',
     paddingLeft: '16px'
   },
   parametersColumn: {
-    width: '400px',
-    minWidth: '400px',
     padding: '4px',
     paddingLeft: '16px'
   },
   activeColumn: {
     whiteSpace: 'pre',
+    width: '100px',
     padding: '4px',
     paddingLeft: '16px'
   }
@@ -88,7 +84,18 @@ export const TasksTable = (props: TasksTableParams) => {
       headerName: 'Active',
       className: classes.activeColumn
     }
-  ].filter(column => column.name != 'active' || onlyActive) as GridTableColumnParams[]
+  ].filter(column => column.name != 'active' || !onlyActive) as GridTableColumnParams[]
+
+  function parametersToString(params: TaskParameter[]) {
+    let str = ''
+    params.forEach(p => {
+      if (str) {
+        str += '\n'
+      }
+      str += `${p.name}:${p.value}`
+    })
+    return str
+  }
 
   const rows = tasks?.tasks
     .map(task => {
@@ -96,7 +103,7 @@ export const TasksTable = (props: TasksTableParams) => {
         ['creationTime', task.creationTime],
         ['id', task.id],
         ['type', task.taskType],
-        ['parameters', task.parameters.toString()],
+        ['parameters', parametersToString(task.parameters)],
         ['active', task.active?true:false]
       ]) })
 

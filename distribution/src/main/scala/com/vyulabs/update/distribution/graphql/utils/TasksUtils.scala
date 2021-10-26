@@ -43,13 +43,15 @@ trait TasksUtils extends SprayJsonSupport {
 
   def createTask(taskType: TaskType, parameters: Seq[TaskParameter],
                  checkAllowToRun: () => Unit,
-                 run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): TaskInfo = {
+                 run: (TaskId, Logger) => (Future[Unit], Option[() => Unit]))
+                (implicit log: Logger): TaskInfo = {
     synchronized {
       checkAllowToRun()
       val task = taskManager.create(s"Task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}", run)
       val info = TaskInfo(task.taskId, taskType, parameters, new Date(), Some(true))
       activeTasks :+= info
-      collections.Tasks_Info.insert(info.copy(active = None))
+      collections.Tasks_Info.insert(info.copy(active = None)).failed
+        .foreach(ex => log.error("Insert task info error", ex))
       task.future.andThen { case _ => synchronized { activeTasks = activeTasks.filter(_ != info) }}
       info
     }

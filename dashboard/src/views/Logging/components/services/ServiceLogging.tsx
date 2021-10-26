@@ -13,9 +13,10 @@ import {
   useLogDirectoriesLazyQuery,
   useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
   useLogServicesQuery
-} from "../../../generated/graphql";
+} from "../../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
-import {LogsTable, LogsTableEvents} from "../../../common/components/logsTable/LogsTable";
+import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
+import {Logs} from "../../../../common/Logs";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {
@@ -87,13 +88,11 @@ interface LoggingRouteParams {
 
 interface LoggingParams extends RouteComponentProps<LoggingRouteParams> {
   fromUrl?: string
-  task?: string
 }
 
-const LoggingView: React.FC<LoggingParams> = props => {
+const ServiceLogging: React.FC<LoggingParams> = props => {
   const classes = useStyles()
 
-  const [task, setTask] = useState(props.task)
   const [service, setService] = useState<string>()
   const [instance, setInstance] = useState<string>()
   const [directory, setDirectory] = useState<string>()
@@ -177,37 +176,6 @@ const LoggingView: React.FC<LoggingParams> = props => {
     onError(err) { setError('Query log max time error ' + err.message) },
   })
 
-  const sortLevels = () => {
-    return levels ? levels.logLevels.sort((l1, l2) => {
-      const level1 = l1.toUpperCase()
-      const level2 = l2.toUpperCase()
-      if (level1 == level2) return 0
-      if (level1 == "TRACE") return -1
-      if (level2 == "TRACE") return 1
-      if (level1 == "DEBUG") return -1
-      if (level2 == "DEBUG") return 1
-      if (level1 == "INFO") return -1
-      if (level2 == "INFO") return 1
-      if (level1 == "WARN") return -1
-      if (level2 == "WARN") return 1
-      if (level1 == "WARNING") return -1
-      if (level2 == "WARNING") return 1
-      if (level1 == "ERROR") return -1
-      if (level2 == "ERROR") return 1
-      return 0
-    }) : []
-  }
-
-  const levelWithSubLevels = () => {
-    if (levels && level) {
-      const sortedLevels = sortLevels()
-      const index = sortedLevels.indexOf(level)
-      return index != undefined ? sortedLevels.slice(index) : undefined
-    } else {
-      return undefined
-    }
-  }
-
   return (
     <div className={classes.root}>
       <Grid container spacing={3}>
@@ -238,7 +206,7 @@ const LoggingView: React.FC<LoggingParams> = props => {
                       }
                       label='Service'
                     />
-                    {!task?<FormControlLabel
+                    <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!service || instances.loading || !instances.data}
@@ -258,8 +226,8 @@ const LoggingView: React.FC<LoggingParams> = props => {
                         </Select>
                       }
                       label='Instance'
-                    />:null}
-                    {!task?<FormControlLabel
+                    />
+                    <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!instance || directories.loading || !directories.data}
@@ -279,8 +247,8 @@ const LoggingView: React.FC<LoggingParams> = props => {
                         </Select>
                       }
                       label='Directory'
-                    />:null}
-                    {!task?<FormControlLabel
+                    />
+                    <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       disabled={!directory || processes.loading || !processes.data }
@@ -300,7 +268,7 @@ const LoggingView: React.FC<LoggingParams> = props => {
                         </Select>
                       }
                       label='Process'
-                    />:null}
+                    />
                     <FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
@@ -332,8 +300,8 @@ const LoggingView: React.FC<LoggingParams> = props => {
                           value={level}
                         >
                           <option key={-1}/>
-                          { sortLevels()
-                            .map((level, index) => <option key={index}>{level}</option>) }
+                          { levels ? Logs.sortLevels(levels.logLevels)
+                            .map((level, index) => <option key={index}>{level}</option>) : null }
                         </Select>
                       }
                       label='Level'
@@ -418,10 +386,9 @@ const LoggingView: React.FC<LoggingParams> = props => {
                 { service && levels && (startTime?.logsStartTime !== undefined) && (endTime?.logsEndTime !== undefined) ?
                   <LogsTable ref={tableRef}
                              className={classes.logsTable}
-                             task={task}
                              service={service} instance={instance} directory={directory} process={process}
                              fromTime={fromTime} toTime={toTime}
-                             levels={levelWithSubLevels()}
+                             levels={level?Logs.levelWithSubLevels(level, levels.logLevels):undefined}
                              find={find != ''?find:undefined}
                              follow={follow}
                              onComplete={() => {}}
@@ -437,4 +404,4 @@ const LoggingView: React.FC<LoggingParams> = props => {
   )
 }
 
-export default LoggingView
+export default ServiceLogging
