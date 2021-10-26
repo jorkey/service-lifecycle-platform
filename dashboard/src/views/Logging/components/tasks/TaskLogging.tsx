@@ -74,7 +74,7 @@ interface TaskLoggingParams extends RouteComponentProps<TaskLoggingRouteParams> 
 const TaskLogging: React.FC<TaskLoggingParams> = props => {
   const classes = useStyles()
 
-  const [task, setTask] = useState(props.match.params.task)
+  const [task] = useState(props.match.params.task)
   const [level, setLevel] = useState<string>()
   const [find, setFind] = useState<string>('')
   const [follow, setFollow] = useState<boolean>()

@@ -141,6 +141,14 @@ query logsEndTime($service: String, $instance: String, $directory: String, $proc
     logsEndTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
 }
 
+query taskLogs ($task: String!,
+        $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
+    logs (task: $task,
+        from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
+        sequence, instance, directory, process, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
 query serviceLogs ($service: String!,
              $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
     logs (service: $service,
@@ -168,14 +176,6 @@ query directoryLogs ($service: String!, $instance: String!, $directory: String!,
 query processLogs ($service: String!, $instance: String!, $directory: String!, $process: String!,
              $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
     logs (service: $service, instance: $instance, directory: $directory, process: $process,
-        from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
-            sequence, payload { time, level, unit, message, terminationStatus }
-    }
-}
-
-query taskLogs ($task: String!,
-                $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
-    logs (task: $task,
         from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
             sequence, payload { time, level, unit, message, terminationStatus }
     }

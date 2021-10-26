@@ -2,7 +2,7 @@ import React, {ForwardedRef, forwardRef, useEffect, useImperativeHandle, useStat
 import {
   LogLine,
   useDirectoryLogsLazyQuery, useInstanceLogsLazyQuery,
-  useProcessLogsLazyQuery, useServiceLogsLazyQuery,
+  useProcessLogsLazyQuery, useServiceLogsLazyQuery, useTaskLogsLazyQuery,
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
@@ -113,6 +113,12 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const sliceRowsCount = 100
 
+  const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
+    fetchPolicy: 'no-cache',
+    onError(err) { onError(err.message) },
+    onCompleted(data) { if (data.logs) { addLines(data.logs) } }
+  })
+
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache',
     onError(err) { onError(err.message) },
@@ -147,7 +153,9 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   }
 
   const getLogs = (from?: BigInt, to?: BigInt) => {
-    if (service && instance && directory && process) {
+    if (task) {
+      getTaskLogs({variables: {task: task, ...getCommonVariables(from, to)}})
+    } else if (service && instance && directory && process) {
       getProcessLogs({ variables: { service: service, instance: instance, directory: directory, process: process, ...getCommonVariables(from, to) }  })
     } else if (service && instance && directory) {
       getDirectoryLogs({ variables: { service: service, instance: instance, directory: directory, ...getCommonVariables(from, to) }  })
