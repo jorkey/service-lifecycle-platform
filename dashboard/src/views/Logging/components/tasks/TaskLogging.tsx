@@ -12,7 +12,7 @@ import {RouteComponentProps} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
   useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
-  useLogServicesQuery
+  useLogServicesQuery, useTasksQuery
 } from "../../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
 import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
@@ -83,11 +83,19 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
 
   const tableRef = useRef<LogsTableEvents>(null)
 
+  const { data: activeTask } = useTasksQuery({
+    variables: { id: task, onlyActive: true },
+    fetchPolicy: 'no-cache',
+    onError(err) { setError('Query active task error ' + err.message) },
+  })
+
   const { data: levels } = useLogLevelsQuery({
     variables: { task:task },
     fetchPolicy: 'no-cache',
     onError(err) { setError('Query log levels error ' + err.message) },
   })
+
+  const active = !!activeTask?.tasks.length
 
   return (
     <div className={classes.root}>
@@ -149,7 +157,7 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
                     >
                       Bottom
                     </Button> : null}
-                    <FormControlLabel
+                    {active?<FormControlLabel
                       className={classes.control}
                       labelPlacement={'start'}
                       control={
@@ -161,7 +169,7 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
                         />
                       }
                       label='Follow'
-                    />
+                    />:null}
                   </FormGroup>
                 </>
               }

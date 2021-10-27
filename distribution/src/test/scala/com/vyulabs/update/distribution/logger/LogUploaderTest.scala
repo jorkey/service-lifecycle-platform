@@ -48,7 +48,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
 
     assertResult((OK,
       ("""{"data":{"logs":[""" +
-        """{"payload":{"level":"INFO","message":"`Test` started"}},""" +
+        """{"payload":{"level":"INFO","message":"Started Test"}},""" +
         """{"payload":{"level":"INFO","message":"log line 1"}},""" +
         """{"payload":{"level":"WARN","message":"log line 2"}},""" +
         """{"payload":{"level":"ERROR","message":"log line 3"}},""" +

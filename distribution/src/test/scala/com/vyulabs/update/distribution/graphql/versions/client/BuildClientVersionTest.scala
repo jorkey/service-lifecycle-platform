@@ -106,7 +106,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    expectMessage(logInput, "`Task RunBuilderByRemoteDistribution with parameters: distribution=consumer, accessToken=qwe, arguments=Vector(buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[])` finished successfully")
+    expectMessage(logInput, "Finished successfully task RunBuilderByRemoteDistribution with parameters: distribution=consumer, accessToken=qwe, arguments=buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]")
 
     expectComplete(logInput)
   }

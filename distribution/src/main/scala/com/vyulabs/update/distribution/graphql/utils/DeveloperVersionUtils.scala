@@ -42,7 +42,7 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
           TaskParameter("sources", sources.toJson.compactPrint),
           TaskParameter("comment", comment),
           TaskParameter("buildClientVersion", buildClientVersion.toString)),
-      () => if (!tasksUtils.getActiveTasks(Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
+      () => if (!tasksUtils.getActiveTasks(None, Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
       },
       (taskId, logger) => {

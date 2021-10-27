@@ -23,7 +23,7 @@ class LogBuffer(description: String, unitName: String, logReceiver: LogReceiver,
 
   override def start(): Unit = {
     synchronized {
-      eventsBuffer :+= LogLine(new Date, "INFO", unitName, s"`${description}` started", None)
+      eventsBuffer :+= LogLine(new Date, "INFO", unitName, s"Started ${description}", None)
       timerTask = Some(timer.schedulePeriodically(() => flush(), FiniteDuration(1, TimeUnit.SECONDS)))
     }
     flush()
@@ -56,7 +56,7 @@ class LogBuffer(description: String, unitName: String, logReceiver: LogReceiver,
       case None => ""
     }
     synchronized {
-      eventsBuffer :+= LogLine(new Date(), "INFO", unitName, s"`${description}` finished${stat}", status)
+      eventsBuffer :+= LogLine(new Date(), "INFO", unitName, s"Finished${stat} ${description}", status)
       flush()
       timerTask.foreach(_.cancel())
       timerTask = None

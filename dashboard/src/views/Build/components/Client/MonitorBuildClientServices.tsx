@@ -72,7 +72,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
 
   const { data: tasksInProcess } = useTasksQuery({
     fetchPolicy: 'no-cache',
-    variables: { taskType: 'BuildClientVersions', onlyActive: true },
+    variables: { type: 'BuildClientVersions', onlyActive: true },
     onError(err) { setError('Query client versions in process error ' + err.message) },
   })
   const [ cancelTask ] = useCancelTaskMutation({

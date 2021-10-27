@@ -40,18 +40,18 @@ const useStyles = makeStyles(theme => ({
 
 interface TasksTableParams {
   className: string
-  taskType: string | undefined
+  type: string | undefined
   onlyActive: boolean | undefined
   onClick: (id: string) => void
   onError: (msg: string) => void
 }
 
 export const TasksTable = (props: TasksTableParams) => {
-  const { className, taskType, onlyActive, onClick, onError } = props
+  const { className, type, onlyActive, onClick, onError } = props
 
   const { data: tasks } = useTasksQuery({
     fetchPolicy: 'no-cache',
-    variables: { taskType: taskType, onlyActive: onlyActive },
+    variables: { type: type, onlyActive: onlyActive },
     onError(err) { onError('Query tasks error ' + err.message) },
   })
 

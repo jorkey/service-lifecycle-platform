@@ -23,7 +23,7 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
   def create(description: String,
              run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): Task = {
     val taskId = idGenerator.generateId(8)
-    log.info(s"${description} started")
+    log.info(s"Started task ${taskId}")
     val appender = new TraceAppender()
     val logger = Utils.getLogbackLogger(Task.getClass)
     logger.addAppender(appender)
@@ -34,7 +34,7 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
     val task = Task(taskId, future, cancel)
     activeTasks += (taskId -> task)
     future.andThen { case status =>
-      log.info(s"Task ${task} is finished with status ${status}")
+      log.info(s"Finished task ${taskId} with status ${status}")
       if (status.isSuccess) {
         appender.setTerminationStatus(true, None)
       } else {

@@ -78,7 +78,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
 
   const { data: tasksInProcess } = useTasksQuery({
     variables: {
-      taskType: 'BuildDeveloperVersion',
+      type: 'BuildDeveloperVersion',
       parameters: [ { name: 'service', value: service } ],
       onlyActive: true },
     fetchPolicy: 'no-cache',

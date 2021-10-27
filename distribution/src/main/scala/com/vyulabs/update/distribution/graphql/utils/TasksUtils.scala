@@ -47,7 +47,7 @@ trait TasksUtils extends SprayJsonSupport {
                 (implicit log: Logger): TaskInfo = {
     synchronized {
       checkAllowToRun()
-      val task = taskManager.create(s"Task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}", run)
+      val task = taskManager.create(s"task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}", run)
       val info = TaskInfo(task.taskId, taskType, parameters, new Date(), Some(true))
       activeTasks :+= info
       collections.Tasks_Info.insert(info.copy(active = None)).failed
@@ -61,10 +61,11 @@ trait TasksUtils extends SprayJsonSupport {
     collections.Tasks_Info.distinctField[TaskType]("taskType")
   }
 
-  def getActiveTasks(taskType: Option[TaskType],
+  def getActiveTasks(id: Option[TaskId] = None, taskType: Option[TaskType] = None,
                      parameters: Seq[TaskParameter] = Seq.empty): Seq[TaskInfo] = {
     synchronized {
       activeTasks
+        .filter(task => id.forall(_ == task.id))
         .filter(task => taskType.forall(_ == task.taskType))
         .filter(task => parameters.forall(parameter =>
           task.parameters.exists(_ == parameter)))
@@ -72,15 +73,16 @@ trait TasksUtils extends SprayJsonSupport {
     }
   }
 
-  def getTasks(taskType: Option[String], parameters: Seq[TaskParameter],
+  def getTasks(id: Option[TaskId], taskType: Option[String], parameters: Seq[TaskParameter],
                onlyActive: Option[Boolean], limit: Option[Int])
               (implicit log: Logger) : Future[Seq[TaskInfo]] = {
-    val activeTasks = getActiveTasks(taskType, parameters)
+    val activeTasks = getActiveTasks(id, taskType, parameters)
     if (onlyActive.getOrElse(false)) {
       Future(activeTasks.take(limit.getOrElse(activeTasks.size)))
     } else {
+      val idArg = id.map { id => Filters.eq("id", id) }
       val taskTypeArg = taskType.map { taskType => Filters.eq("taskType", taskType) }
-      val filters = Filters.and(taskTypeArg.toSeq.asJava)
+      val filters = Filters.and((idArg ++ taskTypeArg).asJava)
       val sort = Some(Sorts.descending("_sequence"))
       collections.Tasks_Info.find(filters, sort, limit).map(
         _.filter(task => parameters.forall(parameter =>

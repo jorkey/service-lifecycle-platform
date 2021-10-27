@@ -110,13 +110,13 @@ object GraphqlSchema {
   val OptionLevelsArg = Argument("levels", OptionInputType(ListInputType(StringType)))
   val OptionFindArg = Argument("find", OptionInputType(StringType))
   val OptionIdArg = Argument("id", OptionInputType(StringType))
+  val OptionTypeArg = Argument("type", OptionInputType(StringType))
+  val OptionParametersArg = Argument("parameters", OptionInputType(ListInputType(TaskParameterInputType)))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionPrefetchArg = Argument("prefetch", OptionInputType(IntType))
   val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
-  val OptionTaskTypeArg = Argument("taskType", OptionInputType(StringType))
-  val OptionTaskParametersArg = Argument("parameters", OptionInputType(ListInputType(TaskParameterInputType)))
   val OptionOnlyActiveArg = Argument("onlyActive", OptionInputType(BooleanType))
 
   // Queries
@@ -293,10 +293,10 @@ object GraphqlSchema {
       Field("taskTypes", ListType(StringType),
         resolve = c => { c.ctx.workspace.getTaskTypes() }),
       Field("tasks", ListType(TaskInfoType),
-        arguments = OptionTaskTypeArg :: OptionTaskParametersArg :: OptionOnlyActiveArg :: OptionLimitArg :: Nil,
+        arguments = OptionIdArg:: OptionTypeArg :: OptionParametersArg :: OptionOnlyActiveArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getTasks(
-          c.arg(OptionTaskTypeArg), c.arg(OptionTaskParametersArg).getOrElse(Seq.empty), c.arg(OptionOnlyActiveArg), c.arg(OptionLimitArg)) }),
+          c.arg(OptionIdArg), c.arg(OptionTypeArg), c.arg(OptionParametersArg).getOrElse(Seq.empty), c.arg(OptionOnlyActiveArg), c.arg(OptionLimitArg)) }),
     )
   )
 

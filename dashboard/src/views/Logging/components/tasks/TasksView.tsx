@@ -124,7 +124,7 @@ const TasksView: React.FC<TasksParams> = props => {
             <CardContent className={classes.content}>
               <div className={classes.inner}>
                 <TasksTable className={classes.tasksTable}
-                           taskType={taskType}
+                           type={taskType}
                            onlyActive={onlyActive}
                            onClick={(task) => { handleOnClick(task) }}
                            onError={error => {setError(error)}}

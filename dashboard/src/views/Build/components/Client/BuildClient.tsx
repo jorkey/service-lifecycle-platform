@@ -30,7 +30,7 @@ const BuildClient = (props: BuildClientParams) => {
 
   useTasksQuery({
     fetchPolicy: 'no-cache',
-    variables: { taskType: 'BuildClientVersions', onlyActive: true },
+    variables: { type: 'BuildClientVersions', onlyActive: true },
     onCompleted(tasks) {
       tasks.tasks.length?
         history.push('client/monitor/'):

@@ -35,7 +35,7 @@ trait ClientVersionUtils {
       "BuildClientVersions",
       Seq(TaskParameter("author", author),
           TaskParameter("versions", Misc.seqToCommaSeparatedString(versions))),
-      () => if (!tasksUtils.getActiveTasks(Some("BuildClientVersions")).isEmpty) {
+      () => if (!tasksUtils.getActiveTasks(taskType = Some("BuildClientVersions")).isEmpty) {
           throw new IOException(s"Build of client versions is already in process")
       },
       (task, logger) => {

@@ -82,7 +82,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     assertResult(Seq(LogLine(logDate, "DEBUG", "module1", "Script is executing", None)))(
       logLines.filter(_.unit == "module1"))
-    assertResult(Seq("`Service test-service` started", "Unformatted line"))(
+    assertResult(Seq("Started Service test-service", "Unformatted line"))(
       logLines.filter(_.unit == "SERVICE").map(_.message))
 
     serviceRunner.stopService()
