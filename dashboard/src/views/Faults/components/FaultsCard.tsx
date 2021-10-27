@@ -74,32 +74,27 @@ const FaultsCard: React.FC<FaultsCardParams> = props => {
   }, [ distribution ])
 
   const { data: distributions } = useFaultDistributionsQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query fault distributions error ' + err.message) },
   })
 
   const [ getServices, services ] = useFaultServicesLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query fault services error ' + err.message) },
   })
 
   const { data: startTime } = useFaultsStartTimeQuery({
     variables: { distribution: distribution, service: service },
-    fetchPolicy: 'no-cache',
     onCompleted(data) { if (data.faultsStartTime) setFromTime(data.faultsStartTime) },
     onError(err) { setError('Query faults min time error ' + err.message) },
   })
 
   const { data: endTime } = useFaultsEndTimeQuery({
     variables: { distribution: distribution, service: service },
-    fetchPolicy: 'no-cache',
     onCompleted(data) { if (data.faultsEndTime) setToTime(data.faultsEndTime) },
     onError(err) { setError('Query faults max time error ' + err.message) },
   })
 
   const { data: faults } = useFaultsQuery({
     variables: { distribution: distribution, service: service, fromTime: fromTime, toTime: toTime },
-    fetchPolicy: 'no-cache',
     onError(err) { setError(err.message) },
   })
 

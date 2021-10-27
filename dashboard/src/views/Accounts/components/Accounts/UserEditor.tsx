@@ -21,7 +21,6 @@ import {
   useAccountsListQuery,
   useAddUserAccountMutation,
   useChangeUserAccountMutation, UserAccountProperties,
-  useServiceProfilesQuery,
   useUserAccountInfoLazyQuery,
   useWhoAmIQuery
 } from '../../../../generated/graphql';
@@ -93,9 +92,12 @@ const UserEditor: React.FC<AccountEditorParams> = props => {
 
   const history = useHistory()
 
+  console.log('user editor ' + initialized + ' ' + whoAmI.data + ' ' + editAccount + ' ' + accountInfo.data)
+
   if (!initialized && whoAmI.data) {
     if (editAccount) {
       if (!accountInfo.data && !accountInfo.loading) {
+        console.log('user editor +')
         getAccountInfo({variables: {account: editAccount}})
       }
       if (accountInfo.data) {

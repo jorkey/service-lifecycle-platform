@@ -70,7 +70,6 @@ const LastClientVersions = () => {
   const [error, setError] = useState<string>()
 
   const {data:clientVersionsInfo, refetch:getClientVersionsInfo} = useClientVersionsInfoQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

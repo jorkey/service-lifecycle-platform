@@ -81,12 +81,10 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
       type: 'BuildDeveloperVersion',
       parameters: [ { name: 'service', value: service } ],
       onlyActive: true },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions in process error ' + err.message) },
   })
   const [ cancelTask ] = useCancelTaskMutation({
     variables: { task: task! },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Cancel task error ' + err.message) },
   })
 

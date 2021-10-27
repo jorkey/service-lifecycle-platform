@@ -210,7 +210,15 @@ const link = ApolloLink.from([
 
 const client = new ApolloClient({
   link: link,
-  cache: new InMemoryCache()
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'no-cache',
+    },
+    query: {
+      fetchPolicy: 'no-cache',
+    }
+  }
 });
 
 export default class App extends Component {

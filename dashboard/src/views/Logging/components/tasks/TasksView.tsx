@@ -66,7 +66,6 @@ const TasksView: React.FC<TasksParams> = props => {
   const [error, setError] = useState<string>()
 
   const { data: taskTypes } = useTaskTypesQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query task types error ' + err.message) },
   })
 

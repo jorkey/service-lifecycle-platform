@@ -137,41 +137,34 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
   }, [ directory ])
 
   const { data: services } = useLogServicesQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query log services error ' + err.message) },
   })
 
   const [ getInstances, instances ] = useLogInstancesLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query log instances error ' + err.message) },
   })
 
   const [ getDirectories, directories ] = useLogDirectoriesLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query log directories error ' + err.message) },
   })
 
   const [ getProcesses, processes ] = useLogProcessesLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query log processes error ' + err.message) },
   })
 
   const { data: levels } = useLogLevelsQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query log levels error ' + err.message) },
   })
 
   const { data: startTime } = useLogsStartTimeQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
-    fetchPolicy: 'no-cache',
     onCompleted(data) { if (data.logsStartTime) setFromTime(data.logsStartTime) },
     onError(err) { setError('Query log min time error ' + err.message) },
   })
 
   const { data: endTime } = useLogsEndTimeQuery({
     variables: { service: service, instance: instance, directory: directory, process: process },
-    fetchPolicy: 'no-cache',
     onCompleted(data) { if (data.logsEndTime) setToTime(data.logsEndTime) },
     onError(err) { setError('Query log max time error ' + err.message) },
   })

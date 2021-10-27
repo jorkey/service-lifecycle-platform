@@ -60,7 +60,6 @@ const ConsumerAccountsTable: React.FC<ConsumerAccountsTableProps> = props => {
   const [error, setError] = useState<string>()
 
   const { data: accountsInfo, refetch: getAccountsInfo } = useConsumerAccountsInfoQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query accounts info error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

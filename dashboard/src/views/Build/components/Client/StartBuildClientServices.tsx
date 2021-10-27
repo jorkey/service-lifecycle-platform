@@ -96,7 +96,6 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   const [rows, setRows] = useState<RowData[]>([])
 
   const { data: providers } = useProvidersInfoQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query providers info error ' + err.message) },
     onCompleted() {
       setError(undefined)
@@ -106,24 +105,19 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     }
   })
   const [ getProviderVersions, providerVersions ] = useProviderDesiredVersionsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query provider desired versions error ' + err.message) },
   })
   const { data: developerVersions, refetch: getDeveloperVersions } = useDeveloperVersionsInfoQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions error ' + err.message) },
   })
   const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const [ getTestedVersions, testedVersions ] = useTestedVersionsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query tested versions error ' + err.message) },
   })
   const [ getProviderTestedVersions, providerTestedVersions ] = useProviderTestedVersionsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query provider tested versions error ' + err.message) },
   })
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
@@ -135,7 +129,6 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           build: version.build
         } } as DeveloperDesiredVersionInput })
     },
-    fetchPolicy: 'no-cache',
     onError(err) {
       setError('Build version error ' + err.message)
     },

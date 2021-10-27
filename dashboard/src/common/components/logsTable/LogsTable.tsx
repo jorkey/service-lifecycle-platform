@@ -114,31 +114,26 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const sliceRowsCount = 100
 
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getDirectoryLogs, directoryLogs ] = useDirectoryLogsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getProcessLogs, processLogs ] = useProcessLogsLazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })

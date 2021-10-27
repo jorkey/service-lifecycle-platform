@@ -64,9 +64,7 @@ const Versions: React.FC<VersionsProps> = props => {
       getVersions(consumer)
   }, [consumer]);
 
-  const { data: consumerAccountsInfo } = useConsumerAccountsInfoQuery({
-    fetchPolicy: 'no-cache',
-  })
+  const { data: consumerAccountsInfo } = useConsumerAccountsInfoQuery()
   const [getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery()
   const [getClientDesiredVersions, clientDesiredVersions] = useClientDesiredVersionsLazyQuery()
   const [getInstalledDesiredVersions, installedDesiredVersions] = useInstalledDesiredVersionsLazyQuery()

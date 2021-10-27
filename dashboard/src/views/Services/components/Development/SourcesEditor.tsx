@@ -63,8 +63,8 @@ const SourcesCard = (params: SourcesCardParams) => {
   const { editService, onServiceChanged } = params
   const classes = useStyles()
 
-  const {data: services} = useDeveloperServicesQuery({ fetchPolicy: 'no-cache' })
-  const [getServiceSources, serviceSources] = useServiceSourcesLazyQuery({ fetchPolicy: 'no-cache' })
+  const {data: services} = useDeveloperServicesQuery()
+  const [getServiceSources, serviceSources] = useServiceSourcesLazyQuery()
 
   const [service, setService] = useState('');
   const [sources, setSources] = useState(new Array<SourceConfig>());

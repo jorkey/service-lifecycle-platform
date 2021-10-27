@@ -79,25 +79,21 @@ const ProvidersManager = () => {
   const [error, setError] = useState<string>()
 
   const { data: providers, refetch: refetchProviders } = useProvidersInfoQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query providers info error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const [ addProvider ] = useAddProviderMutation({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Add provider error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const [ changeProvider ] = useChangeProviderMutation({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Change provider error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const [ removeProvider ] = useRemoveProviderMutation({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Remove provider error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

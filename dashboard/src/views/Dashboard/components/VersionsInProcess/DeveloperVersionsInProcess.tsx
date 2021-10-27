@@ -57,7 +57,6 @@ const DeveloperVersionsInProcess = () => {
   const [error, setError] = useState<string>()
 
   const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
-    fetchPolicy: 'no-cache',
     variables: { type: 'BuildDeveloperVersion', onlyActive: true },
     onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }

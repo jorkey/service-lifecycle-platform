@@ -35,7 +35,6 @@ const ClientVersionsInProcess = () => {
   const [error, setError] = useState<string>()
 
   const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
-    fetchPolicy: 'no-cache',
     variables: { type: 'BuildClientVersions', onlyActive: true },
     onError(err) { setError('Query client versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }

@@ -85,13 +85,11 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
 
   const { data: activeTask } = useTasksQuery({
     variables: { id: task, onlyActive: true },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query active task error ' + err.message) },
   })
 
   const { data: levels } = useLogLevelsQuery({
     variables: { task:task },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query log levels error ' + err.message) },
   })
 

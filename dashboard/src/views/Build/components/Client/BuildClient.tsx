@@ -29,7 +29,6 @@ const BuildClient = (props: BuildClientParams) => {
   const [error, setError] = useState<string>()
 
   useTasksQuery({
-    fetchPolicy: 'no-cache',
     variables: { type: 'BuildClientVersions', onlyActive: true },
     onCompleted(tasks) {
       tasks.tasks.length?

@@ -73,31 +73,26 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const history = useHistory()
 
   const [ getWhoAmI, whoAmI ] = useWhoAmILazyQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query who am I error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const [ getDeveloperVersions, developerVersions ] = useDeveloperVersionsInfoLazyQuery({
     variables: { service: service },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const [ getServiceSources, serviceSources ] = useServiceSourcesLazyQuery({
     variables: { service: service },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query service sources error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const { data: ownServicesProfile } = useProfileServicesQuery({
     variables: { profile: 'own' },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query own profile services error ' + err.message) },
   })
   const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
     variables: { service: service, version: { build: Version.parseBuild(version) },
       sources: sources, comment: comment, buildClientVersion: buildClientVersion },
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
       history.push(props.fromUrl + '/monitor/' + service)

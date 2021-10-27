@@ -37,13 +37,11 @@ const ServicesTable = () => {
   const [error, setError] = useState<string>()
 
   const { data: services, refetch } = useDeveloperServicesQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const [ removeServiceSources ] = useRemoveServiceSourcesMutation({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Remove service sources error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

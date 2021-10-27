@@ -61,7 +61,6 @@ const LastDeveloperVersions = () => {
   const [error, setError] = useState<string>()
 
   const {data:developerVersionsInfo, refetch:getDeveloperVersionsInfo} = useDeveloperVersionsInfoQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

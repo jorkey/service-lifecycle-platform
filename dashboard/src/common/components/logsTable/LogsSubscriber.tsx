@@ -14,7 +14,6 @@ export const LogsSubscriber = (props: LogsSubscriptionParams) => {
 
   useSubscribeLogsSubscription({
     variables: { service, instance, process, directory, task, prefetch: 100, levels },
-    fetchPolicy: 'no-cache',
     onSubscriptionData(data) {
       if (data.subscriptionData.data) {
         onLines(data.subscriptionData.data.subscribeLogs)

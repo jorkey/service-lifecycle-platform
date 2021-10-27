@@ -37,13 +37,11 @@ const ProfilesTable = () => {
   const [error, setError] = useState<string>()
 
   const { data: profiles, refetch } = useServiceProfilesQuery({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Query service profiles error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const [ removeProfile ] = useRemoveServicesProfileMutation({
-    fetchPolicy: 'no-cache',
     onError(err) { setError('Remove services profile error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
