@@ -89,6 +89,8 @@ export const FaultsTable = (props: FaultsTableParams) => {
   ].filter(column => showDistribution || column.name != 'distribution')
    .filter(column => showService || column.name != 'service') as GridTableColumnParams[]
 
+  const development = process.env.NODE_ENV === 'development';
+
   const rows = faults
     .map((fault, row) => {
       return new Map<string, GridTableColumnValue>([
@@ -101,7 +103,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
           <Button key='0'
                   onClick={
                     () => {
-                      download('http://localhost:8000/load/fault-report/' + fault.payload.id,
+                      download(`http://${development?'localhost:8000':window.location.host}/load/fault-report/` + fault.payload.id,
                 `fault-${fault.payload.info.service}-${fault.payload.info.time.toString()}`)
                     }
                   }>

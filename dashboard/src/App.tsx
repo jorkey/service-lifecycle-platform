@@ -189,8 +189,10 @@ class WebSocketLink extends ApolloLink {
   }
 }
 
+const development = process.env.NODE_ENV === 'development';
+
 const wsLink = new WebSocketLink({
-  url: 'ws://localhost:8000/graphql/websocket',
+  url: `ws://${development?'localhost:8000':window.location.host}/graphql/websocket`,
   connectionParams: () => {
     const token = localStorage.getItem('accessToken')
     return {
