@@ -31,7 +31,7 @@ object AuthMiddleware extends MiddlewareBeforeField[GraphqlContext] {
               throw AuthException(s"Unauthorized access: query ${mctx.queryAst.toString}, authorized ${authorized}, account info ${accountInfo}")
             }
           case None =>
-            throw AuthException("Unauthorized access. No access token")
+            throw AuthException("Unauthorized access. No or invalid access token.")
         }
       case None =>
     }

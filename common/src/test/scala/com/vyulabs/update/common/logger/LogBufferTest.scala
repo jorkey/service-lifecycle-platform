@@ -16,7 +16,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
   implicit val log = Utils.getLogbackLogger(this.getClass)
 
   implicit val timer = new Timer() {
-    override def schedulePeriodically(task: () => Unit, period: FiniteDuration): Cancelable = {
+    override def schedulePeriodically(task: () => Any, period: FiniteDuration): Cancelable = {
       timerTask = Some(task)
       new Cancelable {
         override def cancel(): Boolean = {
@@ -27,7 +27,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
     }
   }
 
-  var timerTask = Option.empty[() => Unit]
+  var timerTask = Option.empty[() => Any]
   var messages = Seq.empty[String]
   var promise = Promise[Unit]
 

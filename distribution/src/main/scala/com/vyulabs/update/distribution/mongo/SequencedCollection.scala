@@ -6,6 +6,7 @@ import akka.event.Logging
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
 import com.mongodb.client.model._
+import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
@@ -16,6 +17,7 @@ import org.slf4j.Logger
 
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
@@ -26,7 +28,9 @@ case class NoSuchDocument() extends Exception
 
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]],
-                                       historyExpireDays: Int = 7, createIndex: Boolean = true)(implicit system: ActorSystem, executionContext: ExecutionContext, codecRegistry: CodecRegistry) {
+                                       historyExpireDays: Int = 7, createIndex: Boolean = true)
+                                      (implicit system: ActorSystem, executionContext: ExecutionContext,
+                                       codecRegistry: CodecRegistry) {
   private implicit val log = Logging(system, this.getClass)
 
   private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Sequenced[T]]())
@@ -232,6 +236,10 @@ class SequencedCollection[T: ClassTag](val name: String,
         })
     }
     Source.futureSource(source).mapMaterializedValue(_ => NotUsed)
+  }
+
+  def getStorageSize(): Future[Long] = {
+    collection.map(_.getStorageSize()).flatten
   }
 
   private def findDocuments(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[BsonDocument]] = {

@@ -50,7 +50,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   }
 
   def getCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): MongoDbCollection[T] = {
-    new MongoDbCollection[T](name, db.getCollection(name, classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry))
+    new MongoDbCollection[T](name, db.getCollection(name, classTag.runtimeClass.asInstanceOf[Class[T]]).withCodecRegistry(codecRegistry), this)
   }
 
   def createCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
@@ -72,9 +72,15 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
       .log(s"Drop Mongo DB database ${db.getName}")
       .runWith(Sink.head[Success])
   }
+
+  def getStorageSize(collectionName: String): Future[Long] = {
+    Source.fromPublisher(db.runCommand(new Document("collStats", collectionName)))
+      .runWith(Sink.head[Document])
+      .map(doc => doc.getLong("storageSize"))
+  }
 }
 
-class MongoDbCollection[T](name: String, collection: MongoCollection[T])
+class MongoDbCollection[T](name: String, collection: MongoCollection[T], db: MongoDb)
                           (implicit system: ActorSystem, materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
   implicit val log = Logging(system, this.getClass)
 
@@ -160,5 +166,9 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T])
     Source.fromPublisher(collection.drop())
       .log(s"Drop Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
+  }
+
+  def getStorageSize(): Future[Long] = {
+    db.getStorageSize(name)
   }
 }

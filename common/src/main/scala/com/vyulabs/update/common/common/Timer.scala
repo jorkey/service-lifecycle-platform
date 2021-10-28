@@ -8,13 +8,13 @@ trait Cancelable {
 }
 
 trait Timer {
-  def schedulePeriodically(task: () => Unit, period: FiniteDuration): Cancelable
+  def schedulePeriodically(task: () => Any, period: FiniteDuration): Cancelable
 }
 
 class ThreadTimer() extends Timer {
   val timer = new java.util.Timer()
 
-  override def schedulePeriodically(task: () => Unit, period: FiniteDuration): Cancelable = {
+  override def schedulePeriodically(task: () => Any, period: FiniteDuration): Cancelable = {
     val timerTask = new TimerTask {
       override def run(): Unit = {
         task()
