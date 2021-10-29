@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/styles';
 import { Typography } from '@material-ui/core';
+import {useWhoAmIQuery} from "../../../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -25,9 +26,9 @@ const Profile = props => {
 
   const classes = useStyles();
 
-  const user = JSON.parse(localStorage.getItem('user'))
+  const { data } = useWhoAmIQuery();
 
-  return (
+  return data ?
     <div
       {...rest}
       className={clsx(classes.root, className)}
@@ -36,11 +37,10 @@ const Profile = props => {
         className={classes.name}
         variant='h4'
       >
-        {user.name}
+        {data.whoAmI.name}
       </Typography>
-      <Typography variant='body2'>{user.role}</Typography>
-    </div>
-  );
+      <Typography variant='body2'>{data.whoAmI.role.toString()}</Typography>
+    </div> : null
 };
 
 Profile.propTypes = {

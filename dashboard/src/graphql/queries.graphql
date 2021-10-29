@@ -1,0 +1,370 @@
+# Login
+
+mutation login($account: String!, $password: String!) {
+    login(account: $account, password: $password)
+}
+
+# Info
+
+query whoAmI {
+    whoAmI { account, name, role }
+}
+
+query distributionInfo {
+    distributionInfo { distribution, title }
+}
+
+# Developer Versions
+
+query developerVersionsInfo ($service: String, $version: DeveloperVersionInput) {
+    developerVersionsInfo (service: $service, version: $version) {
+        service, version { distribution, build }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }
+    }
+}
+
+query developerDesiredVersions {
+    developerDesiredVersions { service, version { distribution, build } }
+}
+
+query providerDesiredVersions ($distribution: String!) {
+    providerDesiredVersions (distribution: $distribution) { service, version { distribution, build } }
+}
+
+mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!, $sources: [SourceConfigInput!]!,
+                                $comment: String!, $buildClientVersion: Boolean!) {
+    buildDeveloperVersion (service: $service, version: $version, sources: $sources, comment: $comment, buildClientVersion: $buildClientVersion)
+}
+
+mutation addDeveloperVersionInfo ($info: DeveloperVersionInfoInput!) {
+    addDeveloperVersionInfo (info: $info)
+}
+
+mutation removeDeveloperVersion ($service: String!, $version: DeveloperDistributionVersionInput!) {
+    removeDeveloperVersion (service: $service, version: $version)
+}
+
+mutation setDeveloperDesiredVersions ($versions: [DeveloperDesiredVersionDeltaInput!]!) {
+    setDeveloperDesiredVersions (versions: $versions)
+}
+
+# Tested Versions
+
+mutation setTestedVersions ($versions: [DeveloperDesiredVersionInput!]!) {
+    setTestedVersions (versions: $versions)
+}
+
+query testedVersions {
+    testedVersions {
+        service, version { distribution, build }
+    }
+}
+
+mutation setProviderTestedVersions ($distribution: String!, $versions: [DeveloperDesiredVersionInput!]!) {
+    setProviderTestedVersions (distribution: $distribution, versions: $versions)
+}
+
+query providerTestedVersions ($distribution: String!) {
+    providerTestedVersions (distribution: $distribution) {
+        service, version { distribution, build }
+    }
+}
+
+# Client Versions
+
+query clientVersionsInfo ($service: String, $version: ClientVersionInput) {
+    clientVersionsInfo (service: $service, version: $version) {
+        service, version { distribution, developerBuild, clientBuild }, buildInfo { author, sources { name, git { url, branch, cloneSubmodules } }, time, comment }, installInfo { account, time }
+    }
+}
+
+query clientDesiredVersions {
+    clientDesiredVersions { service, version { distribution, developerBuild, clientBuild } }
+}
+
+query installedDesiredVersions ($distribution: String!) {
+    installedDesiredVersions (distribution: $distribution) {
+        service, version { distribution, developerBuild, clientBuild }
+    }
+}
+
+mutation buildClientVersions ($versions: [DeveloperDesiredVersionInput!]!) {
+    buildClientVersions (versions: $versions)
+}
+
+mutation addClientVersionInfo ($info: ClientVersionInfoInput!) {
+    addClientVersionInfo (info: $info)
+}
+
+mutation removeClientVersion ($service: String!, $version: ClientDistributionVersionInput!) {
+    removeClientVersion (service: $service, version: $version)
+}
+
+mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!) {
+    setClientDesiredVersions (versions: $versions)
+}
+
+# States
+
+query serviceStates ($distribution: String!) {
+    serviceStates (distribution: $distribution) {
+        distribution, payload { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+    }
+}
+
+# Logs
+
+query logServices {
+    logServices
+}
+
+query logInstances($service: String!) {
+    logInstances (service: $service)
+}
+
+query logDirectories($service: String!, $instance: String!) {
+    logDirectories (service: $service, instance: $instance)
+}
+
+query logProcesses($service: String!, $instance: String!, $directory: String!) {
+    logProcesses (service: $service, instance: $instance, directory: $directory)
+}
+
+query logLevels($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logLevels (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+}
+
+query logsStartTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logsStartTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+}
+
+query logsEndTime($service: String, $instance: String, $directory: String, $process: String, $task: String) {
+    logsEndTime (service: $service, instance: $instance, directory: $directory, process: $process, task: $task)
+}
+
+query taskLogs ($task: String!,
+        $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
+    logs (task: $task,
+        from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
+        sequence, instance, directory, process, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
+query serviceLogs ($service: String!,
+             $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
+    logs (service: $service,
+        from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
+            sequence, instance, directory, process, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
+query instanceLogs ($service: String!, $instance: String!,
+             $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
+    logs (service: $service, instance: $instance,
+        from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
+            sequence, directory, process, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
+query directoryLogs ($service: String!, $instance: String!, $directory: String!,
+             $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
+    logs (service: $service, instance: $instance, directory: $directory,
+        from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
+            sequence, process, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
+query processLogs ($service: String!, $instance: String!, $directory: String!, $process: String!,
+             $from: BigInt, $to: BigInt, $fromTime: Date, $toTime: Date, $levels: [String!], $find: String, $limit: Int) {
+    logs (service: $service, instance: $instance, directory: $directory, process: $process,
+        from: $from, to: $to, fromTime: $fromTime, toTime: $toTime, levels: $levels, find: $find, limit: $limit) {
+            sequence, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
+# Faults
+
+query faultDistributions {
+    faultDistributions
+}
+
+query faultServices ($distribution: String) {
+    faultServices (distribution: $distribution)
+}
+
+query faultsStartTime ($distribution: String, $service: String) {
+    faultsStartTime (distribution: $distribution, service: $service)
+}
+
+query faultsEndTime ($distribution: String, $service: String) {
+    faultsEndTime (distribution: $distribution, service: $service)
+}
+
+query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date) {
+    faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime) {
+        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+    }
+}
+
+query fault ($id: String!) {
+    faults (id: $id) {
+        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+    }
+}
+
+# Accounts
+
+query accountsList {
+    accountsList
+}
+
+query userAccountsInfo {
+    userAccountsInfo { account, name, role, properties { email, notifications } }
+}
+
+query userAccountInfo ($account: String!) {
+    userAccountsInfo (account: $account) { account, name, role, properties { email, notifications } }
+}
+
+query serviceAccountsInfo {
+    serviceAccountsInfo { account, name, role }
+}
+
+query serviceAccountInfo ($account: String!) {
+    serviceAccountsInfo (account: $account) { account, name, role }
+}
+
+query consumerAccountsInfo {
+    consumerAccountsInfo { account, name, role, properties { url, profile } }
+}
+
+query consumerAccountInfo ($account: String!) {
+    consumerAccountsInfo (account: $account) { account, name, role, properties { url, profile } }
+}
+
+query accessToken ($account: String!) {
+    accessToken (account: $account)
+}
+
+mutation addUserAccount ($account: String!, $name: String!, $role: AccountRole!, $password: String!, $properties: UserAccountPropertiesInput!) {
+    addUserAccount (account: $account, name: $name, role: $role, password: $password, properties: $properties)
+}
+
+mutation changeUserAccount ($account: String!, $name: String, $role: AccountRole!, $oldPassword: String, $password: String, $properties: UserAccountPropertiesInput) {
+    changeUserAccount (account: $account, name: $name, role: $role, oldPassword: $oldPassword, password: $password, properties: $properties)
+}
+
+mutation addServiceAccount ($account: String!, $name: String!, $role: AccountRole!) {
+    addServiceAccount (account: $account, name: $name, role: $role)
+}
+
+mutation changeServiceAccount ($account: String!, $name: String, $role: AccountRole!) {
+    changeServiceAccount (account: $account, name: $name, role: $role)
+}
+
+mutation addConsumerAccount ($account: String!, $name: String!, $properties: ConsumerAccountPropertiesInput!) {
+    addConsumerAccount (account: $account, name: $name, properties: $properties)
+}
+
+mutation changeConsumerAccount ($account: String!, $name: String, $properties: ConsumerAccountPropertiesInput) {
+    changeConsumerAccount (account: $account, name: $name, properties: $properties)
+}
+
+mutation removeAccount ($account: String!) {
+    removeAccount (account: $account)
+}
+
+# Sources
+
+query developerServices {
+    developerServices
+}
+
+query serviceSources ($service: String!) {
+    serviceSources (service: $service) { name, git { url, branch, cloneSubmodules }  }
+}
+
+mutation addServiceSources ($service: String!, $sources: [SourceConfigInput!]!) {
+    addServiceSources (service: $service, sources: $sources)
+}
+
+mutation changeServiceSources ($service: String!, $sources: [SourceConfigInput!]!) {
+    changeServiceSources (service: $service, sources: $sources)
+}
+
+mutation removeServiceSources ($service: String!) {
+    removeServiceSources (service: $service)
+}
+
+# Profiles
+
+query serviceProfiles {
+    serviceProfiles { profile }
+}
+
+query profileServices ($profile: String!) {
+    serviceProfiles (profile: $profile) { services }
+}
+
+mutation addServicesProfile ($profile: String!, $services: [String!]!) {
+    addServicesProfile (profile: $profile, services: $services)
+}
+
+mutation changeServicesProfile ($profile: String!, $services: [String!]!) {
+    changeServicesProfile (profile: $profile, services: $services)
+}
+
+mutation removeServicesProfile ($profile: String!) {
+    removeServicesProfile (profile: $profile)
+}
+
+# Providers
+
+query providersInfo {
+    providersInfo {
+        distribution, url, accessToken, testConsumer, uploadStateIntervalSec
+    }
+}
+
+mutation addProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
+    addProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
+}
+
+mutation changeProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
+    changeProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
+}
+
+mutation removeProvider ($distribution: String!) {
+    removeProvider (distribution: $distribution)
+}
+
+query providerDesiredVersions ($distribution: String!) {
+    providerDesiredVersions (distribution: $distribution) {
+        service, version { distribution, build }
+    }
+}
+
+# Subscriptions
+
+subscription subscribeLogs ($service: String, $instance: String, $process: String,
+        $directory: String, $task: String, $prefetch: Int!, $levels: [String!]) {
+    subscribeLogs (service: $service, instance: $instance, process: $process,
+                   directory: $directory, task: $task, prefetch: $prefetch, levels: $levels) {
+        sequence, payload { time, level, unit, message, terminationStatus }
+    }
+}
+
+# Tasks
+
+query taskTypes {
+    taskTypes
+}
+
+query tasks ($id: String, $type: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
+    tasks (id: $id, type: $type, parameters: $parameters, onlyActive: $onlyActive, limit: $limit) {
+        id, taskType, parameters { name, value }, creationTime, active
+    }
+}
+
+mutation cancelTask ($task: String!) {
+    cancelTask (task: $task)
+}

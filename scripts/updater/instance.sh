@@ -1,8 +1,9 @@
 #!/bin/bash -e
+set -e
 
-distribDirectoryUrl=$3
+distributionUrl=$3
 serviceToSetup=updater
 . update.sh
 
 echo "Execute setup"
-./updater_setup.sh Azure $@
+./.updater_setup.sh Azure $@

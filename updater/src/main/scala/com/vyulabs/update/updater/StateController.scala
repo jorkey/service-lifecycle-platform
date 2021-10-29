@@ -1,42 +1,49 @@
 package com.vyulabs.update.updater
 
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.info.{ProfiledServiceName, ServiceState, UpdateError}
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
+import com.vyulabs.update.common.version.ClientDistributionVersion
+import org.slf4j.Logger
+
 import java.io.File
 import java.util.Date
-
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.info.UpdateError
-import com.vyulabs.update.info.{ProfiledServiceName, ServiceState}
-import com.vyulabs.update.utils.{IOUtils, Utils}
-import com.vyulabs.update.version.BuildVersion
-import org.slf4j.Logger
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRepository: () => Unit)(implicit log: Logger) {
-  val serviceDirectory = new File(if (profiledServiceName.name == Common.UpdaterServiceName) "." else profiledServiceName.toString)
-  val currentServiceDirectory = new File(serviceDirectory, "current")
+class ServiceStateController(directory: File, profiledServiceName: ProfiledServiceName, updateRepository: () => Unit)
+                            (implicit log: Logger) {
+  val serviceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) directory else new File(directory, profiledServiceName.toString)
+  val currentServiceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) serviceDirectory else new File(serviceDirectory, "current")
+  val logDirectory = new File(currentServiceDirectory, "log")
   val faultsDirectory = new File(serviceDirectory, "faults")
   val newServiceDirectory = new File(serviceDirectory, "new")
   val logHistoryDirectory = new File(serviceDirectory, "log.history")
 
+  serviceDirectory.mkdirs()
+
+  if (profiledServiceName.name != Common.UpdaterServiceName) {
+    currentServiceDirectory.mkdir()
+    faultsDirectory.mkdir()
+    newServiceDirectory.mkdir()
+    logHistoryDirectory.mkdir()
+  }
+
   @volatile private var installDate = Option.empty[Date]
   @volatile private var startDate = Option.empty[Date]
-  @volatile private var version = Option.empty[BuildVersion]
-  @volatile private var updateToVersion = Option.empty[BuildVersion]
+  @volatile private var version = Option.empty[ClientDistributionVersion]
+  @volatile private var updateToVersion = Option.empty[ClientDistributionVersion]
   @volatile private var updateError: Option[UpdateError] = None
   @volatile private var lastExitCode = Option.empty[Int]
   @volatile private var failuresCount = Option.empty[Int]
-
-  private val maxLastErrors = 25
 
   if (!serviceDirectory.exists() && !serviceDirectory.mkdir()) {
     Utils.error(s"Can't create directory ${serviceDirectory}")
   }
 
-  version = IOUtils.readServiceVersion(profiledServiceName.name,
-    if (profiledServiceName.name == Common.UpdaterServiceName) serviceDirectory else currentServiceDirectory)
+  version = IoUtils.readServiceVersion(profiledServiceName.name, currentServiceDirectory)
 
   log.info(s"Current version of service ${profiledServiceName} is ${version}")
 
@@ -44,24 +51,15 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
 
   def getUpdateError() = updateError
 
-  def initFromState(state: ServiceState): Unit = {
-    failuresCount = state.failuresCount
-    if (profiledServiceName.name == Common.UpdaterServiceName) {
-      if (updateToVersion.isEmpty) {
-        failuresCount = Some(failuresCount.getOrElse(0) + 1)
-      }
-    }
-  }
-
-  def setVersion(version: BuildVersion): Unit = synchronized {
+  def setVersion(version: ClientDistributionVersion): Unit = synchronized {
     this.installDate = Some(new Date())
     this.version = Some(version)
     if (updateToVersion.isDefined) {
-      info(s"Updated to version ${version}")
+      log.info(s"Updated to version ${version}")
       updateToVersion = None
       updateError = None
     } else {
-      info(s"Installed version ${version}")
+      log.info(s"Installed version ${version}")
     }
     updateRepository()
   }
@@ -82,35 +80,16 @@ class ServiceStateController(profiledServiceName: ProfiledServiceName, updateRep
     updateRepository()
   }
 
-  def beginUpdateToVersion(serviceVersion: BuildVersion): Unit = synchronized {
+  def beginUpdateToVersion(serviceVersion: ClientDistributionVersion): Unit = synchronized {
     this.updateToVersion = Some(serviceVersion)
     this.updateError = None
-    info(s"Begin update to version ${serviceVersion}")
-    updateRepository()
-  }
-
-  def beginUpdateScriptsToVersion(serviceVersion: BuildVersion): Unit = synchronized {
-    info(s"Begin update scripts to version ${serviceVersion}")
+    log.info(s"Begin update to version ${serviceVersion}")
     updateRepository()
   }
 
   def updateError(critical: Boolean, msg: String): Unit = synchronized {
     this.updateError = Some(UpdateError(critical, msg))
-    error(s"Update ${if (critical) "fatal " else ""}error: ${msg}")
-    updateRepository()
-  }
-
-  def info(message: String): Unit = {
-    log.info(s"Service ${profiledServiceName}: ${message}")
-  }
-
-  def error(message: String): Unit = {
-    log.error(s"Service ${profiledServiceName}: ${message}")
-    updateRepository()
-  }
-
-  def error(message: String, exception: Throwable): Unit = {
-    log.error(s"Service ${profiledServiceName}: ${message}", exception)
+    log.error(s"Update ${if (critical) "fatal " else ""}error: ${msg}")
     updateRepository()
   }
 

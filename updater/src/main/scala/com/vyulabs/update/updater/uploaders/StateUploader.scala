@@ -1,41 +1,25 @@
 package com.vyulabs.update.updater.uploaders
 
-import java.io.File
-import java.util.Date
-
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{InstanceId}
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.{ProfiledServiceName, ServicesState}
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Common.InstanceId
+import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.info.{DirectoryServiceState, InstanceServiceState, ProfiledServiceName}
 import com.vyulabs.update.updater.ServiceStateController
 import org.slf4j.Logger
+import spray.json.DefaultJsonProtocol._
 
-class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceName],
-                    clientDirectory: ClientDistributionDirectoryClient)(implicit log: Logger) extends Thread { self =>
+import java.io.File
+import java.util.concurrent.TimeUnit
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
+
+class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[ProfiledServiceName],
+                    distributionClient: DistributionClient[SyncSource])(implicit executionContext: ExecutionContext, log: Logger) extends Thread { self =>
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+
   private val services = servicesNames.foldLeft(Map.empty[ProfiledServiceName, ServiceStateController]){ (services, name) =>
-    services + (name -> new ServiceStateController(name, () => update()))
-  }
-
-  private var startDate = new Date()
-
-  for (servicesState <- clientDirectory.downloadServicesState(instanceId)) {
-    servicesState.directories.foreach { case (directory, serviceStates) =>
-      serviceStates.foreach { case (serviceName, serviceState) =>
-        if (directory == directory) {
-          if (serviceName == Common.UpdaterServiceName) {
-            for (date <- serviceState.startDate) {
-              startDate = date
-            }
-          } else {
-            services.foreach { case (name, controller) =>
-              if (name.name == serviceName && controller.serviceDirectory.getCanonicalPath == directory) {
-                controller.initFromState(serviceState)
-              }
-            }
-          }
-        }
-      }
-    }
+    services + (name -> new ServiceStateController(directory, name, () => update()))
   }
 
   def getServiceStateController(profiledServiceName: ProfiledServiceName): Option[ServiceStateController] = {
@@ -69,9 +53,10 @@ class StateUploader(instanceId: InstanceId, servicesNames: Set[ProfiledServiceNa
 
   private def updateRepository(): Boolean = synchronized {
     log.info("Update instance state")
-    val scriptsState = ServicesState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
-    val servicesState = services.foldLeft(ServicesState.empty)((state, service) =>
-      state.merge(ServicesState(service._1.name, service._2.getState(), service._2.serviceDirectory.getCanonicalPath)))
-    clientDirectory.uploadServicesStates(instanceId, scriptsState.merge(servicesState))
+    val scriptsState = DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
+    val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
+      state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
+    val instanceServiceStates = serviceStates.map(state => InstanceServiceState(instance, state.service, state.directory, state.state))
+    syncDistributionClient.graphqlRequest(updaterMutations.setServiceStates(instanceServiceStates)).getOrElse(false)
   }
 }

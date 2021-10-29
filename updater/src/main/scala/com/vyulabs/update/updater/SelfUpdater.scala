@@ -1,61 +1,60 @@
 package com.vyulabs.update.updater
 
-import java.io.File
-
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.ServiceName
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.utils.{IOUtils, Utils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.common.common.Common
+import com.vyulabs.update.common.common.Common.ServiceId
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
+import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
+
+import java.io.File
+import java.util.concurrent.TimeUnit
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class SelfUpdater(state: ServiceStateController, clientDirectory: ClientDistributionDirectoryClient)
-                 (implicit log: Logger) {
-  private val scriptsVersion = IOUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
+class SelfUpdater(state: ServiceStateController, distributionClient: DistributionClient[SyncSource])
+                 (implicit executionContext: ExecutionContext, log: Logger) {
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+
+  private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
+  private val updaterVersion = IoUtils.readServiceVersion(Common.UpdaterServiceName, new File("."))
 
   state.serviceStarted()
 
-  def needUpdate(serviceName: ServiceName, desiredVersion: Option[BuildVersion]): Option[BuildVersion] = {
-    Utils.isServiceNeedUpdate(serviceName, getVersion(serviceName), desiredVersion)
+  def needUpdate(service: ServiceId, desiredVersion: Option[ClientDistributionVersion]): Option[ClientDistributionVersion] = {
+    Utils.isServiceNeedUpdate(service, getVersion(service), desiredVersion)
   }
 
   def stop(): Unit = {
     state.serviceStopped()
   }
 
-  def beginServiceUpdate(serviceName: ServiceName, toVersion: BuildVersion): Boolean = {
-    state.info(s"Service ${serviceName} is obsolete. Own version ${getVersion(serviceName)} desired version ${toVersion}")
+  def beginServiceUpdate(service: ServiceId, toVersion: ClientDistributionVersion): Boolean = {
+    log.info(s"Service ${service} is obsolete. Own version ${getVersion(service)} desired version ${toVersion}")
     state.beginUpdateToVersion(toVersion)
-    log.info(s"Downloading ${serviceName} of version ${toVersion}")
-    if (!clientDirectory.downloadVersionImage(serviceName, toVersion, new File(Common.ServiceZipName.format(serviceName)))) {
-      state.updateError(false, s"Downloading ${serviceName} error")
+    log.info(s"Downloading ${service} of version ${toVersion}")
+    if (!syncDistributionClient.downloadClientVersionImage(service, toVersion, new File(Common.ServiceZipName.format(service)))) {
+      state.updateError(false, s"Downloading ${service} error")
       return false
     }
-    if (!IOUtils.writeServiceVersion(new File("."), serviceName, toVersion)) {
-      state.updateError(true, s"Set ${serviceName} version error")
+    if (!IoUtils.writeServiceVersion(new File("."), service, toVersion)) {
+      state.updateError(true, s"Set ${service} version error")
       return false
     }
     true
   }
 
-  private def getVersion(serviceName: ServiceName): Option[BuildVersion] = {
-    if (serviceName == Common.UpdaterServiceName) {
-      state.getVersion()
-    } else if (serviceName == Common.ScriptsServiceName) {
+  private def getVersion(service: ServiceId): Option[ClientDistributionVersion] = {
+    if (service == Common.UpdaterServiceName) {
+      updaterVersion
+    } else if (service == Common.ScriptsServiceName) {
       scriptsVersion
     } else {
       None
     }
-  }
-}
-
-object SelfUpdater {
-  def apply(state: ServiceStateController, clientDirectory: ClientDistributionDirectoryClient)
-           (implicit log: Logger): SelfUpdater = {
-    new SelfUpdater(state, clientDirectory)
   }
 }

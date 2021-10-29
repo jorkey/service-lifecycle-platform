@@ -1,14 +1,20 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.builder.config.BuilderConfig
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.common.Common.{ClientName, ServiceName}
-import com.vyulabs.update.common.com.vyulabs.common.utils.Arguments
-import com.vyulabs.update.distribution.developer.DeveloperDistributionDirectoryAdmin
-import com.vyulabs.update.lock.SmartFilesLocker
-import com.vyulabs.update.utils.{IOUtils, Utils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
+import com.vyulabs.update.common.config.SourceConfig
+import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.lock.SmartFilesLocker
+import com.vyulabs.update.common.process.ProcessUtils
+import com.vyulabs.update.common.utils.Utils
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
+import spray.json._
+
+import java.io.File
+import java.util.concurrent.TimeUnit
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
@@ -17,159 +23,119 @@ import org.slf4j.LoggerFactory
 object BuilderMain extends App {
   implicit val log = LoggerFactory.getLogger(this.getClass)
   implicit val filesLocker = new SmartFilesLocker()
+  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val timer = new ThreadTimer()
 
   def usage(): String =
-    "Use: buildVersion <author=value> <service=value> [client=value]\n" +
-    "                 [version=value] [comment=value] [sourceBranches=value1,value2,...] [setDesiredVersion=true]\n" +
-    "   getDesiredVersions [clientName=value]\n" +
-    "   setDesiredVersions [clientName=value] [services=<service[:version]>,[service1[:version1]],...]"
+    "Use: <command> {[argument=value]}\n" +
+    "  Commands:\n" +
+    "    buildProviderDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
+    "       <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
+    "    buildConsumerDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
+    "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
+    "       <providerAdminPassword=?> <consumerAccessToken=?> <profile=?> [testConsumerMatch=?]\n" +
+    "    buildDeveloperVersion <service=?> <version=?> <sources=?> [buildClientVersion=true/false] <comment=?>\n" +
+    "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
 
-  if (args.size < 1) {
-    Utils.error(usage())
-  }
+  if (args.size < 1) Utils.error(usage())
 
-  val command = args(0)
-  if (command != "buildVersion" && command != "getDesiredVersions" && command != "setDesiredVersions") {
-    Utils.error(usage())
-  }
-  val arguments = Arguments.parse(args.drop(1))
+  try {
+    val command = args(0)
 
-  val config = BuilderConfig().getOrElse {
-    Utils.error("No config")
-  }
+    command match {
+      case "buildProviderDistribution" | "buildConsumerDistribution" =>
+        val arguments = Arguments.parse(args.drop(1), Set.empty)
 
-  val developerDistribution = new DeveloperDistributionDirectoryAdmin(config.developerDistributionUrl)
+        val cloudProvider = arguments.getValue("cloudProvider")
+        val distributionDirectory = arguments.getValue("distributionDirectory")
+        val distribution = arguments.getValue("distribution")
+        val distributionTitle = arguments.getValue("distributionTitle")
+        val mongoDbName = arguments.getValue("mongoDbName")
+        val author = arguments.getValue("author")
+        val port = arguments.getOptionIntValue("port").getOrElse(8000)
+        val test = arguments.getOptionBooleanValue("test").getOrElse(false)
 
-  command match {
-    case "buildVersion" =>
-      val author: String = arguments.getValue("author")
-      val serviceName: ServiceName = arguments.getValue("service")
-      val clientName: Option[ClientName] = arguments.getOptionValue("client")
-      val comment: Option[String] = arguments.getOptionValue("comment")
-      val version = {
-        arguments.getOptionValue("version").map(BuildVersion.parse(_)) map { version =>
-          clientName match {
-            case Some(clientName) =>
-              version.client match {
-                case Some(client) if (client != clientName) =>
-                  Utils.error(s"Client name in the version ${client} != client ${clientName}")
-                case Some(_) =>
-                  version
-                case None =>
-                  BuildVersion.apply(clientName, version.build)
-              }
-            case None =>
-              version
+        val startService = () => {
+          ProcessUtils.runProcess("/bin/sh", Seq(".create_distribution_service.sh"), Map.empty,
+            new File(distributionDirectory), Some(0), None, ProcessUtils.Logging.Realtime)
+        }
+        val distributionBuilder = new DistributionBuilder(cloudProvider, startService,
+          new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false, port)
+
+        if (command == "buildProviderDistribution") {
+          if (!distributionBuilder.buildDistributionFromSources(author)) {
+            Utils.error("Build distribution error")
+          }
+        } else {
+          val provider = arguments.getValue("provider")
+          val providerUrl = arguments.getValue("providerUrl")
+          val providerAdminPassword = arguments.getValue("providerAdminPassword")
+          val consumerAccessToken = arguments.getValue("consumerAccessToken")
+          val testConsumer = arguments.getOptionValue("testConsumer")
+          if (!distributionBuilder.buildFromProviderDistribution(
+                provider, providerUrl, providerAdminPassword, consumerAccessToken, testConsumer, author) ||
+              !distributionBuilder.updateDistributionFromProvider()) {
+            Utils.error("Build distribution error")
           }
         }
-      }
-      val sourceBranches = arguments.getOptionValue("sourceBranches").map(_.split(",").toSeq).getOrElse(Seq.empty)
-      val setDesiredVersion = arguments.getOptionBooleanValue("setDesiredVersion").getOrElse(true)
-
-      log.info(s"Make new version of service ${serviceName}")
-      val builder = new Builder(developerDistribution, config.adminRepositoryUrl)
-      builder.makeVersion(author, serviceName, clientName, comment, version, sourceBranches) match {
-        case Some(version) =>
-          if (setDesiredVersion) {
-            val waitFor = (if (serviceName == Common.DistributionServiceName) {
-              Some(developerDistribution.getDistributionVersionPath)
-            } else if (serviceName == Common.ScriptsServiceName) {
-              Some(developerDistribution.getScriptsVersionPath)
-            } else {
-              None
-            }).map(path => (path, developerDistribution.getServerVersion(path)))
-              .filter { case (_, v) => v.isDefined && v.get.client == version.client }
-              .map(_._1)
-            builder.setDesiredVersions(version.client, Map(serviceName -> Some(version)))
-            waitFor.foreach(path => {
-              log.info("Update distribution server")
-              if (!developerDistribution.waitForServerUpdated(path, version)) {
-                log.error("Can't update distribution server")
-              }
-            })
-          }
-        case None =>
-          log.error("Make version error")
-          System.exit(1)
-      }
-    case "getDesiredVersions" =>
-      val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
-      clientName match {
-        case Some(clientName) =>
-          val commonVersions = new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(None).getOrElse {
-            Utils.error("Get desired versions error")
-          }
-          val clientVersions = new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(Some(clientName))
-            .getOrElse(Map.empty)
-          log.info("Common desired versions:")
-          commonVersions.foreach { case (serviceName, version) => {
-            if (!clientVersions.contains(serviceName)) log.info(s"  ${serviceName} ${version}")
-          }
-          }
-          if (!clientVersions.isEmpty) {
-            log.info("Client desired versions:")
-            clientVersions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
-          }
-
-        case None =>
-          new Builder(developerDistribution, config.adminRepositoryUrl).getDesiredVersions(None) match {
-            case Some(versions) =>
-              log.info("Desired versions:")
-              versions.foreach { case (serviceName, version) => log.info(s"  ${serviceName} ${version}") }
-            case None =>
-              Utils.error("Get desired versions error")
-          }
-      }
-    case "setDesiredVersions" =>
-      val clientName: Option[ClientName] = arguments.getOptionValue("clientName")
-      var servicesVersions = Map.empty[ServiceName, Option[BuildVersion]]
-
-      for (services <- arguments.getOptionValue("services")) {
-        val servicesRecords: Seq[String] = services.split(",")
-        for (record <- servicesRecords) {
-          val fields = record.split(":")
-          if (fields.size == 2) {
-            val version = if (fields(1) != "-") {
-              Some(BuildVersion.parse(fields(1)))
-            } else {
-              None
-            }
-            servicesVersions += (fields(0) -> version)
-          } else {
-            Utils.error(s"Invalid service record ${record}")
-          }
+      case _ =>
+        val distribution = System.getenv("distribution")
+        if (distribution == null) {
+          Utils.error("Environment variable distribution is not defined")
         }
-      }
+        val distributionUrl = System.getenv("distributionUrl")
+        if (distributionUrl == null) {
+          Utils.error("Environment variable distributionUrl is not defined")
+        }
+        val accessToken = System.getenv("accessToken")
+        if (accessToken == null) {
+          Utils.error("Environment variable accessToken is not defined")
+        }
 
-      if (!new Builder(developerDistribution, config.adminRepositoryUrl).setDesiredVersions(clientName, servicesVersions)) {
-        Utils.error("Set desired versions error")
-      }
+        val arguments = Arguments.parse(args.drop(1), Set.empty)
 
-      servicesVersions.get(Common.DistributionServiceName) match {
-        case Some(Some(distributionVersion)) =>
-          log.info("Update distribution server")
-          for (version <- developerDistribution.getServerVersion(developerDistribution.getDistributionVersionPath)) {
-            if (version.client == distributionVersion.client) {
-              if (!developerDistribution.waitForServerUpdated(developerDistribution.getDistributionVersionPath, distributionVersion)) {
-                log.error("Can't update distribution server")
+        val httpClient = new HttpClientImpl(distributionUrl)
+        httpClient.accessToken = Some(accessToken)
+        val asyncDistributionClient = new DistributionClient(httpClient)
+        val distributionClient = new SyncDistributionClient(asyncDistributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+
+        command match {
+          case "buildDeveloperVersion" =>
+            val author = arguments.getValue("author")
+            val service = arguments.getValue("service")
+            val version = DeveloperVersion.parse(arguments.getValue("version"))
+            val buildClientVersion = arguments.getOptionBooleanValue("buildClientVersion").getOrElse(false)
+            val comment = arguments.getValue("comment")
+            val sourceBranches = arguments.getValue("sources").parseJson.convertTo[Seq[SourceConfig]]
+            val developerBuilder = new DeveloperBuilder(new File("."), distribution)
+            if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {
+              Utils.error("Developer version is not generated")
+            }
+            if (buildClientVersion) {
+              val clientBuilder = new ClientBuilder(new File("."))
+              val clientVersion = ClientDistributionVersion.from(distribution, version, 0)
+              val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> clientVersion.toString)
+              if (!clientBuilder.buildClientVersion(distributionClient, service, clientVersion, author, buildArguments)) {
+                Utils.error("Client version is not generated")
               }
             }
-          }
-        case _ =>
-          servicesVersions.get(Common.ScriptsServiceName) match {
-            case Some(Some(scriptsVersion)) =>
-              log.info("Update distribution server scripts")
-              for (version <- developerDistribution.getServerVersion(developerDistribution.getScriptsVersionPath)) {
-                if (version.client == scriptsVersion.client) {
-                  if (!developerDistribution.waitForServerUpdated(developerDistribution.getScriptsVersionPath, scriptsVersion)) {
-                    log.error("Can't update distribution server scripts")
-                  }
-                }
-              }
-            case _ =>
-          }
-      }
-    case command =>
-      Utils.error(s"Invalid command ${command}\n${usage()}")
+          case "buildClientVersion" =>
+            val author = arguments.getValue("author")
+            val service = arguments.getValue("service")
+            val version = ClientDistributionVersion.parse(arguments.getValue("version"))
+            val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> version.toString)
+            val clientBuilder = new ClientBuilder(new File("."))
+            if (!clientBuilder.buildClientVersion(distributionClient, service, version, author, buildArguments)) {
+              Utils.error("Client version is not generated")
+            }
+        }
+    }
+  } catch {
+    case ex: Exception =>
+      println(s"Error: ${ex.getMessage}")
+      ex.printStackTrace()
+      sys.exit(1)
   }
+
+  sys.exit()
 }

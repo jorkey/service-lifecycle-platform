@@ -1,12 +1,22 @@
 package com.vyulabs.update.updater.uploaders
 
-import com.vyulabs.update.common.Common
-import com.vyulabs.update.distribution.client.ClientDistributionDirectoryClient
-import com.vyulabs.update.info.FaultInfo
-import com.vyulabs.update.utils.{IOUtils, Utils, ZipUtils}
-import com.vyulabs.update.version.BuildVersion
+import com.vyulabs.update.common.common.{Common, IdGenerator}
+import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
+import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
+import com.vyulabs.update.common.info.FaultInfo._
+import com.vyulabs.update.common.info.{FaultInfo, FileInfo, ProfiledServiceName, ServiceFaultReport}
+import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
+import com.vyulabs.update.common.version.{Build, DeveloperDistributionVersion}
 import org.slf4j.Logger
 import spray.json.enrichAny
+
+import java.io.File
+import java.nio.file.Files
+import java.util.Date
+import java.util.concurrent.TimeUnit
+import scala.collection.immutable.Queue
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 import java.io.File
 import java.nio.file.Files
@@ -17,10 +27,17 @@ import scala.collection.immutable.Queue
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
   * Copyright FanDate, Inc.
   */
-case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
+trait FaultUploader {
+  def addFaultReport(info: FaultInfo, reportFilesTmpDir: Option[File]): Unit
+  def close(): Unit
+}
 
-class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirectoryClient)
-                   (implicit log: Logger) extends Thread { self =>
+class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient[SyncSource])
+                        (implicit executionContext: ExecutionContext, log: Logger) extends Thread with FaultUploader { self =>
+  private case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
+
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+  private val idGenerator = new IdGenerator()
   private var faults = Queue.empty[FaultReport]
   private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024
   private var stopping = false
@@ -29,9 +46,9 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
     Utils.error(s"Can't create directory ${archiveDir}")
   }
 
-  def addFaultReport(fault: FaultReport): Unit = {
+  def addFaultReport(info: FaultInfo, reportFilesTmpDir: Option[File]): Unit = {
     self.synchronized {
-      faults = faults.enqueue(fault)
+      faults = faults.enqueue(FaultReport(info, reportFilesTmpDir))
       self.notify()
     }
   }
@@ -70,18 +87,19 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
         log.error(s"Can't create directory ${serviceDir}")
         return false
       }
-      val archivedFileName = s"${fault.info.profiledServiceName}_${fault.info.state.version.getOrElse(BuildVersion.empty)}_${fault.info.instanceId}_${Utils.serializeISO8601Date(fault.info.date)}_fault.zip"
+      val profiledServiceName = ProfiledServiceName(fault.info.service, fault.info.serviceProfile)
+      val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(DeveloperDistributionVersion("???", Build.empty))}_${fault.info.instance}_${Utils.serializeISO8601Date(fault.info.time)}_fault.zip"
       val archiveFile = new File(serviceDir, archivedFileName)
-      val tmpDirectory = Files.createTempDirectory(s"fault-${fault.info.profiledServiceName}").toFile
+      val tmpDirectory = Files.createTempDirectory(s"fault-${profiledServiceName}").toFile
       val faultInfoFile = new File(tmpDirectory, Common.FaultInfoFileName)
-      val logTailFile = new File(tmpDirectory, s"${fault.info.profiledServiceName}.log")
+      val logTailFile = new File(tmpDirectory, s"${profiledServiceName}.log")
       try {
-        if (!IOUtils.writeJsonToFile(faultInfoFile, fault.info.toJson)) {
+        if (!IoUtils.writeJsonToFile(faultInfoFile, fault.info.toJson)) {
           log.error(s"Can't write file with state")
           return false
         }
         val logs = fault.info.logTail.foldLeft(new String) { (sum, line) => sum + '\n' + line }
-        if (!IOUtils.writeBytesToFile(logTailFile, logs.getBytes("utf8"))) {
+        if (!IoUtils.writeBytesToFile(logTailFile, logs.getBytes("utf8"))) {
           log.error(s"Can't write file with tail of logs")
           return false
         }
@@ -91,14 +109,23 @@ class FaultUploader(archiveDir: File, clientDirectory: ClientDistributionDirecto
           return false
         }
       } finally {
-        IOUtils.deleteFileRecursively(tmpDirectory)
+        IoUtils.deleteFileRecursively(tmpDirectory)
       }
-      fault.reportFilesTmpDir.foreach(IOUtils.deleteFileRecursively(_))
-      if (!clientDirectory.uploadServiceFault(fault.info.profiledServiceName.name, archiveFile)) {
+      val reportFiles = fault.reportFilesTmpDir.map(_.listFiles().toSeq
+          .map(file => FileInfo(file.getName, file.length())))
+        .getOrElse(Seq.empty[FileInfo])
+      fault.reportFilesTmpDir.foreach(IoUtils.deleteFileRecursively(_))
+      val id = idGenerator.generateId(8)
+      if (!syncDistributionClient.uploadFaultReport(id, archiveFile)) {
         log.error(s"Can't upload service fault file")
         return false
       }
-      IOUtils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, Set(archiveFile))
+      if (!syncDistributionClient.graphqlRequest(
+          updaterMutations.addFaultReportInfo(ServiceFaultReport(id, fault.info, reportFiles))).getOrElse(false)) {
+        log.error(s"Can't upload service fault info")
+        return false
+      }
+      IoUtils.maybeFreeSpace(serviceDir, maxServiceDirectoryCapacity, Set(archiveFile))
       true
     } catch {
       case ex: Exception =>

@@ -1,0 +1,19 @@
+overwrite: true
+schema: "http://localhost:8000/graphql"
+config:
+  scalars:
+    URL: "string"
+    Long: "number"
+    Date: "Date"
+#    BigInt: "../common#BigInt"
+    BigInt: "BigInt"
+documents: "**/*.graphql"
+generates:
+  src/generated/graphql.tsx:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
+  src/generated/graphql.schema.json:
+    plugins:
+      - "introspection"
