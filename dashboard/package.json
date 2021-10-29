@@ -62,7 +62,7 @@
     "react-router-dom": "^5.3.0",
     "react-scripts": "^3.4.4",
     "recompose": "^0.30.0",
-    "underscore": "^1.13.1",
+    "underscore": "^1.12.1",
     "universal-cookie": "^4.0.4",
     "uuid": "^3.3.2",
     "validate.js": "^0.13.1",
