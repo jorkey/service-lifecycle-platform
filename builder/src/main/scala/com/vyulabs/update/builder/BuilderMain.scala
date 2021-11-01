@@ -29,10 +29,10 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildProviderDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
-    "       <distributionTitle=?> <mongoDbName=?> <author=?> [sourceBranches==?[,?]...] [test=true]\n" +
-    "    buildConsumerDistribution <cloudProvider=?> <distribution=?> <distributionDirectory=?>\n" +
-    "       <distributionTitle=?> <mongoDbName=?> <author=?> <provider=?> <providerUrl=?>\n" +
+    "    buildProviderDistribution [cloudProvider=?] <distribution=?> <distributionDirectory=?>\n" +
+    "       <distributionTitle=?> <mongoDbName=?> [sourceBranches==?[,?]...]\n" +
+    "    buildConsumerDistribution [cloudProvider=?] <distribution=?> <distributionDirectory=?>\n" +
+    "       <distributionTitle=?> <mongoDbName=?> <provider=?> <providerUrl=?>\n" +
     "       <providerAdminPassword=?> <consumerAccessToken=?> <profile=?> [testConsumerMatch=?]\n" +
     "    buildDeveloperVersion <service=?> <version=?> <sources=?> [buildClientVersion=true/false] <comment=?>\n" +
     "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
@@ -46,14 +46,12 @@ object BuilderMain extends App {
       case "buildProviderDistribution" | "buildConsumerDistribution" =>
         val arguments = Arguments.parse(args.drop(1), Set.empty)
 
-        val cloudProvider = arguments.getValue("cloudProvider")
+        val cloudProvider = arguments.getOptionValue("cloudProvider").getOrElse("None")
         val distributionDirectory = arguments.getValue("distributionDirectory")
         val distribution = arguments.getValue("distribution")
         val distributionTitle = arguments.getValue("distributionTitle")
         val mongoDbName = arguments.getValue("mongoDbName")
-        val author = arguments.getValue("author")
         val port = arguments.getOptionIntValue("port").getOrElse(8000)
-        val test = arguments.getOptionBooleanValue("test").getOrElse(false)
 
         val startService = () => {
           ProcessUtils.runProcess("/bin/sh", Seq(".create_distribution_service.sh"), Map.empty,
@@ -63,7 +61,7 @@ object BuilderMain extends App {
           new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false, port)
 
         if (command == "buildProviderDistribution") {
-          if (!distributionBuilder.buildDistributionFromSources(author)) {
+          if (!distributionBuilder.buildDistributionFromSources("builder")) {
             Utils.error("Build distribution error")
           }
         } else {
@@ -73,7 +71,7 @@ object BuilderMain extends App {
           val consumerAccessToken = arguments.getValue("consumerAccessToken")
           val testConsumer = arguments.getOptionValue("testConsumer")
           if (!distributionBuilder.buildFromProviderDistribution(
-                provider, providerUrl, providerAdminPassword, consumerAccessToken, testConsumer, author) ||
+                provider, providerUrl, providerAdminPassword, consumerAccessToken, testConsumer, "builder") ||
               !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }
