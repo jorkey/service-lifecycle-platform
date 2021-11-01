@@ -50,7 +50,7 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
     "distribution": "undefined"
   },
   "versions": {
-    "maxHistorySize": 100
+    "maxHistorySize": 25
   },
   "instanceState": {
     "expirationTimeout": { "length": 60, "unit": "SECONDS" }

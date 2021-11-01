@@ -31,7 +31,7 @@ object BuilderConfig {
 case class VersionsConfig(maxHistorySize: Int)
 
 object VersionsConfig {
-  implicit val versionHistoryJson = jsonFormat1(VersionsConfig.apply)
+  implicit val versionsConfigJson = jsonFormat1(VersionsConfig.apply)
 }
 
 case class InstanceStateConfig(expirationTimeout: FiniteDuration)
