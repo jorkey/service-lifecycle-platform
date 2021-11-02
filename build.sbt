@@ -9,6 +9,8 @@ scalaVersion in ThisBuild := "2.12.12"
 parallelExecution in Test := false
 concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
 
+trapExit in builder := false
+
 lazy val update = project
   .in(file("."))
   .disablePlugins(sbtassembly.AssemblyPlugin)
@@ -62,7 +64,7 @@ lazy val distribution = project
 lazy val dashboard = project
   .in(file("dashboard"))
   .settings(
-    resourceGenerators in Compile += buildUi.init
+    resourceGenerators in Compile += buildDashboard.init
   )
 
 lazy val tests = project
@@ -209,7 +211,7 @@ lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
   }
 }
 
-lazy val buildUi = taskKey[Seq[File]]("Generate dashboard resources") := {
+lazy val buildDashboard = taskKey[Seq[File]]("Generate dashboard resources") := {
 //  buildReactScripts.init.value
   val webapp = baseDirectory.value / "build"
   val managed = resourceManaged.value

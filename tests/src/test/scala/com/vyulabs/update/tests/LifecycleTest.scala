@@ -9,6 +9,7 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   val lifecycle = new SimpleLifecycle("test-distribution", 8000)
 
   override protected def afterAll(): Unit = {
+    ProcessHandle.current().children().forEach(handle => handle.destroy())
     lifecycle.close()
   }
 

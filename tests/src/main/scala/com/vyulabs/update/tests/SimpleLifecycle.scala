@@ -39,9 +39,9 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
   private val dbName = s"${distribution}-test"
 
-  private val distributionBuilder = new DistributionBuilder("None", startDistribution,
+  private val distributionBuilder = new DistributionBuilder("None",
     new DistributionDirectory(distributionDir), distribution, "Test distribution server",
-    dbName, false, distributionPort)
+    dbName, false, distributionPort, false)
   private val clientBuilder = new ClientBuilder(builderDir)
 
   private val adminClient = new SyncDistributionClient(
@@ -51,21 +51,6 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
   private val testSourceRepository = GitRepository.createRepository(testServiceSourcesDir, false).getOrElse {
     sys.error("Can't create Git repository")
-  }
-
-  private def startDistribution(): Boolean = {
-    log.info("Start distribution server")
-    val startProcess = ChildProcess.start("/bin/sh", Seq("distribution.sh"), Map.empty, distributionDir)
-    startProcess.onComplete {
-      case Success(process) =>
-        log.info("Distribution server started")
-        synchronized { processes += process }
-        process.onTermination().map(_ => synchronized{ processes -= process })
-      case Failure(ex) =>
-        sys.error("Can't start distribution process")
-        ex.printStackTrace()
-    }
-    true
   }
 
   Await.result(new MongoDb(dbName).dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
@@ -92,7 +77,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     }
     val consumerAccessToken = JWT.encodeAccessToken(AccessToken(distribution), config.jwtSecret)
     if (!distributionBuilder.buildFromProviderDistribution(provider.distribution,
-        s"http://localhost:${provider.distributionPort}", "admin", consumerAccessToken,
+        s"http://localhost:${provider.distributionPort}", consumerAccessToken,
         Some(Common.CommonConsumerProfile), "ak")) {
       sys.error("Can't build distribution server")
     }

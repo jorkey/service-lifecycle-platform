@@ -2,15 +2,15 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
-import com.vyulabs.update.common.common.{Common, JWT}
-import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId}
+import com.vyulabs.update.common.common.{Common}
+import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
 import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.process.ProcessUtils
+import com.vyulabs.update.common.process.{ChildProcess, ProcessUtils}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import org.slf4j.{Logger, LoggerFactory}
@@ -20,15 +20,16 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
-                          distributionDirectory: DistributionDirectory,
+class DistributionBuilder(cloudProvider: String, distributionDirectory: DistributionDirectory,
                           distribution: String, distributionTitle: String,
-                          mongoDbName: String, mongoDbTemporary: Boolean, port: Int)
+                          mongoDbName: String, mongoDbTemporary: Boolean,
+                          port: Int, installService: Boolean)
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -89,13 +90,12 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     true
   }
 
-  def buildFromProviderDistribution(provider: DistributionId, providerURL: String,
-                                    providerAdminPassword: String, consumerAccessToken: String,
+  def buildFromProviderDistribution(provider: DistributionId, providerURL: String, consumerAccessToken: String,
                                     testConsumer: Option[String], author: String): Boolean = {
     this.providerDistributionName = Some(provider)
     adminProviderClient = Some(new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(
-        Utils.addCredentialsToUrl(providerURL, Common.AdminAccount, providerAdminPassword))), FiniteDuration(60, TimeUnit.SECONDS)))
+      new DistributionClient(new HttpClientImpl(providerURL, Some(consumerAccessToken))),
+        FiniteDuration(60, TimeUnit.SECONDS)))
 
     log.info("")
     log.info(s"########################### Download and generate client versions")
@@ -238,7 +238,7 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
         log.error(s"Can't subscribe to task ${task} logs")
         return false
       }
-      var lines = Option.empty[Seq[SequencedServiceLogLine]]
+      val lines = Option.empty[Seq[SequencedServiceLogLine]]
       do {
         for (lines <- source.next()) {
           lines.foreach(line => {
@@ -262,23 +262,6 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     }
     log.info(s"--------------------------- Consumer distribution server is updated successfully")
     true
-  }
-
-  def waitForServerAvailable(waitingTimeoutSec: Int = 10000)
-                            (implicit log: Logger): Boolean = {
-    val client = adminDistributionClient.getOrElse {
-      sys.error("No distribution client")
-    }
-    log.info(s"Wait for distribution server become available")
-    for (_ <- 0 until waitingTimeoutSec) {
-      if (client.available()) {
-        Thread.sleep(1000)
-        return true
-      }
-      Thread.sleep(1000)
-    }
-    log.error(s"Timeout of waiting for distribution server become available")
-    false
   }
 
   def setDeveloperDesiredVersions(versions: Seq[DeveloperDesiredVersionDelta]): Boolean = {
@@ -342,13 +325,8 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
 
     adminDistributionClient = Some(new SyncDistributionClient(
       new DistributionClient(new HttpClientImpl(makeUrlWithCredentials("admin"))), FiniteDuration(60, TimeUnit.SECONDS)))
-    log.info(s"--------------------------- Start distribution service")
-    if (!startDistributionService()) {
-      log.error("Can't start distribution service")
-      return false
-    }
 
-    true
+    startDistributionServer()
   }
 
   def addUserAccount(account: AccountId, name: String, role: AccountRole, password: String, properties: UserAccountProperties): Boolean = {
@@ -485,20 +463,46 @@ class DistributionBuilder(cloudProvider: String, startService: () => Boolean,
     Utils.addCredentialsToUrl(s"${protocol}://localhost:${port}", user, user)
   }
 
-  private def startDistributionService(): Boolean = {
-    log.info(s"--------------------------- Start service")
-    if (!startService()) {
-      log.error("Can't start service process")
-      return false
+  private def startDistributionServer(): Boolean = {
+    if (installService) {
+      log.info("--------------------------- Install and start distribution service")
+      ProcessUtils.runProcess("/bin/sh", Seq(".create_distribution_service.sh"), Map.empty,
+        distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)
+    } else {
+      log.info("--------------------------- Start distribution server")
+      val startProcess = ChildProcess.start("/bin/sh", Seq("distribution.sh"), Map.empty,
+        distributionDirectory.directory)
+      startProcess.onComplete {
+        case Success(process) =>
+          log.info("Distribution server started")
+        case Failure(ex) =>
+          sys.error("Can't start distribution process")
+          ex.printStackTrace()
+      }
     }
-    log.info(s"--------------------------- Waiting for distribution service became available")
     if (!waitForServerAvailable(10000)) {
-      log.error("Can't start distribution server")
       return false
     }
-    log.info("Distribution server is available")
 
     Thread.sleep(5000)
     true
+  }
+
+  def waitForServerAvailable(waitingTimeoutSec: Int = 10000)
+                            (implicit log: Logger): Boolean = {
+    val client = adminDistributionClient.getOrElse {
+      sys.error("No distribution client")
+    }
+    log.info(s"Wait for distribution server become available")
+    for (_ <- 0 until waitingTimeoutSec) {
+      if (client.available()) {
+        log.info("Distribution server is available")
+        Thread.sleep(5000)
+        return true
+      }
+      Thread.sleep(1000)
+    }
+    log.error(s"Timeout of waiting for distribution server become available")
+    false
   }
 }

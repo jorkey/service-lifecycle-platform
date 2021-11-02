@@ -30,10 +30,10 @@ object BuilderMain extends App {
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
     "    buildProviderDistribution [cloudProvider=?] <distribution=?> <distributionDirectory=?>\n" +
-    "       <distributionTitle=?> <mongoDbName=?> [sourceBranches==?[,?]...]\n" +
+    "       <distributionTitle=?> <mongoDbName=?> [sourceBranches=?[,?]...] [serviceOS=?]\n" +
     "    buildConsumerDistribution [cloudProvider=?] <distribution=?> <distributionDirectory=?>\n" +
     "       <distributionTitle=?> <mongoDbName=?> <provider=?> <providerUrl=?>\n" +
-    "       <providerAdminPassword=?> <consumerAccessToken=?> <profile=?> [testConsumerMatch=?]\n" +
+    "       <consumerAccessToken=?> [testConsumerMatch=?] [serviceOS=?]\n" +
     "    buildDeveloperVersion <service=?> <version=?> <sources=?> [buildClientVersion=true/false] <comment=?>\n" +
     "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
 
@@ -52,13 +52,11 @@ object BuilderMain extends App {
         val distributionTitle = arguments.getValue("distributionTitle")
         val mongoDbName = arguments.getValue("mongoDbName")
         val port = arguments.getOptionIntValue("port").getOrElse(8000)
+        val serviceOS = arguments.getOptionBooleanValue("serviceOS").getOrElse(false)
 
-        val startService = () => {
-          ProcessUtils.runProcess("/bin/sh", Seq(".create_distribution_service.sh"), Map.empty,
-            new File(distributionDirectory), Some(0), None, ProcessUtils.Logging.Realtime)
-        }
-        val distributionBuilder = new DistributionBuilder(cloudProvider, startService,
-          new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false, port)
+        val distributionBuilder = new DistributionBuilder(cloudProvider,
+          new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false,
+          port, serviceOS)
 
         if (command == "buildProviderDistribution") {
           if (!distributionBuilder.buildDistributionFromSources("builder")) {
@@ -67,11 +65,10 @@ object BuilderMain extends App {
         } else {
           val provider = arguments.getValue("provider")
           val providerUrl = arguments.getValue("providerUrl")
-          val providerAdminPassword = arguments.getValue("providerAdminPassword")
           val consumerAccessToken = arguments.getValue("consumerAccessToken")
           val testConsumer = arguments.getOptionValue("testConsumer")
           if (!distributionBuilder.buildFromProviderDistribution(
-                provider, providerUrl, providerAdminPassword, consumerAccessToken, testConsumer, "builder") ||
+                provider, providerUrl, consumerAccessToken, testConsumer, "builder") ||
               !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }

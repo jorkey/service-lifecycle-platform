@@ -31,19 +31,15 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
   val providerMongoDbName = "BuildDistributionTest-provider"
   val consumerMongoDbName = "BuildDistributionTest-consumer"
 
-  var processes = Set.empty[ChildProcess]
-
   override protected def beforeAll(): Unit = {
     Await.result(new MongoDb(providerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
     Await.result(new MongoDb(consumerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
   }
 
   override protected def afterAll(): Unit = {
-    synchronized {
-      processes.foreach(_.terminate())
-    }
-    Await.result(new MongoDb(providerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
-    Await.result(new MongoDb(consumerMongoDbName).dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+    ProcessHandle.current().children().forEach(handle => handle.destroy())
+    Await.result(new MongoDb(providerMongoDbName).dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
+    Await.result(new MongoDb(consumerMongoDbName).dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
   }
 
   it should "build provider and consumer distribution servers" in {
@@ -51,9 +47,9 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     log.info(s"########################### Build provider distribution from sources")
     log.info("")
     val providerDistributionBuilder = new DistributionBuilder(
-      "None", () => startService(providerDistributionDir), new DistributionDirectory(providerDistributionDir),
+      "None", new DistributionDirectory(providerDistributionDir),
       providerDistributionName, "Test developer distribution server",
-      providerMongoDbName,true, 8000)
+      providerMongoDbName,true, 8000, false)
     assert(providerDistributionBuilder.buildDistributionFromSources("ak"))
     assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName,
       "Distribution Consumer", ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8001")))
@@ -62,30 +58,13 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     log.info(s"########################### Build consumer distribution from provider distribution")
     log.info("")
     val consumerDistributionBuilder = new DistributionBuilder(
-      "None", () => startService(consumerDistributionDir), new DistributionDirectory(consumerDistributionDir),
+      "None", new DistributionDirectory(consumerDistributionDir),
       consumerDistributionName, "Test client distribution server",
-      consumerMongoDbName,true, 8001)
-
+      consumerMongoDbName,true, 8001, false)
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
-      "http://localhost:8000", Common.AdminAccount,
+      "http://localhost:8000",
       JWT.encodeAccessToken(AccessToken(consumerDistributionName), providerDistributionBuilder.config.get.jwtSecret),
       Some(Common.CommonConsumerProfile), "ak"))
     assert(consumerDistributionBuilder.updateDistributionFromProvider())
-  }
-
-  def startService(directory: File): Boolean = {
-    log.info("Start distribution server")
-    val startProcess = ChildProcess.start("/bin/sh", Seq("distribution.sh"), Map.empty, directory)
-    startProcess.onComplete {
-      case Success(process) =>
-        log.info("Distribution server started")
-        synchronized {
-          this.processes += process
-        }
-      case Failure(ex) =>
-        sys.error("Can't start distribution process")
-        ex.printStackTrace()
-    }
-    true
   }
 }

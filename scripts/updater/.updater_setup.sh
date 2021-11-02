@@ -35,7 +35,7 @@ cat << EOF > updater.json
 }
 EOF
 
-sudo sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
+sudo -p "Enter 'sudo' password:" sh -c "cat << EOF > /etc/systemd/system/update-${name}.service
 [Unit]
 Description=${name}
 After=network.target
@@ -58,6 +58,6 @@ EOF
 "
 echo "Service ${name} is created"
 
-sudo systemctl daemon-reload
-sudo systemctl reenable update-${name}.service
-sudo systemctl restart update-${name}.service
+sudo -p "Enter 'sudo' password:" systemctl daemon-reload
+sudo -p "Enter 'sudo' password:" systemctl reenable update-${name}.service
+sudo -p "Enter 'sudo' password:" systemctl restart update-${name}.service

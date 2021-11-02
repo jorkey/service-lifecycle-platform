@@ -3,7 +3,7 @@ set -e
 
 function createService() {
   echo "Create distribution service"
-  sudo sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
+  sudo -p "Enter 'sudo' password:" sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
 [Unit]
 Description=Update distribution server
 After=network.target
@@ -25,9 +25,9 @@ EOF
 "
   echo "Start distribution service"
 
-  sudo systemctl daemon-reload
-  sudo systemctl reenable update-distribution.service
-  sudo systemctl restart update-distribution.service
+  sudo -p "Enter 'sudo' password:" systemctl daemon-reload
+  sudo -p "Enter 'sudo' password:" systemctl reenable update-distribution.service
+  sudo -p "Enter 'sudo' password:" systemctl restart update-distribution.service
 }
 
 createService
