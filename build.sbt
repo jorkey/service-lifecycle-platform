@@ -200,7 +200,7 @@ lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
 }
 
 lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
-//  installNpmModules.init.value
+  installNpmModules.init.value
   val task = streams.value
   task.log.info(s"Delete React build ...")
   IO.delete(baseDirectory.value / "build")
@@ -212,7 +212,7 @@ lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
 }
 
 lazy val buildDashboard = taskKey[Seq[File]]("Generate dashboard resources") := {
-//  buildReactScripts.init.value
+  buildReactScripts.init.value
   val webapp = baseDirectory.value / "build"
   val managed = resourceManaged.value
   for {

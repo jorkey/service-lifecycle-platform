@@ -32,7 +32,7 @@ else
   exit 1
 fi
 
-jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port} | .network.url=\"${url}\" | .builder.distribution=\"${builderDistribution}\"" >distribution.json <<EOF
+jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port} | .builder.distribution=\"${builderDistribution}\"" >distribution.json <<EOF
 {
   "distribution": "undefined",
   "title": "undefined",
