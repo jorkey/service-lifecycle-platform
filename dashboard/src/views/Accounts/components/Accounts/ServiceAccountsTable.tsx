@@ -4,14 +4,12 @@ import {
   useRemoveAccountMutation, useServiceAccountsInfoQuery,
 } from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
-import AccessTokenIcon from '@material-ui/icons/VpnKey';
 import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
-import {ServiceStatePopup} from "../../../Dashboard/components/Versions/ServiceState";
 import AccessTokenPopup from "./AccessTokenPopup";
 
 const useStyles = makeStyles(theme => ({

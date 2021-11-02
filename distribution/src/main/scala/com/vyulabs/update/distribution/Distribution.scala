@@ -113,12 +113,12 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                     }
                   }
                 }
-              } ~ get {
-                getFromResourceDirectory(uiStaticPathPrefix) ~
-                  pathPrefix("") {
-                    getFromResource(uiStaticPathPrefix + "/index.html", ContentType(`text/html`, `UTF-8`))
-                  }
               }
+            } ~ get {
+              getFromResourceDirectory(uiStaticPathPrefix) ~
+                pathPrefix("") {
+                  getFromResource(uiStaticPathPrefix + "/index.html", ContentType(`text/html`, `UTF-8`))
+                }
             }
           }
         }

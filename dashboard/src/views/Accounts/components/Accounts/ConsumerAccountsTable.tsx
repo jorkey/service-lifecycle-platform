@@ -11,6 +11,7 @@ import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
+import AccessTokenPopup from "./AccessTokenPopup";
 
 const useStyles = makeStyles(theme => ({
   accountsTable: {
@@ -42,6 +43,9 @@ const useStyles = makeStyles(theme => ({
     padding: '4px',
     paddingRight: '40px',
     textAlign: 'center'
+  },
+  action: {
+    padding: '0 0 0 0',
   },
   alert: {
     marginTop: 25
@@ -121,7 +125,11 @@ const ConsumerAccountsTable: React.FC<ConsumerAccountsTableProps> = props => {
         row.set('role', account.role.toString())
         row.set('profile', account.properties.profile)
         row.set('url', account.properties.url)
-        row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(account.account) }>
+        row.set('actions', [
+          <span key='0' className={classes.action}>
+            <AccessTokenPopup account={account.account}/>
+          </span>,
+          <Button key='1' onClick={ () => setDeleteConfirm(account.account) }>
             <DeleteIcon/>
           </Button>])
         rows.push(row)
