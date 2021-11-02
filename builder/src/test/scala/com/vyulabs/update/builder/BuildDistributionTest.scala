@@ -47,9 +47,9 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     log.info(s"########################### Build provider distribution from sources")
     log.info("")
     val providerDistributionBuilder = new DistributionBuilder(
-      "None", new DistributionDirectory(providerDistributionDir),
-      providerDistributionName, "Test developer distribution server",
-      providerMongoDbName,true, 8000, false)
+      "None", providerDistributionName,
+      providerDistributionDir, 8000, "Test developer distribution server",
+      providerMongoDbName, true, false)
     assert(providerDistributionBuilder.buildDistributionFromSources("ak"))
     assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName,
       "Distribution Consumer", ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8001")))
@@ -58,9 +58,9 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     log.info(s"########################### Build consumer distribution from provider distribution")
     log.info("")
     val consumerDistributionBuilder = new DistributionBuilder(
-      "None", new DistributionDirectory(consumerDistributionDir),
-      consumerDistributionName, "Test client distribution server",
-      consumerMongoDbName,true, 8001, false)
+      "None", consumerDistributionName,
+      consumerDistributionDir, 8001, "Test client distribution server",
+      consumerMongoDbName,true, false)
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
       "http://localhost:8000",
       JWT.encodeAccessToken(AccessToken(consumerDistributionName), providerDistributionBuilder.config.get.jwtSecret),

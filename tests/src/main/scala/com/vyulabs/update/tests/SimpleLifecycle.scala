@@ -40,8 +40,8 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   private val dbName = s"${distribution}-test"
 
   private val distributionBuilder = new DistributionBuilder("None",
-    new DistributionDirectory(distributionDir), distribution, "Test distribution server",
-    dbName, false, distributionPort, false)
+    distribution, distributionDir, distributionPort, "Test distribution server",
+    dbName, false, false)
   private val clientBuilder = new ClientBuilder(builderDir)
 
   private val adminClient = new SyncDistributionClient(

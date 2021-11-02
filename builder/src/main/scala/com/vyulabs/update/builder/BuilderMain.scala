@@ -29,10 +29,10 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildProviderDistribution [cloudProvider=?] <distribution=?> <distributionDirectory=?>\n" +
-    "       <distributionTitle=?> <mongoDbName=?> [sourceBranches=?[,?]...] [serviceOS=?]\n" +
-    "    buildConsumerDistribution [cloudProvider=?] <distribution=?> <distributionDirectory=?>\n" +
-    "       <distributionTitle=?> <mongoDbName=?> <provider=?> <providerUrl=?>\n" +
+    "    buildProviderDistribution [cloudProvider=?] <distribution=?> <directory=?>\n" +
+    "       <port=?> <title=?> <mongoDbName=?> [sourceBranches=?[,?]...] [serviceOS=?]\n" +
+    "    buildConsumerDistribution [cloudProvider=?] <distribution=?> <directory=?>\n" +
+    "       <port=?> <title=?> <mongoDbName=?> <provider=?> <providerUrl=?>\n" +
     "       <consumerAccessToken=?> [testConsumerMatch=?] [serviceOS=?]\n" +
     "    buildDeveloperVersion <service=?> <version=?> <sources=?> [buildClientVersion=true/false] <comment=?>\n" +
     "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
@@ -47,16 +47,15 @@ object BuilderMain extends App {
         val arguments = Arguments.parse(args.drop(1), Set.empty)
 
         val cloudProvider = arguments.getOptionValue("cloudProvider").getOrElse("None")
-        val distributionDirectory = arguments.getValue("distributionDirectory")
+        val directory = arguments.getValue("directory")
         val distribution = arguments.getValue("distribution")
-        val distributionTitle = arguments.getValue("distributionTitle")
+        val port = arguments.getIntValue("port")
+        val title = arguments.getValue("title")
         val mongoDbName = arguments.getValue("mongoDbName")
-        val port = arguments.getOptionIntValue("port").getOrElse(8000)
         val serviceOS = arguments.getOptionBooleanValue("serviceOS").getOrElse(false)
 
         val distributionBuilder = new DistributionBuilder(cloudProvider,
-          new DistributionDirectory(new File(distributionDirectory)), distribution, distributionTitle, mongoDbName, false,
-          port, serviceOS)
+          distribution, new File(directory), port, title, mongoDbName, false, serviceOS)
 
         if (command == "buildProviderDistribution") {
           if (!distributionBuilder.buildDistributionFromSources("builder")) {

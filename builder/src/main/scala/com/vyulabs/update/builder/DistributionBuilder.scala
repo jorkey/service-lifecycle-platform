@@ -26,12 +26,13 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class DistributionBuilder(cloudProvider: String, distributionDirectory: DistributionDirectory,
-                          distribution: String, distributionTitle: String,
-                          mongoDbName: String, mongoDbTemporary: Boolean,
-                          port: Int, installService: Boolean)
+class DistributionBuilder(cloudProvider: String, distribution: String,
+                          directory: File, port: Int, title: String,
+                          mongoDbName: String, mongoDbTemporary: Boolean, installService: Boolean)
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
+
+  private val distributionDirectory = new DistributionDirectory(directory)
 
   private val developerBuilder = new DeveloperBuilder(distributionDirectory.getBuilderDir(distribution), distribution)
   private val clientBuilder = new ClientBuilder(distributionDirectory.getBuilderDir(distribution))
@@ -290,29 +291,29 @@ class DistributionBuilder(cloudProvider: String, distributionDirectory: Distribu
   private def installDistributionService(scriptsVersion: ClientDistributionVersion,
                                          distributionVersion: ClientDistributionVersion,
                                          builderDistribution: DistributionId): Boolean = {
-    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), distributionDirectory.directory) ||
-      !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(distributionDirectory.directory, Common.UpdateSh)) ||
-      !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), distributionDirectory.directory)) {
+    if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), directory) ||
+      !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(directory, Common.UpdateSh)) ||
+      !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), directory)) {
       return false
     }
-    distributionDirectory.directory.listFiles().foreach { file =>
+    directory.listFiles().foreach { file =>
       if (file.getName.endsWith(".sh") && !IoUtils.setExecuteFilePermissions(file)) {
         return false
       }
     }
-    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion) ||
-      !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.ScriptsServiceName, scriptsVersion)) {
+    if (!IoUtils.writeDesiredServiceVersion(directory, Common.ScriptsServiceName, scriptsVersion) ||
+      !IoUtils.writeServiceVersion(directory, Common.ScriptsServiceName, scriptsVersion)) {
       return false
     }
-    if (!IoUtils.writeDesiredServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion) ||
-      !IoUtils.writeServiceVersion(distributionDirectory.directory, Common.DistributionServiceName, distributionVersion)) {
+    if (!IoUtils.writeDesiredServiceVersion(directory, Common.DistributionServiceName, distributionVersion) ||
+      !IoUtils.writeServiceVersion(directory, Common.DistributionServiceName, distributionVersion)) {
       return false
     }
     log.info(s"--------------------------- Make distribution config file")
-    val arguments = Seq(cloudProvider, distribution, distributionTitle, mongoDbName, mongoDbTemporary.toString, port.toString,
+    val arguments = Seq(cloudProvider, distribution, title, mongoDbName, mongoDbTemporary.toString, port.toString,
       builderDistribution)
     if (!ProcessUtils.runProcess("/bin/sh", ".make_distribution_config.sh" +: arguments, Map.empty,
-      distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
+      directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
       return false
     }
@@ -467,11 +468,11 @@ class DistributionBuilder(cloudProvider: String, distributionDirectory: Distribu
     if (installService) {
       log.info("--------------------------- Install and start distribution service")
       ProcessUtils.runProcess("/bin/sh", Seq(".create_distribution_service.sh"), Map.empty,
-        distributionDirectory.directory, Some(0), None, ProcessUtils.Logging.Realtime)
+        directory, Some(0), None, ProcessUtils.Logging.Realtime)
     } else {
       log.info("--------------------------- Start distribution server")
       val startProcess = ChildProcess.start("/bin/sh", Seq("distribution.sh"), Map.empty,
-        distributionDirectory.directory)
+        directory)
       startProcess.onComplete {
         case Success(process) =>
           log.info("Distribution server started")
