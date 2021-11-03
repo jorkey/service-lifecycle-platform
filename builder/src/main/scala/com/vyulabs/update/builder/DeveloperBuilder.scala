@@ -61,8 +61,8 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
           return false
         }
 
-        log.info(s"Generate version ${newVersion} of service ${service}")
-        val arguments = Map("version" -> newVersion.toString)
+        log.info(s"Generate version ${newDistributionVersion} of service ${service}")
+        val arguments = Map("version" -> newDistributionVersion.toString)
         if (!generateDeveloperVersion(service, getBuildDirectory(service, sourcesConfig.head.name), arguments)) {
           log.error(s"Can't generate version")
           return false

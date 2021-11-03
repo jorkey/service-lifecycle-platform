@@ -6,9 +6,9 @@ import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, Servi
 import com.vyulabs.update.common.config.{DistributionConfig, SourceConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.version.{DeveloperDistributionVersion, DeveloperVersion}
+import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.{TaskManager}
+import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
@@ -19,7 +19,7 @@ import spray.json._
 import java.io.IOException
 import java.util.Date
 
-trait DeveloperVersionUtils extends SprayJsonSupport {
+trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
 
   protected val directory: DistributionDirectory
   protected val collections: DatabaseCollections
@@ -51,10 +51,11 @@ trait DeveloperVersionUtils extends SprayJsonSupport {
           s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
           s"sources=${sources.toJson.compactPrint}", s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
         val (builderFuture, cancel) = runBuilderUtils.runBuilder(taskId, arguments)
-        val future = builderFuture.flatMap(_ => {
-          setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
-            Some(DeveloperDistributionVersion(config.distribution, version.build)))))
-        })
+        val future = builderFuture
+          .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
+            Some(DeveloperDistributionVersion(config.distribution, version.build))))))
+          .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
+            Some(ClientDistributionVersion(config.distribution, version.build, 0))))))
         (future, cancel)
       }).id
   }
