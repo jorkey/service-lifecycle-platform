@@ -5,7 +5,7 @@ import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, Servi
 import com.vyulabs.update.common.common.Misc
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
@@ -50,6 +50,7 @@ trait ClientVersionUtils {
                 Future()
               }))
           _ <- {
+            var clientVersions = Seq.empty[ClientDesiredVersionDelta]
             val results = versions
               .map(version => for {
                 clientVersion <- getClientVersionsInfo(Some(version.service), Some(version.version.distribution)).map(versions =>
@@ -60,11 +61,13 @@ trait ClientVersionUtils {
                                     .map(version => new ClientDistributionVersion(version.distribution, version.developerBuild, version.clientBuild+1))
                                     .getOrElse(ClientDistributionVersion.from(version.version, 0)))
                 } yield {
+                  clientVersions :+= ClientDesiredVersionDelta(version.service, Some(clientVersion))
                   buildClientVersion(task, version.service, clientVersion, author)
                 }
               )
             results.foreach(_.foreach(_._2.foreach(cancel => cancels :+= cancel)))
-            Future.sequence(results).map(results => Future.sequence(results.map(_._1))).flatten.map(_ => Unit)
+            Future.sequence(results).map(results => Future.sequence(results.map(_._1))).flatten
+              .flatMap(_ => setClientDesiredVersions(clientVersions))
           }
         } yield {}, Some(() => cancels.foreach(cancel => cancel())))
       }).id
