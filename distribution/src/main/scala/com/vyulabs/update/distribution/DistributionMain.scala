@@ -45,7 +45,8 @@ object DistributionMain extends App {
       Utils.error("No config")
     }
 
-    val mongoDb = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary)
+    val mongoDb = new MongoDb(config.mongoDb.name, config.mongoDb.connection,
+      config.mongoDb.temporary.getOrElse(false))
 
     val collections = new DatabaseCollections(mongoDb,
       config.instanceState.expirationTimeout,

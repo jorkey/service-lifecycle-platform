@@ -10,7 +10,7 @@ import spray.json.DefaultJsonProtocol._
 import java.io.File
 import scala.concurrent.duration.FiniteDuration
 
-case class MongoDbConfig(connection: String, name: String, temporary: Boolean)
+case class MongoDbConfig(connection: String, name: String, temporary: Option[Boolean])
 
 object MongoDbConfig {
   implicit val mongoDbConfigJson = jsonFormat3(MongoDbConfig.apply)

@@ -39,7 +39,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   def dbName = getClass.getSimpleName
 
-  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, true)
+  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, Some(true))
   def networkConfig = NetworkConfig(0, None)
   def builderConfig = BuilderConfig("test")
   def versionsConfig = VersionsConfig(3)
@@ -56,7 +56,8 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   val distributionDirectory = Files.createTempDirectory("distribution-").toFile
 
-  val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection, config.mongoDb.temporary); result(mongo.dropDatabase())
+  val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection,
+    config.mongoDb.temporary.getOrElse(false)); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo,
     instanceStateConfig.expirationTimeout,
     logsConfig.expirationTimeout,

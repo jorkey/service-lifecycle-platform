@@ -40,8 +40,7 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
   "jwtSecret": "undefined",
   "mongoDb" : {
     "connection" : "mongodb://localhost:27017",
-    "name": "undefined",
-    "test": false
+    "name": "undefined"
   },
   "network": {
     "port" : 8000

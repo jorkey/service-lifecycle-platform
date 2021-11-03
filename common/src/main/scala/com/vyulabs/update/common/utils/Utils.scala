@@ -135,7 +135,7 @@ object Utils {
     for (stackElement <- Thread.currentThread().getStackTrace) {
       log.debug(stackElement.toString)
     }
-    sys.exit(0)
+    sys.exit(1)
   }
 
   def restartToUpdate(msg: String)(implicit log: Logger): Nothing = {
