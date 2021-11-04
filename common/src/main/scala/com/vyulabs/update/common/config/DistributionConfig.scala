@@ -34,10 +34,10 @@ object VersionsConfig {
   implicit val versionsConfigJson = jsonFormat1(VersionsConfig.apply)
 }
 
-case class InstanceStateConfig(expirationTimeout: FiniteDuration)
+case class ServiceStatesConfig(expirationTimeout: FiniteDuration)
 
-object InstanceStateConfig {
-  implicit val instanceStateConfigJson = jsonFormat1(InstanceStateConfig.apply)
+object ServiceStatesConfig {
+  implicit val instanceStateConfigJson = jsonFormat1(ServiceStatesConfig.apply)
 }
 
 case class LogsConfig(expirationTimeout: FiniteDuration)
@@ -54,13 +54,13 @@ object FaultReportsConfig {
 
 case class DistributionConfig(distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
                               mongoDb: MongoDbConfig, network: NetworkConfig, builder: BuilderConfig,
-                              versions: VersionsConfig, instanceState: InstanceStateConfig,
+                              versions: VersionsConfig, serviceStates: ServiceStatesConfig,
                               logs: LogsConfig, faultReports: FaultReportsConfig)
 
 object DistributionConfig {
   implicit val distributionConfigJson = jsonFormat11((distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
                                                       mongoDb: MongoDbConfig, network: NetworkConfig, builder: BuilderConfig,
-                                                      versions: VersionsConfig, instanceState: InstanceStateConfig,
+                                                      versions: VersionsConfig, instanceState: ServiceStatesConfig,
                                                       logs: LogsConfig, faultReports: FaultReportsConfig) =>
     DistributionConfig.apply(distribution, title, instance, jwtSecret, mongoDb, network, builder,
       versions, instanceState, logs, faultReports))

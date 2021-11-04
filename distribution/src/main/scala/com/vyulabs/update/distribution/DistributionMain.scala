@@ -49,7 +49,7 @@ object DistributionMain extends App {
       config.mongoDb.temporary.getOrElse(false))
 
     val collections = new DatabaseCollections(mongoDb,
-      config.instanceState.expirationTimeout,
+      config.serviceStates.expirationTimeout,
       config.logs.expirationTimeout,
       true)
     val dir = new DistributionDirectory(new File("."))

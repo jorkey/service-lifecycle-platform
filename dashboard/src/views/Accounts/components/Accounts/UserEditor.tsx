@@ -214,7 +214,7 @@ const UserEditor: React.FC<AccountEditorParams> = props => {
           <CardHeader title='Password'/>
           <CardContent>
             { (editAccount && !changePassword)?
-              <Button
+              <Button className={classes.control}
                 color="primary"
                 variant="contained"
                 onClick={ () => setChangePassword(true) }

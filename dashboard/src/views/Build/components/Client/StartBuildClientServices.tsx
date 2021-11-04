@@ -13,7 +13,7 @@ import {
   DistributionProviderInfo,
   useBuildClientVersionsMutation,
   useClientVersionsInfoQuery,
-  useDeveloperVersionsInfoQuery,
+  useDeveloperVersionsInfoQuery, useProfileServicesQuery,
   useProviderDesiredVersionsLazyQuery,
   useProvidersInfoQuery, useProviderTestedVersionsLazyQuery,
   useSetProviderTestedVersionsMutation, useSetTestedVersionsMutation, useTestedVersionsLazyQuery,
@@ -136,7 +136,6 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       history.push(props.fromUrl + '/monitor')
     }
   })
-
   const [ setTestedVersions ] = useSetTestedVersionsMutation({
     onCompleted() {
       getTestedVersions()
@@ -146,6 +145,10 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onCompleted() {
       getProviderTestedVersions({ variables: { distribution: provider!.distribution } })
     }
+  })
+  const { data: selfServicesProfile } = useProfileServicesQuery({
+    variables: { profile: 'self' },
+    onError(err) { setError('Query self profile services error ' + err.message) },
   })
 
   const history = useHistory()
@@ -169,6 +172,10 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     setRows(makeRowsData())
   }, [ provider, providerVersions, developerVersions, clientVersions, testedVersions, providerTestedVersions ])
 
+  const hasSelfClient = (service: string) => {
+    return selfServicesProfile?.serviceProfiles?.find(profile => profile.services.find(s => s == service))
+  }
+
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
 
@@ -181,7 +188,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     } else if (developerVersions?.developerVersionsInfo) {
       developerVersions.developerVersionsInfo.forEach(
         info => {
-          if (info.version.distribution == localStorage.getItem('distribution')) {
+          if (hasSelfClient(info.service) &&
+              info.version.distribution == localStorage.getItem('distribution')) {
             servicesSet.add(info.service)
           }
         }

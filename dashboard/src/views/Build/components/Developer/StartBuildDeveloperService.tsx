@@ -86,9 +86,9 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
     onError(err) { setError('Query service sources error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const { data: ownServicesProfile } = useProfileServicesQuery({
-    variables: { profile: 'own' },
-    onError(err) { setError('Query own profile services error ' + err.message) },
+  const { data: selfServicesProfile } = useProfileServicesQuery({
+    variables: { profile: 'self' },
+    onError(err) { setError('Query self profile services error ' + err.message) },
   })
   const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
     variables: { service: service, version: { build: Version.parseBuild(version) },
@@ -195,7 +195,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   }
 
   const hasClient = () => {
-    return ownServicesProfile?.serviceProfiles?.find(profile => profile.services.find(s => s == service))
+    return selfServicesProfile?.serviceProfiles?.find(profile => profile.services.find(s => s == service))
   }
 
   return (

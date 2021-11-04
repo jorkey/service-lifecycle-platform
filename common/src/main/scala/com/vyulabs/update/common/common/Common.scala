@@ -46,7 +46,7 @@ object Common {
   val ProfileFileNameMatch = "profile-x.json"
 
   val CommonConsumerProfile = "common"
-  val OwnConsumerProfile = "own"
+  val SelfConsumerProfile = "self"
 
   val BuilderSh = "builder.sh"
   val UpdateSh = ".update.sh"

@@ -18,7 +18,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class DatabaseCollections(db: MongoDb,
-                          instanceStateExpireTimeout: FiniteDuration,
+                          serviceStatesExpireTimeout: FiniteDuration,
                           logLineExpireTimeout: FiniteDuration,
                           createIndices: Boolean)
                          (implicit system: ActorSystem, executionContext: ExecutionContext) {
@@ -132,7 +132,7 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.instance")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.service.date"), new IndexOptions()
-      .expireAfter(instanceStateExpireTimeout.length, instanceStateExpireTimeout.unit)) else Future()
+      .expireAfter(serviceStatesExpireTimeout.length, serviceStatesExpireTimeout.unit)) else Future()
     _ <- collection.dropItems()
   } yield collection, Sequences, createIndex = createIndices)
 

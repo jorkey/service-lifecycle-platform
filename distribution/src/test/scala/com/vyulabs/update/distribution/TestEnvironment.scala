@@ -43,7 +43,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   def networkConfig = NetworkConfig(0, None)
   def builderConfig = BuilderConfig("test")
   def versionsConfig = VersionsConfig(3)
-  def instanceStateConfig = InstanceStateConfig(FiniteDuration(60, TimeUnit.SECONDS))
+  def instanceStateConfig = ServiceStatesConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def logsConfig = LogsConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 

@@ -209,7 +209,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
   def addOwnServicesProfile(): Boolean = {
     log.info(s"--------------------------- Add own services profile")
     adminDistributionClient.get.graphqlRequest(
-      administratorMutations.addServicesProfile(Common.OwnConsumerProfile, Seq(Common.DistributionServiceName,
+      administratorMutations.addServicesProfile(Common.SelfConsumerProfile, Seq(Common.DistributionServiceName,
         Common.ScriptsServiceName, Common.BuilderServiceName, Common.UpdaterServiceName))).getOrElse(false)
   }
 
