@@ -51,7 +51,7 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
   "versions": {
     "maxHistorySize": 25
   },
-  "instanceState": {
+  "serviceStates": {
     "expirationTimeout": { "length": 60, "unit": "SECONDS" }
   },
   "logs": {
