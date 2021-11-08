@@ -30,7 +30,7 @@ object UpdaterMain extends App { self =>
   }
 
   def usage(): String = {
-    "Use: runServices <services=<service1>:[-<profile>][,...]>"
+    "Use: runServices services=<service1>:[-<profile>][,...]"
   }
 
   val command = args(0)

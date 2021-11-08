@@ -29,13 +29,13 @@ object BuilderMain extends App {
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
-    "    buildProviderDistribution [cloudProvider=?] <distribution=?> <directory=?>\n" +
-    "       <port=?> <title=?> <mongoDbName=?> [sourceBranches=?[,?]...] [serviceOS=?]\n" +
-    "    buildConsumerDistribution [cloudProvider=?] <distribution=?> <directory=?>\n" +
-    "       <port=?> <title=?> <mongoDbName=?> <provider=?> <providerUrl=?>\n" +
-    "       <consumerAccessToken=?> [testConsumerMatch=?] [serviceOS=?]\n" +
-    "    buildDeveloperVersion <service=?> <version=?> <sources=?> [buildClientVersion=true/false] <comment=?>\n" +
-    "    buildClientVersion <service=?> <developerVersion=?> <clientVersion=?>"
+    "    buildProviderDistribution [cloudProvider=?] distribution=? directory=?\n" +
+    "       port=? title=? mongoDbName=? [sourceBranches=?[,?]...] [serviceOS=?]\n" +
+    "    buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
+    "       port=? title=? mongoDbName=? provider=? providerUrl=?\n" +
+    "       consumerAccessToken=? [testConsumerMatch=?] [serviceOS=?]\n" +
+    "    buildDeveloperVersion service=? version=? sources=? [buildClientVersion=true/false] comment=?\n" +
+    "    buildClientVersion service=? developerVersion=? clientVersion=?"
 
   if (args.size < 1) Utils.error(usage())
 
