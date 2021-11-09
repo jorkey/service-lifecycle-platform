@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.{Common, IdGenerator}
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.FaultInfo._
-import com.vyulabs.update.common.info.{FaultInfo, FileInfo, ProfiledServiceName, ServiceFaultReport}
+import com.vyulabs.update.common.info.{FaultInfo, FileInfo, ServiceNameWithRole, ServiceFaultReport}
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.version.{Build, DeveloperDistributionVersion}
 import org.slf4j.Logger
@@ -87,7 +87,7 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
         log.error(s"Can't create directory ${serviceDir}")
         return false
       }
-      val profiledServiceName = ProfiledServiceName(fault.info.service, fault.info.serviceProfile)
+      val profiledServiceName = ServiceNameWithRole(fault.info.service, fault.info.serviceRole)
       val archivedFileName = s"${profiledServiceName}_${fault.info.state.version.getOrElse(DeveloperDistributionVersion("???", Build.empty))}_${fault.info.instance}_${Utils.serializeISO8601Date(fault.info.time)}_fault.zip"
       val archiveFile = new File(serviceDir, archivedFileName)
       val tmpDirectory = Files.createTempDirectory(s"fault-${profiledServiceName}").toFile

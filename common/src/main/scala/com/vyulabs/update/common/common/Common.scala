@@ -15,7 +15,7 @@ object Common {
   type ServicesProfileId = String
   type ServiceDirectory = String
   type FaultId = String
-  type ServiceInstanceProfile = String
+  type ServiceRole = String
 
   val Pm2DescFileName = "pm2_desc.json"
 

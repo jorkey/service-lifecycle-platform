@@ -2,7 +2,7 @@ package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.ThreadTimer
 import com.vyulabs.update.common.config.{LogWriterConfig, RunServiceConfig}
-import com.vyulabs.update.common.info.{FaultInfo, LogLine, ProfiledServiceName}
+import com.vyulabs.update.common.info.{FaultInfo, LogLine, ServiceNameWithRole}
 import com.vyulabs.update.common.logger.{LogReceiver, PrefixedLogger}
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, Build}
@@ -23,7 +23,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   behavior of "Service runner tests"
 
-  val service = ProfiledServiceName("test-service")
+  val service = ServiceNameWithRole("test-service")
 
   val faultUploaderStub = new FaultUploader {
     override def addFaultReport(info: FaultInfo, reportFilesTmpDir: Option[File]): Unit = {}

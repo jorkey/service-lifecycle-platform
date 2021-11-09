@@ -29,7 +29,7 @@ class ClientBuilder(builderDir: File) {
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
-  private val settingsDirectory = new InstallSettingsDirectory(builderDir)
+  private val installDirectory = new InstallSettingsDirectory(builderDir)
 
   def clientServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def clientBuildDir(service: ServiceId) = makeDir(new File(clientServiceDir(service), "build"))
@@ -98,15 +98,15 @@ class ClientBuilder(builderDir: File) {
     }
 
     log.info(s"Configure client version of service ${service}")
-    val configDir = settingsDirectory.getServiceSettingsDir(service)
-    if (configDir.exists()) {
+    val settingsDir = installDirectory.getServiceSettingsDir(service)
+    if (settingsDir.exists()) {
       log.info(s"Merge private settings files")
-      if (!mergeSettings(service, clientBuildDir(service), configDir, arguments)) {
+      if (!mergeSettings(service, clientBuildDir(service), settingsDir, arguments)) {
         return false
       }
     }
 
-    val privateDir = settingsDirectory.getServicePrivateDir(service)
+    val privateDir = installDirectory.getServicePrivateDir(service)
     if (privateDir.exists()) {
       log.info(s"Copy private files")
       if (!IoUtils.copyFile(privateDir, clientBuildDir(service))) {
@@ -129,7 +129,7 @@ class ClientBuilder(builderDir: File) {
 
   private def mergeInstallConfigFile(service: ServiceId)(implicit log: Logger): Boolean = {
     val buildConfigFile = new File(clientBuildDir(service), Common.InstallConfigFileName)
-    val clientConfigFile = settingsDirectory.getServiceInstallConfigFile(service)
+    val clientConfigFile = installDirectory.getServiceInstallConfigFile(service)
     if (clientConfigFile.exists()) {
       log.info(s"Merge ${Common.InstallConfigFileName} with client version")
       val clientConfig = IoUtils.parseConfigFile(clientConfigFile).getOrElse(return false)

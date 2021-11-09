@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.RunServiceConfig
-import com.vyulabs.update.common.info.{FaultInfo, LogLine, ProfiledServiceName}
+import com.vyulabs.update.common.info.{FaultInfo, LogLine, ServiceNameWithRole}
 import com.vyulabs.update.common.logger.{LogBuffer, LogReceiver}
 import com.vyulabs.update.common.logs.{LogFormat, LogWriter}
 import com.vyulabs.update.common.process.{ChildProcess, ProcessMonitor}
@@ -26,7 +26,7 @@ import scala.concurrent.{Await, ExecutionContext}
   * Copyright FanDate, Inc.
   */
 class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], instance: InstanceId,
-                    profiledServiceName: ProfiledServiceName, state: ServiceStateController,
+                    profiledServiceName: ServiceNameWithRole, state: ServiceStateController,
                     logUploader: Option[LogReceiver], faultUploader: FaultUploader)
                    (implicit log: Logger, timer: Timer, executionContext: ExecutionContext) {
   private val maxLogHistoryDirCapacity = 5L * 1000 * 1000 * 1000
@@ -180,7 +180,8 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
       } else {
         None
       }
-      val info = FaultInfo(new Date(), instance, profiledServiceName.name, new java.io.File(".").getCanonicalPath(), profiledServiceName.profile, state.getState(), logTail)
+      val info = FaultInfo(new Date(), instance, profiledServiceName.name, profiledServiceName.role,
+        new java.io.File(".").getCanonicalPath(), state.getState(), logTail)
       faultUploader.addFaultReport(info, reportFilesTmpDir)
       val restartOnFault = config.restartOnFault.getOrElse(true)
       if (restartOnFault && !stopping) {

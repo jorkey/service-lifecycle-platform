@@ -3,7 +3,7 @@ package com.vyulabs.update.updater
 import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorQueries
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.info.{ClientDesiredVersions, ProfiledServiceName}
+import com.vyulabs.update.common.info.{ClientDesiredVersions, ServiceNameWithRole}
 import com.vyulabs.update.common.logger.{LogUploader, PrefixedLogger, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.ClientDistributionVersion
@@ -30,12 +30,12 @@ object UpdaterMain extends App { self =>
   }
 
   def usage(): String = {
-    "Use: runServices services=<service1>:[-<profile>][,...]"
+    "Use: runServices services=<service1>[-<role>][,...]"
   }
 
   val command = args(0)
 
-  var blacklist = Map.empty[ProfiledServiceName, ClientDistributionVersion]
+  var blacklist = Map.empty[ServiceNameWithRole, ClientDistributionVersion]
 
   val config = UpdaterConfig().getOrElse {
     Utils.error("No config")
@@ -50,13 +50,13 @@ object UpdaterMain extends App { self =>
     case "runServices" =>
       val arguments = Arguments.parse(args.drop(1), Set("services"))
 
-      val servicesInstanceNames = arguments.getValue("services").split(",").foldLeft(Set.empty[ProfiledServiceName])((set, record) =>
-        set + ProfiledServiceName.parse(record)
+      val servicesInstanceNames = arguments.getValue("services").split(",").foldLeft(Set.empty[ServiceNameWithRole])((set, record) =>
+        set + ServiceNameWithRole.parse(record)
       )
 
       log.info(s"-------------------------- Start updater of version ${Utils.getManifestBuildVersion(Common.UpdaterServiceName)} of services ${servicesInstanceNames} -------------------------")
 
-      val updaterServiceName = ProfiledServiceName(Common.UpdaterServiceName)
+      val updaterServiceName = ServiceNameWithRole(Common.UpdaterServiceName)
 
       val instanceState = new StateUploader(new File("."), config.instance, servicesInstanceNames + updaterServiceName, distributionClient)
 
@@ -66,7 +66,7 @@ object UpdaterMain extends App { self =>
         val updaterServiceController = instanceState.getServiceStateController(updaterServiceName).get
         val selfUpdater = new SelfUpdater(updaterServiceController, distributionClient)
 
-        val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ProfiledServiceName, ServiceUpdater])((updaters, service) => {
+        val serviceUpdaters = servicesInstanceNames.foldLeft(Map.empty[ServiceNameWithRole, ServiceUpdater])((updaters, service) => {
           implicit val serviceLogger = new PrefixedLogger(s"Service ${service.toString}: ", log)
           updaters + (service -> new ServiceUpdater(config.instance, service, instanceState.getServiceStateController(service).get, distributionClient))
         })
@@ -144,7 +144,7 @@ object UpdaterMain extends App { self =>
                 Seq(Common.ScriptsServiceName, Common.UpdaterServiceName) ++ serviceUpdaters.map(_._1.name))) match {
               case Some(desiredVersions) =>
                 val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions)
-                var needUpdate = serviceUpdaters.foldLeft(Map.empty[ProfiledServiceName, ClientDistributionVersion])((map, updater) => {
+                var needUpdate = serviceUpdaters.foldLeft(Map.empty[ServiceNameWithRole, ClientDistributionVersion])((map, updater) => {
                   updater._2.needUpdate(desiredVersionsMap.get(updater._1.name)) match {
                     case Some(version) =>
                       map + (updater._1 -> version)
@@ -155,10 +155,10 @@ object UpdaterMain extends App { self =>
                 if (!needUpdate.isEmpty) {
                   selfUpdater.needUpdate(Common.UpdaterServiceName,
                       desiredVersionsMap.get(Common.UpdaterServiceName)).foreach(version =>
-                    needUpdate += (ProfiledServiceName(Common.UpdaterServiceName) -> version))
+                    needUpdate += (ServiceNameWithRole(Common.UpdaterServiceName) -> version))
                   selfUpdater.needUpdate(Common.ScriptsServiceName,
                       desiredVersionsMap.get(Common.ScriptsServiceName)).foreach(version =>
-                    needUpdate += (ProfiledServiceName(Common.ScriptsServiceName) -> version))
+                    needUpdate += (ServiceNameWithRole(Common.ScriptsServiceName) -> version))
                   val toUpdate = needUpdate.filterNot { case (service, version) =>
                     blacklist.get(service) match {
                       case Some(errorVersion) =>
@@ -186,7 +186,7 @@ object UpdaterMain extends App { self =>
           false
         }
 
-        def update(toUpdate: Map[ProfiledServiceName, ClientDistributionVersion]): Boolean = {
+        def update(toUpdate: Map[ServiceNameWithRole, ClientDistributionVersion]): Boolean = {
           var errorUpdates = toUpdate.filterNot { case (service, version) =>
             if (Common.isUpdateService(service.name)) {
               selfUpdater.beginServiceUpdate(service.name, version)

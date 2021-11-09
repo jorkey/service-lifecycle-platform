@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.Common.InstanceId
 import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.common.config.InstallConfig
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.info.{ProfiledServiceName, UpdateError}
+import com.vyulabs.update.common.info.{ServiceNameWithRole, UpdateError}
 import com.vyulabs.update.common.logger.LogUploader
 import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
@@ -20,7 +20,7 @@ import scala.concurrent.duration.FiniteDuration
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
   * Copyright FanDate, Inc.
   */
-class ServiceUpdater(instance: InstanceId, profiledServiceName: ProfiledServiceName,
+class ServiceUpdater(instance: InstanceId, profiledServiceName: ServiceNameWithRole,
                      state: ServiceStateController, distributionClient: DistributionClient[SyncSource])
                     (implicit timer: Timer, executionContext: ExecutionContext, log: Logger) {
   private var serviceRunner = Option.empty[ServiceRunner]
@@ -84,7 +84,9 @@ class ServiceUpdater(instance: InstanceId, profiledServiceName: ProfiledServiceN
 
       log.info(s"Install service")
       var args = Map.empty[String, String]
-      args += ("profile" -> profiledServiceName.profile)
+      for (role <- profiledServiceName.role) {
+        args += ("profile" -> role)
+      }
       args += ("version" -> newVersion.original.toString)
       args += ("PATH" -> System.getenv("PATH"))
 
@@ -144,7 +146,9 @@ class ServiceUpdater(instance: InstanceId, profiledServiceName: ProfiledServiceN
 
       log.info(s"Post install service")
       var args = Map.empty[String, String]
-      args += ("profile" -> profiledServiceName.profile)
+      for (role <- profiledServiceName.role) {
+        args += ("profile" -> role)
+      }
       args += ("version" -> newVersion.original.toString)
       args += ("PATH" -> System.getenv("PATH"))
 
@@ -188,7 +192,9 @@ class ServiceUpdater(instance: InstanceId, profiledServiceName: ProfiledServiceN
           log.info(s"Start service of version ${newVersion}")
 
           var parameters = Map.empty[String, String]
-          parameters += ("profile" -> profiledServiceName.profile)
+          for (role <- profiledServiceName.role) {
+            parameters += ("profile" -> role)
+          }
           parameters += ("version" -> newVersion.original.toString)
 
           val logUploader = if (runService.uploadLogs.getOrElse(false))

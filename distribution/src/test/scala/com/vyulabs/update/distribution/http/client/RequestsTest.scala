@@ -194,17 +194,17 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
     }
 
     it should "execute fault report requests" in {
-      assert(updaterClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "service1", "directory", "common", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assert(updaterClient.graphqlRequest(updaterMutations.addFaultReportInfo(ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
         Seq(FileInfo("fault1.info", 1234), FileInfo("core", 123456789))))).getOrElse(false))
 
-      assert(consumerClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "service1", "directory", "common", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assert(consumerClient.graphqlRequest(distributionMutations.addFaultReportInfo(ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
         Seq(FileInfo("fault2.info", 1234), FileInfo("core", 123456789))))).getOrElse(false))
 
-      assertResult(Some(Seq(DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "service1", "directory", "common", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assertResult(Some(Seq(DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
           Seq(FileInfo("fault1.info", 1234), FileInfo("core", 123456789)))))))(
         adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some(distributionName), Some("service1"), Some(2))))
 
-      assertResult(Some(Seq(DistributionFaultReport("consumer", ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "service1", "directory", "common", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
+      assertResult(Some(Seq(DistributionFaultReport("consumer", ServiceFaultReport("fault2", FaultInfo(stateDate, "instance1", "service1", None, "directory", ServiceState(stateDate, None, None, None, None, None, None, None), Seq()),
           Seq(FileInfo("fault2.info", 1234), FileInfo("core", 123456789)))))))(
         adminClient.graphqlRequest(administratorQueries.getFaultReportsInfo(Some("consumer"), Some("service1"), Some(2))))
 

@@ -41,7 +41,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)
     uploader.start()
 
-    val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", "directory", "profile1", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
+    val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
       Seq(FileInfo("file1", 1234))))
     result(collections.Faults_ReportsInfo.insert(report))
     waitForFaultReportUpload("fault1").success()
@@ -58,7 +58,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(2, TimeUnit.SECONDS), distributionClient)
     uploader.start()
 
-    val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", "directory", "profile1", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
+    val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
       Seq(FileInfo("file2", 1234))))
     result(collections.Faults_ReportsInfo.insert(report1))
     waitForFaultReportUpload( "fault1").failure(new IOException("upload error"))
@@ -70,7 +70,7 @@ class FaultReportsUploadTest extends TestEnvironment {
     waitForFaultReportUpload( "fault1").success()
     waitForAddServiceFaultReportInfo(report1).success(true)
 
-    val report2 = DistributionFaultReport(distributionName, ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "service2", "directory", "profile2", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()),
+    val report2 = DistributionFaultReport(distributionName, ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "service2", Some("role2"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()),
       Seq(FileInfo("file2", 1234))))
     result(collections.Faults_ReportsInfo.insert(report2))
     waitForFaultReportUpload( "fault2").success()

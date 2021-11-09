@@ -1,7 +1,7 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.info.{ProfiledServiceName, ServiceState, UpdateError}
+import com.vyulabs.update.common.info.{ServiceNameWithRole, ServiceState, UpdateError}
 import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
@@ -13,7 +13,7 @@ import java.util.Date
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 10.04.19.
   * Copyright FanDate, Inc.
   */
-class ServiceStateController(directory: File, profiledServiceName: ProfiledServiceName, updateRepository: () => Unit)
+class ServiceStateController(directory: File, profiledServiceName: ServiceNameWithRole, updateRepository: () => Unit)
                             (implicit log: Logger) {
   val serviceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) directory else new File(directory, profiledServiceName.toString)
   val currentServiceDirectory = if (profiledServiceName.name == Common.UpdaterServiceName) serviceDirectory else new File(serviceDirectory, "current")
