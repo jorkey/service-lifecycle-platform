@@ -13,11 +13,11 @@ case class RestartConditions(maxMemoryMB: Option[Long], maxCpu: Option[MaxCpu], 
 }
 
 case class RunServiceConfig(command: String, args: Option[Seq[String]], env: Option[Map[String, String]],
-                            logWriter: Option[LogWriterConfig], uploadLogs: Option[Boolean], faultFilesMatch: Option[String],
+                            writeLogs: Option[WriteLogsConfig], uploadLogs: Option[Boolean], faultFilesMatch: Option[String],
                             restartOnFault: Option[Boolean], restartConditions: Option[RestartConditions])
 
 object RunServiceConfig extends DefaultJsonProtocol {
-  import LogWriterConfig._
+  import WriteLogsConfig._
 
   implicit val restartConditionsConfigJson = jsonFormat4(RestartConditions.apply)
   implicit val runServiceConfigJson = jsonFormat8(RunServiceConfig.apply)

@@ -91,9 +91,9 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     println(s"--------------------------- Configure test service in directory ${testServiceSourcesDir}")
     val buildConfig = BuildConfig(None, Seq(CopyFileConfig("sourceScript.sh", "runScript.sh", None, Some(Map.empty + ("version" -> "%%version%%")))))
     val installCommands = Seq(CommandConfig("chmod", Some(Seq("+x", "runScript.sh")), None, None, None, None))
-    val logWriter = LogWriterConfig("log", "test", 1, 10)
+    val writeLogs = WriteLogsConfig("log", "test", 1, 10)
     val installConfig = InstallConfig(Some(installCommands), None, Some(RunServiceConfig("/bin/sh", Some(Seq("-c", "./runScript.sh")),
-      None, Some(logWriter), Some(false), None, None, None)))
+      None, Some(writeLogs), Some(false), None, None, None)))
     val updateConfig = UpdateConfig(Map.empty + (testServiceName -> ServiceUpdateConfig(buildConfig, Some(installConfig))))
     if (!IoUtils.writeJsonToFile(new File(testServiceSourcesDir, Common.UpdateConfigFileName), updateConfig)) {
       sys.error(s"Can't write update config file")

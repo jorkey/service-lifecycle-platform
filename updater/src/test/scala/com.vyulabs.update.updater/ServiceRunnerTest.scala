@@ -1,7 +1,7 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.ThreadTimer
-import com.vyulabs.update.common.config.{LogWriterConfig, RunServiceConfig}
+import com.vyulabs.update.common.config.{WriteLogsConfig, RunServiceConfig}
 import com.vyulabs.update.common.info.{FaultInfo, LogLine, ServiceNameWithRole}
 import com.vyulabs.update.common.logger.{LogReceiver, PrefixedLogger}
 import com.vyulabs.update.common.utils.IoUtils
@@ -117,9 +117,9 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
       sys.error(s"Can't set execute permissions to script file")
     }
 
-    val logWriter = LogWriterConfig("log", "test", 1, 10)
+    val writeLogsConfig = WriteLogsConfig("log", "test", 1, 10)
     val runServiceConfig = RunServiceConfig("/bin/sh", Some(Seq("-c", "./script.sh")),
-      None, Some(logWriter), Some(logUploader.isDefined), Some("script.sh"), None, None)
+      None, Some(writeLogsConfig), Some(logUploader.isDefined), Some("script.sh"), None, None)
 
     implicit val serviceLogger = new PrefixedLogger(s"Service ${service.toString}: ", log)
     val serviceRunner = new ServiceRunner(runServiceConfig, Map.empty, "none", service, stateController, logUploader, faultUploaderStub)

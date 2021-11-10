@@ -48,11 +48,11 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         val command = Utils.extendMacro(config.command, parameters)
         val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters))
         val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters))
-        val logWriter = config.logWriter.map { logWriterConfig =>
-          new LogWriter(new File(state.currentServiceDirectory, logWriterConfig.directory),
-            logWriterConfig.maxFileSizeMB * 1024 * 1024,
-            logWriterConfig.maxFilesCount,
-            logWriterConfig.filePrefix,
+        val logWriter = config.writeLogs.map { writeLogsConfig =>
+          new LogWriter(new File(state.currentServiceDirectory, writeLogsConfig.directory),
+            writeLogsConfig.maxFileSizeMB * 1024 * 1024,
+            writeLogsConfig.maxFilesCount,
+            writeLogsConfig.filePrefix,
             (message, exception) => log.error(message, exception))
         }
         val logUploaderBuffer = logUploader.map { logUploader =>
@@ -61,12 +61,12 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         }
         val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
-        val onOutput = logWriter.map { logWriter =>
+        val onOutput = logWriter.map { writeLogs =>
           (lines: Seq[(String, Boolean)]) => {
             lines.foreach {
               case (line, nl) =>
                 val logLine = LogFormat.parse(line, logUnitName)
-                logWriter.writeLogLine(logLine)
+                writeLogs.writeLogLine(logLine)
                 logUploaderBuffer.foreach(uploaderBuffer => {
                   uploaderBuffer.append(logLine)
                 })
@@ -133,7 +133,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
 
   def saveLogs(failed: Boolean): Unit = {
     synchronized {
-      for (logDirectory <- config.logWriter.map(_.directory).map(new File(state.currentServiceDirectory, _))) {
+      for (logDirectory <- config.writeLogs.map(_.directory).map(new File(state.currentServiceDirectory, _))) {
         log.info(s"Save log files to history directory")
         if (state.logHistoryDirectory.exists() || state.logHistoryDirectory.mkdir()) {
           val dirName = state.getVersion().getOrElse(DeveloperDistributionVersion("???", Build.empty)).toString + s"-${Utils.serializeISO8601Date(new Date())}" +
