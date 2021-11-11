@@ -51,6 +51,9 @@ object Common {
   val BuilderSh = "builder.sh"
   val UpdateSh = ".update.sh"
 
+  val AuthorBuilder = "builder"
+  val AuthorDistribution = "distribution"
+
   def isUpdateService(service: ServiceId): Boolean = {
     service == ScriptsServiceName ||
     service == DistributionServiceName ||

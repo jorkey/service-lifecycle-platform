@@ -29,7 +29,8 @@ trait ClientVersionUtils {
 
   protected implicit val executionContext: ExecutionContext
 
-  def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)(implicit log: Logger): TaskId = {
+  def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)
+                         (implicit log: Logger): TaskId = {
     var cancels = Seq.empty[() => Unit]
     tasksUtils.createTask(
       "BuildClientVersions",

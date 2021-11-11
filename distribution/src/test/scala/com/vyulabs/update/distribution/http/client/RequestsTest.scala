@@ -87,7 +87,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
       assert(adminClient.graphqlRequest(administratorMutations.addProvider("distribution2",
           "http://localhost/graphql", "token", None, None)).getOrElse(false))
 
-      assertResult(Some(Seq(DistributionProviderInfo("distribution2", "http://localhost/graphql", "token", None, None))))(
+      assertResult(Some(Seq(DistributionProviderInfo("distribution2", "http://localhost/graphql", "token", None, None, None))))(
         adminClient.graphqlRequest(administratorQueries.getDistributionProvidersInfo()))
 
       assert(adminClient.graphqlRequest(administratorMutations.removeProvider("distribution2")).getOrElse(false))

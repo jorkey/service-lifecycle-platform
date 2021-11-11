@@ -124,7 +124,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     }).map(_ => ())
   }
 
-  def getDeveloperDesiredVersions(services: Set[ServiceId])(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+  def getDeveloperDesiredVersions(services: Set[ServiceId] = Set.empty)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
       profile <- collections.Developer_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[DeveloperDesiredVersion])
         .filter(v => services.isEmpty || services.contains(v.service)))

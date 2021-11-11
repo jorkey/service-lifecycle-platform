@@ -35,7 +35,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   def start(): Unit = {
     synchronized {
       task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
-      log.debug("Upload task is scheduled")
+      log.debug("Uploader is scheduled")
     }
   }
 
@@ -43,9 +43,9 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
     synchronized {
       for (task <- task) {
         if (task.cancel() || !task.isCancelled) {
-          log.debug("Upload task is cancelled")
+          log.debug("Uploader is cancelled")
         } else {
-          log.debug("Upload task failed to cancel")
+          log.debug("Uploader failed to cancel")
         }
         this.task = None
       }

@@ -50,7 +50,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     Thread.sleep(1000)
 
-    val logContent = new String(IoUtils.readFileToBytes(new File(stateController.logDirectory, "test.log")).getOrElse {
+    val logContent = new String(IoUtils.readFileToBytes(new File(stateController.currentServiceDirectory, "log/test.log")).getOrElse {
       sys.error("Can't read log file")
     }, "utf8")
     assertResult("2021-03-01 16:19:36.038 DEBUG module1 Script is executing\n")(logContent)

@@ -1,6 +1,6 @@
 package com.vyulabs.update.builder
 
-import com.vyulabs.update.common.common.{Arguments, ThreadTimer}
+import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
 import com.vyulabs.update.common.config.SourceConfig
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -58,7 +58,7 @@ object BuilderMain extends App {
           distribution, new File(directory), port, title, mongoDbName, false, serviceOS)
 
         if (command == "buildProviderDistribution") {
-          if (!distributionBuilder.buildDistributionFromSources("builder")) {
+          if (!distributionBuilder.buildDistributionFromSources(Common.AuthorBuilder)) {
             Utils.error("Build distribution error")
           }
         } else {
@@ -67,7 +67,7 @@ object BuilderMain extends App {
           val consumerAccessToken = arguments.getValue("consumerAccessToken")
           val testConsumer = arguments.getOptionValue("testConsumer")
           if (!distributionBuilder.buildFromProviderDistribution(
-                provider, providerUrl, consumerAccessToken, testConsumer, "builder") ||
+                provider, providerUrl, consumerAccessToken, testConsumer, Common.AuthorBuilder) ||
               !distributionBuilder.updateDistributionFromProvider()) {
             Utils.error("Build distribution error")
           }
