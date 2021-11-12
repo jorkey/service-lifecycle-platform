@@ -35,10 +35,11 @@ class AutoUpdater(distribution: DistributionId,
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   var task = Option.empty[Cancellable]
+  val autoUpdateInterval = FiniteDuration.apply(10, TimeUnit.SECONDS)
 
   def start(): Unit = {
     synchronized {
-      task = Some(system.scheduler.scheduleOnce(FiniteDuration.apply(10, TimeUnit.SECONDS))(autoUpdate()))
+      task = Some(system.scheduler.scheduleOnce(autoUpdateInterval)(autoUpdate()))
       log.debug("Auto updater is scheduled")
     }
   }
@@ -65,7 +66,27 @@ class AutoUpdater(distribution: DistributionId,
       val versionsToUpdate = providerVersions.filter(!developerVersions.contains(_))
       clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution)
     }
-
+    result.andThen {
+      case result =>
+        synchronized {
+          for (_ <- task) {
+            if (!result.isSuccess) {
+              log.error(s"Auto update is failed: ${result.failed.get}")
+            }
+            task = Some(system.scheduler.scheduleOnce(autoUpdateInterval)(autoUpdate()))
+            log.debug("Auto update is scheduled")
+          }
+        }
+    }
   }
 }
 
+object AutoUpdater {
+  def apply(distribution: DistributionId,
+            developerVersionUtils: DeveloperVersionUtils,
+            clientVersionUtils: ClientVersionUtils,
+            distributionProvidersUtils: DistributionProvidersUtils)
+           (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) = {
+    new AutoUpdater(distribution, developerVersionUtils, clientVersionUtils, distributionProvidersUtils)
+  }
+}

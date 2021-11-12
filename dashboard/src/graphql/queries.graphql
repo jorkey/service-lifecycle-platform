@@ -201,13 +201,13 @@ query faultsEndTime ($distribution: String, $service: String) {
 
 query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date) {
     faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime) {
-        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
     }
 }
 
 query fault ($id: String!) {
     faults (id: $id) {
-        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceProfile, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
     }
 }
 
@@ -321,16 +321,20 @@ mutation removeServicesProfile ($profile: String!) {
 
 query providersInfo {
     providersInfo {
-        distribution, url, accessToken, testConsumer, uploadStateIntervalSec
+        distribution, url, accessToken, testConsumer, uploadStateIntervalSec, autoUpdate
     }
 }
 
-mutation addProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
-    addProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
+mutation addProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String,
+                      $uploadStateIntervalSec: Int!, $autoUpdate: Boolean!) {
+    addProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer,
+        uploadStateIntervalSec: $uploadStateIntervalSec, autoUpdate: $autoUpdate)
 }
 
-mutation changeProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String, $uploadStateIntervalSec: Int!) {
-    changeProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer, uploadStateIntervalSec: $uploadStateIntervalSec)
+mutation changeProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String,
+                         $uploadStateIntervalSec: Int!, $autoUpdate: Boolean!) {
+    changeProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer,
+        uploadStateIntervalSec: $uploadStateIntervalSec, autoUpdate: $autoUpdate)
 }
 
 mutation removeProvider ($distribution: String!) {
@@ -361,7 +365,7 @@ query taskTypes {
 
 query tasks ($id: String, $type: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
     tasks (id: $id, type: $type, parameters: $parameters, onlyActive: $onlyActive, limit: $limit) {
-        id, taskType, parameters { name, value }, creationTime, active
+        id, type, parameters { name, value }, creationTime, active
     }
 }
 

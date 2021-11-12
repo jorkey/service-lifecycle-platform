@@ -101,7 +101,7 @@ export const TasksTable = (props: TasksTableParams) => {
       return new Map<string, GridTableColumnValue>([
         ['creationTime', task.creationTime],
         ['id', task.id],
-        ['type', task.taskType],
+        ['type', task.type],
         ['parameters', parametersToString(task.parameters)],
         ['active', task.active?true:false]
       ]) })

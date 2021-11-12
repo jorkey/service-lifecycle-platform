@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme:any) => ({
   inner: {
     minWidth: 800
   },
-  ProvidersTable: {
+  providersTable: {
     marginTop: 20
   },
   distributionColumn: {
@@ -53,6 +53,11 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px',
     width: '400px'
+  },
+  autoUpdate: {
+    padding: '4px',
+    paddingLeft: '16px',
+    width: '200px'
   },
   actionsColumn: {
     padding: '4px',
@@ -151,13 +156,20 @@ const ProvidersManager = () => {
       validate: (value) => {
         try {
           if (!value) {
-            return false
+            return true
           }
           return !isNaN(value as number)
         } catch {
           return false
         }
       }
+    },
+    {
+      name: 'autoUpdate',
+      headerName: 'Auto Update',
+      className: classes.autoUpdate,
+      type: 'checkbox',
+      editable: true,
     },
     {
       name: 'actions',
@@ -174,6 +186,7 @@ const ProvidersManager = () => {
     ['accessToken', provider.accessToken],
     ['testConsumer', provider.testConsumer?provider.testConsumer:''],
     ['uploadStateInterval', provider.uploadStateIntervalSec?provider.uploadStateIntervalSec.toString():''],
+    ['autoUpdate', provider.autoUpdate?true:false],
     ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
       <DeleteIcon/>
     </Button>]]
@@ -205,7 +218,7 @@ const ProvidersManager = () => {
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <GridTable
-            className={classes.ProvidersTable}
+            className={classes.providersTable}
             columns={columns}
             rows={rows}
             addNewRow={addNewRow}
@@ -217,7 +230,8 @@ const ProvidersManager = () => {
                 url: String(row.get('url')!),
                 accessToken: String(row.get('accessToken')!),
                 testConsumer: row.get('testConsumer')?String(row.get('testConsumer')!):undefined,
-                uploadStateIntervalSec: Number(row.get('uploadStateInterval')!)
+                uploadStateIntervalSec: Number(row.get('uploadStateInterval')!),
+                autoUpdate: Boolean(row.get('autoUpdate')!)
               }}).then(() => refetchProviders())
             }}
             onRowChanged={(row, values, oldValues) => {
@@ -226,7 +240,8 @@ const ProvidersManager = () => {
                   distribution: String(values.get('distribution')!),
                   url: String(values.get('url')!),
                   accessToken: String(values.get('accessToken')!),
-                  uploadStateIntervalSec: Number(values.get('uploadStateInterval')!)
+                  uploadStateIntervalSec: Number(values.get('uploadStateInterval')!),
+                  autoUpdate: Boolean(values.get('autoUpdate')!)
                 }}).then(() => refetchProviders().then(() => {}))}}
           />
           { deleteConfirm ? (

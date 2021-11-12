@@ -71,7 +71,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
             if (result.isSuccess) {
               log.debug(s"State is uploaded successfully")
             } else {
-              log.debug(s"State is failed to upload")
+              log.error(s"State is failed to upload: ${result.failed.get}")
             }
             task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
             log.debug("Upload task is scheduled")

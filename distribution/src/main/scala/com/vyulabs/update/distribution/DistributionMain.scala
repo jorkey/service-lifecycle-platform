@@ -15,6 +15,7 @@ import com.vyulabs.update.distribution.loaders.StateUploader
 import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
+import com.vyulabs.update.distribution.updater.AutoUpdater
 import org.slf4j.LoggerFactory
 
 import java.io.{File, FileInputStream}
@@ -71,9 +72,8 @@ object DistributionMain extends App {
       providerInfo.uploadStateIntervalSec.foreach(uploadStateIntervalSec =>
         StateUploader(config.distribution, collections, dir,
           FiniteDuration(uploadStateIntervalSec, TimeUnit.SECONDS), providerInfo.url, providerInfo.accessToken).start())
-//      providerInfo.autoUpdate.foreach(autoUpdate =>
-//        StateUploader(config.distribution, collections, dir,
-//          FiniteDuration(uploadStateIntervalSec, TimeUnit.SECONDS), providerInfo.url, providerInfo.accessToken).start())
+      providerInfo.autoUpdate.foreach(autoUpdate =>
+        AutoUpdater(config.distribution, workspace, workspace, workspace).start())
     })
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)
