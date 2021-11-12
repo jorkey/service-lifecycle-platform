@@ -28,7 +28,7 @@ trait DistributionProvidersCoder {
   def getDistributionProvidersInfo(distribution: Option[DistributionId] = None) =
     GraphqlQuery[Seq[DistributionProviderInfo]]("providersInfo",
       distribution.map(distribution => GraphqlArgument("distribution" -> distribution)).toSeq,
-      subSelection = "{ distribution, url, accessToken, testConsumer, uploadStateIntervalSec }")
+      subSelection = "{ distribution, url, accessToken, testConsumer, uploadState, autoUpdate }")
 
   def getDistributionProviderDesiredVersions(distribution: DistributionId) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("providerDesiredVersions",
@@ -139,11 +139,13 @@ trait ConsumersAdministrationCoder {
     GraphqlMutation[Boolean]("removeServicesProfile", Seq(GraphqlArgument("profile" -> profile)))
 
   def addProvider(distribution: DistributionId, distributionUrl: String, accessToken: String,
-                  testConsumer: Option[String], uploadStateInterval: Option[FiniteDuration]) =
+                  testConsumer: Option[String], uploadState: Option[Boolean], autoUpdate: Option[Boolean]) =
     GraphqlMutation[Boolean]("addProvider", Seq(GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("url" -> distributionUrl), GraphqlArgument("accessToken" -> accessToken),
       GraphqlArgument("testConsumer" -> testConsumer),
-      GraphqlArgument("uploadStateInterval" -> uploadStateInterval, "[FiniteDuration!]")).filter(_.value != JsNull))
+      GraphqlArgument("uploadState" -> uploadState),
+      GraphqlArgument("autoUpdate" -> autoUpdate)
+    ).filter(_.value != JsNull))
   def removeProvider(distribution: DistributionId) =
     GraphqlMutation[Boolean]("removeProvider", Seq(GraphqlArgument("distribution" -> distribution)))
 }

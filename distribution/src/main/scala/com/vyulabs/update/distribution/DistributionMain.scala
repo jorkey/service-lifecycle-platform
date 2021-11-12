@@ -69,10 +69,10 @@ object DistributionMain extends App {
     selfUpdater.start()
 
     workspace.getProvidersInfo().foreach(_.foreach { providerInfo =>
-      providerInfo.uploadStateIntervalSec.foreach(uploadStateIntervalSec =>
+      providerInfo.uploadState.filter(_).foreach(_ =>
         StateUploader(config.distribution, collections, dir,
-          FiniteDuration(uploadStateIntervalSec, TimeUnit.SECONDS), providerInfo.url, providerInfo.accessToken).start())
-      providerInfo.autoUpdate.foreach(autoUpdate =>
+          providerInfo.url, providerInfo.accessToken).start())
+      providerInfo.autoUpdate.filter(_).foreach(_ =>
         AutoUpdater(config.distribution, workspace, workspace, workspace).start())
     })
 

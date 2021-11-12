@@ -28,7 +28,7 @@ class DistributionProviderTest extends TestEnvironment {
             distribution: "provider-distribution",
             url: "http://provider-distribution.com",
             accessToken: "token",
-            uploadStateIntervalSec: 30
+            uploadState: true
           )
         }
       """)))
@@ -52,7 +52,7 @@ class DistributionProviderTest extends TestEnvironment {
             distribution: "provider-distribution-1",
             url: "http://provider-distribution-1.com",
             accessToken: "token",
-            uploadStateIntervalSec: 20
+            uploadState: true
           )
         }
       """)))

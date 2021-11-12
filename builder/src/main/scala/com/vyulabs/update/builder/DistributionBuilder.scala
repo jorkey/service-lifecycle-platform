@@ -139,7 +139,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     log.info(s"########################### Add distribution provider to distribution server")
     log.info("")
     if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addProvider(provider,
-        providerURL, consumerAccessToken, testConsumer, None)).getOrElse(false)) {
+        providerURL, consumerAccessToken, testConsumer, Some(true), None)).getOrElse(false)) {
       log.error(s"Can't add distribution provider")
       return false
     }

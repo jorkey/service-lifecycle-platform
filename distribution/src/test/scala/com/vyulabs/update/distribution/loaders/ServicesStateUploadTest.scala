@@ -34,7 +34,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   waitForLogin().success("token123")
 
   it should "upload service states" in {
-    val uploader = new StateUploader("consumer", collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)
+    val uploader = new StateUploader("consumer", collections, distributionDir, distributionClient)
     uploader.start()
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
@@ -60,7 +60,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   it should "try to upload service states again after failure" in {
-    val uploader = new StateUploader("consumer", collections, distributionDir, FiniteDuration(2, TimeUnit.SECONDS), distributionClient)
+    val uploader = new StateUploader("consumer", collections, distributionDir, distributionClient)
     uploader.start()
 
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",

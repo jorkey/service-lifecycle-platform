@@ -38,7 +38,7 @@ class FaultReportsUploadTest extends TestEnvironment {
   waitForLogin().success("token123")
 
   it should "upload fault reports" in {
-    val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(1, TimeUnit.SECONDS), distributionClient)
+    val uploader = new StateUploader(distributionName, collections, distributionDir, distributionClient)
     uploader.start()
 
     val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
@@ -54,8 +54,8 @@ class FaultReportsUploadTest extends TestEnvironment {
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
  }
 
-  it should "try to upload service states again after failure" in {
-    val uploader = new StateUploader(distributionName, collections, distributionDir, FiniteDuration(2, TimeUnit.SECONDS), distributionClient)
+ it should "try to upload service states again after failure" in {
+    val uploader = new StateUploader(distributionName, collections, distributionDir, distributionClient)
     uploader.start()
 
     val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),

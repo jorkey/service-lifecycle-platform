@@ -114,7 +114,7 @@ object GraphqlSchema {
   val OptionParametersArg = Argument("parameters", OptionInputType(ListInputType(TaskParameterInputType)))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
   val OptionPrefetchArg = Argument("prefetch", OptionInputType(IntType))
-  val OptionUploadStateIntervalSecArg = Argument("uploadStateIntervalSec", OptionInputType(IntType))
+  val OptionUploadStateArg = Argument("uploadState", OptionInputType(BooleanType))
   val OptionAutoUpdateArg = Argument("autoUpdate", OptionInputType(BooleanType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
@@ -433,16 +433,16 @@ object GraphqlSchema {
       // Distribution providers management
       Field("addProvider", BooleanType,
         arguments = DistributionArg :: UrlArg :: AccessTokenArg :: OptionTestConsumerArg ::
-          OptionUploadStateIntervalSecArg :: OptionAutoUpdateArg :: Nil,
+          OptionUploadStateArg :: OptionAutoUpdateArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.addProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(AccessTokenArg),
-          c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateIntervalSecArg), c.arg(OptionAutoUpdateArg)).map(_ => true) }),
+          c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateArg), c.arg(OptionAutoUpdateArg)).map(_ => true) }),
       Field("changeProvider", BooleanType,
         arguments = DistributionArg :: UrlArg :: AccessTokenArg :: OptionTestConsumerArg ::
-          OptionUploadStateIntervalSecArg :: OptionAutoUpdateArg :: Nil,
+          OptionUploadStateArg :: OptionAutoUpdateArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.changeProvider(c.arg(DistributionArg), c.arg(UrlArg), c.arg(AccessTokenArg),
-          c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateIntervalSecArg), c.arg(OptionAutoUpdateArg)).map(_ => true) }),
+          c.arg(OptionTestConsumerArg), c.arg(OptionUploadStateArg), c.arg(OptionAutoUpdateArg)).map(_ => true) }),
       Field("removeProvider", BooleanType,
         arguments = DistributionArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,

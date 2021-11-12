@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
@@ -25,10 +26,13 @@ import scala.util.{Failure, Success}
   * Copyright FanDate, Inc.
   */
 
-class StateUploader(distribution: DistributionId, collections: DatabaseCollections, distributionDirectory: DistributionDirectory,
-                    uploadInterval: FiniteDuration, client: DistributionClient[AkkaSource])
+class StateUploader(distribution: DistributionId, collections: DatabaseCollections,
+                    distributionDirectory: DistributionDirectory,
+                    client: DistributionClient[AkkaSource])
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
+
+  val uploadInterval = FiniteDuration(10, TimeUnit.SECONDS)
 
   var task = Option.empty[Cancellable]
 
@@ -157,10 +161,10 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
 
 object StateUploader {
   def apply(distribution: DistributionId,
-            collections: DatabaseCollections, distributionDirectory: DistributionDirectory, uploadInterval: FiniteDuration,
+            collections: DatabaseCollections, distributionDirectory: DistributionDirectory,
             distributionUrl: String, accessToken: String)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext): StateUploader = {
-    new StateUploader(distribution, collections, distributionDirectory, uploadInterval,
+    new StateUploader(distribution, collections, distributionDirectory,
       new DistributionClient(new AkkaHttpClient(distributionUrl, Some(accessToken))))
   }
 }

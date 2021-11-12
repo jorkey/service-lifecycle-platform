@@ -49,7 +49,7 @@ const useStyles = makeStyles((theme:any) => ({
     paddingLeft: '16px',
     width: '150px'
   },
-  uploadStateInterval: {
+  uploadState: {
     padding: '4px',
     paddingLeft: '16px',
     width: '400px'
@@ -148,21 +148,11 @@ const ProvidersManager = () => {
       editable: true
     },
     {
-      name: 'uploadStateInterval',
-      headerName: 'Upload State Interval (sec)',
-      className: classes.uploadStateInterval,
-      type: 'number',
+      name: 'uploadState',
+      headerName: 'Upload State',
+      className: classes.uploadState,
+      type: 'checkbox',
       editable: true,
-      validate: (value) => {
-        try {
-          if (!value) {
-            return true
-          }
-          return !isNaN(value as number)
-        } catch {
-          return false
-        }
-      }
     },
     {
       name: 'autoUpdate',
@@ -185,7 +175,7 @@ const ProvidersManager = () => {
     ['url', provider.url],
     ['accessToken', provider.accessToken],
     ['testConsumer', provider.testConsumer?provider.testConsumer:''],
-    ['uploadStateInterval', provider.uploadStateIntervalSec?provider.uploadStateIntervalSec.toString():''],
+    ['uploadState', provider.uploadState?true:false],
     ['autoUpdate', provider.autoUpdate?true:false],
     ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
       <DeleteIcon/>
@@ -230,7 +220,7 @@ const ProvidersManager = () => {
                 url: String(row.get('url')!),
                 accessToken: String(row.get('accessToken')!),
                 testConsumer: row.get('testConsumer')?String(row.get('testConsumer')!):undefined,
-                uploadStateIntervalSec: Number(row.get('uploadStateInterval')!),
+                uploadState: Boolean(row.get('uploadState')!),
                 autoUpdate: Boolean(row.get('autoUpdate')!)
               }}).then(() => refetchProviders())
             }}
@@ -240,7 +230,7 @@ const ProvidersManager = () => {
                   distribution: String(values.get('distribution')!),
                   url: String(values.get('url')!),
                   accessToken: String(values.get('accessToken')!),
-                  uploadStateIntervalSec: Number(values.get('uploadStateInterval')!),
+                  uploadState: Boolean(values.get('uploadState')!),
                   autoUpdate: Boolean(values.get('autoUpdate')!)
                 }}).then(() => refetchProviders().then(() => {}))}}
           />

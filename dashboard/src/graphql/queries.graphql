@@ -321,20 +321,20 @@ mutation removeServicesProfile ($profile: String!) {
 
 query providersInfo {
     providersInfo {
-        distribution, url, accessToken, testConsumer, uploadStateIntervalSec, autoUpdate
+        distribution, url, accessToken, testConsumer, uploadState, autoUpdate
     }
 }
 
 mutation addProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String,
-                      $uploadStateIntervalSec: Int!, $autoUpdate: Boolean!) {
+                      $uploadState: Boolean!, $autoUpdate: Boolean!) {
     addProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer,
-        uploadStateIntervalSec: $uploadStateIntervalSec, autoUpdate: $autoUpdate)
+        uploadState: $uploadState, autoUpdate: $autoUpdate)
 }
 
 mutation changeProvider ($distribution: String!, $url: String!, $accessToken: String!, $testConsumer: String,
-                         $uploadStateIntervalSec: Int!, $autoUpdate: Boolean!) {
+                         $uploadState: Boolean!, $autoUpdate: Boolean!) {
     changeProvider (distribution: $distribution, url: $url, accessToken: $accessToken, testConsumer: $testConsumer,
-        uploadStateIntervalSec: $uploadStateIntervalSec, autoUpdate: $autoUpdate)
+        uploadState: $uploadState, autoUpdate: $autoUpdate)
 }
 
 mutation removeProvider ($distribution: String!) {

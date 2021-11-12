@@ -36,15 +36,15 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def addProvider(distribution: DistributionId, distributionUrl: String, accessKey: String, testDistributionMatch: Option[String],
-                  uploadStateIntervalSec: Option[Int], autoUpdate: Option[Boolean]): Future[Unit] = {
+                  uploadState: Option[Boolean], autoUpdate: Option[Boolean]): Future[Unit] = {
     collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
-      DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadStateIntervalSec, autoUpdate)).map(_ => ())
+      DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate)).map(_ => ())
   }
 
   def changeProvider(distribution: DistributionId, distributionUrl: String, accessKey: String, testDistributionMatch: Option[String],
-                     uploadStateIntervalSec: Option[Int], autoUpdate: Option[Boolean]): Future[Unit] = {
+                     uploadState: Option[Boolean], autoUpdate: Option[Boolean]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
-      (_) => DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadStateIntervalSec, autoUpdate)).map(_ => ())
+      (_) => DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate)).map(_ => ())
   }
 
   def removeProvider(distribution: DistributionId): Future[Unit] = {
