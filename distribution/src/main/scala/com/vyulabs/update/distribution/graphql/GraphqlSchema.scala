@@ -461,6 +461,7 @@ object GraphqlSchema {
           if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) c.ctx.accessToken.get.account else c.ctx.workspace.config.distribution,
           if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo].properties.profile else Common.SelfConsumerProfile,
           c.arg(DeveloperDesiredVersionsArg)).map(_ => true) }),
+
       // State
       Field("setInstalledDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionsArg :: Nil,

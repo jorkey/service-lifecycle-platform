@@ -166,7 +166,7 @@ class DatabaseCollections(db: MongoDb,
 
   val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
     collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task"),
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("id"),
       new IndexOptions().unique(true)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType"), new IndexOptions()
       .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()

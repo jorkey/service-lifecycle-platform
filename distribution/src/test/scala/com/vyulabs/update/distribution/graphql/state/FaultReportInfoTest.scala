@@ -99,7 +99,6 @@ class FaultReportInfoTest extends TestEnvironment {
                 instance: "instance1",
                 serviceDirectory: "directory1",
                 service: $$service,
-                serviceProfile: "Common",
                 state: {
                   time: $$time
                 },

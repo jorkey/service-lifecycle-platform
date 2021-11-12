@@ -25,7 +25,7 @@ object TaskParameter extends DefaultJsonProtocol {
   implicit val taskParameterJson = jsonFormat2(TaskParameter.apply)
 }
 
-case class TaskInfo(id: TaskId, taskType: TaskType, parameters: Seq[TaskParameter],
+case class TaskInfo(id: TaskId, `type`: TaskType, parameters: Seq[TaskParameter],
                     creationTime: Date, active: Option[Boolean] = None)
 
 trait TasksUtils extends SprayJsonSupport {
@@ -66,7 +66,7 @@ trait TasksUtils extends SprayJsonSupport {
     synchronized {
       activeTasks
         .filter(task => id.forall(_ == task.id))
-        .filter(task => taskType.forall(_ == task.taskType))
+        .filter(task => taskType.forall(_ == task.`type`))
         .filter(task => parameters.forall(parameter =>
           task.parameters.exists(_ == parameter)))
         .sortWith((t1, t2) => t1.creationTime.getTime > t2.creationTime.getTime)

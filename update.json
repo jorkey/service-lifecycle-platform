@@ -32,10 +32,6 @@
           "destinationFile": "updater/instance.yaml"
         },
         {
-          "sourceFile": "scripts/updater/instance.sh",
-          "destinationFile": "updater/instance.sh"
-        },
-        {
           "sourceFile": "scripts/.update.sh",
           "destinationFile": ".update.sh"
         }
