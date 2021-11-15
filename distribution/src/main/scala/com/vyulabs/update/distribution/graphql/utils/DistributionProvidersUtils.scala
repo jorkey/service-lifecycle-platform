@@ -14,6 +14,8 @@ import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.graphql.NotFoundException
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
+import com.vyulabs.update.distribution.task.TaskManager
+import com.vyulabs.update.distribution.updater.AutoUpdater
 import org.bson.BsonDocument
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -32,23 +34,41 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
   protected val collections: DatabaseCollections
 
   protected val developerVersionUtils: DeveloperVersionUtils
+  protected val clientVersionUtils: ClientVersionUtils
+
+  protected val taskManager: TaskManager
 
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def addProvider(distribution: DistributionId, distributionUrl: String, accessKey: String, testDistributionMatch: Option[String],
                   uploadState: Option[Boolean], autoUpdate: Option[Boolean]): Future[Unit] = {
     collections.Client_ProvidersInfo.add(Filters.eq("distribution", distribution),
-      DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate)).map(_ => ())
+      DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate))
+      .map(_ => {
+        if (autoUpdate.getOrElse(false)) {
+          AutoUpdater.start(distribution, developerVersionUtils, clientVersionUtils, this, taskManager)
+        } else {
+          AutoUpdater.stop(distribution)
+        }
+      })
   }
 
   def changeProvider(distribution: DistributionId, distributionUrl: String, accessKey: String, testDistributionMatch: Option[String],
                      uploadState: Option[Boolean], autoUpdate: Option[Boolean]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
-      (_) => DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate)).map(_ => ())
+      (_) => DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate))
+      .map(_ => {
+        if (autoUpdate.getOrElse(false)) {
+          AutoUpdater.start(distribution, developerVersionUtils, clientVersionUtils, this, taskManager)
+        } else {
+          AutoUpdater.stop(distribution)
+        }
+      })
   }
 
   def removeProvider(distribution: DistributionId): Future[Unit] = {
-    collections.Client_ProvidersInfo.delete(Filters.eq("distribution", distribution)).map(_ => ())
+    collections.Client_ProvidersInfo.delete(Filters.eq("distribution", distribution))
+      .map(_ => AutoUpdater.stop(distribution))
   }
 
   def getProviderDesiredVersions(distribution: DistributionId)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {

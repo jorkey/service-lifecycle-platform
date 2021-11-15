@@ -13,6 +13,7 @@ import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.graphql.utils.{ClientVersionUtils, DeveloperVersionUtils, DistributionProvidersUtils}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
+import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 import spray.json._
@@ -30,63 +31,101 @@ import scala.util.{Failure, Success}
 class AutoUpdater(distribution: DistributionId,
                   developerVersionUtils: DeveloperVersionUtils,
                   clientVersionUtils: ClientVersionUtils,
-                  distributionProvidersUtils: DistributionProvidersUtils)
+                  distributionProvidersUtils: DistributionProvidersUtils,
+                  taskManager: TaskManager)
                  (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
-  var task = Option.empty[Cancellable]
+  var updateTask = Option.empty[Cancellable]
   val autoUpdateInterval = FiniteDuration.apply(10, TimeUnit.SECONDS)
 
   def start(): Unit = {
-    synchronized {
-      task = Some(system.scheduler.scheduleOnce(autoUpdateInterval)(autoUpdate()))
-      log.debug("Auto updater is scheduled")
-    }
+    schedule()
   }
 
   def stop(): Unit = {
     synchronized {
-      for (task <- task) {
+      for (task <- updateTask) {
         if (task.cancel() || !task.isCancelled) {
           log.debug("Auto updater is cancelled")
         } else {
           log.debug("Auto updater failed to cancel")
         }
-        this.task = None
+        this.updateTask = None
       }
     }
   }
 
+  private def schedule(): Unit = {
+    synchronized {
+      val reschedule = updateTask.isDefined
+      updateTask = Some(system.scheduler.scheduleOnce(autoUpdateInterval)(autoUpdate()))
+      log.debug(s"Auto updater is ${if (reschedule) "rescheduled again" else "scheduled"}")
+    }
+  }
+
   private def autoUpdate(): Unit = {
-    log.debug("Auto update")
+    log.debug("Started auto update")
     val result = for {
       developerVersions <- developerVersionUtils.getDeveloperDesiredVersions()
       providerVersions <- distributionProvidersUtils.getProviderDesiredVersions(distribution)
     } yield {
       val versionsToUpdate = providerVersions.filter(!developerVersions.contains(_))
-      clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution)
+      if (!versionsToUpdate.isEmpty) {
+        val taskId = clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution)
+        taskManager.getTask(taskId)
+      } else {
+        None
+      }
     }
-    result.andThen {
-      case result =>
-        synchronized {
-          for (_ <- task) {
-            if (!result.isSuccess) {
-              log.error(s"Auto update is failed: ${result.failed.get}")
-            }
-            task = Some(system.scheduler.scheduleOnce(autoUpdateInterval)(autoUpdate()))
-            log.debug("Auto update is scheduled")
+    result.andThen { case result =>
+      synchronized {
+        if (result.isSuccess) {
+          result.get match {
+            case Some(task) =>
+              task.future.andThen { case result =>
+                if (result.isSuccess) {
+                  log.debug(s"Auto update is successfully finished")
+                } else {
+                  log.error(s"Auto update is failed: ${result.failed.get}")
+                }
+                schedule()
+              }
+            case None =>
+              schedule()
           }
+        } else {
+          log.error(s"Auto update error")
+          schedule()
         }
+      }
     }
   }
 }
 
 object AutoUpdater {
-  def apply(distribution: DistributionId,
+  var autoUpdaters = Map.empty[DistributionId, AutoUpdater]
+
+  def start(distribution: DistributionId,
             developerVersionUtils: DeveloperVersionUtils,
             clientVersionUtils: ClientVersionUtils,
-            distributionProvidersUtils: DistributionProvidersUtils)
+            distributionProvidersUtils: DistributionProvidersUtils,
+            taskManager: TaskManager)
            (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) = {
-    new AutoUpdater(distribution, developerVersionUtils, clientVersionUtils, distributionProvidersUtils)
+    synchronized {
+      val updater = new AutoUpdater(distribution,
+        developerVersionUtils, clientVersionUtils, distributionProvidersUtils, taskManager)
+      updater.start()
+      autoUpdaters += distribution -> updater
+    }
+  }
+
+  def stop(distribution: DistributionId): Unit = {
+    synchronized {
+      autoUpdaters.get(distribution).foreach { updater =>
+        updater.stop()
+        autoUpdaters -= distribution
+      }
+    }
   }
 }

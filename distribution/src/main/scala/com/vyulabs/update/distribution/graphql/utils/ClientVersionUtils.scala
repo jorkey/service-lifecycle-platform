@@ -130,19 +130,25 @@ trait ClientVersionUtils {
   }
 
   def setClientDesiredVersions(deltas: Seq[ClientDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
-    log.info(s"Set client desired versions ${deltas}")
-    collections.Client_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
-      val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions.map(_.versions).getOrElse(Seq.empty))
-      val newVersions =
-        deltas.foldLeft(desiredVersionsMap) {
-          (map, entry) => entry.version match {
-            case Some(version) =>
-              map + (entry.service -> version)
-            case None =>
-              map - entry.service
-          }}
-      Some(ClientDesiredVersions(ClientDesiredVersions.fromMap(newVersions)))
-    }).map(_ => ())
+    if (!deltas.isEmpty) {
+      log.info(s"Set client desired versions ${deltas}")
+      collections.Client_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
+        val desiredVersionsMap = ClientDesiredVersions.toMap(desiredVersions.map(_.versions).getOrElse(Seq.empty))
+        val newVersions =
+          deltas.foldLeft(desiredVersionsMap) {
+            (map, entry) =>
+              entry.version match {
+                case Some(version) =>
+                  map + (entry.service -> version)
+                case None =>
+                  map - entry.service
+              }
+          }
+        Some(ClientDesiredVersions(ClientDesiredVersions.fromMap(newVersions)))
+      }).map(_ => ())
+    } else {
+      Future()
+    }
   }
 
   def getClientDesiredVersions(services: Set[ServiceId] = Set.empty)

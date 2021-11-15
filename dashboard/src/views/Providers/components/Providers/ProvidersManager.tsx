@@ -42,12 +42,11 @@ const useStyles = makeStyles((theme:any) => ({
   accessTokenColumn: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '500px'
   },
   testConsumerColumn: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '150px'
+    width: '400px'
   },
   uploadState: {
     padding: '4px',
@@ -57,7 +56,7 @@ const useStyles = makeStyles((theme:any) => ({
   autoUpdate: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '200px'
+    width: '400px'
   },
   actionsColumn: {
     padding: '4px',

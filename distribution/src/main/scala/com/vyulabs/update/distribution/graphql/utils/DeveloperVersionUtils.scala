@@ -109,19 +109,25 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   }
 
   def setDeveloperDesiredVersions(deltas: Seq[DeveloperDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
-    log.info(s"Set developer desired versions ${deltas}")
-    collections.Developer_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
-      val desiredVersionsMap = DeveloperDesiredVersions.toMap(desiredVersions.map(_.versions).getOrElse(Seq.empty))
-      val newVersions =
-        deltas.foldLeft(desiredVersionsMap) {
-          (map, entry) => entry.version match {
-            case Some(version) =>
-              map + (entry.service -> version)
-            case None =>
-              map - entry.service
-          }}
-      Some(DeveloperDesiredVersions(DeveloperDesiredVersions.fromMap(newVersions)))
-    }).map(_ => ())
+    if (!deltas.isEmpty) {
+      log.info(s"Set developer desired versions ${deltas}")
+      collections.Developer_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
+        val desiredVersionsMap = DeveloperDesiredVersions.toMap(desiredVersions.map(_.versions).getOrElse(Seq.empty))
+        val newVersions =
+          deltas.foldLeft(desiredVersionsMap) {
+            (map, entry) =>
+              entry.version match {
+                case Some(version) =>
+                  map + (entry.service -> version)
+                case None =>
+                  map - entry.service
+              }
+          }
+        Some(DeveloperDesiredVersions(DeveloperDesiredVersions.fromMap(newVersions)))
+      }).map(_ => ())
+    } else {
+      Future()
+    }
   }
 
   def getDeveloperDesiredVersions(services: Set[ServiceId] = Set.empty)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {

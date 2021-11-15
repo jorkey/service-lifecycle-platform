@@ -69,11 +69,11 @@ object DistributionMain extends App {
     selfUpdater.start()
 
     workspace.getProvidersInfo().foreach(_.foreach { providerInfo =>
-      providerInfo.uploadState.filter(_).foreach(_ =>
+      providerInfo.uploadState.filter(s => s).foreach(_ =>
         StateUploader(config.distribution, collections, dir,
           providerInfo.url, providerInfo.accessToken).start())
-      providerInfo.autoUpdate.filter(_).foreach(_ =>
-        AutoUpdater(config.distribution, workspace, workspace, workspace).start())
+      providerInfo.autoUpdate.filter(u => u).foreach(_ =>
+        AutoUpdater.start(config.distribution, workspace, workspace, workspace, taskManager))
     })
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

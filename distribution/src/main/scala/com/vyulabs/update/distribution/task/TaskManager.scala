@@ -56,6 +56,10 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
     false
   }
 
+  def getTask(task: TaskId): Option[Task] = {
+    activeTasks.get(task)
+  }
+
   def getTasks(): Seq[Task] = {
     activeTasks.values.toSeq.sortBy(_.startDate)
   }
