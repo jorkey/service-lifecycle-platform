@@ -110,7 +110,7 @@ const BuildDeveloper = () => {
     },
     {
       name: 'version',
-      headerName: 'Version',
+      headerName: 'Last Version',
       className: classes.versionColumn,
     },
     {
@@ -158,17 +158,19 @@ const BuildDeveloper = () => {
         completedVersion?completedVersion.buildInfo.comment:undefined
       const status = versionInProcess?'In Process':
         completedVersion?'Completed':undefined
-      return new Map<string, GridTableColumnValue>([
-        ['service', service],
-        ['version', version],
-        ['author', author],
-        ['time', time],
-        ['comment', comment],
-        ['status', status],
-        ['actions', [<Button key='0' onClick={ () => handleOnClick(service) }>
-          {versionInProcess?<VisibilityIcon/>:<BuildIcon/>}
-        </Button>]]
-      ])
+      return {
+        columnValues: new Map<string, GridTableColumnValue>([
+          ['service', service],
+          ['version', version],
+          ['author', author],
+          ['time', time],
+          ['comment', comment],
+          ['status', status],
+          ['actions', [<Button key='0' onClick={ () => handleOnClick(service) }>
+            {versionInProcess?<VisibilityIcon/>:<BuildIcon/>}
+          </Button>]]
+        ])
+      }
     })
 
   return (
@@ -192,7 +194,7 @@ const BuildDeveloper = () => {
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}
-           onClick={(row) => { if (rows) handleOnClick(rows[row].get('service')! as string) }}
+           onClick={(row) => { if (rows) handleOnClick(rows[row].columnValues.get('service')! as string) }}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>

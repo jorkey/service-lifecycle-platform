@@ -61,7 +61,6 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const service = props.match.params.service
 
   const [version, setVersion] = useState('');
-  const [author, setAuthor] = useState('');
   const [sources, setSources] = useState<SourceConfig[]>([]);
   const [comment, setComment] = useState('');
   const [buildClientVersion, setBuildClientVersion] = useState(true);
@@ -117,7 +116,6 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
       if (lastVersion) {
         setVersion(Version.buildToString(Version.nextBuild(lastVersion.version.build)))
       }
-      setAuthor(whoAmI.data.whoAmI.account)
       setSources(serviceSources.data.serviceSources)
       setInitialized(true)
     }

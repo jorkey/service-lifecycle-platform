@@ -4,6 +4,7 @@ import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/ConfirmDialog";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -50,7 +51,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
-            return index != rowNum && row.get('service') == value
+            return index != rowNum && row.columnValues.get('service') == value
           })
       }
     },
@@ -62,15 +63,16 @@ export const ServicesTable = (props: ServicesTableParams) => {
     }
   ]
 
-  const rows = new Array<Map<string, GridTableColumnValue>>()
+  const rows = new Array<GridTableRowParams>()
   services.forEach(service => {
-    rows.push(new Map<string, GridTableColumnValue>([
-      ['service', service],
-      ['actions', deleteIcon ?
-          [<Button onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
-            deleteIcon
-          </Button>] : undefined]
-    ]))
+    rows.push({
+      columnValues: new Map<string, GridTableColumnValue>([
+        ['service', service],
+        ['actions', deleteIcon ?
+            [<Button onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
+              deleteIcon
+            </Button>] : undefined]
+      ])})
   })
 
   return (<>

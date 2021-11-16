@@ -10,6 +10,7 @@ import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {useTasksQuery} from "../../../../generated/graphql";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -91,14 +92,14 @@ const DeveloperVersionsInProcess = () => {
     }
   ]
 
-  const rows = tasksInProcess?.tasks.map(
-      task => new Map<string, GridTableColumnValue>([
-    ['service', task.parameters.find(p => p.name == 'service')?.value],
-    ['version', task.parameters.find(p => p.name == 'version')?.value],
-    ['author', task.parameters.find(p => p.name == 'author')?.value],
-    ['comment', task.parameters.find(p => p.name == 'comment')?.value],
-    ['startTime', task.creationTime]
-  ]))
+  const rows = tasksInProcess?.tasks.map(task => ({
+    columnValues: new Map<string, GridTableColumnValue>([
+      ['service', task.parameters.find(p => p.name == 'service')?.value],
+      ['version', task.parameters.find(p => p.name == 'version')?.value],
+      ['author', task.parameters.find(p => p.name == 'author')?.value],
+      ['comment', task.parameters.find(p => p.name == 'comment')?.value],
+      ['startTime', task.creationTime]
+    ])} as GridTableRowParams))
 
   return (
     <Card

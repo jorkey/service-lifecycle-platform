@@ -18,6 +18,7 @@ import ConfirmDialog from "../../../../common/ConfirmDialog";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -113,7 +114,7 @@ const ProvidersManager = () => {
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
-            return index != rowNum && row.get('distribution') == value
+            return index != rowNum && row.columnValues.get('distribution') == value
           })
       }
     },
@@ -168,18 +169,19 @@ const ProvidersManager = () => {
     }
   ]
 
-  const rows = new Array<Map<string, GridTableColumnValue>>()
-  providers?.providersInfo.forEach(provider => { rows.push(new Map<string, GridTableColumnValue>([
-    ['distribution', provider.distribution],
-    ['url', provider.url],
-    ['accessToken', provider.accessToken],
-    ['testConsumer', provider.testConsumer?provider.testConsumer:''],
-    ['uploadState', provider.uploadState?true:false],
-    ['autoUpdate', provider.autoUpdate?true:false],
-    ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
-      <DeleteIcon/>
-    </Button>]]
-  ])) })
+  const rows = new Array<GridTableRowParams>()
+  providers?.providersInfo.forEach(provider => { rows.push({
+    columnValues: new Map<string, GridTableColumnValue>([
+      ['distribution', provider.distribution],
+      ['url', provider.url],
+      ['accessToken', provider.accessToken],
+      ['testConsumer', provider.testConsumer?provider.testConsumer:''],
+      ['uploadState', provider.uploadState?true:false],
+      ['autoUpdate', provider.autoUpdate?true:false],
+      ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
+        <DeleteIcon/>
+      </Button>]]
+    ])}) })
 
   return (
     <Card

@@ -40,7 +40,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   private val dbName = s"${distribution}-test"
 
   private val distributionBuilder = new DistributionBuilder("None",
-    distribution, distributionDir, distributionPort, "Test distribution server",
+    distribution, distributionDir, distributionPort, s"Test distribution server: ${distribution}",
     dbName, false, false)
   private val clientBuilder = new ClientBuilder(builderDir)
 

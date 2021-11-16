@@ -8,6 +8,7 @@ import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
 import {LogsSubscriber} from "./LogsSubscriber";
+import {GridTableRowParams} from "../gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -231,15 +232,15 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   }
 
   const rows = lines
-    .map(line => {
-      return new Map<string, GridTableColumnValue>([
+    .map(line => ({
+      columnValues: new Map<string, GridTableColumnValue>([
         ['time', line.payload.time],
         ['instance', line.instance?line.instance:''],
         ['process', line.process?line.process:''],
         ['level', line.payload.level],
         ['unit', line.payload.unit],
         ['message', line.payload.message]
-      ]) })
+      ]) }) as GridTableRowParams)
 
   return <>
     <GridTable

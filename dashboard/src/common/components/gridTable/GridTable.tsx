@@ -8,16 +8,15 @@ import {
   TableRow
 } from "@material-ui/core";
 import {GridTableColumnParams, GridTableColumnValue} from "./GridTableColumn";
-import {GridTableRow} from "./GridTableRow";
+import {GridTableRow, GridTableRowParams} from "./GridTableRow";
 import {makeStyles} from "@material-ui/styles";
 import ReactDOM from "react-dom";
 
 interface GridParams {
   className: string,
   columns: GridTableColumnParams[],
-  rows: Map<string, GridTableColumnValue>[],
+  rows: GridTableRowParams[],
   checkBoxColumn?: boolean,
-  disableManualCheck?: boolean,
   addNewRow?: boolean,
   scrollToLastRow?: boolean,
   onClick?: (row: number) => void,
@@ -34,14 +33,15 @@ interface GridParams {
 }
 
 export const GridTable = (props: GridParams) => {
-  const { className, columns, rows, checkBoxColumn, disableManualCheck, addNewRow, scrollToLastRow,
+  const { className, columns, rows, checkBoxColumn, addNewRow, scrollToLastRow,
     onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsChecked, onRowsUnchecked,
     onScrollTop, onScrollMiddle, onScrollBottom  } = props
 
   const [editingRow, setEditingRow] = useState(-1)
   const [changingInProgress, setChangingInProgress] = useState(false)
 
-  const selectedRowsCount = rows.map(row => row.get("selected") as boolean).filter(v => v).length
+  const selectedRowsCount = rows.map(row =>
+    row.columnValues.get("selected") as boolean).filter(v => v).length
 
   return (
     <TableContainer className={className}
@@ -63,7 +63,7 @@ export const GridTable = (props: GridParams) => {
                 <Checkbox
                   indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
                   checked={rows.length > 0 && selectedRowsCount === rows.length}
-                  disabled={disableManualCheck}
+                  disabled={!rows.find(row => !row.disableManualCheck)}
                   onChange={(event) => {
                     if (event.target.checked) {
                       onRowsChecked?.(rows.map((row, index) => index))
@@ -77,18 +77,19 @@ export const GridTable = (props: GridParams) => {
               <TableCell key={index} className={column.className}>{column.headerName}</TableCell>) }
           </TableRow>
         </TableHead>
-        { <TableBody onScroll={e => console.log('on scroll ' + e)}>
+        { <TableBody>
             { (addNewRow ?
-              (<GridTableRow key={-1} columns={columns} values={new Map()} adding={addNewRow}
+              (<GridTableRow key={-1} columns={columns} columnValues={new Map()} adding={addNewRow}
                              onSubmitted={(values, oldValues) =>
                              onRowAdded?.(values) }
                              onCanceled={() => onRowAddCancelled?.()}/>) : null) }
             {  rows.map((row, rowNum) => {
-                return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns} values={row}
+                return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns}
+                                      columnValues={row.columnValues}
+                                      checkBoxColumn={row.checkBoxColumn}
+                                      disableManualCheck={row.disableManualCheck}
                                       adding={false}
                                       editing={rowNum == editingRow}
-                                      checkBoxColumn={checkBoxColumn}
-                                      disableManualCheck={disableManualCheck}
                                       scrollInto={
                                         scrollToLastRow && rowNum==rows.length-1
                                       }

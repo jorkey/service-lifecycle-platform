@@ -6,6 +6,7 @@ import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../common/components/gridTable/GridTable";
 import {Card, CardContent, CardHeader} from "@material-ui/core";
+import {GridTableRowParams} from "../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   content: {
@@ -65,13 +66,13 @@ export const LogsTailCard = (props: LogsTailCardParams) => {
   ]
 
   const rows = lines
-    .map(line => {
-      return new Map<string, GridTableColumnValue>([
+    .map(line => ({
+      columnValues: new Map<string, GridTableColumnValue>([
         ['time', line.time],
         ['level', line.level],
         ['unit', line.unit],
         ['message', line.message]
-      ]) })
+      ])}) as GridTableRowParams)
 
   return <Card>
     <CardHeader title={'Logs Tail'}/>

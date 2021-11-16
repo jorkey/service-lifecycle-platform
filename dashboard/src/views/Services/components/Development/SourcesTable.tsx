@@ -6,6 +6,7 @@ import {SourceConfig} from "../../../../generated/graphql";
 import DeleteIcon from "@material-ui/icons/Delete";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -65,7 +66,7 @@ const SourcesTable = (props: SourceTableParams) => {
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
-            return index != rowNum && row.get('name') == value
+            return index != rowNum && row.columnValues.get('name') == value
           })
       }
     },
@@ -107,15 +108,16 @@ const SourcesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = sources.map(source => new Map<string, GridTableColumnValue>([
-    ['name', source.name],
-    ['url', source.git.url],
-    ['branch', source.git.branch],
-    ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false],
-    ['actions', [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(source) : onSourceRemoved?.(source) }>
-      <DeleteIcon/>
-    </Button>]]
-  ]))
+  const rows = sources.map(source => ({
+    columnValues: new Map<string, GridTableColumnValue>([
+      ['name', source.name],
+      ['url', source.git.url],
+      ['branch', source.git.branch],
+      ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false],
+      ['actions', [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(source) : onSourceRemoved?.(source) }>
+        <DeleteIcon/>
+      </Button>]]
+    ])} as GridTableRowParams))
 
   return (<>
     <GridTable

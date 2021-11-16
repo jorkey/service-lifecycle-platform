@@ -10,6 +10,7 @@ import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -68,18 +69,19 @@ const ServicesTable = () => {
     }
   ]
 
-  const rows = new Array<Map<string, GridTableColumnValue>>()
+  const rows = new Array<GridTableRowParams>()
   if (services) {
     [...services.developerServices]
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(service => {
-        rows.push(new Map<string, GridTableColumnValue>([
-          ['service', service],
-          ['actions',
-            [<Button key='0' onClick={ () => setDeleteConfirm(service) }>
-              <DeleteIcon/>
-            </Button>]]
-        ]))
+        rows.push(
+          {columnValues: new Map<string, GridTableColumnValue>([
+            ['service', service],
+            ['actions',
+              [<Button key='0' onClick={ () => setDeleteConfirm(service) }>
+                <DeleteIcon/>
+              </Button>]]
+          ])})
       })
   }
 
@@ -89,7 +91,7 @@ const ServicesTable = () => {
       columns={columns}
       rows={rows}
       onClick={ (row) =>
-        setStartEdit(rows[row].get('service')! as string)
+        setStartEdit(rows[row].columnValues.get('service')! as string)
       }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}

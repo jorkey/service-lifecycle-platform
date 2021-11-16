@@ -10,6 +10,7 @@ import ConfirmDialog from '../../../../common/ConfirmDialog';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   profileTable: {
@@ -68,15 +69,16 @@ const ProfilesTable = () => {
     }
   ]
 
-  const rows = new Array<Map<string, GridTableColumnValue>>()
+  const rows = new Array<GridTableRowParams>()
   if (profiles) {
     [...profiles.serviceProfiles]
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(profile => {
-        rows.push(new Map<string, GridTableColumnValue>([
-          ['profile', profile.profile],
-          ['actions', [<DeleteIcon key='0' onClick={ () => setStartEdit(profile.profile) }/>]]
-        ]))
+        rows.push({
+          columnValues: new Map<string, GridTableColumnValue>([
+            ['profile', profile.profile],
+            ['actions', [<DeleteIcon key='0' onClick={ () => setStartEdit(profile.profile) }/>]]
+          ])})
       })
   }
 
@@ -86,7 +88,7 @@ const ProfilesTable = () => {
       columns={columns}
       rows={rows}
       onClick={ (row) =>
-        setStartEdit(rows[row].get('profile')! as string) }
+        setStartEdit(rows[row].columnValues.get('profile')! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

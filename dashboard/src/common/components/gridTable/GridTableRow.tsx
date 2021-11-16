@@ -18,10 +18,13 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export interface GridTableRowParams {
-  columns: Array<GridTableColumnParams>,
-  values: Map<string, GridTableColumnValue>,
+  columnValues: Map<string, GridTableColumnValue>
   checkBoxColumn?: boolean,
   disableManualCheck?: boolean,
+}
+
+export interface GridTableRowInternalParams extends GridTableRowParams {
+  columns: Array<GridTableColumnParams>,
   rowNum?: number,
   adding?: boolean,
   editing?: boolean,
@@ -38,8 +41,8 @@ export interface GridTableRowParams {
 // @ts-ignore
 const useMountEffect = fun => useEffect(fun, [])
 
-export const GridTableRow = (params: GridTableRowParams) => {
-  const { rowNum, columns, values, checkBoxColumn, disableManualCheck, adding, editing, scrollInto,
+export const GridTableRow = (params: GridTableRowInternalParams) => {
+  const { rowNum, columns, columnValues, checkBoxColumn, disableManualCheck, adding, editing, scrollInto,
     onClick, onBeginEditing, onSubmitted, onCanceled, onChecked, onUnchecked } = params
 
   const [editColumn, setEditColumn] = useState<string>()
@@ -60,7 +63,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
     setEditValues(new Map())
   }
 
-  const selected = values.get('selected') as boolean
+  const selected = columnValues.get('selected') as boolean
 
   const valuesColumns =
     columns.map((column, index) =>
@@ -69,8 +72,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
                     if (!adding && column.editable && editColumn != column.name) {
                       setEditColumn(column.name)
                       if (!editing && onBeginEditing?.()) {
-                        setEditOldValues(new Map(values))
-                        setEditValues(new Map(values))
+                        setEditOldValues(new Map(columnValues))
+                        setEditValues(new Map(columnValues))
                       }
                     } else if (column.type != 'elements') {
                       onClick?.()
@@ -84,26 +87,26 @@ export const GridTableRow = (params: GridTableRowParams) => {
       >
         { column.type == 'checkbox' ?
           <Checkbox className={classes.input}
-                    checked={adding || editing ? editValues.get(column.name) ? editValues.get(column.name) as boolean : false : values.get(column.name) as boolean}
+                    checked={adding || editing ? editValues.get(column.name) ? editValues.get(column.name) as boolean : false : columnValues.get(column.name) as boolean}
                     onChange={() => {
-                      const value = adding || editing ? editValues.get(column.name) as boolean : values.get(column.name) as boolean
+                      const value = adding || editing ? editValues.get(column.name) as boolean : columnValues.get(column.name) as boolean
                       setEditValues(editValues => new Map(editValues.set(column.name, !value)))
                     }}
           />
           : column.type == 'date' ?
-            values.get(column.name)?
-              ((values.get(column.name) as Date).toLocaleString()+'.'+(values.get(column.name) as Date).getMilliseconds()):''
+            columnValues.get(column.name)?
+              ((columnValues.get(column.name) as Date).toLocaleString()+'.'+(columnValues.get(column.name) as Date).getMilliseconds()):''
           : column.type == 'elements' ?
               (column.name == 'actions' ?
                 <GridActions adding={adding}
                              editing={editing}
                              valid={!columns.find(
                                c => { return c.validate && !c.validate(editValues.get(c.name), rowNum) })}
-                             actions={values.get(column.name)! as JSX.Element[]}
+                             actions={columnValues.get(column.name)! as JSX.Element[]}
                              onSubmit={() => onSubmitted?.(editValues, editOldValues) }
                              onCancel={() => onCanceled?.() }
                 />
-                : values.get(column.name)! as JSX.Element[])
+                : columnValues.get(column.name)! as JSX.Element[])
           : (adding || (editing && editColumn === column.name)) ?
             (column.select ?
               <Select className={classes.input}
@@ -125,7 +128,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
                       error={(column.validate)?!column.validate(editValues.get(column.name), rowNum):false}
               />)
           : adding || editing ? editValues.get(column.name)!
-          : values.get(column.name)!
+          : columnValues.get(column.name)!
       }
       </TableCell>))
 

@@ -15,6 +15,7 @@ import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -117,16 +118,16 @@ const LastClientVersions = () => {
   const rows = clientVersionsInfo?.clientVersionsInfo
     .sort((v1, v2) =>
       Version.compareClientDistributionVersions(v2.version, v1.version))
-    .map(
-        version => new Map<string, GridTableColumnValue>([
-      ['service', version.service],
-      ['version', Version.clientDistributionVersionToString(version.version)],
-      ['author', version.buildInfo.author],
-      ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-      ['creationTime', version.buildInfo.time],
-      ['installedBy', version.installInfo.account],
-      ['installTime', version.installInfo.time],
-    ]))
+    .map(version => ({
+      columnValues: new Map<string, GridTableColumnValue>([
+        ['service', version.service],
+        ['version', Version.clientDistributionVersionToString(version.version)],
+        ['author', version.buildInfo.author],
+        ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
+        ['creationTime', version.buildInfo.time],
+        ['installedBy', version.installInfo.account],
+        ['installTime', version.installInfo.time],
+      ])} as GridTableRowParams))
 
   return (
     <Card

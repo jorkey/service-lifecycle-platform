@@ -6,6 +6,7 @@ import {
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
+import {GridTableRowParams} from "../gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -97,21 +98,21 @@ export const TasksTable = (props: TasksTableParams) => {
   }
 
   const rows = tasks?.tasks
-    .map(task => {
-      return new Map<string, GridTableColumnValue>([
+    .map(task => ({
+      columnValues: new Map<string, GridTableColumnValue>([
         ['creationTime', task.creationTime],
         ['id', task.id],
         ['type', task.type],
         ['parameters', parametersToString(task.parameters)],
         ['active', task.active?true:false]
-      ]) })
+      ]) }) as GridTableRowParams)
 
   return rows?<>
     <GridTable
       className={className}
       columns={columns}
       rows={rows}
-      onClick={row => onClick(rows[row].get('id')! as string)}
+      onClick={row => onClick(rows[row].columnValues.get('id')! as string)}
     />
   </>:null
 }

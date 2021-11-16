@@ -11,6 +11,7 @@ import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   accountsTable: {
@@ -101,7 +102,7 @@ const UserAccountsTable: React.FC<UserAccountsTableProps> = props => {
     className: classes.actionsColumn
   })
 
-  const rows = new Array<Map<string, GridTableColumnValue>>()
+  const rows = new Array<GridTableRowParams>()
   if (accountsInfo) {
     [...accountsInfo.userAccountsInfo]
       .sort((u1,u2) =>  (u1.account > u2.account ? 1 : -1))
@@ -114,7 +115,7 @@ const UserAccountsTable: React.FC<UserAccountsTableProps> = props => {
         row.set('actions', [<Button key='0' onClick={ () => setDeleteConfirm(account.account) }>
             <DeleteIcon/>
           </Button>])
-        rows.push(row)
+        rows.push({ columnValues: row })
       })
   }
 
@@ -124,7 +125,7 @@ const UserAccountsTable: React.FC<UserAccountsTableProps> = props => {
       columns={columns}
       rows={rows}
       onClick={ (row) =>
-        setStartEdit(rows[row].get('account')! as string) }
+        setStartEdit(rows[row].columnValues.get('account')! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

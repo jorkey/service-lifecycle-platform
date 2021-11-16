@@ -7,6 +7,7 @@ import {Version} from "../../../common";
 import {Button} from "@material-ui/core";
 import DownloadIcon from '@material-ui/icons/CloudDownload';
 import {download} from "../../../common/Download";
+import {GridTableRowParams} from "../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
   div: {
@@ -92,8 +93,8 @@ export const FaultsTable = (props: FaultsTableParams) => {
   const development = process.env.NODE_ENV === 'development';
 
   const rows = faults
-    .map((fault, row) => {
-      return new Map<string, GridTableColumnValue>([
+    .map((fault, row) => ({
+      columnValues: new Map<string, GridTableColumnValue>([
         ['time', fault.payload.info.time],
         ['distribution', fault.distribution],
         ['service', fault.payload.info.service],
@@ -111,7 +112,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
           </Button>
         ] ],
         ['selected', row == selected]
-      ]) })
+      ])}) as GridTableRowParams)
 
   return <GridTable
       className={className}

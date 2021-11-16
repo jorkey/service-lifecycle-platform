@@ -7,13 +7,13 @@ import {
   CardContent, CardHeader, Select,
 } from '@material-ui/core';
 import {
-  ClientDistributionVersion, ClientVersionInfo,
+  ClientDesiredVersion,
+  ClientDistributionVersion,
   DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
   DistributionProviderInfo,
-  useBuildClientVersionsMutation,
-  useClientVersionsInfoQuery,
-  useDeveloperVersionsInfoQuery, useProfileServicesQuery,
+  useBuildClientVersionsMutation, useClientDesiredVersionsQuery,
+  useClientVersionsInfoQuery, useDeveloperDesiredVersionsQuery,
   useProviderDesiredVersionsLazyQuery,
   useProvidersInfoQuery, useProviderTestedVersionsLazyQuery,
   useSetProviderTestedVersionsMutation, useSetTestedVersionsMutation, useTestedVersionsLazyQuery,
@@ -27,6 +27,7 @@ import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/co
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Button from "@material-ui/core/Button";
 import {RouteComponentProps, useHistory} from "react-router-dom";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -104,11 +105,15 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       }
     }
   })
-  const [ getProviderVersions, providerVersions ] = useProviderDesiredVersionsLazyQuery({
+  const [ getProviderDesiredVersions, providerDesiredVersions ] = useProviderDesiredVersionsLazyQuery({
     onError(err) { setError('Query provider desired versions error ' + err.message) },
   })
-  const { data: developerVersions, refetch: getDeveloperVersions } = useDeveloperVersionsInfoQuery({
-    onError(err) { setError('Query developer versions error ' + err.message) },
+  const { data: developerDesiredVersions, refetch: getDeveloperDesiredVersions } = useDeveloperDesiredVersionsQuery({
+    onError(err) { setError('Query developer desired versions error ' + err.message) },
+  })
+  const { data: clientDesiredVersions, refetch: getClientDesiredVersions } = useClientDesiredVersionsQuery({
+    onError(err) { setError('Query client desired versions error ' + err.message) },
+    onCompleted() { setError(undefined) }
   })
   const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
     onError(err) { setError('Query client versions error ' + err.message) },
@@ -146,16 +151,12 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       getProviderTestedVersions({ variables: { distribution: provider!.distribution } })
     }
   })
-  const { data: selfServicesProfile } = useProfileServicesQuery({
-    variables: { profile: 'self' },
-    onError(err) { setError('Query self profile services error ' + err.message) },
-  })
 
   const history = useHistory()
 
   React.useEffect(() => {
     if (provider) {
-      getProviderVersions({ variables: { distribution: provider.distribution } })
+      getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
       getProviderTestedVersions({ variables: { distribution: provider.distribution } })
     } else {
       getTestedVersions()
@@ -166,33 +167,24 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     if (provider) {
       getProviderTestedVersions({ variables: {distribution: provider.distribution} })
     }
-  }, [ providerVersions ])
+  }, [ providerDesiredVersions ])
 
   React.useEffect(() => {
     setRows(makeRowsData())
-  }, [ provider, providerVersions, developerVersions, clientVersions, testedVersions, providerTestedVersions ])
-
-  const hasSelfClient = (service: string) => {
-    return selfServicesProfile?.serviceProfiles?.find(profile => profile.services.find(s => s == service))
-  }
+  }, [ provider, providerDesiredVersions, developerDesiredVersions, clientDesiredVersions, testedVersions, providerTestedVersions ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
 
     if (provider) {
-      if (providerVersions.data) {
-        providerVersions.data.providerDesiredVersions.forEach(
+      if (providerDesiredVersions.data) {
+        providerDesiredVersions.data.providerDesiredVersions.forEach(
           version => servicesSet.add(version.service)
         )
       }
-    } else if (developerVersions?.developerVersionsInfo) {
-      developerVersions.developerVersionsInfo.forEach(
-        info => {
-          if (hasSelfClient(info.service) &&
-              info.version.distribution == localStorage.getItem('distribution')) {
-            servicesSet.add(info.service)
-          }
-        }
+    } else if (developerDesiredVersions?.developerDesiredVersions) {
+      developerDesiredVersions.developerDesiredVersions.forEach(
+        version => servicesSet.add(version.service)
       )
     }
 
@@ -203,39 +195,35 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     const services = makeServicesList()
     return services.sort().map(
       service => {
-        let selected = false
-        const providerVersion = providerVersions.data?.providerDesiredVersions
-          .find(version => version.service == service)
-        const developerVersion = developerVersions?.developerVersionsInfo
-          .sort((v1, v2) => Version.compareDeveloperDistributionVersions(v1.version, v2.version))
-          .reverse()
-          .find(version => version.service == service)
-        const clientVersion = clientVersions?.clientVersionsInfo
-          .sort((v1, v2) => Version.compareClientDistributionVersions(v1.version, v2.version))
-          .reverse()
-          .find(version => version.service == service)
+        const providerVersion = providerDesiredVersions.data?.providerDesiredVersions
+          .find(version => version.service == service)?.version
+        const developerVersion = developerDesiredVersions?.developerDesiredVersions
+          .find(version => version.service == service)?.version
+        const clientVersion = clientDesiredVersions?.clientDesiredVersions
+          .find(version => version.service == service)?.version
         const testedVersion = testedVersions?.data?.testedVersions?.find(version => version.service == service)
         const providerTestedVersion = providerTestedVersions?.data?.providerTestedVersions
           .find(version => version.service == service)
 
-        if (providerVersion && Version.compareDeveloperDistributionVersions(developerVersion?.version, providerVersion?.version) != 0) {
-          selected = true
-        }
-        if (Version.compareBuilds(developerVersion?.version.build, clientVersion?.version.developerBuild) != 0) {
-          selected = true
-        }
+        const sourceVersion = providerVersion?providerVersion:developerVersion
+        const hasClientVersion = clientVersions?.clientVersionsInfo
+          .filter(info => info.service == service)
+          .find(info => Version.compareDeveloperDistributionVersions(sourceVersion,
+          { distribution: info.version.distribution, build: info.version.developerBuild}) == 0)
+        let selected = !hasClientVersion
+
         return {
           selected: selected,
           service: service,
-          providerVersion: providerVersion?.version,
-          developerVersion: developerVersion?.version,
-          clientVersion: clientVersion?.version,
+          providerVersion: providerVersion,
+          developerVersion: developerVersion,
+          clientVersion: clientVersion,
           testedVersion: testedVersion?testedVersion?.version:providerTestedVersion?.version
         } as RowData
       })
   }
 
-  const validate = () => !!rowsView.find(value => value.get("selected"))
+  const validate = () => !!rowsView.find(value => value.columnValues.get("selected"))
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -245,17 +233,17 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     },
     {
       name: 'providerVersion',
-      headerName: 'Provider Version',
+      headerName: 'Provider Desired Version',
       className: classes.versionColumn,
     },
     {
       name: 'developerVersion',
-      headerName: 'Developer Version',
+      headerName: 'Developer Desired Version',
       className: classes.versionColumn,
     },
     {
       name: 'clientVersion',
-      headerName: 'Client Version',
+      headerName: 'Client Desired Version',
       className: classes.versionColumn,
     },
     {
@@ -266,18 +254,20 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   ].filter(column => column.name != 'providerVersion' || !!provider)
    .filter(column => column.name != 'testedVersion' || !!providerTestedVersions.data || providerTestedVersions.loading)
 
-  const rowsView = rows.map(row =>
-    new Map<string, GridTableColumnValue>([
+  const rowsView = rows.map(row => ({
+    checkBoxColumn: !provider || !provider.testConsumer,
+    disableManualCheck: !!provider && !!provider.testConsumer && row.selected,
+    columnValues: new Map<string, GridTableColumnValue>([
       ['selected', row.selected],
       ['service', row.service],
       ['providerVersion', row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):''],
       ['developerVersion', row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):''],
       ['clientVersion', row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):''],
       ['testedVersion', row.testedVersion?Version.developerDistributionVersionToString(row.testedVersion):'']
-    ])
+    ])} as GridTableRowParams)
   )
 
-  function clientVersionToDeveloperVersion(info: ClientVersionInfo): DeveloperDesiredVersionInput {
+  function clientVersionToDeveloperVersion(info: ClientDesiredVersion): DeveloperDesiredVersionInput {
     return {
       service: info.service,
       version: { distribution: info.version.distribution, build: info.version.developerBuild }
@@ -287,8 +277,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   function isTested() {
     const installedVersions =
       (provider?
-          clientVersions?.clientVersionsInfo?.filter(info => info.version.distribution == provider.distribution):
-          clientVersions?.clientVersionsInfo?.filter(info => info.version.distribution == localStorage.getItem('distribution')))
+          clientDesiredVersions?.clientDesiredVersions?.filter(version => version.version.distribution == provider.distribution):
+          clientDesiredVersions?.clientDesiredVersions?.filter(version => version.version.distribution == localStorage.getItem('distribution')))
       ?.map(version => clientVersionToDeveloperVersion(version))
     if (installedVersions) {
       const markedAsTested = provider?providerTestedVersions?.data?.providerTestedVersions:testedVersions?.data?.testedVersions
@@ -341,10 +331,10 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
               className={classes.control}
               refresh={ () => {
                 if (provider) {
-                  getProviderVersions({ variables: { distribution: provider.distribution } })
+                  getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
                 }
-                getDeveloperVersions()
-                getClientVersions() }}
+                getDeveloperDesiredVersions()
+                getClientDesiredVersions() }}
             />
           </FormGroup>
         }
@@ -357,7 +347,6 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
              columns={columns}
              rows={rowsView?rowsView:[]}
              checkBoxColumn={true}
-             disableManualCheck={provider && !!provider.testConsumer}
              onRowsChecked={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
@@ -379,7 +368,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
             >
               Update Client
             </Button>
-            {clientVersions?<Button className={classes.control}
+            {clientDesiredVersions?<Button className={classes.control}
                     color="primary"
                     variant="contained"
                     disabled={isTested()}
@@ -388,7 +377,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                         setProviderTestedVersions({
                           variables: {
                             distribution: provider.distribution,
-                            versions: clientVersions.clientVersionsInfo
+                            versions: clientDesiredVersions?.clientDesiredVersions
                               .filter(info => info.version.distribution == provider.distribution)
                               .map(version => clientVersionToDeveloperVersion(version)
                             )
@@ -397,8 +386,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
                       } else {
                         setTestedVersions({
                           variables: {
-                            versions: clientVersions.clientVersionsInfo
-                              .filter(info => info.version.distribution == localStorage.getItem('distribution'))
+                            versions: clientDesiredVersions?.clientDesiredVersions
+                              .filter(version => version.version.distribution == localStorage.getItem('distribution'))
                               .map(version => clientVersionToDeveloperVersion(version))
                         }})
                       }}
