@@ -111,7 +111,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
             <DownloadIcon/>
           </Button>
         ] ],
-        ['selected', row == selected]
+        ['select', row == selected]
       ])}) as GridTableRowParams)
 
   return <GridTable

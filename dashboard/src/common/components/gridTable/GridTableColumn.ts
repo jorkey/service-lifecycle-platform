@@ -2,8 +2,8 @@ export type GridTableColumnValue = string|number|boolean|Date|JSX.Element[]|unde
 
 export interface GridTableColumnParams {
   name: string,
-  headerName: string,
-  className: string,
+  headerName?: string,
+  className?: string,
   type?: 'checkbox' | 'date' | 'number' | 'elements',
   select?: string[],
   editable?: boolean,

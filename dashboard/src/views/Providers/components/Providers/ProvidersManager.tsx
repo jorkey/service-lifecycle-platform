@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme:any) => ({
   urlColumn: {
     padding: '4px',
     paddingLeft: '16px',
+    width: '400px'
   },
   accessTokenColumn: {
     padding: '4px',
@@ -52,12 +53,12 @@ const useStyles = makeStyles((theme:any) => ({
   uploadState: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '400px'
+    width: '100px'
   },
   autoUpdate: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '400px'
+    width: '100px'
   },
   actionsColumn: {
     padding: '4px',

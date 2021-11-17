@@ -171,7 +171,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   React.useEffect(() => {
     setRows(makeRowsData())
-  }, [ provider, providerDesiredVersions, developerDesiredVersions, clientDesiredVersions, testedVersions, providerTestedVersions ])
+  }, [ provider, providerDesiredVersions, developerDesiredVersions, clientDesiredVersions,
+    clientVersions, testedVersions, providerTestedVersions ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
@@ -223,9 +224,13 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       })
   }
 
-  const validate = () => !!rowsView.find(value => value.columnValues.get("selected"))
+  const validate = () => !!rowsView.find(value => value.columnValues.get('select'))
 
   const columns: Array<GridTableColumnParams> = [
+    {
+      name: 'select',
+      type: 'checkbox',
+    },
     {
       name: 'service',
       headerName: 'Service',
@@ -252,20 +257,20 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       className: classes.versionColumn,
     }
   ].filter(column => column.name != 'providerVersion' || !!provider)
-   .filter(column => column.name != 'testedVersion' || !!providerTestedVersions.data || providerTestedVersions.loading)
+   .filter(column => column.name != 'testedVersion' || !!providerTestedVersions.data || providerTestedVersions.loading) as GridTableColumnParams[]
 
   const rowsView = rows.map(row => ({
-    checkBoxColumn: !provider || !provider.testConsumer,
-    disableManualCheck: !!provider && !!provider.testConsumer && row.selected,
+    checkBoxColumn: !provider || !provider.testConsumer || row.selected,
     columnValues: new Map<string, GridTableColumnValue>([
-      ['selected', row.selected],
+      ['select', row.selected],
       ['service', row.service],
       ['providerVersion', row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):''],
       ['developerVersion', row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):''],
       ['clientVersion', row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):''],
       ['testedVersion', row.testedVersion?Version.developerDistributionVersionToString(row.testedVersion):'']
-    ])} as GridTableRowParams)
-  )
+    ]),
+    constColumns: (!!provider && !!provider.testConsumer)?['select']:undefined,
+  } as GridTableRowParams))
 
   function clientVersionToDeveloperVersion(info: ClientDesiredVersion): DeveloperDesiredVersionInput {
     return {
@@ -346,13 +351,12 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
              className={classes.versionsTable}
              columns={columns}
              rows={rowsView?rowsView:[]}
-             checkBoxColumn={true}
-             onRowsChecked={(rowsNum) => {
+             onRowsSelected={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
                  developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion } as RowData }))
              }}
-             onRowsUnchecked={(rowsNum) => {
+             onRowsUnselected={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
                  developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion } as RowData }))

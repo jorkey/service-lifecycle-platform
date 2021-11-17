@@ -16,7 +16,6 @@ interface GridParams {
   className: string,
   columns: GridTableColumnParams[],
   rows: GridTableRowParams[],
-  checkBoxColumn?: boolean,
   addNewRow?: boolean,
   scrollToLastRow?: boolean,
   onClick?: (row: number) => void,
@@ -25,23 +24,23 @@ interface GridParams {
   onChanging?: boolean,
   onRowChanged?: (row: number, values: Map<string, GridTableColumnValue>,
                   oldValues: Map<string, GridTableColumnValue>) => Promise<void> | void,
-  onRowsChecked?: (rows: number[]) => void
-  onRowsUnchecked?: (rows: number[]) => void
+  onRowsSelected?: (rows: number[]) => void
+  onRowsUnselected?: (rows: number[]) => void
   onScrollTop?: () => void
   onScrollMiddle?: () => void
   onScrollBottom?: () => void
 }
 
 export const GridTable = (props: GridParams) => {
-  const { className, columns, rows, checkBoxColumn, addNewRow, scrollToLastRow,
-    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsChecked, onRowsUnchecked,
+  const { className, columns, rows, addNewRow, scrollToLastRow,
+    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected,
     onScrollTop, onScrollMiddle, onScrollBottom  } = props
 
   const [editingRow, setEditingRow] = useState(-1)
   const [changingInProgress, setChangingInProgress] = useState(false)
 
   const selectedRowsCount = rows.map(row =>
-    row.columnValues.get("selected") as boolean).filter(v => v).length
+    row.columnValues.get('select') as boolean).filter(v => v).length
 
   return (
     <TableContainer className={className}
@@ -58,23 +57,28 @@ export const GridTable = (props: GridParams) => {
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            { checkBoxColumn ?
-              <TableCell padding='checkbox'>
-                <Checkbox
-                  indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
-                  checked={rows.length > 0 && selectedRowsCount === rows.length}
-                  disabled={!rows.find(row => !row.disableManualCheck)}
-                  onChange={(event) => {
-                    if (event.target.checked) {
-                      onRowsChecked?.(rows.map((row, index) => index))
-                    } else {
-                      onRowsUnchecked?.(rows.map((row, index) => index))
-                    }
-                  }}
-                />
-              </TableCell> : null}
-            { columns.map((column, index) =>
-              <TableCell key={index} className={column.className}>{column.headerName}</TableCell>) }
+            { columns.map((column, index) => {
+              return column.name == 'select' ?
+                <TableCell padding='checkbox' className={column.className}>
+                  {column.editable == false || rows.find(row => !row.constColumns?.find(c => c == column.name))?
+                    <Checkbox className={column.className}
+                      indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
+                      checked={rows.length > 0 && selectedRowsCount === rows.length}
+                      disabled={column.editable == false ||
+                                !rows.find(row => !row.constColumns?.find(c => c == 'select'))}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          onRowsSelected?.(rows.map((row, index) => index))
+                        } else {
+                          onRowsUnselected?.(rows.map((row, index) => index))
+                        }
+                      }}
+                    />:null}
+                </TableCell> :
+                <TableCell key={index} className={column.className}>
+                  {column.headerName}
+                </TableCell>
+            }) }
           </TableRow>
         </TableHead>
         { <TableBody>
@@ -86,21 +90,20 @@ export const GridTable = (props: GridParams) => {
             {  rows.map((row, rowNum) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns}
                                       columnValues={row.columnValues}
-                                      checkBoxColumn={row.checkBoxColumn}
-                                      disableManualCheck={row.disableManualCheck}
+                                      constColumns={row.constColumns}
                                       adding={false}
                                       editing={rowNum == editingRow}
                                       scrollInto={
                                         scrollToLastRow && rowNum==rows.length-1
                                       }
-                                      onClick={() => {
+                                      onClicked={() => {
                                         onClick?.(rowNum)
                                       }}
-                                      onChecked={() => {
-                                        onRowsChecked?.([rowNum])
+                                      onSelected={() => {
+                                        onRowsSelected?.([rowNum])
                                       }}
-                                      onUnchecked={() => {
-                                        onRowsUnchecked?.([rowNum])
+                                      onUnselected={() => {
+                                        onRowsUnselected?.([rowNum])
                                       }}
                                       onBeginEditing={() => {
                                         if (!changingInProgress) {

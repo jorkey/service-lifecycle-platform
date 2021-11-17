@@ -7,9 +7,9 @@ import {
   TableCell,
   TableRow
 } from "@material-ui/core";
-import {makeStyles} from "@material-ui/core/styles";
 import {GridActions} from "./GridActions";
 import {GridTableColumnParams, GridTableColumnValue} from "./GridTableColumn";
+import {makeStyles} from "@material-ui/styles";
 
 const useStyles = makeStyles(theme => ({
   input: {
@@ -19,8 +19,7 @@ const useStyles = makeStyles(theme => ({
 
 export interface GridTableRowParams {
   columnValues: Map<string, GridTableColumnValue>
-  checkBoxColumn?: boolean,
-  disableManualCheck?: boolean,
+  constColumns?: string[] | undefined
 }
 
 export interface GridTableRowInternalParams extends GridTableRowParams {
@@ -30,20 +29,20 @@ export interface GridTableRowInternalParams extends GridTableRowParams {
   editing?: boolean,
   changingInProgress?: boolean,
   scrollInto?: boolean,
-  onClick?: () => void,
+  onClicked?: () => void,
   onBeginEditing?: () => boolean,
   onSubmitted?: (values: Map<string, GridTableColumnValue>, oldValues: Map<string, GridTableColumnValue>) => void,
   onCanceled?: () => void,
-  onChecked?: () => void
-  onUnchecked?: () => void
+  onSelected?: () => void
+  onUnselected?: () => void
 }
 
 // @ts-ignore
 const useMountEffect = fun => useEffect(fun, [])
 
 export const GridTableRow = (params: GridTableRowInternalParams) => {
-  const { rowNum, columns, columnValues, checkBoxColumn, disableManualCheck, adding, editing, scrollInto,
-    onClick, onBeginEditing, onSubmitted, onCanceled, onChecked, onUnchecked } = params
+  const { rowNum, columns, columnValues, constColumns, adding, editing, scrollInto,
+    onClicked, onBeginEditing, onSubmitted, onCanceled, onSelected, onUnselected } = params
 
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, GridTableColumnValue>>(new Map())
@@ -63,11 +62,10 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
     setEditValues(new Map())
   }
 
-  const selected = columnValues.get('selected') as boolean
-
   const valuesColumns =
     columns.map((column, index) =>
       (<TableCell key={index} className={column.className}
+                  padding={column.type == 'checkbox'?'checkbox':undefined}
                   onClick={() => {
                     if (!adding && column.editable && editColumn != column.name) {
                       setEditColumn(column.name)
@@ -76,7 +74,7 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
                         setEditValues(new Map(columnValues))
                       }
                     } else if (column.type != 'elements') {
-                      onClick?.()
+                      onClicked?.()
                     }
                   }}
                   onKeyDown={e => {
@@ -86,13 +84,23 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
                   }}
       >
         { column.type == 'checkbox' ?
-          <Checkbox className={classes.input}
-                    checked={adding || editing ? editValues.get(column.name) ? editValues.get(column.name) as boolean : false : columnValues.get(column.name) as boolean}
-                    onChange={() => {
-                      const value = adding || editing ? editValues.get(column.name) as boolean : columnValues.get(column.name) as boolean
-                      setEditValues(editValues => new Map(editValues.set(column.name, !value)))
-                    }}
-          />
+          (column.editable || !constColumns?.find(c => c == column.name))?
+            <Checkbox className={column.className}
+                      checked={adding || editing ? editValues.get(column.name) ? editValues.get(column.name) as boolean : false : columnValues.get(column.name) as boolean}
+                      disabled={column.editable == false || !!constColumns?.find(c => c == column.name)}
+                      onChange={(e) => {
+                        if (column.name == 'select')
+                          if (e.target.checked) {
+                            onSelected?.()
+                          } else {
+                            onUnselected?.()
+                          }
+                        else {
+                          const value = adding || editing ? editValues.get(column.name) as boolean : columnValues.get(column.name) as boolean
+                          setEditValues(editValues => new Map(editValues.set(column.name, !value)))
+                        }
+                      }}
+            />:null
           : column.type == 'date' ?
             columnValues.get(column.name)?
               ((columnValues.get(column.name) as Date).toLocaleString()+'.'+(columnValues.get(column.name) as Date).getMilliseconds()):''
@@ -109,7 +117,7 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
                 : columnValues.get(column.name)! as JSX.Element[])
           : (adding || (editing && editColumn === column.name)) ?
             (column.select ?
-              <Select className={classes.input}
+              <Select className={column.className}
                       autoFocus={true}
                       value={editValues.get(column.name)?editValues.get(column.name):''}
                       onChange={e => {
@@ -118,7 +126,7 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
               >
                 { column.select.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
               </Select>
-            : <Input  className={classes.input}
+            : <Input  className={column.className + "," + classes.input}
                       type={column.type}
                       value={editValues.get(column.name)?editValues.get(column.name):''}
                       autoFocus={adding?(index == 0):true}
@@ -132,19 +140,7 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
       }
       </TableCell>))
 
-  return (<TableRow ref={myRef} selected={selected}>{ checkBoxColumn ?
-            <TableCell padding='checkbox' key={-1}>
-              <Checkbox
-                checked={selected}
-                disabled={disableManualCheck}
-                onChange={(event) => {
-                  if (event.target.checked) {
-                    onChecked?.()
-                  } else {
-                    onUnchecked?.()
-                  }
-                }}
-              />
-            </TableCell>:null}{valuesColumns}
-          </TableRow>)
+  const selected = !!columns.find(c => { return c.name == 'select' && columnValues.get(c.name) == true })
+
+  return (<TableRow ref={myRef} selected={selected}>{valuesColumns}</TableRow>)
 }
