@@ -13,8 +13,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import {VersionsTable} from './VersionsTable';
 import {
-  AccountRole,
-  useClientDesiredVersionsLazyQuery, useConsumerAccountInfoQuery, useConsumerAccountsInfoQuery,
+  useClientDesiredVersionsLazyQuery, useConsumerAccountsInfoQuery,
   useDeveloperDesiredVersionsLazyQuery,
   useInstalledDesiredVersionsLazyQuery,
   useServiceStatesLazyQuery
@@ -33,9 +32,6 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     alignItems: 'center'
   },
-  // status: {
-  //   marginRight: theme.spacing(1)
-  // },
   actions: {
     justifyContent: 'flex-end'
   },

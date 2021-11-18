@@ -191,8 +191,8 @@ export const VersionsTable: React.FC<VersionsTableProps> = props => {
     <TableHead>
       <TableRow>
         <TableCell className={classes.serviceColumn}>Service</TableCell>
-        <TableCell className={classes.versionColumn}>Developer Version</TableCell>
-        <TableCell className={classes.versionColumn}>Client Version</TableCell>
+        <TableCell className={classes.versionColumn}>Developer Desired Version</TableCell>
+        <TableCell className={classes.versionColumn}>Client Desired Version</TableCell>
         <TableCell className={classes.versionColumn}>Working Version</TableCell>
         <TableCell className={classes.directoryColumn}>Directory</TableCell>
         <TableCell className={classes.instancesColumn}>Instances</TableCell>

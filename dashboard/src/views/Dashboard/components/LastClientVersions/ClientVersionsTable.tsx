@@ -1,18 +1,11 @@
-import React, {useState} from 'react';
-import clsx from 'clsx';
+import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {
-  Card,
-  CardContent, CardHeader,
-} from '@material-ui/core';
-import {
-  useDeveloperVersionsInfoQuery,
+  ClientVersionsInfoQuery,
+  useClientVersionsInfoQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
-import Alert from "@material-ui/lab/Alert";
-import FormGroup from "@material-ui/core/FormGroup";
-import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
@@ -20,9 +13,6 @@ const useStyles = makeStyles((theme:any) => ({
   root: {},
   content: {
     padding: 0
-  },
-  inner: {
-    minWidth: 800
   },
   versionsTable: {
     marginTop: 20
@@ -47,6 +37,14 @@ const useStyles = makeStyles((theme:any) => ({
     width: '250px',
     padding: '4px',
   },
+  installedByColumn: {
+    width: '150px',
+    padding: '4px',
+  },
+  installTimeColumn: {
+    width: '250px',
+    padding: '4px',
+  },
   control: {
     paddingLeft: '10px',
     textTransform: 'none'
@@ -56,15 +54,14 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-const LastDeveloperVersions = () => {
+interface LastClientVersionsTableProps {
+  clientVersions:  ClientVersionsInfoQuery | undefined
+}
+
+const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
+  const { clientVersions } = props
+
   const classes = useStyles()
-
-  const [error, setError] = useState<string>()
-
-  const {data:developerVersionsInfo, refetch:getDeveloperVersionsInfo} = useDeveloperVersionsInfoQuery({
-    onError(err) { setError('Query developer versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -93,46 +90,35 @@ const LastDeveloperVersions = () => {
       headerName: 'Comment',
       className: classes.commentColumn,
     },
+    {
+      name: 'installedBy',
+      headerName: 'Installed By',
+      className: classes.installedByColumn,
+    },
+    {
+      name: 'installTime',
+      headerName: 'Install Time',
+      type: 'date',
+      className: classes.installTimeColumn,
+    }
   ]
 
-  const rows = developerVersionsInfo?.developerVersionsInfo
+  const rows = clientVersions?.clientVersionsInfo
     .sort((v1, v2) =>
-      Version.compareBuilds(v2.version.build, v1.version.build))
+      Version.compareClientDistributionVersions(v2.version, v1.version))
     .map(version => ({
       columnValues: new Map<string, GridTableColumnValue>([
         ['service', version.service],
-        ['version', Version.buildToString(version.version.build)],
+        ['version', Version.clientDistributionVersionToString(version.version)],
         ['author', version.buildInfo.author],
         ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-        ['creationTime', version.buildInfo.time]
-      ]) } as GridTableRowParams))
+        ['creationTime', version.buildInfo.time],
+        ['installedBy', version.installInfo.account],
+        ['installTime', version.installInfo.time],
+      ])} as GridTableRowParams))
 
-  return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <FormGroup row>
-            <RefreshControl
-              className={classes.control}
-              refresh={() => getDeveloperVersionsInfo()}
-            />
-          </FormGroup>
-        }
-        title='Last Developer Versions'
-      />
-      <CardContent className={classes.content}>
-        <div className={classes.inner}>
-          <GridTable
-           className={classes.versionsTable}
-           columns={columns}
-           rows={rows?rows:[]}/>
-          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return <GridTable className={classes.versionsTable}
+                    columns={columns} rows={rows?rows:[]}/>
 }
 
-export default LastDeveloperVersions
+export default ClientVersionsTable

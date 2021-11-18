@@ -1,15 +1,8 @@
-import React, {useState} from 'react';
-import clsx from 'clsx';
+import React from 'react';
 import { makeStyles } from '@material-ui/styles';
-import {
-  Card, CardContent, CardHeader,
-} from '@material-ui/core';
 import GridTable from "../../../../common/components/gridTable/GridTable";
-import Alert from "@material-ui/lab/Alert";
-import FormGroup from "@material-ui/core/FormGroup";
-import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
-import {useTasksQuery} from "../../../../generated/graphql";
+import {TasksQuery} from "../../../../generated/graphql";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
@@ -52,16 +45,14 @@ const useStyles = makeStyles((theme:any) => ({
   },
 }));
 
-const DeveloperVersionsInProcess = () => {
+interface DeveloperVersionsInProcessTableProps {
+  developerVersionsInProcess: TasksQuery | undefined
+}
+
+const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableProps> = (props) => {
+  const { developerVersionsInProcess } = props
+
   const classes = useStyles()
-
-  const [error, setError] = useState<string>()
-
-  const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
-    variables: { type: 'BuildDeveloperVersion', onlyActive: true },
-    onError(err) { setError('Query developer versions in process error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -92,7 +83,7 @@ const DeveloperVersionsInProcess = () => {
     }
   ]
 
-  const rows = tasksInProcess?.tasks.map(task => ({
+  const rows = developerVersionsInProcess?.tasks.map(task => ({
     columnValues: new Map<string, GridTableColumnValue>([
       ['service', task.parameters.find(p => p.name == 'service')?.value],
       ['version', task.parameters.find(p => p.name == 'version')?.value],
@@ -101,32 +92,9 @@ const DeveloperVersionsInProcess = () => {
       ['startTime', task.creationTime]
     ])} as GridTableRowParams))
 
-  return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <FormGroup row>
-            <RefreshControl
-              className={classes.control}
-              refresh={() => getTasksInProcess()}
-            />
-          </FormGroup>
-        }
-        title='Developer Versions In Process'/>
-      <CardContent className={classes.content}>
-        <div className={classes.inner}>
-          {rows?.length?
-            <GridTable
-             className={classes.versionsTable}
-             columns={columns}
-             rows={rows?rows:[]}/>:null}
-          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return rows?.length?<GridTable className={classes.versionsTable}
+           columns={columns}
+           rows={rows?rows:[]}/>:null
 }
 
-export default DeveloperVersionsInProcess
+export default DeveloperVersionsInProcessTable

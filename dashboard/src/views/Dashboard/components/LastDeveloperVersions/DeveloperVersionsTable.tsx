@@ -6,7 +6,7 @@ import {
   CardContent, CardHeader,
 } from '@material-ui/core';
 import {
-  useClientVersionsInfoQuery,
+  ClientVersionsInfoQuery, DeveloperVersionsInfoQuery,
   useDeveloperVersionsInfoQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
@@ -48,14 +48,6 @@ const useStyles = makeStyles((theme:any) => ({
     width: '250px',
     padding: '4px',
   },
-  installedByColumn: {
-    width: '150px',
-    padding: '4px',
-  },
-  installTimeColumn: {
-    width: '250px',
-    padding: '4px',
-  },
   control: {
     paddingLeft: '10px',
     textTransform: 'none'
@@ -65,15 +57,14 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-const LastClientVersions = () => {
+interface LastDeveloperVersionsTableProps {
+  developerVersions:  DeveloperVersionsInfoQuery | undefined
+}
+
+const LastDeveloperVersionsTable: React.FC<LastDeveloperVersionsTableProps> = (props) => {
+  const { developerVersions } = props
+
   const classes = useStyles()
-
-  const [error, setError] = useState<string>()
-
-  const {data:clientVersionsInfo, refetch:getClientVersionsInfo} = useClientVersionsInfoQuery({
-    onError(err) { setError('Query client versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -102,59 +93,24 @@ const LastClientVersions = () => {
       headerName: 'Comment',
       className: classes.commentColumn,
     },
-    {
-      name: 'installedBy',
-      headerName: 'Installed By',
-      className: classes.installedByColumn,
-    },
-    {
-      name: 'installTime',
-      headerName: 'Install Time',
-      type: 'date',
-      className: classes.installTimeColumn,
-    },
   ]
 
-  const rows = clientVersionsInfo?.clientVersionsInfo
+  const rows = developerVersions?.developerVersionsInfo
     .sort((v1, v2) =>
-      Version.compareClientDistributionVersions(v2.version, v1.version))
+      Version.compareBuilds(v2.version.build, v1.version.build))
     .map(version => ({
       columnValues: new Map<string, GridTableColumnValue>([
         ['service', version.service],
-        ['version', Version.clientDistributionVersionToString(version.version)],
+        ['version', Version.buildToString(version.version.build)],
         ['author', version.buildInfo.author],
         ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-        ['creationTime', version.buildInfo.time],
-        ['installedBy', version.installInfo.account],
-        ['installTime', version.installInfo.time],
-      ])} as GridTableRowParams))
+        ['creationTime', version.buildInfo.time]
+      ]) } as GridTableRowParams))
 
-  return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <FormGroup row>
-            <RefreshControl
-              className={classes.control}
-              refresh={() => getClientVersionsInfo()}
-            />
-          </FormGroup>
-        }
-        title='Last Client Versions'
-      />
-      <CardContent className={classes.content}>
-        <div className={classes.inner}>
-          <GridTable
+  return <GridTable
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}/>
-          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
-export default LastClientVersions
+export default LastDeveloperVersionsTable

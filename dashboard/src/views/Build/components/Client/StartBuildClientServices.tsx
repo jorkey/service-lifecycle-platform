@@ -373,29 +373,29 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
               Update Client
             </Button>
             {clientDesiredVersions?<Button className={classes.control}
-                    color="primary"
-                    variant="contained"
-                    disabled={isTested()}
-                    onClick={() => {
-                      if (provider) {
-                        setProviderTestedVersions({
-                          variables: {
-                            distribution: provider.distribution,
-                            versions: clientDesiredVersions?.clientDesiredVersions
-                              .filter(info => info.version.distribution == provider.distribution)
-                              .map(version => clientVersionToDeveloperVersion(version)
-                            )
-                          }
-                        })
-                      } else {
-                        setTestedVersions({
-                          variables: {
-                            versions: clientDesiredVersions?.clientDesiredVersions
-                              .filter(version => version.version.distribution == localStorage.getItem('distribution'))
-                              .map(version => clientVersionToDeveloperVersion(version))
-                        }})
-                      }}
+              color="primary"
+              variant="contained"
+              disabled={isTested()}
+              onClick={() => {
+                if (provider) {
+                  setProviderTestedVersions({
+                    variables: {
+                      distribution: provider.distribution,
+                      versions: clientDesiredVersions?.clientDesiredVersions
+                        .filter(info => info.version.distribution == provider.distribution)
+                        .map(version => clientVersionToDeveloperVersion(version)
+                      )
                     }
+                  })
+                } else {
+                  setTestedVersions({
+                    variables: {
+                      versions: clientDesiredVersions?.clientDesiredVersions
+                        .filter(version => version.version.distribution == localStorage.getItem('distribution'))
+                        .map(version => clientVersionToDeveloperVersion(version))
+                  }})
+                }}
+              }
             >
               Mark As Tested
             </Button>:null}
