@@ -2,17 +2,19 @@ import React, {useEffect, useState} from "react";
 import {Grid, IconButton, Typography} from "@material-ui/core";
 import LeftIcon from '@mui/icons-material/ArrowLeft';
 import RightIcon from '@mui/icons-material/ArrowRight';
+import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
+import RevertIcon from "@material-ui/icons/NotInterestedOutlined";
 
 interface TimeSelectorParams {
   time: Date
   times: Date[]
   selected: (time: Date) => void
-  confirmed: () => void
-  canceled: () => void
+  onConfirm: () => void
+  onCancel: () => void
 }
 
 const TimeSelector: React.FC<TimeSelectorParams> = props => {
-  const { time, times, selected, confirmed, canceled } = props
+  const { time, times, selected, onConfirm, onCancel } = props
 
   const [timeLeft, setTimeLeft] = useState<Date>()
   const [timeRight, setTimeRight] = useState<Date>()
@@ -59,6 +61,22 @@ const TimeSelector: React.FC<TimeSelectorParams> = props => {
       </Grid>
       <Grid item md={3} xs={11}>
         <Typography>{timeRight?.toLocaleString()}</Typography>
+      </Grid>
+      <Grid>
+        <IconButton
+          size={"small"}
+          onClick={ () => { onConfirm() }}
+          title="Done"
+        >
+          <DoneIcon/>
+        </IconButton>
+        <IconButton
+          size={"small"}
+          onClick={ () => onCancel() }
+          title="Cancel"
+        >
+          <RevertIcon/>
+        </IconButton>
       </Grid>
     </Grid>
   );
