@@ -3,6 +3,9 @@ package com.vyulabs.update.common.info
 import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import spray.json.DefaultJsonProtocol
+import com.vyulabs.update.common.utils.JsonFormats.DateJsonFormat
+
+import java.util.Date
 
 case class ClientDesiredVersion(service: ServiceId, version: ClientDistributionVersion) {
   override def toString(): String = {
@@ -31,6 +34,11 @@ object ClientDesiredVersions extends DefaultJsonProtocol {
 case class ClientDesiredVersionDelta(service: ServiceId, version: Option[ClientDistributionVersion])
 
 object ClientDesiredVersionDelta extends DefaultJsonProtocol {
-  implicit val desiredVersionJson = jsonFormat2(ClientDesiredVersionDelta.apply)
+  implicit val desiredDeveloperVersionsRecordJson = jsonFormat2(ClientDesiredVersionDelta.apply)
 }
 
+case class TimedClientDesiredVersions(time: Date, versions: Seq[ClientDesiredVersion])
+
+object TimedClientDesiredVersions extends DefaultJsonProtocol {
+  implicit val desiredClientVersionsRecordJson = jsonFormat2(TimedClientDesiredVersions.apply)
+}

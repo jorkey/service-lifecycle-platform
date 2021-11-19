@@ -14,7 +14,7 @@ import {
   useAddProviderMutation, useChangeProviderMutation,
   useProvidersInfoQuery, useRemoveProviderMutation,
 } from "../../../../generated/graphql";
-import ConfirmDialog from "../../../../common/ConfirmDialog";
+import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";

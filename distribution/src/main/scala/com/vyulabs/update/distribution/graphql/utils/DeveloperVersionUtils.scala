@@ -130,14 +130,24 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     }
   }
 
-  def getDeveloperDesiredVersions(services: Set[ServiceId] = Set.empty)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
+  def getDeveloperDesiredVersions(services: Set[ServiceId] = Set.empty)
+                                 (implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      profile <- collections.Developer_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[DeveloperDesiredVersion])
+      versions <- collections.Developer_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[DeveloperDesiredVersion])
         .filter(v => services.isEmpty || services.contains(v.service)))
-    } yield profile
+    } yield versions
   }
 
-  def getDeveloperDesiredVersion(service: ServiceId)(implicit log: Logger): Future[Option[DeveloperDistributionVersion]] = {
+  def getDeveloperDesiredVersionsHistory(limit: Int)
+                                        (implicit log: Logger): Future[Seq[TimedDeveloperDesiredVersions]] = {
+    for {
+      history <- collections.Developer_DesiredVersions.history(new BsonDocument(), Some(limit))
+        .map(_.map(v => TimedDeveloperDesiredVersions(v.time, v.document.versions)))
+    } yield history
+  }
+
+  def getDeveloperDesiredVersion(service: ServiceId)
+                                (implicit log: Logger): Future[Option[DeveloperDistributionVersion]] = {
     getDeveloperDesiredVersions(Set(service)).map(_.headOption.map(_.version))
   }
 

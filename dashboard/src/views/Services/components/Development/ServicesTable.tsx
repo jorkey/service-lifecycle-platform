@@ -5,7 +5,7 @@ import {
 } from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from 'react-router-dom';
-import ConfirmDialog from '../../../../common/ConfirmDialog';
+import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";

@@ -82,6 +82,7 @@ object GraphqlSchema {
   val CommentArg = Argument("comment", StringType)
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
+  val LimitArg = Argument("limit", IntType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -190,6 +191,12 @@ object GraphqlSchema {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           }
         }),
+      Field("developerDesiredVersionsHistory", ListType(TimedDeveloperDesiredVersionsType),
+        arguments = LimitArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => {
+          c.ctx.workspace.getDeveloperDesiredVersionsHistory(c.arg(LimitArg))
+        }),
 
       // Tested versions
       Field("testedVersions", OptionType(ListType(DeveloperDesiredVersionType)),
@@ -208,6 +215,12 @@ object GraphqlSchema {
         arguments = OptionServicesArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.Updater) :: Nil,
         resolve = c => { c.ctx.workspace.getClientDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet) }),
+      Field("clientDesiredVersionsHistory", ListType(TimedClientDesiredVersionsType),
+        arguments = LimitArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => {
+          c.ctx.workspace.getClientDesiredVersionsHistory(c.arg(LimitArg))
+        }),
 
       // Distribution providers
       Field("providersInfo", ListType(ProviderInfoType),

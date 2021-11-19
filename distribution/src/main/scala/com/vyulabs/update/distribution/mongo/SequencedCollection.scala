@@ -15,6 +15,7 @@ import org.bson.{BsonDateTime, BsonDocument, BsonDocumentReader, BsonDocumentWra
 import org.mongodb.scala.bson.BsonInt64
 import org.slf4j.Logger
 
+import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
 import scala.concurrent.duration.FiniteDuration
@@ -22,6 +23,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
 case class Sequenced[T](sequence: Long, document: T)
+
+case class Timed[T](time: Date, document: T)
 
 case class DocumentAlreadyExists() extends Exception
 case class NoSuchDocument() extends Exception
@@ -212,6 +215,18 @@ class SequencedCollection[T: ClassTag](val name: String,
     } yield result
   }
 
+  def history(filters: Bson = new BsonDocument(), limit: Option[Int] = None): Future[Seq[Timed[T]]] = {
+    for {
+      docs <- getHistory(filters, limit)
+    } yield {
+      docs.map(doc => {
+        val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+        val modifyTime = new Date(doc.getDateTime("_modifyTime").getValue)
+        Timed(modifyTime, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
+      })
+    }
+  }
+
   def subscribe(filters: Bson = new BsonDocument(), from: Option[Long] = None, startLimit: Option[Int])
                (implicit log: Logger): Source[Sequenced[T], NotUsed] = {
     val filtersArg = Filters.and(filters,
@@ -252,6 +267,14 @@ class SequencedCollection[T: ClassTag](val name: String,
       val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_sequence").asInt64())
       docs.filter(doc => { !doc.containsKey("_replacedBy") || !notReplaced.contains(doc.get("_replacedBy").asInt64()) })
     }
+  }
+
+  private def getHistory(filters: Bson = new BsonDocument(), limit: Option[Int] = None): Future[Seq[BsonDocument]] = {
+    for {
+      collection <- collection
+      docs <- collection.find(filters,
+        Some(Sorts.ascending("_sequence")), limit)
+    } yield docs
   }
 
   private def getNextSequence(sequenceName: String, increment: Int = 1): Future[Long] = {

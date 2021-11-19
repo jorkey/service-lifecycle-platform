@@ -20,7 +20,7 @@ const useStyles = makeStyles(theme => ({
   },
   versionColumn: {
     padding: '4px',
-    width: '150px'
+    width: '175px'
   },
   alarmVersionColumn: {
     padding: '4px',

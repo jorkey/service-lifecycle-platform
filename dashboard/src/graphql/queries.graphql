@@ -26,6 +26,10 @@ query developerDesiredVersions {
     developerDesiredVersions { service, version { distribution, build } }
 }
 
+query developerDesiredVersionsHistory ($limit: Int!) {
+    developerDesiredVersionsHistory (limit: $limit) { time, versions { service, version { distribution, build } } }
+}
+
 query providerDesiredVersions ($distribution: String!) {
     providerDesiredVersions (distribution: $distribution) { service, version { distribution, build } }
 }
@@ -79,6 +83,10 @@ query clientVersionsInfo ($service: String, $version: ClientVersionInput) {
 
 query clientDesiredVersions {
     clientDesiredVersions { service, version { distribution, developerBuild, clientBuild } }
+}
+
+query clientDesiredVersionsHistory ($limit: Int!) {
+    clientDesiredVersionsHistory (limit: $limit) { time, versions { service, version { distribution, developerBuild, clientBuild } } }
 }
 
 query installedDesiredVersions ($distribution: String!) {

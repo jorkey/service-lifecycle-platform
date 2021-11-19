@@ -5,7 +5,7 @@ import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, Servi
 import com.vyulabs.update.common.common.Misc
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta}
+import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, TimedClientDesiredVersions, TimedDeveloperDesiredVersions}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
@@ -155,6 +155,14 @@ trait ClientVersionUtils {
                               (implicit log: Logger): Future[Seq[ClientDesiredVersion]] = {
     collections.Client_DesiredVersions.find(new BsonDocument()).map(_.map(_.versions).headOption.getOrElse(Seq.empty[ClientDesiredVersion])
       .filter(v => services.isEmpty || services.contains(v.service)).sortBy(_.service))
+  }
+
+  def getClientDesiredVersionsHistory(limit: Int)
+                                     (implicit log: Logger): Future[Seq[TimedClientDesiredVersions]] = {
+    for {
+      history <- collections.Client_DesiredVersions.history(new BsonDocument(), Some(limit))
+        .map(_.map(v => TimedClientDesiredVersions(v.time, v.document.versions)))
+    } yield history
   }
 
   def getClientDesiredVersion(service: ServiceId)(implicit log: Logger): Future[Option[ClientDistributionVersion]] = {

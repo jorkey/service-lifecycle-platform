@@ -54,7 +54,7 @@ const Versions: React.FC<VersionsProps> = props => {
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
-  const [onlyAlerts, setOnlyAlerts] = useState(true)
+  const [onlyAlerts, setOnlyAlerts] = useState(false)
 
   React.useEffect(() => {
       getVersions(consumer)
@@ -85,20 +85,21 @@ const Versions: React.FC<VersionsProps> = props => {
       <CardHeader
         action={
           <FormGroup row>
-            <FormControlLabel
-              className={classes.control}
-              control={<Select
-                className={classes.distributionSelect}
-                native
-                onChange={(event) => setConsumer(event.target.value as string)}
-                title='Select consumer'
-                value={consumer}
-              >
-                { consumerAccountsInfo?.consumerAccountsInfo
-                    .map(consumer => <option key={consumer.account}>{consumer.account}</option>) }
-              </Select>}
-              label='Consumer'
-            />
+            { consumerAccountsInfo?.consumerAccountsInfo.length ?
+              <FormControlLabel
+                className={classes.control}
+                control={<Select
+                  className={classes.distributionSelect}
+                  native
+                  onChange={(event) => setConsumer(event.target.value as string)}
+                  title='Select consumer'
+                  value={consumer}
+                >
+                  { consumerAccountsInfo?.consumerAccountsInfo
+                      .map(consumer => <option key={consumer.account}>{consumer.account}</option>) }
+                </Select>}
+                label='Consumer'
+              /> : null }
             <FormControlLabel
               className={classes.control}
               control={<Checkbox
