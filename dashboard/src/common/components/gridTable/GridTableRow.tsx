@@ -103,7 +103,7 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
             />:null
           : column.type == 'date' ?
             columnValues.get(column.name)?
-              ((columnValues.get(column.name) as Date).toLocaleString()+'.'+(columnValues.get(column.name) as Date).getMilliseconds()):''
+              ((columnValues.get(column.name) as Date).toLocaleString()):''
           : column.type == 'elements' ?
               (column.name == 'actions' ?
                 <GridActions adding={adding}

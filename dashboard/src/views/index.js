@@ -4,6 +4,7 @@ export { default as Services } from './Services';
 export { default as Accounts } from './Accounts';
 export { default as Providers } from './Providers';
 export { default as Build } from './Build';
+export { default as DesiredVersions } from './DesiredVersions';
 export { default as Logging } from './Logging';
 export { default as Faults } from './Faults';
 export { default as NotFound } from './NotFound';

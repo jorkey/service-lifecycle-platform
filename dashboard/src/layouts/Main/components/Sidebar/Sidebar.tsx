@@ -11,6 +11,7 @@ import ListIcon from '@material-ui/icons/List';
 import ErrorIcon from '@material-ui/icons/Error';
 import SettingsIcon from '@material-ui/icons/Settings';
 import BuildIcon from '@material-ui/icons/Build';
+import DesiredVersionsIcon from '@material-ui/icons/Map';
 import DistributionIcon from '@material-ui/icons/Share';
 import ProfilesIcon from '@material-ui/icons/FilterList';
 import TaskIcon from '@mui/icons-material/Task';
@@ -78,6 +79,26 @@ const Sidebar = (props:any) => {
       icon: <BuildIcon/>
     }
 
+    const desiredVersionsPages: Page = development ? {
+      title: 'Desired Versions',
+      href: '/desiredVersions/',
+      icon: <DesiredVersionsIcon/>,
+      pages: [
+        {
+          title: 'Developer',
+          href: '/desiredVersions/developer',
+        },
+        {
+          title: 'Client',
+          href: '/desiredVersions/client',
+        }
+      ]
+    } : {
+      title: 'Desired Versions',
+      href: '/desiredVersions/client',
+      icon: <DesiredVersionsIcon/>
+    }
+
     const pages: Array<Page> = [
       {
         title: 'Dashboard',
@@ -85,6 +106,7 @@ const Sidebar = (props:any) => {
         icon: <DashboardIcon/>
       },
       buildPages,
+      desiredVersionsPages,
       {
         title: 'Logging',
         href: '/logging',

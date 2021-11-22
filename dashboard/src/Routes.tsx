@@ -11,6 +11,7 @@ import {
   Services as ServicesView,
   Providers as ProvidersView,
   Build as BuildView,
+  DesiredVersions as DesiredVersionsView,
   Logging as LoggingView,
   Faults as FaultsView,
   NotFound as NotFoundView
@@ -49,6 +50,12 @@ const Routes: React.FC<RoutesProps> = props => {
         component={BuildView}
         layout={MainLayout}
         path='/build'
+        {...props}
+      />
+      <RouteWithLayout
+        component={DesiredVersionsView}
+        layout={MainLayout}
+        path='/desiredVersions'
         {...props}
       />
       <RouteWithLayout

@@ -19,7 +19,6 @@ import {
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
-import {Version} from "../../../../common";
 import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({

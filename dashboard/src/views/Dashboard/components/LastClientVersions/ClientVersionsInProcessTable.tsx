@@ -80,8 +80,8 @@ const ClientVersionsInProcessTable: React.FC<ClientVersionsInProcessTableProps> 
         ['startTime', task.creationTime],
       ])} as GridTableRowParams))
 
-  return <GridTable className={classes.versionsTable}
-                    columns={columns} rows={rows?rows:[]}/>
+  return rows?.length?<GridTable className={classes.versionsTable}
+                       columns={columns} rows={rows}/>:null
 }
 
 export default ClientVersionsInProcessTable
