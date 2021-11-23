@@ -90,6 +90,7 @@ export const GridTable = (props: GridParams) => {
             {  rows.map((row, rowNum) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns}
                                       columnValues={row.columnValues}
+                                      classNames={row.classNames}
                                       constColumns={row.constColumns}
                                       adding={false}
                                       editing={rowNum == editingRow}

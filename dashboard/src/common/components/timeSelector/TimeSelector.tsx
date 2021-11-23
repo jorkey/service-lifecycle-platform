@@ -1,28 +1,61 @@
 import React, {useEffect, useState} from "react";
 import {Grid, IconButton, Typography} from "@material-ui/core";
-import LeftIcon from '@mui/icons-material/ArrowLeft';
-import RightIcon from '@mui/icons-material/ArrowRight';
-import DoneIcon from "@material-ui/icons/DoneAllTwoTone";
-import RevertIcon from "@material-ui/icons/NotInterestedOutlined";
+import BackIcon from '@mui/icons-material/ArrowBack';
+import ForwardIcon from '@mui/icons-material/ArrowForward';
+import {makeStyles} from "@material-ui/core/styles";
+
+const useStyles = makeStyles((theme:any) => ({
+  root: {
+  },
+  timeLeft: {
+    maxWidth: 175,
+    minWidth: 175,
+  },
+  timeLeftText: {
+    textAlign: 'right',
+    paddingTop: 2
+  },
+  time: {
+    maxWidth: 175,
+    minWidth: 175,
+  },
+  timeText: {
+    textAlign: 'center',
+    paddingTop: 2
+  },
+  timeRight: {
+    maxWidth: 175,
+    minWidth: 175,
+  },
+  timeRightText: {
+    textAlign: 'left',
+    paddingTop: 2
+  },
+  button: {
+    maxWidth: 30,
+    padding: 0
+  }
+}))
 
 interface TimeSelectorParams {
-  time: Date
+  time: Date | undefined
   times: Date[]
-  selected: (time: Date) => void
-  onConfirm: () => void
-  onCancel: () => void
+  onSelected: (time: Date) => void
 }
 
 const TimeSelector: React.FC<TimeSelectorParams> = props => {
-  const { time, times, selected, onConfirm, onCancel } = props
+  const { time, times, onSelected } = props
 
   const [timeLeft, setTimeLeft] = useState<Date>()
   const [timeRight, setTimeRight] = useState<Date>()
 
+  const classes = useStyles()
+
   useEffect(() => {
-      let left: Date | undefined = undefined
-      let right: Date | undefined = undefined
-      times.forEach(t => {
+    let left: Date | undefined = undefined
+    let right: Date | undefined = undefined
+    times.forEach(t => {
+      if (time) {
         if (t < time) {
           if (left == undefined || left < t) {
             left = t
@@ -32,54 +65,44 @@ const TimeSelector: React.FC<TimeSelectorParams> = props => {
             right = t
           }
         }
-      })
-      setTimeLeft(left)
-      setTimeRight(right)
-    }, [ time ])
+      }
+    })
+    setTimeLeft(left)
+    setTimeRight(right)
+  }, [ time ])
 
-  return (
-    <Grid container direction={'row'} spacing={1}>
-      <Grid item md={3} xs={11}>
-        <Typography>{timeLeft?.toLocaleString()}</Typography>
+  if (!time && times.length) {
+    onSelected(times[times.length-1])
+  }
+
+  return time?
+    <Grid container direction={'row'} spacing={1} className={classes.root}>
+      <Grid item md={3} xs={11} className={classes.timeLeft}>
+        <Typography className={classes.timeLeftText}>{timeLeft?.toLocaleString()}</Typography>
       </Grid>
-      <Grid item md={1} xs={12}>
+      <Grid item md={1} xs={12} className={classes.button}>
         <IconButton
+          className={classes.button}
           disabled={!timeLeft}
-          onClick={() => { if (timeLeft) selected(timeLeft) }}>
-          <LeftIcon/>
+          onClick={() => { if (timeLeft) onSelected(timeLeft) }}>
+          <BackIcon className={classes.button}/>
         </IconButton>
       </Grid>
-      <Grid item md={3} xs={11}>
-        <Typography>{time?.toLocaleString()}</Typography>
+      <Grid item md={3} xs={11} className={classes.time}>
+        <Typography className={classes.timeText}>{time.toLocaleString()}</Typography>
       </Grid>
-      <Grid item md={1} xs={11}>
+      <Grid item md={1} xs={11} className={classes.button}>
         <IconButton
+          className={classes.button}
           disabled={!timeRight}
-          onClick={() => { if (timeRight) selected(timeRight) }}>
-          <RightIcon/>
+          onClick={() => { if (timeRight) onSelected(timeRight) }}>
+          <ForwardIcon className={classes.button}/>
         </IconButton>
       </Grid>
-      <Grid item md={3} xs={11}>
-        <Typography>{timeRight?.toLocaleString()}</Typography>
+      <Grid item md={3} xs={11} className={classes.timeRight}>
+        <Typography className={classes.timeRightText}>{timeRight?.toLocaleString()}</Typography>
       </Grid>
-      <Grid>
-        <IconButton
-          size={"small"}
-          onClick={ () => { onConfirm() }}
-          title="Done"
-        >
-          <DoneIcon/>
-        </IconButton>
-        <IconButton
-          size={"small"}
-          onClick={ () => onCancel() }
-          title="Cancel"
-        >
-          <RevertIcon/>
-        </IconButton>
-      </Grid>
-    </Grid>
-  );
+    </Grid> : null
 }
 
 export default TimeSelector

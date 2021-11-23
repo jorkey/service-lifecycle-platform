@@ -19,6 +19,7 @@ const useStyles = makeStyles(theme => ({
 
 export interface GridTableRowParams {
   columnValues: Map<string, GridTableColumnValue>
+  classNames?: Map<string, string>
   constColumns?: string[] | undefined
 }
 
@@ -41,7 +42,7 @@ export interface GridTableRowInternalParams extends GridTableRowParams {
 const useMountEffect = fun => useEffect(fun, [])
 
 export const GridTableRow = (params: GridTableRowInternalParams) => {
-  const { rowNum, columns, columnValues, constColumns, adding, editing, scrollInto,
+  const { rowNum, columns, columnValues, classNames, constColumns, adding, editing, scrollInto,
     onClicked, onBeginEditing, onSubmitted, onCanceled, onSelected, onUnselected } = params
 
   const [editColumn, setEditColumn] = useState<string>()
@@ -63,8 +64,14 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
   }
 
   const valuesColumns =
-    columns.map((column, index) =>
-      (<TableCell key={index} className={column.className}
+    columns.map((column, index) => {
+      const columnClassName = classNames?.get(column.name)
+      const className = column.className && columnClassName ? column.className + ' ' + columnClassName :
+                        column.className ? column.className :
+                        columnClassName ? columnClassName :
+                        undefined
+      console.log('class name ' + className)
+      return (<TableCell key={index} className={className}
                   padding={column.type == 'checkbox'?'checkbox':undefined}
                   onClick={() => {
                     if (!adding && column.editable && editColumn != column.name) {
@@ -85,7 +92,7 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
       >
         { column.type == 'checkbox' ?
           (column.editable || !constColumns?.find(c => c == column.name))?
-            <Checkbox className={column.className}
+            <Checkbox className={className}
                       checked={adding || editing ? editValues.get(column.name) ? editValues.get(column.name) as boolean : false : columnValues.get(column.name) as boolean}
                       disabled={column.editable == false || !!constColumns?.find(c => c == column.name)}
                       onChange={(e) => {
@@ -116,17 +123,17 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
                 />
                 : columnValues.get(column.name)! as JSX.Element[])
           : (adding || (editing && editColumn === column.name)) ?
-            (column.select ?
-              <Select className={column.className}
+            (column.type == 'select' ?
+              <Select className={className}
                       autoFocus={true}
                       value={editValues.get(column.name)?editValues.get(column.name):''}
                       onChange={e => {
                         setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
                       }}
               >
-                { column.select.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
+                { column.select?.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
               </Select>
-            : <Input  className={column.className + "," + classes.input}
+            : <Input  className={className + ' ' + classes.input}
                       type={column.type}
                       value={editValues.get(column.name)?editValues.get(column.name):''}
                       autoFocus={adding?(index == 0):true}
@@ -138,7 +145,7 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
           : adding || editing ? editValues.get(column.name)!
           : columnValues.get(column.name)!
       }
-      </TableCell>))
+      </TableCell>)})
 
   const selected = !!columns.find(c => { return c.name == 'select' && columnValues.get(c.name) == true })
 

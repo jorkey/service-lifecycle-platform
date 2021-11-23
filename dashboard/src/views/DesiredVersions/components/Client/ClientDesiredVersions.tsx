@@ -1,17 +1,18 @@
 import React, {useState} from 'react';
 
-import {RouteComponentProps, useHistory} from "react-router-dom"
+import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import Alert from "@material-ui/lab/Alert";
 import {
+  ClientDesiredVersion,
   useClientDesiredVersionsHistoryQuery,
   useClientDesiredVersionsQuery, useClientVersionsInfoQuery,
   useDeveloperServicesQuery, useDeveloperVersionsInfoQuery, useSetClientDesiredVersionsMutation,
   useTasksQuery
 } from "../../../../generated/graphql";
 import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
-import {Button, Card, CardContent, CardHeader} from "@material-ui/core";
+import {Box, Button, Card, CardContent, CardHeader, FormControlLabel} from "@material-ui/core";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import BuildIcon from "@material-ui/icons/Build";
 import {Version} from "../../../../common";
@@ -19,6 +20,8 @@ import clsx from "clsx";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 import GridTable from "../../../../common/components/gridTable/GridTable";
+import TimeSelector from "../../../../common/components/timeSelector/TimeSelector";
+import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -41,6 +44,12 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px'
   },
+  boldVersionColumn: {
+    width: '150px',
+    padding: '4px',
+    paddingLeft: '16px',
+    fontWeight: 600
+  },
   authorColumn: {
     width: '150px',
     padding: '4px',
@@ -55,14 +64,15 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '4px',
     paddingLeft: '16px'
   },
-  actionsColumn: {
-    width: '120px',
-    padding: '4px',
-    paddingRight: '30px',
-    textAlign: 'right'
+  controls: {
+    marginTop: 25,
+    display: 'flex',
+    justifyContent: 'flex-end',
+    p: 2
   },
   control: {
-    paddingLeft: '10px',
+    marginLeft: '10px',
+    marginRight: '10px',
     textTransform: 'none'
   },
   alert: {
@@ -85,16 +95,19 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   const classes = useStyles()
 
   const [time, setTime] = useState<Date>()
+  const [timeSelector, setTimeSelector] = useState(false)
+  const [desiredVersions, setDesiredVersions] = useState<ClientDesiredVersion[] | undefined>(undefined)
   const [error, setError] = useState<string>()
 
-  const { data: desiredVersions, refetch: getDesiredVersions } = useClientDesiredVersionsQuery({
-    onError(err) { setError('Query desired versions error ' + err.message) },
+  const { data: originalDesiredVersions, refetch: getOriginalDesiredVersions } = useClientDesiredVersionsQuery({
+    onCompleted(versions) { setDesiredVersions(versions.clientDesiredVersions) },
+    onError(err) { setError('Query desired versions error ' + err.message) }
   })
   const { data: desiredVersionsHistory, refetch: getDesiredVersionsHistory } = useClientDesiredVersionsHistoryQuery({
     variables: { limit: 25 },
     onError(err) { setError('Query desired versions history error ' + err.message) },
   })
-  const [ setDesiredVersions ] = useSetClientDesiredVersionsMutation()
+  const [ changeDesiredVersions ] = useSetClientDesiredVersionsMutation()
   const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
     onError(err) { setError('Query client versions error ' + err.message) },
   })
@@ -134,10 +147,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     }
   ]
 
-  const versions = time?desiredVersionsHistory?.clientDesiredVersionsHistory?.find(v => v.time == time)?.versions:
-    desiredVersions?.clientDesiredVersions
-
-  const rows = versions?.map(version => {
+  const rows = desiredVersions?.map(version => {
     const info = clientVersions?.clientVersionsInfo?.find(v => v.service == version.service)
     const author = info?.buildInfo.author
     const buildTime = info?.buildInfo.time
@@ -151,8 +161,11 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
         ['buildTime', buildTime],
         ['comment', comment],
         ['installTime', installTime]
+      ]),
+      classNames: new Map<string, string>([
+        ['version', classes.boldVersionColumn]
       ])
-    }}
+    } as GridTableRowParams}
   )
 
   return (
@@ -162,17 +175,31 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       <CardHeader
         action={
           <FormGroup row>
-            <Button
-              className={classes.historyButton}
-              color="primary"
-              variant="contained"
-              // onClick={() => tableRef.current?.toTop()}
-            >
-              History
-            </Button>
-            <RefreshControl
-              className={classes.control}
-              refresh={ () => { getDesiredVersions(); getDesiredVersionsHistory(); getClientVersions() }}
+            <FormControlLabel
+              label={null}
+              control={
+                timeSelector ?
+                  <TimeSelector time={time}
+                                times={desiredVersionsHistory!.clientDesiredVersionsHistory.map(v => v.time)}
+                                onSelected={(t) => {
+                                  setTime(t)
+                                  setDesiredVersions(desiredVersionsHistory?.clientDesiredVersionsHistory?.find(v => v.time == time)?.versions)
+                                }}
+                  /> :
+                  <Button
+                    className={classes.historyButton}
+                    color="primary"
+                    variant="contained"
+                    onClick={() => setTimeSelector(true)}
+                  >
+                    History
+                  </Button>
+              }/>
+            <RefreshControl className={classes.control}
+                            refresh={() => {
+                              setTimeSelector(false)
+                              getOriginalDesiredVersions(); getDesiredVersionsHistory(); getClientVersions()
+                            }}
             />
           </FormGroup>
         }
@@ -186,6 +213,23 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
             rows={rows?rows:[]}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
+          {timeSelector?<Box className={classes.controls}>
+            <Button className={classes.control}
+                    color="primary"
+                    variant="contained"
+                    onClick={() => setTimeSelector(false)}
+            >
+              Cancel
+            </Button>
+            <Button className={classes.control}
+                    color="primary"
+                    variant="contained"
+                    // disabled={!validate()}
+                    onClick={() => setTimeSelector(false)}
+            >
+              Save
+            </Button>
+          </Box>:null}
         </div>
       </CardContent>
     </Card>
