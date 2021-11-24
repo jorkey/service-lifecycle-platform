@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom"
 
@@ -100,17 +100,31 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   const [error, setError] = useState<string>()
 
   const { data: originalDesiredVersions, refetch: getOriginalDesiredVersions } = useClientDesiredVersionsQuery({
-    onCompleted(versions) { setDesiredVersions(versions.clientDesiredVersions) },
+    onCompleted(versions) {
+      setDesiredVersions(versions.clientDesiredVersions)
+    },
     onError(err) { setError('Query desired versions error ' + err.message) }
   })
   const { data: desiredVersionsHistory, refetch: getDesiredVersionsHistory } = useClientDesiredVersionsHistoryQuery({
     variables: { limit: 25 },
+    onCompleted(versions) {
+      if (versions.clientDesiredVersionsHistory.length) {
+        setTime(versions.clientDesiredVersionsHistory[versions.clientDesiredVersionsHistory.length-1].time)
+      }
+    },
     onError(err) { setError('Query desired versions history error ' + err.message) },
   })
   const [ changeDesiredVersions ] = useSetClientDesiredVersionsMutation()
   const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
     onError(err) { setError('Query client versions error ' + err.message) },
   })
+
+  useEffect(() => { if (!timeSelector)  {
+    getOriginalDesiredVersions()
+    getDesiredVersionsHistory()
+  } },[ timeSelector ])
+
+  console.log('render')
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -147,28 +161,31 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     }
   ]
 
-  const rows = desiredVersions?.map(version => {
-    const info = clientVersions?.clientVersionsInfo?.find(v => v.service == version.service)
+  const rows = desiredVersions?.map(v => v.service).map(service => {
+    const version = desiredVersions?.find(v => v.service == service)?.version!
+    const info = clientVersions?.clientVersionsInfo?.find(v => v.service == service)
     const author = info?.buildInfo.author
     const buildTime = info?.buildInfo.time
     const comment = info?.buildInfo.comment
     const installTime = info?.installInfo.time
+    const originalVersion = originalDesiredVersions?.clientDesiredVersions.find(v => v.service == service)?.version
+    const modified = Version.compareClientDistributionVersions(version, originalVersion)
     return {
       columnValues: new Map<string, GridTableColumnValue>([
-        ['service', version.service],
-        ['version', Version.clientDistributionVersionToString(version.version)],
+        ['service', service],
+        ['version', Version.clientDistributionVersionToString(version)],
         ['author', author],
         ['buildTime', buildTime],
         ['comment', comment],
         ['installTime', installTime]
       ]),
-      classNames: new Map<string, string>([
+      classNames: modified ? new Map<string, string>([
         ['version', classes.boldVersionColumn]
-      ])
+      ]) : undefined
     } as GridTableRowParams}
   )
 
-  return (
+  return rows && desiredVersionsHistory?.clientDesiredVersionsHistory?(
     <Card
       className={clsx(classes.root)}
     >
@@ -178,10 +195,11 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
             <FormControlLabel
               label={null}
               control={
-                timeSelector ?
+                !timeSelector ?
                   <TimeSelector time={time}
-                                times={desiredVersionsHistory!.clientDesiredVersionsHistory.map(v => v.time)}
+                                times={desiredVersionsHistory.clientDesiredVersionsHistory.map(v => v.time)}
                                 onSelected={(t) => {
+                                  console.log('on selected time ' + t)
                                   setTime(t)
                                   setDesiredVersions(desiredVersionsHistory?.clientDesiredVersionsHistory?.find(v => v.time == time)?.versions)
                                 }}
@@ -233,7 +251,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
         </div>
       </CardContent>
     </Card>
-  );
+  ) : null
 }
 
 export default ClientDesiredVersions;

@@ -59,7 +59,7 @@ export const GridTable = (props: GridParams) => {
           <TableRow>
             { columns.map((column, index) => {
               return column.name == 'select' ?
-                <TableCell padding='checkbox' className={column.className}>
+                <TableCell key={index} padding='checkbox' className={column.className}>
                   {column.editable == false || rows.find(row => !row.constColumns?.find(c => c == column.name))?
                     <Checkbox className={column.className}
                       indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}

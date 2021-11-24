@@ -70,7 +70,6 @@ export const GridTableRow = (params: GridTableRowInternalParams) => {
                         column.className ? column.className :
                         columnClassName ? columnClassName :
                         undefined
-      console.log('class name ' + className)
       return (<TableCell key={index} className={className}
                   padding={column.type == 'checkbox'?'checkbox':undefined}
                   onClick={() => {
