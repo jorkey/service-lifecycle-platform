@@ -171,20 +171,17 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     const installTime = info?.installInfo.time
     const originalVersion = originalDesiredVersions?.clientDesiredVersions.find(v => v.service == service)?.version
     const modified = Version.compareClientDistributionVersions(version, originalVersion)
-    return {
-      columnValues: new Map<string, GridTableCellParams>([
-        ['service', version.service],
-        ['version', Version.clientDistributionVersionToString(version.version)],
-        ['author', author],
-        ['buildTime', buildTime],
-        ['comment', comment],
-        ['installTime', installTime]
-      ]),
-      classNames: modified ? new Map<string, string>([
-        ['version', classes.boldVersionColumn]
-      ]) : undefined
-    } as GridTableRowParams}
-  )
+    return new Map<string, GridTableCellParams>([
+        ['service', { value: service }],
+        ['version', {
+          value: Version.clientDistributionVersionToString(version),
+          className: modified?classes.boldVersionColumn:undefined
+        }],
+        ['author', { value: author }],
+        ['buildTime', { value: buildTime }],
+        ['comment', { value: comment }],
+        ['installTime', { value: installTime }]
+      ])})
 
   return rows && desiredVersionsHistory?.clientDesiredVersionsHistory?(
     <Card

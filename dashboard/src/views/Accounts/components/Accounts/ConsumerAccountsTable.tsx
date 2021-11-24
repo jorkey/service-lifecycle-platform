@@ -115,25 +115,25 @@ const ConsumerAccountsTable: React.FC<ConsumerAccountsTableProps> = props => {
     className: classes.actionsColumn
   })
 
-  const rows = new Array<GridTableRowParams>()
+  const rows = new Array<Map<string, GridTableCellParams>>()
   if (accountsInfo) {
     [...accountsInfo.consumerAccountsInfo]
       .sort((u1,u2) =>  (u1.account > u2.account ? 1 : -1))
       .forEach(account => {
         const row = new Map<string, GridTableCellParams>()
-        row.set('account', account.account)
-        row.set('name', account.name)
-        row.set('role', account.role.toString())
-        row.set('profile', account.properties.profile)
-        row.set('url', account.properties.url)
-        row.set('actions', [
+        row.set('account', { value: account.account })
+        row.set('name', { value: account.name })
+        row.set('role', { value: account.role.toString() })
+        row.set('profile', { value: account.properties.profile })
+        row.set('url', { value: account.properties.url })
+        row.set('actions', { value: [
           <span key='0' className={classes.action}>
             <AccessTokenPopup account={account.account}/>
           </span>,
           <Button key='1' onClick={ () => setDeleteConfirm(account.account) }>
             <DeleteIcon/>
-          </Button>])
-        rows.push({ columnValues:row })
+          </Button>] })
+        rows.push(row)
       })
   }
 
@@ -143,7 +143,7 @@ const ConsumerAccountsTable: React.FC<ConsumerAccountsTableProps> = props => {
       columns={columns}
       rows={rows}
       onClick={ (row) =>
-        setStartEdit(rows[row].columnValues.get('account')! as string) }
+        setStartEdit(rows[row].get('account')!.value! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

@@ -98,21 +98,20 @@ export const TasksTable = (props: TasksTableParams) => {
   }
 
   const rows = tasks?.tasks
-    .map(task => ({
-      columnValues: new Map<string, GridTableCellParams>([
-        ['creationTime', task.creationTime],
-        ['id', task.id],
-        ['type', task.type],
-        ['parameters', parametersToString(task.parameters)],
-        ['active', task.active?true:false]
-      ]) }) as GridTableRowParams)
+    .map(task => new Map<string, GridTableCellParams>([
+        ['creationTime', { value: task.creationTime }],
+        ['id', { value: task.id }],
+        ['type', { value: task.type }],
+        ['parameters', { value: parametersToString(task.parameters) }],
+        ['active', { value: task.active?true:false }]
+      ]))
 
   return rows?<>
     <GridTable
       className={className}
       columns={columns}
       rows={rows}
-      onClick={row => onClick(rows[row].columnValues.get('id')! as string)}
+      onClick={row => onClick(rows[row].get('id')?.value! as string)}
     />
   </>:null
 }

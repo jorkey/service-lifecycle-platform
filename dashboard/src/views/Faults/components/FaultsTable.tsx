@@ -93,14 +93,14 @@ export const FaultsTable = (props: FaultsTableParams) => {
   const development = process.env.NODE_ENV === 'development';
 
   const rows = faults
-    .map((fault, row) => ({
-      columnValues: new Map<string, GridTableCellParams>([
-        ['time', fault.payload.info.time],
-        ['distribution', fault.distribution],
-        ['service', fault.payload.info.service],
-        ['version',
-          fault.payload.info.state.version?Version.clientDistributionVersionToString(fault.payload.info.state.version):''],
-        ['download', [
+    .map((fault, row) => (
+      new Map<string, GridTableCellParams>([
+        ['time', { value: fault.payload.info.time }],
+        ['distribution', { value: fault.distribution }],
+        ['service', { value: fault.payload.info.service }],
+        ['version', { value:
+            fault.payload.info.state.version?Version.clientDistributionVersionToString(fault.payload.info.state.version):'' }],
+        ['download', { value: [
           <Button key='0'
                   onClick={
                     () => {
@@ -110,9 +110,9 @@ export const FaultsTable = (props: FaultsTableParams) => {
                   }>
             <DownloadIcon/>
           </Button>
-        ] ],
-        ['select', row == selected]
-      ])}) as GridTableRowParams)
+        ]}],
+        ['select', { value: row == selected }]
+      ])))
 
   return <GridTable
       className={className}

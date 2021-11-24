@@ -69,19 +69,19 @@ const ServicesTable = () => {
     }
   ]
 
-  const rows = new Array<GridTableRowParams>()
+  const rows = new Array<Map<string, GridTableCellParams>>()
   if (services) {
     [...services.developerServices]
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(service => {
         rows.push(
-          {columnValues: new Map<string, GridTableCellParams>([
-            ['service', service],
+          new Map<string, GridTableCellParams>([
+            ['service', { value: service }],
             ['actions',
-              [<Button key='0' onClick={ () => setDeleteConfirm(service) }>
+              { value: [<Button key='0' onClick={ () => setDeleteConfirm(service) }>
                 <DeleteIcon/>
-              </Button>]]
-          ])})
+              </Button>] }]
+          ]))
       })
   }
 
@@ -91,7 +91,7 @@ const ServicesTable = () => {
       columns={columns}
       rows={rows}
       onClick={ (row) =>
-        setStartEdit(rows[row].columnValues.get('service')! as string)
+        setStartEdit(rows[row].get('service')?.value! as string)
       }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}

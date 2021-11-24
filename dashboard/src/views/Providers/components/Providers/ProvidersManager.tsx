@@ -115,7 +115,7 @@ const ProvidersManager = () => {
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
-            return index != rowNum && row.columnValues.get('distribution') == value
+            return index != rowNum && row.get('distribution')?.value == value
           })
       }
     },
@@ -170,19 +170,19 @@ const ProvidersManager = () => {
     }
   ]
 
-  const rows = new Array<GridTableRowParams>()
-  providers?.providersInfo.forEach(provider => { rows.push({
-    columnValues: new Map<string, GridTableCellParams>([
-      ['distribution', provider.distribution],
-      ['url', provider.url],
-      ['accessToken', provider.accessToken],
-      ['testConsumer', provider.testConsumer?provider.testConsumer:''],
-      ['uploadState', provider.uploadState?true:false],
-      ['autoUpdate', provider.autoUpdate?true:false],
-      ['actions', [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
+  const rows = new Array<Map<string, GridTableCellParams>>()
+  providers?.providersInfo.forEach(provider => { rows.push(
+    new Map<string, GridTableCellParams>([
+      ['distribution', { value: provider.distribution }],
+      ['url', { value: provider.url }],
+      ['accessToken', { value: provider.accessToken }],
+      ['testConsumer', { value: provider.testConsumer?provider.testConsumer:'' }],
+      ['uploadState', { value: provider.uploadState?true:false }],
+      ['autoUpdate', { value: provider.autoUpdate?true:false }],
+      ['actions', { value: [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
         <DeleteIcon/>
-      </Button>]]
-    ])}) })
+      </Button>] }]
+    ]))})
 
   return (
     <Card

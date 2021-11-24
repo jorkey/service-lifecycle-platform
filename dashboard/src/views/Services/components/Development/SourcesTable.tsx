@@ -66,7 +66,7 @@ const SourcesTable = (props: SourceTableParams) => {
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
-            return index != rowNum && row.columnValues.get('name') == value
+            return index != rowNum && row.get('name')?.value == value
           })
       }
     },
@@ -108,16 +108,16 @@ const SourcesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = sources.map(source => ({
-    columnValues: new Map<string, GridTableCellParams>([
-      ['name', source.name],
-      ['url', source.git.url],
-      ['branch', source.git.branch],
-      ['cloneSubmodules', source.git.cloneSubmodules?source.git.cloneSubmodules:false],
-      ['actions', [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(source) : onSourceRemoved?.(source) }>
+  const rows = sources.map(source => (
+    new Map<string, GridTableCellParams>([
+      ['name', { value: source.name }],
+      ['url', { value: source.git.url }],
+      ['branch', { value: source.git.branch }],
+      ['cloneSubmodules', { value: source.git.cloneSubmodules?source.git.cloneSubmodules:false }],
+      ['actions', { value: [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(source) : onSourceRemoved?.(source) }>
         <DeleteIcon/>
-      </Button>]]
-    ])} as GridTableRowParams))
+      </Button>] }]
+    ])))
 
   return (<>
     <GridTable

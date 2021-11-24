@@ -57,11 +57,11 @@ const BranchesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = branches.map(source => ({
-    columnValues: new Map<string, GridTableCellParams>([
-      ['source', source.name],
-      ['branch', source.branch]
-    ])} as GridTableRowParams))
+  const rows = branches.map(source => (
+    new Map<string, GridTableCellParams>([
+      ['source', { value: source.name }],
+      ['branch', { value: source.branch }]
+    ])))
 
   return (<>
     <GridTable

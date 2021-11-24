@@ -1,13 +1,9 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
-import {
-  ClientVersionsInfoQuery,
-  useClientVersionsInfoQuery,
-} from "../../../../generated/graphql";
+import { ClientVersionsInfoQuery } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
 import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -106,8 +102,8 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
   const rows = clientVersions?.clientVersionsInfo
     .sort((v1, v2) =>
       Version.compareClientDistributionVersions(v2.version, v1.version))
-    .map(version => ({
-      columnValues: new Map<string, GridTableCellParams>([
+    .map(version => (
+      new Map<string, GridTableCellParams>([
         ['service', { value: version.service }],
         ['version', { value: Version.clientDistributionVersionToString(version.version) }],
         ['author', { value: version.buildInfo.author }],
@@ -115,7 +111,7 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
         ['creationTime', { value: version.buildInfo.time }],
         ['installedBy', { value: version.installInfo.account }],
         ['installTime', { value: version.installInfo.time }],
-      ])} as GridTableRowParams))
+      ])))
 
   return <GridTable className={classes.versionsTable}
                     columns={columns} rows={rows?rows:[]}/>

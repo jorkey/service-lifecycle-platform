@@ -53,7 +53,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     sys.error("Can't create Git repository")
   }
 
-  Await.result(new MongoDb(dbName).dropDatabase(), FiniteDuration(10, TimeUnit.SECONDS))
+  Await.result(new MongoDb(dbName).dropDatabase(), FiniteDuration(30, TimeUnit.SECONDS))
 
   def close(): Unit = {
     synchronized {

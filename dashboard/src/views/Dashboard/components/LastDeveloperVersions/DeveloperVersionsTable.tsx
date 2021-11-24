@@ -98,14 +98,14 @@ const LastDeveloperVersionsTable: React.FC<LastDeveloperVersionsTableProps> = (p
   const rows = developerVersions?.developerVersionsInfo
     .sort((v1, v2) =>
       Version.compareBuilds(v2.version.build, v1.version.build))
-    .map(version => ({
-      columnValues: new Map<string, GridTableCellParams>([
-        ['service', version.service],
-        ['version', Version.buildToString(version.version.build)],
-        ['author', version.buildInfo.author],
-        ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-        ['creationTime', version.buildInfo.time]
-      ]) } as GridTableRowParams))
+    .map(version => (
+      new Map<string, GridTableCellParams>([
+        ['service', { value: version.service }],
+        ['version', { value: Version.buildToString(version.version.build) }],
+        ['author', { value: version.buildInfo.author }],
+        ['comment', { value: version.buildInfo.comment?version.buildInfo.comment:'' }],
+        ['creationTime', { value: version.buildInfo.time }]
+      ])))
 
   return <GridTable
            className={classes.versionsTable}

@@ -51,7 +51,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
-            return index != rowNum && row.columnValues.get('service') == value
+            return index != rowNum && row.get('service')?.value == value
           })
       }
     },
@@ -63,16 +63,16 @@ export const ServicesTable = (props: ServicesTableParams) => {
     }
   ]
 
-  const rows = new Array<GridTableRowParams>()
+  const rows = new Array<Map<string, GridTableCellParams>>()
   services.forEach(service => {
-    rows.push({
-      columnValues: new Map<string, GridTableCellParams>([
-        ['service', service],
-        ['actions', deleteIcon ?
+    rows.push(
+      new Map<string, GridTableCellParams>([
+        ['service', { value: service }],
+        ['actions', { value: deleteIcon ?
             [<Button onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
               deleteIcon
-            </Button>] : undefined]
-      ])})
+            </Button>] : undefined }]
+        ]))
   })
 
   return (<>

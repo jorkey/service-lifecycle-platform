@@ -66,13 +66,13 @@ export const LogsTailCard = (props: LogsTailCardParams) => {
   ]
 
   const rows = lines
-    .map(line => ({
-      columnValues: new Map<string, GridTableCellParams>([
-        ['time', line.time],
-        ['level', line.level],
-        ['unit', line.unit],
-        ['message', line.message]
-      ])}) as GridTableRowParams)
+    .map(line => (
+      new Map<string, GridTableCellParams>([
+        ['time', { value: line.time }],
+        ['level', { value: line.level }],
+        ['unit', { value: line.unit }],
+        ['message', { value: line.message }]
+      ])))
 
   return <Card>
     <CardHeader title={'Logs Tail'}/>

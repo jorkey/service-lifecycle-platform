@@ -68,7 +68,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
       const constColumn = columnValues.get(column.name)?.constant
       const columnValue = columnValues.get(column.name)?.value
       const editValue = editValues.get(column.name)
-      return (<TableCell key={index} className={className}
+      return (<TableCell className={className}
                   padding={column.type == 'checkbox'?'checkbox':undefined}
                   onClick={() => {
                     if (!adding && column.editable && editColumn != column.name) {

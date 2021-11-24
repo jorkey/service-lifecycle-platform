@@ -232,15 +232,15 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   }
 
   const rows = lines
-    .map(line => ({
-      columnValues: new Map<string, GridTableCellParams>([
-        ['time', line.payload.time],
-        ['instance', line.instance?line.instance:''],
-        ['process', line.process?line.process:''],
-        ['level', line.payload.level],
-        ['unit', line.payload.unit],
-        ['message', line.payload.message]
-      ]) }) as GridTableRowParams)
+    .map(line => (
+      new Map<string, GridTableCellParams>([
+        ['time', { value: line.payload.time }],
+        ['instance', { value: line.instance?line.instance:'' }],
+        ['process', { value: line.process?line.process:'' }],
+        ['level', { value: line.payload.level }],
+        ['unit', { value: line.payload.unit }],
+        ['message', { value: line.payload.message }]
+      ])))
 
   return <>
     <GridTable

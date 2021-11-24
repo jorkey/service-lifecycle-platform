@@ -95,16 +95,16 @@ const ServiceAccountsTable: React.FC<ServiceAccountsTableProps> = props => {
     }
   ]
 
-  const rows = new Array<GridTableRowParams>()
+  const rows = new Array<Map<string, GridTableCellParams>>()
   if (accountsInfo) {
     [...accountsInfo.serviceAccountsInfo]
       .sort((u1,u2) =>  (u1.account > u2.account ? 1 : -1))
       .forEach(account => {
         const row = new Map<string, GridTableCellParams>()
-        row.set('account', account.account)
-        row.set('name', account.name)
-        row.set('role', account.role.toString())
-        row.set('actions', [
+        row.set('account', { value: account.account })
+        row.set('name', { value: account.name })
+        row.set('role', { value: account.role.toString() })
+        row.set('actions', { value: [
           <span key='0' className={classes.action}>
             <AccessTokenPopup account={account.account}/>
           </span>,
@@ -113,8 +113,8 @@ const ServiceAccountsTable: React.FC<ServiceAccountsTableProps> = props => {
           >
             <DeleteIcon/>
           </Button>
-        ])
-        rows.push({ columnValues: row })
+        ] })
+        rows.push(row)
       })
   }
 
@@ -124,7 +124,7 @@ const ServiceAccountsTable: React.FC<ServiceAccountsTableProps> = props => {
       columns={columns}
       rows={rows}
       onClick={ (row) =>
-        setStartEdit(rows[row].columnValues.get('account')! as string) }
+        setStartEdit(rows[row].get('account')!.value! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

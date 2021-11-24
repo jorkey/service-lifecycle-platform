@@ -8,12 +8,12 @@ import {
   TableRow
 } from "@material-ui/core";
 import {GridTableColumnParams, GridTableCellParams, GridTableCellValue} from "./GridTableColumn";
-import {GridTableRow, GridTableRowParams} from "./GridTableRow";
+import {GridTableRow} from "./GridTableRow";
 
 interface GridParams {
   className: string,
   columns: GridTableColumnParams[],
-  rows: GridTableRowParams[],
+  rows: Map<string, GridTableCellParams>[],
   addNewRow?: boolean,
   scrollToLastRow?: boolean,
   onClick?: (row: number) => void,
@@ -38,7 +38,7 @@ export const GridTable = (props: GridParams) => {
   const [changingInProgress, setChangingInProgress] = useState(false)
 
   const selectedRowsCount = rows.map(row =>
-    row.columnValues.get('select')?.value as boolean).filter(v => v).length
+    row.get('select')?.value as boolean).filter(v => v).length
 
   return (
     <TableContainer className={className}
@@ -58,12 +58,12 @@ export const GridTable = (props: GridParams) => {
             { columns.map((column, index) => {
               return column.name == 'select' ?
                 <TableCell key={index} padding='checkbox' className={column.className}>
-                  {column.editable == false || rows.find(row => !row.columnValues.get(column.name)?.constant)?
+                  {column.editable == false || rows.find(row => !row.get(column.name)?.constant)?
                     <Checkbox className={column.className}
                       indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
                       checked={rows.length > 0 && selectedRowsCount === rows.length}
                       disabled={column.editable == false ||
-                                !rows.find(row => !row.columnValues.get('select')?.constant)}
+                                !rows.find(row => !row.get('select')?.constant)}
                       onChange={(event) => {
                         if (event.target.checked) {
                           onRowsSelected?.(rows.map((row, index) => index))
@@ -87,7 +87,7 @@ export const GridTable = (props: GridParams) => {
                              onCanceled={() => onRowAddCancelled?.()}/>) : null) }
             {  rows.map((row, rowNum) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns}
-                                      columnValues={row.columnValues}
+                                      columnValues={row}
                                       adding={false}
                                       editing={rowNum == editingRow}
                                       scrollInto={

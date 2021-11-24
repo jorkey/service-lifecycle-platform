@@ -83,14 +83,14 @@ const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableP
     }
   ]
 
-  const rows = developerVersionsInProcess?.tasks.map(task => ({
-    columnValues: new Map<string, GridTableCellParams>([
-      ['service', task.parameters.find(p => p.name == 'service')?.value],
-      ['version', task.parameters.find(p => p.name == 'version')?.value],
-      ['author', task.parameters.find(p => p.name == 'author')?.value],
-      ['comment', task.parameters.find(p => p.name == 'comment')?.value],
-      ['startTime', task.creationTime]
-    ])} as GridTableRowParams))
+  const rows = developerVersionsInProcess?.tasks.map(task => (
+    new Map<string, GridTableCellParams>([
+      ['service', { value: task.parameters.find(p => p.name == 'service')?.value }],
+      ['version', { value: task.parameters.find(p => p.name == 'version')?.value }],
+      ['author', { value: task.parameters.find(p => p.name == 'author')?.value }],
+      ['comment', { value: task.parameters.find(p => p.name == 'comment')?.value }],
+      ['startTime', { value: task.creationTime }]
+    ])))
 
   return rows?.length?<GridTable className={classes.versionsTable}
            columns={columns}

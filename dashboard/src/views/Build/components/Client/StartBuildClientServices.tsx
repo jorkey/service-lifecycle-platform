@@ -224,7 +224,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       })
   }
 
-  const validate = () => !!rowsView.find(value => value.columnValues.get('select'))
+  const validate = () => !!rowsView.find(value => value.get('select')?.value)
 
   const columns: Array<GridTableColumnParams> = [
     {
@@ -259,18 +259,18 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   ].filter(column => column.name != 'providerVersion' || !!provider)
    .filter(column => column.name != 'testedVersion' || !!providerTestedVersions.data || providerTestedVersions.loading) as GridTableColumnParams[]
 
-  const rowsView = rows.map(row => ({
-    checkBoxColumn: !provider || !provider.testConsumer || row.selected,
-    columnValues: new Map<string, GridTableCellParams>([
-      ['select', row.selected],
-      ['service', row.service],
-      ['providerVersion', row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):''],
-      ['developerVersion', row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):''],
-      ['clientVersion', row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):''],
-      ['testedVersion', row.testedVersion?Version.developerDistributionVersionToString(row.testedVersion):'']
-    ]),
-    constColumns: (!!provider && !!provider.testConsumer)?['select']:undefined,
-  } as GridTableRowParams))
+  const rowsView = rows.map(row => (
+    new Map<string, GridTableCellParams>([
+      ['select', {
+        value: row.selected,
+        constant: !!provider && !!provider.testConsumer
+      }],
+      ['service', { value: row.service }],
+      ['providerVersion', { value: row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):'' }],
+      ['developerVersion', { value: row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):'' }],
+      ['clientVersion', { value: row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):'' }],
+      ['testedVersion', { value: row.testedVersion?Version.developerDistributionVersionToString(row.testedVersion):'' }]
+    ])))
 
   function clientVersionToDeveloperVersion(info: ClientDesiredVersion): DeveloperDesiredVersionInput {
     return {

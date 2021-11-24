@@ -69,16 +69,16 @@ const ProfilesTable = () => {
     }
   ]
 
-  const rows = new Array<GridTableRowParams>()
+  const rows = new Array<Map<string, GridTableCellParams>>()
   if (profiles) {
     [...profiles.serviceProfiles]
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(profile => {
-        rows.push({
-          columnValues: new Map<string, GridTableCellParams>([
-            ['profile', profile.profile],
-            ['actions', [<DeleteIcon key='0' onClick={ () => setStartEdit(profile.profile) }/>]]
-          ])})
+        rows.push(
+          new Map<string, GridTableCellParams>([
+            ['profile', { value: profile.profile }],
+            ['actions', { value: [<DeleteIcon key='0' onClick={ () => setStartEdit(profile.profile) }/>] }]
+          ]))
       })
   }
 
@@ -88,7 +88,7 @@ const ProfilesTable = () => {
       columns={columns}
       rows={rows}
       onClick={ (row) =>
-        setStartEdit(rows[row].columnValues.get('profile')! as string) }
+        setStartEdit(rows[row].get('profile')?.value! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
     { deleteConfirm ? (

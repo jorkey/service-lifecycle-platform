@@ -130,16 +130,13 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     const author = clientVersions?.clientVersionsInfo?.find(v => v.service)?.buildInfo.author
     const time = clientVersions?.clientVersionsInfo?.find(v => v.service)?.buildInfo.time
     const comment = clientVersions?.clientVersionsInfo?.find(v => v.service)?.buildInfo.comment
-    return {
-      columnValues: new Map<string, GridTableCellParams>([
-        ['service', version.service],
-        ['version', Version.clientDistributionVersionToString(version.version)],
-        ['author', author],
-        ['time', time],
-        ['comment', comment]
-      ])
-    }}
-  )
+    return new Map<string, GridTableCellParams>([
+      ['service', { value: version.service }],
+      ['version', { value: Version.clientDistributionVersionToString(version.version) }],
+      ['author', { value: author }],
+      ['time', { value: time }],
+      ['comment', { value: comment }]
+      ])})
 
   return (
     <Card

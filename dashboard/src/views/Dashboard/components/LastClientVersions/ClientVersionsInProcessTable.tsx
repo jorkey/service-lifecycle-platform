@@ -1,7 +1,6 @@
-import React, {useState} from 'react';
+import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {TasksQuery} from "../../../../generated/graphql";
 
@@ -66,12 +65,12 @@ const ClientVersionsInProcessTable: React.FC<ClientVersionsInProcessTableProps> 
   ]
 
   const rows = clientVersionsInProcess?.tasks
-    .map(task => ({
-      columnValues: new Map<string, GridTableCellParams>([
-        ['versions', task.parameters.find(p => p.name == 'versions')?.value],
-        ['author', task.parameters.find(p => p.name == 'author')?.value],
-        ['startTime', task.creationTime],
-      ])} as GridTableRowParams))
+    .map(task => (
+      new Map<string, GridTableCellParams>([
+        ['versions', { value: task.parameters.find(p => p.name == 'versions')?.value }],
+        ['author', { value: task.parameters.find(p => p.name == 'author')?.value }],
+        ['startTime', { value: task.creationTime }],
+      ])))
 
   return rows?.length?<GridTable className={classes.versionsTable}
                        columns={columns} rows={rows}/>:null
