@@ -3,7 +3,7 @@ import {
   LogLine,
 } from "../../../generated/graphql";
 import {makeStyles} from "@material-ui/core/styles";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../common/components/gridTable/GridTable";
 import {Card, CardContent, CardHeader} from "@material-ui/core";
 import {GridTableRowParams} from "../../../common/components/gridTable/GridTableRow";
@@ -67,7 +67,7 @@ export const LogsTailCard = (props: LogsTailCardParams) => {
 
   const rows = lines
     .map(line => ({
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['time', line.time],
         ['level', line.level],
         ['unit', line.unit],

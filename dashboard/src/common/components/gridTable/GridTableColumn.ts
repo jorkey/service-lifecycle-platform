@@ -1,4 +1,11 @@
-export type GridTableColumnValue = string|number|boolean|Date|JSX.Element[]|undefined
+export type GridTableCellValue = string | number | boolean | Date | JSX.Element[] | undefined
+
+export interface GridTableCellParams {
+  value: GridTableCellValue,
+  className?: string,
+  constant?: boolean,
+  select?: string[]
+}
 
 export interface GridTableColumnParams {
   name: string,
@@ -7,6 +14,6 @@ export interface GridTableColumnParams {
   type?: 'checkbox' | 'select' | 'date' | 'number' | 'elements',
   select?: string[],
   editable?: boolean,
-  validate?: (value: GridTableColumnValue, rowNum: number|undefined) => boolean,
+  validate?: (value: GridTableCellValue, rowNum: number|undefined) => boolean,
   elements?: JSX.Element[]
 }

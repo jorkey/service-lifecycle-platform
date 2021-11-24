@@ -7,10 +7,8 @@ import {
   TableHead,
   TableRow
 } from "@material-ui/core";
-import {GridTableColumnParams, GridTableColumnValue} from "./GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams, GridTableCellValue} from "./GridTableColumn";
 import {GridTableRow, GridTableRowParams} from "./GridTableRow";
-import {makeStyles} from "@material-ui/styles";
-import ReactDOM from "react-dom";
 
 interface GridParams {
   className: string,
@@ -19,15 +17,15 @@ interface GridParams {
   addNewRow?: boolean,
   scrollToLastRow?: boolean,
   onClick?: (row: number) => void,
-  onRowAdded?: (values: Map<string, GridTableColumnValue>) => Promise<void> | void,
+  onRowAdded?: (values: Map<string, GridTableCellValue>) => Promise<void> | void,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
-  onRowChanged?: (row: number, values: Map<string, GridTableColumnValue>,
-                  oldValues: Map<string, GridTableColumnValue>) => Promise<void> | void,
-  onRowsSelected?: (rows: number[]) => void
-  onRowsUnselected?: (rows: number[]) => void
-  onScrollTop?: () => void
-  onScrollMiddle?: () => void
+  onRowChanged?: (row: number, values: Map<string, GridTableCellValue>,
+                  oldValues: Map<string, GridTableCellValue>) => Promise<void> | void,
+  onRowsSelected?: (rows: number[]) => void,
+  onRowsUnselected?: (rows: number[]) => void,
+  onScrollTop?: () => void,
+  onScrollMiddle?: () => void,
   onScrollBottom?: () => void
 }
 
@@ -40,7 +38,7 @@ export const GridTable = (props: GridParams) => {
   const [changingInProgress, setChangingInProgress] = useState(false)
 
   const selectedRowsCount = rows.map(row =>
-    row.columnValues.get('select') as boolean).filter(v => v).length
+    row.columnValues.get('select')?.value as boolean).filter(v => v).length
 
   return (
     <TableContainer className={className}
@@ -60,12 +58,12 @@ export const GridTable = (props: GridParams) => {
             { columns.map((column, index) => {
               return column.name == 'select' ?
                 <TableCell key={index} padding='checkbox' className={column.className}>
-                  {column.editable == false || rows.find(row => !row.constColumns?.find(c => c == column.name))?
+                  {column.editable == false || rows.find(row => !row.columnValues.get(column.name)?.constant)?
                     <Checkbox className={column.className}
                       indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
                       checked={rows.length > 0 && selectedRowsCount === rows.length}
                       disabled={column.editable == false ||
-                                !rows.find(row => !row.constColumns?.find(c => c == 'select'))}
+                                !rows.find(row => !row.columnValues.get('select')?.constant)}
                       onChange={(event) => {
                         if (event.target.checked) {
                           onRowsSelected?.(rows.map((row, index) => index))
@@ -90,8 +88,6 @@ export const GridTable = (props: GridParams) => {
             {  rows.map((row, rowNum) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns}
                                       columnValues={row.columnValues}
-                                      classNames={row.classNames}
-                                      constColumns={row.constColumns}
                                       adding={false}
                                       editing={rowNum == editingRow}
                                       scrollInto={

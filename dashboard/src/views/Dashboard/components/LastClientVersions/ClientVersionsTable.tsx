@@ -6,7 +6,7 @@ import {
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
@@ -107,14 +107,14 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
     .sort((v1, v2) =>
       Version.compareClientDistributionVersions(v2.version, v1.version))
     .map(version => ({
-      columnValues: new Map<string, GridTableColumnValue>([
-        ['service', version.service],
-        ['version', Version.clientDistributionVersionToString(version.version)],
-        ['author', version.buildInfo.author],
-        ['comment', version.buildInfo.comment?version.buildInfo.comment:''],
-        ['creationTime', version.buildInfo.time],
-        ['installedBy', version.installInfo.account],
-        ['installTime', version.installInfo.time],
+      columnValues: new Map<string, GridTableCellParams>([
+        ['service', { value: version.service }],
+        ['version', { value: Version.clientDistributionVersionToString(version.version) }],
+        ['author', { value: version.buildInfo.author }],
+        ['comment', { value: version.buildInfo.comment?version.buildInfo.comment:'' }],
+        ['creationTime', { value: version.buildInfo.time }],
+        ['installedBy', { value: version.installInfo.account }],
+        ['installTime', { value: version.installInfo.time }],
       ])} as GridTableRowParams))
 
   return <GridTable className={classes.versionsTable}

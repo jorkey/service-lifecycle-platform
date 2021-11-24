@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import {DistributionFaultReport} from "../../../generated/graphql";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../common/components/gridTable/GridTable";
 import {Version} from "../../../common";
 import {Button} from "@material-ui/core";
@@ -94,7 +94,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
 
   const rows = faults
     .map((fault, row) => ({
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['time', fault.payload.info.time],
         ['distribution', fault.distribution],
         ['service', fault.payload.info.service],
