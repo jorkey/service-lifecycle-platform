@@ -6,7 +6,7 @@ import {
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
-import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../gridTable/GridTableColumn";
 import {LogsSubscriber} from "./LogsSubscriber";
 import {GridTableRowParams} from "../gridTable/GridTableRow";
 
@@ -233,7 +233,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const rows = lines
     .map(line => ({
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['time', line.payload.time],
         ['instance', line.instance?line.instance:''],
         ['process', line.process?line.process:''],

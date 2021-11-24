@@ -1,7 +1,7 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import GridTable from "../../../../common/components/gridTable/GridTable";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {TasksQuery} from "../../../../generated/graphql";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
@@ -84,7 +84,7 @@ const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableP
   ]
 
   const rows = developerVersionsInProcess?.tasks.map(task => ({
-    columnValues: new Map<string, GridTableColumnValue>([
+    columnValues: new Map<string, GridTableCellParams>([
       ['service', task.parameters.find(p => p.name == 'service')?.value],
       ['version', task.parameters.find(p => p.name == 'version')?.value],
       ['author', task.parameters.find(p => p.name == 'author')?.value],

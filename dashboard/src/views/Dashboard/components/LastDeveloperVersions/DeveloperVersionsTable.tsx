@@ -14,7 +14,7 @@ import {Version} from "../../../../common";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
@@ -99,7 +99,7 @@ const LastDeveloperVersionsTable: React.FC<LastDeveloperVersionsTableProps> = (p
     .sort((v1, v2) =>
       Version.compareBuilds(v2.version.build, v1.version.build))
     .map(version => ({
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['service', version.service],
         ['version', Version.buildToString(version.version.build)],
         ['author', version.buildInfo.author],

@@ -4,7 +4,7 @@ import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
 import {SourceConfig} from "../../../../generated/graphql";
 import DeleteIcon from "@material-ui/icons/Delete";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
@@ -109,7 +109,7 @@ const SourcesTable = (props: SourceTableParams) => {
   ]
 
   const rows = sources.map(source => ({
-    columnValues: new Map<string, GridTableColumnValue>([
+    columnValues: new Map<string, GridTableCellParams>([
       ['name', source.name],
       ['url', source.git.url],
       ['branch', source.git.branch],

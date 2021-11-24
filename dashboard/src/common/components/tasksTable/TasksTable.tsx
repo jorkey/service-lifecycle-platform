@@ -5,7 +5,7 @@ import {
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
-import {GridTableColumnParams, GridTableColumnValue} from "../gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../gridTable/GridTableColumn";
 import {GridTableRowParams} from "../gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
@@ -99,7 +99,7 @@ export const TasksTable = (props: TasksTableParams) => {
 
   const rows = tasks?.tasks
     .map(task => ({
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['creationTime', task.creationTime],
         ['id', task.id],
         ['type', task.type],

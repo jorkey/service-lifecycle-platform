@@ -8,7 +8,7 @@ import {Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
@@ -75,7 +75,7 @@ const ServicesTable = () => {
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(service => {
         rows.push(
-          {columnValues: new Map<string, GridTableColumnValue>([
+          {columnValues: new Map<string, GridTableCellParams>([
             ['service', service],
             ['actions',
               [<Button key='0' onClick={ () => setDeleteConfirm(service) }>

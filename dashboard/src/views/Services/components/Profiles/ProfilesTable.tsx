@@ -9,7 +9,7 @@ import {NavLink as RouterLink, Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
@@ -75,7 +75,7 @@ const ProfilesTable = () => {
       .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
       .forEach(profile => {
         rows.push({
-          columnValues: new Map<string, GridTableColumnValue>([
+          columnValues: new Map<string, GridTableCellParams>([
             ['profile', profile.profile],
             ['actions', [<DeleteIcon key='0' onClick={ () => setStartEdit(profile.profile) }/>]]
           ])})

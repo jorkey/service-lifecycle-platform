@@ -1,16 +1,9 @@
 import React, {useState} from 'react';
-import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
-import {
-  Card, CardContent, CardHeader, Grid, Typography,
-} from '@material-ui/core';
-import Alert from "@material-ui/lab/Alert";
-import FormGroup from "@material-ui/core/FormGroup";
-import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import {TasksQuery, useTasksQuery} from "../../../../generated/graphql";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 import GridTable from "../../../../common/components/gridTable/GridTable";
+import {TasksQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -74,7 +67,7 @@ const ClientVersionsInProcessTable: React.FC<ClientVersionsInProcessTableProps> 
 
   const rows = clientVersionsInProcess?.tasks
     .map(task => ({
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['versions', task.parameters.find(p => p.name == 'versions')?.value],
         ['author', task.parameters.find(p => p.name == 'author')?.value],
         ['startTime', task.creationTime],

@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
@@ -66,7 +66,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
   const rows = new Array<GridTableRowParams>()
   services.forEach(service => {
     rows.push({
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['service', service],
         ['actions', deleteIcon ?
             [<Button onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>

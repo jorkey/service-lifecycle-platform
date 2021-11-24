@@ -8,7 +8,7 @@ import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import AccessTokenPopup from "./AccessTokenPopup";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
@@ -100,7 +100,7 @@ const ServiceAccountsTable: React.FC<ServiceAccountsTableProps> = props => {
     [...accountsInfo.serviceAccountsInfo]
       .sort((u1,u2) =>  (u1.account > u2.account ? 1 : -1))
       .forEach(account => {
-        const row = new Map<string, GridTableColumnValue>()
+        const row = new Map<string, GridTableCellParams>()
         row.set('account', account.account)
         row.set('name', account.name)
         row.set('role', account.role.toString())

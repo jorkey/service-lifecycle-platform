@@ -11,7 +11,7 @@ import {
   useDeveloperServicesQuery, useDeveloperVersionsInfoQuery, useSetClientDesiredVersionsMutation,
   useTasksQuery
 } from "../../../../generated/graphql";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Box, Button, Card, CardContent, CardHeader, FormControlLabel} from "@material-ui/core";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import BuildIcon from "@material-ui/icons/Build";
@@ -120,6 +120,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     },
     {
       name: 'version',
+      type: 'select',
       headerName: 'Desired Version',
       className: classes.versionColumn,
     },
@@ -154,7 +155,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     const comment = info?.buildInfo.comment
     const installTime = info?.installInfo.time
     return {
-      columnValues: new Map<string, GridTableColumnValue>([
+      columnValues: new Map<string, GridTableCellParams>([
         ['service', version.service],
         ['version', Version.clientDistributionVersionToString(version.version)],
         ['author', author],

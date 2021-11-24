@@ -18,7 +18,7 @@ import {RefreshControl} from "../../../../common/components/refreshControl/Refre
 import {useHistory} from "react-router-dom";
 import BuildIcon from "@material-ui/icons/Build";
 import VisibilityIcon from "@material-ui/icons/Visibility";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -159,7 +159,7 @@ const BuildDeveloper = () => {
       const status = versionInProcess?'In Process':
         completedVersion?'Completed':undefined
       return {
-        columnValues: new Map<string, GridTableColumnValue>([
+        columnValues: new Map<string, GridTableCellParams>([
           ['service', service],
           ['version', version],
           ['author', author],

@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles(theme => ({
@@ -58,7 +58,7 @@ const BranchesTable = (props: SourceTableParams) => {
   ]
 
   const rows = branches.map(source => ({
-    columnValues: new Map<string, GridTableColumnValue>([
+    columnValues: new Map<string, GridTableCellParams>([
       ['source', source.name],
       ['branch', source.branch]
     ])} as GridTableRowParams))

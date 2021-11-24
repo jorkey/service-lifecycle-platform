@@ -23,7 +23,7 @@ import {Version} from "../../../../common";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import {GridTableColumnParams, GridTableColumnValue} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Button from "@material-ui/core/Button";
 import {RouteComponentProps, useHistory} from "react-router-dom";
@@ -261,7 +261,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const rowsView = rows.map(row => ({
     checkBoxColumn: !provider || !provider.testConsumer || row.selected,
-    columnValues: new Map<string, GridTableColumnValue>([
+    columnValues: new Map<string, GridTableCellParams>([
       ['select', row.selected],
       ['service', row.service],
       ['providerVersion', row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):''],
