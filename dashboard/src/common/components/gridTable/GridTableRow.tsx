@@ -58,20 +58,24 @@ export const GridTableRow = (params: GridTableRowParams) => {
     setEditValues(new Map())
   }
 
+  const valid = !columns.find(c => { return c.validate && !c.validate(editValues.get(c.name), rowNum) })
+
   const valuesColumns =
     columns.map((column, index) => {
       const columnClassName = columnValues.get(column.name)?.className
       const className = column.className && columnClassName ? column.className + ' ' + columnClassName :
-                        column.className ? column.className :
-                        columnClassName ? columnClassName :
-                        undefined
-      const constColumn = columnValues.get(column.name)?.constant
+                      column.className ? column.className :
+                      columnClassName ? columnClassName :
+                      undefined
+      const editingCell = editing && editColumn === column.name
+      const constCell = columnValues.get(column.name)?.constant
       const columnValue = columnValues.get(column.name)?.value
       const editValue = editValues.get(column.name)
-      return (<TableCell className={className}
+
+      return (<TableCell key={index} className={className}
                   padding={column.type == 'checkbox'?'checkbox':undefined}
                   onClick={() => {
-                    if (!adding && column.editable && editColumn != column.name) {
+                    if (!adding && !editingCell) {
                       setEditColumn(column.name)
                       if (!editing && onBeginEditing?.()) {
                         const values = new Map<string, GridTableCellValue>()
@@ -90,10 +94,10 @@ export const GridTableRow = (params: GridTableRowParams) => {
                   }}
       >
         { column.type == 'checkbox' ?
-          (column.editable || !constColumn)?
-            <Checkbox className={className}
-                      checked={adding || editing ? editValue ? editValue as boolean : false : editValue as boolean}
-                      disabled={column.editable == false || constColumn}
+          (column.editable || !constCell)?
+            <Checkbox
+                      checked={adding || editing ? editValue ? editValue as boolean : false : columnValue as boolean}
+                      disabled={column.editable == false || constCell}
                       onChange={(e) => {
                         if (column.name == 'select')
                           if (e.target.checked) {
@@ -113,16 +117,15 @@ export const GridTableRow = (params: GridTableRowParams) => {
               (column.name == 'actions' ?
                 <GridActions adding={adding}
                              editing={editing}
-                             valid={!columns.find(
-                               c => { return c.validate && !c.validate(editValue, rowNum) })}
+                             valid={valid}
                              actions={columnValue! as JSX.Element[]}
                              onSubmit={() => onSubmitted?.(editValues, editOldValues) }
                              onCancel={() => onCanceled?.() }
                 />
                 : columnValue! as JSX.Element[])
-          : (adding || (editing && editColumn === column.name)) ?
+          : (adding || editingCell) ?
             (column.type == 'select' ?
-              <Select className={className}
+              <Select
                       autoFocus={true}
                       value={editValues.get(column.name)?editValues.get(column.name):''}
                       onChange={e => {
@@ -131,17 +134,17 @@ export const GridTableRow = (params: GridTableRowParams) => {
               >
                 { column.select?.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
               </Select>
-            : <Input  className={className + ' ' + classes.input}
-                      type={column.type}
-                      value={editValues.get(column.name)?editValues.get(column.name):''}
-                      autoFocus={adding?(index == 0):true}
-                      onChange={e => {
-                        setEditValues(new Map(editValues.set(column.name, e.target.value)))
+            : <Input className={classes.input}
+                     type={column.type}
+                     value={editValues.get(column.name)?editValues.get(column.name):''}
+                     autoFocus={adding?(index == 0):true}
+                     onChange={e => {
+                       setEditValues(new Map(editValues.set(column.name, e.target.value)))
                       }}
-                      error={(column.validate)?!column.validate(editValues.get(column.name), rowNum):false}
+                     error={column.validate?!column.validate(editValues.get(column.name), rowNum):false}
               />)
           : adding || editing ? editValues.get(column.name)!
-          : columnValues.get(column.name)!
+          : columnValues.get(column.name)!.value!
       }
       </TableCell>)})
 

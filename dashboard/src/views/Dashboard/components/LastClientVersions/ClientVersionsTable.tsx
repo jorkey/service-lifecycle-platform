@@ -99,10 +99,8 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
     }
   ]
 
-  const rows = clientVersions?.clientVersionsInfo
-    .sort((v1, v2) =>
-      Version.compareClientDistributionVersions(v2.version, v1.version))
-    .map(version => (
+  const rows = clientVersions?.clientVersionsInfo?[...clientVersions?.clientVersionsInfo].sort((v1, v2) =>
+    Version.compareClientDistributionVersions(v2.version, v1.version)).map(version => (
       new Map<string, GridTableCellParams>([
         ['service', { value: version.service }],
         ['version', { value: Version.clientDistributionVersionToString(version.version) }],
@@ -111,7 +109,7 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
         ['creationTime', { value: version.buildInfo.time }],
         ['installedBy', { value: version.installInfo.account }],
         ['installTime', { value: version.installInfo.time }],
-      ])))
+      ]))):undefined
 
   return <GridTable className={classes.versionsTable}
                     columns={columns} rows={rows?rows:[]}/>

@@ -53,12 +53,12 @@ const useStyles = makeStyles((theme:any) => ({
   uploadState: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '100px'
+    width: '150px'
   },
   autoUpdate: {
     padding: '4px',
     paddingLeft: '16px',
-    width: '100px'
+    width: '150px'
   },
   actionsColumn: {
     padding: '4px',
@@ -171,18 +171,23 @@ const ProvidersManager = () => {
   ]
 
   const rows = new Array<Map<string, GridTableCellParams>>()
-  providers?.providersInfo.forEach(provider => { rows.push(
-    new Map<string, GridTableCellParams>([
-      ['distribution', { value: provider.distribution }],
-      ['url', { value: provider.url }],
-      ['accessToken', { value: provider.accessToken }],
-      ['testConsumer', { value: provider.testConsumer?provider.testConsumer:'' }],
-      ['uploadState', { value: provider.uploadState?true:false }],
-      ['autoUpdate', { value: provider.autoUpdate?true:false }],
-      ['actions', { value: [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
-        <DeleteIcon/>
-      </Button>] }]
-    ]))})
+  if (providers) {
+    [...providers.providersInfo]
+        .sort((p1, p2) =>
+          p1.distribution == p2.distribution ? 0 : p1.distribution > p2.distribution ? 1 : -1)
+        .forEach(provider => { rows.push(
+      new Map<string, GridTableCellParams>([
+        ['distribution', { value: provider.distribution }],
+        ['url', { value: provider.url }],
+        ['accessToken', { value: provider.accessToken }],
+        ['testConsumer', { value: provider.testConsumer?provider.testConsumer:'' }],
+        ['uploadState', { value: provider.uploadState?true:false }],
+        ['autoUpdate', { value: provider.autoUpdate?true:false }],
+        ['actions', { value: [<Button key='0' onClick={ () => setDeleteConfirm(provider.distribution) }>
+            <DeleteIcon/>
+          </Button>] }]
+      ]))})
+  }
 
   return (
     <Card
