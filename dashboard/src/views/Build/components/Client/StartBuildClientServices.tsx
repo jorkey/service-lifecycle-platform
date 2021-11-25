@@ -98,9 +98,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const { data: providers } = useProvidersInfoQuery({
     onError(err) { setError('Query providers info error ' + err.message) },
-    onCompleted() {
-      setError(undefined)
-      if (providers?.providersInfo?.length) {
+    onCompleted(providers) {
+      if (providers.providersInfo?.length) {
         setProvider(providers.providersInfo[0])
       }
     }

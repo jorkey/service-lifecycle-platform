@@ -237,6 +237,7 @@ const ProvidersManager = () => {
                   distribution: String(values.get('distribution')!),
                   url: String(values.get('url')!),
                   accessToken: String(values.get('accessToken')!),
+                  testConsumer: values.get('testConsumer')?String(values.get('testConsumer')!):undefined,
                   uploadState: Boolean(values.get('uploadState')!),
                   autoUpdate: Boolean(values.get('autoUpdate')!)
                 }}).then(() => refetchProviders().then(() => {}))}}
