@@ -125,7 +125,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
                 : columnValue! as JSX.Element[])
           : (adding || editingCell) ?
             (column.type == 'select' ?
-              <Select
+              <Select className={classes.input}
                       autoFocus={true}
                       value={editValues.get(column.name)?editValues.get(column.name):''}
                       onChange={e => {

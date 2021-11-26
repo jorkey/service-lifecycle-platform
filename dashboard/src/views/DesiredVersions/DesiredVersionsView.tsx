@@ -7,17 +7,20 @@ import Alert from "@material-ui/lab/Alert";
 import React from "react";
 import {GridTableCellParams, GridTableColumnParams} from "../../common/components/gridTable/GridTableColumn";
 
-export class DesiredVersionWrap<DesiredVersion> {
-  desiredVersion: DesiredVersion
+export class VersionWrap<Version> {
+  original: Version
   service: string
   version: string
-  author: string
-  buildTime: string
-  comment: string
+  author: string | undefined
+  buildTime: string | undefined
+  comment: string | undefined
 
-  constructor(desiredVersion: DesiredVersion,
-              service: string, version: string, author: string, buildTime: string, comment: string) {
-    this.desiredVersion = desiredVersion
+  constructor(desiredVersion: Version,
+              service: string, version: string,
+              author: string | undefined,
+              buildTime: string | undefined,
+              comment: string | undefined) {
+    this.original = desiredVersion
     this.service = service
     this.version = version
     this.author = author
@@ -30,19 +33,20 @@ type Classes = Record<"root" | "content" | "inner" | "versionsTable" |
                       "serviceColumn" | "versionColumn" | "boldVersionColumn" | "authorColumn" | "timeColumn" | "commentColumn" |
                       "controls" | "control" | "alert" | "historyButton", string>
 
-export class DesiredVersionsView<DesiredVersion> {
+export class DesiredVersionsView<Version> {
   private title: string
-  private wrap: (version: DesiredVersion) => DesiredVersionWrap<DesiredVersion>
-  private compare: (v1: DesiredVersionWrap<DesiredVersion> | undefined,
-                    v2: DesiredVersionWrap<DesiredVersion> | undefined) => number
-  private modifyDesiredVersions: (desiredVersions: DesiredVersion[]) => void
+  private wrap: (version: Version) => VersionWrap<Version>
+  private compare: (v1: VersionWrap<Version> | undefined,
+                    v2: VersionWrap<Version> | undefined) => number
+  private modifyDesiredVersions: (desiredVersions: Version[]) => void
   private rerender: () => void
   private refresh: () => void
   private classes: Classes
 
-  private desiredVersions: DesiredVersionWrap<DesiredVersion>[] = []
-  private originalDesiredVersions: DesiredVersionWrap<DesiredVersion>[] = []
-  private desiredVersionsHistory: {time:Date, versions:DesiredVersionWrap<DesiredVersion>[]}[] = []
+  private desiredVersions: VersionWrap<Version>[] = []
+  private originalDesiredVersions: VersionWrap<Version>[] = []
+  private desiredVersionsHistory: {time:Date, versions:VersionWrap<Version>[]}[] = []
+  private versionsHistory: VersionWrap<Version>[] = []
 
   private columns: Array<GridTableColumnParams> = []
   private rows: Map<string, GridTableCellParams>[] = []
@@ -50,9 +54,9 @@ export class DesiredVersionsView<DesiredVersion> {
   private error: string | undefined = undefined
 
   constructor(title: string,
-              wrap: (version: DesiredVersion) => DesiredVersionWrap<DesiredVersion>,
-              compare: (v1: DesiredVersionWrap<DesiredVersion> | undefined, v2: DesiredVersionWrap<DesiredVersion> | undefined) => number,
-              modifyDesiredVersions: (desiredVersions: DesiredVersion[]) => void,
+              wrap: (version: Version) => VersionWrap<Version>,
+              compare: (v1: VersionWrap<Version> | undefined, v2: VersionWrap<Version> | undefined) => number,
+              modifyDesiredVersions: (desiredVersions: Version[]) => void,
               rerender: () => void, refresh: () => void, classes: Classes) {
     this.title = title
     this.wrap = wrap
@@ -63,13 +67,18 @@ export class DesiredVersionsView<DesiredVersion> {
     this.classes = classes
   }
 
-  setDesiredVersions(desiredVersions: DesiredVersion[]) {
+  setDesiredVersions(desiredVersions: Version[]) {
     this.desiredVersions = desiredVersions.map(version => this.wrap(version))
+    this.originalDesiredVersions = [...this.desiredVersions]
   }
 
-  setDesiredVersionsHistory(desiredVersionsHistory: {time:Date, versions:DesiredVersion[]}[]) {
+  setDesiredVersionsHistory(desiredVersionsHistory: {time:Date, versions:Version[]}[]) {
     this.desiredVersionsHistory =
       desiredVersionsHistory.map(v => { return {time: v.time, versions: v.versions.map(v => this.wrap(v))}})
+  }
+
+  setVersionsHistory(versionsHistory: Version[]) {
+    this.versionsHistory = versionsHistory.map(v => this.wrap(v))
   }
 
   setError(error: string | undefined) {
@@ -88,6 +97,7 @@ export class DesiredVersionsView<DesiredVersion> {
         type: 'select',
         headerName: 'Desired Version',
         className: this.classes.versionColumn,
+        editable: true
       },
       {
         name: 'author',
@@ -114,6 +124,8 @@ export class DesiredVersionsView<DesiredVersion> {
 
   getRows() {
     return this.makeServicesList().map(service => {
+      const l = this.versionsHistory.filter(v => v.service == service)?.map(v => v.version)
+      console.log('versions for ' + service + ' ' + l.length)
       const currentVersion = this.desiredVersions.find(v => v.service == service)
       const originalVersion = this.originalDesiredVersions.find(v => v.service == service)
       const version = currentVersion ? currentVersion : originalVersion!
@@ -122,7 +134,8 @@ export class DesiredVersionsView<DesiredVersion> {
         ['service', { value: service }],
         ['version', {
           value: version.version,
-          className: modified?this.classes.boldVersionColumn:undefined
+          className: modified?this.classes.boldVersionColumn:undefined,
+          select: this.versionsHistory.filter(v => v.service == service)?.map(v => v.version)
         }],
         ['author', { value: version.author }],
         ['buildTime', { value: version.buildTime }],
@@ -159,7 +172,7 @@ export class DesiredVersionsView<DesiredVersion> {
                                     this.timeSelect = t
                                     const versions = this.desiredVersionsHistory.find(v => v.time == this.timeSelect)?.versions
                                     if (versions) {
-                                      this.modifyDesiredVersions(versions.map(v => v.desiredVersion))
+                                      this.modifyDesiredVersions(versions.map(v => v.original))
                                     }
                                   }}
                     /> :

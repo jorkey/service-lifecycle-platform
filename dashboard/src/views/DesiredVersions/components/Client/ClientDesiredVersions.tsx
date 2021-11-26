@@ -9,7 +9,7 @@ import {
   useSetClientDesiredVersionsMutation,
 } from "../../../../generated/graphql";
 import {Version} from "../../../../common";
-import {DesiredVersionsView, DesiredVersionWrap} from "../../DesiredVersionsView";
+import {DesiredVersionsView, VersionWrap} from "../../DesiredVersionsView";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -82,44 +82,55 @@ interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredV
 const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   const classes = useStyles()
 
-  const [ version, setVersion ] = useState(0)
+  const [ version, setTimestamp ] = useState(new Date())
 
-  const view = new DesiredVersionsView<ClientDesiredVersion>(
+  const [ view, setView ] = useState(new DesiredVersionsView<ClientDesiredVersion>(
     'Client Desired Versions',
     (version) => {
-      const buildInfo = clientVersionsInfo?.clientVersionsInfo
-        ?.find(v => v.service == version.service)?.buildInfo!
-      return new DesiredVersionWrap<ClientDesiredVersion>(version, version.service,
+      const buildInfo = versionsInfo?.clientVersionsInfo.find(
+        v => v.service == version.service)?.buildInfo
+      return new VersionWrap<ClientDesiredVersion>(version, version.service,
         Version.clientDistributionVersionToString(version.version),
-        buildInfo.author, buildInfo.time.toLocaleDateString(), buildInfo.comment)
+        buildInfo?.author, buildInfo?.time.toLocaleDateString(), buildInfo?.comment)
     },
     (v1, v2) =>
-      Version.compareClientDistributionVersions(v1?.desiredVersion.version, v2?.desiredVersion.version),
+      Version.compareClientDistributionVersions(v1?.original.version, v2?.original.version),
     (desiredVersions) => {
       changeDesiredVersions({ variables: { versions: desiredVersions }})
     },
     () => {
-      setVersion(version + 1)
+      setTimestamp(new Date())
     },
     () => {
       getDesiredVersions()
       getDesiredVersionsHistory()
-      getClientVersionsInfo()
+      getVersionsInfo()
     },
-    classes)
+    classes))
 
   const {data: desiredVersions, refetch: getDesiredVersions} = useClientDesiredVersionsQuery({
+    onCompleted(versions) {
+      view.setDesiredVersions(versions.clientDesiredVersions)
+    },
     onError(err) {
       view.setError('Query desired versions error ' + err.message)
     }
   })
   const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} = useClientDesiredVersionsHistoryQuery({
     variables: {limit: 25},
+    onCompleted(versions) {
+      view.setDesiredVersionsHistory(versions.clientDesiredVersionsHistory)
+    },
     onError(err) {
       view.setError('Query desired versions history error ' + err.message)
-    },
+    }
   })
-  const {data: clientVersionsInfo, refetch: getClientVersionsInfo} = useClientVersionsInfoQuery({
+  const {data: versionsInfo, refetch: getVersionsInfo} = useClientVersionsInfoQuery({
+    onCompleted(versions) {
+      view.setVersionsHistory(versions.clientVersionsInfo.map(
+        v => ({ service: v.service, version: v.version } as ClientDesiredVersion)
+      ))
+    },
     onError(err) {
       view.setError('Query client versions error ' + err.message)
     },
@@ -127,10 +138,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
 
   const [changeDesiredVersions] = useSetClientDesiredVersionsMutation()
 
-  if (desiredVersions && desiredVersionsHistory?.clientDesiredVersionsHistory && clientVersionsInfo) {
-    view.setDesiredVersions(desiredVersions.clientDesiredVersions)
-    view.setDesiredVersionsHistory(desiredVersionsHistory.clientDesiredVersionsHistory)
-
+  if (desiredVersions && desiredVersionsHistory?.clientDesiredVersionsHistory && versionsInfo?.clientVersionsInfo) {
     const columns = view.getColumns()
     columns.push({
       name: 'installTime',
@@ -143,7 +151,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     const rows = view.getRows()
     rows.map(row => {
       const service = row.get('service')!.value as string
-      const installInfo = clientVersionsInfo.clientVersionsInfo.find(v => v.service == service)!.installInfo
+      const installInfo = versionsInfo.clientVersionsInfo.find(v => v.service == service)!.installInfo
       row.set('installTime', { value: installInfo.time })
       return row
     })
