@@ -70,101 +70,15 @@ const useStyles = makeStyles((theme:any) => ({
   }
 }));
 
-interface ClientDesiredVersionsRouteParams {
+interface DeveloperDesiredVersionsRouteParams {
 }
 
-interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredVersionsRouteParams> {
+interface DeveloperDesiredVersionsParams extends RouteComponentProps<DeveloperDesiredVersionsRouteParams> {
   fromUrl: string
 }
 
-const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
-  const classes = useStyles()
-
-  const [time, setTime] = useState<Date>()
-  const [error, setError] = useState<string>()
-
-  const { data: desiredVersions, refetch: getDesiredVersions } = useClientDesiredVersionsQuery({
-    onError(err) { setError('Query desired versions error ' + err.message) },
-  })
-  const { data: desiredVersionsHistory, refetch: getDesiredVersionsHistory } = useClientDesiredVersionsHistoryQuery({
-    onError(err) { setError('Query desired versions history error ' + err.message) },
-  })
-  const [ setDesiredVersions ] = useSetClientDesiredVersionsMutation()
-  const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
-    onError(err) { setError('Query client versions error ' + err.message) },
-  })
-
-  const columns: Array<GridTableColumnParams> = [
-    {
-      name: 'service',
-      headerName: 'Service',
-      className: classes.serviceColumn,
-    },
-    {
-      name: 'version',
-      headerName: 'Desired Version',
-      className: classes.versionColumn,
-    },
-    {
-      name: 'author',
-      headerName: 'Author',
-      className: classes.authorColumn,
-    },
-    {
-      name: 'time',
-      headerName: 'Time',
-      type: 'date',
-      className: classes.timeColumn,
-    },
-    {
-      name: 'comment',
-      headerName: 'Comment',
-      className: classes.commentColumn,
-    }
-  ]
-
-  const versions = time?desiredVersionsHistory?.clientDesiredVersionsHistory?.find(v => v.time == time)?.versions:
-    desiredVersions?.clientDesiredVersions
-
-  const rows = versions?.map(version => {
-    const author = clientVersions?.clientVersionsInfo?.find(v => v.service)?.buildInfo.author
-    const time = clientVersions?.clientVersionsInfo?.find(v => v.service)?.buildInfo.time
-    const comment = clientVersions?.clientVersionsInfo?.find(v => v.service)?.buildInfo.comment
-    return new Map<string, GridTableCellParams>([
-      ['service', { value: version.service }],
-      ['version', { value: Version.clientDistributionVersionToString(version.version) }],
-      ['author', { value: author }],
-      ['time', { value: time }],
-      ['comment', { value: comment }]
-      ])})
-
-  return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <FormGroup row>
-            <RefreshControl
-              className={classes.control}
-              refresh={ () => { getDesiredVersions(); getDesiredVersionsHistory(); getClientVersions() }}
-            />
-          </FormGroup>
-        }
-        title='Client Desired Versions'
-      />
-      <CardContent className={classes.content}>
-        <div className={classes.inner}>
-          <GridTable
-            className={classes.versionsTable}
-            columns={columns}
-            rows={rows?rows:[]}
-          />
-          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-        </div>
-      </CardContent>
-    </Card>
-  );
+const DeveloperDesiredVersions = (props: DeveloperDesiredVersionsParams) => {
+  return null
 }
 
-export default ClientDesiredVersions;
+export default DeveloperDesiredVersions;

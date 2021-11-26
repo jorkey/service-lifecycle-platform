@@ -48,8 +48,6 @@ const TimeSelector: React.FC<TimeSelectorParams> = props => {
 
   const classes = useStyles()
 
-  console.log('time ' + time)
-
   let left: Date | undefined
   let right: Date | undefined
 

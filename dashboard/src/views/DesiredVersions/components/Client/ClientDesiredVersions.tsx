@@ -1,27 +1,15 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 
-import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom"
-
+import {RouteComponentProps} from "react-router-dom"
 import { makeStyles } from '@material-ui/core/styles';
-import Alert from "@material-ui/lab/Alert";
 import {
   ClientDesiredVersion,
   useClientDesiredVersionsHistoryQuery,
   useClientDesiredVersionsQuery, useClientVersionsInfoQuery,
-  useDeveloperServicesQuery, useDeveloperVersionsInfoQuery, useSetClientDesiredVersionsMutation,
-  useTasksQuery
+  useSetClientDesiredVersionsMutation,
 } from "../../../../generated/graphql";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {Box, Button, Card, CardContent, CardHeader, FormControlLabel} from "@material-ui/core";
-import VisibilityIcon from "@material-ui/icons/Visibility";
-import BuildIcon from "@material-ui/icons/Build";
 import {Version} from "../../../../common";
-import clsx from "clsx";
-import FormGroup from "@material-ui/core/FormGroup";
-import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import GridTable from "../../../../common/components/gridTable/GridTable";
-import TimeSelector from "../../../../common/components/timeSelector/TimeSelector";
-import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
+import {DesiredVersionsView, DesiredVersionWrap} from "../../DesiredVersionsView";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -94,162 +82,77 @@ interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredV
 const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   const classes = useStyles()
 
-  const [time, setTime] = useState<Date>()
-  const [timeSelector, setTimeSelector] = useState(false)
-  const [desiredVersions, setDesiredVersions] = useState<ClientDesiredVersion[] | undefined>(undefined)
-  const [error, setError] = useState<string>()
+  const [ version, setVersion ] = useState(0)
 
-  const { data: originalDesiredVersions, refetch: getOriginalDesiredVersions } = useClientDesiredVersionsQuery({
-    onCompleted(versions) {
-      setDesiredVersions(versions.clientDesiredVersions)
+  const view = new DesiredVersionsView<ClientDesiredVersion>(
+    'Client Desired Versions',
+    (version) => {
+      const buildInfo = clientVersionsInfo?.clientVersionsInfo
+        ?.find(v => v.service == version.service)?.buildInfo!
+      return new DesiredVersionWrap<ClientDesiredVersion>(version, version.service,
+        Version.clientDistributionVersionToString(version.version),
+        buildInfo.author, buildInfo.time.toLocaleDateString(), buildInfo.comment)
     },
-    onError(err) { setError('Query desired versions error ' + err.message) }
+    (v1, v2) =>
+      Version.compareClientDistributionVersions(v1?.desiredVersion.version, v2?.desiredVersion.version),
+    (desiredVersions) => {
+      changeDesiredVersions({ variables: { versions: desiredVersions }})
+    },
+    () => {
+      setVersion(version + 1)
+    },
+    () => {
+      getDesiredVersions()
+      getDesiredVersionsHistory()
+      getClientVersionsInfo()
+    },
+    classes)
+
+  const {data: desiredVersions, refetch: getDesiredVersions} = useClientDesiredVersionsQuery({
+    onError(err) {
+      view.setError('Query desired versions error ' + err.message)
+    }
   })
-  const { data: desiredVersionsHistory, refetch: getDesiredVersionsHistory } = useClientDesiredVersionsHistoryQuery({
-    variables: { limit: 25 },
-    onCompleted(versions) {
-      if (versions.clientDesiredVersionsHistory.length) {
-        setTime(versions.clientDesiredVersionsHistory[versions.clientDesiredVersionsHistory.length-1].time)
-      }
+  const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} = useClientDesiredVersionsHistoryQuery({
+    variables: {limit: 25},
+    onError(err) {
+      view.setError('Query desired versions history error ' + err.message)
     },
-    onError(err) { setError('Query desired versions history error ' + err.message) },
   })
-  const [ changeDesiredVersions ] = useSetClientDesiredVersionsMutation()
-  const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
-    onError(err) { setError('Query client versions error ' + err.message) },
+  const {data: clientVersionsInfo, refetch: getClientVersionsInfo} = useClientVersionsInfoQuery({
+    onError(err) {
+      view.setError('Query client versions error ' + err.message)
+    },
   })
 
-  useEffect(() => { if (!timeSelector)  {
-    getOriginalDesiredVersions()
-    getDesiredVersionsHistory()
-  } },[ timeSelector ])
+  const [changeDesiredVersions] = useSetClientDesiredVersionsMutation()
 
-  console.log('render')
+  if (desiredVersions && desiredVersionsHistory?.clientDesiredVersionsHistory && clientVersionsInfo) {
+    view.setDesiredVersions(desiredVersions.clientDesiredVersions)
+    view.setDesiredVersionsHistory(desiredVersionsHistory.clientDesiredVersionsHistory)
 
-  const columns: Array<GridTableColumnParams> = [
-    {
-      name: 'service',
-      headerName: 'Service',
-      className: classes.serviceColumn,
-    },
-    {
-      name: 'version',
-      type: 'select',
-      headerName: 'Desired Version',
-      className: classes.versionColumn,
-    },
-    {
-      name: 'author',
-      headerName: 'Author',
-      className: classes.authorColumn,
-    },
-    {
-      name: 'buildTime',
-      headerName: 'Build Time',
-      type: 'date',
-      className: classes.timeColumn,
-    },
-    {
-      name: 'comment',
-      headerName: 'Comment',
-      className: classes.commentColumn,
-    },
-    {
+    const columns = view.getColumns()
+    columns.push({
       name: 'installTime',
       headerName: 'Install Time',
       type: 'date',
       className: classes.timeColumn,
-    }
-  ]
+    })
+    view.setColumns(columns)
 
-  const rows = desiredVersions?.map(v => v.service).map(service => {
-    const version = desiredVersions?.find(v => v.service == service)?.version!
-    const info = clientVersions?.clientVersionsInfo?.find(v => v.service == service)
-    const author = info?.buildInfo.author
-    const buildTime = info?.buildInfo.time
-    const comment = info?.buildInfo.comment
-    const installTime = info?.installInfo.time
-    const originalVersion = originalDesiredVersions?.clientDesiredVersions.find(v => v.service == service)?.version
-    const modified = Version.compareClientDistributionVersions(version, originalVersion)
-    return new Map<string, GridTableCellParams>([
-        ['service', { value: service }],
-        ['version', {
-          value: Version.clientDistributionVersionToString(version),
-          className: modified?classes.boldVersionColumn:undefined
-        }],
-        ['author', { value: author }],
-        ['buildTime', { value: buildTime }],
-        ['comment', { value: comment }],
-        ['installTime', { value: installTime }]
-      ])})
+    const rows = view.getRows()
+    rows.map(row => {
+      const service = row.get('service')!.value as string
+      const installInfo = clientVersionsInfo.clientVersionsInfo.find(v => v.service == service)!.installInfo
+      row.set('installTime', { value: installInfo.time })
+      return row
+    })
+    view.setRows(rows)
 
-  return rows && desiredVersionsHistory?.clientDesiredVersionsHistory?(
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <FormGroup row>
-            <FormControlLabel
-              label={null}
-              control={
-                !timeSelector ?
-                  <TimeSelector time={time}
-                                times={desiredVersionsHistory.clientDesiredVersionsHistory.map(v => v.time)}
-                                onSelected={(t) => {
-                                  console.log('on selected time ' + t)
-                                  setTime(t)
-                                  setDesiredVersions(desiredVersionsHistory?.clientDesiredVersionsHistory?.find(v => v.time == time)?.versions)
-                                }}
-                  /> :
-                  <Button
-                    className={classes.historyButton}
-                    color="primary"
-                    variant="contained"
-                    onClick={() => setTimeSelector(true)}
-                  >
-                    History
-                  </Button>
-              }/>
-            <RefreshControl className={classes.control}
-                            refresh={() => {
-                              setTimeSelector(false)
-                              getOriginalDesiredVersions(); getDesiredVersionsHistory(); getClientVersions()
-                            }}
-            />
-          </FormGroup>
-        }
-        title='Client Desired Versions'
-      />
-      <CardContent className={classes.content}>
-        <div className={classes.inner}>
-          <GridTable
-            className={classes.versionsTable}
-            columns={columns}
-            rows={rows?rows:[]}
-          />
-          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-          {timeSelector?<Box className={classes.controls}>
-            <Button className={classes.control}
-                    color="primary"
-                    variant="contained"
-                    onClick={() => setTimeSelector(false)}
-            >
-              Cancel
-            </Button>
-            <Button className={classes.control}
-                    color="primary"
-                    variant="contained"
-                    // disabled={!validate()}
-                    onClick={() => setTimeSelector(false)}
-            >
-              Save
-            </Button>
-          </Box>:null}
-        </div>
-      </CardContent>
-    </Card>
-  ) : null
+    return view.render()
+  } else {
+    return null
+  }
 }
 
 export default ClientDesiredVersions;
