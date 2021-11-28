@@ -132,14 +132,11 @@ export const GridTableRow = (params: GridTableRowParams) => {
            column.type == 'select' ?
             <Select className={classes.input}
                     autoFocus={true}
-                    // value={editValues.get(column.name)?editValues.get(column.name):''}
-                    value={'qwe2'}
+                    value={editValues.get(column.name)?editValues.get(column.name):''}
                     open={true}
                     onChange={e => {
-                      console.log('onChange')
                       setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
                       if (!hasGridActions) {
-                        console.log('onSubmitted')
                         onSubmitted?.(editValues, editOldValues)
                       }
                     }}

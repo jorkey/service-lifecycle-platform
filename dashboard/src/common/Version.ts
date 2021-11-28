@@ -8,6 +8,22 @@ export class Version {
     return version.split('.').map(Number)
   }
 
+  static parseDeveloperDistributionVersion(version: string): DeveloperDistributionVersion {
+    const parts = version.split('-')
+    const distribution = parts[0]
+    const build = Version.parseBuild(parts[1])
+    return { distribution: distribution, build: build }
+  }
+
+  static parseClientDistributionVersion(version: string): ClientDistributionVersion {
+    const parts = version.split('-')
+    const distribution = parts[0]
+    const parts1 = parts[1].split('_')
+    const developerBuild = Version.parseBuild(parts1[0])
+    const clientBuild = parts1.length?Number(parts1[1]):0
+    return { distribution: distribution, developerBuild: developerBuild, clientBuild: clientBuild }
+  }
+
   static contains(clientVersion: ClientDistributionVersion, developerVersion: DeveloperDistributionVersion): boolean {
     return clientVersion.distribution === developerVersion.distribution &&
       clientVersion.developerBuild === developerVersion.build

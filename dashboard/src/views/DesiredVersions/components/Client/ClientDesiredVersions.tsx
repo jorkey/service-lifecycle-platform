@@ -3,13 +3,13 @@ import React, {useEffect, useState} from 'react';
 import {RouteComponentProps} from "react-router-dom"
 import { makeStyles } from '@material-ui/core/styles';
 import {
-  ClientDesiredVersion,
+  ClientDesiredVersion, ClientDistributionVersion,
   useClientDesiredVersionsHistoryQuery,
   useClientDesiredVersionsQuery, useClientVersionsInfoQuery,
   useSetClientDesiredVersionsMutation,
 } from "../../../../generated/graphql";
 import {Version} from "../../../../common";
-import {DesiredVersionsView, VersionWrap} from "../../DesiredVersionsView";
+import {DesiredVersionsView} from "../../DesiredVersionsView";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -84,20 +84,22 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
 
   const [ version, setTimestamp ] = useState(new Date())
 
-  const [ view, setView ] = useState(new DesiredVersionsView<ClientDesiredVersion>(
+  const [ view, setView ] = useState(new DesiredVersionsView<ClientDistributionVersion>(
     'Client Desired Versions',
-    (version) => {
+    (service, version) => {
       const buildInfo = versionsInfo?.clientVersionsInfo.find(
-        v => v.service == version.service)?.buildInfo
-      return new VersionWrap<ClientDesiredVersion>(version, version.service,
-        Version.clientDistributionVersionToString(version.version),
-        buildInfo?.author, buildInfo?.time.toLocaleDateString(), buildInfo?.comment)
+        v => v.service == service)?.buildInfo
+      return buildInfo ? { author: buildInfo.author,
+        buildTime: buildInfo.time.toLocaleDateString(), comment: buildInfo.comment } : undefined
     },
     (v1, v2) =>
-      Version.compareClientDistributionVersions(v1?.original.version, v2?.original.version),
-    (desiredVersions) => {
-      changeDesiredVersions({ variables: { versions: desiredVersions }})
-    },
+      Version.compareClientDistributionVersions(v1, v2),
+    (v) =>
+      Version.clientDistributionVersionToString(v),
+    (v) =>
+      Version.parseClientDistributionVersion(v),
+    (desiredVersions) =>
+      changeDesiredVersions({ variables: { versions: desiredVersions }}),
     () => {
       setTimestamp(new Date())
     },
