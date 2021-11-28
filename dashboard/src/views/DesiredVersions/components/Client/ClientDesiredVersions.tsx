@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {RouteComponentProps} from "react-router-dom"
 import { makeStyles } from '@material-ui/core/styles';
@@ -108,6 +108,17 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     },
     classes))
 
+  useEffect(() => {
+    const columns = view.getBaseColumns()
+    columns.push({
+      name: 'installTime',
+      headerName: 'Install Time',
+      type: 'date',
+      className: classes.timeColumn,
+    })
+    view.setColumns(columns)
+  })
+
   const {data: desiredVersions, refetch: getDesiredVersions} = useClientDesiredVersionsQuery({
     onCompleted(versions) {
       view.setDesiredVersions(versions.clientDesiredVersions)
@@ -138,26 +149,15 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
 
   const [changeDesiredVersions] = useSetClientDesiredVersionsMutation()
 
-  if (desiredVersions && desiredVersionsHistory?.clientDesiredVersionsHistory && versionsInfo?.clientVersionsInfo) {
-    const columns = view.getColumns()
-    columns.push({
-      name: 'installTime',
-      headerName: 'Install Time',
-      type: 'date',
-      className: classes.timeColumn,
-    })
-    view.setColumns(columns)
-
-    const rows = view.getRows()
+  if (view.isDataReady() && versionsInfo?.clientVersionsInfo) {
+    const rows = view.makeBaseRows()
     rows.map(row => {
       const service = row.get('service')!.value as string
       const installInfo = versionsInfo.clientVersionsInfo.find(v => v.service == service)!.installInfo
       row.set('installTime', { value: installInfo.time })
       return row
     })
-    view.setRows(rows)
-
-    return view.render()
+    return view.render(rows)
   } else {
     return null
   }

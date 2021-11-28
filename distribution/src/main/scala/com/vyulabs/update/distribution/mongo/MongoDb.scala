@@ -41,7 +41,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
 
   def getCollectionNames(): Future[Seq[String]] = {
     Source.fromPublisher(db.listCollectionNames())
-      .log(s"Get Mongo DB collection names")
+//      .log(s"Get Mongo DB collection names")
       .runWith(Sink.fold[Seq[String], String](Seq.empty[String])((seq, obj) => {seq :+ obj}))
   }
 
@@ -55,7 +55,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
 
   def createCollection[T](name: String)(implicit classTag: ClassTag[T], codecRegistry: CodecRegistry): Future[MongoDbCollection[T]] = {
     Source.fromPublisher(db.createCollection(name))
-      .log(s"Create Mongo DB collection ${name}")
+//      .log(s"Create Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
       .map(_ => getCollection[T](name))
   }
@@ -69,7 +69,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
 
   def dropDatabase(): Future[Success] = {
     Source.fromPublisher(db.drop())
-      .log(s"Drop Mongo DB database ${db.getName}")
+//      .log(s"Drop Mongo DB database ${db.getName}")
       .runWith(Sink.head[Success])
   }
 
@@ -88,19 +88,19 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T], db: Mon
 
   def insert(obj: T): Future[Success] = {
     Source.fromPublisher(collection.insertOne(obj))
-      .log(s"Insert to Mongo DB collection ${name}")
+//      .log(s"Insert to Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }
 
   def insert(objs: Seq[T]): Future[Success] = {
     Source.fromPublisher(collection.insertMany(objs.toList.asJava))
-      .log(s"Insert to Mongo DB collection ${name}")
+//      .log(s"Insert to Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }
 
   def replace(filters: Bson, obj: T): Future[UpdateResult] = {
     Source.fromPublisher(collection.replaceOne(filters, obj, new ReplaceOptions().upsert(true)))
-      .log(s"Replace document in Mongo DB collection ${name}")
+//      .log(s"Replace document in Mongo DB collection ${name}")
       .runWith(Sink.head[UpdateResult])
   }
 
@@ -109,13 +109,13 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T], db: Mon
     sort.foreach(sort => find = find.sort(sort))
     limit.foreach(limit => find = find.limit(limit))
     Source.fromPublisher(find)
-      .log(s"Find in Mongo DB collection ${name} with filters ${filters}")
+//      .log(s"Find in Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
   def findOneAndUpdate(filters: Bson, update: Bson, options: FindOneAndUpdateOptions = new FindOneAndUpdateOptions().upsert(true)): Future[Seq[T]] = {
     Source.fromPublisher(collection.findOneAndUpdate(filters, update, options))
-      .log(s"Find and update Mongo DB collection ${name} with filters ${filters}, update ${update}")
+//      .log(s"Find and update Mongo DB collection ${name} with filters ${filters}, update ${update}")
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
@@ -123,25 +123,25 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T], db: Mon
                  (implicit classTag: ClassTag[T]): Future[Seq[T]] = {
     val distinct = collection.distinct(fieldName, filters, classTag.runtimeClass.asInstanceOf[Class[T]])
     Source.fromPublisher(distinct)
-      .log(s"Distinct ${fieldName} in Mongo DB collection ${name} with filters ${filters}")
+//      .log(s"Distinct ${fieldName} in Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
   }
 
   def updateOne(filters: Bson, update: Bson, options: UpdateOptions = new UpdateOptions().upsert(true)): Future[UpdateResult] = {
     Source.fromPublisher(collection.updateOne(filters, update, options))
-      .log(s"Update Mongo DB collection ${name} with filters ${filters}")
+//      .log(s"Update Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.head[UpdateResult])
   }
 
   def updateMany(filters: Bson, update: Bson, options: UpdateOptions = new UpdateOptions().upsert(true)): Future[UpdateResult] = {
     Source.fromPublisher(collection.updateMany(filters, update, options))
-      .log(s"Update Mongo DB collection ${name} with filters ${filters}")
+//      .log(s"Update Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.head[UpdateResult])
   }
 
   def createIndex(index: Bson, options: IndexOptions = new IndexOptions()): Future[String] = {
     Source.fromPublisher(collection.createIndex(index, options))
-      .log(s"Create index ${index} in Mongo DB collection ${name}")
+//      .log(s"Create index ${index} in Mongo DB collection ${name}")
       .runWith(Sink.head[String])
   }
 
@@ -152,19 +152,19 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T], db: Mon
 
   def delete(filters: Bson = new BsonDocument()): Future[DeleteResult] = {
     Source.fromPublisher(collection.deleteMany(filters))
-      .log(s"Delete from Mongo DB collection ${name} with filters ${filters}")
+//      .log(s"Delete from Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.head[DeleteResult])
   }
 
   def dropItems(): Future[DeleteResult] = {
     Source.fromPublisher(collection.deleteMany(new BsonDocument()))
-      .log(s"Drop Mongo DB collection ${name} items")
+//      .log(s"Drop Mongo DB collection ${name} items")
       .runWith(Sink.head)
   }
 
   def drop(): Future[Success] = {
     Source.fromPublisher(collection.drop())
-      .log(s"Drop Mongo DB collection ${name}")
+//      .log(s"Drop Mongo DB collection ${name}")
       .runWith(Sink.head[Success])
   }
 

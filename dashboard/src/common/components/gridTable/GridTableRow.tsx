@@ -59,8 +59,9 @@ export const GridTableRow = (params: GridTableRowParams) => {
   }
 
   const valid = !columns.find(c => { return c.validate && !c.validate(editValues.get(c.name), rowNum) })
+  const hasGridActions = !!columns.find(c => c.type == 'elements' && c.name == 'actions')
 
-  const valuesColumns =
+    const valuesColumns =
     columns.map((column, index) => {
       const columnClassName = columnValues.get(column.name)?.className
       const className = column.className && columnClassName ? column.className + ' ' + columnClassName :
@@ -69,7 +70,8 @@ export const GridTableRow = (params: GridTableRowParams) => {
                       undefined
       const editingCell = editing && editColumn === column.name
       const constCell = columnValues.get(column.name)?.constant
-      const columnValue = columnValues.get(column.name)?.value
+      const cellValue = columnValues.get(column.name)?.value
+      const cellSelect = columnValues.get(column.name)?.select
       const editValue = editValues.get(column.name)
 
       return (<TableCell key={index} className={className}
@@ -92,59 +94,75 @@ export const GridTableRow = (params: GridTableRowParams) => {
                       onCanceled?.()
                     }
                   }}
-      >
-        { column.type == 'checkbox' ?
-          (column.editable || !constCell)?
+      > {
+        column.type == 'checkbox' ?
+          column.editable || !constCell?
             <Checkbox
-                      checked={adding || editing ? editValue ? editValue as boolean : false : columnValue as boolean}
+                      checked={adding || editing ? editValue ? editValue as boolean : false : cellValue as boolean}
                       disabled={column.editable == false || constCell}
                       onChange={(e) => {
-                        if (column.name == 'select')
+                        if (column.name == 'select') {
                           if (e.target.checked) {
                             onSelected?.()
                           } else {
                             onUnselected?.()
                           }
-                        else {
-                          const value = adding || editing ? editValue as boolean : columnValue as boolean
+                        } else {
+                          const value = adding || editing ? editValue as boolean : cellValue as boolean
                           setEditValues(editValues => new Map(editValues.set(column.name, !value)))
+                          if (!hasGridActions) {
+                            onSubmitted?.(editValues, editOldValues)
+                          }
                         }
                       }}
             />:null
-          : column.type == 'date' ?
-            columnValue?((columnValue as Date).toLocaleString()):''
-          : column.type == 'elements' ?
-              (column.name == 'actions' ?
-                <GridActions adding={adding}
-                             editing={editing}
-                             valid={valid}
-                             actions={columnValue! as JSX.Element[]}
-                             onSubmit={() => onSubmitted?.(editValues, editOldValues) }
-                             onCancel={() => onCanceled?.() }
-                />
-                : columnValue! as JSX.Element[])
-          : (adding || editingCell) ?
-            (column.type == 'select' ?
-              <Select className={classes.input}
-                      autoFocus={true}
-                      value={editValues.get(column.name)?editValues.get(column.name):''}
-                      onChange={e => {
-                        setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
-                      }}
-              >
-                { column.select?.map((item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
-              </Select>
-            : <Input className={classes.input}
-                     type={column.type}
-                     value={editValues.get(column.name)?editValues.get(column.name):''}
-                     autoFocus={adding?(index == 0):true}
-                     onChange={e => {
-                       setEditValues(new Map(editValues.set(column.name, e.target.value)))
-                      }}
-                     error={column.validate?!column.validate(editValues.get(column.name), rowNum):false}
-              />)
-          : adding || editing ? editValues.get(column.name)!
-          : columnValues.get(column.name)!.value!
+        : column.type == 'date' ?
+          cellValue?((cellValue as Date).toLocaleString()):''
+        : column.type == 'elements' ?
+             column.name == 'actions' ?
+              <GridActions adding={adding}
+                           editing={editing}
+                           valid={valid}
+                           actions={cellValue! as JSX.Element[]}
+                           onSubmit={() => onSubmitted?.(editValues, editOldValues) }
+                           onCancel={() => onCanceled?.() }
+              />
+              : cellValue! as JSX.Element[]
+        : adding || editingCell ?
+           column.type == 'select' ?
+            <Select className={classes.input}
+                    autoFocus={true}
+                    // value={editValues.get(column.name)?editValues.get(column.name):''}
+                    value={'qwe2'}
+                    open={true}
+                    onChange={e => {
+                      console.log('onChange')
+                      setEditValues(new Map(editValues.set(column.name, e.target.value as string)))
+                      if (!hasGridActions) {
+                        console.log('onSubmitted')
+                        onSubmitted?.(editValues, editOldValues)
+                      }
+                    }}
+            >
+              { cellSelect ? cellSelect?.map(
+                  (item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) :
+                column.select?.map(
+                  (item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
+            </Select>
+          : <Input className={classes.input}
+                   type={column.type}
+                   value={editValues.get(column.name)?editValues.get(column.name):''}
+                   autoFocus={adding?(index == 0):true}
+                   onChange={e => {
+                     setEditValues(new Map(editValues.set(column.name, e.target.value)))
+                     if (!hasGridActions) {
+                       onSubmitted?.(editValues, editOldValues)
+                     }
+                    }}
+                   error={column.validate?!column.validate(editValues.get(column.name), rowNum):false}
+            />
+        : adding || editing ? editValues.get(column.name)!
+        : columnValues.get(column.name)!.value!
       }
       </TableCell>)})
 

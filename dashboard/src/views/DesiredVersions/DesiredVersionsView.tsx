@@ -43,13 +43,12 @@ export class DesiredVersionsView<Version> {
   private refresh: () => void
   private classes: Classes
 
-  private desiredVersions: VersionWrap<Version>[] = []
-  private originalDesiredVersions: VersionWrap<Version>[] = []
-  private desiredVersionsHistory: {time:Date, versions:VersionWrap<Version>[]}[] = []
-  private versionsHistory: VersionWrap<Version>[] = []
+  private desiredVersions: VersionWrap<Version>[] | undefined
+  private originalDesiredVersions: VersionWrap<Version>[] | undefined
+  private desiredVersionsHistory: {time:Date, versions:VersionWrap<Version>[]}[] | undefined
+  private versionsHistory: VersionWrap<Version>[] | undefined
 
   private columns: Array<GridTableColumnParams> = []
-  private rows: Map<string, GridTableCellParams>[] = []
   private timeSelect: Date | undefined = undefined
   private error: string | undefined = undefined
 
@@ -65,27 +64,10 @@ export class DesiredVersionsView<Version> {
     this.rerender = rerender
     this.refresh = refresh
     this.classes = classes
+    this.columns = this.getBaseColumns()
   }
 
-  setDesiredVersions(desiredVersions: Version[]) {
-    this.desiredVersions = desiredVersions.map(version => this.wrap(version))
-    this.originalDesiredVersions = [...this.desiredVersions]
-  }
-
-  setDesiredVersionsHistory(desiredVersionsHistory: {time:Date, versions:Version[]}[]) {
-    this.desiredVersionsHistory =
-      desiredVersionsHistory.map(v => { return {time: v.time, versions: v.versions.map(v => this.wrap(v))}})
-  }
-
-  setVersionsHistory(versionsHistory: Version[]) {
-    this.versionsHistory = versionsHistory.map(v => this.wrap(v))
-  }
-
-  setError(error: string | undefined) {
-    this.error = error
-  }
-
-  getColumns() {
+  getBaseColumns() {
     return [
       {
         name: 'service',
@@ -122,12 +104,40 @@ export class DesiredVersionsView<Version> {
     this.columns = columns
   }
 
-  getRows() {
+  setDesiredVersions(desiredVersions: Version[]) {
+    this.desiredVersions = desiredVersions.map(version => this.wrap(version))
+    this.originalDesiredVersions = [...this.desiredVersions]
+    this.rerender()
+  }
+
+  setDesiredVersionsHistory(desiredVersionsHistory: {time:Date, versions:Version[]}[]) {
+    this.desiredVersionsHistory =
+      desiredVersionsHistory.map(v => { return {time: v.time, versions: v.versions.map(v => this.wrap(v))}})
+    this.rerender()
+  }
+
+  setVersionsHistory(versionsHistory: Version[]) {
+    console.log('setVersionsHistory')
+    this.versionsHistory = versionsHistory.map(v => this.wrap(v))
+    this.rerender()
+  }
+
+  setError(error: string | undefined) {
+    this.error = error
+    this.rerender()
+  }
+
+  isDataReady() {
+    return !!this.desiredVersions && !!this.desiredVersionsHistory && !!this.versionsHistory
+  }
+
+  makeBaseRows() {
     return this.makeServicesList().map(service => {
-      const l = this.versionsHistory.filter(v => v.service == service)?.map(v => v.version)
+      const l = this.versionsHistory!.filter(v => v.service == service)?.map(v => v.version)
       console.log('versions for ' + service + ' ' + l.length)
-      const currentVersion = this.desiredVersions.find(v => v.service == service)
-      const originalVersion = this.originalDesiredVersions.find(v => v.service == service)
+
+      const currentVersion = this.desiredVersions!.find(v => v.service == service)
+      const originalVersion = this.originalDesiredVersions!.find(v => v.service == service)
       const version = currentVersion ? currentVersion : originalVersion!
       const modified = this.compare(currentVersion, originalVersion)
       return new Map<string, GridTableCellParams>([
@@ -135,7 +145,7 @@ export class DesiredVersionsView<Version> {
         ['version', {
           value: version.version,
           className: modified?this.classes.boldVersionColumn:undefined,
-          select: this.versionsHistory.filter(v => v.service == service)?.map(v => v.version)
+          select: this.versionsHistory!.filter(v => v.service == service)?.map(v => v.version)
         }],
         ['author', { value: version.author }],
         ['buildTime', { value: version.buildTime }],
@@ -143,18 +153,14 @@ export class DesiredVersionsView<Version> {
       ])})
   }
 
-  setRows(rows: Map<string, GridTableCellParams>[]) {
-    this.rows = rows
-  }
-
   private makeServicesList() {
     const services = new Set<string>()
-    this.originalDesiredVersions.map(v => v.service).forEach(s => services.add(s))
-    this.desiredVersions.map(v => v.service).forEach(s => services.add(s))
+    this.originalDesiredVersions!.map(v => v.service).forEach(s => services.add(s))
+    this.desiredVersions!.map(v => v.service).forEach(s => services.add(s))
     return Array.from(services)
   }
 
-  render() {
+  render(rows: Map<string, GridTableCellParams>[]) {
     return (
       <Card
         className={this.classes.root}
@@ -167,10 +173,10 @@ export class DesiredVersionsView<Version> {
                 control={
                   this.timeSelect ?
                     <TimeSelector time={this.timeSelect}
-                                  times={this.desiredVersionsHistory.map(v => v.time).sort()}
+                                  times={this.desiredVersionsHistory!.map(v => v.time).sort()}
                                   onSelected={(t) => {
                                     this.timeSelect = t
-                                    const versions = this.desiredVersionsHistory.find(v => v.time == this.timeSelect)?.versions
+                                    const versions = this.desiredVersionsHistory!.find(v => v.time == this.timeSelect)?.versions
                                     if (versions) {
                                       this.modifyDesiredVersions(versions.map(v => v.original))
                                     }
@@ -181,7 +187,7 @@ export class DesiredVersionsView<Version> {
                       color="primary"
                       variant="contained"
                       onClick={() => {
-                        const history = this.desiredVersionsHistory.map(v => v.time).sort()
+                        const history = this.desiredVersionsHistory!.map(v => v.time).sort()
                         if (history.length) {
                           this.timeSelect = history[history.length-1]
                           this.rerender()
@@ -192,7 +198,7 @@ export class DesiredVersionsView<Version> {
                     </Button>
                 }/>
               <RefreshControl className={this.classes.control}
-                              refresh={() => this.refresh()}
+                              refresh={() => { this.refresh() }}
               />
             </FormGroup>
           }
@@ -203,7 +209,10 @@ export class DesiredVersionsView<Version> {
             <GridTable
               className={this.classes.versionsTable}
               columns={this.columns}
-              rows={this.rows}
+              rows={rows}
+              onRowChanged={ () => {
+                console.log('onRowChanged')
+              } }
             />
             {this.error && <Alert className={this.classes.alert} severity="error">{this.error}</Alert>}
             {this.timeSelect ?
