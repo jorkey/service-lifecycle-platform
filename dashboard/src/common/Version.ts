@@ -48,15 +48,15 @@ export class Version {
     if (version1 == undefined || version2 == undefined) {
       return version1 == version2 ? 0 : version1 ? 1 : -1
     }
-    let result = Version.compareBuilds(version1.build, version2.build)
-    if (result != 0) {
-      return result
-    }
     if (version1.distribution < version2.distribution) {
       return -1;
     }
     if (version1.distribution > version2.distribution) {
       return 1;
+    }
+    let result = Version.compareBuilds(version1.build, version2.build)
+    if (result != 0) {
+      return result
     }
     return 0;
   }
@@ -64,6 +64,12 @@ export class Version {
   static compareClientDistributionVersions(version1?: ClientDistributionVersion, version2?: ClientDistributionVersion): number {
     if (version1 == undefined || version2 == undefined) {
       return version1 == version2 ? 0 : version1 ? 1 : -1
+    }
+    if (version1.distribution < version2.distribution) {
+      return -1;
+    }
+    if (version1.distribution > version2.distribution) {
+      return 1;
     }
     let result = Version.compareBuilds(version1.developerBuild, version2.developerBuild)
     if (result != 0) {
@@ -73,12 +79,6 @@ export class Version {
       return -1;
     }
     if (version1.clientBuild > version2.clientBuild) {
-      return 1;
-    }
-    if (version1.distribution < version2.distribution) {
-      return -1;
-    }
-    if (version1.distribution > version2.distribution) {
       return 1;
     }
     return 0;

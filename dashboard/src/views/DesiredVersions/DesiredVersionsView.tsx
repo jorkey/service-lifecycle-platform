@@ -135,7 +135,8 @@ export class DesiredVersionsView<Version> {
           value: this.serialize(version.version),
           className: modified?this.classes.boldVersionColumn:undefined,
           select: this.versionsInfo!.filter(v => v.version.service == service)
-            ?.map(v => this.serialize(v.version.version))
+            ?.map(v => ({value: this.serialize(v.version.version),
+              description: this.serialize(v.version.version) + ' - ' + v.info.comment } as {value:string, description:string}))
         }],
         ['author', { value: info?.author }],
         ['buildTime', { value: info?.buildTime }],
@@ -169,12 +170,13 @@ export class DesiredVersionsView<Version> {
                       className={this.classes.historyButton}
                       color="primary"
                       variant="contained"
-                      onClick={() => {
+                      onClick={e => {
                         const history = this.desiredVersionsHistory!.map(v => v.time).sort()
                         if (history.length) {
                           this.timeSelect = history[history.length-1]
                           this.rerender()
                         }
+                        e.preventDefault()
                       }}
                     >
                       History

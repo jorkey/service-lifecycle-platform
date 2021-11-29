@@ -4,7 +4,7 @@ export interface GridTableCellParams {
   value: GridTableCellValue,
   className?: string,
   editable?: boolean,
-  select?: string[]
+  select?: {value:string, description:string}[]
 }
 
 export interface GridTableColumnParams {
@@ -12,7 +12,7 @@ export interface GridTableColumnParams {
   headerName?: string,
   className?: string,
   type?: 'checkbox' | 'select' | 'date' | 'number' | 'elements',
-  select?: string[],
+  select?: {value:string, description:string}[],
   editable?: boolean,
   validate?: (value: GridTableCellValue, rowNum: number|undefined) => boolean,
   elements?: JSX.Element[]

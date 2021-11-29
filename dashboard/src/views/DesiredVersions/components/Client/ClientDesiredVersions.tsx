@@ -104,7 +104,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       view.setVersionsInfo(versions.clientVersionsInfo.map(
         v => { return {
           version: { service: v.service, version: v.version },
-          info: { author: v.buildInfo.author, buildTime: v.installInfo.time.toLocaleString(), comment: v.buildInfo.comment }
+          info: { author: v.buildInfo.author, buildTime: v.buildInfo.time.toLocaleString(), comment: v.buildInfo.comment }
         }}
       ))
     },
@@ -152,7 +152,10 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     const rows = view.makeBaseRows()
     rows.map(row => {
       const service = row.get('service')!.value as string
-      const installInfo = versionsInfo.clientVersionsInfo.find(v => v.service == service)!.installInfo
+      const version = Version.parseClientDistributionVersion(row.get('version')!.value as string)
+      const installInfo = versionsInfo.clientVersionsInfo
+        .find(v => v.service == service &&
+          Version.compareClientDistributionVersions(v.version, version) == 0)!.installInfo
       row.set('installTime', { value: installInfo.time })
       return row
     })

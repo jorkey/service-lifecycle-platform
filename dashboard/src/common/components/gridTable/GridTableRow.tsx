@@ -144,9 +144,11 @@ export const GridTableRow = (params: GridTableRowParams) => {
                     }}
             >
               { cellSelect ? cellSelect?.map(
-                  (item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) :
+                  ({value, description}, index) =>
+                    <MenuItem key={index} value={value}>{description}</MenuItem>) :
                 column.select?.map(
-                  (item, index) => <MenuItem key={index} value={item}>{item}</MenuItem>) }
+                  ({value, description}, index) =>
+                    <MenuItem key={index} value={value}>{description}</MenuItem>) }
             </Select>
           : <Input className={classes.input}
                    type={column.type}
