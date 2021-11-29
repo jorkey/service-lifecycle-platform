@@ -68,16 +68,17 @@ export const GridTableRow = (params: GridTableRowParams) => {
                       column.className ? column.className :
                       columnClassName ? columnClassName :
                       undefined
-      const editingCell = editing && editColumn === column.name
-      const constCell = columnValues.get(column.name)?.constant
       const cellValue = columnValues.get(column.name)?.value
       const cellSelect = columnValues.get(column.name)?.select
+      const editingCell = editing && editColumn === column.name
+      const editableCell = column.editable?
+        (columnValues.get(column.name)?.editable != false) : columnValues.get(column.name)?.editable
       const editValue = editValues.get(column.name)
 
       return (<TableCell key={index} className={className}
                   padding={column.type == 'checkbox'?'checkbox':undefined}
                   onClick={() => {
-                    if (!adding && !editingCell) {
+                    if (column.name != 'select' && !adding && editableCell && !editingCell) {
                       setEditColumn(column.name)
                       if (!editing && onBeginEditing?.()) {
                         const values = new Map<string, GridTableCellValue>()
@@ -96,26 +97,24 @@ export const GridTableRow = (params: GridTableRowParams) => {
                   }}
       > {
         column.type == 'checkbox' ?
-          column.editable || !constCell?
-            <Checkbox
-                      checked={adding || editing ? editValue ? editValue as boolean : false : cellValue as boolean}
-                      disabled={column.editable == false || constCell}
-                      onChange={(e) => {
-                        if (column.name == 'select') {
-                          if (e.target.checked) {
-                            onSelected?.()
-                          } else {
-                            onUnselected?.()
-                          }
+          <Checkbox checked={adding || editing ? editValue ? editValue as boolean : false : cellValue as boolean}
+                    disabled={!editableCell}
+                    onChange={(e) => {
+                      if (column.name == 'select') {
+                        if (e.target.checked) {
+                          onSelected?.()
                         } else {
-                          const value = adding || editing ? editValue as boolean : cellValue as boolean
-                          setEditValues(editValues => new Map(editValues.set(column.name, !value)))
-                          if (!hasGridActions) {
-                            onSubmitted?.(editValues, editOldValues)
-                          }
+                          onUnselected?.()
                         }
-                      }}
-            />:null
+                      } else {
+                        const value = adding || editing ? editValue as boolean : cellValue as boolean
+                        setEditValues(editValues => new Map(editValues.set(column.name, !value)))
+                        if (!hasGridActions) {
+                          onSubmitted?.(editValues, editOldValues)
+                        }
+                      }
+                    }}
+          />
         : column.type == 'date' ?
           cellValue?((cellValue as Date).toLocaleString()):''
         : column.type == 'elements' ?
@@ -139,6 +138,9 @@ export const GridTableRow = (params: GridTableRowParams) => {
                       if (!hasGridActions) {
                         onSubmitted?.(editValues, editOldValues)
                       }
+                    }}
+                    onClose={() => {
+                      setEditColumn(undefined)
                     }}
             >
               { cellSelect ? cellSelect?.map(

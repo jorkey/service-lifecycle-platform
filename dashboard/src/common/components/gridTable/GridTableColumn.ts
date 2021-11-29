@@ -3,7 +3,7 @@ export type GridTableCellValue = string | number | boolean | Date | JSX.Element[
 export interface GridTableCellParams {
   value: GridTableCellValue,
   className?: string,
-  constant?: boolean,
+  editable?: boolean,
   select?: string[]
 }
 

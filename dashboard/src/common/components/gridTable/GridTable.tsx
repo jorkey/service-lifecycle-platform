@@ -58,20 +58,18 @@ export const GridTable = (props: GridParams) => {
             { columns.map((column, index) => {
               return column.name == 'select' ?
                 <TableCell key={index} padding='checkbox' className={column.className}>
-                  {column.editable == false || rows.find(row => !row.get(column.name)?.constant)?
-                    <Checkbox className={column.className}
-                      indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
-                      checked={rows.length > 0 && selectedRowsCount === rows.length}
-                      disabled={column.editable == false ||
-                                !rows.find(row => !row.get('select')?.constant)}
-                      onChange={(event) => {
-                        if (event.target.checked) {
-                          onRowsSelected?.(rows.map((row, index) => index))
-                        } else {
-                          onRowsUnselected?.(rows.map((row, index) => index))
-                        }
-                      }}
-                    />:null}
+                  <Checkbox className={column.className}
+                    indeterminate={selectedRowsCount > 0 && selectedRowsCount < rows.length}
+                    checked={rows.length > 0 && selectedRowsCount === rows.length}
+                    disabled={column.editable == false || !rows.find(row => row.get('select')?.editable != false)}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        onRowsSelected?.(rows.map((row, index) => index))
+                      } else {
+                        onRowsUnselected?.(rows.map((row, index) => index))
+                      }
+                    }}
+                  />
                 </TableCell> :
                 <TableCell key={index} className={column.className}>
                   {column.headerName}
@@ -83,7 +81,7 @@ export const GridTable = (props: GridParams) => {
             { (addNewRow ?
               (<GridTableRow key={-1} columns={columns} columnValues={new Map()} adding={addNewRow}
                              onSubmitted={(values, oldValues) =>
-                             onRowAdded?.(values) }
+                                           onRowAdded?.(values) }
                              onCanceled={() => onRowAddCancelled?.()}/>) : null) }
             {  rows.map((row, rowNum) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns}
@@ -110,6 +108,7 @@ export const GridTable = (props: GridParams) => {
                                         return false
                                       }}
                                       onSubmitted={(values, oldValues) => {
+                                        console.log('onSubmitted')
                                         const promise = onRowChanged!(rowNum, values, oldValues)
                                         if (promise) {
                                           setChangingInProgress(true)

@@ -27,7 +27,6 @@ import {GridTableColumnParams, GridTableCellParams} from "../../../../common/com
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Button from "@material-ui/core/Button";
 import {RouteComponentProps, useHistory} from "react-router-dom";
-import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -49,11 +48,11 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: '20px'
   },
   serviceColumn: {
-    padding: 'none',
+    padding: '4px',
     paddingLeft: '16px'
   },
   versionColumn: {
-    padding: 'normal',
+    padding: '4px',
     paddingLeft: '16px'
   },
   controls: {
@@ -258,18 +257,18 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   ].filter(column => column.name != 'providerVersion' || !!provider)
    .filter(column => column.name != 'testedVersion' || !!providerTestedVersions.data || providerTestedVersions.loading) as GridTableColumnParams[]
 
-  const rowsView = rows.map(row => (
-    new Map<string, GridTableCellParams>([
+  const rowsView = rows.map(row => {
+    return new Map<string, GridTableCellParams>([
       ['select', {
         value: row.selected,
-        constant: !!provider && !!provider.testConsumer
+        editable: !provider?.testConsumer
       }],
       ['service', { value: row.service }],
       ['providerVersion', { value: row.providerVersion?Version.developerDistributionVersionToString(row.providerVersion):'' }],
       ['developerVersion', { value: row.developerVersion?Version.developerDistributionVersionToString(row.developerVersion):'' }],
       ['clientVersion', { value: row.clientVersion?Version.clientDistributionVersionToString(row.clientVersion):'' }],
       ['testedVersion', { value: row.testedVersion?Version.developerDistributionVersionToString(row.testedVersion):'' }]
-    ])))
+    ])})
 
   function clientVersionToDeveloperVersion(info: ClientDesiredVersion): DeveloperDesiredVersionInput {
     return {
@@ -353,12 +352,14 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
              onRowsSelected={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
-                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion } as RowData }))
+                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
+               } as RowData }))
              }}
              onRowsUnselected={(rowsNum) => {
                setRows(rows.map((row, index) => { return {
                  selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
-                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion } as RowData }))
+                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
+               } as RowData }))
              }}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
