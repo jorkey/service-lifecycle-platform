@@ -423,7 +423,8 @@ object GraphqlSchema {
       Field("setDeveloperDesiredVersions", BooleanType,
         arguments = DeveloperDesiredVersionDeltasArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(c.arg(DeveloperDesiredVersionDeltasArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(
+          c.arg(DeveloperDesiredVersionDeltasArg), c.ctx.accessToken.get.account).map(_ => true) }),
 
       // Client versions
       Field("buildClientVersions", StringType,
@@ -441,7 +442,8 @@ object GraphqlSchema {
       Field("setClientDesiredVersions", BooleanType,
         arguments = ClientDesiredVersionDeltasArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.setClientDesiredVersions(c.arg(ClientDesiredVersionDeltasArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.setClientDesiredVersions(
+          c.arg(ClientDesiredVersionDeltasArg), c.ctx.accessToken.get.account).map(_ => true) }),
 
       // Distribution providers management
       Field("addProvider", BooleanType,

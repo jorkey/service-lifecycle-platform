@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, TaskId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.ConsumerGraphqlCoder.{distributionMutations, distributionQueries}
@@ -118,7 +119,8 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
               case None =>
                 Future()
             }
-            _ <- developerVersionUtils.setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service, Some(version))))
+            _ <- developerVersionUtils.setDeveloperDesiredVersions(
+              Seq(DeveloperDesiredVersionDelta(service, Some(version))), Common.AuthorDistribution)
           } yield {}
         } else {
           log.info(s"Version ${version} already exists")

@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.info
 
-import com.vyulabs.update.common.common.Common.ServiceId
+import com.vyulabs.update.common.common.Common.{AccountId, ServiceId}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import spray.json.DefaultJsonProtocol
 import com.vyulabs.update.common.utils.JsonFormats.DateJsonFormat
@@ -17,10 +17,10 @@ object ClientDesiredVersion extends DefaultJsonProtocol {
   implicit val desiredVersionJson = jsonFormat2(ClientDesiredVersion.apply)
 }
 
-case class ClientDesiredVersions(versions: Seq[ClientDesiredVersion])
+case class ClientDesiredVersions(author: AccountId, versions: Seq[ClientDesiredVersion])
 
 object ClientDesiredVersions extends DefaultJsonProtocol {
-  implicit val clientDesiredVersionsJson = jsonFormat1(ClientDesiredVersions.apply)
+  implicit val clientDesiredVersionsJson = jsonFormat2(ClientDesiredVersions.apply)
 
   def toMap(versions: Seq[ClientDesiredVersion]): Map[ServiceId, ClientDistributionVersion] = {
     versions.foldLeft(Map.empty[ServiceId, ClientDistributionVersion])((map, version) => map + (version.service -> version.version))

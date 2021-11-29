@@ -53,9 +53,9 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
         val (builderFuture, cancel) = runBuilderUtils.runBuilder(taskId, arguments)
         val future = builderFuture
           .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
-            Some(DeveloperDistributionVersion(config.distribution, version.build))))))
+            Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
           .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
-            Some(ClientDistributionVersion(config.distribution, version.build, 0))))))
+            Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
         (future, cancel)
       }).id
   }
@@ -108,7 +108,8 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     collections.Developer_Versions.find(filters)
   }
 
-  def setDeveloperDesiredVersions(deltas: Seq[DeveloperDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
+  def setDeveloperDesiredVersions(deltas: Seq[DeveloperDesiredVersionDelta],
+                                  author: AccountId)(implicit log: Logger): Future[Unit] = {
     if (!deltas.isEmpty) {
       log.info(s"Set developer desired versions ${deltas}")
       collections.Developer_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
@@ -123,7 +124,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
                   map - entry.service
               }
           }
-        Some(DeveloperDesiredVersions(DeveloperDesiredVersions.fromMap(newVersions)))
+        Some(DeveloperDesiredVersions(author, DeveloperDesiredVersions.fromMap(newVersions)))
       }).map(_ => ())
     } else {
       Future()

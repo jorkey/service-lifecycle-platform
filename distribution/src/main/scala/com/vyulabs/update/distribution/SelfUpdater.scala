@@ -44,7 +44,8 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
           DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
         ))
       }
-      desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(ClientDesiredVersions(Seq.empty)))
+      desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(
+        ClientDesiredVersions(Common.AuthorDistribution, Seq.empty)))
       distributionNewVersion <- Future(Utils.isServiceNeedUpdate(Common.DistributionServiceName,
         distributionVersion, ClientDesiredVersions.toMap(desiredVersions.versions).get(Common.DistributionServiceName)))
       scriptsNewVersion <- Future(Utils.isServiceNeedUpdate(Common.ScriptsServiceName,

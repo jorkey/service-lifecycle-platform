@@ -68,7 +68,7 @@ trait ClientVersionUtils {
               )
             results.foreach(_.foreach(_._2.foreach(cancel => cancels :+= cancel)))
             Future.sequence(results).map(results => Future.sequence(results.map(_._1))).flatten
-              .flatMap(_ => setClientDesiredVersions(clientVersions))
+              .flatMap(_ => setClientDesiredVersions(clientVersions, author))
           }
         } yield {}, Some(() => cancels.foreach(cancel => cancel())))
       }).id
@@ -129,7 +129,8 @@ trait ClientVersionUtils {
     collections.Client_Versions.delete(filters).map(_ > 0)
   }
 
-  def setClientDesiredVersions(deltas: Seq[ClientDesiredVersionDelta])(implicit log: Logger): Future[Unit] = {
+  def setClientDesiredVersions(deltas: Seq[ClientDesiredVersionDelta], author: AccountId)
+                              (implicit log: Logger): Future[Unit] = {
     if (!deltas.isEmpty) {
       log.info(s"Set client desired versions ${deltas}")
       collections.Client_DesiredVersions.update(new BsonDocument(), { desiredVersions =>
@@ -144,7 +145,7 @@ trait ClientVersionUtils {
                   map - entry.service
               }
           }
-        Some(ClientDesiredVersions(ClientDesiredVersions.fromMap(newVersions)))
+        Some(ClientDesiredVersions(author, ClientDesiredVersions.fromMap(newVersions)))
       }).map(_ => ())
     } else {
       Future()
