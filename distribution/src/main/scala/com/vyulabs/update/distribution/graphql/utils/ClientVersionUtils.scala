@@ -162,7 +162,7 @@ trait ClientVersionUtils {
                                      (implicit log: Logger): Future[Seq[TimedClientDesiredVersions]] = {
     for {
       history <- collections.Client_DesiredVersions.history(new BsonDocument(), Some(limit))
-        .map(_.map(v => TimedClientDesiredVersions(v.time, v.document.versions)))
+        .map(_.map(v => TimedClientDesiredVersions(v.time, v.document.author, v.document.versions)))
     } yield history
   }
 

@@ -143,7 +143,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
                                         (implicit log: Logger): Future[Seq[TimedDeveloperDesiredVersions]] = {
     for {
       history <- collections.Developer_DesiredVersions.history(new BsonDocument(), Some(limit))
-        .map(_.map(v => TimedDeveloperDesiredVersions(v.time, v.document.versions)))
+        .map(_.map(v => TimedDeveloperDesiredVersions(v.time, v.document.author, v.document.versions)))
     } yield history
   }
 

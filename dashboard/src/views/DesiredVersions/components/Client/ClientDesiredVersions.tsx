@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {RouteComponentProps} from "react-router-dom"
 import { makeStyles } from '@material-ui/core/styles';
 import {
-  ClientDesiredVersion, ClientDistributionVersion,
+  ClientDistributionVersion,
   useClientDesiredVersionsHistoryQuery,
   useClientDesiredVersionsQuery, useClientVersionsInfoQuery,
   useSetClientDesiredVersionsMutation,
@@ -66,7 +66,17 @@ const useStyles = makeStyles((theme:any) => ({
   alert: {
     marginTop: 25
   },
+  authorText: {
+    textAlign: 'left',
+    paddingTop: 2
+  },
+  timeText: {
+    textAlign: 'left',
+    paddingLeft: 20,
+    paddingTop: 2
+  },
   historyButton: {
+    paddingLeft: 20,
     width: '100px',
     textTransform: 'none',
   },
@@ -82,14 +92,6 @@ interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredV
 const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   const classes = useStyles()
 
-  const {data: desiredVersions, refetch: getDesiredVersions} = useClientDesiredVersionsQuery({
-    onCompleted(versions) {
-      view.setDesiredVersions(versions.clientDesiredVersions)
-    },
-    onError(err) {
-      view.setError('Query desired versions error ' + err.message)
-    }
-  })
   const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} = useClientDesiredVersionsHistoryQuery({
     variables: {limit: 25},
     onCompleted(versions) {
@@ -129,7 +131,6 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       setTimestamp(new Date())
     },
     () => {
-      getDesiredVersions()
       getDesiredVersionsHistory()
       getVersionsInfo()
     },

@@ -31,10 +31,10 @@ object DeveloperDesiredVersions extends DefaultJsonProtocol {
   }
 }
 
-case class TimedDeveloperDesiredVersions(time: Date, versions: Seq[DeveloperDesiredVersion])
+case class TimedDeveloperDesiredVersions(time: Date, author: AccountId, versions: Seq[DeveloperDesiredVersion])
 
 object TimedDeveloperDesiredVersions extends DefaultJsonProtocol {
-  implicit val desiredVersionsRecordJson = jsonFormat2(TimedDeveloperDesiredVersions.apply)
+  implicit val desiredVersionsRecordJson = jsonFormat3(TimedDeveloperDesiredVersions.apply)
 }
 
 case class TestedVersions(profile: ServicesProfileId, consumerDistribution: DistributionId,

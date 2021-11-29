@@ -1,4 +1,4 @@
-import {Box, Button, Card, CardContent, CardHeader, FormControlLabel} from "@material-ui/core";
+import {Box, Button, Card, CardContent, CardHeader, FormControlLabel, Typography} from "@material-ui/core";
 import FormGroup from "@material-ui/core/FormGroup";
 import TimeSelector from "./TimeSelector";
 import {RefreshControl} from "../../common/components/refreshControl/RefreshControl";
@@ -9,7 +9,7 @@ import {GridTableCellParams, GridTableColumnParams} from "../../common/component
 
 type Classes = Record<"root" | "content" | "inner" | "versionsTable" |
                       "serviceColumn" | "versionColumn" | "boldVersionColumn" | "authorColumn" | "timeColumn" | "commentColumn" |
-                      "controls" | "control" | "alert" | "historyButton", string>
+                      "controls" | "control" | "alert" | "historyButton" | "authorText" | "timeText", string>
 
 export interface ServiceVersion<Version> {
   service: string
@@ -32,9 +32,11 @@ export class DesiredVersionsView<Version> {
   private refresh: () => void
   private classes: Classes
 
+  private time: Date | undefined
+  private author: string | undefined
   private desiredVersions: ServiceVersion<Version>[] | undefined
   private originalDesiredVersions: ServiceVersion<Version>[] | undefined
-  private desiredVersionsHistory: {time:Date, versions:ServiceVersion<Version>[]}[] | undefined
+  private desiredVersionsHistory: {time:Date, author: string, versions:ServiceVersion<Version>[]}[] | undefined
   private versionsInfo: {version:ServiceVersion<Version>, info: VersionInfo}[] | undefined
 
   private columns: Array<GridTableColumnParams> = []
@@ -95,15 +97,17 @@ export class DesiredVersionsView<Version> {
     this.columns = columns
   }
 
-  setDesiredVersions(desiredVersions: ServiceVersion<Version>[]) {
-    this.desiredVersions = desiredVersions
-    this.originalDesiredVersions = [...this.desiredVersions]
-    this.rerender()
-  }
-
-  setDesiredVersionsHistory(desiredVersionsHistory: {time:Date, versions:ServiceVersion<Version>[]}[]) {
+  setDesiredVersionsHistory(desiredVersionsHistory: {time:Date, author: string, versions:ServiceVersion<Version>[]}[]) {
     this.desiredVersionsHistory =
-      desiredVersionsHistory.map(v => { return {time: v.time, versions: v.versions}})
+      desiredVersionsHistory.map(v => { return {time: v.time, author: v.author, versions: v.versions}})
+        .sort((v1, v2) => v1.time == v2.time ? 0 : v1.time > v2.time ? 1 : -1)
+    if (this.desiredVersionsHistory.length) {
+      const current = this.desiredVersionsHistory[this.desiredVersionsHistory.length-1]
+      this.time = current.time
+      this.author = current.author
+      this.desiredVersions = [...current.versions]
+      this.originalDesiredVersions = [...current.versions]
+    }
     this.rerender()
   }
 
@@ -152,6 +156,18 @@ export class DesiredVersionsView<Version> {
         <CardHeader
           action={
             <FormGroup row>
+              <FormControlLabel
+                label={null}
+                control={
+                  <Typography className={this.classes.authorText}>Author: {this.author}</Typography>
+                }
+              />
+              <FormControlLabel
+                label={null}
+                control={
+                  <Typography className={this.classes.timeText}>Time: {this.time?.toLocaleString()}</Typography>
+                }
+              />
               <FormControlLabel
                 label={null}
                 control={

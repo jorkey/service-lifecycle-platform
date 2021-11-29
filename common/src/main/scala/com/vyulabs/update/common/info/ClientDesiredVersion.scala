@@ -37,8 +37,8 @@ object ClientDesiredVersionDelta extends DefaultJsonProtocol {
   implicit val desiredDeveloperVersionsRecordJson = jsonFormat2(ClientDesiredVersionDelta.apply)
 }
 
-case class TimedClientDesiredVersions(time: Date, versions: Seq[ClientDesiredVersion])
+case class TimedClientDesiredVersions(time: Date, author: AccountId, versions: Seq[ClientDesiredVersion])
 
 object TimedClientDesiredVersions extends DefaultJsonProtocol {
-  implicit val desiredClientVersionsRecordJson = jsonFormat2(TimedClientDesiredVersions.apply)
+  implicit val desiredClientVersionsRecordJson = jsonFormat3(TimedClientDesiredVersions.apply)
 }
