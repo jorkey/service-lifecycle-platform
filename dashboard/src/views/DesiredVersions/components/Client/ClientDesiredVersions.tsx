@@ -24,32 +24,32 @@ const useStyles = makeStyles((theme:any) => ({
   },
   serviceColumn: {
     width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
+    padding: '8px',
+    paddingLeft: '20px'
   },
   versionColumn: {
     width: '150px',
-    padding: '4px',
+    padding: '8px',
     paddingLeft: '16px'
   },
   boldVersionColumn: {
     width: '150px',
-    padding: '4px',
+    padding: '8px',
     paddingLeft: '16px',
     fontWeight: 600
   },
   authorColumn: {
     width: '150px',
-    padding: '4px',
+    padding: '8px',
     paddingLeft: '16px'
   },
   commentColumn: {
-    padding: '4px',
+    padding: '8px',
     paddingLeft: '16px'
   },
   timeColumn: {
     width: '200px',
-    padding: '4px',
+    padding: '8px',
     paddingLeft: '16px'
   },
   controls: {

@@ -20,7 +20,7 @@ export class Version {
     const distribution = parts[0]
     const parts1 = parts[1].split('_')
     const developerBuild = Version.parseBuild(parts1[0])
-    const clientBuild = parts1.length?Number(parts1[1]):0
+    const clientBuild = parts1.length > 1?Number(parts1[1]):0
     return { distribution: distribution, developerBuild: developerBuild, clientBuild: clientBuild }
   }
 

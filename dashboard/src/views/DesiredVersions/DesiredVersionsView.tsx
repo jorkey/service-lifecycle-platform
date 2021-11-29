@@ -203,9 +203,18 @@ export class DesiredVersionsView<Version> {
               className={this.classes.versionsTable}
               columns={this.columns}
               rows={rows}
-              onRowChanged={ () => {
-                console.log('onRowChanged')
-              } }
+              onRowChanged={ (row, values, oldValues) => {
+                const service = values.get('service')
+                const version = this.parse(values.get('version') as string)
+                this.desiredVersions = this.desiredVersions?.map(v => {
+                  if (v.service == service) {
+                    return { service: v.service, version: version }
+                  } else {
+                    return v
+                  }
+                })
+                this.rerender()
+              }}
             />
             {this.error && <Alert className={this.classes.alert} severity="error">{this.error}</Alert>}
             {this.timeSelect ?
