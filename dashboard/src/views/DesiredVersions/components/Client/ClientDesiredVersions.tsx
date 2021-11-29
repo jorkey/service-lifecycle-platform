@@ -9,7 +9,7 @@ import {
   useSetClientDesiredVersionsMutation,
 } from "../../../../generated/graphql";
 import {Version} from "../../../../common";
-import {DesiredVersionsView} from "../../DesiredVersionsView";
+import {DesiredVersionsView, ServiceVersion, VersionInfo} from "../../DesiredVersionsView";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -82,45 +82,6 @@ interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredV
 const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   const classes = useStyles()
 
-  const [ version, setTimestamp ] = useState(new Date())
-
-  const [ view, setView ] = useState(new DesiredVersionsView<ClientDistributionVersion>(
-    'Client Desired Versions',
-    (service, version) => {
-      const buildInfo = versionsInfo?.clientVersionsInfo.find(
-        v => v.service == service)?.buildInfo
-      return buildInfo ? { author: buildInfo.author,
-        buildTime: buildInfo.time.toLocaleDateString(), comment: buildInfo.comment } : undefined
-    },
-    (v1, v2) =>
-      Version.compareClientDistributionVersions(v1, v2),
-    (v) =>
-      Version.clientDistributionVersionToString(v),
-    (v) =>
-      Version.parseClientDistributionVersion(v),
-    (desiredVersions) =>
-      changeDesiredVersions({ variables: { versions: desiredVersions }}),
-    () => {
-      setTimestamp(new Date())
-    },
-    () => {
-      getDesiredVersions()
-      getDesiredVersionsHistory()
-      getVersionsInfo()
-    },
-    classes))
-
-  useEffect(() => {
-    const columns = view.getBaseColumns()
-    columns.push({
-      name: 'installTime',
-      headerName: 'Install Time',
-      type: 'date',
-      className: classes.timeColumn,
-    })
-    view.setColumns(columns)
-  })
-
   const {data: desiredVersions, refetch: getDesiredVersions} = useClientDesiredVersionsQuery({
     onCompleted(versions) {
       view.setDesiredVersions(versions.clientDesiredVersions)
@@ -140,8 +101,11 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   })
   const {data: versionsInfo, refetch: getVersionsInfo} = useClientVersionsInfoQuery({
     onCompleted(versions) {
-      view.setVersionsHistory(versions.clientVersionsInfo.map(
-        v => ({ service: v.service, version: v.version } as ClientDesiredVersion)
+      view.setVersionsInfo(versions.clientVersionsInfo.map(
+        v => { return {
+          version: { service: v.service, version: v.version },
+          info: { author: v.buildInfo.author, buildTime: v.installInfo.time.toLocaleString(), comment: v.buildInfo.comment }
+        }}
       ))
     },
     onError(err) {
@@ -150,6 +114,39 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   })
 
   const [changeDesiredVersions] = useSetClientDesiredVersionsMutation()
+
+  const [ view, setView ] = useState(new DesiredVersionsView<ClientDistributionVersion>(
+    'Client Desired Versions',
+    (v1, v2) =>
+      Version.compareClientDistributionVersions(v1, v2),
+    (v) =>
+      Version.clientDistributionVersionToString(v),
+    (v) =>
+      Version.parseClientDistributionVersion(v),
+    (desiredVersions) =>
+      changeDesiredVersions({ variables: { versions: desiredVersions }}),
+    () => {
+      setTimestamp(new Date())
+    },
+    () => {
+      getDesiredVersions()
+      getDesiredVersionsHistory()
+      getVersionsInfo()
+    },
+    classes))
+
+  const [ version, setTimestamp ] = useState(new Date())
+
+  useEffect(() => {
+    const columns = view.getBaseColumns()
+    columns.push({
+      name: 'installTime',
+      headerName: 'Install Time',
+      type: 'date',
+      className: classes.timeColumn,
+    })
+    view.setColumns(columns)
+  })
 
   if (view.isDataReady() && versionsInfo?.clientVersionsInfo) {
     const rows = view.makeBaseRows()

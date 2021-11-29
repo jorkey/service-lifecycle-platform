@@ -108,7 +108,6 @@ export const GridTable = (props: GridParams) => {
                                         return false
                                       }}
                                       onSubmitted={(values, oldValues) => {
-                                        console.log('onSubmitted')
                                         const promise = onRowChanged!(rowNum, values, oldValues)
                                         if (promise) {
                                           setChangingInProgress(true)

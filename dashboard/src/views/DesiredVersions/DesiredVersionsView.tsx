@@ -11,20 +11,19 @@ type Classes = Record<"root" | "content" | "inner" | "versionsTable" |
                       "serviceColumn" | "versionColumn" | "boldVersionColumn" | "authorColumn" | "timeColumn" | "commentColumn" |
                       "controls" | "control" | "alert" | "historyButton", string>
 
+export interface ServiceVersion<Version> {
+  service: string
+  version: Version
+}
+
 export interface VersionInfo {
   author: string
   buildTime: string
   comment: string
 }
 
-interface ServiceVersion<Version> {
-  service: string
-  version: Version
-}
-
 export class DesiredVersionsView<Version> {
   private title: string
-  private info: (service: string, version: Version) => VersionInfo | undefined
   private compare: (v1: Version | undefined, v2: Version | undefined) => number
   private serialize: (version: Version) => string
   private parse: (version: string) => Version
@@ -36,21 +35,19 @@ export class DesiredVersionsView<Version> {
   private desiredVersions: ServiceVersion<Version>[] | undefined
   private originalDesiredVersions: ServiceVersion<Version>[] | undefined
   private desiredVersionsHistory: {time:Date, versions:ServiceVersion<Version>[]}[] | undefined
-  private versionsHistory: ServiceVersion<Version>[] | undefined
+  private versionsInfo: {version:ServiceVersion<Version>, info: VersionInfo}[] | undefined
 
   private columns: Array<GridTableColumnParams> = []
   private timeSelect: Date | undefined = undefined
   private error: string | undefined = undefined
 
   constructor(title: string,
-              info: (service: string, version: Version) => VersionInfo | undefined,
               compare: (v1: Version | undefined, v2: Version | undefined) => number,
               serialize: (version: Version) => string,
               parse: (version: string) => Version,
               modify: (desiredVersions: ServiceVersion<Version>[]) => void,
               rerender: () => void, refresh: () => void, classes: Classes) {
     this.title = title
-    this.info = info
     this.compare = compare
     this.serialize = serialize
     this.parse = parse
@@ -110,9 +107,8 @@ export class DesiredVersionsView<Version> {
     this.rerender()
   }
 
-  setVersionsHistory(versionsHistory: ServiceVersion<Version>[]) {
-    console.log('setVersionsHistory')
-    this.versionsHistory = versionsHistory
+  setVersionsInfo(versionsInfo: {version:ServiceVersion<Version>, info: VersionInfo}[]) {
+    this.versionsInfo = versionsInfo
     this.rerender()
   }
 
@@ -122,7 +118,7 @@ export class DesiredVersionsView<Version> {
   }
 
   isDataReady() {
-    return !!this.desiredVersions && !!this.desiredVersionsHistory && !!this.versionsHistory
+    return !!this.desiredVersions && !!this.desiredVersionsHistory && !!this.versionsInfo
   }
 
   makeBaseRows() {
@@ -131,26 +127,20 @@ export class DesiredVersionsView<Version> {
       const originalVersion = this.originalDesiredVersions!.find(v => v.service == service)
       const version = currentVersion ? currentVersion : originalVersion!
       const modified = this.compare(currentVersion?.version, originalVersion?.version)
-      const info = this.info(service, version.version)
+      const info = this.versionsInfo!.find(info => info.version.service == service &&
+        this.compare(info.version.version, version?.version) == 0)?.info
       return new Map<string, GridTableCellParams>([
         ['service', { value: service }],
         ['version', {
           value: this.serialize(version.version),
           className: modified?this.classes.boldVersionColumn:undefined,
-          select: this.versionsHistory!.filter(v => v.service == service)
-            ?.map(v => this.serialize(v.version))
+          select: this.versionsInfo!.filter(v => v.version.service == service)
+            ?.map(v => this.serialize(v.version.version))
         }],
         ['author', { value: info?.author }],
         ['buildTime', { value: info?.buildTime }],
         ['comment', { value: info?.comment }]
       ])})
-  }
-
-  private makeServicesList() {
-    const services = new Set<string>()
-    this.originalDesiredVersions!.map(v => v.service).forEach(s => services.add(s))
-    this.desiredVersions!.map(v => v.service).forEach(s => services.add(s))
-    return Array.from(services)
   }
 
   render(rows: Map<string, GridTableCellParams>[]) {
@@ -217,19 +207,28 @@ export class DesiredVersionsView<Version> {
               }}
             />
             {this.error && <Alert className={this.classes.alert} severity="error">{this.error}</Alert>}
-            {this.timeSelect ?
+            {this.timeSelect || this.isModified() ?
               <Box className={this.classes.controls}>
                 <Button className={this.classes.control}
                         color="primary"
                         variant="contained"
-                        onClick={() => { this.timeSelect = undefined; this.rerender() }}
+                        onClick={() => {
+                          this.timeSelect = undefined
+                          this.desiredVersions = [...this.originalDesiredVersions!]
+                          this.rerender()
+                        }}
                 >
                   Cancel
                 </Button>
                 <Button className={this.classes.control}
                         color="primary"
                         variant="contained"
-                        onClick={() => { this.timeSelect = undefined; this.rerender() }}
+                        disabled={!this.isModified()}
+                        onClick={() => {
+                          this.timeSelect = undefined
+                          this.modify(this.desiredVersions!)
+                          this.rerender()
+                        }}
                 >
                   Save
                 </Button>
@@ -238,5 +237,20 @@ export class DesiredVersionsView<Version> {
         </CardContent>
       </Card>
     )
+  }
+
+  private makeServicesList() {
+    const services = new Set<string>()
+    this.originalDesiredVersions!.map(v => v.service).forEach(s => services.add(s))
+    this.desiredVersions!.map(v => v.service).forEach(s => services.add(s))
+    return Array.from(services)
+  }
+
+  private isModified() {
+    return this.desiredVersions?.length != this.originalDesiredVersions?.length ||
+           this.desiredVersions?.find(v1 => {
+             const v2 = this.originalDesiredVersions?.find(v2 => v2.service == v1.service)
+             return this.compare(v1.version, v2?.version) != 0
+           })
   }
 }
