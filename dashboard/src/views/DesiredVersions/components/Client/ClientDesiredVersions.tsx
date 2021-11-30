@@ -5,7 +5,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
   ClientDistributionVersion, ClientVersionInfo, TimedClientDesiredVersions,
   useClientDesiredVersionsHistoryQuery,
-  useClientDesiredVersionsQuery, useClientVersionsInfoQuery,
+  useClientVersionsInfoQuery,
   useSetClientDesiredVersionsMutation,
 } from "../../../../generated/graphql";
 import {Version} from "../../../../common";
@@ -134,14 +134,17 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
         Version.clientDistributionVersionToString(v),
       (v) =>
         Version.parseClientDistributionVersion(v),
-      (desiredVersions) =>
-        changeDesiredVersions({ variables: { versions: desiredVersions }}),
+      (desiredVersionsDeltas) =>
+        changeDesiredVersions({ variables: { versions: desiredVersionsDeltas }}),
       () => {
         setTimestamp(new Date())
       },
       () => {
-        getDesiredVersionsHistory()
-        getVersionsInfo()
+        Promise.all([getDesiredVersionsHistory(), getVersionsInfo()])
+          .then(([desiredVersionsHistory, versionsInfo]) => {
+            initView(desiredVersionsHistory.data.clientDesiredVersionsHistory,
+              versionsInfo.data.clientVersionsInfo)
+          })
       },
       classes)
     setView(view)

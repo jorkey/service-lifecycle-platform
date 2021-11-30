@@ -19,6 +19,11 @@ export interface ServiceVersion<Version> {
   version: Version
 }
 
+export interface OptionServiceVersion<Version> {
+  service: string
+  version?: Version
+}
+
 export interface VersionInfo {
   author: string
   buildTime: string
@@ -32,7 +37,7 @@ export class DesiredVersionsView<Version> {
   private compare: (v1: Version | undefined, v2: Version | undefined) => number
   private serialize: (version: Version) => string
   private parse: (version: string) => Version
-  private modify: (desiredVersions: ServiceVersion<Version>[]) => void
+  private modify: (desiredVersions: OptionServiceVersion<Version>[]) => Promise<any>
   private rerender: () => void
   private refresh: () => void
   private classes: Classes
@@ -50,7 +55,7 @@ export class DesiredVersionsView<Version> {
               compare: (v1: Version | undefined, v2: Version | undefined) => number,
               serialize: (version: Version) => string,
               parse: (version: string) => Version,
-              modify: (desiredVersions: ServiceVersion<Version>[]) => void,
+              modify: (desiredVersions: OptionServiceVersion<Version>[]) => Promise<any>,
               rerender: () => void, refresh: () => void, classes: Classes) {
     this.title = title
     this.desiredVersionsHistory = desiredVersionsHistory
@@ -110,6 +115,7 @@ export class DesiredVersionsView<Version> {
 
   makeBaseRows() {
     return this.makeServicesList().map(service => {
+      console.log('service ' + service)
       const modifiedVersion = this.desiredVersions.find(v => v.service == service)
       const currentVersion = this.getCurrentDesiredVersions().find(v => v.service == service)
       const version = modifiedVersion ? modifiedVersion : currentVersion!
@@ -243,8 +249,7 @@ export class DesiredVersionsView<Version> {
                         variant="contained"
                         disabled={!this.isModified()}
                         onClick={() => {
-                          this.modify(this.desiredVersions)
-                          this.refresh()
+                          this.modify(this.getDeltas()).then(() => this.refresh())
                         }}
                 >
                   Save
@@ -260,7 +265,7 @@ export class DesiredVersionsView<Version> {
     const services = new Set<string>()
     this.getCurrentDesiredVersions().map(v => v.service).forEach(s => services.add(s))
     this.desiredVersions!.map(v => v.service).forEach(s => services.add(s))
-    return Array.from(services)
+    return Array.from(services).sort()
   }
 
   private getCurrentDesiredVersions() {
@@ -281,5 +286,15 @@ export class DesiredVersionsView<Version> {
              const v2 = this.getCurrentDesiredVersions().find(v2 => v2.service == v1.service)
              return this.compare(v1.version, v2?.version) != 0
            })
+  }
+
+  private getDeltas() {
+    const current = this.getCurrentDesiredVersions()
+    const modified = this.desiredVersions.filter(v => !current.find(v1 => v.service == v1.service &&
+      this.compare(v.version, v1.version) == 0)) as OptionServiceVersion<Version>[]
+    const removed = current.filter(v => !this.desiredVersions.find(v1 => v.service == v1.service))
+      .map(v => { return {service: v.service, version: undefined} as OptionServiceVersion<Version>})
+    const deltas = [...modified, ...removed]
+    return deltas
   }
 }
