@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {RouteComponentProps} from "react-router-dom"
 import { makeStyles } from '@material-ui/core/styles';
 import {
-  ClientDistributionVersion,
+  ClientDistributionVersion, ClientVersionInfo, TimedClientDesiredVersions,
   useClientDesiredVersionsHistoryQuery,
   useClientDesiredVersionsQuery, useClientVersionsInfoQuery,
   useSetClientDesiredVersionsMutation,
@@ -32,12 +32,6 @@ const useStyles = makeStyles((theme:any) => ({
     padding: '8px',
     paddingLeft: '16px'
   },
-  boldVersionColumn: {
-    width: '150px',
-    padding: '8px',
-    paddingLeft: '16px',
-    fontWeight: 600
-  },
   authorColumn: {
     width: '150px',
     padding: '8px',
@@ -51,6 +45,15 @@ const useStyles = makeStyles((theme:any) => ({
     width: '200px',
     padding: '8px',
     paddingLeft: '16px'
+  },
+  appearedAttribute: {
+    color: 'green'
+  },
+  disappearedAttribute: {
+    color: 'red'
+  },
+  modifiedAttribute: {
+    fontWeight: 600
   },
   controls: {
     marginTop: 25,
@@ -68,16 +71,15 @@ const useStyles = makeStyles((theme:any) => ({
   },
   authorText: {
     textAlign: 'left',
+    paddingLeft: 25,
     paddingTop: 2
   },
   timeText: {
     textAlign: 'left',
-    paddingLeft: 20,
     paddingTop: 2
   },
-  historyButton: {
-    paddingLeft: 20,
-    width: '100px',
+  timeChangeButton: {
+    width: '25px',
     textTransform: 'none',
   },
 }));
@@ -92,53 +94,60 @@ interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredV
 const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   const classes = useStyles()
 
-  const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} = useClientDesiredVersionsHistoryQuery({
+  const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} =
+      useClientDesiredVersionsHistoryQuery({
     variables: {limit: 25},
-    onCompleted(versions) {
-      view.setDesiredVersionsHistory(versions.clientDesiredVersionsHistory)
+    onCompleted(desiredVersionsHistory) {
+      if (versionsInfo) {
+        initView(desiredVersionsHistory.clientDesiredVersionsHistory, versionsInfo.clientVersionsInfo)
+      }
     },
     onError(err) {
-      view.setError('Query desired versions history error ' + err.message)
+      // view.setError('Query desired versions history error ' + err.message)
     }
   })
   const {data: versionsInfo, refetch: getVersionsInfo} = useClientVersionsInfoQuery({
-    onCompleted(versions) {
-      view.setVersionsInfo(versions.clientVersionsInfo.map(
-        v => { return {
-          version: { service: v.service, version: v.version },
-          info: { author: v.buildInfo.author, buildTime: v.buildInfo.time.toLocaleString(), comment: v.buildInfo.comment }
-        }}
-      ))
+    onCompleted(versionsInfo) {
+      if (desiredVersionsHistory) {
+        initView(desiredVersionsHistory.clientDesiredVersionsHistory, versionsInfo.clientVersionsInfo)
+      }
     },
     onError(err) {
-      view.setError('Query client versions error ' + err.message)
+      // view.setError('Query client versions error ' + err.message)
     },
   })
 
   const [changeDesiredVersions] = useSetClientDesiredVersionsMutation()
 
-  const [ view, setView ] = useState(new DesiredVersionsView<ClientDistributionVersion>(
-    'Client Desired Versions',
-    (v1, v2) =>
-      Version.compareClientDistributionVersions(v1, v2),
-    (v) =>
-      Version.clientDistributionVersionToString(v),
-    (v) =>
-      Version.parseClientDistributionVersion(v),
-    (desiredVersions) =>
-      changeDesiredVersions({ variables: { versions: desiredVersions }}),
-    () => {
-      setTimestamp(new Date())
-    },
-    () => {
-      getDesiredVersionsHistory()
-      getVersionsInfo()
-    },
-    classes))
-
+  const [ view, setView ] = useState<DesiredVersionsView<ClientDistributionVersion>>()
   const [ version, setTimestamp ] = useState(new Date())
 
-  useEffect(() => {
+  const initView = (desiredVersionsHistory: TimedClientDesiredVersions[], versionsInfo: ClientVersionInfo[]) => {
+    const view = new DesiredVersionsView<ClientDistributionVersion>(
+      'Client Desired Versions',
+      desiredVersionsHistory,
+      versionsInfo.map(v => { return { version: v,
+        info: { author: v.buildInfo.author, buildTime: v.buildInfo.time.toLocaleString(), comment: v.buildInfo.comment }}}),
+      (v1, v2) =>
+        Version.compareClientDistributionVersions(v1, v2),
+      (v) =>
+        Version.clientDistributionVersionToString(v),
+      (v) =>
+        Version.parseClientDistributionVersion(v),
+      (desiredVersions) =>
+        changeDesiredVersions({ variables: { versions: desiredVersions }}),
+      () => {
+        setTimestamp(new Date())
+      },
+      () => {
+        getDesiredVersionsHistory()
+        getVersionsInfo()
+      },
+      classes)
+    setView(view)
+  }
+
+  if (view && versionsInfo) {
     const columns = view.getBaseColumns()
     columns.push({
       name: 'installTime',
@@ -146,12 +155,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       type: 'date',
       className: classes.timeColumn,
     })
-    view.setColumns(columns)
-  })
-
-  if (view.isDataReady() && versionsInfo?.clientVersionsInfo) {
-    const rows = view.makeBaseRows()
-    rows.map(row => {
+    const rows = view.makeBaseRows().map(row => {
       const service = row.get('service')!.value as string
       const version = Version.parseClientDistributionVersion(row.get('version')!.value as string)
       const installInfo = versionsInfo.clientVersionsInfo
@@ -160,7 +164,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       row.set('installTime', { value: installInfo.time })
       return row
     })
-    return view.render(rows)
+    return view.render(columns, rows)
   } else {
     return null
   }
