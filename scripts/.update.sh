@@ -69,7 +69,7 @@ function graphqlQuery {
 # output:
 #   stdout - short version string
 function developerVersionToString {
-  echo $1 | jq -r '"\(.distribution)-\((.developerBuild | join("."))|tostring)"'
+  echo $1 | jq -r '"\(.distribution)-\((.developerBuild | map(tostring) | join(".")))"'
 }
 
 ## Convert client version from Json to string
