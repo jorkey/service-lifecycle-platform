@@ -1,70 +1,18 @@
 import React, {useState} from 'react';
 
-import {RouteComponentProps, useHistory} from "react-router-dom"
-
+import {RouteComponentProps} from "react-router-dom"
 import { makeStyles } from '@material-ui/core/styles';
-import Alert from "@material-ui/lab/Alert";
 import {
-  useClientDesiredVersionsHistoryQuery,
-  useClientDesiredVersionsQuery, useClientVersionsInfoQuery,
-  useDeveloperServicesQuery, useDeveloperVersionsInfoQuery, useSetClientDesiredVersionsMutation,
-  useTasksQuery
+  DeveloperDistributionVersion, DeveloperVersionInfo, TimedDeveloperDesiredVersions,
+  useDeveloperDesiredVersionsHistoryQuery,
+  useDeveloperVersionsInfoQuery,
+  useSetDeveloperDesiredVersionsMutation,
 } from "../../../../generated/graphql";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {Button, Card, CardContent, CardHeader} from "@material-ui/core";
-import VisibilityIcon from "@material-ui/icons/Visibility";
-import BuildIcon from "@material-ui/icons/Build";
 import {Version} from "../../../../common";
-import clsx from "clsx";
-import FormGroup from "@material-ui/core/FormGroup";
-import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import GridTable from "../../../../common/components/gridTable/GridTable";
+import {DesiredVersionsView, useBaseStyles} from "../../DesiredVersionsView";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {},
-  content: {
-    padding: 0
-  },
-  inner: {
-    minWidth: 800
-  },
-  versionsTable: {
-    marginTop: 20
-  },
-  serviceColumn: {
-    width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  versionColumn: {
-    width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  authorColumn: {
-    width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  commentColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  timeColumn: {
-    width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
-  },
-  actionsColumn: {
-    width: '120px',
-    padding: '4px',
-    paddingRight: '30px',
-    textAlign: 'right'
-  },
-  control: {
-    paddingLeft: '10px',
-    textTransform: 'none'
-  },
   alert: {
     marginTop: 25
   }
@@ -78,7 +26,78 @@ interface DeveloperDesiredVersionsParams extends RouteComponentProps<DeveloperDe
 }
 
 const DeveloperDesiredVersions = (props: DeveloperDesiredVersionsParams) => {
-  return null
+  const baseClasses = useBaseStyles()
+  const classes = useStyles()
+
+  const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} =
+      useDeveloperDesiredVersionsHistoryQuery({
+    variables: {limit: 25},
+    onCompleted(desiredVersionsHistory) {
+      if (versionsInfo) {
+        initView(desiredVersionsHistory.developerDesiredVersionsHistory, versionsInfo.developerVersionsInfo)
+      }
+    },
+    onError(err) {
+      setError('Query desired versions history error ' + err.message)
+    }
+  })
+  const {data: versionsInfo, refetch: getVersionsInfo} = useDeveloperVersionsInfoQuery({
+    onCompleted(versionsInfo) {
+      if (desiredVersionsHistory) {
+        initView(desiredVersionsHistory.developerDesiredVersionsHistory, versionsInfo.developerVersionsInfo)
+      }
+    },
+    onError(err) {
+      setError('Query developer versions error ' + err.message)
+    },
+  })
+
+  const [changeDesiredVersions] = useSetDeveloperDesiredVersionsMutation()
+
+  const [ view, setView ] = useState<DesiredVersionsView<DeveloperDistributionVersion>>()
+  const [ version, setTimestamp ] = useState(new Date())
+
+  const [ error, setError ] = useState<string>()
+
+  const initView = (desiredVersionsHistory: TimedDeveloperDesiredVersions[], versionsInfo: DeveloperVersionInfo[]) => {
+    const view = new DesiredVersionsView<DeveloperDistributionVersion>(
+      'Developer Desired Versions',
+      desiredVersionsHistory,
+      versionsInfo.map(v => { return { version: v,
+        info: { author: v.buildInfo.author, buildTime: v.buildInfo.time.toLocaleString(), comment: v.buildInfo.comment }}}),
+      (v1, v2) =>
+        Version.compareDeveloperDistributionVersions(v1, v2),
+      (v) =>
+        Version.developerDistributionVersionToString(v),
+      (v) =>
+        Version.parseDeveloperDistributionVersion(v),
+      (desiredVersionsDeltas) =>
+        changeDesiredVersions({ variables: { versions: desiredVersionsDeltas }}),
+      () => {
+        setTimestamp(new Date())
+      },
+      () => {
+        Promise.all([getDesiredVersionsHistory(), getVersionsInfo()])
+          .then(([desiredVersionsHistory, versionsInfo]) => {
+            initView(desiredVersionsHistory.data.developerDesiredVersionsHistory,
+              versionsInfo.data.developerVersionsInfo)
+          })
+      },
+      baseClasses)
+    setView(view)
+  }
+
+  let viewRender: JSX.Element | null = null
+
+  if (view && versionsInfo) {
+    const columns = view.getBaseColumns()
+    const rows = view.makeBaseRows()
+    viewRender = view.render(columns, rows)
+  }
+  return (<>
+    {viewRender}
+    {error ? <Alert className={classes.alert} severity="error">{error}</Alert> : null}
+  </>)
 }
 
 export default DeveloperDesiredVersions;

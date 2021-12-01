@@ -2,16 +2,86 @@ import {Box, Button, Card, CardContent, CardHeader, FormControlLabel, IconButton
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../common/components/refreshControl/RefreshControl";
 import GridTable from "../../common/components/gridTable/GridTable";
-import Alert from "@material-ui/lab/Alert";
 import React from "react";
 import {GridTableCellParams, GridTableColumnParams} from "../../common/components/gridTable/GridTableColumn";
 import UpIcon from "@mui/icons-material/ArrowUpward";
 import DownIcon from '@mui/icons-material/ArrowDownward';
+import {makeStyles} from "@material-ui/core/styles";
+
+export const useBaseStyles = makeStyles((theme:any) => ({
+  root: {},
+  content: {
+    padding: 0
+  },
+  inner: {
+    minWidth: 800
+  },
+  versionsTable: {
+    marginTop: 20
+  },
+  serviceColumn: {
+    width: '150px',
+    padding: '8px',
+    paddingLeft: '20px'
+  },
+  versionColumn: {
+    width: '150px',
+    padding: '8px',
+    paddingLeft: '16px'
+  },
+  authorColumn: {
+    width: '150px',
+    padding: '8px',
+        paddingLeft: '16px'
+  },
+  commentColumn: {
+    padding: '8px',
+    paddingLeft: '16px'
+  },
+  timeColumn: {
+    width: '200px',
+    padding: '8px',
+    paddingLeft: '16px'
+  },
+  appearedAttribute: {
+    color: 'green'
+  },
+  disappearedAttribute: {
+    color: 'red'
+  },
+  modifiedAttribute: {
+    fontWeight: 600
+  },
+  controls: {
+    marginTop: 25,
+    display: 'flex',
+    justifyContent: 'flex-end',
+    p: 2
+  },
+  control: {
+    marginLeft: '10px',
+    marginRight: '10px',
+    textTransform: 'none'
+  },
+  authorText: {
+    textAlign: 'left',
+    paddingLeft: 25,
+    paddingTop: 2
+  },
+  timeText: {
+    textAlign: 'left',
+    paddingTop: 2
+  },
+  timeChangeButton: {
+    width: '25px',
+    textTransform: 'none',
+  },
+}));
 
 type Classes = Record<"root" | "content" | "inner" | "versionsTable" |
                       "serviceColumn" | "versionColumn" | "authorColumn" | "timeColumn" | "commentColumn" |
                       "appearedAttribute" | "disappearedAttribute" | "modifiedAttribute" |
-                      "controls" | "control" | "alert" | "authorText" | "timeText" |
+                      "controls" | "control" | "authorText" | "timeText" |
                       "timeChangeButton", string>
 
 export interface ServiceVersion<Version> {
@@ -46,8 +116,6 @@ export class DesiredVersionsView<Version> {
   private historyIndex: number = 0
   private time: Date | undefined
   private author: string | undefined
-
-  private error: string | undefined = undefined
 
   constructor(title: string,
               desiredVersionsHistory: {time:Date, author: string, versions:ServiceVersion<Version>[]}[],
@@ -103,19 +171,8 @@ export class DesiredVersionsView<Version> {
     ] as Array<GridTableColumnParams>
   }
 
-  setVersionsInfo(versionsInfo: {version:ServiceVersion<Version>, info: VersionInfo}[]) {
-    this.versionsInfo = versionsInfo
-    this.rerender()
-  }
-
-  setError(error: string | undefined) {
-    this.error = error
-    this.rerender()
-  }
-
   makeBaseRows() {
     return this.makeServicesList().map(service => {
-      console.log('service ' + service)
       const modifiedVersion = this.desiredVersions.find(v => v.service == service)
       const currentVersion = this.getCurrentDesiredVersions().find(v => v.service == service)
       const version = modifiedVersion ? modifiedVersion : currentVersion!
@@ -136,9 +193,10 @@ export class DesiredVersionsView<Version> {
         ['version', {
           value: this.serialize(version.version),
           className: className,
-          select: this.versionsInfo.filter(v => v.version.service == service)
+          editable: !disappeared,
+          select: !disappeared?this.versionsInfo.filter(v => v.version.service == service)
             ?.map(v => ({value: this.serialize(v.version.version),
-              description: this.serialize(v.version.version) + ' - ' + v.info.comment } as {value:string, description:string}))
+              description: this.serialize(v.version.version) + ' - ' + v.info.comment } as {value:string, description:string})):undefined
         }],
         ['author', {
           value: info?.author,
@@ -231,7 +289,6 @@ export class DesiredVersionsView<Version> {
                 this.rerender()
               }}
             />
-            {this.error && <Alert className={this.classes.alert} severity="error">{this.error}</Alert>}
             {this.historyIndex != this.desiredVersionsHistory.length - 1 || this.isModified() ?
               <Box className={this.classes.controls}>
                 <Button className={this.classes.control}

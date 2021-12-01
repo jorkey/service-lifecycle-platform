@@ -9,79 +9,13 @@ import {
   useSetClientDesiredVersionsMutation,
 } from "../../../../generated/graphql";
 import {Version} from "../../../../common";
-import {DesiredVersionsView, ServiceVersion, VersionInfo} from "../../DesiredVersionsView";
+import {DesiredVersionsView, useBaseStyles} from "../../DesiredVersionsView";
+import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {},
-  content: {
-    padding: 0
-  },
-  inner: {
-    minWidth: 800
-  },
-  versionsTable: {
-    marginTop: 20
-  },
-  serviceColumn: {
-    width: '150px',
-    padding: '8px',
-    paddingLeft: '20px'
-  },
-  versionColumn: {
-    width: '150px',
-    padding: '8px',
-    paddingLeft: '16px'
-  },
-  authorColumn: {
-    width: '150px',
-    padding: '8px',
-    paddingLeft: '16px'
-  },
-  commentColumn: {
-    padding: '8px',
-    paddingLeft: '16px'
-  },
-  timeColumn: {
-    width: '200px',
-    padding: '8px',
-    paddingLeft: '16px'
-  },
-  appearedAttribute: {
-    color: 'green'
-  },
-  disappearedAttribute: {
-    color: 'red'
-  },
-  modifiedAttribute: {
-    fontWeight: 600
-  },
-  controls: {
-    marginTop: 25,
-    display: 'flex',
-    justifyContent: 'flex-end',
-    p: 2
-  },
-  control: {
-    marginLeft: '10px',
-    marginRight: '10px',
-    textTransform: 'none'
-  },
   alert: {
     marginTop: 25
-  },
-  authorText: {
-    textAlign: 'left',
-    paddingLeft: 25,
-    paddingTop: 2
-  },
-  timeText: {
-    textAlign: 'left',
-    paddingTop: 2
-  },
-  timeChangeButton: {
-    width: '25px',
-    textTransform: 'none',
-  },
+  }
 }));
 
 interface ClientDesiredVersionsRouteParams {
@@ -92,6 +26,7 @@ interface ClientDesiredVersionsParams extends RouteComponentProps<ClientDesiredV
 }
 
 const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
+  const baseClasses = useBaseStyles()
   const classes = useStyles()
 
   const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} =
@@ -103,7 +38,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       }
     },
     onError(err) {
-      // view.setError('Query desired versions history error ' + err.message)
+      setError('Query desired versions history error ' + err.message)
     }
   })
   const {data: versionsInfo, refetch: getVersionsInfo} = useClientVersionsInfoQuery({
@@ -113,7 +48,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       }
     },
     onError(err) {
-      // view.setError('Query client versions error ' + err.message)
+      setError('Query client versions error ' + err.message)
     },
   })
 
@@ -121,6 +56,8 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
 
   const [ view, setView ] = useState<DesiredVersionsView<ClientDistributionVersion>>()
   const [ version, setTimestamp ] = useState(new Date())
+
+  const [ error, setError ] = useState<string>()
 
   const initView = (desiredVersionsHistory: TimedClientDesiredVersions[], versionsInfo: ClientVersionInfo[]) => {
     const view = new DesiredVersionsView<ClientDistributionVersion>(
@@ -146,9 +83,11 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
               versionsInfo.data.clientVersionsInfo)
           })
       },
-      classes)
+      baseClasses)
     setView(view)
   }
+
+  let viewRender: JSX.Element | null = null
 
   if (view && versionsInfo) {
     const columns = view.getBaseColumns()
@@ -156,7 +95,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       name: 'installTime',
       headerName: 'Install Time',
       type: 'date',
-      className: classes.timeColumn,
+      className: baseClasses.timeColumn,
     })
     const rows = view.makeBaseRows().map(row => {
       const service = row.get('service')!.value as string
@@ -167,10 +106,12 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       row.set('installTime', { value: installInfo.time })
       return row
     })
-    return view.render(columns, rows)
-  } else {
-    return null
+    viewRender = view.render(columns, rows)
   }
+  return (<>
+    {viewRender}
+    {error ? <Alert className={classes.alert} severity="error">{error}</Alert> : null}
+  </>)
 }
 
 export default ClientDesiredVersions;

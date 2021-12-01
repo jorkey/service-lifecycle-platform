@@ -307,8 +307,8 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                         <DateTimePicker
                           className={classes.date}
                           value={fromTime}
-                          minDate={startTime}
-                          maxDate={endTime}
+                          // minDate={startTime}
+                          // maxDate={endTime}
                           ampm={false}
                           onChange={(newValue) => {
                             setFromTime(newValue?newValue:undefined)
@@ -325,8 +325,8 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                         <DateTimePicker
                           className={classes.date}
                           value={toTime}
-                          minDate={startTime}
-                          maxDate={endTime}
+                          // minDate={startTime}
+                          // maxDate={endTime}
                           ampm={false}
                           onChange={(newValue) => {
                             setToTime(newValue?newValue:undefined)

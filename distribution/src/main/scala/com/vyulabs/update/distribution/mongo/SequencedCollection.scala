@@ -273,7 +273,7 @@ class SequencedCollection[T: ClassTag](val name: String,
     for {
       collection <- collection
       docs <- collection.find(filters,
-        Some(Sorts.ascending("_sequence")), limit)
+        Some(Sorts.descending("_sequence")), limit).map(_.sortBy(_.get("_sequence").asInt64()))
     } yield docs
   }
 
