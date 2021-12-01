@@ -81,7 +81,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       _ <- prepareBuilder(distribution, distributionUrl, accessToken)
       process <- {
         log.info(s"--------------------------- Start builder")
-        ChildProcess.start("/bin/sh", s"./${Common.BuilderSh}" +: arguments,
+        ChildProcess.start("/bin/bash", s"./${Common.BuilderSh}" +: arguments,
           Map.empty[String, String] +
             ("distribution" -> distribution) +
             ("distributionUrl" -> distributionUrl) +

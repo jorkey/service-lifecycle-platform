@@ -312,7 +312,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     log.info(s"--------------------------- Make distribution config file")
     val arguments = Seq(cloudProvider, distribution, title, mongoDbName, mongoDbTemporary.toString, port.toString,
       builderDistribution)
-    if (!ProcessUtils.runProcess("/bin/sh", ".make_distribution_config.sh" +: arguments, Map.empty,
+    if (!ProcessUtils.runProcess("/bin/bash", ".make_distribution_config.sh" +: arguments, Map.empty,
       directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
       return false
@@ -467,11 +467,11 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
   private def startDistributionServer(): Boolean = {
     if (installService) {
       log.info("--------------------------- Install and start distribution service")
-      ProcessUtils.runProcess("/bin/sh", Seq(".create_distribution_service.sh"), Map.empty,
+      ProcessUtils.runProcess("/bin/bash", Seq(".create_distribution_service.sh"), Map.empty,
         directory, Some(0), None, ProcessUtils.Logging.Realtime)
     } else {
       log.info("--------------------------- Start distribution server")
-      val startProcess = ChildProcess.start("/bin/sh", Seq("distribution.sh"), Map.empty,
+      val startProcess = ChildProcess.start("/bin/bash", Seq("distribution.sh"), Map.empty,
         directory)
       startProcess.onComplete {
         case Success(process) =>

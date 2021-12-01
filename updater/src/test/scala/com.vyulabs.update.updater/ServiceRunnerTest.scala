@@ -118,7 +118,7 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     }
 
     val writeLogsConfig = WriteLogsConfig("log", "test", 1, 10)
-    val runServiceConfig = RunServiceConfig("/bin/sh", Some(Seq("-c", "./script.sh")),
+    val runServiceConfig = RunServiceConfig("/bin/bash", Some(Seq("-c", "./script.sh")),
       None, Some(writeLogsConfig), Some(logUploader.isDefined), Some("script.sh"), None, None)
 
     implicit val serviceLogger = new PrefixedLogger(s"Service ${service.toString}: ", log)
