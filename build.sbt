@@ -190,8 +190,8 @@ val shell = if (sys.props("os.name").contains("Windows")) Seq("cmd", "/c") else 
 
 lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
   val task = streams.value
-  //task.log.info(s"Delete npm modules ...")
-  //IO.delete(baseDirectory.value / "node_modules")
+  task.log.info(s"Delete npm modules ...") // Comment this to skip compile React scripts
+  IO.delete(baseDirectory.value / "node_modules") // Comment this to skip compile React scripts
   task.log.info("Install npm modules ...")
   val process = Process(shell :+ "npm install", baseDirectory.value)
   if ((process ! task.log) != 0) {
@@ -200,7 +200,7 @@ lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
 }
 
 lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
-//  installNpmModules.init.value // Comment this to skip compile React scripts
+  installNpmModules.init.value // Comment this to skip compile React scripts
   val task = streams.value
   task.log.info(s"Delete React build ...")
   IO.delete(baseDirectory.value / "build")
@@ -212,7 +212,7 @@ lazy val buildReactScripts = taskKey[Unit]("Compile React scripts") := {
 }
 
 lazy val buildDashboard = taskKey[Seq[File]]("Generate dashboard resources") := {
-//  buildReactScripts.init.value // Comment this to skip compile React scripts
+  buildReactScripts.init.value // Comment this to skip compile React scripts
   val webapp = baseDirectory.value / "build"
   val managed = resourceManaged.value
   for {
