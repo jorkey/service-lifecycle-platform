@@ -38,7 +38,7 @@ function download {
 #  $2 - query
 #  $3 - sub selection
 #  $4 - output file
-function graphqlQuery() {
+function graphqlQuery {
   set -e
   local url="$1/graphql"
   local query=$2

@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -e
 
-function exitUsage() {
+function exitUsage {
   >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> <mongoDbName> <mongoDbTemporary> <port> <builderDistribution>"
   exit 1
 }

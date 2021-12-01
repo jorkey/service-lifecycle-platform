@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -e
 
-function createService() {
+function createService {
   echo "Create distribution service"
   sudo -p "Enter 'sudo' password:" sh -c "cat << EOF > /etc/systemd/system/update-distribution.service
 [Unit]
