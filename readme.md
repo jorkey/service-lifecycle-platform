@@ -331,7 +331,7 @@ _distribution_ запускает _builder_.
 
 Выполните команду:
 
-`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbName=? [serviceOS=?]"`
+`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbName=? [persistent=?]"`
 
 Вместо `?` подставьте значения:
 - _cloudProvider_
@@ -347,7 +347,7 @@ _distribution_ запускает _builder_.
   - короткое описание сервера дистрибуции
 - _mongoDbName_
   - имя базы данных MongoDB
-- _serviceOS_
+- _persistent_
   - в настоящее время только для установки на Linux. 
   - _true_, если сервер дистрибуции устанавливается как сервис systemd Linux. 
 
@@ -371,7 +371,7 @@ serviceToRun=builder
 distributionUrl=?
 accessToken=?
 
-. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [serviceOS=?] 
+. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
 ```
 
 Вместо `?` подставьте значения:
@@ -400,7 +400,7 @@ accessToken=?
     - Зайдите в _Settings/Accounts/Distribution Consumers_ и нажмите на значок ключа для соответствующей записи.
 - _testConsumerMatch_
   - имя сервера дистрибуции тестовой системы
-- _serviceOS_
+- _persistent_
   - в настоящее время только для установки на Linux.
   - _true_, если сервер дистрибуции устанавливается как сервис systemd Linux.
 

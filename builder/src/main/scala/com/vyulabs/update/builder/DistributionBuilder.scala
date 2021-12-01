@@ -28,7 +28,7 @@ import scala.util.{Failure, Success}
   */
 class DistributionBuilder(cloudProvider: String, distribution: String,
                           directory: File, port: Int, title: String,
-                          mongoDbName: String, mongoDbTemporary: Boolean, installService: Boolean)
+                          mongoDbName: String, mongoDbTemporary: Boolean, persistent: Boolean)
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -465,7 +465,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
   }
 
   private def startDistributionServer(): Boolean = {
-    if (installService) {
+    if (persistent) {
       log.info("--------------------------- Install and start distribution service")
       ProcessUtils.runProcess("/bin/bash", Seq(".create_distribution_service.sh"), Map.empty,
         directory, Some(0), None, ProcessUtils.Logging.Realtime)
