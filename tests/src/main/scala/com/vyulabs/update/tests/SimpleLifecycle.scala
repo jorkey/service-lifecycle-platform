@@ -37,11 +37,12 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   private val testServiceSourcesDir = Files.createTempDirectory("service-sources").toFile
   private val testServiceInstanceDir = Files.createTempDirectory("service-instance").toFile
 
+  private val dbConnection = s"mongodb://localhost:27017"
   private val dbName = s"${distribution}-test"
 
   private val distributionBuilder = new DistributionBuilder("None",
     distribution, distributionDir, distributionPort, s"Test distribution server: ${distribution}",
-    dbName, false, false)
+    dbConnection, dbName, false, false)
   private val clientBuilder = new ClientBuilder(builderDir)
 
   private val adminClient = new SyncDistributionClient(

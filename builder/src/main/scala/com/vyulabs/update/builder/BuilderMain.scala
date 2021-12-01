@@ -30,9 +30,9 @@ object BuilderMain extends App {
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
     "    buildProviderDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       port=? title=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
+    "       port=? title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
     "    buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       port=? title=? mongoDbName=? provider=? providerUrl=?\n" +
+    "       port=? title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
     "       consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
     "    buildDeveloperVersion service=? version=? sources=? [buildClientVersion=true/false] comment=?\n" +
     "    buildClientVersion service=? developerVersion=? clientVersion=?"
@@ -51,11 +51,13 @@ object BuilderMain extends App {
         val distribution = arguments.getValue("distribution")
         val port = arguments.getIntValue("port")
         val title = arguments.getValue("title")
+        val mongoDbConnection = arguments.getValue("mongoDbConnection")
         val mongoDbName = arguments.getValue("mongoDbName")
         val persistent = arguments.getOptionBooleanValue("persistent").getOrElse(false)
 
         val distributionBuilder = new DistributionBuilder(cloudProvider,
-          distribution, new File(directory), port, title, mongoDbName, false, persistent)
+          distribution, new File(directory), port, title,
+          mongoDbConnection, mongoDbName, false, persistent)
 
         if (command == "buildProviderDistribution") {
           if (!distributionBuilder.buildDistributionFromSources(Common.AuthorBuilder)) {

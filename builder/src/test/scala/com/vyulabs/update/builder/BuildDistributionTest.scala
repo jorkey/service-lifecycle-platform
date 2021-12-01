@@ -28,6 +28,8 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
   val consumerDistributionName = "test-consumer"
   val consumerDistributionDir = Files.createTempDirectory("distrib").toFile
 
+  val mongoDbConnection = s"mongodb://localhost:27017"
+
   val providerMongoDbName = "BuildDistributionTest-provider"
   val consumerMongoDbName = "BuildDistributionTest-consumer"
 
@@ -49,7 +51,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     val providerDistributionBuilder = new DistributionBuilder(
       "None", providerDistributionName,
       providerDistributionDir, 8000, "Test developer distribution server",
-      providerMongoDbName, true, false)
+      mongoDbConnection, providerMongoDbName, true, false)
     assert(providerDistributionBuilder.buildDistributionFromSources("ak"))
     assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName,
       "Distribution Consumer", ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8001")))
@@ -60,7 +62,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     val consumerDistributionBuilder = new DistributionBuilder(
       "None", consumerDistributionName,
       consumerDistributionDir, 8001, "Test client distribution server",
-      consumerMongoDbName,true, false)
+      mongoDbConnection, consumerMongoDbName,true, false)
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
       "http://localhost:8000",
       JWT.encodeAccessToken(AccessToken(consumerDistributionName), providerDistributionBuilder.config.get.jwtSecret),

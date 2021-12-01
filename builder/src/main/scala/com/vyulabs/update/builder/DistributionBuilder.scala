@@ -28,7 +28,8 @@ import scala.util.{Failure, Success}
   */
 class DistributionBuilder(cloudProvider: String, distribution: String,
                           directory: File, port: Int, title: String,
-                          mongoDbName: String, mongoDbTemporary: Boolean, persistent: Boolean)
+                          mongoDbConnection: String, mongoDbName: String, mongoDbTemporary: Boolean,
+                          persistent: Boolean)
                          (implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -310,8 +311,8 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
       return false
     }
     log.info(s"--------------------------- Make distribution config file")
-    val arguments = Seq(cloudProvider, distribution, title, mongoDbName, mongoDbTemporary.toString, port.toString,
-      builderDistribution)
+    val arguments = Seq(cloudProvider, distribution, title, mongoDbConnection,
+      mongoDbName, mongoDbTemporary.toString, port.toString, builderDistribution)
     if (!ProcessUtils.runProcess("/bin/bash", ".make_distribution_config.sh" +: arguments, Map.empty,
       directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")

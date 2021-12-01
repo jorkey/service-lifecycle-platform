@@ -345,6 +345,8 @@ _distribution_ запускает _builder_.
   - порт для сервиса http (сервис https можно определить позднее в настройках)
 - _title_
   - короткое описание сервера дистрибуции
+- _mongoDbConnection_
+  - URL подсоединения к MongoDB, например mongodb://localhost:27017
 - _mongoDbName_
   - имя базы данных MongoDB
 - _persistent_
@@ -391,6 +393,8 @@ accessToken=?
   - порт для сервиса http (сервис https можно определить позднее в настройках)
 - _title_
   - короткое описание сервера дистрибуции
+- _mongoDbConnection_
+  - URL подсоединения к MongoDB, например mongodb://localhost:27017
 - _mongoDbName_
   - имя базы данных MongoDB
 - _provider_
