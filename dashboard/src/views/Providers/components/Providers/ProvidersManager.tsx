@@ -32,21 +32,31 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: 20
   },
   distributionColumn: {
-    width: '150px'
+    minWidth: '150px',
+    maxWidth: '150px'
   },
   urlColumn: {
-    width: '400px'
+    minWidth: '200px',
+    maxWidth: '200px'
   },
   accessTokenColumn: {
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    minWidth: '400px',
+    maxWidth: '400px'
   },
   testConsumerColumn: {
-    width: '400px'
+    minWidth: '200px',
+    maxWidth: '200px'
   },
-  uploadState: {
-    width: '150px'
+  uploadStateColumn: {
+    minWidth: '120px',
+    maxWidth: '120px'
   },
-  autoUpdate: {
-    width: '150px'
+  autoUpdateColumn: {
+    minWidth: '120px',
+    maxWidth: '120px'
   },
   actionsColumn: {
     paddingRight: '40px',
@@ -138,14 +148,14 @@ const ProvidersManager = () => {
     {
       name: 'uploadState',
       headerName: 'Upload State',
-      className: classes.uploadState,
+      className: classes.uploadStateColumn,
       type: 'checkbox',
       editable: true,
     },
     {
       name: 'autoUpdate',
       headerName: 'Auto Update',
-      className: classes.autoUpdate,
+      className: classes.autoUpdateColumn,
       type: 'checkbox',
       editable: true,
     },

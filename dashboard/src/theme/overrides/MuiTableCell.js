@@ -6,6 +6,7 @@ export default {
     ...typography.body1,
     padding: '0px',
     paddingLeft: '16px',
+    paddingRight: '16px',
     borderBottom: `1px solid ${palette.divider}`
   }
 };
