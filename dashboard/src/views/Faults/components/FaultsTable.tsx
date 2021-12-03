@@ -15,28 +15,18 @@ const useStyles = makeStyles(theme => ({
   },
   timeColumn: {
     minWidth: '250px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   distributionColumn: {
     minWidth: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   serviceColumn: {
     minWidth: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   versionColumn: {
     minWidth: '250px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   downloadColumn: {
     maxWidth: '50px',
-    padding: '4px',
-    paddingLeft: '16px'
   }
 }))
 

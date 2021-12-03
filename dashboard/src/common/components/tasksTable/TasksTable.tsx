@@ -14,28 +14,18 @@ const useStyles = makeStyles(theme => ({
   },
   creationTimeColumn: {
     width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   idColumn: {
     width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   typeColumn: {
     width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   parametersColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   activeColumn: {
     whiteSpace: 'pre',
     width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   }
 }))
 

@@ -18,25 +18,17 @@ const useStyles = makeStyles(theme => ({
   },
   accountColumn: {
     width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   nameColumn: {
     width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   rolesColumn: {
     width: '300px',
-    padding: '4px'
   },
   emailColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   actionsColumn: {
     width: '200px',
-    padding: '4px',
     paddingRight: '40px',
     textAlign: 'center'
   },

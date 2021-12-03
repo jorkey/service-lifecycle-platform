@@ -24,7 +24,6 @@ const useStyles = makeStyles(theme => ({
     color: 'red'
   },
   stateColumn: {
-    padding: '4px'
   },
   statePopover: {
     pointerEvents: 'none'

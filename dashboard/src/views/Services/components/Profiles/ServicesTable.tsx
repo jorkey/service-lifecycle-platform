@@ -11,12 +11,9 @@ const useStyles = makeStyles(theme => ({
     marginTop: 20
   },
   serviceColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   actionsColumn: {
     width: '200px',
-    padding: '4px',
     paddingRight: '40px',
     textAlign: 'right'
   },

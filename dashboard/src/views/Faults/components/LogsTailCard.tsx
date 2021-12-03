@@ -21,19 +21,13 @@ const useStyles = makeStyles(theme => ({
   timeColumn: {
     width: '200px',
     minWidth: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   levelColumn: {
     width: '100px',
     minWidth: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   messageColumn: {
     whiteSpace: 'pre',
-    padding: '4px',
-    paddingLeft: '16px'
   },
 }))
 

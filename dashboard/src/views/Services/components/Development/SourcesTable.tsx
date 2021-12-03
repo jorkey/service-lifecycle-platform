@@ -14,26 +14,17 @@ const useStyles = makeStyles(theme => ({
   },
   nameColumn: {
     width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   urlColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   branchColumn: {
     width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   cloneSubmodulesColumn: {
     width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   actionsColumn: {
     width: '200px',
-    padding: '4px',
     paddingRight: '40px',
     textAlign: 'right'
   },

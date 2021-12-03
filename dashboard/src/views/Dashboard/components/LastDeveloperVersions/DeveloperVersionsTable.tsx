@@ -30,23 +30,17 @@ const useStyles = makeStyles((theme:any) => ({
   },
   serviceColumn: {
     width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   versionColumn: {
     width: '150px',
-    padding: '4px',
   },
   authorColumn: {
     width: '150px',
-    padding: '4px',
   },
   commentColumn: {
-    padding: '4px',
   },
   creationTime: {
     width: '250px',
-    padding: '4px',
   },
   control: {
     paddingLeft: '10px',

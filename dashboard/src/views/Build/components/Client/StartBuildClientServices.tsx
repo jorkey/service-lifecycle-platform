@@ -48,12 +48,8 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: '20px'
   },
   serviceColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   versionColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   controls: {
     marginTop: '25px',

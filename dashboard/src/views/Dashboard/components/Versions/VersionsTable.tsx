@@ -15,28 +15,21 @@ import {
 const useStyles = makeStyles(theme => ({
   serviceColumn: {
     width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   versionColumn: {
-    padding: '4px',
     width: '175px'
   },
   alarmVersionColumn: {
-    padding: '4px',
     width: '150px',
     color: 'red'
   },
   directoryColumn: {
-    padding: '4px',
     width: '300px'
   },
   instancesColumn: {
-    padding: '4px'
   },
   infoColumn: {
     width: '30px',
-    padding: '4px',
     paddingRight: '10px'
   }
 }));

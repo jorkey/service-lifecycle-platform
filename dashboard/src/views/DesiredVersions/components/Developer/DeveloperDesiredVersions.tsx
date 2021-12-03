@@ -9,7 +9,7 @@ import {
   useSetDeveloperDesiredVersionsMutation,
 } from "../../../../generated/graphql";
 import {Version} from "../../../../common";
-import {DesiredVersionsView, useBaseStyles} from "../../DesiredVersionsView";
+import {DesiredVersionsView, useBaseStyles} from "../DesiredVersionsView";
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles((theme:any) => ({

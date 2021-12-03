@@ -33,41 +33,27 @@ const useStyles = makeStyles((theme:any) => ({
   },
   serviceColumn: {
     width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   versionColumn: {
     width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   authorColumn: {
     width: '150px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   commentColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   statusColumn: {
     width: '100px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   timeColumn: {
     width: '200px',
-    padding: '4px',
-    paddingLeft: '16px'
   },
   actionsColumn: {
     width: '120px',
-    padding: '4px',
     paddingRight: '30px',
     textAlign: 'right'
   },
   control: {
-    paddingLeft: '10px',
     textTransform: 'none'
   },
   alert: {

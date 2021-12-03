@@ -16,19 +16,14 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: 20
   },
   versionsColumn: {
-    padding: '4px',
-    paddingLeft: '16px'
   },
   authorColumn: {
     width: '150px',
-    padding: '4px',
   },
   creationTime: {
     width: '250px',
-    padding: '4px',
   },
   control: {
-    paddingLeft: '10px',
     textTransform: 'none'
   },
   alert: {

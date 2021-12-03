@@ -32,36 +32,23 @@ const useStyles = makeStyles((theme:any) => ({
     marginTop: 20
   },
   distributionColumn: {
-    padding: '4px',
-    paddingLeft: '16px',
     width: '150px'
   },
   urlColumn: {
-    padding: '4px',
-    paddingLeft: '16px',
     width: '400px'
   },
   accessTokenColumn: {
-    padding: '4px',
-    paddingLeft: '16px',
   },
   testConsumerColumn: {
-    padding: '4px',
-    paddingLeft: '16px',
     width: '400px'
   },
   uploadState: {
-    padding: '4px',
-    paddingLeft: '16px',
     width: '150px'
   },
   autoUpdate: {
-    padding: '4px',
-    paddingLeft: '16px',
     width: '150px'
   },
   actionsColumn: {
-    padding: '4px',
     paddingRight: '40px',
     textAlign: 'right',
     width: '200px',

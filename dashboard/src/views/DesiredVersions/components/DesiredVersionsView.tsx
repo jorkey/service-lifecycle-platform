@@ -1,9 +1,9 @@
 import {Box, Button, Card, CardContent, CardHeader, FormControlLabel, IconButton, Typography} from "@material-ui/core";
 import FormGroup from "@material-ui/core/FormGroup";
-import {RefreshControl} from "../../common/components/refreshControl/RefreshControl";
-import GridTable from "../../common/components/gridTable/GridTable";
+import {RefreshControl} from "../../../common/components/refreshControl/RefreshControl";
+import GridTable from "../../../common/components/gridTable/GridTable";
 import React from "react";
-import {GridTableCellParams, GridTableColumnParams} from "../../common/components/gridTable/GridTableColumn";
+import {GridTableCellParams, GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
 import UpIcon from "@mui/icons-material/ArrowUpward";
 import DownIcon from '@mui/icons-material/ArrowDownward';
 import {makeStyles} from "@material-ui/core/styles";
@@ -21,27 +21,18 @@ export const useBaseStyles = makeStyles((theme:any) => ({
   },
   serviceColumn: {
     width: '150px',
-    padding: '8px',
     paddingLeft: '20px'
   },
   versionColumn: {
     width: '150px',
-    padding: '8px',
-    paddingLeft: '16px'
   },
   authorColumn: {
     width: '150px',
-    padding: '8px',
-        paddingLeft: '16px'
   },
   commentColumn: {
-    padding: '8px',
-    paddingLeft: '16px'
   },
   timeColumn: {
     width: '200px',
-    padding: '8px',
-    paddingLeft: '16px'
   },
   appearedAttribute: {
     color: 'green'
