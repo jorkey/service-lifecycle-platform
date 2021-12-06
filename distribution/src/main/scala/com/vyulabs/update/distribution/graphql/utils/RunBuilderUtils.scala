@@ -75,7 +75,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
             accountInfo.getOrElse(throw new IOException(s"No consumer account '${distribution}''")).properties.url
           }
         } else {
-          Future(s"http://localhost:${config.network.port}")
+          Future(s"${if (config.network.ssl.isDefined) "https" else "http"}://localhost:${config.network.port}")
         }
       }
       _ <- prepareBuilder(distribution, distributionUrl, accessToken)
