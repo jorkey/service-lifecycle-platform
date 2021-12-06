@@ -1,4 +1,4 @@
-import React from "react";
+import React, {Attributes} from "react";
 import {
   Checkbox,
   Input,
@@ -30,9 +30,8 @@ export interface GridTableCellParams {
   select?: {value:string, description:string}[]
 }
 
-export interface GridTableCellInternalParams {
-  index: number
-  name: string,
+export interface GridTableCellInternalParams extends Attributes {
+  name: string
   className?: string
   width?: number
   type?: GridColumnType
@@ -52,7 +51,7 @@ export interface GridTableCellInternalParams {
 }
 
 export const GridTableCell = (params: GridTableCellInternalParams) => {
-  const { index, name, className, width, type, value, select, editValue, editing, editable,
+  const { name, className, width, type, value, select, editValue, editing, editable,
     onValidate, onClicked, onStartEdit, onStopEdit, onSetEditValue,
     onCancelled, onSelected, onUnselected } = params
 
@@ -69,20 +68,20 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
   }
 
   return (
-    <TableCell key={index} className={classNames}
-        padding={type == 'checkbox'?'checkbox':undefined}
-        onClick={() => {
-          if (editable && !editing) {
-            onStartEdit?.()
-          } else if (type != 'elements') {
-            onClicked?.()
-          }
-        }}
-        onKeyDown={e => {
-          if (editing && e.keyCode == 27) {
-            onCancelled?.()
-          }
-        }}
+    <TableCell className={classNames}
+               padding={type == 'checkbox'?'checkbox':undefined}
+               onClick={() => {
+                  if (editable && !editing) {
+                    onStartEdit?.()
+                  } else if (type != 'elements') {
+                    onClicked?.()
+                  }
+                }}
+               onKeyDown={e => {
+                 if (editing && e.keyCode == 27) {
+                   onCancelled?.()
+                 }
+               }}
     > {
       type == 'checkbox' ?
         <Checkbox checked={editing ? editValue ? editValue as boolean : false : value as boolean}
@@ -118,7 +117,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
         : <Input className={classes.input}
                  type={type}
                  value={editValue?editValue:''}
-                 autoFocus={index == 0}
+                 autoFocus={editing}
                  onChange={e => onSetEditValue?.(e.target.value)}
                  error={onValidate?!onValidate(editValue):false}
           />

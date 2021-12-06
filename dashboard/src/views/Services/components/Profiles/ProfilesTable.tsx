@@ -5,7 +5,7 @@ import {
   useServiceProfilesQuery,
 } from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
-import {NavLink as RouterLink, Redirect, useRouteMatch} from 'react-router-dom';
+import {Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";

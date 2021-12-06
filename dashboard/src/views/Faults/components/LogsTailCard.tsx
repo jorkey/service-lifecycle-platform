@@ -3,10 +3,10 @@ import {
   LogLine,
 } from "../../../generated/graphql";
 import {makeStyles} from "@material-ui/core/styles";
-import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../common/components/gridTable/GridTable";
 import {Card, CardContent, CardHeader} from "@material-ui/core";
 import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
+import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
 
 const useStyles = makeStyles(theme => ({
   content: {

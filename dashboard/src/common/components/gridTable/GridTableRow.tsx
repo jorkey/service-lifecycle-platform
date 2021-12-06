@@ -2,7 +2,6 @@ import React, {useEffect, useRef, useState} from "react";
 import {TableCell, TableRow} from "@material-ui/core";
 import {GridActions} from "./GridActions";
 import {GridTableColumnParams, GridTableCellValue} from "./GridTableColumn";
-import {makeStyles} from "@material-ui/styles";
 import {GridTableCell, GridTableCellParams} from "./GridTableCell";
 
 export interface GridTableRowParams {
@@ -61,7 +60,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
     if (column.type == 'elements' && column.name == 'actions') {
       return <TableCell key={index} className={classNames}>
           <GridActions adding={adding}
-                       editing={editingCell}
+                       editing={editing}
                        valid={valid}
                        actions={cellValue! as JSX.Element[]}
                        onSubmit={() => onSubmitted?.(editValues, editOldValues)}
@@ -69,13 +68,14 @@ export const GridTableRow = (params: GridTableRowParams) => {
           />
         </TableCell>
     } else {
-      return <GridTableCell index={index} name={column.name} className={classNames} width={column.width}
-                            type={column.type} select={cellSelect}
+      return <GridTableCell key={index} name={column.name} className={classNames} width={column.width}
+                            type={column.type} value={cellValue} select={cellSelect}
                             editable={editableCell} editing={editingCell} editValue={editValue}
                             onValidate={() => column.validate ? column.validate(editValues.get(column.name), rowNum) : true}
                             onClicked={() => onClicked?.()}
                             onStartEdit={() => {
                               if (onBeginEditing?.()) {
+                                setEditColumn(column.name)
                                 const values = new Map<string, GridTableCellValue>()
                                 cells.forEach((value, key) => values.set(key, value.value))
                                 setEditOldValues(values)

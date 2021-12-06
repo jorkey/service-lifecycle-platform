@@ -2,9 +2,9 @@ import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
