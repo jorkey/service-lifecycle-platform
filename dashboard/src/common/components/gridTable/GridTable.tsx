@@ -7,8 +7,9 @@ import {
   TableHead,
   TableRow
 } from "@material-ui/core";
-import {GridTableColumnParams, GridTableCellParams, GridTableCellValue} from "./GridTableColumn";
+import {GridTableColumnParams, GridTableCellValue} from "./GridTableColumn";
 import {GridTableRow} from "./GridTableRow";
+import {GridTableCellParams} from "./GridTableCell";
 
 interface GridParams {
   className: string,
@@ -79,13 +80,13 @@ export const GridTable = (props: GridParams) => {
         </TableHead>
         { <TableBody>
             { (addNewRow ?
-              (<GridTableRow key={-1} columns={columns} columnValues={new Map()} adding={addNewRow}
+              (<GridTableRow key={-1} columns={columns} cells={new Map()} adding={addNewRow}
                              onSubmitted={(values, oldValues) =>
                                            onRowAdded?.(values) }
                              onCanceled={() => onRowAddCancelled?.()}/>) : null) }
             {  rows.map((row, rowNum) => {
                 return (<GridTableRow key={rowNum} rowNum={rowNum} columns={columns}
-                                      columnValues={row}
+                                      cells={row}
                                       adding={false}
                                       editing={rowNum == editingRow}
                                       scrollInto={

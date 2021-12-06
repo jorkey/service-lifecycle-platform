@@ -17,8 +17,8 @@ import {
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},

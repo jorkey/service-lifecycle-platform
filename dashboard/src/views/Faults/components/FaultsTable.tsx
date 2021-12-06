@@ -1,13 +1,13 @@
 import React, {useEffect, useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import {DistributionFaultReport} from "../../../generated/graphql";
-import {GridTableColumnParams, GridTableCellParams} from "../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../common/components/gridTable/GridTable";
 import {Version} from "../../../common";
 import {Button} from "@material-ui/core";
 import DownloadIcon from '@material-ui/icons/CloudDownload';
 import {download} from "../../../common/Download";
-import {GridTableRowParams} from "../../../common/components/gridTable/GridTableRow";
+import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({
   div: {

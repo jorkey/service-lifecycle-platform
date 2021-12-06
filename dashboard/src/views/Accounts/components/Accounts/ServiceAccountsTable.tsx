@@ -8,10 +8,10 @@ import {Redirect, useRouteMatch} from "react-router-dom";
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import AccessTokenPopup from "./AccessTokenPopup";
-import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({
   accountsTable: {

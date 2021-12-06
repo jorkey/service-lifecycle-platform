@@ -6,9 +6,9 @@ import {
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
 import {makeStyles} from "@material-ui/core/styles";
-import {GridTableColumnParams, GridTableCellParams} from "../gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../gridTable/GridTableColumn";
 import {LogsSubscriber} from "./LogsSubscriber";
-import {GridTableRowParams} from "../gridTable/GridTableRow";
+import {GridTableCellParams} from "../gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({
   div: {

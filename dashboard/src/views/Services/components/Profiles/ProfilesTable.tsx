@@ -9,8 +9,8 @@ import {NavLink as RouterLink, Redirect, useRouteMatch} from 'react-router-dom';
 import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
-import {GridTableRowParams} from "../../../../common/components/gridTable/GridTableRow";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({
   profileTable: {

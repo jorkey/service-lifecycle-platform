@@ -23,10 +23,11 @@ import {Version} from "../../../../common";
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import Button from "@material-ui/core/Button";
 import {RouteComponentProps, useHistory} from "react-router-dom";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},

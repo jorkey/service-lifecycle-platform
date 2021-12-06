@@ -3,10 +3,11 @@ import FormGroup from "@material-ui/core/FormGroup";
 import {RefreshControl} from "../../../common/components/refreshControl/RefreshControl";
 import GridTable from "../../../common/components/gridTable/GridTable";
 import React from "react";
-import {GridTableCellParams, GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
 import UpIcon from "@mui/icons-material/ArrowUpward";
 import DownIcon from '@mui/icons-material/ArrowDownward';
 import {makeStyles} from "@material-ui/core/styles";
+import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
 
 export const useBaseStyles = makeStyles((theme:any) => ({
   root: {},

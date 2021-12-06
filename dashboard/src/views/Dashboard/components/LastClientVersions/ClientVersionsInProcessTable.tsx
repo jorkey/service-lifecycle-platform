@@ -1,8 +1,9 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {TasksQuery} from "../../../../generated/graphql";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},

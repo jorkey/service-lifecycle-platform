@@ -3,7 +3,8 @@ import { makeStyles } from '@material-ui/styles';
 import { ClientVersionsInfoQuery } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},

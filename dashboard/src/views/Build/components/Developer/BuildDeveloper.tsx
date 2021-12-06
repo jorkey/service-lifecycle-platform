@@ -18,7 +18,8 @@ import {RefreshControl} from "../../../../common/components/refreshControl/Refre
 import {useHistory} from "react-router-dom";
 import BuildIcon from "@material-ui/icons/Build";
 import VisibilityIcon from "@material-ui/icons/Visibility";
-import {GridTableColumnParams, GridTableCellParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
