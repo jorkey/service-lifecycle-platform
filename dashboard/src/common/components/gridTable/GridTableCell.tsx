@@ -14,10 +14,6 @@ const useStyles = makeStyles<Theme, GridTableCellInternalParams>(theme => ({
     border: '1px solid #ccc',
     borderStyle: 'dashed'
   },
-  width: {
-    minWidth: props => props.width,
-    maxWidth: props => props.width
-  },
   input: {
     width: '100%'
   }
@@ -33,7 +29,6 @@ export interface GridTableCellParams {
 export interface GridTableCellInternalParams extends Attributes {
   name: string
   className?: string
-  width?: number
   type?: GridColumnType
   value?: GridTableCellValue
   select?: {value:string, description:string}[]
@@ -51,17 +46,13 @@ export interface GridTableCellInternalParams extends Attributes {
 }
 
 export const GridTableCell = (params: GridTableCellInternalParams) => {
-  const { name, className, width, type, value, select, editValue, editing, editable,
+  const { name, className, type, value, select, editValue, editing, editable,
     onValidate, onClicked, onStartEdit, onStopEdit, onSetEditValue,
     onCancelled, onSelected, onUnselected } = params
 
   const classes = useStyles(params)
 
   let classNames = className
-  if (width) {
-    if (classNames) classNames += ' ';
-    classNames += classes.width
-  }
   if (editable && type != 'checkbox') {
     if (classNames) classNames += ' ';
     classNames += classes.editable
@@ -71,7 +62,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
     <TableCell className={classNames}
                padding={type == 'checkbox'?'checkbox':undefined}
                onClick={() => {
-                  if (editable && !editing) {
+                  if (name != 'select' && editable && !editing) {
                     onStartEdit?.()
                   } else if (type != 'elements') {
                     onClicked?.()

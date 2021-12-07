@@ -43,7 +43,7 @@ const DeveloperDesiredVersions = (props: DeveloperDesiredVersionsParams) => {
   })
   const {data: versionsInfo, refetch: getVersionsInfo} = useDeveloperVersionsInfoQuery({
     onCompleted(versionsInfo) {
-      if (desiredVersionsHistory) {
+      if (desiredVersionsHistory?.developerDesiredVersionsHistory?.length) {
         initView(desiredVersionsHistory.developerDesiredVersionsHistory, versionsInfo.developerVersionsInfo)
       }
     },

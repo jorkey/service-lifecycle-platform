@@ -68,7 +68,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
           />
         </TableCell>
     } else {
-      return <GridTableCell key={index} name={column.name} className={classNames} width={column.width}
+      return <GridTableCell key={index} name={column.name} className={classNames}
                             type={column.type} value={cellValue} select={cellSelect}
                             editable={editableCell} editing={editingCell} editValue={editValue}
                             onValidate={() => column.validate ? column.validate(editValues.get(column.name), rowNum) : true}

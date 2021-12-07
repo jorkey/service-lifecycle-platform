@@ -33,7 +33,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       useClientDesiredVersionsHistoryQuery({
     variables: {limit: 25},
     onCompleted(desiredVersionsHistory) {
-      if (versionsInfo) {
+      if (versionsInfo?.clientVersionsInfo) {
         initView(desiredVersionsHistory.clientDesiredVersionsHistory, versionsInfo.clientVersionsInfo)
       }
     },
@@ -43,7 +43,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
   })
   const {data: versionsInfo, refetch: getVersionsInfo} = useClientVersionsInfoQuery({
     onCompleted(versionsInfo) {
-      if (desiredVersionsHistory) {
+      if (desiredVersionsHistory?.clientDesiredVersionsHistory?.length) {
         initView(desiredVersionsHistory.clientDesiredVersionsHistory, versionsInfo.clientVersionsInfo)
       }
     },

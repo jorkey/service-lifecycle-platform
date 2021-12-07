@@ -16,19 +16,15 @@ const useStyles = makeStyles(theme => ({
   },
   timeColumn: {
     width: '200px',
-    minWidth: '200px',
   },
   instanceColumn: {
     width: '200px',
-    minWidth: '200px',
   },
   processColumn: {
     width: '100px',
-    minWidth: '100px',
   },
   levelColumn: {
     width: '100px',
-    minWidth: '100px',
   },
   messageColumn: {
     whiteSpace: 'pre',
