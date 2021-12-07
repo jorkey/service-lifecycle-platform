@@ -92,7 +92,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
       newStates <- Future(newStatesDocuments)
     } yield {
       if (!newStates.isEmpty) {
-        client.graphqlRequest(GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("state" -> newStates.map(_.document).toJson)))).
+        client.graphqlRequest(GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> newStates.map(_.document).toJson)))).
           andThen {
             case Success(_) =>
               setLastUploadSequence(collections.State_ServiceStates.name, newStatesDocuments.last.sequence)
