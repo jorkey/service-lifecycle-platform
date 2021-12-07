@@ -120,6 +120,7 @@ object GraphqlSchema {
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
   val OptionOnlyActiveArg = Argument("onlyActive", OptionInputType(BooleanType))
+  val OptionEnvironmentArg = Argument("environment", OptionInputType(ListInputType(EnvironmentVariableInputType)))
 
   // Queries
 
@@ -407,11 +408,13 @@ object GraphqlSchema {
 
       // Developer versions
       Field("buildDeveloperVersion", StringType,
-        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg :: OptionBuildClientVersionArg :: Nil,
+        arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg ::
+          OptionBuildClientVersionArg :: OptionEnvironmentArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildDeveloperVersion(
           c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.account,
-          c.arg(SourcesArg), c.arg(CommentArg), c.arg(OptionBuildClientVersionArg).getOrElse(false)) }),
+          c.arg(SourcesArg), c.arg(CommentArg), c.arg(OptionBuildClientVersionArg).getOrElse(false),
+          c.arg(OptionEnvironmentArg).getOrElse(Seq.empty)) }),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
@@ -428,9 +431,10 @@ object GraphqlSchema {
 
       // Client versions
       Field("buildClientVersions", StringType,
-        arguments = DeveloperDesiredVersionsArg :: Nil,
+        arguments = DeveloperDesiredVersionsArg :: OptionEnvironmentArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
-        resolve = c => { c.ctx.workspace.buildClientVersions(c.arg(DeveloperDesiredVersionsArg), c.ctx.accessToken.get.account) }),
+        resolve = c => { c.ctx.workspace.buildClientVersions(c.arg(DeveloperDesiredVersionsArg),
+          c.ctx.accessToken.get.account, c.arg(OptionEnvironmentArg).getOrElse(Seq.empty)) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
@@ -512,10 +516,10 @@ object GraphqlSchema {
 
       // Run builder remotely
       Field("runBuilder", StringType,
-        arguments = AccessTokenArg :: ArgumentsArg :: Nil,
+        arguments = AccessTokenArg :: ArgumentsArg :: OptionEnvironmentArg :: Nil,
         tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
         resolve = c => { c.ctx.workspace.runBuilderByRemoteDistribution(c.ctx.accessToken.get.account,
-          c.arg(AccessTokenArg), c.arg(ArgumentsArg)) }),
+          c.arg(AccessTokenArg), c.arg(ArgumentsArg), c.arg(OptionEnvironmentArg).getOrElse(Seq.empty)) }),
 
       // Cancel tasks
       Field("cancelTask", BooleanType,

@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.graphql
 
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import com.vyulabs.update.common.config.{GitConfig, SourceConfig}
+import com.vyulabs.update.common.config.{EnvironmentVariable, GitConfig, SourceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
@@ -150,4 +150,5 @@ object GraphqlTypes {
   implicit val FileInfoInputType = deriveInputObjectType[FileInfo](InputObjectTypeName("FileInfoInput"))
   implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
   implicit val TaskParameterInputType = deriveInputObjectType[TaskParameter](InputObjectTypeName("TaskParameterInput"))
+  implicit val EnvironmentVariableInputType = deriveInputObjectType[EnvironmentVariable](InputObjectTypeName("EnvironmentVariableInput"))
 }

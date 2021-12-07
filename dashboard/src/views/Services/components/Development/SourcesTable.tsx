@@ -21,7 +21,7 @@ const useStyles = makeStyles(theme => ({
     width: '200px',
   },
   cloneSubmodulesColumn: {
-    width: '100px',
+    width: '150px',
   },
   actionsColumn: {
     width: '200px',

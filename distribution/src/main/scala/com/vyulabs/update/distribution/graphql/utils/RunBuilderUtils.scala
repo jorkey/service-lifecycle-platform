@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{DistributionId, TaskId}
-import com.vyulabs.update.common.config.DistributionConfig
+import com.vyulabs.update.common.config.{DistributionConfig, EnvironmentVariable}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
@@ -39,32 +39,35 @@ trait RunBuilderUtils extends SprayJsonSupport {
 
   implicit val timer = new AkkaTimer(system.scheduler)
 
-  def runBuilder(task: TaskId, arguments: Seq[String])
+  def runBuilder(task: TaskId, arguments: Seq[String], environment: Seq[EnvironmentVariable])
                 (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName))
     if (config.distribution == config.builder.distribution) {
-      runLocalBuilder(task, config.builder.distribution, accessToken, arguments)
+      runLocalBuilder(task, config.builder.distribution, accessToken, arguments, environment)
     } else {
-      runRemoteBuilder(task, config.builder.distribution, accessToken, arguments)
+      runRemoteBuilder(task, config.builder.distribution, accessToken, arguments, environment)
     }
   }
 
   def runBuilderByRemoteDistribution(distribution: DistributionId, accessToken: String,
-                                     arguments: Seq[String])(implicit log: Logger): TaskId = {
+                                     arguments: Seq[String], environment: Seq[EnvironmentVariable])
+                                    (implicit log: Logger): TaskId = {
     tasksUtils.createTask(
       "RunBuilderByRemoteDistribution",
       Seq(TaskParameter("distribution", distribution),
         TaskParameter("accessToken", accessToken),
-        TaskParameter("arguments", Misc.seqToCommaSeparatedString(arguments))),
+        TaskParameter("arguments", Misc.seqToCommaSeparatedString(arguments)),
+        TaskParameter("environment", Misc.seqToCommaSeparatedString(environment))),
       () => {},
       (task, logger) => {
         implicit val log = logger
-        runLocalBuilder(task, distribution, accessToken, arguments)
+        runLocalBuilder(task, distribution, accessToken, arguments, environment)
       }).id
   }
 
   private def runLocalBuilder(task: TaskId, distribution: DistributionId,
-                              accessToken: String, arguments: Seq[String])
+                              accessToken: String, arguments: Seq[String],
+                              environment: Seq[EnvironmentVariable])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
       distributionUrl <- {
@@ -82,10 +85,11 @@ trait RunBuilderUtils extends SprayJsonSupport {
       process <- {
         log.info(s"--------------------------- Start builder")
         ChildProcess.start("/bin/bash", s"./${Common.BuilderSh}" +: arguments,
-          Map.empty[String, String] +
+          environment.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value)) +
             ("distribution" -> distribution) +
             ("distributionUrl" -> distributionUrl) +
-            ("accessToken" -> accessToken), directory.getBuilderDir(distribution))
+            ("accessToken" -> accessToken),
+          directory.getBuilderDir(distribution))
       }
     } yield {
       val outputFinishedPromise = Promise[Unit]
@@ -128,7 +132,8 @@ trait RunBuilderUtils extends SprayJsonSupport {
     (future, Some(() => process.map(_._1.terminate())))
   }
 
-  private def runRemoteBuilder(task: TaskId, distribution: DistributionId, accessToken: String, arguments: Seq[String])
+  private def runRemoteBuilder(task: TaskId, distribution: DistributionId, accessToken: String,
+                               arguments: Seq[String], environment: Seq[EnvironmentVariable])
                               (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     @volatile var distributionClient = Option.empty[DistributionClient[AkkaHttpClient.AkkaSource]]
     @volatile var remoteTaskId = Option.empty[TaskId]
@@ -136,7 +141,9 @@ trait RunBuilderUtils extends SprayJsonSupport {
       client <- distributionProvidersUtils.getDistributionProviderInfo(distribution).map(provider => {
         new DistributionClient(new AkkaHttpClient(provider.url, Some(provider.accessToken))) })
       remoteTask <- client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder",
-        Seq(GraphqlArgument("accessToken" -> accessToken), GraphqlArgument("arguments" -> arguments, "[String!]"))))
+        Seq(GraphqlArgument("accessToken" -> accessToken),
+            GraphqlArgument("arguments" -> arguments, "[String!]"),
+            GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]"))))
       logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
       end <- {
         distributionClient = Some(client)

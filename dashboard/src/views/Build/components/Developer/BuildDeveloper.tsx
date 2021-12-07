@@ -36,7 +36,7 @@ const useStyles = makeStyles((theme:any) => ({
     width: '150px',
   },
   versionColumn: {
-    width: '100px',
+    width: '150px',
   },
   authorColumn: {
     width: '150px',

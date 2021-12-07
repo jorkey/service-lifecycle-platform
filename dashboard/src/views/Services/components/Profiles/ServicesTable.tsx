@@ -67,7 +67,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
         ['service', { value: service }],
         ['actions', { value: deleteIcon ?
             [<Button onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
-              deleteIcon
+              {deleteIcon}
             </Button>] : undefined }]
         ]))
   })

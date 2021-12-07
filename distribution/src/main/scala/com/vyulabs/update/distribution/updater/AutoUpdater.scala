@@ -72,7 +72,7 @@ class AutoUpdater(distribution: DistributionId,
     } yield {
       val versionsToUpdate = providerVersions.filter(!developerVersions.contains(_))
       if (!versionsToUpdate.isEmpty) {
-        val taskId = clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution)
+        val taskId = clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution, Seq.empty)
         taskManager.getTask(taskId)
       } else {
         None

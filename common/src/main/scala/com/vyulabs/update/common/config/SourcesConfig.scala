@@ -16,3 +16,9 @@ object SourceConfig extends DefaultJsonProtocol {
 }
 
 case class ServiceSourcesConfig(service: ServiceId, payload: Seq[SourceConfig])
+
+case class EnvironmentVariable(name: String, value: String)
+
+object EnvironmentVariable extends DefaultJsonProtocol {
+  implicit val environmentVariableJson = jsonFormat2(EnvironmentVariable.apply)
+}
