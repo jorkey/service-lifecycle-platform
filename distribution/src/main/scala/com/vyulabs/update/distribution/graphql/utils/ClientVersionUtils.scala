@@ -29,8 +29,8 @@ trait ClientVersionUtils {
 
   protected implicit val executionContext: ExecutionContext
 
-  def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId,
-                          environment: Seq[EnvironmentVariable])(implicit log: Logger): TaskId = {
+  def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)
+                         (implicit log: Logger): TaskId = {
     var cancels = Seq.empty[() => Unit]
     tasksUtils.createTask(
       "BuildClientVersions",
@@ -63,7 +63,7 @@ trait ClientVersionUtils {
                                     .getOrElse(ClientDistributionVersion.from(version.version, 0)))
                 } yield {
                   clientVersions :+= ClientDesiredVersionDelta(version.service, Some(clientVersion))
-                  buildClientVersion(task, version.service, clientVersion, author, environment)
+                  buildClientVersion(task, version.service, clientVersion, author)
                 }
               )
             results.foreach(_.foreach(_._2.foreach(cancel => cancels :+= cancel)))
@@ -75,13 +75,12 @@ trait ClientVersionUtils {
   }
 
   private def buildClientVersion(task: TaskId, service: ServiceId,
-                                 version: ClientDistributionVersion, author: String,
-                                 environment: Seq[EnvironmentVariable])
+                                 version: ClientDistributionVersion, author: String)
                                 (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val arguments = Seq("buildClientVersion",
       s"distribution=${config.distribution}", s"service=${service}",
       s"version=${version.toString}", s"author=${author}")
-    runBuilderUtils.runBuilder(task, arguments, environment)
+    runBuilderUtils.runClientBuilder(task, service, arguments)
   }
 
   def addClientVersionInfo(versionInfo: ClientVersionInfo)(implicit log: Logger): Future[Unit] = {

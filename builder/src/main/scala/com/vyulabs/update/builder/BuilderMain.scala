@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
-import com.vyulabs.update.common.config.SourceConfig
+import com.vyulabs.update.common.config.Source
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
@@ -102,7 +102,7 @@ object BuilderMain extends App {
             val version = DeveloperVersion.parse(arguments.getValue("version"))
             val buildClientVersion = arguments.getOptionBooleanValue("buildClientVersion").getOrElse(false)
             val comment = arguments.getValue("comment")
-            val sourceBranches = arguments.getValue("sources").parseJson.convertTo[Seq[SourceConfig]]
+            val sourceBranches = arguments.getValue("sources").parseJson.convertTo[Seq[Source]]
             val developerBuilder = new DeveloperBuilder(new File("."), distribution)
             if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {
               Utils.error("Developer version is not generated")

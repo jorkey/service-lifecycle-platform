@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.graphql
 
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import com.vyulabs.update.common.config.{EnvironmentVariable, GitConfig, SourceConfig}
+import com.vyulabs.update.common.config.{EnvironmentVariable, GitConfig, Source}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
@@ -88,7 +88,7 @@ object GraphqlTypes {
 
   implicit val ServicesProfileType = deriveObjectType[Unit, ServicesProfile]()
   implicit val GitConfigType = deriveObjectType[Unit, GitConfig]()
-  implicit val SourceConfigType = deriveObjectType[Unit, SourceConfig]()
+  implicit val SourceConfigType = deriveObjectType[Unit, Source]()
   implicit val DeveloperVersionType = deriveObjectType[Unit, DeveloperVersion]()
   implicit val DistributionVersionType = deriveObjectType[Unit, DeveloperDistributionVersion]()
   implicit val ClientVersionType = deriveObjectType[Unit, ClientVersion]()
@@ -132,7 +132,7 @@ object GraphqlTypes {
   implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersionInput"))
   implicit val ClientDistributionVersionInputType = deriveInputObjectType[ClientDistributionVersion](InputObjectTypeName("ClientDistributionVersionInput"))
   implicit val GitConfigInputType = deriveInputObjectType[GitConfig](InputObjectTypeName("GitConfigInput"))
-  implicit val SourceConfigInputType = deriveInputObjectType[SourceConfig](InputObjectTypeName("SourceConfigInput"))
+  implicit val SourceConfigInputType = deriveInputObjectType[Source](InputObjectTypeName("SourceConfigInput"))
   implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
   implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))
   implicit val DeveloperVersionInfoInputType = deriveInputObjectType[DeveloperVersionInfo](InputObjectTypeName("DeveloperVersionInfoInput"))

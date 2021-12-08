@@ -23,7 +23,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                         (implicit protected val system: ActorSystem,
                          protected val materializer: Materializer,
                          protected val executionContext: ExecutionContext)
-    extends SourceUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
+    extends ConfigBuilderUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with LogUtils with FaultsUtils with TasksUtils
       with RunBuilderUtils with AccountsUtils {
   protected val sourceUtils = this
@@ -409,12 +409,11 @@ object GraphqlSchema {
       // Developer versions
       Field("buildDeveloperVersion", StringType,
         arguments = ServiceArg :: DeveloperVersionArg :: SourcesArg :: CommentArg ::
-          OptionBuildClientVersionArg :: OptionEnvironmentArg :: Nil,
+          OptionBuildClientVersionArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildDeveloperVersion(
           c.arg(ServiceArg), c.arg(DeveloperVersionArg), c.ctx.accessToken.get.account,
-          c.arg(SourcesArg), c.arg(CommentArg), c.arg(OptionBuildClientVersionArg).getOrElse(false),
-          c.arg(OptionEnvironmentArg).getOrElse(Seq.empty)) }),
+          c.arg(SourcesArg), c.arg(CommentArg), c.arg(OptionBuildClientVersionArg).getOrElse(false))}),
       Field("addDeveloperVersionInfo", BooleanType,
         arguments = DeveloperVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
@@ -431,10 +430,10 @@ object GraphqlSchema {
 
       // Client versions
       Field("buildClientVersions", StringType,
-        arguments = DeveloperDesiredVersionsArg :: OptionEnvironmentArg :: Nil,
+        arguments = DeveloperDesiredVersionsArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.buildClientVersions(c.arg(DeveloperDesiredVersionsArg),
-          c.ctx.accessToken.get.account, c.arg(OptionEnvironmentArg).getOrElse(Seq.empty)) }),
+          c.ctx.accessToken.get.account) }),
       Field("addClientVersionInfo", BooleanType,
         arguments = ClientVersionInfoArg :: Nil,
         tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,

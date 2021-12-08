@@ -4,7 +4,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId, TaskId}
-import com.vyulabs.update.common.config.{DistributionConfig, EnvironmentVariable, SourceConfig}
+import com.vyulabs.update.common.config.{DistributionConfig, EnvironmentVariable, Source}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.Utils
@@ -34,8 +34,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   protected implicit val executionContext: ExecutionContext
 
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: AccountId,
-                            sources: Seq[SourceConfig], comment: String, buildClientVersion: Boolean,
-                            environment: Seq[EnvironmentVariable])
+                            sources: Seq[Source], comment: String, buildClientVersion: Boolean)
                            (implicit log: Logger): TaskId = {
     tasksUtils.createTask(
       "BuildDeveloperVersion",
@@ -44,8 +43,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           TaskParameter("author", author),
           TaskParameter("sources", sources.toJson.compactPrint),
           TaskParameter("comment", comment),
-          TaskParameter("buildClientVersion", buildClientVersion.toString),
-          TaskParameter("environment", Misc.seqToCommaSeparatedString(environment))
+          TaskParameter("buildClientVersion", buildClientVersion.toString)
       ),
       () => if (!tasksUtils.getActiveTasks(None, Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
@@ -55,7 +53,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
         val arguments = Seq("buildDeveloperVersion",
           s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
           s"sources=${sources.toJson.compactPrint}", s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
-        val (builderFuture, cancel) = runBuilderUtils.runBuilder(taskId, arguments, environment)
+        val (builderFuture, cancel) = runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
         val future = builderFuture
           .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
             Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))

@@ -2,7 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.config.SourceConfig
+import com.vyulabs.update.common.config.Source
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
@@ -20,7 +20,7 @@ object PingCoder {
 
 trait ServiceSourcesCoder {
   def getServiceSources(service: ServiceId) =
-    GraphqlQuery[Seq[SourceConfig]]("serviceSources",
+    GraphqlQuery[Seq[Source]]("serviceSources",
       Seq(GraphqlArgument("service" -> service)))
 }
 
@@ -96,10 +96,10 @@ object LoginCoder {
 }
 
 trait SourcesAdministrationCoder {
-  def addServiceSources(service: ServiceId, sources: Seq[SourceConfig]) =
+  def addServiceSources(service: ServiceId, sources: Seq[Source]) =
     GraphqlMutation[Boolean]("addServiceSources", Seq(GraphqlArgument("service" -> service),
       GraphqlArgument("sources" -> sources, "[SourceConfigInput!]")))
-  def changeServiceSources(service: ServiceId, sources: Seq[SourceConfig]) =
+  def changeServiceSources(service: ServiceId, sources: Seq[Source]) =
     GraphqlMutation[Boolean]("changeServiceSources", Seq(GraphqlArgument("service" -> service),
       GraphqlArgument("sources" -> sources, "[SourceConfigInput!]")))
   def removeServiceSources(service: ServiceId) =
@@ -152,7 +152,7 @@ trait ConsumersAdministrationCoder {
 
 trait BuildDeveloperVersionCoder {
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion,
-                            sources: Seq[SourceConfig], comment: String,
+                            sources: Seq[Source], comment: String,
                             buildClientVersion: Boolean) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(
       GraphqlArgument("service" -> service),

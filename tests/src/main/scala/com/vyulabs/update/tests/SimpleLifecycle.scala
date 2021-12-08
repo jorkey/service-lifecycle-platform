@@ -106,7 +106,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
     println(s"--------------------------- Make test service version")
     buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild),
-      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
+      Seq(Source("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
@@ -143,7 +143,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
     println(s"--------------------------- Make fixed test service version")
     buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild).next,
-      Seq(SourceConfig("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
+      Seq(Source("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
 
     println()
     println(s"########################### Test service is updated")
@@ -180,7 +180,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   }
 
   private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
-                                       version: DeveloperVersion, sources: Seq[SourceConfig]): Unit = {
+                                       version: DeveloperVersion, sources: Seq[Source]): Unit = {
     println("--------------------------- Build developer and client version of test service")
     val task = developerClient.graphqlRequest(
         developerMutations.buildDeveloperVersion(testServiceName, version, sources,

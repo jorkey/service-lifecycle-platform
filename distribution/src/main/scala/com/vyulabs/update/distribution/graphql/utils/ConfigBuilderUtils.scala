@@ -5,13 +5,13 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{ServiceId}
-import com.vyulabs.update.common.config.{DistributionConfig, ServiceSourcesConfig, SourceConfig}
+import com.vyulabs.update.common.config.{DistributionConfig, ServiceSources, Source}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.slf4j.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SourceUtils extends SprayJsonSupport {
+trait ConfigBuilderUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
@@ -23,17 +23,17 @@ trait SourceUtils extends SprayJsonSupport {
     collections.Sources.find().map(_.map(_.service))
   }
 
-  def getServiceSources(service: ServiceId)(implicit log: Logger): Future[Seq[SourceConfig]] = {
+  def getServiceSources(service: ServiceId)(implicit log: Logger): Future[Seq[Source]] = {
     val filters = Filters.eq("service", service)
     collections.Sources.find(filters).map(_.headOption.map(_.payload).getOrElse(Seq.empty))
   }
 
-  def addServiceSources(service: ServiceId, sources: Seq[SourceConfig])
+  def addServiceSources(service: ServiceId, sources: Seq[Source])
                        (implicit log: Logger): Future[Unit] = {
     log.info(s"Add sources for service ${service}")
     for {
       result <- {
-        val document = ServiceSourcesConfig(service, sources)
+        val document = ServiceSources(service, sources)
         collections.Sources.insert(document).map(_ => ())
       }
     } yield result
@@ -46,10 +46,10 @@ trait SourceUtils extends SprayJsonSupport {
     collections.Sources.delete(filters).map(_ > 0)
   }
 
-  def changeSources(service: ServiceId, sources: Seq[SourceConfig])
+  def changeSources(service: ServiceId, sources: Seq[Source])
                    (implicit log: Logger): Future[Boolean] = {
     log.info(s"Change sources of service ${service}")
     val filters = Filters.eq("service", service)
-    collections.Sources.change(filters, _ => ServiceSourcesConfig(service, sources)).map(_ > 0)
+    collections.Sources.change(filters, _ => ServiceSources(service, sources)).map(_ > 0)
   }
 }

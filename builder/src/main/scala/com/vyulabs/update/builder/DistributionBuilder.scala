@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.{Common}
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, SourceConfig}
+import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, Source}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -174,7 +174,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
 
   def addUpdateServicesSources(): Boolean = {
     val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
-    val sourceConfig = SourceConfig("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
+    val sourceConfig = Source("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
     Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.BuilderServiceName, Common.UpdaterServiceName)
       .foreach(service => {
         if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addServiceSources(service, Seq(sourceConfig))).getOrElse(false)) {

@@ -3,11 +3,11 @@ set -e
 
 function exitUsage {
   >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> "\
-    "<mongoDbConnection> <mongoDbName> <mongoDbTemporary> <port> <builderDistribution>"
+    "<mongoDbConnection> <mongoDbName> <mongoDbTemporary> <port>"
   exit 1
 }
 
-if [ $# -ne 8 ]; then
+if [ $# -ne 7 ]; then
   exitUsage
 fi
 
@@ -18,7 +18,6 @@ mongoDbConnection=$4
 mongoDbName=$5
 mongoDbTemporary=$6
 port=$7
-builderDistribution=$8
 
 jwtSecret=`openssl rand -base64 32`
 
@@ -34,7 +33,7 @@ else
   exit 1
 fi
 
-jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.connection=\"${mongoDbConnection}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port} | .builder.distribution=\"${builderDistribution}\"" >distribution.json <<EOF
+jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.connection=\"${mongoDbConnection}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.port=${port}" >distribution.json <<EOF
 {
   "distribution": "undefined",
   "title": "undefined",
@@ -46,9 +45,6 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
   },
   "network": {
     "port" : 8000
-  },
-  "builder": {
-    "distribution": "undefined"
   },
   "versions": {
     "maxHistorySize": 25

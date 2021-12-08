@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.InstallConfig._
-import com.vyulabs.update.common.config.{SourceConfig, UpdateConfig}
+import com.vyulabs.update.common.config.{Source, UpdateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.InstallSettingsDirectory
@@ -44,7 +44,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
                             author: String, service: ServiceId, newVersion: DeveloperVersion, comment: String,
-                            sourcesConfig: Seq[SourceConfig])(implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
+                            sourcesConfig: Seq[Source])(implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     val newDistributionVersion = DeveloperDistributionVersion.from(distribution, newVersion)
     IoUtils.synchronize[Boolean](new File(developerServiceDir(service), builderLockFile), false,
       (attempt, _) => {
@@ -90,7 +90,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
       }).getOrElse(false)
   }
 
-  def prepareSourceDirectories(service: ServiceId, sourcesConfig: Seq[SourceConfig]): Option[Seq[GitRepository]] = {
+  def prepareSourceDirectories(service: ServiceId, sourcesConfig: Seq[Source]): Option[Seq[GitRepository]] = {
     var gitRepositories = Seq.empty[GitRepository]
     for (sourceConfig <- sourcesConfig) {
       val branch = sourceConfig.git.branch

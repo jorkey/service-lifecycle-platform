@@ -3,8 +3,8 @@ package com.vyulabs.update.distribution.graphql.utils
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vyulabs.update.common.common.{Common, Misc}
-import com.vyulabs.update.common.common.Common.{DistributionId, TaskId}
-import com.vyulabs.update.common.config.{DistributionConfig, EnvironmentVariable}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
+import com.vyulabs.update.common.config.{BuilderConfig, DistributionConfig, EnvironmentVariable}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
@@ -14,7 +14,6 @@ import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
@@ -39,14 +38,39 @@ trait RunBuilderUtils extends SprayJsonSupport {
 
   implicit val timer = new AkkaTimer(system.scheduler)
 
-  def runBuilder(task: TaskId, arguments: Seq[String], environment: Seq[EnvironmentVariable])
+  def runDeveloperBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
+                         (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    runBuilder(task, service, collections.Developer_Builder.find().map(_.headOption
+      .getOrElse(throw new IOException("No developer builder config"))), arguments)
+  }
+
+
+  def runClientBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
+                      (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    runBuilder(task, service, collections.Client_Builder.find().map(_.headOption
+      .getOrElse(throw new IOException("No client builder config"))), arguments)
+  }
+
+
+  def runBuilder(task: TaskId, service: ServiceId,
+                 builderConfig: Future[BuilderConfig], arguments: Seq[String])
                 (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName))
-    if (config.distribution == config.builder.distribution) {
-      runLocalBuilder(task, config.builder.distribution, accessToken, arguments, environment)
-    } else {
-      runRemoteBuilder(task, config.builder.distribution, accessToken, arguments, environment)
+    val future = for {
+      builderConfig <- builderConfig
+    } yield {
+      val environment = builderConfig.environment.find(_.service == service)
+        .map(_.payload).getOrElse(Seq.empty)
+      val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName))
+      if (config.distribution == builderConfig.distribution) {
+        runLocalBuilder(task, builderConfig.distribution, accessToken, arguments, environment)
+      } else {
+        runRemoteBuilder(task, builderConfig.distribution, accessToken, arguments, environment)
+      }
     }
+    val result = future.map(_._1).flatten
+    val cancel = Some(() =>
+      if (future.isCompleted && future.value.get.isSuccess) future.value.get.get._2.foreach(_.apply()))
+    (result, cancel)
   }
 
   def runBuilderByRemoteDistribution(distribution: DistributionId, accessToken: String,
