@@ -8,7 +8,8 @@ import {
   LoginPage as LoginPageView,
   Dashboard as DashboardView,
   Accounts as AccountsView,
-  Services as ServicesView,
+  Builder as BuilderView,
+  Profiles as ProfilesView,
   Providers as ProvidersView,
   Build as BuildView,
   DesiredVersions as DesiredVersionsView,
@@ -78,9 +79,15 @@ const Routes: React.FC<RoutesProps> = props => {
         {...props}
       />
       <RouteWithLayout
-        component={ServicesView}
+        component={BuilderView}
         layout={MainLayout}
-        path='/settings/services'
+        path='/settings/builder'
+        {...props}
+      />
+      <RouteWithLayout
+        component={ProfilesView}
+        layout={MainLayout}
+        path='/settings/profiles'
         {...props}
       />
       <RouteWithLayout

@@ -281,26 +281,22 @@ mutation removeAccount ($account: String!) {
     removeAccount (account: $account)
 }
 
-# Sources
+# Builder configs
 
-query developerServices {
-    developerServices
+query developerBuilderConfig {
+    developerBuilderConfig { distribution, environment { service, payload { name, value } }, sources { service, payload { name, git { url, branch, cloneSubmodules } } } }
 }
 
-query serviceSources ($service: String!) {
-    serviceSources (service: $service) { name, git { url, branch, cloneSubmodules }  }
+query clientBuilderConfig {
+    clientBuilderConfig { distribution, environment { service, payload { name, value } } }
 }
 
-mutation addServiceSources ($service: String!, $sources: [SourceConfigInput!]!) {
-    addServiceSources (service: $service, sources: $sources)
+mutation setDeveloperBuilderConfig ($config: DeveloperBuilderConfigInput!) {
+    setDeveloperBuilderConfig (config: $config)
 }
 
-mutation changeServiceSources ($service: String!, $sources: [SourceConfigInput!]!) {
-    changeServiceSources (service: $service, sources: $sources)
-}
-
-mutation removeServiceSources ($service: String!) {
-    removeServiceSources (service: $service)
+mutation setClientBuilderConfig ($config: ClientBuilderConfigInput!) {
+    setClientBuilderConfig (config: $config)
 }
 
 # Profiles

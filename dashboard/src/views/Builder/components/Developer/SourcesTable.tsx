@@ -2,11 +2,11 @@ import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
-import {SourceConfig} from "../../../../generated/graphql";
 import DeleteIcon from "@material-ui/icons/Delete";
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
+import {Source} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -31,20 +31,20 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface SourceTableParams {
-  sources: Array<SourceConfig>
+  sources: Array<Source>
   addSource?: boolean
   confirmRemove?: boolean
-  onSourceAdded?: (source: SourceConfig) => void
+  onSourceAdded?: (source: Source) => void
   onSourceAddCancelled?: () => void
-  onSourceChanged?: (oldSource: SourceConfig, newSource: SourceConfig) => void
-  onSourceRemoved?: (source: SourceConfig) => void
+  onSourceChanged?: (oldSource: Source, newSource: Source) => void
+  onSourceRemoved?: (source: Source) => void
 }
 
 const SourcesTable = (props: SourceTableParams) => {
   const { sources, addSource, confirmRemove,
     onSourceAdded, onSourceAddCancelled, onSourceChanged, onSourceRemoved } = props;
 
-  const [ deleteConfirm, setDeleteConfirm ] = useState<SourceConfig>()
+  const [ deleteConfirm, setDeleteConfirm ] = useState<Source>()
 
   const classes = useStyles();
 

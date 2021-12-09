@@ -18,7 +18,7 @@ import {
   useChangeServicesProfileMutation, useDeveloperServicesQuery,
   useProfileServicesLazyQuery,
   useServiceProfilesQuery,
-} from '../../../../generated/graphql';
+} from '../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';

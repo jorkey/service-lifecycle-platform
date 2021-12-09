@@ -17,7 +17,7 @@ import ProfilesIcon from '@material-ui/icons/FilterList';
 import TaskIcon from '@mui/icons-material/Task';
 
 import { Profile, SidebarNav } from './components';
-import {useDeveloperServicesQuery} from "../../../../generated/graphql";
+import {useDeveloperBuilderConfigQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme?: any) => ({
   drawer: {
@@ -54,10 +54,10 @@ const Sidebar = (props:any) => {
 
   const classes = useStyles()
 
-  const { data: developerServices } = useDeveloperServicesQuery()
+  const { data: developerBuilderConfig } = useDeveloperBuilderConfigQuery()
 
-  if (developerServices) {
-    const development = !!developerServices.developerServices?.length
+  if (developerBuilderConfig) {
+    const development = !!developerBuilderConfig.developerBuilderConfig?.sources.length
 
     const buildPages: Page = development ? {
       title: 'Build',
@@ -157,21 +157,24 @@ const Sidebar = (props:any) => {
             ]
           },
           {
-            title: 'Services',
-            href: '/settings/services/',
-            icon: <BubbleChartIcon/>,
+            title: 'Builder',
+            href: '/settings/builder/',
+            icon: <BuildIcon/>,
             pages: [
               {
                 title: 'Development',
-                href: '/settings/services/development',
-                icon: <BuildIcon/>,
+                href: '/settings/builder/development'
               },
               {
-                title: 'Profiles',
-                href: '/settings/services/profiles',
-                icon: <ProfilesIcon/>,
+                title: 'Client',
+                href: '/settings/builder/client'
               }
             ]
+          },
+          {
+            title: 'Profiles',
+            href: '/settings/profiles',
+            icon: <ProfilesIcon/>,
           },
           {
             title: 'Providers',

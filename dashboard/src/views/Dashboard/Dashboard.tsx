@@ -3,7 +3,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Grid } from '@material-ui/core';
 import Versions from "./components/Versions/Versions";
 import LastClientVersions from "./components/LastClientVersions/LastClientVersions";
-import {useDeveloperServicesQuery} from "../../generated/graphql";
 import LastDeveloperVersions from "./components/LastDeveloperVersions/LastDeveloperVersions";
 
 const useStyles = makeStyles(theme => ({

@@ -2,11 +2,9 @@ import React from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
-import ProfilesManager from "./components/Profiles/ProfilesManager";
-import ProfileEditor from "./components/Profiles/ProfileEditor";
 import {Route, Switch, useRouteMatch} from "react-router-dom";
-import SourcesEditor from "./components/Development/SourcesEditor";
-import ServicesManager from "./components/Development/ServicesManager";
+import SourcesEditor from "./components/Developer/SourcesEditor";
+import ServicesManager from "./components/Developer/ServicesManager";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -14,7 +12,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Services = () => {
+const Builder = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
@@ -36,14 +34,6 @@ const Services = () => {
             <Route exact path={`${routeMatch.url}/development/edit/:service`}
                    render={(props) => <SourcesEditor fromUrl={`${routeMatch.url}/development`} {...props} /> }>
             </Route>
-            <Route exact path={`${routeMatch.url}/profiles`}
-              component={ProfilesManager}/>
-            <Route exact path={`${routeMatch.url}/profiles/new`}
-              render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
-            </Route>
-            <Route exact path={`${routeMatch.url}/profiles/edit/:profile`}
-              render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
-            </Route>
           </Switch>
         </Grid>
       </Grid>
@@ -51,4 +41,4 @@ const Services = () => {
   );
 };
 
-export default Services;
+export default Builder;

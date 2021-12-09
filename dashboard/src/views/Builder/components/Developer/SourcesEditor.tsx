@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 
 import Button from '@material-ui/core/Button';
-import {NavLink as RouterLink, Redirect, RouteComponentProps, useHistory} from 'react-router-dom'
+import {NavLink as RouterLink, Redirect, RouteComponentProps} from 'react-router-dom'
 
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -14,11 +14,7 @@ import {
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
-import {
-  SourceConfig,
-  useAddServiceSourcesMutation,
-  useChangeServiceSourcesMutation, useDeveloperServicesQuery, useServiceSourcesLazyQuery,
-} from "../../../../generated/graphql";
+import { Source } from "../../../../generated/graphql";
 import TextField from "@material-ui/core/TextField";
 import SourcesTable from "./SourcesTable";
 
@@ -56,7 +52,7 @@ const useStyles = makeStyles(theme => ({
 
 interface SourcesCardParams {
   editService: string | undefined
-  onServiceChanged: (service: string, sources: SourceConfig[], readyToSave: boolean) => void
+  onServiceChanged: (service: string, sources: Source[], readyToSave: boolean) => void
 }
 
 const SourcesCard = (params: SourcesCardParams) => {
@@ -67,7 +63,7 @@ const SourcesCard = (params: SourcesCardParams) => {
   const [getServiceSources, serviceSources] = useServiceSourcesLazyQuery()
 
   const [service, setService] = useState('');
-  const [sources, setSources] = useState(new Array<SourceConfig>());
+  const [sources, setSources] = useState(new Array<Source>());
 
   const [addSource, setAddSource] = useState(false);
 

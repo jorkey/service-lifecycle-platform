@@ -32,7 +32,7 @@ export enum AccountRole {
 export type BuildInfo = {
   __typename?: 'BuildInfo';
   author: Scalars['String'];
-  sources: Array<SourceConfig>;
+  sources: Array<Source>;
   time: Scalars['Date'];
   comment: Scalars['String'];
 };
@@ -42,6 +42,17 @@ export type BuildInfoInput = {
   sources: Array<SourceConfigInput>;
   time: Scalars['Date'];
   comment: Scalars['String'];
+};
+
+export type ClientBuilderConfig = {
+  __typename?: 'ClientBuilderConfig';
+  distribution: Scalars['String'];
+  environment: Array<ServiceEnvironment>;
+};
+
+export type ClientBuilderConfigInput = {
+  distribution: Scalars['String'];
+  environment: Array<ServiceEnvironmentInput>;
 };
 
 export type ClientDesiredVersion = {
@@ -113,6 +124,19 @@ export type ConsumerAccountPropertiesInput = {
 };
 
 
+export type DeveloperBuilderConfig = {
+  __typename?: 'DeveloperBuilderConfig';
+  distribution: Scalars['String'];
+  environment: Array<ServiceEnvironment>;
+  sources: Array<ServiceSources>;
+};
+
+export type DeveloperBuilderConfigInput = {
+  distribution: Scalars['String'];
+  environment: Array<ServiceEnvironmentInput>;
+  sources: Array<ServiceSourcesInput>;
+};
+
 export type DeveloperDesiredVersion = {
   __typename?: 'DeveloperDesiredVersion';
   service: Scalars['String'];
@@ -183,6 +207,17 @@ export type DistributionServiceState = {
   __typename?: 'DistributionServiceState';
   distribution: Scalars['String'];
   payload: InstanceServiceState;
+};
+
+export type EnvironmentVariable = {
+  __typename?: 'EnvironmentVariable';
+  name: Scalars['String'];
+  value: Scalars['String'];
+};
+
+export type EnvironmentVariableInput = {
+  name: Scalars['String'];
+  value: Scalars['String'];
 };
 
 export type FaultInfo = {
@@ -284,9 +319,8 @@ export type Mutation = {
   changeServiceAccount: Scalars['Boolean'];
   changeConsumerAccount: Scalars['Boolean'];
   removeAccount: Scalars['Boolean'];
-  addServiceSources: Scalars['Boolean'];
-  changeServiceSources: Scalars['Boolean'];
-  removeServiceSources: Scalars['Boolean'];
+  setDeveloperBuilderConfig: Scalars['Boolean'];
+  setClientBuilderConfig: Scalars['Boolean'];
   addServicesProfile: Scalars['Boolean'];
   changeServicesProfile: Scalars['Boolean'];
   removeServicesProfile: Scalars['Boolean'];
@@ -370,20 +404,13 @@ export type MutationRemoveAccountArgs = {
 };
 
 
-export type MutationAddServiceSourcesArgs = {
-  service: Scalars['String'];
-  sources: Array<SourceConfigInput>;
+export type MutationSetDeveloperBuilderConfigArgs = {
+  config: DeveloperBuilderConfigInput;
 };
 
 
-export type MutationChangeServiceSourcesArgs = {
-  service: Scalars['String'];
-  sources: Array<SourceConfigInput>;
-};
-
-
-export type MutationRemoveServiceSourcesArgs = {
-  service: Scalars['String'];
+export type MutationSetClientBuilderConfigArgs = {
+  config: ClientBuilderConfigInput;
 };
 
 
@@ -514,6 +541,7 @@ export type MutationAddFaultReportInfoArgs = {
 export type MutationRunBuilderArgs = {
   accessToken: Scalars['String'];
   arguments: Array<Scalars['String']>;
+  environment?: Maybe<Array<EnvironmentVariableInput>>;
 };
 
 
@@ -531,8 +559,8 @@ export type Query = {
   serviceAccountsInfo: Array<ServiceAccountInfo>;
   consumerAccountsInfo: Array<ConsumerAccountInfo>;
   accessToken: Scalars['String'];
-  developerServices: Array<Scalars['String']>;
-  serviceSources: Array<SourceConfig>;
+  developerBuilderConfig: DeveloperBuilderConfig;
+  clientBuilderConfig: ClientBuilderConfig;
   serviceProfiles: Array<ServicesProfile>;
   developerVersionsInfo: Array<DeveloperVersionInfo>;
   developerDesiredVersions: Array<DeveloperDesiredVersion>;
@@ -581,11 +609,6 @@ export type QueryConsumerAccountsInfoArgs = {
 
 export type QueryAccessTokenArgs = {
   account: Scalars['String'];
-};
-
-
-export type QueryServiceSourcesArgs = {
-  service: Scalars['String'];
 };
 
 
@@ -770,6 +793,17 @@ export type ServiceAccountInfo = {
   role: AccountRole;
 };
 
+export type ServiceEnvironment = {
+  __typename?: 'ServiceEnvironment';
+  service: Scalars['String'];
+  payload: Array<EnvironmentVariable>;
+};
+
+export type ServiceEnvironmentInput = {
+  service: Scalars['String'];
+  payload: Array<EnvironmentVariableInput>;
+};
+
 export type ServiceFaultReport = {
   __typename?: 'ServiceFaultReport';
   id: Scalars['String'];
@@ -781,6 +815,17 @@ export type ServiceFaultReportInput = {
   id: Scalars['String'];
   info: FaultInfoInput;
   files: Array<FileInfoInput>;
+};
+
+export type ServiceSources = {
+  __typename?: 'ServiceSources';
+  service: Scalars['String'];
+  payload: Array<Source>;
+};
+
+export type ServiceSourcesInput = {
+  service: Scalars['String'];
+  payload: Array<SourceConfigInput>;
 };
 
 export type ServiceState = {
@@ -812,8 +857,8 @@ export type ServicesProfile = {
   services: Array<Scalars['String']>;
 };
 
-export type SourceConfig = {
-  __typename?: 'SourceConfig';
+export type Source = {
+  __typename?: 'Source';
   name: Scalars['String'];
   git: GitConfig;
 };
@@ -956,8 +1001,8 @@ export type DeveloperVersionsInfoQuery = (
       { __typename?: 'BuildInfo' }
       & Pick<BuildInfo, 'author' | 'time' | 'comment'>
       & { sources: Array<(
-        { __typename?: 'SourceConfig' }
-        & Pick<SourceConfig, 'name'>
+        { __typename?: 'Source' }
+        & Pick<Source, 'name'>
         & { git: (
           { __typename?: 'GitConfig' }
           & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
@@ -1136,8 +1181,8 @@ export type ClientVersionsInfoQuery = (
       { __typename?: 'BuildInfo' }
       & Pick<BuildInfo, 'author' | 'time' | 'comment'>
       & { sources: Array<(
-        { __typename?: 'SourceConfig' }
-        & Pick<SourceConfig, 'name'>
+        { __typename?: 'Source' }
+        & Pick<Source, 'name'>
         & { git: (
           { __typename?: 'GitConfig' }
           & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
@@ -1802,61 +1847,73 @@ export type RemoveAccountMutation = (
   & Pick<Mutation, 'removeAccount'>
 );
 
-export type DeveloperServicesQueryVariables = Exact<{ [key: string]: never; }>;
+export type DeveloperBuilderConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type DeveloperServicesQuery = (
+export type DeveloperBuilderConfigQuery = (
   { __typename?: 'Query' }
-  & Pick<Query, 'developerServices'>
+  & { developerBuilderConfig: (
+    { __typename?: 'DeveloperBuilderConfig' }
+    & Pick<DeveloperBuilderConfig, 'distribution'>
+    & { environment: Array<(
+      { __typename?: 'ServiceEnvironment' }
+      & Pick<ServiceEnvironment, 'service'>
+      & { payload: Array<(
+        { __typename?: 'EnvironmentVariable' }
+        & Pick<EnvironmentVariable, 'name' | 'value'>
+      )> }
+    )>, sources: Array<(
+      { __typename?: 'ServiceSources' }
+      & Pick<ServiceSources, 'service'>
+      & { payload: Array<(
+        { __typename?: 'Source' }
+        & Pick<Source, 'name'>
+        & { git: (
+          { __typename?: 'GitConfig' }
+          & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
+        ) }
+      )> }
+    )> }
+  ) }
 );
 
-export type ServiceSourcesQueryVariables = Exact<{
-  service: Scalars['String'];
-}>;
+export type ClientBuilderConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type ServiceSourcesQuery = (
+export type ClientBuilderConfigQuery = (
   { __typename?: 'Query' }
-  & { serviceSources: Array<(
-    { __typename?: 'SourceConfig' }
-    & Pick<SourceConfig, 'name'>
-    & { git: (
-      { __typename?: 'GitConfig' }
-      & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
-    ) }
-  )> }
+  & { clientBuilderConfig: (
+    { __typename?: 'ClientBuilderConfig' }
+    & Pick<ClientBuilderConfig, 'distribution'>
+    & { environment: Array<(
+      { __typename?: 'ServiceEnvironment' }
+      & Pick<ServiceEnvironment, 'service'>
+      & { payload: Array<(
+        { __typename?: 'EnvironmentVariable' }
+        & Pick<EnvironmentVariable, 'name' | 'value'>
+      )> }
+    )> }
+  ) }
 );
 
-export type AddServiceSourcesMutationVariables = Exact<{
-  service: Scalars['String'];
-  sources: Array<SourceConfigInput> | SourceConfigInput;
+export type SetDeveloperBuilderConfigMutationVariables = Exact<{
+  config: DeveloperBuilderConfigInput;
 }>;
 
 
-export type AddServiceSourcesMutation = (
+export type SetDeveloperBuilderConfigMutation = (
   { __typename?: 'Mutation' }
-  & Pick<Mutation, 'addServiceSources'>
+  & Pick<Mutation, 'setDeveloperBuilderConfig'>
 );
 
-export type ChangeServiceSourcesMutationVariables = Exact<{
-  service: Scalars['String'];
-  sources: Array<SourceConfigInput> | SourceConfigInput;
+export type SetClientBuilderConfigMutationVariables = Exact<{
+  config: ClientBuilderConfigInput;
 }>;
 
 
-export type ChangeServiceSourcesMutation = (
+export type SetClientBuilderConfigMutation = (
   { __typename?: 'Mutation' }
-  & Pick<Mutation, 'changeServiceSources'>
-);
-
-export type RemoveServiceSourcesMutationVariables = Exact<{
-  service: Scalars['String'];
-}>;
-
-
-export type RemoveServiceSourcesMutation = (
-  { __typename?: 'Mutation' }
-  & Pick<Mutation, 'removeServiceSources'>
+  & Pick<Mutation, 'setClientBuilderConfig'>
 );
 
 export type ServiceProfilesQueryVariables = Exact<{ [key: string]: never; }>;
@@ -4363,173 +4420,161 @@ export function useRemoveAccountMutation(baseOptions?: Apollo.MutationHookOption
 export type RemoveAccountMutationHookResult = ReturnType<typeof useRemoveAccountMutation>;
 export type RemoveAccountMutationResult = Apollo.MutationResult<RemoveAccountMutation>;
 export type RemoveAccountMutationOptions = Apollo.BaseMutationOptions<RemoveAccountMutation, RemoveAccountMutationVariables>;
-export const DeveloperServicesDocument = gql`
-    query developerServices {
-  developerServices
-}
-    `;
-
-/**
- * __useDeveloperServicesQuery__
- *
- * To run a query within a React component, call `useDeveloperServicesQuery` and pass it any options that fit your needs.
- * When your component renders, `useDeveloperServicesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useDeveloperServicesQuery({
- *   variables: {
- *   },
- * });
- */
-export function useDeveloperServicesQuery(baseOptions?: Apollo.QueryHookOptions<DeveloperServicesQuery, DeveloperServicesQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<DeveloperServicesQuery, DeveloperServicesQueryVariables>(DeveloperServicesDocument, options);
+export const DeveloperBuilderConfigDocument = gql`
+    query developerBuilderConfig {
+  developerBuilderConfig {
+    distribution
+    environment {
+      service
+      payload {
+        name
+        value
       }
-export function useDeveloperServicesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<DeveloperServicesQuery, DeveloperServicesQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<DeveloperServicesQuery, DeveloperServicesQueryVariables>(DeveloperServicesDocument, options);
+    }
+    sources {
+      service
+      payload {
+        name
+        git {
+          url
+          branch
+          cloneSubmodules
         }
-export type DeveloperServicesQueryHookResult = ReturnType<typeof useDeveloperServicesQuery>;
-export type DeveloperServicesLazyQueryHookResult = ReturnType<typeof useDeveloperServicesLazyQuery>;
-export type DeveloperServicesQueryResult = Apollo.QueryResult<DeveloperServicesQuery, DeveloperServicesQueryVariables>;
-export const ServiceSourcesDocument = gql`
-    query serviceSources($service: String!) {
-  serviceSources(service: $service) {
-    name
-    git {
-      url
-      branch
-      cloneSubmodules
+      }
     }
   }
 }
     `;
 
 /**
- * __useServiceSourcesQuery__
+ * __useDeveloperBuilderConfigQuery__
  *
- * To run a query within a React component, call `useServiceSourcesQuery` and pass it any options that fit your needs.
- * When your component renders, `useServiceSourcesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useDeveloperBuilderConfigQuery` and pass it any options that fit your needs.
+ * When your component renders, `useDeveloperBuilderConfigQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useServiceSourcesQuery({
+ * const { data, loading, error } = useDeveloperBuilderConfigQuery({
  *   variables: {
- *      service: // value for 'service'
  *   },
  * });
  */
-export function useServiceSourcesQuery(baseOptions: Apollo.QueryHookOptions<ServiceSourcesQuery, ServiceSourcesQueryVariables>) {
+export function useDeveloperBuilderConfigQuery(baseOptions?: Apollo.QueryHookOptions<DeveloperBuilderConfigQuery, DeveloperBuilderConfigQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ServiceSourcesQuery, ServiceSourcesQueryVariables>(ServiceSourcesDocument, options);
+        return Apollo.useQuery<DeveloperBuilderConfigQuery, DeveloperBuilderConfigQueryVariables>(DeveloperBuilderConfigDocument, options);
       }
-export function useServiceSourcesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ServiceSourcesQuery, ServiceSourcesQueryVariables>) {
+export function useDeveloperBuilderConfigLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<DeveloperBuilderConfigQuery, DeveloperBuilderConfigQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ServiceSourcesQuery, ServiceSourcesQueryVariables>(ServiceSourcesDocument, options);
+          return Apollo.useLazyQuery<DeveloperBuilderConfigQuery, DeveloperBuilderConfigQueryVariables>(DeveloperBuilderConfigDocument, options);
         }
-export type ServiceSourcesQueryHookResult = ReturnType<typeof useServiceSourcesQuery>;
-export type ServiceSourcesLazyQueryHookResult = ReturnType<typeof useServiceSourcesLazyQuery>;
-export type ServiceSourcesQueryResult = Apollo.QueryResult<ServiceSourcesQuery, ServiceSourcesQueryVariables>;
-export const AddServiceSourcesDocument = gql`
-    mutation addServiceSources($service: String!, $sources: [SourceConfigInput!]!) {
-  addServiceSources(service: $service, sources: $sources)
+export type DeveloperBuilderConfigQueryHookResult = ReturnType<typeof useDeveloperBuilderConfigQuery>;
+export type DeveloperBuilderConfigLazyQueryHookResult = ReturnType<typeof useDeveloperBuilderConfigLazyQuery>;
+export type DeveloperBuilderConfigQueryResult = Apollo.QueryResult<DeveloperBuilderConfigQuery, DeveloperBuilderConfigQueryVariables>;
+export const ClientBuilderConfigDocument = gql`
+    query clientBuilderConfig {
+  clientBuilderConfig {
+    distribution
+    environment {
+      service
+      payload {
+        name
+        value
+      }
+    }
+  }
 }
     `;
-export type AddServiceSourcesMutationFn = Apollo.MutationFunction<AddServiceSourcesMutation, AddServiceSourcesMutationVariables>;
 
 /**
- * __useAddServiceSourcesMutation__
+ * __useClientBuilderConfigQuery__
  *
- * To run a mutation, you first call `useAddServiceSourcesMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useAddServiceSourcesMutation` returns a tuple that includes:
+ * To run a query within a React component, call `useClientBuilderConfigQuery` and pass it any options that fit your needs.
+ * When your component renders, `useClientBuilderConfigQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useClientBuilderConfigQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useClientBuilderConfigQuery(baseOptions?: Apollo.QueryHookOptions<ClientBuilderConfigQuery, ClientBuilderConfigQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ClientBuilderConfigQuery, ClientBuilderConfigQueryVariables>(ClientBuilderConfigDocument, options);
+      }
+export function useClientBuilderConfigLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ClientBuilderConfigQuery, ClientBuilderConfigQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ClientBuilderConfigQuery, ClientBuilderConfigQueryVariables>(ClientBuilderConfigDocument, options);
+        }
+export type ClientBuilderConfigQueryHookResult = ReturnType<typeof useClientBuilderConfigQuery>;
+export type ClientBuilderConfigLazyQueryHookResult = ReturnType<typeof useClientBuilderConfigLazyQuery>;
+export type ClientBuilderConfigQueryResult = Apollo.QueryResult<ClientBuilderConfigQuery, ClientBuilderConfigQueryVariables>;
+export const SetDeveloperBuilderConfigDocument = gql`
+    mutation setDeveloperBuilderConfig($config: DeveloperBuilderConfigInput!) {
+  setDeveloperBuilderConfig(config: $config)
+}
+    `;
+export type SetDeveloperBuilderConfigMutationFn = Apollo.MutationFunction<SetDeveloperBuilderConfigMutation, SetDeveloperBuilderConfigMutationVariables>;
+
+/**
+ * __useSetDeveloperBuilderConfigMutation__
+ *
+ * To run a mutation, you first call `useSetDeveloperBuilderConfigMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetDeveloperBuilderConfigMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [addServiceSourcesMutation, { data, loading, error }] = useAddServiceSourcesMutation({
+ * const [setDeveloperBuilderConfigMutation, { data, loading, error }] = useSetDeveloperBuilderConfigMutation({
  *   variables: {
- *      service: // value for 'service'
- *      sources: // value for 'sources'
+ *      config: // value for 'config'
  *   },
  * });
  */
-export function useAddServiceSourcesMutation(baseOptions?: Apollo.MutationHookOptions<AddServiceSourcesMutation, AddServiceSourcesMutationVariables>) {
+export function useSetDeveloperBuilderConfigMutation(baseOptions?: Apollo.MutationHookOptions<SetDeveloperBuilderConfigMutation, SetDeveloperBuilderConfigMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<AddServiceSourcesMutation, AddServiceSourcesMutationVariables>(AddServiceSourcesDocument, options);
+        return Apollo.useMutation<SetDeveloperBuilderConfigMutation, SetDeveloperBuilderConfigMutationVariables>(SetDeveloperBuilderConfigDocument, options);
       }
-export type AddServiceSourcesMutationHookResult = ReturnType<typeof useAddServiceSourcesMutation>;
-export type AddServiceSourcesMutationResult = Apollo.MutationResult<AddServiceSourcesMutation>;
-export type AddServiceSourcesMutationOptions = Apollo.BaseMutationOptions<AddServiceSourcesMutation, AddServiceSourcesMutationVariables>;
-export const ChangeServiceSourcesDocument = gql`
-    mutation changeServiceSources($service: String!, $sources: [SourceConfigInput!]!) {
-  changeServiceSources(service: $service, sources: $sources)
+export type SetDeveloperBuilderConfigMutationHookResult = ReturnType<typeof useSetDeveloperBuilderConfigMutation>;
+export type SetDeveloperBuilderConfigMutationResult = Apollo.MutationResult<SetDeveloperBuilderConfigMutation>;
+export type SetDeveloperBuilderConfigMutationOptions = Apollo.BaseMutationOptions<SetDeveloperBuilderConfigMutation, SetDeveloperBuilderConfigMutationVariables>;
+export const SetClientBuilderConfigDocument = gql`
+    mutation setClientBuilderConfig($config: ClientBuilderConfigInput!) {
+  setClientBuilderConfig(config: $config)
 }
     `;
-export type ChangeServiceSourcesMutationFn = Apollo.MutationFunction<ChangeServiceSourcesMutation, ChangeServiceSourcesMutationVariables>;
+export type SetClientBuilderConfigMutationFn = Apollo.MutationFunction<SetClientBuilderConfigMutation, SetClientBuilderConfigMutationVariables>;
 
 /**
- * __useChangeServiceSourcesMutation__
+ * __useSetClientBuilderConfigMutation__
  *
- * To run a mutation, you first call `useChangeServiceSourcesMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useChangeServiceSourcesMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useSetClientBuilderConfigMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetClientBuilderConfigMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [changeServiceSourcesMutation, { data, loading, error }] = useChangeServiceSourcesMutation({
+ * const [setClientBuilderConfigMutation, { data, loading, error }] = useSetClientBuilderConfigMutation({
  *   variables: {
- *      service: // value for 'service'
- *      sources: // value for 'sources'
+ *      config: // value for 'config'
  *   },
  * });
  */
-export function useChangeServiceSourcesMutation(baseOptions?: Apollo.MutationHookOptions<ChangeServiceSourcesMutation, ChangeServiceSourcesMutationVariables>) {
+export function useSetClientBuilderConfigMutation(baseOptions?: Apollo.MutationHookOptions<SetClientBuilderConfigMutation, SetClientBuilderConfigMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<ChangeServiceSourcesMutation, ChangeServiceSourcesMutationVariables>(ChangeServiceSourcesDocument, options);
+        return Apollo.useMutation<SetClientBuilderConfigMutation, SetClientBuilderConfigMutationVariables>(SetClientBuilderConfigDocument, options);
       }
-export type ChangeServiceSourcesMutationHookResult = ReturnType<typeof useChangeServiceSourcesMutation>;
-export type ChangeServiceSourcesMutationResult = Apollo.MutationResult<ChangeServiceSourcesMutation>;
-export type ChangeServiceSourcesMutationOptions = Apollo.BaseMutationOptions<ChangeServiceSourcesMutation, ChangeServiceSourcesMutationVariables>;
-export const RemoveServiceSourcesDocument = gql`
-    mutation removeServiceSources($service: String!) {
-  removeServiceSources(service: $service)
-}
-    `;
-export type RemoveServiceSourcesMutationFn = Apollo.MutationFunction<RemoveServiceSourcesMutation, RemoveServiceSourcesMutationVariables>;
-
-/**
- * __useRemoveServiceSourcesMutation__
- *
- * To run a mutation, you first call `useRemoveServiceSourcesMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useRemoveServiceSourcesMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [removeServiceSourcesMutation, { data, loading, error }] = useRemoveServiceSourcesMutation({
- *   variables: {
- *      service: // value for 'service'
- *   },
- * });
- */
-export function useRemoveServiceSourcesMutation(baseOptions?: Apollo.MutationHookOptions<RemoveServiceSourcesMutation, RemoveServiceSourcesMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<RemoveServiceSourcesMutation, RemoveServiceSourcesMutationVariables>(RemoveServiceSourcesDocument, options);
-      }
-export type RemoveServiceSourcesMutationHookResult = ReturnType<typeof useRemoveServiceSourcesMutation>;
-export type RemoveServiceSourcesMutationResult = Apollo.MutationResult<RemoveServiceSourcesMutation>;
-export type RemoveServiceSourcesMutationOptions = Apollo.BaseMutationOptions<RemoveServiceSourcesMutation, RemoveServiceSourcesMutationVariables>;
+export type SetClientBuilderConfigMutationHookResult = ReturnType<typeof useSetClientBuilderConfigMutation>;
+export type SetClientBuilderConfigMutationResult = Apollo.MutationResult<SetClientBuilderConfigMutation>;
+export type SetClientBuilderConfigMutationOptions = Apollo.BaseMutationOptions<SetClientBuilderConfigMutation, SetClientBuilderConfigMutationVariables>;
 export const ServiceProfilesDocument = gql`
     query serviceProfiles {
   serviceProfiles {
