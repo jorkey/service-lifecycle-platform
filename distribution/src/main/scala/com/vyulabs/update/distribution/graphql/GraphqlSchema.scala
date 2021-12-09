@@ -83,6 +83,8 @@ object GraphqlSchema {
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
   val LimitArg = Argument("limit", IntType)
+  val DeveloperBuilderConfigArg = Argument("config", DeveloperBuilderConfigInputType)
+  val ClientBuilderConfigArg = Argument("config", ClientBuilderConfigInputType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -161,14 +163,13 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getAccessToken(c.arg(AccountArg)) }),
 
-      // Sources
-      Field("developerServices", ListType(StringType),
+      // Builders
+      Field("developerBuilderConfig", DeveloperBuilderConfigType,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperServices() }),
-      Field("serviceSources", ListType(SourceConfigType),
-        arguments = ServiceArg :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperBuilderConfig() }),
+      Field("clientBuilderConfig", ClientBuilderConfigType,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getServiceSources(c.arg(ServiceArg)) }),
+        resolve = c => { c.ctx.workspace.getClientBuilderConfig() }),
 
       // Profiles
       Field("serviceProfiles", ListType(ServicesProfileType),
@@ -378,19 +379,17 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeAccount(c.arg(AccountArg)) }),
 
-      // Sources
-      Field("addServiceSources", BooleanType,
-        arguments = ServiceArg :: SourcesArg :: Nil,
+      // Builders
+      Field("setDeveloperBuilderConfig", BooleanType,
+        arguments = DeveloperBuilderConfigArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.addServiceSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
-      Field("changeServiceSources", BooleanType,
-        arguments = ServiceArg :: SourcesArg :: Nil,
+        resolve = c => { c.ctx.workspace.setDeveloperBuilderConfig(
+          c.arg(DeveloperBuilderConfigArg)).map(_ => true) }),
+      Field("setClientBuilderConfig", BooleanType,
+        arguments = ClientBuilderConfigArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.changeSources(c.arg(ServiceArg), c.arg(SourcesArg)).map(_ => true) }),
-      Field("removeServiceSources", BooleanType,
-        arguments = ServiceArg :: Nil,
-        tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.removeServiceSources(c.arg(ServiceArg)).map(_ => true) }),
+        resolve = c => { c.ctx.workspace.setClientBuilderConfig(
+          c.arg(ClientBuilderConfigArg)).map(_ => true) }),
 
       // Profiles
       Field("addServicesProfile", BooleanType,

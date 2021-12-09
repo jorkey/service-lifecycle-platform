@@ -3,12 +3,12 @@ package com.vyulabs.update.distribution.graphql.utils
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
-import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common.{ServiceId}
-import com.vyulabs.update.common.config.{DistributionConfig, ServiceSources, Source}
+import com.vyulabs.update.common.config.{ClientBuilderConfig, DeveloperBuilderConfig, DistributionConfig, ServiceSources, Source}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
+import org.bson.BsonDocument
 import org.slf4j.Logger
 
+import java.io.IOException
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ConfigBuilderUtils extends SprayJsonSupport {
@@ -19,37 +19,25 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def getDeveloperServices()(implicit log: Logger): Future[Seq[ServiceId]] = {
-    collections.Sources.find().map(_.map(_.service))
+  def setDeveloperBuilderConfig(config: DeveloperBuilderConfig)
+                               (implicit log: Logger): Future[Boolean] = {
+    log.info(s"Set developer build config")
+    collections.Developer_Builder.update(new BsonDocument(), _ => Some(config)).map(_ > 0)
   }
 
-  def getServiceSources(service: ServiceId)(implicit log: Logger): Future[Seq[Source]] = {
-    val filters = Filters.eq("service", service)
-    collections.Sources.find(filters).map(_.headOption.map(_.payload).getOrElse(Seq.empty))
+  def getDeveloperBuilderConfig()(implicit log: Logger): Future[DeveloperBuilderConfig] = {
+    collections.Developer_Builder.find().map(_.headOption.getOrElse(
+      throw new IOException("No developer builder config")))
   }
 
-  def addServiceSources(service: ServiceId, sources: Seq[Source])
-                       (implicit log: Logger): Future[Unit] = {
-    log.info(s"Add sources for service ${service}")
-    for {
-      result <- {
-        val document = ServiceSources(service, sources)
-        collections.Sources.insert(document).map(_ => ())
-      }
-    } yield result
+  def setClientBuilderConfig(config: ClientBuilderConfig)
+                            (implicit log: Logger): Future[Boolean] = {
+    log.info(s"Set client build config")
+    collections.Client_Builder.update(new BsonDocument(), _ => Some(config)).map(_ > 0)
   }
 
-  def removeServiceSources(service: ServiceId)
-                          (implicit log: Logger): Future[Boolean] = {
-    log.info(s"Remove sources of service ${service}")
-    val filters = Filters.eq("service", service)
-    collections.Sources.delete(filters).map(_ > 0)
-  }
-
-  def changeSources(service: ServiceId, sources: Seq[Source])
-                   (implicit log: Logger): Future[Boolean] = {
-    log.info(s"Change sources of service ${service}")
-    val filters = Filters.eq("service", service)
-    collections.Sources.change(filters, _ => ServiceSources(service, sources)).map(_ > 0)
+  def getClientBuilderConfig()(implicit log: Logger): Future[ClientBuilderConfig] = {
+    collections.Client_Builder.find().map(_.headOption.getOrElse(
+      throw new IOException("No client builder config")))
   }
 }

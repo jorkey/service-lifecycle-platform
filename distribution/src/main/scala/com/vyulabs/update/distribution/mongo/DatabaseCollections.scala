@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.config.{DeveloperBuilderConfig, GitConfig, ServiceSources, Source}
+import com.vyulabs.update.common.config.{ClientBuilderConfig, DeveloperBuilderConfig, GitConfig, ServiceSources, Source}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, PasswordHash, ServerAccountInfo, UserAccountProperties}
@@ -64,6 +64,8 @@ class DatabaseCollections(db: MongoDb,
     classOf[TaskInfo],
     classOf[TaskParameter],
     classOf[ServiceFaultReport],
+    classOf[DeveloperBuilderConfig],
+    classOf[ClientBuilderConfig],
     fromCodecs(FiniteDurationCodec, URLCodec)
   ))
 
@@ -105,7 +107,7 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerDistribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Client_Builder = new SequencedCollection[DeveloperBuilderConfig]("client.builder", for {
+  val Client_Builder = new SequencedCollection[ClientBuilderConfig]("client.builder", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.builder")
   } yield collection, Sequences, createIndex = createIndices)
 

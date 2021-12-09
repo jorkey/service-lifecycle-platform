@@ -41,15 +41,13 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, Some(true))
   def networkConfig = NetworkConfig(0, None)
-  def builderConfig = BuilderConfig("test")
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = ServiceStatesConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def logsConfig = LogsConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 
   val config = DistributionConfig("test", "Test distribution server", "instance1", "secret", mongoDbConfig,
-                                  networkConfig, builderConfig, versionsConfig,
-                                  instanceStateConfig, logsConfig, faultReportsConfig)
+                                  networkConfig, versionsConfig, instanceStateConfig, logsConfig, faultReportsConfig)
 
   val distributionName = config.distribution
   val instance = config.instance

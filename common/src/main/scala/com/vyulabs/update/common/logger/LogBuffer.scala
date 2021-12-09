@@ -56,7 +56,7 @@ class LogBuffer(description: String, unitName: String, logReceiver: LogReceiver,
       case None => ""
     }
     synchronized {
-      eventsBuffer :+= LogLine(new Date(), "INFO", unitName, s"Finished${stat} ${description}", status)
+      eventsBuffer :+= LogLine(new Date(), "INFO", unitName, s"Finished${stat}, ${description}", status)
       flush()
       timerTask.foreach(_.cancel())
       timerTask = None

@@ -2,9 +2,9 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
-import com.vyulabs.update.common.common.{Common}
+import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, Source}
+import com.vyulabs.update.common.config.{ClientBuilderConfig, DeveloperBuilderConfig, DistributionConfig, GitConfig, ServiceSources, Source}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -63,7 +63,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     log.info("")
     log.info(s"########################### Install distribution service")
     log.info("")
-    if (!installDistributionService(initialClientVersion, initialClientVersion, distribution)) {
+    if (!installDistributionService(initialClientVersion, initialClientVersion)) {
       log.error("Can't install distribution service")
       return false
     }
@@ -77,11 +77,13 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
       return false
     }
 
-    if (!addUpdateServicesSources() ||
+    if (!setDeveloperBuilderConfig(distribution,
+          Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.BuilderServiceName, Common.UpdaterServiceName)) ||
+        !setClientBuilderConfig(distribution) ||
         !generateAndUploadInitialVersions(author) ||
         !addCommonServicesProfile() ||
         !addOwnServicesProfile()) {
-      log.error("Can't initialize distribution")
+      log.error("Can't initialize distribution service")
       return false
     }
 
@@ -118,7 +120,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     log.info("")
     log.info(s"########################### Install distribution service")
     log.info("")
-    if (!installDistributionService(scriptsVersion, distributionVersion, provider)) {
+    if (!installDistributionService(scriptsVersion, distributionVersion)) {
       log.error("Can't install distribution service")
       return false
     }
@@ -154,6 +156,13 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
       return false
     }
 
+    if (!setDeveloperBuilderConfig(distribution, Seq.empty) &&
+        !setClientBuilderConfig(distribution)) {
+      log.error("Can't initialize distribution service")
+      return false
+    }
+
+
     log.info("")
     log.info(s"########################### Distribution service is ready")
     log.info("")
@@ -172,16 +181,25 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     true
   }
 
-  def addUpdateServicesSources(): Boolean = {
+  def setDeveloperBuilderConfig(distribution: DistributionId, sourceServices: Seq[ServiceId]): Boolean = {
     val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
     val sourceConfig = Source("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
-    Seq(Common.ScriptsServiceName, Common.DistributionServiceName, Common.BuilderServiceName, Common.UpdaterServiceName)
-      .foreach(service => {
-        if (!adminDistributionClient.get.graphqlRequest(administratorMutations.addServiceSources(service, Seq(sourceConfig))).getOrElse(false)) {
-          log.error(s"Can't add service ${service} sources")
-          return false
-        }
-      })
+    val sources = sourceServices.map(ServiceSources(_, Seq(sourceConfig)))
+    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperBuilderConfig(
+          DeveloperBuilderConfig(distribution, Seq.empty, sources))).getOrElse(false)) {
+      log.error(s"Can't set developer builder config")
+      return false
+    }
+    true
+  }
+
+  def setClientBuilderConfig(distribution: DistributionId): Boolean = {
+    val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
+    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setClientBuilderConfig(
+        ClientBuilderConfig(distribution, Seq.empty))).getOrElse(false)) {
+      log.error(s"Can't set client builder config")
+      return false
+    }
     true
   }
 
@@ -290,8 +308,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
   }
 
   private def installDistributionService(scriptsVersion: ClientDistributionVersion,
-                                         distributionVersion: ClientDistributionVersion,
-                                         builderDistribution: DistributionId): Boolean = {
+                                         distributionVersion: ClientDistributionVersion): Boolean = {
     if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), directory) ||
       !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(directory, Common.UpdateSh)) ||
       !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), directory)) {
@@ -312,7 +329,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     }
     log.info(s"--------------------------- Make distribution config file")
     val arguments = Seq(cloudProvider, distribution, title, mongoDbConnection,
-      mongoDbName, mongoDbTemporary.toString, port.toString, builderDistribution)
+      mongoDbName, mongoDbTemporary.toString, port.toString)
     if (!ProcessUtils.runProcess("/bin/bash", ".make_distribution_config.sh" +: arguments, Map.empty,
       directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")

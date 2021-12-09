@@ -2,7 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.config.Source
+import com.vyulabs.update.common.config.{ClientBuilderConfig, DeveloperBuilderConfig, Source}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
@@ -18,10 +18,12 @@ object PingCoder {
   def ping() = GraphqlQuery[String]("ping")
 }
 
-trait ServiceSourcesCoder {
-  def getServiceSources(service: ServiceId) =
-    GraphqlQuery[Seq[Source]]("serviceSources",
-      Seq(GraphqlArgument("service" -> service)))
+trait BuilderConfigsCoder {
+  def getDeveloperBuilderConfig() =
+    GraphqlQuery[DeveloperBuilderConfig]("developerBuilderConfig")
+
+  def getClientBuilderConfig() =
+    GraphqlQuery[ClientBuilderConfig]("clientBuilderConfig")
 }
 
 trait DistributionProvidersCoder {
@@ -95,15 +97,18 @@ object LoginCoder {
       Seq(GraphqlArgument("account" -> account), GraphqlArgument("password" -> password)))
 }
 
-trait SourcesAdministrationCoder {
-  def addServiceSources(service: ServiceId, sources: Seq[Source]) =
-    GraphqlMutation[Boolean]("addServiceSources", Seq(GraphqlArgument("service" -> service),
-      GraphqlArgument("sources" -> sources, "[SourceConfigInput!]")))
-  def changeServiceSources(service: ServiceId, sources: Seq[Source]) =
-    GraphqlMutation[Boolean]("changeServiceSources", Seq(GraphqlArgument("service" -> service),
-      GraphqlArgument("sources" -> sources, "[SourceConfigInput!]")))
-  def removeServiceSources(service: ServiceId) =
-    GraphqlMutation[Boolean]("removeServiceSources", Seq(GraphqlArgument("service" -> service)))
+trait BuilderConfigsAdministrationCoder {
+  def setDeveloperBuilderConfig(config: DeveloperBuilderConfig) = {
+    GraphqlMutation[Boolean]("setDeveloperBuilderConfig", Seq(
+      GraphqlArgument("config" -> config, "DeveloperBuilderConfigInput")
+    ))
+  }
+
+  def setClientBuilderConfig(config: ClientBuilderConfig) = {
+    GraphqlMutation[Boolean]("setClientBuilderConfig", Seq(
+      GraphqlArgument("config" -> config, "ClientBuilderConfigInput")
+    ))
+  }
 }
 
 trait AccountsAdministrationCoder {
@@ -253,9 +258,9 @@ object DeveloperGraphqlCoder {
   val developerSubscriptions = DeveloperSubscriptionsCoder
 }
 
-object AdministratorQueriesCoder extends DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
+object AdministratorQueriesCoder extends BuilderConfigsCoder with DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
-object AdministratorMutationsCoder extends SourcesAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
+object AdministratorMutationsCoder extends BuilderConfigsAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
   with AddDeveloperVersionInfoCoder with AddClientVersionInfoCoder  with BuildClientVersionCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
 object AdministratorSubscriptionsCoder extends SubscribeLogsCoder {}
