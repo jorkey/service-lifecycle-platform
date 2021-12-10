@@ -20,10 +20,14 @@ object PingCoder {
 
 trait BuilderConfigsCoder {
   def getDeveloperBuilderConfig() =
-    GraphqlQuery[DeveloperBuilderConfig]("developerBuilderConfig")
+    GraphqlQuery[DeveloperBuilderConfig]("developerBuilderConfig",
+      Seq.empty,
+      "{ distribution, services { service, sources { name, git { url, branch, cloneSubmodules } }, environment { name, value } } }")
 
   def getClientBuilderConfig() =
-    GraphqlQuery[ClientBuilderConfig]("clientBuilderConfig")
+    GraphqlQuery[ClientBuilderConfig]("clientBuilderConfig",
+      Seq.empty,
+      "{ distribution, services { service, environment { name, value } } }")
 }
 
 trait DistributionProvidersCoder {
@@ -157,12 +161,10 @@ trait ConsumersAdministrationCoder {
 
 trait BuildDeveloperVersionCoder {
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion,
-                            sources: Seq[Source], comment: String,
-                            buildClientVersion: Boolean) =
+                            comment: String, buildClientVersion: Boolean) =
     GraphqlMutation[String]("buildDeveloperVersion", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("version" -> version, "DeveloperVersionInput"),
-      GraphqlArgument("sources" -> sources, "[SourceConfigInput!]"),
       GraphqlArgument("comment" -> comment),
       GraphqlArgument("buildClientVersion" -> buildClientVersion)
     ))
@@ -246,7 +248,7 @@ trait TestSubscriptionCoder {
 
 // Accounts
 
-object DeveloperQueriesCoder extends DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
+object DeveloperQueriesCoder extends BuilderConfigsCoder with DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
 object DeveloperMutationsCoder extends BuildDeveloperVersionCoder with RemoveDeveloperVersionCoder
   with BuildClientVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}

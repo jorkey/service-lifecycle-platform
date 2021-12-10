@@ -47,12 +47,12 @@ export type BuildInfoInput = {
 export type ClientBuilderConfig = {
   __typename?: 'ClientBuilderConfig';
   distribution: Scalars['String'];
-  environment: Array<ServiceEnvironment>;
+  services: Array<ClientServiceConfig>;
 };
 
 export type ClientBuilderConfigInput = {
   distribution: Scalars['String'];
-  environment: Array<ServiceEnvironmentInput>;
+  services: Array<ClientServiceConfigInput>;
 };
 
 export type ClientDesiredVersion = {
@@ -82,6 +82,17 @@ export type ClientDistributionVersionInput = {
   distribution: Scalars['String'];
   developerBuild: Array<Scalars['Int']>;
   clientBuild: Scalars['Int'];
+};
+
+export type ClientServiceConfig = {
+  __typename?: 'ClientServiceConfig';
+  service: Scalars['String'];
+  environment: Array<EnvironmentVariable>;
+};
+
+export type ClientServiceConfigInput = {
+  service: Scalars['String'];
+  environment: Array<EnvironmentVariableInput>;
 };
 
 export type ClientVersionInfo = {
@@ -127,14 +138,12 @@ export type ConsumerAccountPropertiesInput = {
 export type DeveloperBuilderConfig = {
   __typename?: 'DeveloperBuilderConfig';
   distribution: Scalars['String'];
-  environment: Array<ServiceEnvironment>;
-  sources: Array<ServiceSources>;
+  services: Array<DeveloperServiceConfig>;
 };
 
 export type DeveloperBuilderConfigInput = {
   distribution: Scalars['String'];
-  environment: Array<ServiceEnvironmentInput>;
-  sources: Array<ServiceSourcesInput>;
+  services: Array<DeveloperServiceConfigInput>;
 };
 
 export type DeveloperDesiredVersion = {
@@ -162,6 +171,19 @@ export type DeveloperDistributionVersion = {
 export type DeveloperDistributionVersionInput = {
   distribution: Scalars['String'];
   build: Array<Scalars['Int']>;
+};
+
+export type DeveloperServiceConfig = {
+  __typename?: 'DeveloperServiceConfig';
+  service: Scalars['String'];
+  sources: Array<Source>;
+  environment: Array<EnvironmentVariable>;
+};
+
+export type DeveloperServiceConfigInput = {
+  service: Scalars['String'];
+  sources: Array<SourceConfigInput>;
+  environment: Array<EnvironmentVariableInput>;
 };
 
 export type DeveloperVersionInfo = {
@@ -434,7 +456,6 @@ export type MutationRemoveServicesProfileArgs = {
 export type MutationBuildDeveloperVersionArgs = {
   service: Scalars['String'];
   version: DeveloperVersionInput;
-  sources: Array<SourceConfigInput>;
   comment: Scalars['String'];
   buildClientVersion?: Maybe<Scalars['Boolean']>;
 };
@@ -793,17 +814,6 @@ export type ServiceAccountInfo = {
   role: AccountRole;
 };
 
-export type ServiceEnvironment = {
-  __typename?: 'ServiceEnvironment';
-  service: Scalars['String'];
-  payload: Array<EnvironmentVariable>;
-};
-
-export type ServiceEnvironmentInput = {
-  service: Scalars['String'];
-  payload: Array<EnvironmentVariableInput>;
-};
-
 export type ServiceFaultReport = {
   __typename?: 'ServiceFaultReport';
   id: Scalars['String'];
@@ -815,17 +825,6 @@ export type ServiceFaultReportInput = {
   id: Scalars['String'];
   info: FaultInfoInput;
   files: Array<FileInfoInput>;
-};
-
-export type ServiceSources = {
-  __typename?: 'ServiceSources';
-  service: Scalars['String'];
-  payload: Array<Source>;
-};
-
-export type ServiceSourcesInput = {
-  service: Scalars['String'];
-  payload: Array<SourceConfigInput>;
 };
 
 export type ServiceState = {
@@ -1068,7 +1067,6 @@ export type ProviderDesiredVersionsQuery = (
 export type BuildDeveloperVersionMutationVariables = Exact<{
   service: Scalars['String'];
   version: DeveloperVersionInput;
-  sources: Array<SourceConfigInput> | SourceConfigInput;
   comment: Scalars['String'];
   buildClientVersion: Scalars['Boolean'];
 }>;
@@ -1855,17 +1853,13 @@ export type DeveloperBuilderConfigQuery = (
   & { developerBuilderConfig: (
     { __typename?: 'DeveloperBuilderConfig' }
     & Pick<DeveloperBuilderConfig, 'distribution'>
-    & { environment: Array<(
-      { __typename?: 'ServiceEnvironment' }
-      & Pick<ServiceEnvironment, 'service'>
-      & { payload: Array<(
+    & { services: Array<(
+      { __typename?: 'DeveloperServiceConfig' }
+      & Pick<DeveloperServiceConfig, 'service'>
+      & { environment: Array<(
         { __typename?: 'EnvironmentVariable' }
         & Pick<EnvironmentVariable, 'name' | 'value'>
-      )> }
-    )>, sources: Array<(
-      { __typename?: 'ServiceSources' }
-      & Pick<ServiceSources, 'service'>
-      & { payload: Array<(
+      )>, sources: Array<(
         { __typename?: 'Source' }
         & Pick<Source, 'name'>
         & { git: (
@@ -1885,10 +1879,10 @@ export type ClientBuilderConfigQuery = (
   & { clientBuilderConfig: (
     { __typename?: 'ClientBuilderConfig' }
     & Pick<ClientBuilderConfig, 'distribution'>
-    & { environment: Array<(
-      { __typename?: 'ServiceEnvironment' }
-      & Pick<ServiceEnvironment, 'service'>
-      & { payload: Array<(
+    & { services: Array<(
+      { __typename?: 'ClientServiceConfig' }
+      & Pick<ClientServiceConfig, 'service'>
+      & { environment: Array<(
         { __typename?: 'EnvironmentVariable' }
         & Pick<EnvironmentVariable, 'name' | 'value'>
       )> }
@@ -2363,11 +2357,10 @@ export type ProviderDesiredVersionsQueryHookResult = ReturnType<typeof useProvid
 export type ProviderDesiredVersionsLazyQueryHookResult = ReturnType<typeof useProviderDesiredVersionsLazyQuery>;
 export type ProviderDesiredVersionsQueryResult = Apollo.QueryResult<ProviderDesiredVersionsQuery, ProviderDesiredVersionsQueryVariables>;
 export const BuildDeveloperVersionDocument = gql`
-    mutation buildDeveloperVersion($service: String!, $version: DeveloperVersionInput!, $sources: [SourceConfigInput!]!, $comment: String!, $buildClientVersion: Boolean!) {
+    mutation buildDeveloperVersion($service: String!, $version: DeveloperVersionInput!, $comment: String!, $buildClientVersion: Boolean!) {
   buildDeveloperVersion(
     service: $service
     version: $version
-    sources: $sources
     comment: $comment
     buildClientVersion: $buildClientVersion
   )
@@ -2390,7 +2383,6 @@ export type BuildDeveloperVersionMutationFn = Apollo.MutationFunction<BuildDevel
  *   variables: {
  *      service: // value for 'service'
  *      version: // value for 'version'
- *      sources: // value for 'sources'
  *      comment: // value for 'comment'
  *      buildClientVersion: // value for 'buildClientVersion'
  *   },
@@ -4424,16 +4416,13 @@ export const DeveloperBuilderConfigDocument = gql`
     query developerBuilderConfig {
   developerBuilderConfig {
     distribution
-    environment {
+    services {
       service
-      payload {
+      environment {
         name
         value
       }
-    }
-    sources {
-      service
-      payload {
+      sources {
         name
         git {
           url
@@ -4476,9 +4465,9 @@ export const ClientBuilderConfigDocument = gql`
     query clientBuilderConfig {
   clientBuilderConfig {
     distribution
-    environment {
+    services {
       service
-      payload {
+      environment {
         name
         value
       }

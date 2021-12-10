@@ -7,49 +7,57 @@ import spray.json.DefaultJsonProtocol._
 case class GitConfig(url: String, branch: String, cloneSubmodules: Option[Boolean])
 
 object GitConfig extends DefaultJsonProtocol {
-  implicit val gitConfigJson = jsonFormat3(GitConfig.apply)
+  implicit val json = jsonFormat3(GitConfig.apply)
 }
 
 case class Source(name: String, git: GitConfig)
 
 object Source extends DefaultJsonProtocol {
-  implicit val sourceConfigJson = jsonFormat2(Source.apply)
-}
-
-case class ServiceSources(service: ServiceId, payload: Seq[Source])
-
-object ServiceSources extends DefaultJsonProtocol {
-  implicit val environmentVariableJson = jsonFormat2(ServiceSources.apply)
+  implicit val json = jsonFormat2(Source.apply)
 }
 
 case class EnvironmentVariable(name: String, value: String)
 
 object EnvironmentVariable extends DefaultJsonProtocol {
-  implicit val environmentVariableJson = jsonFormat2(EnvironmentVariable.apply)
+  implicit val json = jsonFormat2(EnvironmentVariable.apply)
 }
 
-case class ServiceEnvironment(service: ServiceId, payload: Seq[EnvironmentVariable])
+trait ServiceConfig {
+  val environment: Seq[EnvironmentVariable]
+}
 
-object ServiceEnvironment extends DefaultJsonProtocol {
-  implicit val serviceEnvironmentJson = jsonFormat2(ServiceEnvironment.apply)
+case class DeveloperServiceConfig(service: ServiceId,
+                                  sources: Seq[Source],
+                                  environment: Seq[EnvironmentVariable]) extends ServiceConfig
+
+object DeveloperServiceConfig {
+  implicit val json = jsonFormat3(DeveloperServiceConfig.apply)
+}
+
+
+case class ClientServiceConfig(service: ServiceId,
+                               environment: Seq[EnvironmentVariable]) extends ServiceConfig
+
+object ClientServiceConfig {
+  implicit val json = jsonFormat2(ClientServiceConfig.apply)
 }
 
 trait BuilderConfig {
   val distribution: DistributionId
-  val environment: Seq[ServiceEnvironment]
+  val services: Seq[ServiceConfig]
 }
 
 case class DeveloperBuilderConfig(distribution: DistributionId,
-                                  environment: Seq[ServiceEnvironment],
-                                  sources: Seq[ServiceSources]) extends BuilderConfig
+                                  services: Seq[DeveloperServiceConfig]) extends BuilderConfig
 
 object DeveloperBuilderConfig {
-  implicit val builderConfigJson = jsonFormat3(DeveloperBuilderConfig.apply)
+  implicit val json = jsonFormat2(DeveloperBuilderConfig.apply)
 }
 
 case class ClientBuilderConfig(distribution: DistributionId,
-                               environment: Seq[ServiceEnvironment]) extends BuilderConfig
+                               services: Seq[ClientServiceConfig]) extends BuilderConfig
 
 object ClientBuilderConfig {
-  implicit val builderConfigJson = jsonFormat2(ClientBuilderConfig.apply)
+  implicit val json = jsonFormat2(ClientBuilderConfig.apply)
 }
+

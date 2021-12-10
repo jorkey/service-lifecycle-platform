@@ -34,14 +34,13 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   protected implicit val executionContext: ExecutionContext
 
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: AccountId,
-                            sources: Seq[Source], comment: String, buildClientVersion: Boolean)
+                            comment: String, buildClientVersion: Boolean)
                            (implicit log: Logger): TaskId = {
     tasksUtils.createTask(
       "BuildDeveloperVersion",
       Seq(TaskParameter("service", service),
           TaskParameter("version", version.toString),
           TaskParameter("author", author),
-          TaskParameter("sources", sources.toJson.compactPrint),
           TaskParameter("comment", comment),
           TaskParameter("buildClientVersion", buildClientVersion.toString)
       ),
@@ -52,7 +51,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
           s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
-          s"sources=${sources.toJson.compactPrint}", s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
+          s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
         val (builderFuture, cancel) = runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
         val future = builderFuture
           .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,

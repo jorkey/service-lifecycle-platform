@@ -6,6 +6,7 @@ import com.vyulabs.update.common.accounts.ConsumerAccountProperties
 import com.vyulabs.update.common.common.{Common, JWT}
 import com.vyulabs.update.common.common.Common.{DistributionId, ServicesProfileId, TaskId}
 import com.vyulabs.update.common.config._
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -104,9 +105,11 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
       sys.error(s"Can't write script")
     }
 
+    println(s"--------------------------- Configure test service on distribution server")
+    configureTestServiceVersions(adminClient, Seq(Source("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
+
     println(s"--------------------------- Make test service version")
-    buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild),
-      Seq(Source("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
+    buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild))
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
@@ -142,8 +145,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     }
 
     println(s"--------------------------- Make fixed test service version")
-    buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild).next,
-      Seq(Source("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
+    buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild).next)
 
     println()
     println(s"########################### Test service is updated")
@@ -179,11 +181,24 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     println()
   }
 
+  private def configureTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
+                                           sources: Seq[Source]): Unit = {
+    val config = developerClient.graphqlRequest(
+        administratorQueries.getDeveloperBuilderConfig()).getOrElse {
+      sys.error("Can't get developer builder config")
+    }
+    if (!developerClient.graphqlRequest(administratorMutations.setDeveloperBuilderConfig(
+        config.copy(services = config.services :+ DeveloperServiceConfig(testServiceName, sources, Seq.empty))
+      )).getOrElse(false)) {
+      sys.error("Can't set developer builder config")
+    }
+  }
+
   private def buildTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
-                                       version: DeveloperVersion, sources: Seq[Source]): Unit = {
+                                       version: DeveloperVersion): Unit = {
     println("--------------------------- Build developer and client version of test service")
     val task = developerClient.graphqlRequest(
-        developerMutations.buildDeveloperVersion(testServiceName, version, sources,
+        developerMutations.buildDeveloperVersion(testServiceName, version,
           "Test service version", true)).getOrElse {
       sys.error("Can't execute build developer and client version task")
     }

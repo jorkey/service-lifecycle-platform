@@ -34,9 +34,9 @@ query providerDesiredVersions ($distribution: String!) {
     providerDesiredVersions (distribution: $distribution) { service, version { distribution, build } }
 }
 
-mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!, $sources: [SourceConfigInput!]!,
+mutation buildDeveloperVersion ($service: String!, $version: DeveloperVersionInput!,
                                 $comment: String!, $buildClientVersion: Boolean!) {
-    buildDeveloperVersion (service: $service, version: $version, sources: $sources, comment: $comment, buildClientVersion: $buildClientVersion)
+    buildDeveloperVersion (service: $service, version: $version, comment: $comment, buildClientVersion: $buildClientVersion)
 }
 
 mutation addDeveloperVersionInfo ($info: DeveloperVersionInfoInput!) {
@@ -284,11 +284,11 @@ mutation removeAccount ($account: String!) {
 # Builder configs
 
 query developerBuilderConfig {
-    developerBuilderConfig { distribution, environment { service, payload { name, value } }, sources { service, payload { name, git { url, branch, cloneSubmodules } } } }
+    developerBuilderConfig { distribution, services { service, environment { name, value }, sources { name, git { url, branch, cloneSubmodules } } } }
 }
 
 query clientBuilderConfig {
-    clientBuilderConfig { distribution, environment { service, payload { name, value } } }
+    clientBuilderConfig { distribution, services { service, environment { name, value } } }
 }
 
 mutation setDeveloperBuilderConfig ($config: DeveloperBuilderConfigInput!) {

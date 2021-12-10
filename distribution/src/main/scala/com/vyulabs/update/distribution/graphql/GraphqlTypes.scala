@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.graphql
 
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import com.vyulabs.update.common.config.{ClientBuilderConfig, DeveloperBuilderConfig, EnvironmentVariable, GitConfig, ServiceEnvironment, ServiceSources, Source}
+import com.vyulabs.update.common.config.{ClientBuilderConfig, ClientServiceConfig, DeveloperBuilderConfig, DeveloperServiceConfig, EnvironmentVariable, GitConfig, Source}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
@@ -125,8 +125,8 @@ object GraphqlTypes {
   implicit val TaskParameterType = deriveObjectType[Unit, TaskParameter]()
   implicit val TaskInfoType = deriveObjectType[Unit, TaskInfo]()
   implicit val EnvironmentVariableType = deriveObjectType[Unit, EnvironmentVariable]()
-  implicit val ServiceEnvironmentType = deriveObjectType[Unit, ServiceEnvironment]()
-  implicit val ServiceSourcesType = deriveObjectType[Unit, ServiceSources]()
+  implicit val DeveloperServiceConfigType = deriveObjectType[Unit, DeveloperServiceConfig]()
+  implicit val ClientServiceConfigType = deriveObjectType[Unit, ClientServiceConfig]()
   implicit val DeveloperBuilderConfigType = deriveObjectType[Unit, DeveloperBuilderConfig]()
   implicit val ClientBuilderConfigType = deriveObjectType[Unit, ClientBuilderConfig]()
 
@@ -156,8 +156,8 @@ object GraphqlTypes {
   implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
   implicit val TaskParameterInputType = deriveInputObjectType[TaskParameter](InputObjectTypeName("TaskParameterInput"))
   implicit val EnvironmentVariableInputType = deriveInputObjectType[EnvironmentVariable](InputObjectTypeName("EnvironmentVariableInput"))
-  implicit val ServiceEnvironmentInputType = deriveInputObjectType[ServiceEnvironment](InputObjectTypeName("ServiceEnvironmentInput"))
-  implicit val ServiceSourcesInputType = deriveInputObjectType[ServiceSources](InputObjectTypeName("ServiceSourcesInput"))
+  implicit val DeveloperServiceConfigInputType = deriveInputObjectType[DeveloperServiceConfig](InputObjectTypeName("DeveloperServiceConfigInput"))
+  implicit val ClientServiceConfigInputType = deriveInputObjectType[ClientServiceConfig](InputObjectTypeName("ClientServiceConfigInput"))
   implicit val DeveloperBuilderConfigInputType = deriveInputObjectType[DeveloperBuilderConfig](InputObjectTypeName("DeveloperBuilderConfigInput"))
   implicit val ClientBuilderConfigInputType = deriveInputObjectType[ClientBuilderConfig](InputObjectTypeName("ClientBuilderConfigInput"))
 }
