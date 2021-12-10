@@ -284,19 +284,51 @@ mutation removeAccount ($account: String!) {
 # Builder configs
 
 query developerBuilderConfig {
-    developerBuilderConfig { distribution, services { service, environment { name, value }, sources { name, git { url, branch, cloneSubmodules } } } }
+    developerBuilderConfig { distribution }
 }
 
 query clientBuilderConfig {
-    clientBuilderConfig { distribution, services { service, environment { name, value } } }
+    clientBuilderConfig { distribution }
 }
 
-mutation setDeveloperBuilderConfig ($config: DeveloperBuilderConfigInput!) {
-    setDeveloperBuilderConfig (config: $config)
+query developerServices {
+    developerServicesConfig { service }
 }
 
-mutation setClientBuilderConfig ($config: ClientBuilderConfigInput!) {
-    setClientBuilderConfig (config: $config)
+query developerServiceConfig ($service: String!) {
+    developerServicesConfig (service: $service) { service, environment { name, value }, sources { name, git { url, branch, cloneSubmodules } } }
+}
+
+query clientServices {
+    clientServicesConfig { service }
+}
+
+query clientServiceConfig ($service: String!) {
+    clientServicesConfig (service: $service) { service, environment { name, value } }
+}
+
+mutation setDeveloperBuilderConfig ($distribution: String!) {
+    setDeveloperBuilderConfig (distribution: $distribution)
+}
+
+mutation setDeveloperServiceConfig ($service: String!, $environment: [EnvironmentVariableInput!]!, $sources: [SourceInput!]!) {
+    setDeveloperServiceConfig (service: $service, environment: $environment, sources: $sources)
+}
+
+mutation removeDeveloperServiceConfig ($service: String!) {
+    removeDeveloperServiceConfig (service: $service)
+}
+
+mutation setClientBuilderConfig ($distribution: String!) {
+    setClientBuilderConfig (distribution: $distribution)
+}
+
+mutation setClientServiceConfig ($service: String!, $environment: [EnvironmentVariableInput!]!) {
+    setClientServiceConfig (service: $service, environment: $environment)
+}
+
+mutation removeClientServiceConfig ($service: String!) {
+    removeClientServiceConfig (service: $service)
 }
 
 # Profiles

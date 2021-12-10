@@ -57,6 +57,13 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
     collections.Developer_Services.find(filters)
   }
 
+  def getDeveloperServiceConfig(service: ServiceId)
+                               (implicit log: Logger): Future[DeveloperServiceConfig] = {
+    getDeveloperServicesConfig(Some(service)).map(_.headOption.getOrElse {
+      throw new IOException(s"No developer service ${service} config")
+    })
+  }
+
   def setClientBuilderConfig(distribution: DistributionId)
                             (implicit log: Logger): Future[Boolean] = {
     log.info(s"Set client builder config")
@@ -81,6 +88,13 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   def getClientBuilderConfig()(implicit log: Logger): Future[BuilderConfig] = {
     collections.Client_Builder.find().map(_.headOption.getOrElse {
       throw new IOException("Client builder config is not defined")
+    })
+  }
+
+  def getClientServiceConfig(service: ServiceId)
+                             (implicit log: Logger): Future[ClientServiceConfig] = {
+    getClientServicesConfig(Some(service)).map(_.headOption.getOrElse {
+      throw new IOException(s"No client service ${service} config")
     })
   }
 

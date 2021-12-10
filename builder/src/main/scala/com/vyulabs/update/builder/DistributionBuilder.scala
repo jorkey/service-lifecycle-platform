@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{ClientBuilderConfig, DeveloperBuilderConfig, DeveloperServiceConfig, DistributionConfig, GitConfig, Source}
+import com.vyulabs.update.common.config.{DeveloperServiceConfig, DistributionConfig, GitConfig, Source}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -182,20 +182,26 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
   }
 
   def setDeveloperBuilderConfig(distribution: DistributionId, sourceServices: Seq[ServiceId]): Boolean = {
-    val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
-    val sourceConfig = Source("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
-    val services = sourceServices.map(DeveloperServiceConfig(_, Seq(sourceConfig), Seq.empty))
     if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperBuilderConfig(
-          DeveloperBuilderConfig(distribution, services))).getOrElse(false)) {
+          distribution)).getOrElse(false)) {
       log.error(s"Can't set developer builder config")
       return false
     }
+    val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
+    val source = Source("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
+    sourceServices.foreach(service => {
+      if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperServiceConfig(
+          service, Seq.empty, Seq(source))).getOrElse(false)) {
+        log.error(s"Can't set developer builder config")
+        return false
+      }
+    })
     true
   }
 
   def setClientBuilderConfig(distribution: DistributionId): Boolean = {
     if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setClientBuilderConfig(
-        ClientBuilderConfig(distribution, Seq.empty))).getOrElse(false)) {
+        distribution)).getOrElse(false)) {
       log.error(s"Can't set client builder config")
       return false
     }

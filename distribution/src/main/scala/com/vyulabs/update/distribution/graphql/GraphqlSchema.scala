@@ -26,7 +26,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
     extends ConfigBuilderUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with LogUtils with FaultsUtils with TasksUtils
       with RunBuilderUtils with AccountsUtils {
-  protected val sourceUtils = this
+  protected val configBuilderUtils = this
   protected val distributionInfoUtils = this
   protected val serviceProfilesUtils = this
   protected val distributionProvidersUtils = this

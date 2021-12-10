@@ -183,14 +183,9 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
   private def configureTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
                                            sources: Seq[Source]): Unit = {
-    val config = developerClient.graphqlRequest(
-        administratorQueries.getDeveloperBuilderConfig()).getOrElse {
-      sys.error("Can't get developer builder config")
-    }
-    if (!developerClient.graphqlRequest(administratorMutations.setDeveloperBuilderConfig(
-        config.copy(services = config.services :+ DeveloperServiceConfig(testServiceName, sources, Seq.empty))
-      )).getOrElse(false)) {
-      sys.error("Can't set developer builder config")
+    if (!developerClient.graphqlRequest(administratorMutations.setDeveloperServiceConfig(testServiceName,
+        Seq.empty, sources)).getOrElse(false)) {
+      sys.error(s"Can't set developer service ${testServiceName} config")
     }
   }
 

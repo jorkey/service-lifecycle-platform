@@ -2,6 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common._
+import com.vyulabs.update.common.config.{BuilderConfig, ClientServiceConfig, DeveloperServiceConfig, EnvironmentVariable, Source}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -16,14 +17,24 @@ object PingCoder {
 
 trait BuilderConfigsCoder {
   def getDeveloperBuilderConfig() =
-    GraphqlQuery[DeveloperBuilderConfig]("developerBuilderConfig",
-      Seq.empty,
-      "{ distribution, services { service, sources { name, git { url, branch, cloneSubmodules } }, environment { name, value } } }")
+    GraphqlQuery[BuilderConfig]("developerBuilderConfig",
+      Seq.empty,"{ distribution }")
 
   def getClientBuilderConfig() =
-    GraphqlQuery[ClientBuilderConfig]("clientBuilderConfig",
+    GraphqlQuery[BuilderConfig]("clientBuilderConfig",
+      Seq.empty,"{ distribution }")
+}
+
+trait ServicesConfigCoder {
+  def getDeveloperServicesConfig() =
+    GraphqlQuery[Seq[DeveloperServiceConfig]]("developerServicesConfig",
       Seq.empty,
-      "{ distribution, services { service, environment { name, value } } }")
+      "{ service, sources { name, git { url, branch, cloneSubmodules } }, environment { name, value } }")
+
+  def getClientServicesConfig() =
+    GraphqlQuery[Seq[ClientServiceConfig]]("clientServicesConfig",
+      Seq.empty,
+      "{ service, environment { name, value } }")
 }
 
 trait DistributionProvidersCoder {
@@ -98,17 +109,46 @@ object LoginCoder {
 }
 
 trait BuilderConfigsAdministrationCoder {
-  def setDeveloperBuilderConfig(config: DeveloperBuilderConfig) = {
+  def setDeveloperBuilderConfig(distribution: DistributionId) = {
     GraphqlMutation[Boolean]("setDeveloperBuilderConfig", Seq(
-      GraphqlArgument("config" -> config, "DeveloperBuilderConfigInput")
+      GraphqlArgument("distribution" -> distribution)
     ))
   }
 
-  def setClientBuilderConfig(config: ClientBuilderConfig) = {
+  def setClientBuilderConfig(distribution: DistributionId) = {
     GraphqlMutation[Boolean]("setClientBuilderConfig", Seq(
-      GraphqlArgument("config" -> config, "ClientBuilderConfigInput")
+      GraphqlArgument("distribution" -> distribution)
     ))
   }
+}
+
+trait ServiceConfigsAdministrationCoder {
+  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[EnvironmentVariable],
+                                sources: Seq[Source]) = {
+    GraphqlMutation[Boolean]("setDeveloperServiceConfig", Seq(
+      GraphqlArgument("service" -> service),
+      GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]"),
+      GraphqlArgument("sources" -> sources, "[SourceInput!]")
+    ))
+  }
+
+  def removeDeveloperServiceConfig(service: ServiceId) = {
+    GraphqlMutation[Boolean]("removeDeveloperServiceConfig", Seq(
+      GraphqlArgument("service" -> service)))
+  }
+
+  def setClientServiceConfig(service: ServiceId, environment: Seq[EnvironmentVariable]) = {
+    GraphqlMutation[Boolean]("setClientServiceConfig", Seq(
+      GraphqlArgument("service" -> service),
+      GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]")
+    ))
+  }
+
+  def removeClientServiceConfig(service: ServiceId) = {
+    GraphqlMutation[Boolean]("removeClientServiceConfig", Seq(
+      GraphqlArgument("service" -> service)))
+  }
+
 }
 
 trait AccountsAdministrationCoder {
@@ -244,7 +284,7 @@ trait TestSubscriptionCoder {
 
 // Accounts
 
-object DeveloperQueriesCoder extends BuilderConfigsCoder with DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
+object DeveloperQueriesCoder extends BuilderConfigsCoder with ServicesConfigCoder with DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
 object DeveloperMutationsCoder extends BuildDeveloperVersionCoder with RemoveDeveloperVersionCoder
   with BuildClientVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
@@ -256,9 +296,9 @@ object DeveloperGraphqlCoder {
   val developerSubscriptions = DeveloperSubscriptionsCoder
 }
 
-object AdministratorQueriesCoder extends BuilderConfigsCoder with DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
+object AdministratorQueriesCoder extends BuilderConfigsCoder with ServicesConfigCoder with DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
-object AdministratorMutationsCoder extends BuilderConfigsAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
+object AdministratorMutationsCoder extends BuilderConfigsAdministrationCoder with ServiceConfigsAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
   with AddDeveloperVersionInfoCoder with AddClientVersionInfoCoder  with BuildClientVersionCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
 object AdministratorSubscriptionsCoder extends SubscribeLogsCoder {}

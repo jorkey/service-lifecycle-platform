@@ -33,6 +33,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
   protected val logUtils: LogUtils
   protected val tasksUtils: TasksUtils
   protected val distributionProvidersUtils: DistributionProvidersUtils
+  protected val configBuilderUtils: ConfigBuilderUtils
 
   protected implicit val executionContext: ExecutionContext
   protected implicit val system: ActorSystem
@@ -42,11 +43,9 @@ trait RunBuilderUtils extends SprayJsonSupport {
   def runDeveloperBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
                          (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val future = for {
-      builderConfig <- collections.Developer_Builder.find().map(_.headOption
-        .getOrElse(throw new IOException("No developer builder config")))
+      builderConfig <- configBuilderUtils.getDeveloperBuilderConfig()
+      serviceConfig <- configBuilderUtils.getDeveloperServiceConfig(service)
     } yield {
-      val serviceConfig = builderConfig.services.find(_.service == service)
-        .getOrElse(throw new IOException(s"No developer builder config for service ${service}"))
       val args = arguments :+ s"sources=${serviceConfig.sources.toJson.compactPrint}"
       runBuilder(task, builderConfig.distribution, serviceConfig.environment, args)
     }
@@ -60,11 +59,9 @@ trait RunBuilderUtils extends SprayJsonSupport {
   def runClientBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
                       (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val future = for {
-      builderConfig <- collections.Client_Builder.find().map(_.headOption
-        .getOrElse(throw new IOException("No client builder config")))
+      builderConfig <- configBuilderUtils.getClientBuilderConfig()
+      serviceConfig <- configBuilderUtils.getClientServiceConfig(service)
     } yield {
-      val serviceConfig = builderConfig.services.find(_.service == service)
-        .getOrElse(throw new IOException(s"No developer builder config for service ${service}"))
       runBuilder(task, builderConfig.distribution, serviceConfig.environment, arguments)
     }
     val result = future.map(_._1).flatten
