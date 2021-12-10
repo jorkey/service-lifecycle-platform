@@ -27,8 +27,8 @@ trait ServiceConfig {
 }
 
 case class DeveloperServiceConfig(service: ServiceId,
-                                  sources: Seq[Source],
-                                  environment: Seq[EnvironmentVariable]) extends ServiceConfig
+                                  environment: Seq[EnvironmentVariable],
+                                  sources: Seq[Source]) extends ServiceConfig
 
 object DeveloperServiceConfig {
   implicit val json = jsonFormat3(DeveloperServiceConfig.apply)
@@ -42,22 +42,9 @@ object ClientServiceConfig {
   implicit val json = jsonFormat2(ClientServiceConfig.apply)
 }
 
-trait BuilderConfig {
-  val distribution: DistributionId
-  val services: Seq[ServiceConfig]
-}
+case class BuilderConfig(distribution: DistributionId)
 
-case class DeveloperBuilderConfig(distribution: DistributionId,
-                                  services: Seq[DeveloperServiceConfig]) extends BuilderConfig
-
-object DeveloperBuilderConfig {
-  implicit val json = jsonFormat2(DeveloperBuilderConfig.apply)
-}
-
-case class ClientBuilderConfig(distribution: DistributionId,
-                               services: Seq[ClientServiceConfig]) extends BuilderConfig
-
-object ClientBuilderConfig {
-  implicit val json = jsonFormat2(ClientBuilderConfig.apply)
+object BuilderConfig {
+  implicit val json = jsonFormat1(BuilderConfig.apply)
 }
 

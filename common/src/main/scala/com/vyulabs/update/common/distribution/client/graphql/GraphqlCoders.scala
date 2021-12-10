@@ -2,15 +2,11 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.config.{ClientBuilderConfig, DeveloperBuilderConfig, Source}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
-
-import scala.concurrent.duration.FiniteDuration
 
 // Queries
 

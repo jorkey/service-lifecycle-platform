@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.config.DistributionConfig
+import com.vyulabs.update.common.config.{DeveloperServiceConfig, DistributionConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
@@ -82,8 +82,8 @@ object GraphqlSchema {
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
   val LimitArg = Argument("limit", IntType)
-  val DeveloperBuilderConfigArg = Argument("config", DeveloperBuilderConfigInputType)
-  val ClientBuilderConfigArg = Argument("config", ClientBuilderConfigInputType)
+  val EnvironmentArg = Argument("environment", ListInputType(EnvironmentVariableInputType))
+  val SourcesArg = Argument("sources", ListInputType(SourceInputType))
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -163,12 +163,20 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getAccessToken(c.arg(AccountArg)) }),
 
       // Builders
-      Field("developerBuilderConfig", DeveloperBuilderConfigType,
+      Field("developerBuilderConfig", BuilderConfigType,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getDeveloperBuilderConfig() }),
-      Field("clientBuilderConfig", ClientBuilderConfigType,
+      Field("developerServicesConfig", ListType(DeveloperServiceConfigType),
+        arguments = OptionServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperServicesConfig(c.arg(OptionServiceArg)) }),
+      Field("clientBuilderConfig", BuilderConfigType,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getClientBuilderConfig() }),
+      Field("clientServicesConfig", ListType(ClientServiceConfigType),
+        arguments = OptionServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getClientServicesConfig(c.arg(OptionServiceArg)) }),
 
       // Profiles
       Field("serviceProfiles", ListType(ServicesProfileType),
@@ -380,15 +388,33 @@ object GraphqlSchema {
 
       // Builders
       Field("setDeveloperBuilderConfig", BooleanType,
-        arguments = DeveloperBuilderConfigArg :: Nil,
+        arguments = DistributionArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperBuilderConfig(
-          c.arg(DeveloperBuilderConfigArg)).map(_ => true) }),
+          c.arg(DistributionArg)).map(_ => true) }),
+      Field("setDeveloperServiceConfig", BooleanType,
+        arguments = ServiceArg :: EnvironmentArg :: SourcesArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.setDeveloperServiceConfig(
+          c.arg(ServiceArg), c.arg(EnvironmentArg), c.arg(SourcesArg)).map(_ => true) }),
+      Field("removeDeveloperServiceConfig", BooleanType,
+        arguments = ServiceArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.removeDeveloperServiceConfig(c.arg(ServiceArg)).map(_ => true) }),
       Field("setClientBuilderConfig", BooleanType,
-        arguments = ClientBuilderConfigArg :: Nil,
+        arguments = DistributionArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setClientBuilderConfig(
-          c.arg(ClientBuilderConfigArg)).map(_ => true) }),
+          c.arg(DistributionArg)).map(_ => true) }),
+      Field("setClientServiceConfig", BooleanType,
+        arguments = ServiceArg :: EnvironmentArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.setClientServiceConfig(
+          c.arg(ServiceArg), c.arg(EnvironmentArg)).map(_ => true) }),
+      Field("removeClientServiceConfig", BooleanType,
+        arguments = ServiceArg :: Nil,
+        tags = Authorized(AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.removeClientServiceConfig(c.arg(ServiceArg)).map(_ => true) }),
 
       // Profiles
       Field("addServicesProfile", BooleanType,

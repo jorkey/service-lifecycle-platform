@@ -14,7 +14,7 @@ import {
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
-import { Source } from "../../../../generated/graphql";
+import {EnvironmentVariable, Source} from "../../../../generated/graphql";
 import TextField from "@material-ui/core/TextField";
 import SourcesTable from "./SourcesTable";
 
@@ -50,12 +50,13 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-interface SourcesCardParams {
-  editService: string | undefined
-  onServiceChanged: (service: string, sources: Source[], readyToSave: boolean) => void
+interface ServiceCardParams {
+  editService?: string
+  onServiceChanged: (service: string, environment: EnvironmentVariable[],
+                     sources: Source[], readyToSave: boolean) => void
 }
 
-const SourcesCard = (params: SourcesCardParams) => {
+const ServiceCard = (params: ServiceCardParams) => {
   const { editService, onServiceChanged } = params
   const classes = useStyles()
 
@@ -156,15 +157,15 @@ interface ServiceRouteParams {
   service?: string
 }
 
-interface ServiceSourcesEditorParams extends RouteComponentProps<ServiceRouteParams> {
+interface ServiceCardEditorParams extends RouteComponentProps<ServiceCardRouteParams> {
     fromUrl: string
 }
 
-const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
+const ServiceCardEditor: React.FC<ServiceCardEditorParams> = props => {
   const classes = useStyles()
 
   const [service, setService] = useState('');
-  const [sources, setSources] = useState(new Array<SourceConfig>());
+  const [sources, setSources] = useState(new Array<Source>());
   const [readyToSave, setReadyToSave] = useState(false);
 
   const editService = props.match.params.service
@@ -201,7 +202,7 @@ const ServiceSourcesEditor: React.FC<ServiceSourcesEditorParams> = props => {
     <Card
       className={clsx(classes.root)}
     >
-      <SourcesCard editService={editService} onServiceChanged={(service, sources, readyToSave) => {
+      <ServiceCard editService={editService} onServiceChanged={(service, sources, readyToSave) => {
         setService(service)
         setSources(sources)
         setReadyToSave(readyToSave)}
