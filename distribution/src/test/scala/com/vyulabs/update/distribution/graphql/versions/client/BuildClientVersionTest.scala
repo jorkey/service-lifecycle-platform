@@ -94,7 +94,7 @@ class BuildClientVersionTest extends TestEnvironment {
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
         mutation {
-          runBuilder (accessToken: "qwe", arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin", "sources=[]"])
+          runBuilder (accessToken: "qwe", arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin"])
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -106,7 +106,7 @@ class BuildClientVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    expectMessage(logInput, "Finished successfully task RunBuilderByRemoteDistribution with parameters: distribution=consumer, accessToken=qwe, arguments=buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin, sources=[]")
+    expectMessage(logInput, "Finished successfully task RunBuilderByRemoteDistribution with parameters: distribution=consumer, accessToken=qwe, arguments=buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin")
 
     expectComplete(logInput)
   }

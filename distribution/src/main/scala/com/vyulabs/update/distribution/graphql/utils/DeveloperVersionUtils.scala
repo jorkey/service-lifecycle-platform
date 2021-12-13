@@ -58,6 +58,9 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
             Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
           .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
             Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
+
+       // TODO buildClientVersion
+
         (future, cancel)
       }).id
   }

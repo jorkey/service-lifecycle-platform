@@ -25,7 +25,7 @@ object NameValue extends DefaultJsonProtocol {
 case class ServiceConfig(service: ServiceId,
                          environment: Seq[NameValue],
                          repositories: Seq[Repository],
-                         values: Seq[NameValue])
+                         macroValues: Seq[NameValue])
 
 object ServiceConfig {
   implicit val json = jsonFormat4(ServiceConfig.apply)

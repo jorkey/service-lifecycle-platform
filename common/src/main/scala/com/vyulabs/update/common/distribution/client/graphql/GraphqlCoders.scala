@@ -124,11 +124,12 @@ trait BuilderConfigsAdministrationCoder {
 
 trait ServiceConfigsAdministrationCoder {
   def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NameValue],
-                                sources: Seq[Repository]) = {
+                                repositories: Seq[Repository], macroValues: Seq[NameValue]) = {
     GraphqlMutation[Boolean]("setDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]"),
-      GraphqlArgument("sources" -> sources, "[SourceInput!]")
+      GraphqlArgument("environment" -> environment, "[NameValueInput!]"),
+      GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
+      GraphqlArgument("macroValues" -> macroValues, "[NameValueInput!]")
     ))
   }
 
@@ -137,10 +138,13 @@ trait ServiceConfigsAdministrationCoder {
       GraphqlArgument("service" -> service)))
   }
 
-  def setClientServiceConfig(service: ServiceId, environment: Seq[NameValue]) = {
+  def setClientServiceConfig(service: ServiceId, environment: Seq[NameValue],
+                             repositories: Seq[Repository], macroValues: Seq[NameValue]) = {
     GraphqlMutation[Boolean]("setClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]")
+      GraphqlArgument("environment" -> environment, "[NameValueInput!]"),
+      GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
+      GraphqlArgument("macroValues" -> macroValues, "[NameValueInput!]")
     ))
   }
 

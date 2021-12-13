@@ -46,7 +46,9 @@ trait RunBuilderUtils extends SprayJsonSupport {
       builderConfig <- configBuilderUtils.getDeveloperBuilderConfig()
       serviceConfig <- configBuilderUtils.getDeveloperServiceConfig(service)
     } yield {
-      val args = arguments :+ s"sources=${serviceConfig.repositories.toJson.compactPrint}"
+      val args = arguments ++ Seq(
+        s"sourceRepositories=${serviceConfig.repositories.toJson.compactPrint}",
+        s"macroValues=${serviceConfig.macroValues.toJson.compactPrint}")
       runBuilder(task, builderConfig.distribution, serviceConfig.environment, args)
     }
     val result = future.map(_._1).flatten
@@ -62,7 +64,10 @@ trait RunBuilderUtils extends SprayJsonSupport {
       builderConfig <- configBuilderUtils.getClientBuilderConfig()
       serviceConfig <- configBuilderUtils.getClientServiceConfig(service)
     } yield {
-      runBuilder(task, builderConfig.distribution, serviceConfig.environment, arguments)
+      val args = arguments ++ Seq(
+        s"sourceRepositories=${serviceConfig.repositories.toJson.compactPrint}",
+        s"macroValues=${serviceConfig.macroValues.toJson.compactPrint}")
+      runBuilder(task, builderConfig.distribution, serviceConfig.environment, args)
     }
     val result = future.map(_._1).flatten
     val cancel = Some(() =>
