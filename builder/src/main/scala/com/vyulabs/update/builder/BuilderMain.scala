@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
-import com.vyulabs.update.common.config.Source
+import com.vyulabs.update.common.config.{NameValue, Repository}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
@@ -34,8 +34,8 @@ object BuilderMain extends App {
     "    buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
     "       port=? title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
     "       consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
-    "    buildDeveloperVersion service=? version=? sources=? [buildClientVersion=true/false] comment=?\n" +
-    "    buildClientVersion service=? developerVersion=? clientVersion=?"
+    "    buildDeveloperVersion service=? version=? sourceRepositories=? macroValues=? comment=?\n" +
+    "    buildClientVersion service=? developerVersion=? clientVersion=? settingsRepositories=? macroValues=?"
 
   if (args.size < 1) Utils.error(usage())
 
@@ -90,6 +90,8 @@ object BuilderMain extends App {
 
         val arguments = Arguments.parse(args.drop(1), Set.empty)
 
+        val macroValues = arguments.getValue("macroValues").parseJson.convertTo[Seq[NameValue]]
+
         val httpClient = new HttpClientImpl(distributionUrl)
         httpClient.accessToken = Some(accessToken)
         val asyncDistributionClient = new DistributionClient(httpClient)
@@ -100,28 +102,24 @@ object BuilderMain extends App {
             val author = arguments.getValue("author")
             val service = arguments.getValue("service")
             val version = DeveloperVersion.parse(arguments.getValue("version"))
-            val buildClientVersion = arguments.getOptionBooleanValue("buildClientVersion").getOrElse(false)
+            val sourceRepositories = arguments.getValue("sourceRepositories").parseJson.convertTo[Seq[Repository]]
             val comment = arguments.getValue("comment")
-            val sourceBranches = arguments.getValue("sources").parseJson.convertTo[Seq[Source]]
             val developerBuilder = new DeveloperBuilder(new File("."), distribution)
-            if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceBranches)) {
+            val buildValues = macroValues.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value))
+            if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceRepositories, buildValues)) {
               Utils.error("Developer version is not generated")
-            }
-            if (buildClientVersion) {
-              val clientBuilder = new ClientBuilder(new File("."))
-              val clientVersion = ClientDistributionVersion.from(distribution, version, 0)
-              val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> clientVersion.toString)
-              if (!clientBuilder.buildClientVersion(distributionClient, service, clientVersion, author, buildArguments)) {
-                Utils.error("Client version is not generated")
-              }
             }
           case "buildClientVersion" =>
             val author = arguments.getValue("author")
             val service = arguments.getValue("service")
             val version = ClientDistributionVersion.parse(arguments.getValue("version"))
-            val buildArguments = Map("distributionUrl" -> distributionUrl, "version" -> version.toString)
+            val settingsRepositories = arguments.getValue("settingsRepositories").parseJson.convertTo[Seq[Repository]]
+            var buildValues = macroValues.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value))
+            buildValues += ("distributionUrl" -> distributionUrl)
+            buildValues += ("version" -> version.toString)
             val clientBuilder = new ClientBuilder(new File("."))
-            if (!clientBuilder.buildClientVersion(distributionClient, service, version, author, buildArguments)) {
+            if (!clientBuilder.buildClientVersion(distributionClient, service, version, author,
+                settingsRepositories, buildValues)) {
               Utils.error("Client version is not generated")
             }
         }

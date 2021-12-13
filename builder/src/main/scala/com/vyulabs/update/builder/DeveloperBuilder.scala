@@ -4,10 +4,10 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.InstallConfig._
-import com.vyulabs.update.common.config.{Source, UpdateConfig}
+import com.vyulabs.update.common.config.{NameValue, Repository, UpdateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.InstallSettingsDirectory
+import com.vyulabs.update.common.distribution.server.ServiceSettingsDirectory
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
@@ -32,7 +32,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   private val developerDir = makeDir(new File(builderDir, "developer"))
   private val servicesDir = makeDir(new File(developerDir, "services"))
 
-  private val settingsDirectory = new InstallSettingsDirectory(builderDir)
+  private val settingsDirectory = new ServiceSettingsDirectory(builderDir)
 
   def developerServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def developerBuildDir(service: ServiceId) = makeDir(new File(developerServiceDir(service), "build"))
@@ -44,7 +44,8 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
                             author: String, service: ServiceId, newVersion: DeveloperVersion, comment: String,
-                            sourcesConfig: Seq[Source])(implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
+                            repositories: Seq[Repository], values: Map[String, String])
+                           (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     val newDistributionVersion = DeveloperDistributionVersion.from(distribution, newVersion)
     IoUtils.synchronize[Boolean](new File(developerServiceDir(service), builderLockFile), false,
       (attempt, _) => {
@@ -56,14 +57,14 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
       },
       () => {
         log.info(s"Prepare source directories of service ${service}")
-        val sourceRepositories = prepareSourceDirectories(service, sourcesConfig).getOrElse {
-          log.error(s"Can't pull source directories")
+        val sourceRepositories = prepareSourceRepositories(service, repositories).getOrElse {
+          log.error(s"Can't pull source repositories")
           return false
         }
 
         log.info(s"Generate version ${newDistributionVersion} of service ${service}")
-        val arguments = Map("version" -> newDistributionVersion.toString)
-        if (!generateDeveloperVersion(service, getBuildDirectory(service, sourcesConfig.head.name), arguments)) {
+        val buildValues = values + ("version" -> newDistributionVersion.toString)
+        if (!generateDeveloperVersion(service, getBuildDirectory(service, repositories.head.name), buildValues)) {
           log.error(s"Can't generate version")
           return false
         }
@@ -75,7 +76,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
         }
 
         log.info(s"Upload version image ${newVersion} of service ${service} to distribution server")
-        val buildInfo = BuildInfo(author, sourcesConfig, new Date(), comment)
+        val buildInfo = BuildInfo(author, repositories, new Date(), comment)
         if (!uploadDeveloperVersion(distributionClient, service, newDistributionVersion, buildInfo, imageFile)) {
           log.error("Can't upload version image")
           return false
@@ -90,7 +91,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
       }).getOrElse(false)
   }
 
-  def prepareSourceDirectories(service: ServiceId, sourcesConfig: Seq[Source]): Option[Seq[GitRepository]] = {
+  private def prepareSourceRepositories(service: ServiceId, sourcesConfig: Seq[Repository]): Option[Seq[GitRepository]] = {
     var gitRepositories = Seq.empty[GitRepository]
     for (sourceConfig <- sourcesConfig) {
       val branch = sourceConfig.git.branch
@@ -104,7 +105,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     Some(gitRepositories)
   }
 
-  def generateDeveloperVersion(service: ServiceId, sourceDirectory: File, arguments: Map[String, String])
+  def generateDeveloperVersion(service: ServiceId, sourceDirectory: File, parameters: Map[String, String])
                               (implicit log: Logger): Boolean = {
     val directory = developerBuildDir(service)
 
@@ -123,23 +124,22 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     })
 
     log.info("Execute build commands")
-    var args = arguments
-    args += ("PATH" -> System.getenv("PATH"))
+    val params = parameters + ("PATH" -> System.getenv("PATH"))
     for (command <- updateConfig.build.buildCommands.getOrElse(Seq.empty)) {
-      if (!ProcessUtils.runProcess(command, args, sourceDirectory, ProcessUtils.Logging.Realtime)) {
+      if (!ProcessUtils.runProcess(command, params, sourceDirectory, ProcessUtils.Logging.Realtime)) {
         return false
       }
     }
 
     log.info(s"Copy files to build directory ${directory}")
     for (copyCommand <- updateConfig.build.copyFiles) {
-      val sourceFile = Utils.extendMacro(copyCommand.sourceFile, args)
+      val sourceFile = Utils.extendMacro(copyCommand.sourceFile, params)
       val in = if (sourceFile.startsWith("/")) {
         new File(sourceFile)
       } else {
         new File(sourceDirectory, sourceFile)
       }
-      val out = new File(directory, Utils.extendMacro(copyCommand.destinationFile, args))
+      val out = new File(directory, Utils.extendMacro(copyCommand.destinationFile, params))
       val outDir = out.getParentFile
       if (outDir != null) {
         if (!outDir.exists() && !outDir.mkdirs()) {
@@ -148,7 +148,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
         }
       }
       if (!copyFile(in, out, file => !copyCommand.except.getOrElse(Set.empty).contains(in.toPath.relativize(file.toPath).toString),
-          copyCommand.settings.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, args)))) {
+          copyCommand.settings.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, params)))) {
         return false
       }
     }

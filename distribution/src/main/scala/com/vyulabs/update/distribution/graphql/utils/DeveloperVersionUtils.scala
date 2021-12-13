@@ -4,7 +4,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId, TaskId}
-import com.vyulabs.update.common.config.{DistributionConfig, EnvironmentVariable, Source}
+import com.vyulabs.update.common.config.{DistributionConfig, NameValue, Repository}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.Utils

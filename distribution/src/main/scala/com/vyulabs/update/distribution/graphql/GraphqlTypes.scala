@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import com.vyulabs.update.common.config.{BuilderConfig, ClientServiceConfig, DeveloperServiceConfig, EnvironmentVariable, GitConfig, Source}
+import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, NameValue, GitConfig, Repository}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
@@ -88,7 +88,7 @@ object GraphqlTypes {
 
   implicit val ServicesProfileType = deriveObjectType[Unit, ServicesProfile]()
   implicit val GitConfigType = deriveObjectType[Unit, GitConfig]()
-  implicit val SourceConfigType = deriveObjectType[Unit, Source]()
+  implicit val SourceConfigType = deriveObjectType[Unit, Repository]()
   implicit val DeveloperVersionType = deriveObjectType[Unit, DeveloperVersion]()
   implicit val DistributionVersionType = deriveObjectType[Unit, DeveloperDistributionVersion]()
   implicit val ClientVersionType = deriveObjectType[Unit, ClientVersion]()
@@ -125,9 +125,9 @@ object GraphqlTypes {
   implicit val TaskParameterType = deriveObjectType[Unit, TaskParameter]()
   implicit val TaskInfoType = deriveObjectType[Unit, TaskInfo]()
   implicit val BuilderConfigType = deriveObjectType[Unit, BuilderConfig]()
-  implicit val EnvironmentVariableType = deriveObjectType[Unit, EnvironmentVariable]()
-  implicit val DeveloperServiceConfigType = deriveObjectType[Unit, DeveloperServiceConfig]()
-  implicit val ClientServiceConfigType = deriveObjectType[Unit, ClientServiceConfig]()
+  implicit val EnvironmentVariableType = deriveObjectType[Unit, NameValue]()
+  implicit val DeveloperServiceConfigType = deriveObjectType[Unit, ServiceConfig]()
+  implicit val ClientServiceConfigType = deriveObjectType[Unit, ServiceConfig]()
 
   implicit val UserAccountPropertiesInputType = deriveInputObjectType[UserAccountProperties](InputObjectTypeName("UserAccountPropertiesInput"))
   implicit val ConsumerAccountPropertiesInputType = deriveInputObjectType[ConsumerAccountProperties](InputObjectTypeName("ConsumerAccountPropertiesInput"))
@@ -136,7 +136,7 @@ object GraphqlTypes {
   implicit val DeveloperDistributionVersionInputType = deriveInputObjectType[DeveloperDistributionVersion](InputObjectTypeName("DeveloperDistributionVersionInput"))
   implicit val ClientDistributionVersionInputType = deriveInputObjectType[ClientDistributionVersion](InputObjectTypeName("ClientDistributionVersionInput"))
   implicit val GitConfigInputType = deriveInputObjectType[GitConfig](InputObjectTypeName("GitConfigInput"))
-  implicit val SourceInputType = deriveInputObjectType[Source](InputObjectTypeName("SourceInput"))
+  implicit val RepositoryInputType = deriveInputObjectType[Repository](InputObjectTypeName("RepositoryInput"))
   implicit val BuildInfoInputType = deriveInputObjectType[BuildInfo](InputObjectTypeName("BuildInfoInput"))
   implicit val InstallInfoInputType = deriveInputObjectType[InstallInfo](InputObjectTypeName("InstallInfoInput"))
   implicit val DeveloperVersionInfoInputType = deriveInputObjectType[DeveloperVersionInfo](InputObjectTypeName("DeveloperVersionInfoInput"))
@@ -155,5 +155,5 @@ object GraphqlTypes {
   implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
   implicit val TaskParameterInputType = deriveInputObjectType[TaskParameter](InputObjectTypeName("TaskParameterInput"))
   implicit val BuilderConfigInputType = deriveInputObjectType[BuilderConfig](InputObjectTypeName("BuilderConfigInput"))
-  implicit val EnvironmentVariableInputType = deriveInputObjectType[EnvironmentVariable](InputObjectTypeName("EnvironmentVariableInput"))
+  implicit val NameValueInputType = deriveInputObjectType[NameValue](InputObjectTypeName("NameValueInput"))
 }

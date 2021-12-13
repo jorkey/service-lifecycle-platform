@@ -4,10 +4,10 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
-import com.vyulabs.update.common.config.{BuilderConfig, DistributionConfig, EnvironmentVariable}
+import com.vyulabs.update.common.config.{BuilderConfig, DistributionConfig, NameValue}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, InstallSettingsDirectory}
+import com.vyulabs.update.common.distribution.server.{DistributionDirectory, ServiceSettingsDirectory}
 import com.vyulabs.update.common.info.{AccessToken, LogLine}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
@@ -46,7 +46,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       builderConfig <- configBuilderUtils.getDeveloperBuilderConfig()
       serviceConfig <- configBuilderUtils.getDeveloperServiceConfig(service)
     } yield {
-      val args = arguments :+ s"sources=${serviceConfig.sources.toJson.compactPrint}"
+      val args = arguments :+ s"sources=${serviceConfig.repositories.toJson.compactPrint}"
       runBuilder(task, builderConfig.distribution, serviceConfig.environment, args)
     }
     val result = future.map(_._1).flatten
@@ -72,7 +72,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
 
 
   def runBuilder(task: TaskId, distribution: DistributionId,
-                 environment: Seq[EnvironmentVariable], arguments: Seq[String])
+                 environment: Seq[NameValue], arguments: Seq[String])
                 (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName))
     if (config.distribution == distribution) {
@@ -83,7 +83,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
   }
 
   def runBuilderByRemoteDistribution(distribution: DistributionId, accessToken: String,
-                                     arguments: Seq[String], environment: Seq[EnvironmentVariable])
+                                     arguments: Seq[String], environment: Seq[NameValue])
                                     (implicit log: Logger): TaskId = {
     tasksUtils.createTask(
       "RunBuilderByRemoteDistribution",
@@ -99,7 +99,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
   }
 
   private def runLocalBuilder(task: TaskId, distribution: DistributionId,
-                              accessToken: String, environment: Seq[EnvironmentVariable],
+                              accessToken: String, environment: Seq[NameValue],
                               arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val process = for {
@@ -166,7 +166,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
   }
 
   private def runRemoteBuilder(task: TaskId, distribution: DistributionId, accessToken: String,
-                               environment: Seq[EnvironmentVariable], arguments: Seq[String])
+                               environment: Seq[NameValue], arguments: Seq[String])
                               (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     @volatile var distributionClient = Option.empty[DistributionClient[AkkaHttpClient.AkkaSource]]
     @volatile var remoteTaskId = Option.empty[TaskId]
@@ -237,7 +237,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
                   throw new IOException("Can't set execution permissions")
                 } else {
                   log.info(s"Create settings directory")
-                  new InstallSettingsDirectory(builderDir)
+                  new ServiceSettingsDirectory(builderDir)
                 }
               }
             } else {

@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{DeveloperServiceConfig, DistributionConfig, GitConfig, Source}
+import com.vyulabs.update.common.config.{ServiceConfig, DistributionConfig, GitConfig, Repository}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -188,7 +188,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
       return false
     }
     val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
-    val source = Source("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
+    val source = Repository("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
     sourceServices.foreach(service => {
       if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperServiceConfig(
           service, Seq.empty, Seq(source))).getOrElse(false)) {
@@ -444,7 +444,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     }
 
     log.info(s"Generate client version of service ${service}")
-    if (!clientBuilder.generateClientVersion(service, Map.empty)) {
+    if (!clientBuilder.generateClientVersion(service, Seq.empty, Map.empty)) {
       log.error(s"Can't generate client version of service ${service}")
       return false
     }
@@ -470,7 +470,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
 
     val clientVersion = ClientDistributionVersion(developerVersion.distribution, developerVersion.build, 0)
     log.info(s"--------------------------- Generate client version ${clientVersion} of service ${service}")
-    if (!clientBuilder.generateClientVersion(service, Map.empty)) {
+    if (!clientBuilder.generateClientVersion(service, Seq.empty, Map.empty)) {
       log.error(s"Can't generate client version of service ${service}")
       return None
     }

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.config.{DeveloperServiceConfig, DistributionConfig}
+import com.vyulabs.update.common.config.{ServiceConfig, DistributionConfig}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
@@ -82,8 +82,9 @@ object GraphqlSchema {
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
   val LimitArg = Argument("limit", IntType)
-  val EnvironmentArg = Argument("environment", ListInputType(EnvironmentVariableInputType))
-  val SourcesArg = Argument("sources", ListInputType(SourceInputType))
+  val EnvironmentArg = Argument("environment", ListInputType(NameValueInputType))
+  val MacroValuesArg = Argument("macroValues", ListInputType(NameValueInputType))
+  val RepositoriesArg = Argument("repositories", ListInputType(RepositoryInputType))
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -121,7 +122,7 @@ object GraphqlSchema {
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
   val OptionOnlyActiveArg = Argument("onlyActive", OptionInputType(BooleanType))
-  val OptionEnvironmentArg = Argument("environment", OptionInputType(ListInputType(EnvironmentVariableInputType)))
+  val OptionEnvironmentArg = Argument("environment", OptionInputType(ListInputType(NameValueInputType)))
 
   // Queries
 
@@ -393,10 +394,11 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.setDeveloperBuilderConfig(
           c.arg(DistributionArg)).map(_ => true) }),
       Field("setDeveloperServiceConfig", BooleanType,
-        arguments = ServiceArg :: EnvironmentArg :: SourcesArg :: Nil,
+        arguments = ServiceArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperServiceConfig(
-          c.arg(ServiceArg), c.arg(EnvironmentArg), c.arg(SourcesArg)).map(_ => true) }),
+          c.arg(ServiceArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
+          c.arg(MacroValuesArg)).map(_ => true) }),
       Field("removeDeveloperServiceConfig", BooleanType,
         arguments = ServiceArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
@@ -407,10 +409,11 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.setClientBuilderConfig(
           c.arg(DistributionArg)).map(_ => true) }),
       Field("setClientServiceConfig", BooleanType,
-        arguments = ServiceArg :: EnvironmentArg :: Nil,
+        arguments = ServiceArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setClientServiceConfig(
-          c.arg(ServiceArg), c.arg(EnvironmentArg)).map(_ => true) }),
+          c.arg(ServiceArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
+          c.arg(MacroValuesArg)).map(_ => true) }),
       Field("removeClientServiceConfig", BooleanType,
         arguments = ServiceArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,

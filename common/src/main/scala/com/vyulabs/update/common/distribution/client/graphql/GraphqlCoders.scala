@@ -2,7 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.config.{BuilderConfig, ClientServiceConfig, DeveloperServiceConfig, EnvironmentVariable, Source}
+import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, NameValue, Repository}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -27,12 +27,12 @@ trait BuilderConfigsCoder {
 
 trait ServicesConfigCoder {
   def getDeveloperServicesConfig() =
-    GraphqlQuery[Seq[DeveloperServiceConfig]]("developerServicesConfig",
+    GraphqlQuery[Seq[ServiceConfig]]("developerServicesConfig",
       Seq.empty,
       "{ service, sources { name, git { url, branch, cloneSubmodules } }, environment { name, value } }")
 
   def getClientServicesConfig() =
-    GraphqlQuery[Seq[ClientServiceConfig]]("clientServicesConfig",
+    GraphqlQuery[Seq[ServiceConfig]]("clientServicesConfig",
       Seq.empty,
       "{ service, environment { name, value } }")
 }
@@ -123,8 +123,8 @@ trait BuilderConfigsAdministrationCoder {
 }
 
 trait ServiceConfigsAdministrationCoder {
-  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[EnvironmentVariable],
-                                sources: Seq[Source]) = {
+  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NameValue],
+                                sources: Seq[Repository]) = {
     GraphqlMutation[Boolean]("setDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]"),
@@ -137,7 +137,7 @@ trait ServiceConfigsAdministrationCoder {
       GraphqlArgument("service" -> service)))
   }
 
-  def setClientServiceConfig(service: ServiceId, environment: Seq[EnvironmentVariable]) = {
+  def setClientServiceConfig(service: ServiceId, environment: Seq[NameValue]) = {
     GraphqlMutation[Boolean]("setClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]")

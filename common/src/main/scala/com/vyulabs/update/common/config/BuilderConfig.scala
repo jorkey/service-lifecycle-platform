@@ -10,36 +10,25 @@ object GitConfig extends DefaultJsonProtocol {
   implicit val json = jsonFormat3(GitConfig.apply)
 }
 
-case class Source(name: String, git: GitConfig)
+case class Repository(name: String, git: GitConfig)
 
-object Source extends DefaultJsonProtocol {
-  implicit val json = jsonFormat2(Source.apply)
+object Repository extends DefaultJsonProtocol {
+  implicit val json = jsonFormat2(Repository.apply)
 }
 
-case class EnvironmentVariable(name: String, value: String)
+case class NameValue(name: String, value: String)
 
-object EnvironmentVariable extends DefaultJsonProtocol {
-  implicit val json = jsonFormat2(EnvironmentVariable.apply)
+object NameValue extends DefaultJsonProtocol {
+  implicit val json = jsonFormat2(NameValue.apply)
 }
 
-trait ServiceConfig {
-  val environment: Seq[EnvironmentVariable]
-}
+case class ServiceConfig(service: ServiceId,
+                         environment: Seq[NameValue],
+                         repositories: Seq[Repository],
+                         values: Seq[NameValue])
 
-case class DeveloperServiceConfig(service: ServiceId,
-                                  environment: Seq[EnvironmentVariable],
-                                  sources: Seq[Source]) extends ServiceConfig
-
-object DeveloperServiceConfig {
-  implicit val json = jsonFormat3(DeveloperServiceConfig.apply)
-}
-
-
-case class ClientServiceConfig(service: ServiceId,
-                               environment: Seq[EnvironmentVariable]) extends ServiceConfig
-
-object ClientServiceConfig {
-  implicit val json = jsonFormat2(ClientServiceConfig.apply)
+object ServiceConfig {
+  implicit val json = jsonFormat4(ServiceConfig.apply)
 }
 
 case class BuilderConfig(distribution: DistributionId)

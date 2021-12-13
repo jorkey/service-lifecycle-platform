@@ -1,12 +1,14 @@
 package com.vyulabs.update.builder
 
+import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
+import com.vyulabs.update.common.common.Common.ServiceId
+import com.vyulabs.update.common.config.Repository
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.{builderMutations, builderQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.InstallSettingsDirectory
+import com.vyulabs.update.common.distribution.server.ServiceSettingsDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.settings.{ConfigSettings, DefinesSettings}
+import com.vyulabs.update.common.settings.{ConfigSettings, DefinedValues}
 import com.vyulabs.update.common.utils.Utils.makeDir
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
@@ -29,15 +31,15 @@ class ClientBuilder(builderDir: File) {
   private val clientDir = makeDir(new File(builderDir, "client"))
   private val servicesDir = makeDir(new File(clientDir, "services"))
 
-  private val installDirectory = new InstallSettingsDirectory(builderDir)
-
   def clientServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def clientBuildDir(service: ServiceId) = makeDir(new File(clientServiceDir(service), "build"))
+  def clientSettingsDir(service: ServiceId) = makeDir(new File(clientServiceDir(service), "settings"))
 
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
-                         version: ClientDistributionVersion, author: String, arguments: Map[String, String])
+                         version: ClientDistributionVersion, author: String, repositories: Seq[Repository],
+                         values: Map[String, String])
                          (implicit log: Logger): Boolean = {
     val developerVersion = DeveloperDistributionVersion.from(version)
     val versionInfo = downloadDeveloperVersion(distributionClient, service, developerVersion).getOrElse {
@@ -45,7 +47,12 @@ class ClientBuilder(builderDir: File) {
       return false
     }
 
-    if (!generateClientVersion(service, arguments)) {
+    if (prepareSettingsRepositories(service, repositories).isEmpty) {
+      log.error(s"Can't pull settings repositories")
+      return false
+    }
+
+    if (!generateClientVersion(service, repositories.map(_.name), values)) {
       log.error(s"Can't generate client version ${version} of service ${service}")
       return false
     }
@@ -53,6 +60,24 @@ class ClientBuilder(builderDir: File) {
     log.info(s"Upload client version ${version} of service ${service}")
     uploadClientVersion(distributionClient, service, version,
       author, versionInfo.buildInfo)
+  }
+
+  private def prepareSettingsRepositories(service: ServiceId,
+                                          repositories: Seq[Repository]): Option[Seq[GitRepository]] = {
+    if (!IoUtils.deleteDirectoryContents(clientSettingsDir(service))) {
+      return None
+    }
+    var gitRepositories = Seq.empty[GitRepository]
+    for (sourceConfig <- repositories) {
+      val branch = sourceConfig.git.branch
+      val sourceRepository =
+        GitRepository.getGitRepository(sourceConfig.git.url, branch, sourceConfig.git.cloneSubmodules.getOrElse(true),
+          new File(clientSettingsDir(service), sourceConfig.name)).getOrElse {
+          return None
+        }
+      gitRepositories :+= sourceRepository
+    }
+    Some(gitRepositories)
   }
 
   def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
@@ -92,27 +117,31 @@ class ClientBuilder(builderDir: File) {
     Some(versionInfo)
   }
 
-  def generateClientVersion(service: ServiceId, arguments: Map[String, String])(implicit log: Logger): Boolean = {
-    if (!mergeInstallConfigFile(service)) {
-      return false
-    }
+  def generateClientVersion(service: ServiceId, settingsDirs: Seq[String], values: Map[String, String])
+                           (implicit log: Logger): Boolean = {
+    if (!settingsDirs.isEmpty) {
+      log.info(s"Configure client version of service ${service}")
+      settingsDirs.foreach { dir =>
+        val settingsDir = new ServiceSettingsDirectory(new File(clientSettingsDir(service), dir))
 
-    log.info(s"Configure client version of service ${service}")
-    val settingsDir = installDirectory.getServiceSettingsDir(service)
-    if (settingsDir.exists()) {
-      log.info(s"Merge private settings files")
-      if (!mergeSettings(service, clientBuildDir(service), settingsDir, arguments)) {
-        return false
+        val configDir = settingsDir.getConfigDir()
+        if (configDir.exists()) {
+          log.info(s"Merge private settings files")
+          if (!mergeSettings(service, clientBuildDir(service), configDir, values)) {
+            return false
+          }
+        }
+
+        val privateDir = settingsDir.getPrivateDir()
+        if (privateDir.exists()) {
+          log.info(s"Copy private files")
+          if (!IoUtils.copyFile(privateDir, clientBuildDir(service))) {
+            return false
+          }
+        }
       }
     }
 
-    val privateDir = installDirectory.getServicePrivateDir(service)
-    if (privateDir.exists()) {
-      log.info(s"Copy private files")
-      if (!IoUtils.copyFile(privateDir, clientBuildDir(service))) {
-        return false
-      }
-    }
     true
   }
 
@@ -127,26 +156,8 @@ class ClientBuilder(builderDir: File) {
     }
   }
 
-  private def mergeInstallConfigFile(service: ServiceId)(implicit log: Logger): Boolean = {
-    val buildConfigFile = new File(clientBuildDir(service), Common.InstallConfigFileName)
-    val clientConfigFile = installDirectory.getServiceInstallConfigFile(service)
-    if (clientConfigFile.exists()) {
-      log.info(s"Merge ${Common.InstallConfigFileName} with client version")
-      val clientConfig = IoUtils.parseConfigFile(clientConfigFile).getOrElse(return false)
-      if (buildConfigFile.exists()) {
-        val buildConfig = IoUtils.parseConfigFile(buildConfigFile).getOrElse(return false)
-        val newConfig = clientConfig.withFallback(buildConfig).resolve()
-        IoUtils.writeConfigToFile(buildConfigFile, newConfig)
-      } else {
-        IoUtils.copyFile(buildConfigFile, clientConfigFile)
-      }
-    } else {
-      true
-    }
-  }
-
   private def mergeSettings(service: ServiceId, buildDirectory: File, localDirectory: File,
-                            arguments: Map[String, String], subPath: String = "")(implicit log: Logger): Boolean = {
+                            values: Map[String, String], subPath: String = "")(implicit log: Logger): Boolean = {
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {
       if (localFile.isDirectory) {
         val newSubPath = subPath + "/" + localFile.getName
@@ -155,7 +166,7 @@ class ClientBuilder(builderDir: File) {
           log.error(s"Can't make ${buildSubDirectory}")
           return false
         }
-        if (!mergeSettings(service, buildDirectory, localDirectory, arguments, newSubPath)) {
+        if (!mergeSettings(service, buildDirectory, localDirectory, values, newSubPath)) {
           return false
         }
       } else {
@@ -183,11 +194,11 @@ class ClientBuilder(builderDir: File) {
           val sourceName = originalName.substring(0, originalName.length-8)
           val filePath = if (subPath.isEmpty) sourceName else subPath + "/" + sourceName
           val buildConf = new File(buildDirectory, filePath)
-          val definesSettings = DefinesSettings(localFile, arguments).getOrElse {
+          val definedValues = DefinedValues(localFile, values).getOrElse {
             return false
           }
           log.info(s"Extend configuration file ${filePath} with defines")
-          if (!definesSettings.propertiesExpansion(buildConf)) {
+          if (!definedValues.propertiesExpansion(buildConf)) {
             log.error("Extend configuration file with defines error")
             return false
           }

@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{BuilderConfig, ClientServiceConfig, DeveloperServiceConfig, DistributionConfig, EnvironmentVariable, Source}
+import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, DistributionConfig, NameValue, Repository}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
@@ -29,13 +29,13 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       _ => Some(BuilderConfig(distribution))).map(_ > 0)
   }
 
-  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[EnvironmentVariable],
-                                sources: Seq[Source])
+  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NameValue],
+                                sourceRepositories: Seq[Repository], macroValues: Seq[NameValue])
                                (implicit log: Logger): Future[Boolean] = {
     log.info(s"Set developer service ${service} config")
     val filters = Filters.eq("service", service)
     collections.Developer_Services.update(filters, _ =>
-      Some(DeveloperServiceConfig(service, environment, sources))).map(_ > 0)
+      Some(ServiceConfig(service, environment, sourceRepositories, macroValues))).map(_ > 0)
   }
 
   def removeDeveloperServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
@@ -51,14 +51,14 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   }
 
   def getDeveloperServicesConfig(service: Option[ServiceId])
-                                (implicit log: Logger): Future[Seq[DeveloperServiceConfig]] = {
+                                (implicit log: Logger): Future[Seq[ServiceConfig]] = {
     val args = service.map(Filters.eq("service", _)).toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Developer_Services.find(filters)
   }
 
   def getDeveloperServiceConfig(service: ServiceId)
-                               (implicit log: Logger): Future[DeveloperServiceConfig] = {
+                               (implicit log: Logger): Future[ServiceConfig] = {
     getDeveloperServicesConfig(Some(service)).map(_.headOption.getOrElse {
       throw new IOException(s"No developer service ${service} config")
     })
@@ -71,12 +71,13 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       _ => Some(BuilderConfig(distribution))).map(_ > 0)
   }
 
-  def setClientServiceConfig(service: ServiceId, environment: Seq[EnvironmentVariable])
+  def setClientServiceConfig(service: ServiceId, environment: Seq[NameValue],
+                             settings: Seq[Repository], macroValues: Seq[NameValue])
                             (implicit log: Logger): Future[Boolean] = {
     log.info(s"Set client service ${service} config")
     val filters = Filters.eq("service", service)
     collections.Client_Services.update(filters, _ =>
-      Some(ClientServiceConfig(service, environment))).map(_ > 0)
+      Some(ServiceConfig(service, environment, settings, macroValues))).map(_ > 0)
   }
 
   def removeClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
@@ -92,14 +93,14 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   }
 
   def getClientServiceConfig(service: ServiceId)
-                             (implicit log: Logger): Future[ClientServiceConfig] = {
+                             (implicit log: Logger): Future[ServiceConfig] = {
     getClientServicesConfig(Some(service)).map(_.headOption.getOrElse {
       throw new IOException(s"No client service ${service} config")
     })
   }
 
   def getClientServicesConfig(service: Option[ServiceId])
-                              (implicit log: Logger): Future[Seq[ClientServiceConfig]] = {
+                              (implicit log: Logger): Future[Seq[ServiceConfig]] = {
     val args = service.map(Filters.eq("service", _)).toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Client_Services.find(filters)
