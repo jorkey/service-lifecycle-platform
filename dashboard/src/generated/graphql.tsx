@@ -32,14 +32,14 @@ export enum AccountRole {
 export type BuildInfo = {
   __typename?: 'BuildInfo';
   author: Scalars['String'];
-  sources: Array<Source>;
+  sources: Array<Repository>;
   time: Scalars['Date'];
   comment: Scalars['String'];
 };
 
 export type BuildInfoInput = {
   author: Scalars['String'];
-  sources: Array<SourceInput>;
+  sources: Array<RepositoryInput>;
   time: Scalars['Date'];
   comment: Scalars['String'];
 };
@@ -76,12 +76,6 @@ export type ClientDistributionVersionInput = {
   distribution: Scalars['String'];
   developerBuild: Array<Scalars['Int']>;
   clientBuild: Scalars['Int'];
-};
-
-export type ClientServiceConfig = {
-  __typename?: 'ClientServiceConfig';
-  service: Scalars['String'];
-  environment: Array<EnvironmentVariable>;
 };
 
 export type ClientVersionInfo = {
@@ -151,13 +145,6 @@ export type DeveloperDistributionVersionInput = {
   build: Array<Scalars['Int']>;
 };
 
-export type DeveloperServiceConfig = {
-  __typename?: 'DeveloperServiceConfig';
-  service: Scalars['String'];
-  environment: Array<EnvironmentVariable>;
-  sources: Array<Source>;
-};
-
 export type DeveloperVersionInfo = {
   __typename?: 'DeveloperVersionInfo';
   service: Scalars['String'];
@@ -201,17 +188,6 @@ export type DistributionServiceState = {
   __typename?: 'DistributionServiceState';
   distribution: Scalars['String'];
   payload: InstanceServiceState;
-};
-
-export type EnvironmentVariable = {
-  __typename?: 'EnvironmentVariable';
-  name: Scalars['String'];
-  value: Scalars['String'];
-};
-
-export type EnvironmentVariableInput = {
-  name: Scalars['String'];
-  value: Scalars['String'];
 };
 
 export type FaultInfo = {
@@ -409,8 +385,9 @@ export type MutationSetDeveloperBuilderConfigArgs = {
 
 export type MutationSetDeveloperServiceConfigArgs = {
   service: Scalars['String'];
-  environment: Array<EnvironmentVariableInput>;
-  sources: Array<SourceInput>;
+  environment: Array<NamedStringValueInput>;
+  repositories: Array<RepositoryInput>;
+  macroValues: Array<NamedStringValueInput>;
 };
 
 
@@ -426,7 +403,9 @@ export type MutationSetClientBuilderConfigArgs = {
 
 export type MutationSetClientServiceConfigArgs = {
   service: Scalars['String'];
-  environment: Array<EnvironmentVariableInput>;
+  environment: Array<NamedStringValueInput>;
+  repositories: Array<RepositoryInput>;
+  macroValues: Array<NamedStringValueInput>;
 };
 
 
@@ -561,12 +540,23 @@ export type MutationAddFaultReportInfoArgs = {
 export type MutationRunBuilderArgs = {
   accessToken: Scalars['String'];
   arguments: Array<Scalars['String']>;
-  environment?: Maybe<Array<EnvironmentVariableInput>>;
+  environment?: Maybe<Array<NamedStringValueInput>>;
 };
 
 
 export type MutationCancelTaskArgs = {
   task: Scalars['String'];
+};
+
+export type NamedStringValue = {
+  __typename?: 'NamedStringValue';
+  name: Scalars['String'];
+  value: Scalars['String'];
+};
+
+export type NamedStringValueInput = {
+  name: Scalars['String'];
+  value: Scalars['String'];
 };
 
 export type Query = {
@@ -580,9 +570,9 @@ export type Query = {
   consumerAccountsInfo: Array<ConsumerAccountInfo>;
   accessToken: Scalars['String'];
   developerBuilderConfig: BuilderConfig;
-  developerServicesConfig: Array<DeveloperServiceConfig>;
+  developerServicesConfig: Array<ServiceConfig>;
   clientBuilderConfig: BuilderConfig;
-  clientServicesConfig: Array<ClientServiceConfig>;
+  clientServicesConfig: Array<ServiceConfig>;
   serviceProfiles: Array<ServicesProfile>;
   developerVersionsInfo: Array<DeveloperVersionInfo>;
   developerDesiredVersions: Array<DeveloperDesiredVersion>;
@@ -809,6 +799,17 @@ export type QueryTasksArgs = {
   limit?: Maybe<Scalars['Int']>;
 };
 
+export type Repository = {
+  __typename?: 'Repository';
+  name: Scalars['String'];
+  git: GitConfig;
+};
+
+export type RepositoryInput = {
+  name: Scalars['String'];
+  git: GitConfigInput;
+};
+
 export type SequencedServiceLogLine = {
   __typename?: 'SequencedServiceLogLine';
   sequence: Scalars['BigInt'];
@@ -823,6 +824,14 @@ export type ServiceAccountInfo = {
   account: Scalars['String'];
   name: Scalars['String'];
   role: AccountRole;
+};
+
+export type ServiceConfig = {
+  __typename?: 'ServiceConfig';
+  service: Scalars['String'];
+  environment: Array<NamedStringValue>;
+  repositories: Array<Repository>;
+  macroValues: Array<NamedStringValue>;
 };
 
 export type ServiceFaultReport = {
@@ -865,17 +874,6 @@ export type ServicesProfile = {
   __typename?: 'ServicesProfile';
   profile: Scalars['String'];
   services: Array<Scalars['String']>;
-};
-
-export type Source = {
-  __typename?: 'Source';
-  name: Scalars['String'];
-  git: GitConfig;
-};
-
-export type SourceInput = {
-  name: Scalars['String'];
-  git: GitConfigInput;
 };
 
 export type Subscription = {
@@ -1011,8 +1009,8 @@ export type DeveloperVersionsInfoQuery = (
       { __typename?: 'BuildInfo' }
       & Pick<BuildInfo, 'author' | 'time' | 'comment'>
       & { sources: Array<(
-        { __typename?: 'Source' }
-        & Pick<Source, 'name'>
+        { __typename?: 'Repository' }
+        & Pick<Repository, 'name'>
         & { git: (
           { __typename?: 'GitConfig' }
           & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
@@ -1190,8 +1188,8 @@ export type ClientVersionsInfoQuery = (
       { __typename?: 'BuildInfo' }
       & Pick<BuildInfo, 'author' | 'time' | 'comment'>
       & { sources: Array<(
-        { __typename?: 'Source' }
-        & Pick<Source, 'name'>
+        { __typename?: 'Repository' }
+        & Pick<Repository, 'name'>
         & { git: (
           { __typename?: 'GitConfig' }
           & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
@@ -1884,8 +1882,8 @@ export type DeveloperServicesQueryVariables = Exact<{ [key: string]: never; }>;
 export type DeveloperServicesQuery = (
   { __typename?: 'Query' }
   & { developerServicesConfig: Array<(
-    { __typename?: 'DeveloperServiceConfig' }
-    & Pick<DeveloperServiceConfig, 'service'>
+    { __typename?: 'ServiceConfig' }
+    & Pick<ServiceConfig, 'service'>
   )> }
 );
 
@@ -1897,18 +1895,21 @@ export type DeveloperServiceConfigQueryVariables = Exact<{
 export type DeveloperServiceConfigQuery = (
   { __typename?: 'Query' }
   & { developerServicesConfig: Array<(
-    { __typename?: 'DeveloperServiceConfig' }
-    & Pick<DeveloperServiceConfig, 'service'>
+    { __typename?: 'ServiceConfig' }
+    & Pick<ServiceConfig, 'service'>
     & { environment: Array<(
-      { __typename?: 'EnvironmentVariable' }
-      & Pick<EnvironmentVariable, 'name' | 'value'>
-    )>, sources: Array<(
-      { __typename?: 'Source' }
-      & Pick<Source, 'name'>
+      { __typename?: 'NamedStringValue' }
+      & Pick<NamedStringValue, 'name' | 'value'>
+    )>, repositories: Array<(
+      { __typename?: 'Repository' }
+      & Pick<Repository, 'name'>
       & { git: (
         { __typename?: 'GitConfig' }
         & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
       ) }
+    )>, macroValues: Array<(
+      { __typename?: 'NamedStringValue' }
+      & Pick<NamedStringValue, 'name' | 'value'>
     )> }
   )> }
 );
@@ -1919,8 +1920,8 @@ export type ClientServicesQueryVariables = Exact<{ [key: string]: never; }>;
 export type ClientServicesQuery = (
   { __typename?: 'Query' }
   & { clientServicesConfig: Array<(
-    { __typename?: 'ClientServiceConfig' }
-    & Pick<ClientServiceConfig, 'service'>
+    { __typename?: 'ServiceConfig' }
+    & Pick<ServiceConfig, 'service'>
   )> }
 );
 
@@ -1932,11 +1933,21 @@ export type ClientServiceConfigQueryVariables = Exact<{
 export type ClientServiceConfigQuery = (
   { __typename?: 'Query' }
   & { clientServicesConfig: Array<(
-    { __typename?: 'ClientServiceConfig' }
-    & Pick<ClientServiceConfig, 'service'>
+    { __typename?: 'ServiceConfig' }
+    & Pick<ServiceConfig, 'service'>
     & { environment: Array<(
-      { __typename?: 'EnvironmentVariable' }
-      & Pick<EnvironmentVariable, 'name' | 'value'>
+      { __typename?: 'NamedStringValue' }
+      & Pick<NamedStringValue, 'name' | 'value'>
+    )>, repositories: Array<(
+      { __typename?: 'Repository' }
+      & Pick<Repository, 'name'>
+      & { git: (
+        { __typename?: 'GitConfig' }
+        & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
+      ) }
+    )>, macroValues: Array<(
+      { __typename?: 'NamedStringValue' }
+      & Pick<NamedStringValue, 'name' | 'value'>
     )> }
   )> }
 );
@@ -1953,8 +1964,9 @@ export type SetDeveloperBuilderConfigMutation = (
 
 export type SetDeveloperServiceConfigMutationVariables = Exact<{
   service: Scalars['String'];
-  environment: Array<EnvironmentVariableInput> | EnvironmentVariableInput;
-  sources: Array<SourceInput> | SourceInput;
+  environment: Array<NamedStringValueInput> | NamedStringValueInput;
+  repositories: Array<RepositoryInput> | RepositoryInput;
+  macroValues: Array<NamedStringValueInput> | NamedStringValueInput;
 }>;
 
 
@@ -1985,7 +1997,9 @@ export type SetClientBuilderConfigMutation = (
 
 export type SetClientServiceConfigMutationVariables = Exact<{
   service: Scalars['String'];
-  environment: Array<EnvironmentVariableInput> | EnvironmentVariableInput;
+  environment: Array<NamedStringValueInput> | NamedStringValueInput;
+  repositories: Array<RepositoryInput> | RepositoryInput;
+  macroValues: Array<NamedStringValueInput> | NamedStringValueInput;
 }>;
 
 
@@ -4616,13 +4630,17 @@ export const DeveloperServiceConfigDocument = gql`
       name
       value
     }
-    sources {
+    repositories {
       name
       git {
         url
         branch
         cloneSubmodules
       }
+    }
+    macroValues {
+      name
+      value
     }
   }
 }
@@ -4697,6 +4715,18 @@ export const ClientServiceConfigDocument = gql`
       name
       value
     }
+    repositories {
+      name
+      git {
+        url
+        branch
+        cloneSubmodules
+      }
+    }
+    macroValues {
+      name
+      value
+    }
   }
 }
     `;
@@ -4760,11 +4790,12 @@ export type SetDeveloperBuilderConfigMutationHookResult = ReturnType<typeof useS
 export type SetDeveloperBuilderConfigMutationResult = Apollo.MutationResult<SetDeveloperBuilderConfigMutation>;
 export type SetDeveloperBuilderConfigMutationOptions = Apollo.BaseMutationOptions<SetDeveloperBuilderConfigMutation, SetDeveloperBuilderConfigMutationVariables>;
 export const SetDeveloperServiceConfigDocument = gql`
-    mutation setDeveloperServiceConfig($service: String!, $environment: [EnvironmentVariableInput!]!, $sources: [SourceInput!]!) {
+    mutation setDeveloperServiceConfig($service: String!, $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $macroValues: [NamedStringValueInput!]!) {
   setDeveloperServiceConfig(
     service: $service
     environment: $environment
-    sources: $sources
+    repositories: $repositories
+    macroValues: $macroValues
   )
 }
     `;
@@ -4785,7 +4816,8 @@ export type SetDeveloperServiceConfigMutationFn = Apollo.MutationFunction<SetDev
  *   variables: {
  *      service: // value for 'service'
  *      environment: // value for 'environment'
- *      sources: // value for 'sources'
+ *      repositories: // value for 'repositories'
+ *      macroValues: // value for 'macroValues'
  *   },
  * });
  */
@@ -4859,8 +4891,13 @@ export type SetClientBuilderConfigMutationHookResult = ReturnType<typeof useSetC
 export type SetClientBuilderConfigMutationResult = Apollo.MutationResult<SetClientBuilderConfigMutation>;
 export type SetClientBuilderConfigMutationOptions = Apollo.BaseMutationOptions<SetClientBuilderConfigMutation, SetClientBuilderConfigMutationVariables>;
 export const SetClientServiceConfigDocument = gql`
-    mutation setClientServiceConfig($service: String!, $environment: [EnvironmentVariableInput!]!) {
-  setClientServiceConfig(service: $service, environment: $environment)
+    mutation setClientServiceConfig($service: String!, $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $macroValues: [NamedStringValueInput!]!) {
+  setClientServiceConfig(
+    service: $service
+    environment: $environment
+    repositories: $repositories
+    macroValues: $macroValues
+  )
 }
     `;
 export type SetClientServiceConfigMutationFn = Apollo.MutationFunction<SetClientServiceConfigMutation, SetClientServiceConfigMutationVariables>;
@@ -4880,6 +4917,8 @@ export type SetClientServiceConfigMutationFn = Apollo.MutationFunction<SetClient
  *   variables: {
  *      service: // value for 'service'
  *      environment: // value for 'environment'
+ *      repositories: // value for 'repositories'
+ *      macroValues: // value for 'macroValues'
  *   },
  * });
  */

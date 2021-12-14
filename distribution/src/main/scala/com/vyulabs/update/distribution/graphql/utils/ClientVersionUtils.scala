@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.graphql.utils
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, TaskId}
 import com.vyulabs.update.common.common.Misc
-import com.vyulabs.update.common.config.{DistributionConfig, NameValue}
+import com.vyulabs.update.common.config.{DistributionConfig, NamedStringValue}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, TimedClientDesiredVersions, TimedDeveloperDesiredVersions}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
@@ -74,9 +74,9 @@ trait ClientVersionUtils {
       }).id
   }
 
-  private def buildClientVersion(task: TaskId, service: ServiceId,
-                                 version: ClientDistributionVersion, author: String)
-                                (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+  def buildClientVersion(task: TaskId, service: ServiceId,
+                         version: ClientDistributionVersion, author: String)
+                        (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val arguments = Seq("buildClientVersion",
       s"distribution=${config.distribution}", s"service=${service}",
       s"version=${version.toString}", s"author=${author}")

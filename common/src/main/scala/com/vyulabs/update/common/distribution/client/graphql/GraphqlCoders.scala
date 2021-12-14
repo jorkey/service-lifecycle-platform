@@ -2,7 +2,7 @@ package com.vyulabs.update.common.distribution.client.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common._
-import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, NameValue, Repository}
+import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.info.AccountRole.AccountRole
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -123,13 +123,13 @@ trait BuilderConfigsAdministrationCoder {
 }
 
 trait ServiceConfigsAdministrationCoder {
-  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NameValue],
-                                repositories: Seq[Repository], macroValues: Seq[NameValue]) = {
+  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+                                repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("environment" -> environment, "[NameValueInput!]"),
+      GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
-      GraphqlArgument("macroValues" -> macroValues, "[NameValueInput!]")
+      GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
     ))
   }
 
@@ -138,13 +138,13 @@ trait ServiceConfigsAdministrationCoder {
       GraphqlArgument("service" -> service)))
   }
 
-  def setClientServiceConfig(service: ServiceId, environment: Seq[NameValue],
-                             repositories: Seq[Repository], macroValues: Seq[NameValue]) = {
+  def setClientServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+                             repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("environment" -> environment, "[NameValueInput!]"),
+      GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
-      GraphqlArgument("macroValues" -> macroValues, "[NameValueInput!]")
+      GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
     ))
   }
 

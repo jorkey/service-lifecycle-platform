@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, DistributionConfig, NameValue, Repository}
+import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, DistributionConfig, NamedStringValue, Repository}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
@@ -29,8 +29,8 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       _ => Some(BuilderConfig(distribution))).map(_ > 0)
   }
 
-  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NameValue],
-                                sourceRepositories: Seq[Repository], macroValues: Seq[NameValue])
+  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+                                sourceRepositories: Seq[Repository], macroValues: Seq[NamedStringValue])
                                (implicit log: Logger): Future[Boolean] = {
     log.info(s"Set developer service ${service} config")
     val filters = Filters.eq("service", service)
@@ -71,8 +71,8 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       _ => Some(BuilderConfig(distribution))).map(_ > 0)
   }
 
-  def setClientServiceConfig(service: ServiceId, environment: Seq[NameValue],
-                             settings: Seq[Repository], macroValues: Seq[NameValue])
+  def setClientServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+                             settings: Seq[Repository], macroValues: Seq[NamedStringValue])
                             (implicit log: Logger): Future[Boolean] = {
     log.info(s"Set client service ${service} config")
     val filters = Filters.eq("service", service)
@@ -93,10 +93,8 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   }
 
   def getClientServiceConfig(service: ServiceId)
-                             (implicit log: Logger): Future[ServiceConfig] = {
-    getClientServicesConfig(Some(service)).map(_.headOption.getOrElse {
-      throw new IOException(s"No client service ${service} config")
-    })
+                             (implicit log: Logger): Future[Option[ServiceConfig]] = {
+    getClientServicesConfig(Some(service)).map(_.headOption)
   }
 
   def getClientServicesConfig(service: Option[ServiceId])

@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.InstallConfig._
-import com.vyulabs.update.common.config.{NameValue, Repository, UpdateConfig}
+import com.vyulabs.update.common.config.{NamedStringValue, Repository, UpdateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.ServiceSettingsDirectory

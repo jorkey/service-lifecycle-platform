@@ -16,16 +16,16 @@ object Repository extends DefaultJsonProtocol {
   implicit val json = jsonFormat2(Repository.apply)
 }
 
-case class NameValue(name: String, value: String)
+case class NamedStringValue(name: String, value: String)
 
-object NameValue extends DefaultJsonProtocol {
-  implicit val json = jsonFormat2(NameValue.apply)
+object NamedStringValue extends DefaultJsonProtocol {
+  implicit val json = jsonFormat2(NamedStringValue.apply)
 }
 
 case class ServiceConfig(service: ServiceId,
-                         environment: Seq[NameValue],
+                         environment: Seq[NamedStringValue],
                          repositories: Seq[Repository],
-                         macroValues: Seq[NameValue])
+                         macroValues: Seq[NamedStringValue])
 
 object ServiceConfig {
   implicit val json = jsonFormat4(ServiceConfig.apply)

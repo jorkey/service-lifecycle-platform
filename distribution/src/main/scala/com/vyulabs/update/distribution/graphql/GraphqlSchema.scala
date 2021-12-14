@@ -82,8 +82,8 @@ object GraphqlSchema {
   val DownloadUpdatesArg = Argument("downloadUpdates", BooleanType)
   val RebuildWithNewConfigArg = Argument("rebuildWithNewConfig", BooleanType)
   val LimitArg = Argument("limit", IntType)
-  val EnvironmentArg = Argument("environment", ListInputType(NameValueInputType))
-  val MacroValuesArg = Argument("macroValues", ListInputType(NameValueInputType))
+  val EnvironmentArg = Argument("environment", ListInputType(NamedStringValueInputType))
+  val MacroValuesArg = Argument("macroValues", ListInputType(NamedStringValueInputType))
   val RepositoriesArg = Argument("repositories", ListInputType(RepositoryInputType))
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
@@ -122,7 +122,7 @@ object GraphqlSchema {
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
   val OptionBuildClientVersionArg = Argument("buildClientVersion", OptionInputType(BooleanType))
   val OptionOnlyActiveArg = Argument("onlyActive", OptionInputType(BooleanType))
-  val OptionEnvironmentArg = Argument("environment", OptionInputType(ListInputType(NameValueInputType)))
+  val OptionEnvironmentArg = Argument("environment", OptionInputType(ListInputType(NamedStringValueInputType)))
 
   // Queries
 

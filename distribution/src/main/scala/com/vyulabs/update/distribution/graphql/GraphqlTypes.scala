@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, NameValue, GitConfig, Repository}
+import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, NamedStringValue, GitConfig, Repository}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
@@ -125,7 +125,7 @@ object GraphqlTypes {
   implicit val TaskParameterType = deriveObjectType[Unit, TaskParameter]()
   implicit val TaskInfoType = deriveObjectType[Unit, TaskInfo]()
   implicit val BuilderConfigType = deriveObjectType[Unit, BuilderConfig]()
-  implicit val EnvironmentVariableType = deriveObjectType[Unit, NameValue]()
+  implicit val EnvironmentVariableType = deriveObjectType[Unit, NamedStringValue]()
   implicit val DeveloperServiceConfigType = deriveObjectType[Unit, ServiceConfig]()
   implicit val ClientServiceConfigType = deriveObjectType[Unit, ServiceConfig]()
 
@@ -155,5 +155,5 @@ object GraphqlTypes {
   implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
   implicit val TaskParameterInputType = deriveInputObjectType[TaskParameter](InputObjectTypeName("TaskParameterInput"))
   implicit val BuilderConfigInputType = deriveInputObjectType[BuilderConfig](InputObjectTypeName("BuilderConfigInput"))
-  implicit val NameValueInputType = deriveInputObjectType[NameValue](InputObjectTypeName("NameValueInput"))
+  implicit val NamedStringValueInputType = deriveInputObjectType[NamedStringValue](InputObjectTypeName("NamedStringValueInput"))
 }

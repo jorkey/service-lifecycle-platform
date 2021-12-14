@@ -4,7 +4,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId, TaskId}
-import com.vyulabs.update.common.config.{DistributionConfig, NameValue, Repository}
+import com.vyulabs.update.common.config.{DistributionConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.Utils
@@ -27,6 +27,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   protected val collections: DatabaseCollections
   protected val config: DistributionConfig
 
+  protected val clientVersionUtils: ClientVersionUtils
   protected val serviceProfilesUtils: ServiceProfilesUtils
   protected val tasksUtils: TasksUtils
   protected val runBuilderUtils: RunBuilderUtils
@@ -50,18 +51,27 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
-          s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}", s"author=${author}",
-          s"buildClientVersion=${buildClientVersion}", s"comment=${comment}")
-        val (builderFuture, cancel) = runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
+          s"distribution=${config.distribution}", s"service=${service}", s"version=${version.toString}",
+          s"author=${author}", s"comment=${comment}")
+        @volatile var (builderFuture, cancel) =
+          runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
         val future = builderFuture
+          .flatMap { _ =>
+            cancel = None
+            if (buildClientVersion) {
+              val (future, newCancel) = clientVersionUtils.buildClientVersion(taskId, service,
+                ClientDistributionVersion(config.distribution, version.build, 0), author)
+              cancel = newCancel
+              future
+            } else {
+              Future()
+            }
+          }
           .flatMap(_ => setDeveloperDesiredVersions(Seq(DeveloperDesiredVersionDelta(service,
             Some(DeveloperDistributionVersion(config.distribution, version.build)))), author))
           .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
             Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
-
-       // TODO buildClientVersion
-
-        (future, cancel)
+        (future, Some(() => cancel.foreach(_.apply())))
       }).id
   }
 

@@ -156,7 +156,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
       return false
     }
 
-    if (!setDeveloperBuilderConfig(distribution, Seq.empty) &&
+    if (!setDeveloperBuilderConfig(distribution, Seq.empty) ||
         !setClientBuilderConfig(distribution)) {
       log.error("Can't initialize distribution service")
       return false
