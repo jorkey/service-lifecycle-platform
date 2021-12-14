@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import {Grid} from '@material-ui/core';
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import SourcesEditor from "./components/Developer/SourcesEditor";
-import ServicesManager from "./components/Developer/ServicesManager";
+import ServicesManager from "./components/ServicesManager";
 
 const useStyles = makeStyles(theme => ({
   root: {

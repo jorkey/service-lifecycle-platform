@@ -1,16 +1,16 @@
 import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/styles';
 import {
-  useDeveloperServicesQuery, useRemoveServiceSourcesMutation
-} from '../../../../generated/graphql';
+  useDeveloperServicesQuery
+} from '../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from 'react-router-dom';
-import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
-import GridTable from "../../../../common/components/gridTable/GridTable";
+import ConfirmDialog from '../../../common/components/dialogs/ConfirmDialog';
+import GridTable from "../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
-import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
+import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -28,21 +28,18 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const ServicesTable = () => {
+interface ServicesTableParams {
+  services: string[]
+  removeServiceConfig: (service: string) => void
+}
+
+const ServicesTable: React.FC<ServicesTableParams> = props => {
+  const { services, removeServiceConfig } = props
+
   const [ startEdit, setStartEdit ] = React.useState('')
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
   const [error, setError] = useState<string>()
-
-  const { data: services, refetch } = useDeveloperServicesQuery({
-    onError(err) { setError('Query developer services error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
-
-  const [ removeServiceSources ] = useRemoveServiceSourcesMutation({
-    onError(err) { setError('Remove service sources error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
 
   const classes = useStyles()
 
@@ -67,20 +64,18 @@ const ServicesTable = () => {
   ]
 
   const rows = new Array<Map<string, GridTableCellParams>>()
-  if (services) {
-    [...services.developerServices]
-      .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
-      .forEach(service => {
-        rows.push(
-          new Map<string, GridTableCellParams>([
-            ['service', { value: service }],
-            ['actions',
-              { value: [<Button key='0' onClick={ () => setDeleteConfirm(service) }>
-                <DeleteIcon/>
-              </Button>] }]
-          ]))
-      })
-  }
+  services
+    .sort((s1, s2) =>  (s1 > s2 ? 1 : -1))
+    .forEach(service => {
+      rows.push(
+        new Map<string, GridTableCellParams>([
+          ['service', { value: service }],
+          ['actions',
+            { value: [<Button key='0' onClick={ () => setDeleteConfirm(service) }>
+              <DeleteIcon/>
+            </Button>] }]
+        ]))
+    })
 
   return (<>
     <GridTable
@@ -100,9 +95,7 @@ const ServicesTable = () => {
           setDeleteConfirm('')
         }}
         onConfirm={() => {
-          removeServiceSources({
-            variables: { service: deleteConfirm }
-          }).then(() => refetch())
+          removeServiceConfig(deleteConfirm)
           setDeleteConfirm('')
         }}
       />) : null }

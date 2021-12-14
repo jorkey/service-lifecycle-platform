@@ -17,7 +17,7 @@ import ProfilesIcon from '@material-ui/icons/FilterList';
 import TaskIcon from '@mui/icons-material/Task';
 
 import { Profile, SidebarNav } from './components';
-import {useDeveloperBuilderConfigQuery} from "../../../../generated/graphql";
+import {useDeveloperBuilderConfigQuery, useDeveloperServicesQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme?: any) => ({
   drawer: {
@@ -54,10 +54,10 @@ const Sidebar = (props:any) => {
 
   const classes = useStyles()
 
-  const { data: developerBuilderConfig } = useDeveloperBuilderConfigQuery()
+  const { data: developerServices } = useDeveloperServicesQuery()
 
-  if (developerBuilderConfig) {
-    const development = !!developerBuilderConfig.developerBuilderConfig?.sources.length
+  if (developerServices?.developerServicesConfig) {
+    const development = !!developerServices?.developerServicesConfig.length
 
     const buildPages: Page = development ? {
       title: 'Build',

@@ -14,15 +14,12 @@ import {
   Grid
 } from '@material-ui/core';
 import {
-  SourceConfig,
   useBuildDeveloperVersionMutation,
-  useDeveloperVersionsInfoLazyQuery, useProfileServicesQuery, useServiceProfilesQuery,
-  useServiceSourcesLazyQuery,
+  useDeveloperVersionsInfoLazyQuery, useProfileServicesQuery,
   useWhoAmILazyQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
-import BranchesTable from "./BranchesTable";
 import {Version} from "../../../../common";
 
 const useStyles = makeStyles(theme => ({
@@ -61,7 +58,6 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const service = props.match.params.service
 
   const [version, setVersion] = useState('');
-  const [sources, setSources] = useState<SourceConfig[]>([]);
   const [comment, setComment] = useState('');
   const [buildClientVersion, setBuildClientVersion] = useState(true);
 
@@ -80,18 +76,13 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
-  const [ getServiceSources, serviceSources ] = useServiceSourcesLazyQuery({
-    variables: { service: service },
-    onError(err) { setError('Query service sources error ' + err.message) },
-    onCompleted() { setError(undefined) }
-  })
   const { data: selfServicesProfile } = useProfileServicesQuery({
     variables: { profile: 'self' },
     onError(err) { setError('Query self profile services error ' + err.message) },
   })
   const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
     variables: { service: service, version: { build: Version.parseBuild(version) },
-      sources: sources, comment: comment, buildClientVersion: buildClientVersion },
+      comment: comment, buildClientVersion: buildClientVersion },
     onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
       history.push(props.fromUrl + '/monitor/' + service)
@@ -105,10 +96,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
     if (!developerVersions.data && !developerVersions.loading) {
       getDeveloperVersions()
     }
-    if (!serviceSources.data && !serviceSources.loading) {
-      getServiceSources()
-    }
-    if (whoAmI.data && developerVersions.data && serviceSources.data) {
+    if (whoAmI.data && developerVersions.data) {
       const versions = [...developerVersions.data.developerVersionsInfo]
         .sort((v1, v2) =>
           Version.compareBuilds(v1.version.build, v2.version.build))
@@ -116,7 +104,6 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
       if (lastVersion) {
         setVersion(Version.buildToString(Version.nextBuild(lastVersion.version.build)))
       }
-      setSources(serviceSources.data.serviceSources)
       setInitialized(true)
     }
   }
@@ -131,7 +118,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   }
 
   const validate = () => {
-    return validateVersion(version) && sources.length != 0 && comment.length != 0
+    return validateVersion(version) && comment.length != 0
   }
 
   const BuildCard = () => {
@@ -166,16 +153,6 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
               />
             </Grid>
           </Grid>
-          <BranchesTable
-            branches={sources?.map(source => { return { name: source.name, branch: source.git.branch } })}
-            editable={true}
-            onBranchesChanged={branches => setSources(sources.map(source => {
-              const branch = branches.find(branch => branch.name == source.name)
-              return branch ?
-                { name: source.name, git: { url: source.git.url, branch: branch.branch, cloneSubmodules: source.git.cloneSubmodules } }
-                : source }))
-            }
-          />
           {hasClient()?
             <FormControlLabel
               control={(

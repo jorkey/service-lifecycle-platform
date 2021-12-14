@@ -4,6 +4,7 @@ import { Grid } from '@material-ui/core';
 import Versions from "./components/Versions/Versions";
 import LastClientVersions from "./components/LastClientVersions/LastClientVersions";
 import LastDeveloperVersions from "./components/LastDeveloperVersions/LastDeveloperVersions";
+import {useDeveloperServicesQuery} from "../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -18,7 +19,7 @@ const Dashboard: React.FC<DashboardProps> = props => {
   const classes = useStyles()
 
   const { data: developerServices } = useDeveloperServicesQuery()
-  const development = !!developerServices?.developerServices?.length
+  const development = !!developerServices?.developerServicesConfig?.length
 
   return (
     <div className={classes.root}>

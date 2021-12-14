@@ -1,12 +1,12 @@
 import React, {useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import GridTable from "../../../../common/components/gridTable/GridTable";
-import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
+import GridTable from "../../../common/components/gridTable/GridTable";
+import ConfirmDialog from "../../../common/components/dialogs/ConfirmDialog";
 import DeleteIcon from "@material-ui/icons/Delete";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
-import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
-import {Source} from "../../../../generated/graphql";
+import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
+import {Repository} from "../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   servicesTable: {
@@ -30,21 +30,21 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-interface SourceTableParams {
-  sources: Array<Source>
-  addSource?: boolean
+interface RepositoryTableParams {
+  repositories: Array<Repository>
+  addRepository?: boolean
   confirmRemove?: boolean
-  onSourceAdded?: (source: Source) => void
-  onSourceAddCancelled?: () => void
-  onSourceChanged?: (oldSource: Source, newSource: Source) => void
-  onSourceRemoved?: (source: Source) => void
+  onRepositoryAdded?: (repository: Repository) => void
+  onRepositoryAddCancelled?: () => void
+  onRepositoryChanged?: (oldRepository: Repository, newRepository: Repository) => void
+  onRepositoryRemoved?: (repository: Repository) => void
 }
 
-const SourcesTable = (props: SourceTableParams) => {
-  const { sources, addSource, confirmRemove,
-    onSourceAdded, onSourceAddCancelled, onSourceChanged, onSourceRemoved } = props;
+const RepositoriesTable = (props: RepositoryTableParams) => {
+  const { repositories, addRepository, confirmRemove,
+    onRepositoryAdded, onRepositoryAddCancelled, onRepositoryChanged, onRepositoryRemoved } = props;
 
-  const [ deleteConfirm, setDeleteConfirm ] = useState<Source>()
+  const [ deleteConfirm, setDeleteConfirm ] = useState<Repository>()
 
   const classes = useStyles();
 
@@ -99,13 +99,13 @@ const SourcesTable = (props: SourceTableParams) => {
     }
   ]
 
-  const rows = sources.map(source => (
+  const rows = repositories.map(repository => (
     new Map<string, GridTableCellParams>([
-      ['name', { value: source.name }],
-      ['url', { value: source.git.url }],
-      ['branch', { value: source.git.branch }],
-      ['cloneSubmodules', { value: source.git.cloneSubmodules?source.git.cloneSubmodules:false }],
-      ['actions', { value: [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(source) : onSourceRemoved?.(source) }>
+      ['name', { value: repository.name }],
+      ['url', { value: repository.git.url }],
+      ['branch', { value: repository.git.branch }],
+      ['cloneSubmodules', { value: repository.git.cloneSubmodules?repository.git.cloneSubmodules:false }],
+      ['actions', { value: [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(repository) : onRepositoryRemoved?.(repository) }>
         <DeleteIcon/>
       </Button>] }]
     ])))
@@ -115,28 +115,28 @@ const SourcesTable = (props: SourceTableParams) => {
       className={classes.servicesTable}
       columns={columns}
       rows={rows}
-      addNewRow={addSource}
+      addNewRow={addRepository}
       onRowAdded={ (columns) => {
-        onSourceAdded?.({ name: columns.get('name')! as string,
+        onRepositoryAdded?.({ name: columns.get('name')! as string,
           git: { url: columns.get('url')! as string, branch: columns.get('branch')! as string,
             cloneSubmodules: columns.get('cloneSubmodules') as boolean } }) }}
-      onRowAddCancelled={onSourceAddCancelled}
+      onRowAddCancelled={onRepositoryAddCancelled}
       onRowChanged={ (row, values, oldValues) => {
-        onSourceChanged!(sources[row], { name: values.get('name')! as string,
+        onRepositoryChanged!(repositories[row], { name: values.get('name')! as string,
           git: { url: values.get('url')! as string, branch: values.get('branch')! as string,
             cloneSubmodules: values.get('cloneSubmodules') as boolean } }) }}
     />
     { deleteConfirm ? (
       <ConfirmDialog
-        message={`Do you want to delete source '${deleteConfirm.name}'?`}
+        message={`Do you want to delete repository '${deleteConfirm.name}'?`}
         open={true}
         close={() => { setDeleteConfirm(undefined) }}
         onConfirm={() => {
-          onSourceRemoved?.(deleteConfirm)
+          onRepositoryRemoved?.(deleteConfirm)
           setDeleteConfirm(undefined)
         }}
       />) : null }
   </>)
 }
 
-export default SourcesTable;
+export default RepositoriesTable;
