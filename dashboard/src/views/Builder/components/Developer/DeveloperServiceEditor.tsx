@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
 
-import {Redirect, RouteComponentProps} from 'react-router-dom'
+import {RouteComponentProps} from 'react-router-dom'
 
 import {
-  NamedStringValue, Repository,
+  useDeveloperServiceConfigLazyQuery,
   useDeveloperServicesQuery,
   useSetDeveloperServiceConfigMutation
 } from "../../../../generated/graphql";
@@ -24,29 +24,51 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
 
   const { data: developerServices } = useDeveloperServicesQuery({
     onError(err) {
-      setError('Query service profiles error ' + err.message)
+      setError('Query developer services error ' + err.message)
     }
   })
 
+  const [ getServiceConfig, serviceConfig ] = useDeveloperServiceConfigLazyQuery({
+      onError(err) {
+        setError('Get service config error ' + err.message)
+      }
+    }
+  )
+
   const [ setServiceConfig ] =
     useSetDeveloperServiceConfigMutation({
-      onError(err) { setError('Add service sources error ' + err.message) },
+      onError(err) { setError('Set developer service config error ' + err.message) },
     })
 
-  return developerServices?.developerServicesConfig?
-    (<ServiceEditor title=''
-                    service={service}
-                    environment={}
-                    repositories={}
-                    macroValues={}
-                    hasService={(service => !!developerServices?.developerServicesConfig.find(s => s.service == service))}
-                    validate={(service, environment,
-                               repositories, macroValues) => true}
-                    setServiceConfig={(service, environment,
-                               repositories, macroValues) => {}}
-                    error={error}
-                    fromUrl={props.fromUrl}
-    />) : null
+  if (service && !serviceConfig.data && !serviceConfig.loading) {
+    getServiceConfig({variables: {service: service}})
+  }
+
+  const config = serviceConfig.data?.developerServicesConfig.length?serviceConfig.data.developerServicesConfig[0]:undefined
+
+  if ((service || config) && developerServices?.developerServicesConfig) {
+    const environment = config?config.environment:[]
+    const repositories = config?config.repositories:[]
+    const macroValues = config?config.macroValues:[]
+
+    return (<ServiceEditor
+              title='Developer Service Config'
+              service={service}
+              environment={environment}
+              repositories={repositories}
+              macroValues={macroValues}
+              hasService={(service =>
+                !!developerServices?.developerServicesConfig.find(s => s.service == service))}
+              validate={(environment, repositories, macroValues) =>
+                repositories.length > 0 }
+              setServiceConfig={(service, environment, repositories, macroValues) =>
+                setServiceConfig({ variables: { service, environment, repositories, macroValues } })}
+              error={error}
+              fromUrl={props.fromUrl}
+      />)
+  } else {
+    return null
+  }
 }
 
 export default DeveloperServiceEditor;

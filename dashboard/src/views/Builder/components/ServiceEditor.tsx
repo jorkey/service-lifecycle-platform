@@ -56,12 +56,10 @@ interface ServiceEditorParams {
   environment: NamedStringValue[]
   repositories: Repository[]
   macroValues: NamedStringValue[]
-  editService: boolean
   hasService: (service: string) => boolean
-  validate: (service: string, environment: NamedStringValue[],
-             repositories: Repository[], macroValues: NamedStringValue[]) => boolean
+  validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
   setServiceConfig: (service: string, environment: NamedStringValue[],
-                     repositories: Repository[], macroValues: NamedStringValue[]) => Promise<void>
+                     repositories: Repository[], macroValues: NamedStringValue[]) => Promise<any>
   error?: string
   fromUrl: string
 }
@@ -69,7 +67,7 @@ interface ServiceEditorParams {
 const ServiceEditor: React.FC<ServiceEditorParams> = props => {
   const { title, service: initService, environment: initEnvironment,
     repositories: initRepositories, macroValues: initMacroValues,
-    hasService, validate, editService, setServiceConfig, error, fromUrl } = props
+    hasService, validate, setServiceConfig, error, fromUrl } = props
 
   const [service, setService] = useState(initService)
   const [environment, setEnvironment] = useState(initEnvironment)
@@ -109,7 +107,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
         title={title}
       />
       <CardContent>
-        { !editService ?
+        { !initService ?
           <TextField  className={classes.newServiceName}
                       autoFocus
                       error={!!service && hasService(service)}
@@ -163,13 +161,13 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
         <Button
           className={classes.control}
           color="primary"
-          disabled={!service || !validate(service, environment, repositories, macroValues)}
+          disabled={!service || !validate(environment, repositories, macroValues)}
           onClick={() => {
             setServiceConfig(service!, environment, repositories, macroValues).then(() => setGoBack(true))
           }}
           variant="contained"
         >
-          {!editService?'Add New Service':'Save'}
+          {!initService?'Add New Service':'Save'}
         </Button>
       </Box>
     </Card>
