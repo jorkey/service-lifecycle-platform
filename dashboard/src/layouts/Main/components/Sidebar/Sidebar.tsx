@@ -17,11 +17,11 @@ import ProfilesIcon from '@material-ui/icons/FilterList';
 import TaskIcon from '@mui/icons-material/Task';
 
 import { Profile, SidebarNav } from './components';
-import {useDeveloperBuilderConfigQuery, useDeveloperServicesQuery} from "../../../../generated/graphql";
+import {useDeveloperServicesQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme?: any) => ({
   drawer: {
-    width: 240,
+    width: 260,
     [theme.breakpoints.up('lg')]: {
       marginTop: 64,
       height: 'calc(100% - 64px)'

@@ -81,7 +81,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
   const classes = useStyles()
 
   if (goBack) {
-    return <Redirect to={fromUrl} />
+    return <Redirect to={fromUrl}/>
   }
 
   return (

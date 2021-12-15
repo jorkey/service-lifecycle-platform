@@ -28,7 +28,7 @@ const Builder = () => {
           <Switch>
             <Route exact path={`${routeMatch.url}/developer`}
                    component={DeveloperBuilderConfiguration}/>
-            <Route exact path={`${routeMatch.url}/developer/service/new`}
+            <Route exact path={`${routeMatch.url}/developer/new`}
                    render={(props) =>
                      <DeveloperServiceEditor fromUrl={`${routeMatch.url}/developer`} {...props} />}>
             </Route>

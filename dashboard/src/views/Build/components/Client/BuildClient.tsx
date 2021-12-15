@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 
-import {RouteComponentProps, useHistory} from "react-router-dom"
+import {Redirect, RouteComponentProps, useHistory} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import Alert from "@material-ui/lab/Alert";

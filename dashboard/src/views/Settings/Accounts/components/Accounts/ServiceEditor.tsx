@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import {NavLink as RouterLink, RouteComponentProps, useHistory} from "react-router-dom"
+import {NavLink as RouterLink, Redirect, RouteComponentProps, useHistory} from "react-router-dom"
 
 import {makeStyles} from '@material-ui/core/styles';
 import {
@@ -85,8 +85,6 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
 
   const editAccount = props.match.params.account
 
-  const history = useHistory()
-
   if (!initialized && whoAmI.data) {
     if (editAccount) {
       if (!accountInfo.data && !accountInfo.loading) {
@@ -117,7 +115,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
     })
 
   if (addAccountData || changeAccountData) {
-    history.push(props.fromUrl)
+    return <Redirect to={props.fromUrl}/>
   }
 
   const validate: () => boolean = () => {
