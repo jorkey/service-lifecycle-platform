@@ -3,14 +3,14 @@ import {makeStyles} from '@material-ui/styles';
 import {
   useRemoveServicesProfileMutation,
   useServiceProfilesQuery,
-} from '../../../generated/graphql';
+} from '../../../../generated/graphql';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {Redirect, useRouteMatch} from 'react-router-dom';
-import ConfirmDialog from '../../../common/components/dialogs/ConfirmDialog';
-import GridTable from "../../../common/components/gridTable/GridTable";
+import ConfirmDialog from '../../../../common/components/dialogs/ConfirmDialog';
+import GridTable from "../../../../common/components/gridTable/GridTable";
 import Alert from "@material-ui/lab/Alert";
-import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
-import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
+import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({
   profileTable: {

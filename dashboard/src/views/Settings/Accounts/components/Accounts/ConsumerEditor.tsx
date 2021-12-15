@@ -24,7 +24,7 @@ import {
   useServiceProfilesQuery,
   useUserAccountInfoLazyQuery,
   useWhoAmIQuery
-} from '../../../../generated/graphql';
+} from '../../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 

@@ -6,8 +6,8 @@ import TableCell from '@material-ui/core/TableCell';
 import InfoIcon from '@material-ui/icons/Info';
 import AlertIcon from '@material-ui/icons/Error';
 import TableRow from '@material-ui/core/TableRow';
-import {ServiceState, useAccessTokenQuery} from '../../../../generated/graphql';
-import {Version} from '../../../../common';
+import {ServiceState, useAccessTokenQuery} from '../../../../../generated/graphql';
+import {Version} from '../../../../../common';
 import AccessTokenIcon from "@material-ui/icons/VpnKey";
 
 const useStyles = makeStyles(theme => ({

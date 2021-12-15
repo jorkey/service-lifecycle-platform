@@ -1,8 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
-import {NavLink as RouterLink, RouteComponentProps, useRouteMatch, useHistory} from "react-router-dom"
+import {NavLink as RouterLink, RouteComponentProps} from "react-router-dom"
 
 import { makeStyles } from '@material-ui/core/styles';
 import {
@@ -14,7 +13,6 @@ import {
   Grid, Typography
 } from '@material-ui/core';
 import {
-  SourceConfig,
   useCancelTaskMutation, useTasksQuery,
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
@@ -62,7 +60,6 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   const [task, setTask] = useState<string>()
   const [version, setVersion] = useState<string>()
   const [author, setAuthor] = useState<string>()
-  const [sources, setSources] = useState<SourceConfig[]>()
   const [comment, setComment] = useState<string>()
   const [startTime, setStartTime] = useState<Date>()
   const [endTime, setEndTime] = useState<Date>()
@@ -94,8 +91,6 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
       setStartTime(task.creationTime)
       setVersion(task.parameters.find(p => p.name == 'version')?.value)
       setAuthor(task.parameters.find(p => p.name == 'author')?.value)
-      const sourcesStr = task.parameters.find(p => p.name == 'sources')?.value
-      setSources(sourcesStr?JSON.parse(sourcesStr):undefined)
       setComment(task.parameters.find(p => p.name == 'comment')?.value)
       setStatus(Status.InProcess)
     } else {
@@ -133,9 +128,6 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
 
             <Grid item md={1} xs={12}>
               <Typography>Branches</Typography>
-            </Grid>
-            <Grid item md={8} xs={12}>
-              <Typography>{sources?.map(source => { return source.name + ':' + source.git.branch })}</Typography>
             </Grid>
 
             <Grid item md={1} xs={12}>

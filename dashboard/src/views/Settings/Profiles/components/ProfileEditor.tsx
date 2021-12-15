@@ -18,7 +18,7 @@ import {
   useChangeServicesProfileMutation, useDeveloperServicesQuery,
   useProfileServicesLazyQuery,
   useServiceProfilesQuery,
-} from '../../../generated/graphql';
+} from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
@@ -188,8 +188,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
               xs={6}
             >
               <DevelopmentServices services={developerServices?
-                                    developerServices?.developerServices.filter(service =>
-                                      services.find(s => s == service) === undefined):[]}
+                                      developerServices.developerServicesConfig.map(s => s.service)
+                                        .filter(service => services.find(s => s == service) === undefined):[]}
                                    deleteIcon={<LeftIcon/>}
                                    onServiceRemove={ service => {
                                      setServices([...services, service])

@@ -129,7 +129,7 @@ const BuildDeveloper = () => {
     }
   ]
 
-  const rows = services?.developerServices.map(
+  const rows = services?.developerServicesConfig.map(s => s.service).map(
     service => {
       const versionInProcess = tasksInProcess?.tasks.find(task => task.parameters.find(p => {
         return p.name == 'service' && p.value == service }))
