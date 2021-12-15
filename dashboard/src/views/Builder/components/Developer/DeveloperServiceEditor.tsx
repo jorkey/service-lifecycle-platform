@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
 
-import {Redirect, RouteComponentProps} from 'react-router-dom'
+import {RouteComponentProps} from 'react-router-dom'
 
 import {
-  NamedStringValue, Repository,
+  useDeveloperServiceConfigQuery,
   useDeveloperServicesQuery,
   useSetDeveloperServiceConfigMutation
 } from "../../../../generated/graphql";
@@ -25,6 +25,12 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
   const { data: developerServices } = useDeveloperServicesQuery({
     onError(err) {
       setError('Query service profiles error ' + err.message)
+    }
+  })
+
+  useDeveloperServiceConfigQuery({
+    variables: {
+      service: service
     }
   })
 
