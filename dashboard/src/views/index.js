@@ -1,11 +1,11 @@
 export { default as LoginPage } from './LoginPage';
 export { default as Dashboard } from './Dashboard';
-export { default as Builder } from './Settings/Builder';
-export { default as Profiles } from './Profiles';
-export { default as Accounts } from './Settings/Accounts';
-export { default as Providers } from './Settings/Providers';
 export { default as Build } from './Build';
 export { default as DesiredVersions } from './DesiredVersions';
 export { default as Logging } from './Logging';
 export { default as Faults } from './Faults';
+export { default as Builder } from './Settings/Builder';
+export { default as Profiles } from './Settings/Profiles';
+export { default as Accounts } from './Settings/Accounts';
+export { default as Providers } from './Settings/Providers';
 export { default as NotFound } from './NotFound';

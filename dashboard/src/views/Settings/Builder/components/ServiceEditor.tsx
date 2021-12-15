@@ -100,7 +100,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
               startIcon={<AddIcon/>}
               variant="contained"
             >
-              Add New Source
+              Add New Repository
             </Button>
           </Box>
         }

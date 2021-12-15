@@ -11,7 +11,7 @@ interface DeveloperServicesManagerParams {
 const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = props => {
   const [error, setError] = useState<string>()
 
-  const { data: developerServices } = useDeveloperServicesQuery({
+  const { data: developerServices, refetch: getDeveloperServices } = useDeveloperServicesQuery({
     onError(err) {
       setError('Query developer services error ' + err.message)
     }
@@ -26,7 +26,8 @@ const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = 
     return (<BuilderConfiguration
               title='Developer Services'
               services={developerServices.developerServicesConfig.map(s => s.service)}
-              removeServiceConfig={(service) => removeServiceConfig({ variables: { service } }) }
+              removeServiceConfig={(service) =>
+                removeServiceConfig({ variables: { service } }).then(() => getDeveloperServices()) }
               error={error}
       />)
   } else {

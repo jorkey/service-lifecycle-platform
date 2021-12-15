@@ -162,8 +162,8 @@ const Sidebar = (props:any) => {
             icon: <BuildIcon/>,
             pages: [
               {
-                title: 'Development',
-                href: '/settings/builder/development'
+                title: 'Developer',
+                href: '/settings/builder/developer'
               },
               {
                 title: 'Client',
