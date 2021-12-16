@@ -84,69 +84,73 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
     return <Redirect to={fromUrl}/>
   }
 
-  return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <Box
-            className={classes.controls}
-          >
-            <Button
-              className={classes.control}
-              color="primary"
-              onClick={() => setAddRepository(true)}
-              startIcon={<AddIcon/>}
-              variant="contained"
+  return (<Card className={clsx(classes.root)}>
+    <CardHeader
+      title={initService?`Service '${service}'`:`New service`}
+    />
+    <CardContent>
+      <Card
+        className={clsx(classes.root)}
+      >
+        <CardHeader
+          action={
+            <Box
+              className={classes.controls}
             >
-              Add New Repository
-            </Button>
-          </Box>
-        }
-        title={title}
-      />
-      <CardContent>
-        { !initService ?
-          <TextField  className={classes.newServiceName}
-                      autoFocus
-                      error={!!service && hasService(service)}
-                      fullWidth
-                      helperText={(service && hasService(service)) ? 'Service already exists': ''}
-                      label="Service"
-                      margin="normal"
-                      onChange={e => {setService(e.target.value)}}
-                      required
-                      value={service?service:''}
-                      variant="outlined"
-          /> : null }
-        <RepositoriesTable repositories={repositories}
-                           addRepository={addRepository}
-                           confirmRemove={true}
-                           onRepositoryAdded={
-                             repository => {
-                               setRepositories([...repositories, repository])
-                               setAddRepository(false)
-                             }
-                           }
-                           onRepositoryAddCancelled={() => {
-                             setAddRepository(false)
-                           }}
-                           onRepositoryChanged={
-                             (oldRepository, newRepository) => {
-                               const newSources = repositories.filter(s => s != oldRepository)
-                               setRepositories([...newSources, newRepository])
-                             }
-                           }
-                           onRepositoryRemoved={
-                             repository => {
-                               const newServices = repositories.filter(s => s != repository)
-                               setRepositories(newServices)
-                             }
-                           }
+              <Button
+                className={classes.control}
+                color="primary"
+                onClick={() => setAddRepository(true)}
+                startIcon={<AddIcon/>}
+                variant="contained"
+              >
+                Add New Repository
+              </Button>
+            </Box>
+          }
+          title={title}
         />
-      </CardContent>
-      <Divider />
+        <CardContent>
+          { !initService ?
+            <TextField  className={classes.newServiceName}
+                        autoFocus
+                        error={!!service && hasService(service)}
+                        fullWidth
+                        helperText={(service && hasService(service)) ? 'Service already exists': ''}
+                        label="Service"
+                        margin="normal"
+                        onChange={e => {setService(e.target.value)}}
+                        required
+                        value={service?service:''}
+                        variant="outlined"
+            /> : null }
+          <RepositoriesTable repositories={repositories}
+                             addRepository={addRepository}
+                             confirmRemove={true}
+                             onRepositoryAdded={
+                               repository => {
+                                 setRepositories([...repositories, repository])
+                                 setAddRepository(false)
+                               }
+                             }
+                             onRepositoryAddCancelled={() => {
+                               setAddRepository(false)
+                             }}
+                             onRepositoryChanged={
+                               (oldRepository, newRepository) => {
+                                 const newSources = repositories.filter(s => s != oldRepository)
+                                 setRepositories([...newSources, newRepository])
+                               }
+                             }
+                             onRepositoryRemoved={
+                               repository => {
+                                 const newServices = repositories.filter(s => s != repository)
+                                 setRepositories(newServices)
+                               }
+                             }
+          />
+        </CardContent>
+      </Card>
       {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
       <Box className={classes.controls}>
         <Button
@@ -170,8 +174,8 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
           {!initService?'Add New Service':'Save'}
         </Button>
       </Box>
-    </Card>
-  )
+    </CardContent>
+  </Card>)
 }
 
 export default ServiceEditor;

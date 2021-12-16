@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
-import com.vyulabs.update.common.config.{BuilderConfig, DistributionConfig, NamedStringValue}
+import com.vyulabs.update.common.config.{DistributionConfig, NamedStringValue}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, ServiceSettingsDirectory}
@@ -64,14 +64,10 @@ trait RunBuilderUtils extends SprayJsonSupport {
       builderConfig <- configBuilderUtils.getClientBuilderConfig()
       serviceConfig <- configBuilderUtils.getClientServiceConfig(service)
     } yield {
-      var env = Seq.empty[NamedStringValue]
-      var args = arguments
-      for (serviceConfig <- serviceConfig) {
-        env ++= serviceConfig.environment
-        args ++= Seq(
-          s"settingsRepositories=${serviceConfig.repositories.toJson.compactPrint}",
-          s"macroValues=${serviceConfig.macroValues.toJson.compactPrint}")
-      }
+      val env = serviceConfig.map(_.environment).getOrElse(Seq.empty)
+      val args = serviceConfig.map(s =>
+        Seq(s"settingsRepositories=${s.repositories.toJson.compactPrint}",
+            s"macroValues=${s.macroValues.toJson.compactPrint}")).getOrElse(Seq.empty)
       runBuilder(task, builderConfig.distribution, env, args)
     }
     val result = future.map(_._1).flatten

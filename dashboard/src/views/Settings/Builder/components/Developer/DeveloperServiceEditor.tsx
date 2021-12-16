@@ -51,7 +51,7 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
     const macroValues = config?config.macroValues:[]
 
     return (<ServiceEditor
-              title={`Developer Service '${service}' Config`}
+              title={`Source Repositories`}
               service={service}
               environment={environment}
               repositories={repositories}

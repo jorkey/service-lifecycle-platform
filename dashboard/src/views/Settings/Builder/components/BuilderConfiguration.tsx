@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, Box, Link,
+  Box, Select, Divider, Checkbox,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import {Redirect, useRouteMatch} from "react-router-dom";
@@ -17,9 +17,16 @@ import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 import DeleteIcon from "@material-ui/icons/Delete";
+import FormGroup from "@material-ui/core/FormGroup";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import {BuilderConfig, useProvidersInfoQuery} from "../../../../generated/graphql";
+import {valueFromAST} from "graphql";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
+  card: {
+    marginTop: 25
+  },
   content: {
     padding: 0
   },
@@ -36,6 +43,13 @@ const useStyles = makeStyles((theme:any) => ({
     paddingRight: '40px',
     textAlign: 'right'
   },
+  localBuilder: {
+    paddingRight: '2px'
+  },
+  providerSelect: {
+    width: '150px',
+    paddingRight: '2px'
+  },
   alert: {
     marginTop: 25
   },
@@ -51,20 +65,29 @@ const useStyles = makeStyles((theme:any) => ({
 
 interface ServicesManagerParams {
   title: string
+  builderConfig: BuilderConfig
   services: string[]
+  setBuilderConfig: (distribution: string) => void
   removeServiceConfig: (service: string) => void
+  setError: (error: string) => void
   error?: string
 }
 
 const BuilderConfiguration: React.FC<ServicesManagerParams> = props => {
-  const { title, services, removeServiceConfig, error } = props
+  const { title, builderConfig, services,
+    setBuilderConfig, removeServiceConfig, setError, error } = props
 
   const [ startEdit, setStartEdit ] = React.useState('')
+  const [ selectingBuilderProvider, setSelectingBuilderProvider ] = useState(false)
   const [ deleteConfirm, setDeleteConfirm ] = useState('')
 
   const classes = useStyles()
 
-  const routeMatch = useRouteMatch();
+  const routeMatch = useRouteMatch()
+
+  const { data: providers } = useProvidersInfoQuery({
+    onError(err) { setError('Query providers info error ' + err.message) },
+  })
 
   if (startEdit) {
     return <Redirect to={`${routeMatch.url}/edit/${startEdit}`}/>
@@ -98,53 +121,118 @@ const BuilderConfiguration: React.FC<ServicesManagerParams> = props => {
         ]))
     })
 
+  const localBuilder = builderConfig.distribution == localStorage.getItem('distribution')
+  const hasProviders = !!providers?.providersInfo.length
+
   return (
     <Card
-      className={clsx(classes.root)}
+      className={classes.card}
     >
       <CardHeader
-        action={
-          <Box
-            className={classes.controls}
-          >
-            <Button
-              color="primary"
-              variant="contained"
-              className={classes.control}
-              startIcon={<AddIcon/>}
-              component={RouterLink}
-              to={`${routeMatch.url}/new`}
-            >
-              Add New
-            </Button>
-          </Box>
-        }
         title={title}
       />
-      <Divider/>
-      <CardContent className={classes.content}>
-        <GridTable
-          className={classes.servicesTable}
-          columns={columns}
-          rows={rows}
-          onClick={ (row) =>
-            setStartEdit(rows[row].get('service')?.value! as string)
-          }
-        />
-        {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-        { deleteConfirm ? (
-          <ConfirmDialog
-            message={`Do you want to delete service '${deleteConfirm}'?`}
-            open={true}
-            close={() => {
-              setDeleteConfirm('')
-            }}
-            onConfirm={() => {
-              removeServiceConfig(deleteConfirm)
-              setDeleteConfirm('')
-            }}
-          />) : null
-        }
+      <CardContent>
+        <Card
+          className={classes.card}
+        >
+          <CardHeader
+            action={
+              <FormGroup row>
+                <FormControlLabel
+                  className={classes.control}
+                  control={<Checkbox
+                    className={classes.localBuilder}
+                    checked={localBuilder && !selectingBuilderProvider}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        setBuilderConfig(localStorage.getItem('distribution')!)
+                      } else {
+                        setSelectingBuilderProvider(true)
+                      }
+                    }}
+                  />}
+                  label='Local Builder'
+                />
+                { hasProviders ?
+                  <FormControlLabel
+                    className={classes.control}
+                    control={
+                      <Select
+                        className={classes.providerSelect}
+                        native
+                        onChange={(event) => {
+                          setBuilderConfig(event.target.value as string)
+                          setSelectingBuilderProvider(false)
+                        }}
+                        value={providers?.providersInfo
+                          .find(provider => provider.distribution == builderConfig.distribution)}
+                        open={selectingBuilderProvider}
+                        autoFocus={selectingBuilderProvider}
+                        disabled={localBuilder && !selectingBuilderProvider}
+                        error={!!providers?.providersInfo
+                          .find(provider => provider.distribution == builderConfig.distribution)}
+                      >
+                        <option key={-1}/>
+                        { providers?.providersInfo
+                          .map((provider) => provider.distribution)
+                          .map((provider, index) => <option key={index}>{provider}</option>)}
+                      </Select>
+                    }
+                    label='Distribution server to run builder'
+                  /> : null }
+              </FormGroup>
+            }
+            title={'Builder'}
+          />
+        </Card>
+        <Divider />
+        <Card
+          className={classes.card}
+        >
+          <CardHeader
+            action={
+              <Box
+                className={classes.controls}
+              >
+                <Button
+                  color="primary"
+                  variant="contained"
+                  className={classes.control}
+                  startIcon={<AddIcon/>}
+                  component={RouterLink}
+                  to={`${routeMatch.url}/new`}
+                >
+                  Add New Service
+                </Button>
+              </Box>
+            }
+            title={'Services'}
+          />
+          <CardContent className={classes.content}>
+            <GridTable
+              className={classes.servicesTable}
+              columns={columns}
+              rows={rows}
+              onClick={ (row) =>
+                setStartEdit(rows[row].get('service')?.value! as string)
+              }
+            />
+            {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
+            { deleteConfirm ? (
+              <ConfirmDialog
+                message={`Do you want to delete service '${deleteConfirm}'?`}
+                open={true}
+                close={() =>
+                  setDeleteConfirm('')
+                }
+                onConfirm={() => {
+                  removeServiceConfig(deleteConfirm)
+                  setDeleteConfirm('')
+                }}
+              />) : null
+            }
+          </CardContent>
+        </Card>
       </CardContent>
     </Card>
   );

@@ -103,8 +103,8 @@ const Versions: React.FC<VersionsProps> = props => {
             <FormControlLabel
               className={classes.control}
               control={<Checkbox
-                checked={onlyAlerts}
                 className={classes.onlyAlerts}
+                checked={onlyAlerts}
                 onChange={event => setOnlyAlerts(event.target.checked)}
               />}
               label='Only Alerts'

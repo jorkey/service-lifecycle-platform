@@ -212,9 +212,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
 
   return (
     initialized ? (
-      <Card
-        className={clsx(classes.root)}
-      >
+      <Card className={clsx(classes.root)}>
         {AccountCard()}
         <Divider />
         {RolesCard()}
