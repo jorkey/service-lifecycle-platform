@@ -41,7 +41,9 @@ const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = 
               services={developerServices.developerServicesConfig.map(s => s.service)}
               setBuilderConfig={(distribution =>
                 setDeveloperBuilderConfig({ variables: { distribution: distribution } })
-                  .then(() => getBuilderConfig()))}
+                  .then(() => {
+                    console.log('getBuilderConfig')
+                    getBuilderConfig()}))}
               removeServiceConfig={(service) =>
                 removeServiceConfig({ variables: { service } }).then(() => getDeveloperServices()) }
               setError={(error) => setError(error)}

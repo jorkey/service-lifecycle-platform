@@ -9,7 +9,7 @@ import {GridTableCellParams} from "../../../../common/components/gridTable/GridT
 import {Repository} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
-  servicesTable: {
+  repositoriesTable: {
     marginTop: 20
   },
   nameColumn: {
@@ -112,7 +112,7 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
 
   return (<>
     <GridTable
-      className={classes.servicesTable}
+      className={classes.repositoriesTable}
       columns={columns}
       rows={rows}
       addNewRow={addRepository}
