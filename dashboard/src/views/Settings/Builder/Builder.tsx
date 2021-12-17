@@ -5,6 +5,8 @@ import {Grid} from '@material-ui/core';
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import DeveloperBuilderConfiguration from "./components/Developer/DeveloperBuilderConfiguration";
 import DeveloperServiceEditor from "./components/Developer/DeveloperServiceEditor";
+import ClientBuilderConfiguration from "./components/Client/ClientBuilderConfiguration";
+import ClientServiceEditor from "./components/Client/ClientServiceEditor";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -35,6 +37,16 @@ const Builder = () => {
             <Route exact path={`${routeMatch.url}/developer/edit/:service`}
                    render={(props) =>
                      <DeveloperServiceEditor fromUrl={`${routeMatch.url}/developer`} {...props} />}>
+            </Route>
+            <Route exact path={`${routeMatch.url}/client`}
+                   component={ClientBuilderConfiguration}/>
+            <Route exact path={`${routeMatch.url}/client/new`}
+                   render={(props) =>
+                     <ClientServiceEditor fromUrl={`${routeMatch.url}/client`} {...props} />}>
+            </Route>
+            <Route exact path={`${routeMatch.url}/client/edit/:service`}
+                   render={(props) =>
+                     <ClientServiceEditor fromUrl={`${routeMatch.url}/client`} {...props} />}>
             </Route>
           </Switch>
         </Grid>

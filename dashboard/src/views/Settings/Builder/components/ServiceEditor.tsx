@@ -199,12 +199,60 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
             }
             onRepositoryRemoved={
               repository => {
-                const newServices = repositories.filter(s => s != repository)
-                setRepositories(newServices)
+                const newValues = repositories.filter(s => s != repository)
+                setRepositories(newValues)
               }
             }
           />
         </CardContent>
+      </Card>
+      <Card
+        className={classes.card}
+      >
+        <CardHeader
+          action={
+            <Box
+              className={classes.controls}
+            >
+              <Button
+                className={classes.control}
+                color="primary"
+                onClick={() => setAddEnvironment(true)}
+                startIcon={<AddIcon/>}
+                title={'Add value'}
+              />
+            </Box>
+          }
+          title={'Macro Values'}
+        />
+        {macroValues.length || addMacroValue ? <CardContent>
+          <NamedValueTable
+            values={macroValues}
+            addValue={addMacroValue}
+            confirmRemove={true}
+            onValueAdded={
+              value => {
+                setEnvironment([...macroValues, value])
+                setAddMacroValue(false)
+              }
+            }
+            onValueAddCancelled={() => {
+              setAddMacroValue(false)
+            }}
+            onValueChanged={
+              (oldValue, newValue) => {
+                const newValues = macroValues.filter(v => v.name != oldValue.name)
+                setMacroValues([...newValues, newValue])
+              }
+            }
+            onValueRemoved={
+              value => {
+                const newValues = macroValues.filter(v => v.name != value.name)
+                setMacroValues(newValues)
+              }
+            }
+          />
+        </CardContent> : null}
       </Card>
       {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
       <Box className={classes.controls}>
