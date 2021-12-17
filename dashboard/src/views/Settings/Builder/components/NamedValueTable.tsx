@@ -47,7 +47,6 @@ const NamedValueTable = (props: NamedValueTableParams) => {
       name: 'name',
       headerName: 'Name',
       className: classes.nameColumn,
-      editable: true,
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
@@ -60,14 +59,15 @@ const NamedValueTable = (props: NamedValueTableParams) => {
       headerName: 'Value',
       className: classes.valueColumn,
       editable: true,
-      validate: (value, rowNum) => {
-        try {
-          return value?!!new URL(value as string):false
-        } catch (ex) {
-          return false
-        }
-      }
+      validate: (value, rowNum) =>
+        !!value
     },
+    {
+      name: 'actions',
+      headerName: 'Actions',
+      type: 'elements',
+      className: classes.actionsColumn
+    }
   ]
 
   const rows = values

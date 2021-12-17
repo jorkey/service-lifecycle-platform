@@ -130,30 +130,31 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
           title={'Environment'}
         />
         {environment.length || addEnvironment ? <CardContent>
-          <NamedValueTable values={environment}
-                           addValue={addEnvironment}
-                           confirmRemove={true}
-                           onValueAdded={
-                             value => {
-                               setEnvironment([...environment, value])
-                               setAddEnvironment(false)
-                             }
-                           }
-                           onValueAddCancelled={() => {
-                             setAddEnvironment(false)
-                           }}
-                           onValueChanged={
-                             (oldValue, newValue) => {
-                               const newValues = environment.filter(v => v.name != oldValue.name)
-                               setEnvironment([...newValues, newValue])
-                             }
-                           }
-                           onValueRemoved={
-                             value => {
-                               const newServices = environment.filter(v => v.name != value.name)
-                               setEnvironment(newServices)
-                             }
-                           }
+          <NamedValueTable
+            values={environment}
+            addValue={addEnvironment}
+            confirmRemove={true}
+            onValueAdded={
+              value => {
+                setEnvironment([...environment, value])
+                setAddEnvironment(false)
+              }
+            }
+            onValueAddCancelled={() => {
+              setAddEnvironment(false)
+            }}
+            onValueChanged={
+              (oldValue, newValue) => {
+                const newValues = environment.filter(v => v.name != oldValue.name)
+                setEnvironment([...newValues, newValue])
+              }
+            }
+            onValueRemoved={
+              value => {
+                const newServices = environment.filter(v => v.name != value.name)
+                setEnvironment(newServices)
+              }
+            }
           />
         </CardContent> : null}
       </Card>
@@ -177,30 +178,31 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
           title={repositoriesTitle}
         />
         <CardContent>
-          <RepositoriesTable repositories={repositories}
-                             addRepository={addRepository}
-                             confirmRemove={true}
-                             onRepositoryAdded={
-                               repository => {
-                                 setRepositories([...repositories, repository])
-                                 setAddRepository(false)
-                               }
-                             }
-                             onRepositoryAddCancelled={() => {
-                               setAddRepository(false)
-                             }}
-                             onRepositoryChanged={
-                               (oldRepository, newRepository) => {
-                                 const newSources = repositories.filter(s => s != oldRepository)
-                                 setRepositories([...newSources, newRepository])
-                               }
-                             }
-                             onRepositoryRemoved={
-                               repository => {
-                                 const newServices = repositories.filter(s => s != repository)
-                                 setRepositories(newServices)
-                               }
-                             }
+          <RepositoriesTable
+            repositories={repositories}
+            addRepository={addRepository}
+            confirmRemove={true}
+            onRepositoryAdded={
+              repository => {
+                setRepositories([...repositories, repository])
+                setAddRepository(false)
+              }
+            }
+            onRepositoryAddCancelled={() => {
+              setAddRepository(false)
+            }}
+            onRepositoryChanged={
+              (oldRepository, newRepository) => {
+                const newSources = repositories.filter(s => s != oldRepository)
+                setRepositories([...newSources, newRepository])
+              }
+            }
+            onRepositoryRemoved={
+              repository => {
+                const newServices = repositories.filter(s => s != repository)
+                setRepositories(newServices)
+              }
+            }
           />
         </CardContent>
       </Card>
