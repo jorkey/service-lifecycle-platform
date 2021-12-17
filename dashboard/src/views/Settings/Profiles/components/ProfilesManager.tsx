@@ -49,11 +49,10 @@ const ProfilesManager = () => {
               variant="contained"
               className={classes.control}
               startIcon={<AddIcon/>}
+              title={'Add profile'}
               component={RouterLink}
               to={`${routeMatch.url}/new`}
-            >
-              Add New
-            </Button>
+            />
           </Box>
         }
         title={'Service Profiles'}

@@ -200,10 +200,9 @@ const ProvidersManager = () => {
               variant="contained"
               className={classes.control}
               startIcon={<AddIcon/>}
+              title={'Add provider'}
               onClick={() => setAddNewRow(true) }
-            >
-              Add New Provider
-            </Button>
+            />
           </Box>
         }
         title={'Providers'}

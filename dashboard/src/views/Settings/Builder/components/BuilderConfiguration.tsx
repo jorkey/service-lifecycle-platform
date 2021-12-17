@@ -1,12 +1,11 @@
 import React, {useState} from 'react';
-import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
   Card,
   CardHeader,
   CardContent,
   Button,
-  Box, Select, Divider, Checkbox,
+  Box, Select, Divider,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import {Redirect, useRouteMatch} from "react-router-dom";
@@ -20,7 +19,6 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {BuilderConfig, useProvidersInfoQuery} from "../../../../generated/graphql";
-import {valueFromAST} from "graphql";
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
@@ -171,14 +169,12 @@ const BuilderConfiguration: React.FC<ServicesManagerParams> = props => {
                 >
                   <Button
                     color="primary"
-                    variant="contained"
                     className={classes.control}
                     startIcon={<AddIcon/>}
+                    title={'Add service'}
                     component={RouterLink}
                     to={`${routeMatch.url}/new`}
-                  >
-                    Add New Service
-                  </Button>
+                  />
                 </Box>
               }
               title={'Services'}

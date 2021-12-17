@@ -54,14 +54,15 @@ const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> 
           >
             <Button
               color="primary"
-              variant="contained"
               className={classes.control}
               startIcon={<AddIcon/>}
               component={RouterLink}
               to={`${routeMatch.url}/new`}
-            >
-              Add New Account
-            </Button>
+              title={'Add ' + (accountsType == 'users' ? 'user' :
+                               accountsType == 'services' ? 'service' :
+                               accountsType == 'consumers' ? 'consumer' : '')
+              }
+            />
           </Box>
         }
         title={accountsType == 'users'? 'Users'

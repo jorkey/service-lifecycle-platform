@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import {NavLink as RouterLink, Redirect} from 'react-router-dom'
@@ -9,14 +9,13 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider,
 } from '@material-ui/core';
-import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
 import {NamedStringValue, Repository} from "../../../../generated/graphql";
 import TextField from "@material-ui/core/TextField";
 import RepositoriesTable from "./RepositoriesTable";
+import NamedValueTable from "./NamedValueTable";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -51,9 +50,9 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface ServiceEditorParams {
-  title: string
   service?: string
   environment: NamedStringValue[]
+  repositoriesTitle: string
   repositories: Repository[]
   macroValues: NamedStringValue[]
   hasService: (service: string) => boolean
@@ -65,8 +64,8 @@ interface ServiceEditorParams {
 }
 
 const ServiceEditor: React.FC<ServiceEditorParams> = props => {
-  const { title, service: initService, environment: initEnvironment,
-    repositories: initRepositories, macroValues: initMacroValues,
+  const { service: initService, environment: initEnvironment,
+    repositoriesTitle, repositories: initRepositories, macroValues: initMacroValues,
     hasService, validate, setServiceConfig, error, fromUrl } = props
 
   const [service, setService] = useState(initService)
@@ -74,23 +73,92 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
   const [repositories, setRepositories] = useState(initRepositories)
   const [macroValues, setMacroValues] = useState(initMacroValues)
 
-  const [addRepository, setAddRepository] = useState(false);
+  const [addEnvironment, setAddEnvironment] = useState(false)
+  const [addRepository, setAddRepository] = useState(false)
+  const [addMacroValue, setAddMacroValue] = useState(false)
 
   const [goBack, setGoBack] = useState(false)
 
   const classes = useStyles()
 
+  useEffect(() => { if (addEnvironment) { setAddRepository(false); setAddMacroValue(false) }},
+    [ addEnvironment ])
+  useEffect(() => { if (addRepository) { setAddEnvironment(false); setAddMacroValue(false) }},
+    [ addRepository ])
+  useEffect(() => { if (addMacroValue) { setAddEnvironment(false); setAddRepository(false) }},
+    [ addMacroValue ])
+
   if (goBack) {
     return <Redirect to={fromUrl}/>
   }
 
-  return (<Card className={clsx(classes.root)}>
+  return (<Card className={classes.card}>
     <CardHeader
       title={initService?`Service '${service}'`:`New service`}
     />
     <CardContent>
+      { !initService ?
+        <TextField  className={classes.newServiceName}
+                    autoFocus
+                    error={!!service && hasService(service)}
+                    fullWidth
+                    helperText={(service && hasService(service)) ? 'Service already exists': ''}
+                    label="Service"
+                    margin="normal"
+                    onChange={e => {setService(e.target.value)}}
+                    required
+                    value={service?service:''}
+                    variant="outlined"
+        /> : null }
       <Card
-        className={clsx(classes.root)}
+        className={classes.card}
+      >
+        <CardHeader
+          action={
+            <Box
+              className={classes.controls}
+            >
+              <Button
+                className={classes.control}
+                color="primary"
+                onClick={() => setAddEnvironment(true)}
+                startIcon={<AddIcon/>}
+                title={'Add variable'}
+              />
+            </Box>
+          }
+          title={'Environment'}
+        />
+        {environment.length || addEnvironment ? <CardContent>
+          <NamedValueTable values={environment}
+                           addValue={addEnvironment}
+                           confirmRemove={true}
+                           onValueAdded={
+                             value => {
+                               setEnvironment([...environment, value])
+                               setAddEnvironment(false)
+                             }
+                           }
+                           onValueAddCancelled={() => {
+                             setAddEnvironment(false)
+                           }}
+                           onValueChanged={
+                             (oldValue, newValue) => {
+                               const newValues = environment.filter(v => v.name != oldValue.name)
+                               setEnvironment([...newValues, newValue])
+                             }
+                           }
+                           onValueRemoved={
+                             value => {
+                               const newServices = environment.filter(v => v.name != value.name)
+                               setEnvironment(newServices)
+                             }
+                           }
+          />
+        </CardContent> : null}
+      </Card>
+      <Card
+        className={classes.card}
       >
         <CardHeader
           action={
@@ -102,28 +170,13 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
                 color="primary"
                 onClick={() => setAddRepository(true)}
                 startIcon={<AddIcon/>}
-                variant="contained"
-              >
-                Add New Repository
-              </Button>
+                title={'Add repository'}
+              />
             </Box>
           }
-          title={title}
+          title={repositoriesTitle}
         />
         <CardContent>
-          { !initService ?
-            <TextField  className={classes.newServiceName}
-                        autoFocus
-                        error={!!service && hasService(service)}
-                        fullWidth
-                        helperText={(service && hasService(service)) ? 'Service already exists': ''}
-                        label="Service"
-                        margin="normal"
-                        onChange={e => {setService(e.target.value)}}
-                        required
-                        value={service?service:''}
-                        variant="outlined"
-            /> : null }
           <RepositoriesTable repositories={repositories}
                              addRepository={addRepository}
                              confirmRemove={true}

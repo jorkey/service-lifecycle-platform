@@ -155,10 +155,8 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                 color="primary"
                 onClick={() => setAddService(true)}
                 startIcon={<AddIcon/>}
-                variant="contained"
-              >
-                Add New Service
-              </Button>
+                title={'Add service'}
+              />
             </Box>)
           }
           title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Profile'}

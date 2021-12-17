@@ -70,7 +70,9 @@ const NamedValueTable = (props: NamedValueTableParams) => {
     },
   ]
 
-  const rows = values.map(value => (
+  const rows = values
+      .sort((v1,v2) => v1.name > v2.name ? 1 : v2.name > v1.name ? -1 : 0)
+      .map(value => (
     new Map<string, GridTableCellParams>([
       ['name', { value: value.name }],
       ['value', { value: value.value }],
@@ -86,11 +88,13 @@ const NamedValueTable = (props: NamedValueTableParams) => {
       rows={rows}
       addNewRow={addValue}
       onRowAdded={ (cells) => {
-        onValueAdded?.({ name: cells.get('name')! as string,
+        onValueAdded?.({
+          name: cells.get('name')! as string,
           value: cells.get('value')! as string }) }}
       onRowAddCancelled={onValueAddCancelled}
       onRowChanged={ (row, cells, oldValues) => {
-        onValueChanged!(values[row], { name: cells.get('name')! as string,
+        onValueChanged!(values[row], {
+          name: cells.get('name')! as string,
           value: cells.get('value')! as string }) }}
     />
     { deleteConfirm ? (

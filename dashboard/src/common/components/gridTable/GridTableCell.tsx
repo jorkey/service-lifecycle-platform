@@ -34,6 +34,7 @@ export interface GridTableCellInternalParams extends Attributes {
   select?: {value:string, description:string}[]
   editable?: boolean
   editing?: boolean
+  focused?: boolean
   editValue?: GridTableCellValue
   onValidate?: (value: GridTableCellValue) => boolean
   onClicked?: () => void
@@ -46,7 +47,7 @@ export interface GridTableCellInternalParams extends Attributes {
 }
 
 export const GridTableCell = (params: GridTableCellInternalParams) => {
-  const { name, className, type, value, select, editValue, editing, editable,
+  const { name, className, type, value, select, editValue, editable, editing, focused,
     onValidate, onClicked, onStartEdit, onStopEdit, onSetEditValue,
     onCancelled, onSelected, onUnselected } = params
 
@@ -95,7 +96,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
       : editing ?
          type == 'select' ?
           <Select className={classes.input}
-                  autoFocus={true}
+                  autoFocus={focused}
                   value={editValue?editValue:''}
                   open={true}
                   onChange={e => onSetEditValue?.(e.target.value as string)}
@@ -108,7 +109,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
         : <Input className={classes.input}
                  type={type}
                  value={editValue?editValue:''}
-                 autoFocus={editing}
+                 autoFocus={focused}
                  onChange={e => onSetEditValue?.(e.target.value)}
                  error={onValidate?!onValidate(editValue):false}
           />
