@@ -36,7 +36,7 @@ const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = 
 
   if (builderConfig?.developerBuilderConfig && developerServices?.developerServicesConfig) {
     return (<BuilderConfiguration
-              title='Developer Builder Configuration'
+              title='Developer Build Configuration'
               builderConfig={builderConfig.developerBuilderConfig}
               services={developerServices.developerServicesConfig.map(s => s.service)}
               setBuilderConfig={(distribution =>

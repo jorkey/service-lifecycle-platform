@@ -332,7 +332,7 @@ _distribution_ запускает _builder_.
 
 Выполните команду:
 
-`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbName=? [persistent=?]"`
+`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbConnection=? mongoDbName=? [persistent=?]"`
 
 Вместо `?` подставьте значения:
 - _cloudProvider_
@@ -374,7 +374,7 @@ serviceToRun=builder
 distributionUrl=?
 accessToken=?
 
-. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
+. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
 ```
 
 Вместо `?` подставьте значения:
@@ -875,7 +875,7 @@ Access Key используется в скриптах запуска и обн
 - Задание сервера дистрибуции для запуска _builder_.
 - Описание параметров для запуска _builder_:
   - Окружение
-  - Репозитории исходных кодов, настройки 
+  - Репозитории исходных кодов, значения макросов
     (см [Сборка версии разработчика](#build_developer_version))
 
 #### Client
@@ -883,8 +883,10 @@ Access Key используется в скриптах запуска и обн
 Настройки для сборки клиентской версии.
 Включает в себя:
 - Задание сервера дистрибуции для запуска _builder_.
-- Описание параметров для запуска _builder_
-  (см [Сборка клиентской версии](#build_client_version))
+- Описание параметров для запуска _builder_:
+  - Окружение
+  - Репозитории настроек, значения макросов
+    (см [Сборка клиентской версии](#build_client_version))
 
 ### Profiles
 

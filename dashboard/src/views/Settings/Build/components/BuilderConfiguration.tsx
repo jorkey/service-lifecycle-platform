@@ -151,7 +151,7 @@ const BuilderConfiguration: React.FC<ServicesManagerParams> = props => {
                           .map((distribution, index) => <option key={index}>{distribution}</option>)}
                       </Select>
                     }
-                    label='Distribution Server To Run The Builder'
+                    label='Distribution Server To Run The Build'
                   />
                 </FormGroup>
               }

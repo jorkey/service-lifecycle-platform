@@ -46,7 +46,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   it should "build developer version" in {
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
-          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, sources: [], comment: "Test version")
+          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, comment: "Test version")
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -68,7 +68,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
-          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, sources: [], comment: "Test version")
+          buildDeveloperVersion (service: "service1", version: { build: [1,1,1] }, comment: "Test version")
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -138,6 +138,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
       .asJsObject.fields.get("subscribeLogs").get.asInstanceOf[JsArray]
       .elements.map(_.asJsObject.fields.get("payload").get.asJsObject
       .fields.get("message").get.asInstanceOf[JsString].value)
+    println(s"messages ${messages}")
     if (!messages.contains(message)) {
       expectMessage(input, message)
     }

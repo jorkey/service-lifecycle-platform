@@ -157,17 +157,17 @@ const Sidebar = (props:any) => {
             ]
           },
           {
-            title: 'Builder',
-            href: '/settings/builder/',
+            title: 'Build',
+            href: '/settings/build/',
             icon: <BuildIcon/>,
             pages: [
               {
                 title: 'Developer',
-                href: '/settings/builder/developer'
+                href: '/settings/build/developer'
               },
               {
                 title: 'Client',
-                href: '/settings/builder/client'
+                href: '/settings/build/client'
               }
             ]
           },

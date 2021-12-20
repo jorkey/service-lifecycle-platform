@@ -36,7 +36,7 @@ const ClientBuilderConfiguration: React.FC<ClientServicesManagerParams> = props 
 
   if (builderConfig?.clientBuilderConfig && clientServices?.clientServicesConfig) {
     return (<BuilderConfiguration
-              title='Client Builder Configuration'
+              title='Client Build Configuration'
               builderConfig={builderConfig.clientBuilderConfig}
               services={clientServices.clientServicesConfig.map(s => s.service)}
               setBuilderConfig={(distribution =>

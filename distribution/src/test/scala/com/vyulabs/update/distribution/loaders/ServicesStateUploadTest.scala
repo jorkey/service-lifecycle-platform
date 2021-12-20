@@ -16,8 +16,6 @@ import spray.json.enrichAny
 
 import java.io.IOException
 import java.util.Date
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Promise}
 
 class ServicesStateUploadTest extends TestEnvironment {
@@ -95,7 +93,7 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   private def waitForSetServiceStates(states: Seq[DistributionServiceState]): Promise[Boolean] = {
-    httpClient.waitForMutation("setServiceStates", Seq(GraphqlArgument("state" -> states.toJson)))
+    httpClient.waitForMutation("setServiceStates", Seq(GraphqlArgument("states" -> states.toJson)))
   }
 
   private def clear(): Unit = {

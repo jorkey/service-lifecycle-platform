@@ -197,7 +197,6 @@ const ProvidersManager = () => {
           >
             <Button
               color="primary"
-              variant="contained"
               className={classes.control}
               startIcon={<AddIcon/>}
               title={'Add provider'}

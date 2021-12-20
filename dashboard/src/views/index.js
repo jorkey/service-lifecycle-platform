@@ -4,7 +4,7 @@ export { default as Build } from './Build';
 export { default as DesiredVersions } from './DesiredVersions';
 export { default as Logging } from './Logging';
 export { default as Faults } from './Faults';
-export { default as Builder } from './Settings/Builder';
+export { default as Build } from './Settings/Build';
 export { default as Profiles } from './Settings/Profiles';
 export { default as Accounts } from './Settings/Accounts';
 export { default as Providers } from './Settings/Providers';

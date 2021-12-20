@@ -281,7 +281,7 @@ mutation removeAccount ($account: String!) {
     removeAccount (account: $account)
 }
 
-# Builder configs
+# Build configs
 
 query developerBuilderConfig {
     developerBuilderConfig { distribution }

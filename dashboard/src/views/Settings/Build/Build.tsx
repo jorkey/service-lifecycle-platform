@@ -14,7 +14,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Builder = () => {
+const Build = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
@@ -55,4 +55,4 @@ const Builder = () => {
   );
 };
 
-export default Builder;
+export default Build;

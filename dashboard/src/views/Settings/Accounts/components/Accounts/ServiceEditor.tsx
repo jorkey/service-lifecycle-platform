@@ -201,7 +201,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
                 onChange={ event => setRole(event.target.checked ? AccountRole.Builder : undefined) }
               />
             )}
-            label="Builder"
+            label="Build"
           />
         </FormGroup>
       </CardContent>
