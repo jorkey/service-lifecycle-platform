@@ -65,7 +65,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       serviceConfig <- configBuilderUtils.getClientServiceConfig(service)
     } yield {
       val env = serviceConfig.map(_.environment).getOrElse(Seq.empty)
-      val args = serviceConfig.map(s =>
+      val args = arguments ++ serviceConfig.map(s =>
         Seq(s"settingsRepositories=${s.repositories.toJson.compactPrint}",
             s"macroValues=${s.macroValues.toJson.compactPrint}")).getOrElse(Seq.empty)
       runBuilder(task, builderConfig.distribution, env, args)
