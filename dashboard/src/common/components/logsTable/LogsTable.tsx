@@ -184,8 +184,8 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       headerName: 'Line',
       className: classes.messageColumn
     },
-  ].filter(column => column.name != 'instance' || (!instance && !task))
-   .filter(column => column.name != 'process' || (!process && !task)) as GridTableColumnParams[]
+  ].filter(column => column.name !== 'instance' || (!instance && !task))
+   .filter(column => column.name !== 'process' || (!process && !task)) as GridTableColumnParams[]
 
   const addLines = (receivedLines: LogRecord[]) => {
     const begin = lines.length ? lines[0].sequence : BigInt(0)

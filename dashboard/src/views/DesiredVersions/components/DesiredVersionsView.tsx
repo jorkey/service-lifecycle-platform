@@ -4,8 +4,8 @@ import {RefreshControl} from "../../../common/components/refreshControl/RefreshC
 import GridTable from "../../../common/components/gridTable/GridTable";
 import React from "react";
 import {GridTableColumnParams} from "../../../common/components/gridTable/GridTableColumn";
-import UpIcon from "@mui/icons-material/ArrowUpward";
-import DownIcon from '@mui/icons-material/ArrowDownward';
+import UpIcon from "@material-ui/icons/ArrowUpward";
+import DownIcon from '@material-ui/icons/ArrowDownward';
 import {makeStyles} from "@material-ui/core/styles";
 import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
 

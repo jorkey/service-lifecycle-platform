@@ -14,7 +14,7 @@ import BuildIcon from '@material-ui/icons/Build';
 import DesiredVersionsIcon from '@material-ui/icons/Map';
 import DistributionIcon from '@material-ui/icons/Share';
 import ProfilesIcon from '@material-ui/icons/FilterList';
-import TaskIcon from '@mui/icons-material/Task';
+import TaskIcon from '@material-ui/icons/Check';
 
 import { Profile, SidebarNav } from './components';
 import {useDeveloperServicesQuery} from "../../../../generated/graphql";
