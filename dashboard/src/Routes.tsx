@@ -7,14 +7,14 @@ import { Switch, Redirect, Route } from 'react-router-dom';
 import {
   LoginPage as LoginPageView,
   Dashboard as DashboardView,
-  Accounts as AccountsView,
-  Builder as BuilderView,
-  Profiles as ProfilesView,
-  Providers as ProvidersView,
+  SettingsAccounts as AccountsView,
   Build as BuildView,
   DesiredVersions as DesiredVersionsView,
   Logging as LoggingView,
   Faults as FaultsView,
+  SettingsBuild as SettingsBuildView,
+  SettingsProfiles as SettingsProfilesView,
+  SettingsProviders as SettingsProvidersView,
   NotFound as NotFoundView
 } from './views';
 import {DistributionInfo, useDistributionInfoQuery} from './generated/graphql';
@@ -79,19 +79,19 @@ const Routes: React.FC<RoutesProps> = props => {
         {...props}
       />
       <RouteWithLayout
-        component={BuilderView}
+        component={SettingsBuildView}
         layout={MainLayout}
-        path='/settings/builder'
+        path='/settings/build'
         {...props}
       />
       <RouteWithLayout
-        component={ProfilesView}
+        component={SettingsProfilesView}
         layout={MainLayout}
         path='/settings/profiles'
         {...props}
       />
       <RouteWithLayout
-        component={ProvidersView}
+        component={SettingsProvidersView}
         layout={MainLayout}
         path='/settings/providers'
         {...props}
