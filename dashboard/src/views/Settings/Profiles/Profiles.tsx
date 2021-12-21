@@ -16,6 +16,8 @@ const Profiles = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
+  console.log('profiles route')
+
   return (
     <div className={classes.root}>
       <Grid

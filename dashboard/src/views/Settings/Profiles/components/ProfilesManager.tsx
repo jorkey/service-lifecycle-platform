@@ -33,7 +33,9 @@ const useStyles = makeStyles((theme:any) => ({
 
 const ProfilesManager = () => {
   const classes = useStyles()
-  const routeMatch = useRouteMatch();
+  const routeMatch = useRouteMatch()
+
+  console.log('profiles manager')
 
   return (
     <Card
