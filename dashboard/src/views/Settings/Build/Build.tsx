@@ -18,6 +18,8 @@ const Build = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
+  console.log('build route ' + routeMatch.url)
+
   return (
     <div className={classes.root}>
       <Grid
