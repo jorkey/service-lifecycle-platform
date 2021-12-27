@@ -235,9 +235,9 @@ export default class App extends Component {
       <ApolloProvider client={client}>
         <MuiPickersUtilsProvider utils={DateFnsUtils}>
           <ThemeProvider theme={theme}>
-            <Router history={browserHistory}>
+            <DebugRouter history={browserHistory}>
               <LoginRoutes />
-            </Router>
+            </DebugRouter>
           </ThemeProvider>
         </MuiPickersUtilsProvider>
       </ApolloProvider>
