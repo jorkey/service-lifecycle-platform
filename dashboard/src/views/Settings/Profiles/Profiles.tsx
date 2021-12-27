@@ -5,7 +5,6 @@ import {Grid} from '@material-ui/core';
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import ProfilesManager from "./components/ProfilesManager";
 import ProfileEditor from "./components/ProfileEditor";
-import ProvidersManager from "../Providers/components/Providers/ProvidersManager";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -30,7 +29,7 @@ const Profiles = () => {
         >
           <Switch>
             <Route exact path={`${routeMatch.url}/profiles`}
-                   component={ProvidersManager}/>
+                   component={ProfilesManager}/>
             <Route exact path={`${routeMatch.url}/profiles/new`}
                    render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
             </Route>
