@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {BrowserRouter, Router, useHistory} from 'react-router-dom';
+import { Router } from 'react-router-dom';
 import { createBrowserHistory } from 'history';
 import { ThemeProvider } from '@material-ui/styles';
 import validate from 'validate.js';
@@ -229,22 +229,13 @@ const client = new ApolloClient({
   }
 });
 
-const DebugRouter = ({ children }: { children: any }) => {
-  const { location } = useHistory()
-  console.log(
-    `Route: ${location.pathname}${location.search}, State: ${JSON.stringify(location.state)}`,
-  )
-
-  return children
-}
-
 export default class App extends Component {
   render() {
     return (
       <ApolloProvider client={client}>
         <MuiPickersUtilsProvider utils={DateFnsUtils}>
           <ThemeProvider theme={theme}>
-            <DebugRouter>
+            <DebugRouter history={browserHistory}>
               <LoginRoutes />
             </DebugRouter>
           </ThemeProvider>
