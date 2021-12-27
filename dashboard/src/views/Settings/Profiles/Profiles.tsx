@@ -17,32 +17,31 @@ const Profiles = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
-  console.log('profiles route 2 ' + routeMatch.url)
+  console.log('profiles route 1 ' + routeMatch.url)
 
-  return (<ProfilesManager/>);
-  // return (
-  //   <div className={classes.root}>
-  //     <Grid
-  //       container
-  //     >
-  //       <Grid
-  //         item
-  //         xs={12}
-  //       >
-  //         <Switch>
-  //           <Route exact path={`${routeMatch.url}/profiles`}
-  //                  component={ProvidersManager}/>
-  //           <Route exact path={`${routeMatch.url}/profiles/new`}
-  //                  render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
-  //           </Route>
-  //           <Route exact path={`${routeMatch.url}/profiles/edit/:profile`}
-  //                  render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
-  //           </Route>
-  //         </Switch>
-  //       </Grid>
-  //     </Grid>
-  //   </div>
-  // );
+  return (
+    <div className={classes.root}>
+      <Grid
+        container
+      >
+        <Grid
+          item
+          xs={12}
+        >
+          <Switch>
+            <Route exact path={`${routeMatch.url}/profiles`}
+                   component={ProvidersManager}/>
+            <Route exact path={`${routeMatch.url}/profiles/new`}
+                   render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
+            </Route>
+            <Route exact path={`${routeMatch.url}/profiles/edit/:profile`}
+                   render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
+            </Route>
+          </Switch>
+        </Grid>
+      </Grid>
+    </div>
+  );
 };
 
 export default Profiles;
