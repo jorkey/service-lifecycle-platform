@@ -17,7 +17,7 @@ const Profiles = () => {
   const classes = useStyles();
   const routeMatch = useRouteMatch();
 
-  console.log('profiles route ' + routeMatch.url)
+  console.log('profiles route 1 ' + routeMatch.url)
 
   return (
     <div className={classes.root}>
