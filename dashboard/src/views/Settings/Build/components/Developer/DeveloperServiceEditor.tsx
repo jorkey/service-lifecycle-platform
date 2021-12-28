@@ -22,17 +22,18 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
   const [error, setError] = useState<string>()
 
   const { data: developerServices } = useDeveloperServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query developer services error ' + err.message)
     }
   })
 
   const [ getServiceConfig, serviceConfig ] = useDeveloperServiceConfigLazyQuery({
-      onError(err) {
-        setError('Get service config error ' + err.message)
-      }
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onError(err) {
+      setError('Get service config error ' + err.message)
     }
-  )
+  })
 
   const [ setServiceConfig ] =
     useSetDeveloperServiceConfigMutation({

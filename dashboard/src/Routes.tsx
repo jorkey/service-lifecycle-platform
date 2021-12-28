@@ -109,7 +109,9 @@ const Routes: React.FC<RoutesProps> = props => {
 }
 
 const LoginRoutes = () => {
-  const { data } = useDistributionInfoQuery()
+  const { data } = useDistributionInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+  })
 
   if (data && data.distributionInfo) {
     localStorage.setItem('distribution', data.distributionInfo.distribution)

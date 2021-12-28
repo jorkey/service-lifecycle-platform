@@ -41,6 +41,7 @@ export const TasksTable = (props: TasksTableParams) => {
   const { className, type, onlyActive, onClick, onError } = props
 
   const { data: tasks } = useTasksQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { type: type, onlyActive: onlyActive },
     onError(err) { onError('Query tasks error ' + err.message) },
   })

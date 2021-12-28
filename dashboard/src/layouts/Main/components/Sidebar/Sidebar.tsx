@@ -54,7 +54,9 @@ const Sidebar = (props:any) => {
 
   const classes = useStyles()
 
-  const { data: developerServices } = useDeveloperServicesQuery()
+  const { data: developerServices } = useDeveloperServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+  })
 
   if (developerServices?.developerServicesConfig) {
     const development = !!developerServices?.developerServicesConfig.length

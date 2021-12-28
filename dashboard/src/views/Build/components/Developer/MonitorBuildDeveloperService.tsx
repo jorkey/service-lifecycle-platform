@@ -73,6 +73,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   const [status, setStatus] = useState<Status>()
 
   const { data: tasksInProcess } = useTasksQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: {
       type: 'BuildDeveloperVersion',
       parameters: [ { name: 'service', value: service } ],

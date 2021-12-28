@@ -10,12 +10,8 @@ import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps, useHistory} from "react-router-dom";
 import {
-  useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
-  useLogServicesQuery, useTasksQuery, useTaskTypesQuery
+  useTaskTypesQuery
 } from "../../../../generated/graphql";
-import {DateTimePicker} from "@material-ui/pickers";
-import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
 import {TasksTable} from "../../../../common/components/tasksTable/TasksTable";
 
 const useStyles = makeStyles((theme:any) => ({
@@ -66,6 +62,7 @@ const TasksView: React.FC<TasksParams> = props => {
   const [error, setError] = useState<string>()
 
   const { data: taskTypes } = useTaskTypesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query task types error ' + err.message) },
   })
 

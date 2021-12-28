@@ -93,6 +93,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   const [rows, setRows] = useState<RowData[]>([])
 
   const { data: providers } = useProvidersInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query providers info error ' + err.message) },
     onCompleted(providers) {
       if (providers.providersInfo?.length) {
@@ -100,24 +101,33 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       }
     }
   })
-  const [ getProviderDesiredVersions, providerDesiredVersions ] = useProviderDesiredVersionsLazyQuery({
-    onError(err) { setError('Query provider desired versions error ' + err.message) },
-  })
   const { data: developerDesiredVersions, refetch: getDeveloperDesiredVersions } = useDeveloperDesiredVersionsQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer desired versions error ' + err.message) },
   })
   const { data: clientDesiredVersions, refetch: getClientDesiredVersions } = useClientDesiredVersionsQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query client desired versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query client versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
+  const [ getProviderDesiredVersions, providerDesiredVersions ] = useProviderDesiredVersionsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onCompleted() { setRows(makeRowsData()) },
+    onError(err) { setError('Query provider desired versions error ' + err.message) },
+  })
   const [ getTestedVersions, testedVersions ] = useTestedVersionsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query tested versions error ' + err.message) },
   })
   const [ getProviderTestedVersions, providerTestedVersions ] = useProviderTestedVersionsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query provider tested versions error ' + err.message) },
   })
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
@@ -159,15 +169,9 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   }, [ provider ])
 
   React.useEffect(() => {
-    if (provider) {
-      getProviderTestedVersions({ variables: {distribution: provider.distribution} })
-    }
-  }, [ providerDesiredVersions ])
-
-  React.useEffect(() => {
+    console.log('useEffect')
     setRows(makeRowsData())
-  }, [ provider, providerDesiredVersions, developerDesiredVersions, clientDesiredVersions,
-    clientVersions, testedVersions, providerTestedVersions ])
+  }, [ developerDesiredVersions, clientDesiredVersions, clientVersions ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
@@ -188,35 +192,40 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   }
 
   const makeRowsData: () => RowData[] = () => {
-    const services = makeServicesList()
-    return services.sort().map(
-      service => {
-        const providerVersion = providerDesiredVersions.data?.providerDesiredVersions
-          .find(version => version.service == service)?.version
-        const developerVersion = developerDesiredVersions?.developerDesiredVersions
-          .find(version => version.service == service)?.version
-        const clientVersion = clientDesiredVersions?.clientDesiredVersions
-          .find(version => version.service == service)?.version
-        const testedVersion = testedVersions?.data?.testedVersions?.find(version => version.service == service)
-        const providerTestedVersion = providerTestedVersions?.data?.providerTestedVersions
-          .find(version => version.service == service)
+    if (developerDesiredVersions && clientDesiredVersions && clientVersions &&
+        providerDesiredVersions.data && testedVersions.data?.testedVersions) {
+      const services = makeServicesList()
+      return services.sort().map(
+        service => {
+          const providerVersion = providerDesiredVersions.data?.providerDesiredVersions
+            .find(version => version.service == service)?.version
+          const developerVersion = developerDesiredVersions.developerDesiredVersions
+            .find(version => version.service == service)?.version
+          const clientVersion = clientDesiredVersions.clientDesiredVersions
+            .find(version => version.service == service)?.version
+          const testedVersion = testedVersions.data?.testedVersions?.find(version => version.service == service)
+          const providerTestedVersion = providerTestedVersions?.data?.providerTestedVersions
+            .find(version => version.service == service)
 
-        const sourceVersion = providerVersion?providerVersion:developerVersion
-        const hasClientVersion = clientVersions?.clientVersionsInfo
-          .filter(info => info.service == service)
-          .find(info => Version.compareDeveloperDistributionVersions(sourceVersion,
-          { distribution: info.version.distribution, build: info.version.developerBuild}) == 0)
-        let selected = !hasClientVersion
+          const sourceVersion = providerVersion ? providerVersion : developerVersion
+          const hasClientVersion = clientVersions?.clientVersionsInfo
+            .filter(info => info.service == service)
+            .find(info => Version.compareDeveloperDistributionVersions(sourceVersion,
+              {distribution: info.version.distribution, build: info.version.developerBuild}) == 0)
+          let selected = !hasClientVersion
 
-        return {
-          selected: selected,
-          service: service,
-          providerVersion: providerVersion,
-          developerVersion: developerVersion,
-          clientVersion: clientVersion,
-          testedVersion: testedVersion?testedVersion?.version:providerTestedVersion?.version
-        } as RowData
-      })
+          return {
+            selected: selected,
+            service: service,
+            providerVersion: providerVersion,
+            developerVersion: developerVersion,
+            clientVersion: clientVersion,
+            testedVersion: testedVersion ? testedVersion?.version : providerTestedVersion?.version
+          } as RowData
+        })
+    } else {
+      return []
+    }
   }
 
   const validate = () => !!rowsView.find(value => value.get('select')?.value)

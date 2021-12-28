@@ -30,6 +30,7 @@ export const AccessTokenPopup: React.FC<AccessTokenPopupProps> = (props) => {
   const [popupAnchor, setPopupAnchor] = React.useState<Element>()
 
   const { data:accessToken } = useAccessTokenQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { account: account }
   })
 

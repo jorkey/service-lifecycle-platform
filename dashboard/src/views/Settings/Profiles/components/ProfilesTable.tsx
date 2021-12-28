@@ -35,6 +35,7 @@ const ProfilesTable = () => {
   const [error, setError] = useState<string>()
 
   const { data: profiles, refetch } = useServiceProfilesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query service profiles error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

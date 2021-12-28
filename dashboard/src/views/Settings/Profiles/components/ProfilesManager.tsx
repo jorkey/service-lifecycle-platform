@@ -10,7 +10,7 @@ import {
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import ProfilesTable from './ProfilesTable';
-import {RouteComponentProps, useRouteMatch} from "react-router-dom";
+import {useRouteMatch} from "react-router-dom";
 import { NavLink as RouterLink } from 'react-router-dom';
 
 const useStyles = makeStyles((theme:any) => ({
@@ -35,8 +35,6 @@ const ProfilesManager = () => {
   const classes = useStyles()
   const routeMatch = useRouteMatch()
 
-  console.log('profiles manager')
-
   return (
     <Card
       className={clsx(classes.root)}
@@ -48,7 +46,6 @@ const ProfilesManager = () => {
           >
             <Button
               color="primary"
-              variant="contained"
               className={classes.control}
               startIcon={<AddIcon/>}
               title={'Add profile'}

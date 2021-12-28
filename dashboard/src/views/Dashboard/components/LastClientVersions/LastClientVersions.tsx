@@ -38,11 +38,13 @@ const LastClientVersions = () => {
   const classes = useStyles()
 
   const { data: clientVersionsInProcess, refetch: getClientVersionsInProcess } = useTasksQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { type: 'BuildClientVersions', onlyActive: true },
     onError(err) { setError('Query client versions in process error ' + err.message) },
   })
 
   const { data:clientVersions, refetch:getClientVersions } = useClientVersionsInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query client versions error ' + err.message) },
   })
 

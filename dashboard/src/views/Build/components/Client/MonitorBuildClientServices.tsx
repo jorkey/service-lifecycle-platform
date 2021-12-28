@@ -13,7 +13,6 @@ import {
   Grid, Typography
 } from '@material-ui/core';
 import {
-  DeveloperDesiredVersion,
   useCancelTaskMutation, useTasksQuery
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
@@ -71,6 +70,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
   const [status, setStatus] = useState<Status>()
 
   const { data: tasksInProcess } = useTasksQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { type: 'BuildClientVersions', onlyActive: true },
     onError(err) { setError('Query client versions in process error ' + err.message) },
   })

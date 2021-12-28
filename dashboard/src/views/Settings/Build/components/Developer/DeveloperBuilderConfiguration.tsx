@@ -13,12 +13,14 @@ const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = 
   const [error, setError] = useState<string>()
 
   const { data: builderConfig, refetch: getBuilderConfig } = useDeveloperBuilderConfigQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query developer services error ' + err.message)
     }
   })
 
   const { data: developerServices, refetch: getDeveloperServices } = useDeveloperServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query developer services error ' + err.message)
     }

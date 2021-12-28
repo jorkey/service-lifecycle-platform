@@ -31,6 +31,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
 
   const {data: desiredVersionsHistory, refetch: getDesiredVersionsHistory} =
       useClientDesiredVersionsHistoryQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: {limit: 25},
     onCompleted(desiredVersionsHistory) {
       if (versionsInfo?.clientVersionsInfo) {
@@ -42,6 +43,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     }
   })
   const {data: versionsInfo, refetch: getVersionsInfo} = useClientVersionsInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onCompleted(versionsInfo) {
       if (desiredVersionsHistory?.clientDesiredVersionsHistory?.length) {
         initView(desiredVersionsHistory.clientDesiredVersionsHistory, versionsInfo.clientVersionsInfo)

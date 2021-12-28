@@ -22,17 +22,18 @@ const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
   const [error, setError] = useState<string>()
 
   const { data: clientServices } = useClientServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query client services error ' + err.message)
     }
   })
 
   const [ getServiceConfig, serviceConfig ] = useClientServiceConfigLazyQuery({
-      onError(err) {
-        setError('Get service config error ' + err.message)
-      }
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onError(err) {
+      setError('Get service config error ' + err.message)
     }
-  )
+  })
 
   const [ setServiceConfig ] =
     useSetClientServiceConfigMutation({

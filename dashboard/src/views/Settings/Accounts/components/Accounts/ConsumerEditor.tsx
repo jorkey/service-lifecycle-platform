@@ -71,10 +71,18 @@ interface AccountEditorParams extends RouteComponentProps<AccountRouteParams> {
 }
 
 const ConsumerEditor: React.FC<AccountEditorParams> = props => {
-  const whoAmI = useWhoAmIQuery()
-  const {data: accountsList} = useAccountsListQuery()
-  const {data: profilesList} = useServiceProfilesQuery()
-  const [getAccountInfo, accountInfo] = useConsumerAccountInfoLazyQuery()
+  const whoAmI = useWhoAmIQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+  })
+  const {data: accountsList} = useAccountsListQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+  })
+  const {data: profilesList} = useServiceProfilesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+  })
+  const [getAccountInfo, accountInfo] = useConsumerAccountInfoLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+  })
 
   const classes = useStyles()
 

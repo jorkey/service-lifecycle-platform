@@ -37,11 +37,13 @@ const LastDeveloperVersions = () => {
   const [error, setError] = useState<string>()
 
   const { data: developerVersionsInProcess, refetch: getDeveloperVersionsInProcess } = useTasksQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { type: 'BuildDeveloperVersion', onlyActive: true },
     onError(err) { setError('Query developer versions in process error ' + err.message) },
   })
 
   const {data:developerVersions, refetch:getDeveloperVersions} = useDeveloperVersionsInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

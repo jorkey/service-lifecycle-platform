@@ -13,12 +13,14 @@ const ClientBuilderConfiguration: React.FC<ClientServicesManagerParams> = props 
   const [error, setError] = useState<string>()
 
   const { data: builderConfig, refetch: getBuilderConfig } = useClientBuilderConfigQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query client services error ' + err.message)
     }
   })
 
   const { data: clientServices, refetch: getClientServices } = useClientServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query client services error ' + err.message)
     }

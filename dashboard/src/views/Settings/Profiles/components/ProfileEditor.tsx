@@ -59,16 +59,19 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   const [error, setError] = useState<string>()
 
   const {data: profiles} = useServiceProfilesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query service profiles error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const {data: developerServices} = useDeveloperServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
 
   const [getProfileServices, profileServices] = useProfileServicesLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query profile services error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

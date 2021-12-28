@@ -86,7 +86,7 @@ const LastDeveloperVersionsTable: React.FC<LastDeveloperVersionsTableProps> = (p
     },
   ]
 
-  const rows = developerVersions?.developerVersionsInfo
+  const rows = (developerVersions?.developerVersionsInfo ? [...developerVersions?.developerVersionsInfo] : [])
     .sort((v1, v2) =>
       Version.compareBuilds(v2.version.build, v1.version.build))
     .map(version => (

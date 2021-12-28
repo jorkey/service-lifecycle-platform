@@ -18,7 +18,9 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = props => {
   const classes = useStyles()
 
-  const { data: developerServices } = useDeveloperServicesQuery()
+  const { data: developerServices } = useDeveloperServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+  })
   const development = !!developerServices?.developerServicesConfig?.length
 
   return (

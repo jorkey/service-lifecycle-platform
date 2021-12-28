@@ -28,12 +28,12 @@ const Profiles = () => {
           xs={12}
         >
           <Switch>
-            <Route exact path={`${routeMatch.url}/profiles`}
+            <Route exact path={routeMatch.url}
                    component={ProfilesManager}/>
-            <Route exact path={`${routeMatch.url}/profiles/new`}
+            <Route exact path={`${routeMatch.url}/new`}
                    render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
             </Route>
-            <Route exact path={`${routeMatch.url}/profiles/edit/:profile`}
+            <Route exact path={`${routeMatch.url}/edit/:profile`}
                    render={(props) => <ProfileEditor fromUrl={`${routeMatch.url}/profiles`} {...props} /> }>
             </Route>
           </Switch>

@@ -69,14 +69,17 @@ const BuildDeveloper = () => {
   const [error, setError] = useState<string>()
 
   const { data: services, refetch: getServices } = useDeveloperServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const { data: completedVersions, refetch: getCompletedVersions } = useDeveloperVersionsInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const { data: tasksInProcess, refetch: getTasksInProcess } = useTasksQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { type: 'BuildDeveloperVersion', onlyActive: true },
     onError(err) { setError('Query developer versions in process error ' + err.message) },
     onCompleted() { setError(undefined) }

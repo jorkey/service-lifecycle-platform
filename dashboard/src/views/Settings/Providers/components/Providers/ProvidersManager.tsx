@@ -82,6 +82,7 @@ const ProvidersManager = () => {
   const [error, setError] = useState<string>()
 
   const { data: providers, refetch: refetchProviders } = useProvidersInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query providers info error ' + err.message) },
     onCompleted() { setError(undefined) }
   })

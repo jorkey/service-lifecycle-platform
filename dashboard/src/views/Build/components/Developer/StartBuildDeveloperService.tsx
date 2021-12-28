@@ -68,15 +68,18 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const history = useHistory()
 
   const [ getWhoAmI, whoAmI ] = useWhoAmILazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query who am I error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const [ getDeveloperVersions, developerVersions ] = useDeveloperVersionsInfoLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { service: service },
     onError(err) { setError('Query developer versions error ' + err.message) },
     onCompleted() { setError(undefined) }
   })
   const { data: selfServicesProfile } = useProfileServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { profile: 'self' },
     onError(err) { setError('Query self profile services error ' + err.message) },
   })

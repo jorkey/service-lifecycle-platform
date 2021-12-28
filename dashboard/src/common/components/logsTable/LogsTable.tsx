@@ -15,16 +15,20 @@ const useStyles = makeStyles(theme => ({
     display: 'relative'
   },
   timeColumn: {
-    width: '200px',
+    minWidth: '180px',
+    maxWidth: '180px',
   },
   instanceColumn: {
-    width: '200px',
+    minWidth: '200px',
+    maxWidth: '200px',
   },
   processColumn: {
-    width: '100px',
+    minWidth: '100px',
+    maxWidth: '100px',
   },
   levelColumn: {
-    width: '100px',
+    minWidth: '100px',
+    maxWidth: '100px',
   },
   messageColumn: {
     whiteSpace: 'pre',
@@ -101,26 +105,31 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const sliceRowsCount = 100
 
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getDirectoryLogs, directoryLogs ] = useDirectoryLogsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getProcessLogs, processLogs ] = useProcessLogsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })

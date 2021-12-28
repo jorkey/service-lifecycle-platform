@@ -83,6 +83,7 @@ const BuilderConfiguration: React.FC<ServicesManagerParams> = props => {
   const routeMatch = useRouteMatch()
 
   const { data: providers } = useProvidersInfoQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query providers info error ' + err.message) },
   })
 

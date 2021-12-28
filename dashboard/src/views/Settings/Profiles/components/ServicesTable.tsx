@@ -66,7 +66,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       new Map<string, GridTableCellParams>([
         ['service', { value: service }],
         ['actions', { value: deleteIcon ?
-            [<Button onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
+            [<Button key={0} onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
               {deleteIcon}
             </Button>] : undefined }]
         ]))

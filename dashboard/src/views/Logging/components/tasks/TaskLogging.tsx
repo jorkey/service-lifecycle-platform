@@ -10,11 +10,9 @@ import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
-  useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
-  useLogServicesQuery, useTasksQuery
+  useLogLevelsQuery,
+  useTasksQuery
 } from "../../../../generated/graphql";
-import {DateTimePicker} from "@material-ui/pickers";
 import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
 import {Logs} from "../../../../common/Logs";
 
@@ -84,11 +82,13 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
   const tableRef = useRef<LogsTableEvents>(null)
 
   const { data: activeTask } = useTasksQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { id: task, onlyActive: true },
     onError(err) { setError('Query active task error ' + err.message) },
   })
 
   const { data: levels } = useLogLevelsQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { task:task },
     onError(err) { setError('Query log levels error ' + err.message) },
   })
