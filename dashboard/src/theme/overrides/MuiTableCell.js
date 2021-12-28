@@ -4,7 +4,7 @@ import typography from '../typography';
 export default {
   root: {
     ...typography.body1,
-    padding: '0px',
+    padding: '2px',
     paddingLeft: '16px',
     paddingRight: '16px',
     borderBottom: `1px solid ${palette.divider}`,
