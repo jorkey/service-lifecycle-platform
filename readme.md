@@ -332,7 +332,7 @@ _distribution_ запускает _builder_.
 
 Выполните команду:
 
-`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbConnection=? mongoDbName=? [persistent=?]"`
+`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? host=? port=? title=? mongoDbConnection=? mongoDbName=? [persistent=?]"`
 
 Вместо `?` подставьте значения:
 - _cloudProvider_
@@ -342,6 +342,8 @@ _distribution_ запускает _builder_.
   - уникальное имя сервера дистрибуции, без пробелов
 - _directory_
   - каталог для установки
+- _host_
+  - DNS имя для сервиса http (сервис https можно определить позднее в настройках)
 - _port_
   - порт для сервиса http (сервис https можно определить позднее в настройках)
 - _title_
@@ -374,7 +376,7 @@ serviceToRun=builder
 distributionUrl=?
 accessToken=?
 
-. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? port=? title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
+. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? host=? port=? title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
 ```
 
 Вместо `?` подставьте значения:
@@ -390,6 +392,8 @@ accessToken=?
   - уникальное имя сервера дистрибуции
 - _directory_
   - каталог для установки
+- _host_
+  - DNS имя для сервиса http (сервис https можно определить позднее в настройках)
 - _port_
   - порт для сервиса http (сервис https можно определить позднее в настройках)
 - _title_
