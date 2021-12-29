@@ -114,9 +114,9 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
     } yield {
       if (!newReports.isEmpty) {
         Future.sequence(newReports.filter(_.document.distribution == distribution).map(report => {
-          val file = distributionDirectory.getFaultReportFile(report.document.payload.id)
+          val file = distributionDirectory.getFaultReportFile(report.document.payload.fault)
           val infoUpload = for {
-            _ <- client.uploadFaultReport(report.document.payload.id, file)
+            _ <- client.uploadFaultReport(report.document.payload.fault, file)
             _ <- client.graphqlRequest(GraphqlMutation[Boolean]("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.document.payload.toJson))))
           } yield {}
           infoUpload.

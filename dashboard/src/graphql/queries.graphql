@@ -209,13 +209,13 @@ query faultsEndTime ($distribution: String, $service: String) {
 
 query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date) {
     faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime) {
-        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
     }
 }
 
-query fault ($id: String!) {
-    faults (id: $id) {
-        distribution, payload { id, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+query fault ($fault: String!) {
+    faults (fault: $fault) {
+        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
     }
 }
 
@@ -410,9 +410,9 @@ query taskTypes {
     taskTypes
 }
 
-query tasks ($id: String, $type: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
-    tasks (id: $id, type: $type, parameters: $parameters, onlyActive: $onlyActive, limit: $limit) {
-        id, type, parameters { name, value }, creationTime, active
+query tasks ($task: String, $type: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
+    tasks (task: $task, type: $type, parameters: $parameters, onlyActive: $onlyActive, limit: $limit) {
+        task, type, parameters { name, value }, creationTime, active
     }
 }
 

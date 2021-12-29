@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  TaskInfo, TaskParameter,
+  TaskParameter,
   useTasksQuery,
 } from "../../../generated/graphql";
 import GridTable from "../gridTable/GridTable";
@@ -56,8 +56,8 @@ export const TasksTable = (props: TasksTableParams) => {
       type: 'date',
     },
     {
-      name: 'id',
-      headerName: 'ID',
+      name: 'task',
+      headerName: 'TaskId',
       className: classes.idColumn
     },
     {
@@ -91,7 +91,7 @@ export const TasksTable = (props: TasksTableParams) => {
   const rows = tasks?.tasks
     .map(task => new Map<string, GridTableCellParams>([
         ['creationTime', { value: task.creationTime }],
-        ['id', { value: task.id }],
+        ['task', { value: task.task }],
         ['type', { value: task.type }],
         ['parameters', { value: parametersToString(task.parameters) }],
         ['active', { value: task.active?true:false }]
@@ -102,7 +102,7 @@ export const TasksTable = (props: TasksTableParams) => {
       className={className}
       columns={columns}
       rows={rows}
-      onClick={row => onClick(rows[row].get('id')?.value! as string)}
+      onClick={row => onClick(rows[row].get('task')?.value! as string)}
     />
   </>:null
 }

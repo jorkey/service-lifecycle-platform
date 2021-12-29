@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.config.{ServiceConfig, DistributionConfig}
+import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
 import com.vyulabs.update.distribution.graphql.GraphqlTypes._
@@ -112,7 +112,7 @@ object GraphqlSchema {
   val OptionToTimeArg = Argument("toTime", OptionInputType(DateType))
   val OptionLevelsArg = Argument("levels", OptionInputType(ListInputType(StringType)))
   val OptionFindArg = Argument("find", OptionInputType(StringType))
-  val OptionIdArg = Argument("id", OptionInputType(StringType))
+  val OptionFaultArg = Argument("fault", OptionInputType(StringType))
   val OptionTypeArg = Argument("type", OptionInputType(StringType))
   val OptionParametersArg = Argument("parameters", OptionInputType(ListInputType(TaskParameterInputType)))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
@@ -306,21 +306,23 @@ object GraphqlSchema {
         arguments = OptionDistributionArg :: OptionServiceArg :: Nil,
         resolve = c => { c.ctx.workspace.getFaultsEndTime(c.arg(OptionDistributionArg), c.arg(OptionServiceArg)) }),
       Field("faults", ListType(DistributionFaultReportType),
-        arguments = OptionDistributionArg :: OptionServiceArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionIdArg :: OptionLimitArg :: Nil,
+        arguments = OptionFaultArg :: OptionDistributionArg :: OptionServiceArg ::
+          OptionFromTimeArg :: OptionToTimeArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getFaults(
-          c.arg(OptionDistributionArg), c.arg(OptionServiceArg),
-          c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
-          c.arg(OptionIdArg), c.arg(OptionLimitArg)) }),
+          c.arg(OptionDistributionArg), c.arg(OptionFaultArg),
+          c.arg(OptionServiceArg), c.arg(OptionFromTimeArg),
+          c.arg(OptionToTimeArg), c.arg(OptionLimitArg)) }),
 
       // Tasks
       Field("taskTypes", ListType(StringType),
         resolve = c => { c.ctx.workspace.getTaskTypes() }),
       Field("tasks", ListType(TaskInfoType),
-        arguments = OptionIdArg:: OptionTypeArg :: OptionParametersArg :: OptionOnlyActiveArg :: OptionLimitArg :: Nil,
+        arguments = OptionTaskArg :: OptionTypeArg :: OptionParametersArg :: OptionOnlyActiveArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getTasks(
-          c.arg(OptionIdArg), c.arg(OptionTypeArg), c.arg(OptionParametersArg).getOrElse(Seq.empty), c.arg(OptionOnlyActiveArg), c.arg(OptionLimitArg)) }),
+          c.arg(OptionTaskArg), c.arg(OptionTypeArg), c.arg(OptionParametersArg).getOrElse(Seq.empty),
+          c.arg(OptionOnlyActiveArg), c.arg(OptionLimitArg)) }),
     )
   )
 

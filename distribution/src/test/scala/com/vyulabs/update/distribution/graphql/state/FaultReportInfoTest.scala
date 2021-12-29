@@ -33,14 +33,14 @@ class FaultReportInfoTest extends TestEnvironment {
     addFaultReportInfo("fault2", "service2", 2, new Date())
 
     assertResult((OK,
-      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"id":"fault2","info":{"service":"service2","instance":"instance1"},"files":[{ "path": "core", "length": 123456789 }, { "path": "log/service.log", "length": 12345 }]}}]}}""").parseJson))(
+      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"fault":"fault2","info":{"service":"service2","instance":"instance1"},"files":[{ "path": "core", "length": 123456789 }, { "path": "log/service.log", "length": 12345 }]}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
         adminContext, graphql"""
           query FaultsQuery($$service: String!) {
             faults (service: $$service) {
               distribution
               payload {
-                id
+                fault
                 info {
                   service
                   instance
@@ -86,14 +86,14 @@ class FaultReportInfoTest extends TestEnvironment {
     clear()
   }
 
-  def addFaultReportInfo(id: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
+  def addFaultReportInfo(fault: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult((OK,
       ("""{"data":{"addFaultReportInfo":true}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
-        mutation FaultReportInfo($$time: Date!, $$id: String!, $$service: String!) {
+        mutation FaultReportInfo($$time: Date!, $$fault: String!, $$service: String!) {
           addFaultReportInfo (
             fault: {
-              id: $$id,
+              fault: $$fault,
               info: {
                 time: $$time,
                 instance: "instance1",
@@ -111,10 +111,10 @@ class FaultReportInfoTest extends TestEnvironment {
             }
           )
         }
-      """, variables = JsObject("time" -> time.toJson, "id" -> JsString(id), "service" -> JsString(service)))))
-    assert(distributionDir.getFaultReportFile(id).createNewFile())
+      """, variables = JsObject("time" -> time.toJson, "fault" -> JsString(fault), "service" -> JsString(service)))))
+    assert(distributionDir.getFaultReportFile(fault).createNewFile())
 
-    checkReportExists(id, service, sequence, time)
+    checkReportExists(fault, service, sequence, time)
   }
 
   def checkReportExists(id: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {

@@ -40,7 +40,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   def dbName = getClass.getSimpleName
 
   def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, Some(true))
-  def networkConfig = NetworkConfig(0, None)
+  def networkConfig = NetworkConfig("localhost", 0, None)
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = ServiceStatesConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def logsConfig = LogsConfig(FiniteDuration(60, TimeUnit.SECONDS))

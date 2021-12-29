@@ -4,18 +4,9 @@ import {
   Card,
   CardContent, CardHeader, Grid, Select, Table, TableBody, TableCell, TableRow,
 } from '@material-ui/core';
-import FormGroup from "@material-ui/core/FormGroup";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import {RouteComponentProps} from "react-router-dom";
 import {
   DistributionFaultReport,
-  useFaultDistributionsQuery, useFaultQuery, useFaultServicesLazyQuery, useFaultsQuery,
-  useFaultsStartTimeQuery
 } from "../../../generated/graphql";
-import {DateTimePicker} from "@material-ui/pickers";
-import Alert from "@material-ui/lab/Alert";
-import {FaultsTable} from "./FaultsTable";
-import TextField from "@material-ui/core/TextField";
 import {Version} from "../../../common";
 
 const useStyles = makeStyles((theme:any) => ({
@@ -53,7 +44,7 @@ const FaultInfoCard: React.FC<FaultInfoCardParams> = props => {
           <TableBody>
             <TableRow>
               <TableCell className={classes.infoCellHeader}>Fault Id</TableCell>
-              <TableCell className={classes.infoCellValue}>{report.payload.id}</TableCell>
+              <TableCell className={classes.infoCellValue}>{report.payload.fault}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell className={classes.infoCellHeader}>Instance</TableCell>

@@ -88,7 +88,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
       comment: comment, buildClientVersion: buildClientVersion },
     onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
-      history.push(props.fromUrl + '/monitor/' + service)
+      history.push(props.fromUrl + '/monitor/' + data.buildDeveloperVersion)
     }
   })
 

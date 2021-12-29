@@ -3,14 +3,14 @@ package com.vyulabs.update.tests
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.builder.{ClientBuilder, DistributionBuilder}
 import com.vyulabs.update.common.accounts.ConsumerAccountProperties
+import com.vyulabs.update.common.common.Common.{DistributionId, TaskId}
 import com.vyulabs.update.common.common.{Common, JWT}
-import com.vyulabs.update.common.common.Common.{DistributionId, ServicesProfileId, TaskId}
 import com.vyulabs.update.common.config._
-import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries}
+import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.administratorMutations
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersionDelta, DeveloperDesiredVersion}
+import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersionDelta}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version._
@@ -19,12 +19,11 @@ import com.vyulabs.update.updater.config.UpdaterConfig
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
 
-import java.io.{File, IOException}
+import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
-import scala.util.{Failure, Success}
 
 class SimpleLifecycle(val distribution: DistributionId, val distributionPort: Int) {
   private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
@@ -42,7 +41,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   private val dbName = s"${distribution}-test"
 
   private val distributionBuilder = new DistributionBuilder("None",
-    distribution, distributionDir, distributionPort, s"Test distribution server: ${distribution}",
+    distribution, distributionDir, "localhost", distributionPort, s"Test distribution server: ${distribution}",
     dbConnection, dbName, false, false)
   private val clientBuilder = new ClientBuilder(builderDir)
 

@@ -17,7 +17,6 @@ import {
 } from '../../../../generated/graphql';
 import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
-import {Version} from "../../../../common";
 import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
@@ -46,6 +45,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface MonitorBuildServicesRouteParams {
+  task: string
 }
 
 interface MonitorBuildServicesParams extends RouteComponentProps<MonitorBuildServicesRouteParams> {
@@ -55,7 +55,8 @@ interface MonitorBuildServicesParams extends RouteComponentProps<MonitorBuildSer
 const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
   const classes = useStyles()
 
-  const [task, setTask] = useState<string>()
+  const task = props.match.params.task
+
   const [startTime, setStartTime] = useState<Date>()
   const [author, setAuthor] = useState<string>()
   const [versions, setVersions] = useState<string>()
@@ -69,9 +70,9 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
   enum Status { InProcess, Success, Error}
   const [status, setStatus] = useState<Status>()
 
-  const { data: tasksInProcess } = useTasksQuery({
+  const { data: tasks } = useTasksQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: { type: 'BuildClientVersions', onlyActive: true },
+    variables: { task: task },
     onError(err) { setError('Query client versions in process error ' + err.message) },
   })
   const [ cancelTask ] = useCancelTaskMutation({
@@ -79,10 +80,9 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
     onError(err) { setError('Cancel task error ' + err.message) },
   })
 
-  if (!initialized && tasksInProcess?.tasks.length) {
-    if (tasksInProcess.tasks.length) {
-      const task = tasksInProcess.tasks[0]
-      setTask(task.id)
+  if (!initialized && tasks?.tasks.length) {
+    if (tasks.tasks.length) {
+      const task = tasks.tasks[0]
       setStartTime(task.creationTime)
       setAuthor(task.parameters.find(p => p.name == 'author')?.value)
       setVersions(task.parameters.find(p => p.name == 'versions')?.value)

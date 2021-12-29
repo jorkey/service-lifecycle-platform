@@ -142,8 +142,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onError(err) {
       setError('Build version error ' + err.message)
     },
-    onCompleted() {
-      history.push(props.fromUrl + '/monitor')
+    onCompleted(data) {
+      history.push(props.fromUrl + '/monitor/' + data.buildClientVersions)
     }
   })
   const [ setTestedVersions ] = useSetTestedVersionsMutation({

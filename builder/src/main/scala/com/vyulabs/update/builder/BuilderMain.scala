@@ -3,9 +3,7 @@ package com.vyulabs.update.builder
 import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
 import com.vyulabs.update.common.config.{NamedStringValue, Repository}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
-import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.lock.SmartFilesLocker
-import com.vyulabs.update.common.process.ProcessUtils
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
@@ -30,9 +28,9 @@ object BuilderMain extends App {
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
     "    buildProviderDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       port=? title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
+    "       host=? port=? title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
     "    buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       port=? title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
+    "       host=? port=? title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
     "       consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
     "    buildDeveloperVersion service=? version=? sourceRepositories=? [macroValues=?] comment=?\n" +
     "    buildClientVersion service=? developerVersion=? clientVersion=? [settingsRepositories=?] [macroValues=?]"
@@ -49,6 +47,7 @@ object BuilderMain extends App {
         val cloudProvider = arguments.getOptionValue("cloudProvider").getOrElse("None")
         val directory = arguments.getValue("directory")
         val distribution = arguments.getValue("distribution")
+        val host = arguments.getValue("host")
         val port = arguments.getIntValue("port")
         val title = arguments.getValue("title")
         val mongoDbConnection = arguments.getValue("mongoDbConnection")
@@ -56,7 +55,7 @@ object BuilderMain extends App {
         val persistent = arguments.getOptionBooleanValue("persistent").getOrElse(false)
 
         val distributionBuilder = new DistributionBuilder(cloudProvider,
-          distribution, new File(directory), port, title,
+          distribution, new File(directory), host, port, title,
           mongoDbConnection, mongoDbName, false, persistent)
 
         if (command == "buildProviderDistribution") {

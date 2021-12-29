@@ -64,16 +64,16 @@ trait FaultsUtils extends SprayJsonSupport {
     collections.Faults_ReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.info.time))
   }
 
-  def getFaults(distribution: Option[DistributionId], service: Option[ServiceId],
-                fromTime: Option[Date], toTime: Option[Date], id: Option[FaultId],
+  def getFaults(distribution: Option[DistributionId], fault: Option[FaultId],
+                service: Option[ServiceId], fromTime: Option[Date], toTime: Option[Date],
                 limit: Option[Int])(implicit log: Logger)
       : Future[Seq[DistributionFaultReport]] = {
-    val clientArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
+    val distributionArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
+    val faultArg = fault.map(fault => Filters.lte("payload.fault", fault))
     val serviceArg = service.map { service => Filters.eq("payload.info.service", service) }
     val fromTimeArg = fromTime.map(time => Filters.gte("payload.info.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("payload.info.time", time))
-    val idArg = id.map(id => Filters.lte("payload.id", id))
-    val args = clientArg ++ serviceArg ++ fromTimeArg ++ toTimeArg ++ idArg
+    val args = faultArg ++ distributionArg ++ serviceArg ++ fromTimeArg ++ toTimeArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Some(Sorts.descending("_sequence"))
     collections.Faults_ReportsInfo.find(filters, sort, limit)
@@ -97,7 +97,7 @@ trait FaultsUtils extends SprayJsonSupport {
                            (implicit log: Logger): Future[Unit] = {
     Future.sequence(reports.map { report =>
       log.debug(s"Delete fault report ${report.sequence}")
-      val faultFile = directory.getFaultReportFile(report.document.payload.id)
+      val faultFile = directory.getFaultReportFile(report.document.payload.fault)
       faultFile.delete()
       collection.delete(Filters.and(Filters.eq("_sequence", report.sequence)))
     }).map(_ => Unit)

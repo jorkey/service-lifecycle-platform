@@ -83,7 +83,7 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
 
   const { data: activeTask } = useTasksQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: { id: task, onlyActive: true },
+    variables: { task: task, onlyActive: true },
     onError(err) { setError('Query active task error ' + err.message) },
   })
 

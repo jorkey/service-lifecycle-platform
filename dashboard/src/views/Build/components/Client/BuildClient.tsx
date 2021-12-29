@@ -33,7 +33,7 @@ const BuildClient = (props: BuildClientParams) => {
     variables: { type: 'BuildClientVersions', onlyActive: true },
     onCompleted(tasks) {
       tasks.tasks.length?
-        history.push('client/monitor/'):
+        history.push('client/monitor/' + tasks.tasks[0].task):
         history.push('client/start')
     },
     onError(err) { setError('Query client versions in process error ' + err.message) },

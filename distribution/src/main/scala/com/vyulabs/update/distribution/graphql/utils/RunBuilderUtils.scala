@@ -101,7 +101,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, distribution, accessToken, environment, arguments)
-      }).id
+      }).task
   }
 
   private def runLocalBuilder(task: TaskId, distribution: DistributionId,

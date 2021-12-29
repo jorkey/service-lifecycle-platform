@@ -782,17 +782,17 @@ export type QueryFaultsEndTimeArgs = {
 
 
 export type QueryFaultsArgs = {
+  fault?: Maybe<Scalars['String']>;
   distribution?: Maybe<Scalars['String']>;
   service?: Maybe<Scalars['String']>;
   fromTime?: Maybe<Scalars['Date']>;
   toTime?: Maybe<Scalars['Date']>;
-  id?: Maybe<Scalars['String']>;
   limit?: Maybe<Scalars['Int']>;
 };
 
 
 export type QueryTasksArgs = {
-  id?: Maybe<Scalars['String']>;
+  task?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   parameters?: Maybe<Array<TaskParameterInput>>;
   onlyActive?: Maybe<Scalars['Boolean']>;
@@ -836,13 +836,13 @@ export type ServiceConfig = {
 
 export type ServiceFaultReport = {
   __typename?: 'ServiceFaultReport';
-  id: Scalars['String'];
+  fault: Scalars['String'];
   info: FaultInfo;
   files: Array<FileInfo>;
 };
 
 export type ServiceFaultReportInput = {
-  id: Scalars['String'];
+  fault: Scalars['String'];
   info: FaultInfoInput;
   files: Array<FileInfoInput>;
 };
@@ -896,7 +896,7 @@ export type SubscriptionSubscribeLogsArgs = {
 
 export type TaskInfo = {
   __typename?: 'TaskInfo';
-  id: Scalars['String'];
+  task: Scalars['String'];
   type: Scalars['String'];
   parameters: Array<TaskParameter>;
   creationTime: Scalars['Date'];
@@ -1591,7 +1591,7 @@ export type FaultsQuery = (
     & Pick<DistributionFaultReport, 'distribution'>
     & { payload: (
       { __typename?: 'ServiceFaultReport' }
-      & Pick<ServiceFaultReport, 'id'>
+      & Pick<ServiceFaultReport, 'fault'>
       & { info: (
         { __typename?: 'FaultInfo' }
         & Pick<FaultInfo, 'time' | 'instance' | 'service' | 'serviceDirectory' | 'serviceRole'>
@@ -1621,7 +1621,7 @@ export type FaultsQuery = (
 );
 
 export type FaultQueryVariables = Exact<{
-  id: Scalars['String'];
+  fault: Scalars['String'];
 }>;
 
 
@@ -1632,7 +1632,7 @@ export type FaultQuery = (
     & Pick<DistributionFaultReport, 'distribution'>
     & { payload: (
       { __typename?: 'ServiceFaultReport' }
-      & Pick<ServiceFaultReport, 'id'>
+      & Pick<ServiceFaultReport, 'fault'>
       & { info: (
         { __typename?: 'FaultInfo' }
         & Pick<FaultInfo, 'time' | 'instance' | 'service' | 'serviceDirectory' | 'serviceRole'>
@@ -2157,7 +2157,7 @@ export type TaskTypesQuery = (
 );
 
 export type TasksQueryVariables = Exact<{
-  id?: Maybe<Scalars['String']>;
+  task?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   parameters?: Maybe<Array<TaskParameterInput> | TaskParameterInput>;
   onlyActive?: Maybe<Scalars['Boolean']>;
@@ -2169,7 +2169,7 @@ export type TasksQuery = (
   { __typename?: 'Query' }
   & { tasks: Array<(
     { __typename?: 'TaskInfo' }
-    & Pick<TaskInfo, 'id' | 'type' | 'creationTime' | 'active'>
+    & Pick<TaskInfo, 'task' | 'type' | 'creationTime' | 'active'>
     & { parameters: Array<(
       { __typename?: 'TaskParameter' }
       & Pick<TaskParameter, 'name' | 'value'>
@@ -3821,7 +3821,7 @@ export const FaultsDocument = gql`
   ) {
     distribution
     payload {
-      id
+      fault
       info {
         time
         instance
@@ -3897,11 +3897,11 @@ export type FaultsQueryHookResult = ReturnType<typeof useFaultsQuery>;
 export type FaultsLazyQueryHookResult = ReturnType<typeof useFaultsLazyQuery>;
 export type FaultsQueryResult = Apollo.QueryResult<FaultsQuery, FaultsQueryVariables>;
 export const FaultDocument = gql`
-    query fault($id: String!) {
-  faults(id: $id) {
+    query fault($fault: String!) {
+  faults(fault: $fault) {
     distribution
     payload {
-      id
+      fault
       info {
         time
         instance
@@ -3958,7 +3958,7 @@ export const FaultDocument = gql`
  * @example
  * const { data, loading, error } = useFaultQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      fault: // value for 'fault'
  *   },
  * });
  */
@@ -5364,15 +5364,15 @@ export type TaskTypesQueryHookResult = ReturnType<typeof useTaskTypesQuery>;
 export type TaskTypesLazyQueryHookResult = ReturnType<typeof useTaskTypesLazyQuery>;
 export type TaskTypesQueryResult = Apollo.QueryResult<TaskTypesQuery, TaskTypesQueryVariables>;
 export const TasksDocument = gql`
-    query tasks($id: String, $type: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
+    query tasks($task: String, $type: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
   tasks(
-    id: $id
+    task: $task
     type: $type
     parameters: $parameters
     onlyActive: $onlyActive
     limit: $limit
   ) {
-    id
+    task
     type
     parameters {
       name
@@ -5396,7 +5396,7 @@ export const TasksDocument = gql`
  * @example
  * const { data, loading, error } = useTasksQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      task: // value for 'task'
  *      type: // value for 'type'
  *      parameters: // value for 'parameters'
  *      onlyActive: // value for 'onlyActive'

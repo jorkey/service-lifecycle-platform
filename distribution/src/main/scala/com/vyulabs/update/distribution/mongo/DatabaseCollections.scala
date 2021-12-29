@@ -173,7 +173,7 @@ class DatabaseCollections(db: MongoDb,
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
     collection <- db.getOrCreateCollection[BsonDocument]("faults.reports")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.id")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.fault")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.service")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.time")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.info.time")) else Future()
@@ -181,7 +181,7 @@ class DatabaseCollections(db: MongoDb,
 
   val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
     collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("id"),
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task"),
       new IndexOptions().unique(true)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType"), new IndexOptions()
       .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()

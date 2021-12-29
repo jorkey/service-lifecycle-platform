@@ -20,9 +20,8 @@ import org.slf4j.LoggerFactory
 
 import java.io.{File, FileInputStream}
 import java.security.{KeyStore, SecureRandom}
-import java.util.concurrent.TimeUnit
 import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 
 /**
@@ -76,7 +75,7 @@ object DistributionMain extends App {
         AutoUpdater.start(config.distribution, workspace, workspace, workspace, taskManager))
     })
 
-    var server = Http().newServerAt("0.0.0.0", config.network.port)
+    var server = Http().newServerAt(config.network.host, config.network.port)
     config.network.ssl.foreach {
       log.info("Enable https")
       ssl => server = server.enableHttps(makeHttpsContext(ssl))

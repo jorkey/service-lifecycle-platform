@@ -94,7 +94,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
           <Button key='0'
                   onClick={
                     () => {
-                      download(`http://${development?'localhost:8000':window.location.host}/load/fault-report/` + fault.payload.id,
+                      download(`http://${development?'localhost:8000':window.location.host}/load/fault-report/` + fault.payload.fault,
                 `fault-${fault.payload.info.service}-${fault.payload.info.time.toString()}`)
                     }
                   }>

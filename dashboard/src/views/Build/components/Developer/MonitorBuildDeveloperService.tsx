@@ -45,7 +45,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface MonitorBuildServiceRouteParams {
-  service: string
+  task: string
 }
 
 interface MonitorBuildServiceParams extends RouteComponentProps<MonitorBuildServiceRouteParams> {
@@ -55,9 +55,9 @@ interface MonitorBuildServiceParams extends RouteComponentProps<MonitorBuildServ
 const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   const classes = useStyles()
 
-  const service = props.match.params.service
+  const task = props.match.params.task
 
-  const [task, setTask] = useState<string>()
+  const [service, setService] = useState<string>()
   const [version, setVersion] = useState<string>()
   const [author, setAuthor] = useState<string>()
   const [comment, setComment] = useState<string>()
@@ -72,12 +72,10 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   enum Status { InProcess, Success, Error}
   const [status, setStatus] = useState<Status>()
 
-  const { data: tasksInProcess } = useTasksQuery({
+  const { data: tasks } = useTasksQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: {
-      type: 'BuildDeveloperVersion',
-      parameters: [ { name: 'service', value: service } ],
-      onlyActive: true },
+    variables: { task: task },
+    onCompleted(d) { console.log('completed ' + d.tasks.length) },
     onError(err) { setError('Query developer versions in process error ' + err.message) },
   })
   const [ cancelTask ] = useCancelTaskMutation({
@@ -85,17 +83,18 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
     onError(err) { setError('Cancel task error ' + err.message) },
   })
 
-  if (!initialized && tasksInProcess?.tasks) {
-    if (tasksInProcess.tasks?.length) {
-      const task = tasksInProcess.tasks[0]
-      setTask(task.id)
+  if (!initialized && tasks?.tasks) {
+    console.log('length ' + tasks.tasks.length)
+    if (tasks.tasks.length) {
+      const task = tasks.tasks[0]
       setStartTime(task.creationTime)
+      setService(task.parameters.find(p => p.name == 'service')?.value)
       setVersion(task.parameters.find(p => p.name == 'version')?.value)
       setAuthor(task.parameters.find(p => p.name == 'author')?.value)
       setComment(task.parameters.find(p => p.name == 'comment')?.value)
       setStatus(Status.InProcess)
     } else {
-      setError(`Building of service ${service} is not in process now`)
+      setError(`Building of service task ${task} is not in process now`)
     }
     setInitialized(true)
   }
@@ -103,7 +102,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   const MonitorCard = () => {
     return (<>
       <Card className={classes.card}>
-        <CardHeader title={`Building Service '${service}'`}/>
+        <CardHeader title={`Building Service ${service?`'${service}'`:''}`}/>
         <CardContent>
           <Grid container spacing={1}>
             <Grid item md={1} xs={12}>
@@ -128,13 +127,9 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
             </Grid>
 
             <Grid item md={1} xs={12}>
-              <Typography>Branches</Typography>
-            </Grid>
-
-            <Grid item md={1} xs={12}>
               <Typography>Status</Typography>
             </Grid>
-            <Grid item md={2} xs={12}>
+            <Grid item md={8} xs={12}>
               <Typography>{status == Status.InProcess ? 'In Process': status == Status.Success ? 'Success' : 'Error'}</Typography>
             </Grid>
 
@@ -164,7 +159,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
         <CardHeader title={`Task logs`}/>
         <CardContent>
           { <LogsTable className={classes.logsTable}
-                       task={task!}
+                       task={task}
                        follow={true}
                        onComplete={
                         (time, stat) => {

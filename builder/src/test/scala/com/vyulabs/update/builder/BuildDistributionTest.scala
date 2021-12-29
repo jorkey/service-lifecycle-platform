@@ -2,20 +2,16 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.accounts.ConsumerAccountProperties
 import com.vyulabs.update.common.common.{Common, JWT}
-import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.AccessToken
-import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
-import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
 
 class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAll {
   behavior of "BuildDistribution"
@@ -50,7 +46,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     log.info("")
     val providerDistributionBuilder = new DistributionBuilder(
       "None", providerDistributionName,
-      providerDistributionDir, 8000, "Test developer distribution server",
+      providerDistributionDir, "localhost", 8000, "Test developer distribution server",
       mongoDbConnection, providerMongoDbName, true, false)
     assert(providerDistributionBuilder.buildDistributionFromSources("ak"))
     assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName,
@@ -61,7 +57,7 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
     log.info("")
     val consumerDistributionBuilder = new DistributionBuilder(
       "None", consumerDistributionName,
-      consumerDistributionDir, 8001, "Test client distribution server",
+      consumerDistributionDir, "localhost", 8001, "Test client distribution server",
       mongoDbConnection, consumerMongoDbName,true, false)
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
       "http://localhost:8000",

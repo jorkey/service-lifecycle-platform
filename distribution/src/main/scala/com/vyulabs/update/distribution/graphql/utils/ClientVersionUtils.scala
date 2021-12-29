@@ -71,7 +71,7 @@ trait ClientVersionUtils {
               .flatMap(_ => setClientDesiredVersions(clientVersions, author))
           }
         } yield {}, Some(() => cancels.foreach(cancel => cancel())))
-      }).id
+      }).task
   }
 
   def buildClientVersion(task: TaskId, service: ServiceId,

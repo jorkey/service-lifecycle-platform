@@ -25,7 +25,7 @@ object TaskParameter extends DefaultJsonProtocol {
   implicit val taskParameterJson = jsonFormat2(TaskParameter.apply)
 }
 
-case class TaskInfo(id: TaskId, `type`: TaskType, parameters: Seq[TaskParameter],
+case class TaskInfo(task: TaskId, `type`: TaskType, parameters: Seq[TaskParameter],
                     creationTime: Date, active: Option[Boolean] = None)
 
 trait TasksUtils extends SprayJsonSupport {
@@ -50,9 +50,9 @@ trait TasksUtils extends SprayJsonSupport {
       val task = taskManager.create(s"task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}", run)
       val info = TaskInfo(task.taskId, taskType, parameters, new Date(), Some(true))
       activeTasks :+= info
+      task.future.andThen { case _ => synchronized { activeTasks = activeTasks.filter(_ != info) }}
       collections.Tasks_Info.insert(info.copy(active = None)).failed
         .foreach(ex => log.error("Insert task info error", ex))
-      task.future.andThen { case _ => synchronized { activeTasks = activeTasks.filter(_ != info) }}
       info
     }
   }
@@ -65,7 +65,7 @@ trait TasksUtils extends SprayJsonSupport {
                      parameters: Seq[TaskParameter] = Seq.empty): Seq[TaskInfo] = {
     synchronized {
       activeTasks
-        .filter(task => id.forall(_ == task.id))
+        .filter(task => id.forall(_ == task.task))
         .filter(task => taskType.forall(_ == task.`type`))
         .filter(task => parameters.forall(parameter =>
           task.parameters.exists(_ == parameter)))
@@ -73,21 +73,21 @@ trait TasksUtils extends SprayJsonSupport {
     }
   }
 
-  def getTasks(id: Option[TaskId], taskType: Option[String], parameters: Seq[TaskParameter],
+  def getTasks(task: Option[TaskId], taskType: Option[String], parameters: Seq[TaskParameter],
                onlyActive: Option[Boolean], limit: Option[Int])
               (implicit log: Logger) : Future[Seq[TaskInfo]] = {
-    val activeTasks = getActiveTasks(id, taskType, parameters)
-    if (onlyActive.getOrElse(false)) {
-      Future(activeTasks.take(limit.getOrElse(activeTasks.size)))
+    val activeTasks = getActiveTasks(task, taskType, parameters).take(limit.getOrElse(Int.MaxValue))
+    if (onlyActive.getOrElse(false) || limit.exists(_ == activeTasks.size)) {
+      Future(activeTasks)
     } else {
-      val idArg = id.map { id => Filters.eq("id", id) }
+      val idArg = task.map { id => Filters.eq("task", id) }
       val taskTypeArg = taskType.map { taskType => Filters.eq("taskType", taskType) }
       val filters = Filters.and((idArg ++ taskTypeArg).asJava)
       val sort = Some(Sorts.descending("_sequence"))
-      collections.Tasks_Info.find(filters, sort, limit).map(
-        _.filter(task => parameters.forall(parameter =>
-          task.parameters.exists(_ == parameter)))
-        .map(task => task.copy(active = activeTasks.find(_.id == task.id).map(_ => true))))
+      collections.Tasks_Info.find(filters, sort, limit.map(_ - activeTasks.size))
+        .map(_.filter(info => !activeTasks.exists(_.task == info.task))
+              .filter(task => parameters.forall(parameter => task.parameters.exists(_ == parameter))))
+        .map(activeTasks ++ _)
     }
   }
 }

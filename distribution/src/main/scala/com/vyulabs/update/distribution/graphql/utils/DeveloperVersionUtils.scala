@@ -72,7 +72,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
             Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
         (future, Some(() => cancel.foreach(_.apply())))
-      }).id
+      }).task
   }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {

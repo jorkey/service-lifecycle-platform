@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{ServiceConfig, DistributionConfig, GitConfig, Repository}
+import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, Repository}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -27,10 +27,9 @@ import scala.util.{Failure, Success}
   * Copyright FanDate, Inc.
   */
 class DistributionBuilder(cloudProvider: String, distribution: String,
-                          directory: File, port: Int, title: String,
+                          directory: File, host: String, port: Int, title: String,
                           mongoDbConnection: String, mongoDbName: String, mongoDbTemporary: Boolean,
-                          persistent: Boolean)
-                         (implicit executionContext: ExecutionContext) {
+                          persistent: Boolean)(implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val distributionDirectory = new DistributionDirectory(directory)
@@ -334,7 +333,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
     }
     log.info(s"--------------------------- Make distribution config file")
     val arguments = Seq(cloudProvider, distribution, title, mongoDbConnection,
-      mongoDbName, mongoDbTemporary.toString, port.toString)
+      mongoDbName, mongoDbTemporary.toString, host, port.toString)
     if (!ProcessUtils.runProcess("/bin/bash", ".make_distribution_config.sh" +: arguments, Map.empty,
       directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")

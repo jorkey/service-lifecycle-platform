@@ -86,9 +86,9 @@ const BuildDeveloper = () => {
   })
 
   const handleOnClick = useCallback((service: string) => {
-    tasksInProcess?.tasks.find(task => task.parameters.find(p => {
-        return p.name == 'service' && p.value == service })) ?
-      history.push('developer/monitor/' + service) :
+    const task = tasksInProcess?.tasks.find(task => task.parameters.find(p => {
+        return p.name == 'service' && p.value == service }))
+    return task ? history.push('developer/monitor/' + task.task) :
       history.push('developer/start/' + service)
   }, [ tasksInProcess, history ]);
 

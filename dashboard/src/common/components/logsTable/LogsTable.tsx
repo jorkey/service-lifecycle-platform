@@ -81,6 +81,7 @@ export interface FindLogsDashboardParams {
   toTime?: Date
   subscribe?: boolean
 }
+
 export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<LogsTableEvents>) => {
   const { className, service, instance, process, directory, task, fromTime, toTime, levels, find,
     follow, onComplete, onError } = props
@@ -134,7 +135,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
-  const isLoading = () => serviceLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
+  const isLoading = () => serviceLogs.loading || taskLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
 
   const getCommonVariables = (from?: BigInt, to?: BigInt) => {
     return {
