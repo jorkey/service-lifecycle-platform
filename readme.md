@@ -332,7 +332,7 @@ _distribution_ запускает _builder_.
 
 Выполните команду:
 
-`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? host=? port=? title=? mongoDbConnection=? mongoDbName=? [persistent=?]"`
+`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? [persistent=?]"`
 
 Вместо `?` подставьте значения:
 - _cloudProvider_
@@ -343,9 +343,13 @@ _distribution_ запускает _builder_.
 - _directory_
   - каталог для установки
 - _host_
-  - DNS имя для сервиса http (сервис https можно определить позднее в настройках)
+  - DNS имя для сервиса https
 - _port_
-  - порт для сервиса http (сервис https можно определить позднее в настройках)
+  - порт для сервиса https
+- _[sslKeyStoreFile]_
+  - файл с приватным ключом и сертификатом
+- _[sslKeyStorePassword]_
+  - пароль к файлу с приватным ключом и сертификатом
 - _title_
   - короткое описание сервера дистрибуции
 - _mongoDbConnection_
@@ -376,7 +380,7 @@ serviceToRun=builder
 distributionUrl=?
 accessToken=?
 
-. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? host=? port=? title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
+. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
 ```
 
 Вместо `?` подставьте значения:
@@ -393,9 +397,13 @@ accessToken=?
 - _directory_
   - каталог для установки
 - _host_
-  - DNS имя для сервиса http (сервис https можно определить позднее в настройках)
+  - DNS имя для сервиса https
 - _port_
-  - порт для сервиса http (сервис https можно определить позднее в настройках)
+  - порт для сервиса https
+- _[sslKeyStoreFile]_
+  - файл с приватным ключом и сертификатом
+- _[sslKeyStorePassword]_
+  - пароль к файлу с приватным ключом и сертификатом
 - _title_
   - короткое описание сервера дистрибуции
 - _mongoDbConnection_

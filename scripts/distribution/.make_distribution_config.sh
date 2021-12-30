@@ -2,23 +2,16 @@
 set -e
 
 function exitUsage {
-  >&2 echo "Use: $0 <cloudProvider> <distribution> <distributionTitle> "\
-    "<mongoDbConnection> <mongoDbName> <mongoDbTemporary> <host> <port>"
+  >&2 echo "Use: $0 <cloudProvider> <substitutions>"
   exit 1
 }
 
-if [ $# -ne 8 ]; then
+if [ $# -ne 2 ]; then
   exitUsage
 fi
 
 cloudProvider=$1
-distribution=$2
-distributionTitle=$3
-mongoDbConnection=$4
-mongoDbName=$5
-mongoDbTemporary=$6
-host=$7
-port=$8
+substitutions=$2
 
 jwtSecret=`openssl rand -base64 32`
 
@@ -34,7 +27,9 @@ else
   exit 1
 fi
 
-jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\" | .mongoDb.connection=\"${mongoDbConnection}\" | .mongoDb.name=\"${mongoDbName}\" | .mongoDb.temporary=${mongoDbTemporary} | .network.host=\"${host}\" | .network.port=${port}" >distribution.json <<EOF
+substitutions="$substitutions | .instance=\"${instance}\" | .jwtSecret=\"${jwtSecret}\""
+
+jq "$substitutions" >distribution.json <<EOF
 {
   "distribution": "undefined",
   "title": "undefined",
@@ -45,7 +40,7 @@ jq ".distribution=\"${distribution}\" | .title=\"${distributionTitle}\" | .insta
     "name": "undefined"
   },
   "network": {
-    "host" : "localhost",
+    "host" : "undefined",
     "port" : 8000
   },
   "versions": {

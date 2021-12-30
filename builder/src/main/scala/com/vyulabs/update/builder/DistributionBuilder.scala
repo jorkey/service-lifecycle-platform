@@ -26,9 +26,9 @@ import scala.util.{Failure, Success}
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 04.02.19.
   * Copyright FanDate, Inc.
   */
-class DistributionBuilder(cloudProvider: String, distribution: String,
-                          directory: File, host: String, port: Int, title: String,
-                          mongoDbConnection: String, mongoDbName: String, mongoDbTemporary: Boolean,
+class DistributionBuilder(cloudProvider: String, distribution: String, directory: File,
+                          host: String, port: Int, sslKeyStoreFile: Option[String], sslKeyStorePassword: Option[String],
+                          title: String, mongoDbConnection: String, mongoDbName: String, mongoDbTemporary: Boolean,
                           persistent: Boolean)(implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -331,11 +331,24 @@ class DistributionBuilder(cloudProvider: String, distribution: String,
       !IoUtils.writeServiceVersion(directory, Common.DistributionServiceName, distributionVersion)) {
       return false
     }
-    log.info(s"--------------------------- Make distribution config file")
-    val arguments = Seq(cloudProvider, distribution, title, mongoDbConnection,
-      mongoDbName, mongoDbTemporary.toString, host, port.toString)
+
+
+    log.info(s"--------------------------- Make distribution config")
+    var substitutions = s""".distribution="${distribution}" | .title="${title}"""" +
+      s""" | .mongoDb.connection="${mongoDbConnection}" | .mongoDb.name="${mongoDbName}" | .mongoDb.temporary=${mongoDbTemporary}""" +
+      s""" | .network.host="${host}" | .network.port=${port}"""
+    for (sslKeyStoreFile <- sslKeyStoreFile) {
+      if (!IoUtils.copyFile(new File(sslKeyStoreFile), new File(directory, "keystore.jks"))) {
+        return false
+      }
+      substitutions += """ | .network.ssl.keyStoreFile="keystore.jks""""
+      for (sslKeyStorePassword <- sslKeyStorePassword) {
+        substitutions += s""" | .network.ssl.keyStorePassword ="${sslKeyStorePassword}""""
+      }
+    }
+    val arguments = Seq(cloudProvider, substitutions)
     if (!ProcessUtils.runProcess("/bin/bash", ".make_distribution_config.sh" +: arguments, Map.empty,
-      directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
+        directory, Some(0), None, ProcessUtils.Logging.Realtime)) {
       log.error(s"Make distribution config file error")
       return false
     }

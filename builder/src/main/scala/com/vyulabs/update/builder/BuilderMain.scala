@@ -28,9 +28,11 @@ object BuilderMain extends App {
     "Use: <command> {[argument=value]}\n" +
     "  Commands:\n" +
     "    buildProviderDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       host=? port=? title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
+    "       host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
+    "       title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
     "    buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       host=? port=? title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
+    "       host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
+    "       title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
     "       consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
     "    buildDeveloperVersion service=? version=? sourceRepositories=? [macroValues=?] comment=?\n" +
     "    buildClientVersion service=? developerVersion=? clientVersion=? [settingsRepositories=?] [macroValues=?]"
@@ -49,14 +51,16 @@ object BuilderMain extends App {
         val distribution = arguments.getValue("distribution")
         val host = arguments.getValue("host")
         val port = arguments.getIntValue("port")
+        val sslKeyStoreFile = arguments.getOptionValue("sslKeyStoreFile")
+        val sslKeyStorePassword = arguments.getOptionValue("sslKeyStorePassword")
         val title = arguments.getValue("title")
         val mongoDbConnection = arguments.getValue("mongoDbConnection")
         val mongoDbName = arguments.getValue("mongoDbName")
         val persistent = arguments.getOptionBooleanValue("persistent").getOrElse(false)
 
         val distributionBuilder = new DistributionBuilder(cloudProvider,
-          distribution, new File(directory), host, port, title,
-          mongoDbConnection, mongoDbName, false, persistent)
+          distribution, new File(directory), host, port, sslKeyStoreFile, sslKeyStorePassword,
+          title, mongoDbConnection, mongoDbName, false, persistent)
 
         if (command == "buildProviderDistribution") {
           if (!distributionBuilder.buildDistributionFromSources(Common.AuthorBuilder)) {

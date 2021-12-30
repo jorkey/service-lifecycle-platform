@@ -91,10 +91,10 @@ object DistributionMain extends App {
     val keyStore = KeyStore.getInstance("PKCS12")
     val keyStoreStream = new FileInputStream(new File(config.keyStoreFile))
 
-    keyStore.load(keyStoreStream, config.keyStorePassword.toCharArray)
+    keyStore.load(keyStoreStream, config.keyStorePassword.map(_.toCharArray).getOrElse(null))
 
     val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
-    keyManagerFactory.init(keyStore, config.keyStorePassword.toCharArray)
+    keyManagerFactory.init(keyStore, config.keyStorePassword.map(_.toCharArray).getOrElse(null))
 
     val trustManagerFactory = TrustManagerFactory.getInstance("SunX509")
     trustManagerFactory.init(keyStore)
