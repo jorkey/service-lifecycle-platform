@@ -88,7 +88,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
       setVersions(task.parameters.find(p => p.name == 'versions')?.value)
       setStatus(Status.InProcess)
     } else {
-      setError(`Building of services is not in process now`)
+      setError(`Can't find task ${task}`)
     }
     setInitialized(true)
   }

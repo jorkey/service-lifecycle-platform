@@ -75,7 +75,6 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   const { data: tasks } = useTasksQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { task: task },
-    onCompleted(d) { console.log('completed ' + d.tasks.length) },
     onError(err) { setError('Query developer versions in process error ' + err.message) },
   })
   const [ cancelTask ] = useCancelTaskMutation({
@@ -84,7 +83,6 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
   })
 
   if (!initialized && tasks?.tasks) {
-    console.log('length ' + tasks.tasks.length)
     if (tasks.tasks.length) {
       const task = tasks.tasks[0]
       setStartTime(task.creationTime)
@@ -94,7 +92,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
       setComment(task.parameters.find(p => p.name == 'comment')?.value)
       setStatus(Status.InProcess)
     } else {
-      setError(`Building of service task ${task} is not in process now`)
+      setError(`Can't find task ${task}`)
     }
     setInitialized(true)
   }
