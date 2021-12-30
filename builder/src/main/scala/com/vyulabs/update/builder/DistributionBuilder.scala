@@ -495,8 +495,9 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       sys.error("No distribution config")
     }
     val protocol = if (config.network.ssl.isDefined) "https" else "http"
+    val host = config.network.host
     val port = config.network.port
-    Utils.addCredentialsToUrl(s"${protocol}://localhost:${port}", user, user)
+    Utils.addCredentialsToUrl(s"${protocol}://${host}:${port}", user, user)
   }
 
   private def startDistributionServer(): Boolean = {
