@@ -75,7 +75,7 @@ object DistributionMain extends App {
         AutoUpdater.start(config.distribution, workspace, workspace, workspace, taskManager))
     })
 
-    var server = Http().newServerAt(config.network.host, config.network.port)
+    var server = Http().newServerAt("0.0.0.0", config.network.port)
     config.network.ssl.foreach {
       log.info("Enable https")
       ssl => server = server.enableHttps(makeHttpsContext(ssl))
