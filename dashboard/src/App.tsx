@@ -64,9 +64,7 @@ const authLink = setContext((_, { headers }) => {
 const errorLink = onError(({ graphQLErrors, networkError: networkError}) => {
   if (graphQLErrors) {
     graphQLErrors.forEach(({message, locations, path}) => {
-        console.log(
-          `GraphQL error: message: ${message}, location: ${locations}, path: ${path}`,
-        )
+        console.log(`GraphQL error: message: ${message}, location: ${locations}, path: ${path}`)
         // https://github.com/sangria-graphql/sangria/issues/710
         if (message == "Unauthorized access. No or invalid access token.") {
           localStorage.removeItem('accessToken')

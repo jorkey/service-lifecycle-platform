@@ -37,7 +37,7 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
 
   const [ setServiceConfig ] =
     useSetDeveloperServiceConfigMutation({
-      onError(err) { setError('Set developer service config error ' + err.message) },
+      onError(err) { setError('Set developer service config error: ' + err.message) },
     })
 
   if (service && !serviceConfig.data && !serviceConfig.loading) {
@@ -62,7 +62,8 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
               validate={(environment, repositories, macroValues) =>
                 repositories.length > 0 }
               setServiceConfig={(service, environment, repositories, macroValues) =>
-                setServiceConfig({ variables: { service, environment, repositories, macroValues } })}
+                setServiceConfig({ variables: { service, environment, repositories, macroValues } })
+                  .then((r) => !!r.data?.setDeveloperServiceConfig) }
               error={error}
               fromUrl={props.fromUrl}
       />)

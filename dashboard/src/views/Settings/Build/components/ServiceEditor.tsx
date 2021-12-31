@@ -16,6 +16,7 @@ import {NamedStringValue, Repository} from "../../../../generated/graphql";
 import TextField from "@material-ui/core/TextField";
 import RepositoriesTable from "./RepositoriesTable";
 import NamedValueTable from "./NamedValueTable";
+import {FetchResult} from "@apollo/client";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -58,7 +59,7 @@ interface ServiceEditorParams {
   hasService: (service: string) => boolean
   validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
   setServiceConfig: (service: string, environment: NamedStringValue[],
-                     repositories: Repository[], macroValues: NamedStringValue[]) => Promise<any>
+                     repositories: Repository[], macroValues: NamedStringValue[]) => Promise<boolean>
   error?: string
   fromUrl: string
 }
@@ -217,7 +218,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
               <Button
                 className={classes.control}
                 color="primary"
-                onClick={() => setAddEnvironment(true)}
+                onClick={() => setAddMacroValue(true)}
                 startIcon={<AddIcon/>}
                 title={'Add value'}
               />
@@ -270,7 +271,8 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
           color="primary"
           disabled={!service || !validate(environment, repositories, macroValues)}
           onClick={() => {
-            setServiceConfig(service!, environment, repositories, macroValues).then(() => setGoBack(true))
+            setServiceConfig(service!, environment, repositories, macroValues)
+              .then((result) => { if (result) setGoBack(true) })
           }}
           variant="contained"
         >

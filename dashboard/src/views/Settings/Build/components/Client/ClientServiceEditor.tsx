@@ -62,7 +62,9 @@ const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
               validate={(environment, repositories, macroValues) =>
                 repositories.length > 0 }
               setServiceConfig={(service, environment, repositories, macroValues) =>
-                setServiceConfig({ variables: { service, environment, repositories, macroValues } })}
+                setServiceConfig({ variables: { service, environment, repositories, macroValues } })
+                  .then((r) => !!r.data?.setClientServiceConfig)
+              }
               error={error}
               fromUrl={props.fromUrl}
       />)

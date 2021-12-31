@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, GitConfig, Repository}
+import com.vyulabs.update.common.config.{BuilderConfig, GitConfig, NamedStringValue, Repository, ServiceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, PasswordHash, ServerAccountInfo, UserAccountProperties}
@@ -65,6 +65,7 @@ class DatabaseCollections(db: MongoDb,
     classOf[ServiceFaultReport],
     classOf[ServiceConfig],
     classOf[BuilderConfig],
+    classOf[NamedStringValue],
     fromCodecs(FiniteDurationCodec, URLCodec)
   ))
 
