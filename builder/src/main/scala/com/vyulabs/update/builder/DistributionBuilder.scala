@@ -244,7 +244,8 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       return false
     })
     val versionsForUpdate = providerDesiredVersions.filter { case (service, version) =>
-      val existingVersions = adminDistributionClient.get.graphqlRequest(administratorQueries.getDeveloperVersionsInfo(service)).getOrElse {
+      val existingVersions = adminDistributionClient.get.graphqlRequest(
+          administratorQueries.getDeveloperVersionsInfo(service)).getOrElse {
         log.error(s"Can't get distribution server existing versions of service ${service}")
         return false
       }

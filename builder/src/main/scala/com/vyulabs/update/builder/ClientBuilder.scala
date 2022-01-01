@@ -1,7 +1,6 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
-import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.config.Repository
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.{builderMutations, builderQueries}
@@ -101,7 +100,9 @@ class ClientBuilder(builderDir: File) {
   def downloadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                                version: DeveloperDistributionVersion)(implicit log: Logger): Option[DeveloperVersionInfo] = {
     log.info(s"Get developer version ${version} of service ${service} info")
-    val versionInfo = distributionClient.graphqlRequest(builderQueries.getDeveloperVersionsInfo(service)).getOrElse(Seq.empty).headOption.getOrElse {
+    val versionInfo = distributionClient.graphqlRequest(
+        builderQueries.getDeveloperVersionsInfo(service,
+          distribution = Some(version.distribution), version = Some(version.developerVersion))).getOrElse(Seq.empty).headOption.getOrElse {
       log.error(s"Can't get developer version ${version} of service ${service} info")
       return None
     }
