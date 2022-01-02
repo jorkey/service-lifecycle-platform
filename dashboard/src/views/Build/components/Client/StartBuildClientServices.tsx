@@ -103,17 +103,18 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   })
   const { data: developerDesiredVersions, refetch: getDeveloperDesiredVersions } = useDeveloperDesiredVersionsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
+    onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query developer desired versions error ' + err.message) },
   })
   const { data: clientDesiredVersions, refetch: getClientDesiredVersions } = useClientDesiredVersionsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
+    onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query client desired versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
   const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) { setError('Query client versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
+    onCompleted() { setRows(makeRowsData()) },
+    onError(err) { setError('Query client versions error ' + err.message) }
   })
   const [ getProviderDesiredVersions, providerDesiredVersions ] = useProviderDesiredVersionsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
@@ -130,6 +131,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query provider tested versions error ' + err.message) },
   })
+
   const [ buildClientVersions ] = useBuildClientVersionsMutation({
     variables: {
       versions: rows.filter(row => row.selected && (row.providerVersion || row.developerVersion)).map(row => {
@@ -167,10 +169,6 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       getTestedVersions()
     }
   }, [ provider ])
-
-  React.useEffect(() => {
-    setRows(makeRowsData())
-  }, [ developerDesiredVersions, clientDesiredVersions, clientVersions ])
 
   const makeServicesList = () => {
     const servicesSet = new Set<string>()
