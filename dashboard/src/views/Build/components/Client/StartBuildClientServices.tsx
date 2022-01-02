@@ -111,7 +111,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query client desired versions error ' + err.message) },
   })
-  const { data: clientVersions, refetch: getClientVersions } = useClientVersionsInfoQuery({
+  const { data: clientVersions } = useClientVersionsInfoQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query client versions error ' + err.message) }
@@ -190,7 +190,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
 
   const makeRowsData: () => RowData[] = () => {
     if (developerDesiredVersions && clientDesiredVersions && clientVersions &&
-        providerDesiredVersions.data && testedVersions.data?.testedVersions) {
+        (!provider || (providerDesiredVersions.data && testedVersions.data?.testedVersions))) {
       const services = makeServicesList()
       return services.sort().map(
         service => {

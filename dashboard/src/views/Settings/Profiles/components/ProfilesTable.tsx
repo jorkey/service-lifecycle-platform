@@ -75,7 +75,7 @@ const ProfilesTable = () => {
         rows.push(
           new Map<string, GridTableCellParams>([
             ['profile', { value: profile.profile }],
-            ['actions', { value: [<DeleteIcon key='0' onClick={ () => setStartEdit(profile.profile) }/>] }]
+            ['actions', { value: [<DeleteIcon key='0' onClick={ () => setDeleteConfirm(profile.profile) }/>] }]
           ]))
       })
   }
