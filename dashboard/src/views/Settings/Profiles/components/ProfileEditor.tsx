@@ -178,10 +178,12 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                                setProfile={setProfile}
                                services={services}
                                doesProfileExist={profile => doesProfileExist(profile)}
-                               onServiceRemove={service => {
-                                 setServices(services.filter(s => s != service))
-                                 setChanged(true)
-                               }}
+                               onServiceRemoved={service =>
+                                 new Promise<boolean>(() => {
+                                   setServices(services.filter(s => s != service))
+                                   setChanged(true)
+                                   return true
+                               })}
               />
             </Grid>
             <Grid
@@ -192,10 +194,13 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                                       developerServices.developerServicesConfig.map(s => s.service)
                                         .filter(service => services.find(s => s == service) === undefined):[]}
                                    deleteIcon={<LeftIcon/>}
-                                   onServiceRemove={ service => {
-                                     setServices([...services, service])
-                                     setChanged(true)
-                                   }}
+                                   onServiceRemove={ service =>
+                                     new Promise<boolean>(() => {
+                                       setServices([...services, service])
+                                       setChanged(true)
+                                       return true
+                                     })
+                                   }
               />
             </Grid>
           </Grid>

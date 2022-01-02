@@ -44,7 +44,6 @@ const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = 
               setBuilderConfig={(distribution =>
                 setDeveloperBuilderConfig({ variables: { distribution: distribution } })
                   .then(() => {
-                    console.log('getBuilderConfig')
                     getBuilderConfig()}))}
               removeServiceConfig={(service) =>
                 removeServiceConfig({ variables: { service } }).then(() => getDeveloperServices()) }

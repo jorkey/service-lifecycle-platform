@@ -218,15 +218,19 @@ const ProvidersManager = () => {
             onRowAddCancelled={ () => setAddNewRow(false) }
             onRowAdded={(row) => {
               setAddNewRow(false)
-              addProvider({ variables: {
+              return addProvider({ variables: {
                 distribution: String(row.get('distribution')!),
                 url: String(row.get('url')!),
                 accessToken: String(row.get('accessToken')!),
                 testConsumer: row.get('testConsumer')?String(row.get('testConsumer')!):undefined,
                 uploadState: Boolean(row.get('uploadState')!),
                 autoUpdate: Boolean(row.get('autoUpdate')!)
-              }}).then(() => refetchProviders())
-            }}
+              }}).then((result) => {
+                if (result.data?.addProvider) {
+                  refetchProviders()
+                }
+                return !!result.data?.addProvider
+              })}}
             onRowChanged={(row, values, oldValues) => {
               setAddNewRow(false)
               return changeProvider({ variables: {
@@ -236,7 +240,12 @@ const ProvidersManager = () => {
                   testConsumer: values.get('testConsumer')?String(values.get('testConsumer')!):undefined,
                   uploadState: Boolean(values.get('uploadState')!),
                   autoUpdate: Boolean(values.get('autoUpdate')!)
-                }}).then(() => refetchProviders().then(() => {}))}}
+                }}).then((result) => {
+                  if (result.data?.changeProvider) {
+                    refetchProviders()
+                  }
+                  return !!result.data?.changeProvider
+                })}}
           />
           { deleteConfirm ? (
             <ConfirmDialog

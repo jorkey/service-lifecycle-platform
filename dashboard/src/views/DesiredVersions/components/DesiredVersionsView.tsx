@@ -268,18 +268,21 @@ export class DesiredVersionsView<Version> {
               className={this.classes.versionsTable}
               columns={columns}
               rows={rows}
-              onRowChanged={ (row, values, oldValues) => {
-                const service = values.get('service')
-                const version = this.parse(values.get('version') as string)
-                this.desiredVersions = this.desiredVersions?.map(v => {
-                  if (v.service == service) {
-                    return { service: v.service, version: version }
-                  } else {
-                    return v
-                  }
+              onRowChanged={ (row, values, oldValues) =>
+                new Promise(() => {
+                  const service = values.get('service')
+                  const version = this.parse(values.get('version') as string)
+                  this.desiredVersions = this.desiredVersions?.map(v => {
+                    if (v.service == service) {
+                      return {service: v.service, version: version}
+                    } else {
+                      return v
+                    }
+                  })
+                  this.rerender()
+                  return true
                 })
-                this.rerender()
-              }}
+              }
             />
             {this.historyIndex != this.desiredVersionsHistory.length - 1 || this.isModified() ?
               <Box className={this.classes.controls}>

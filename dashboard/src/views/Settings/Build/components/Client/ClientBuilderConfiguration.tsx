@@ -43,9 +43,7 @@ const ClientBuilderConfiguration: React.FC<ClientServicesManagerParams> = props 
               services={clientServices.clientServicesConfig.map(s => s.service)}
               setBuilderConfig={(distribution =>
                 setClientBuilderConfig({ variables: { distribution: distribution } })
-                  .then(() => {
-                    console.log('getBuilderConfig')
-                    getBuilderConfig()}))}
+                  .then(() => getBuilderConfig()))}
               removeServiceConfig={(service) =>
                 removeServiceConfig({ variables: { service } }).then(() => getClientServices()) }
               setError={(error) => setError(error)}

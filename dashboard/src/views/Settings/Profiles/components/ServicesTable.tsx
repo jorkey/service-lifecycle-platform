@@ -25,15 +25,15 @@ interface ServicesTableParams {
   deleteIcon?: JSX.Element
   allowEdit?: boolean
   confirmRemove?: boolean
-  onServiceAdded?: (service: string) => void
+  onServiceAdded?: (service: string) => Promise<boolean>
   onServiceAddCancelled?: () => void
-  onServiceChange?: (oldServiceName: string, newServiceName: string) => void
-  onServiceRemove?: (service: string) => void
+  onServiceChanged?: (oldServiceName: string, newServiceName: string) => Promise<boolean>
+  onServiceRemoved?: (service: string) => Promise<boolean>
 }
 
 export const ServicesTable = (props: ServicesTableParams) => {
   const { services, addService, deleteIcon, allowEdit, confirmRemove,
-    onServiceAdded, onServiceAddCancelled, onServiceChange, onServiceRemove } = props;
+    onServiceAdded, onServiceAddCancelled, onServiceChanged, onServiceRemoved } = props;
 
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
 
@@ -66,7 +66,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       new Map<string, GridTableCellParams>([
         ['service', { value: service }],
         ['actions', { value: deleteIcon ?
-            [<Button key={0} onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemove?.(service) }>
+            [<Button key={0} onClick={ () => confirmRemove ? setDeleteConfirm(service) : onServiceRemoved?.(service) }>
               {deleteIcon}
             </Button>] : undefined }]
         ]))
@@ -83,7 +83,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
       }
       onRowAddCancelled={onServiceAddCancelled}
       onRowChanged={ (row, values, oldValues) => {
-        return onServiceChange!(oldValues.get('service')! as string, values.get('service')! as string) }}
+        return onServiceChanged!(oldValues.get('service')! as string, values.get('service')! as string) }}
     />
     { deleteConfirm ? (
       <ConfirmDialog
@@ -91,7 +91,7 @@ export const ServicesTable = (props: ServicesTableParams) => {
         open={true}
         close={() => { setDeleteConfirm(undefined) }}
         onConfirm={() => {
-          onServiceRemove?.(deleteConfirm)
+          onServiceRemoved?.(deleteConfirm)
           setDeleteConfirm(undefined)
         }}
       />) : null }

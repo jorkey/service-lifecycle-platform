@@ -15,7 +15,7 @@ const useStyles = makeStyles(theme => ({
 interface DevelopmentServicesParams {
   services: Array<string>
   deleteIcon?: JSX.Element
-  onServiceRemove?: (service: string) => Promise<void> | void
+  onServiceRemove?: (service: string) => Promise<boolean>
 }
 
 const DevelopmentServices = (params: DevelopmentServicesParams) => {
@@ -30,7 +30,7 @@ const DevelopmentServices = (params: DevelopmentServicesParams) => {
     </Typography>
     <ServicesTable services={services}
                    deleteIcon={deleteIcon}
-                   onServiceRemove={onServiceRemove}
+                   onServiceRemoved={onServiceRemove}
     />
   </>)
 }

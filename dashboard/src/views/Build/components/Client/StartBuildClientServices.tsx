@@ -169,7 +169,6 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   }, [ provider ])
 
   React.useEffect(() => {
-    console.log('useEffect')
     setRows(makeRowsData())
   }, [ developerDesiredVersions, clientDesiredVersions, clientVersions ])
 

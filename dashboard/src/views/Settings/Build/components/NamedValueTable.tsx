@@ -87,15 +87,21 @@ const NamedValueTable = (props: NamedValueTableParams) => {
       columns={columns}
       rows={rows}
       addNewRow={addValue}
-      onRowAdded={ (cells) => {
-        onValueAdded?.({
-          name: cells.get('name')! as string,
-          value: cells.get('value')! as string }) }}
+      onRowAdded={ (cells) =>
+        new Promise<boolean>(() => {
+          onValueAdded?.({
+            name: cells.get('name')! as string,
+            value: cells.get('value')! as string })
+          return true
+        })}
       onRowAddCancelled={onValueAddCancelled}
-      onRowChanged={ (row, cells, oldValues) => {
-        onValueChanged!(values[row], {
-          name: cells.get('name')! as string,
-          value: cells.get('value')! as string }) }}
+      onRowChanged={ (row, cells, oldValues) =>
+        new Promise<boolean>(() => {
+          onValueChanged!(values[row], {
+            name: cells.get('name')! as string,
+            value: cells.get('value')! as string })
+          return true
+        })}
     />
     { deleteConfirm ? (
       <ConfirmDialog

@@ -18,11 +18,11 @@ interface GridParams {
   addNewRow?: boolean,
   scrollToLastRow?: boolean,
   onClick?: (row: number) => void,
-  onRowAdded?: (values: Map<string, GridTableCellValue>) => Promise<void> | void,
+  onRowAdded?: (values: Map<string, GridTableCellValue>) => Promise<boolean>,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
   onRowChanged?: (row: number, values: Map<string, GridTableCellValue>,
-                  oldValues: Map<string, GridTableCellValue>) => Promise<void> | void,
+                  oldValues: Map<string, GridTableCellValue>) => Promise<boolean>,
   onRowsSelected?: (rows: number[]) => void,
   onRowsUnselected?: (rows: number[]) => void,
   onScrollTop?: () => void,
@@ -109,16 +109,14 @@ export const GridTable = (props: GridParams) => {
                                         return false
                                       }}
                                       onSubmitted={(values, oldValues) => {
-                                        const promise = onRowChanged!(rowNum, values, oldValues)
-                                        if (promise) {
-                                          setChangingInProgress(true)
-                                          promise.then(() => {
+                                        const result = onRowChanged!(rowNum, values, oldValues)
+                                        setChangingInProgress(true)
+                                        result.then((result) => {
+                                          if (result) {
                                             setEditingRow(-1)
                                             setChangingInProgress(false)
-                                          })
-                                        } else {
-                                          setEditingRow(-1)
-                                        }
+                                          }
+                                        })
                                       }}
                                       onCanceled={() => setEditingRow(-1)}
                 />)})}
