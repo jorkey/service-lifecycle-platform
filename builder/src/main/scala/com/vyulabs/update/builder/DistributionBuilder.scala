@@ -186,15 +186,17 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       log.error(s"Can't set developer builder config")
       return false
     }
-    val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
-    val source = Repository("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
-    sourceServices.foreach(service => {
-      if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperServiceConfig(
+    if (!sourceServices.isEmpty) {
+      val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
+      val source = Repository("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
+      sourceServices.foreach(service => {
+        if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperServiceConfig(
           service, Seq.empty, Seq(source), Seq.empty)).getOrElse(false)) {
-        log.error(s"Can't set developer builder config")
-        return false
-      }
-    })
+          log.error(s"Can't set developer builder config")
+          return false
+        }
+      })
+    }
     true
   }
 
