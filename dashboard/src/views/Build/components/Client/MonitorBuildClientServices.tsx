@@ -110,14 +110,21 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
             <Grid item md={1} xs={12}>
               <Typography>Author</Typography>
             </Grid>
-            <Grid item md={11} xs={12}>
+            <Grid item md={2} xs={12}>
               <Typography>{author}</Typography>
+            </Grid>
+
+            <Grid item md={1} xs={12}>
+              <Typography>Task</Typography>
+            </Grid>
+            <Grid item md={8} xs={12}>
+              <Typography>{task}</Typography>
             </Grid>
 
             <Grid item md={1} xs={12}>
               <Typography>Status</Typography>
             </Grid>
-            <Grid item md={11} xs={12}>
+            <Grid item md={2} xs={12}>
               <Typography>{status == Status.InProcess ? 'In Process': status == Status.Success ? 'Success' : 'Error'}</Typography>
             </Grid>
 
@@ -126,7 +133,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
                 <Grid item md={1} xs={12}>
                   <Typography>Start</Typography>
                 </Grid>
-                <Grid item md={11} xs={12}>
+                <Grid item md={8} xs={12}>
                   <Typography>{startTime.toLocaleTimeString()}</Typography>
                 </Grid>
               </> : (startTime && endTime) ?
@@ -134,7 +141,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
                 <Grid item md={1} xs={12}>
                   <Typography>Start / End</Typography>
                 </Grid>
-                <Grid item md={11} xs={12}>
+                <Grid item md={8} xs={12}>
                   <Typography>{startTime.toLocaleTimeString() + ' / ' + endTime.toLocaleTimeString()}</Typography>
                 </Grid>
               </> : null

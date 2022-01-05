@@ -125,9 +125,16 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
             </Grid>
 
             <Grid item md={1} xs={12}>
-              <Typography>Status</Typography>
+              <Typography>Task</Typography>
             </Grid>
             <Grid item md={8} xs={12}>
+              <Typography>{task}</Typography>
+            </Grid>
+
+            <Grid item md={1} xs={12}>
+              <Typography>Status</Typography>
+            </Grid>
+            <Grid item md={2} xs={12}>
               <Typography>{status == Status.InProcess ? 'In Process': status == Status.Success ? 'Success' : 'Error'}</Typography>
             </Grid>
 
