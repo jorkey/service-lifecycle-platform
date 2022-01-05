@@ -22,10 +22,6 @@ import {GridTableColumnParams} from "../../../../common/components/gridTable/Gri
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {},
-  content: {
-    padding: 0
-  },
   inner: {
     minWidth: 800
   },
@@ -162,9 +158,7 @@ const BuildDeveloper = () => {
     })
 
   return (
-    <Card
-      className={clsx(classes.root)}
-    >
+    <Card>
       <CardHeader
         action={
           <FormGroup row>
@@ -176,7 +170,7 @@ const BuildDeveloper = () => {
         }
         title='Build Developer Service Version'
       />
-      <CardContent className={classes.content}>
+      <CardContent>
         <div className={classes.inner}>
           <GridTable
            className={classes.versionsTable}

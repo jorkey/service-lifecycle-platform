@@ -16,9 +16,6 @@ import Alert from "@material-ui/lab/Alert";
 import {FaultsTable} from "./FaultsTable";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {
-    padding: theme.spacing(2)
-  },
   content: {
     padding: 0
   },

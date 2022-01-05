@@ -6,25 +6,17 @@ import LastClientVersions from "./components/LastClientVersions/LastClientVersio
 import LastDeveloperVersions from "./components/LastDeveloperVersions/LastDeveloperVersions";
 import {useDeveloperServicesQuery} from "../../generated/graphql";
 
-const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(2)
-  }
-}));
-
 interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = props => {
-  const classes = useStyles()
-
   const { data: developerServices } = useDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
   })
   const development = !!developerServices?.developerServicesConfig?.length
 
   return (
-    <div className={classes.root}>
+    <div>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Versions/>

@@ -9,7 +9,7 @@ const useStyles = makeStyles(theme => ({
   root: {
     borderRadius: '4px',
     alignItems: 'center',
-    padding: theme.spacing(1),
+    padding: theme.spacing(2),
     display: 'flex',
     flexBasis: 420
   },

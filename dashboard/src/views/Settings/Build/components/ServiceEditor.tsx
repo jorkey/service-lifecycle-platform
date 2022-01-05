@@ -19,12 +19,6 @@ import NamedValueTable from "./NamedValueTable";
 import {FetchResult} from "@apollo/client";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(4)
-  },
-  card: {
-    marginTop: 25
-  },
   newServiceName: {
     height: 60,
     margin: 0
@@ -93,7 +87,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
     return <Redirect to={fromUrl}/>
   }
 
-  return (<Card className={classes.card}>
+  return (<Card>
     <CardHeader
       title={initService?`Service '${service}'`:`New service`}
     />
@@ -111,9 +105,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
                     value={service?service:''}
                     variant="outlined"
         /> : null }
-      <Card
-        className={classes.card}
-      >
+      <Card>
         <CardHeader
           action={
             <Box
@@ -159,9 +151,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
           />
         </CardContent> : null}
       </Card>
-      <Card
-        className={classes.card}
-      >
+      <Card>
         <CardHeader
           action={
             <Box
@@ -207,9 +197,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
           />
         </CardContent>
       </Card>
-      <Card
-        className={classes.card}
-      >
+      <Card>
         <CardHeader
           action={
             <Box

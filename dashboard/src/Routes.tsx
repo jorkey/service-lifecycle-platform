@@ -18,6 +18,7 @@ import {
   NotFound as NotFoundView
 } from './views';
 import {DistributionInfo, useDistributionInfoQuery} from './generated/graphql';
+import {makeStyles} from "@material-ui/core/styles";
 
 // @ts-ignore
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
@@ -28,12 +29,20 @@ export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
   }} />
 )
 
+const useStyles = makeStyles(theme => ({
+  root: {
+    padding: theme.spacing(2)
+  }
+}));
+
 interface RoutesProps {
   distributionInfo: DistributionInfo
 }
 
 const Routes: React.FC<RoutesProps> = props => {
-  return (
+  const classes = useStyles();
+
+  return (<div className={classes.root}>
     <Switch>
       <Redirect
         from='/'
@@ -105,7 +114,7 @@ const Routes: React.FC<RoutesProps> = props => {
       />
       <Redirect to='/not-found'/>
     </Switch>
-  );
+  </div>);
 }
 
 const LoginRoutes = () => {

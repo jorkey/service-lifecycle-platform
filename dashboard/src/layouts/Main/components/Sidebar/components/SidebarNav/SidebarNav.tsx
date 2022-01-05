@@ -6,7 +6,9 @@ import {Page} from "../../Sidebar";
 import PageNav from "./PageNav";
 
 const useStyles = makeStyles((theme: any) => ({
-  root: {},
+  root: {
+    padding: 2
+  },
 }));
 
 interface SidebarNavProps {

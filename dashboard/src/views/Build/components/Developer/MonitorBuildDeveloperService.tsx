@@ -20,11 +20,8 @@ import Alert from "@material-ui/lab/Alert";
 import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(1)
-  },
   logsTable: {
-    height: 'calc(100vh - 400px)',
+    height: 'calc(100vh - 440px)',
   },
   card: {
     marginTop: 10
@@ -181,9 +178,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
 
   return (
     initialized ?
-      <Card
-        className={clsx(classes.root)}
-      >
+      <div>
         { task ?
           <>
             {MonitorCard()}
@@ -210,7 +205,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
           </> : error ?
             <Alert className={classes.alert} severity='error'>{error}</Alert> : error
         }
-      </Card> : null
+      </div> : null
   )
 }
 

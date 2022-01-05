@@ -29,9 +29,6 @@ import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(4)
-  },
   card: {
     marginTop: 25
   },
@@ -223,9 +220,7 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
 
   return (
     initialized ? (
-      <Card
-        className={clsx(classes.root)}
-      >
+      <Card>
         {AccountCard()}
         <Divider />
         <Divider />

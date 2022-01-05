@@ -23,9 +23,6 @@ import Alert from "@material-ui/lab/Alert";
 import {Version} from "../../../../common";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(4)
-  },
   card: {
     marginTop: 25
   },
@@ -178,9 +175,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
 
   return (
     initialized ? (
-      <Card
-        className={clsx(classes.root)}
-      >
+      <Card>
         {BuildCard()}
         <Divider />
         {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}

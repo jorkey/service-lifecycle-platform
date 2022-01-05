@@ -15,19 +15,15 @@ import {
 import {
   useCancelTaskMutation, useTasksQuery
 } from '../../../../generated/graphql';
-import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(1)
-  },
   card: {
     marginTop: 10
   },
   logsTable: {
-    height: 'calc(100vh - 390px)',
+    height: 'calc(100vh - 450px)',
   },
   controls: {
     marginTop: 12,
@@ -171,9 +167,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
 
   return (
     initialized ?
-      <Card
-        className={clsx(classes.root)}
-      >
+      <div>
         { task ?
           <>
             {MonitorCard()}
@@ -200,7 +194,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
           </> : error ?
             <Alert className={classes.alert} severity='error'>{error}</Alert> : error
         }
-      </Card> : null
+      </div> : null
   )
 }
 

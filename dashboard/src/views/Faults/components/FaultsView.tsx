@@ -8,12 +8,6 @@ import {LogsTailCard} from "./LogsTailCard";
 import FaultsCard from "./FaultsCard";
 import {DistributionFaultReport} from "../../../generated/graphql";
 
-const useStyles = makeStyles((theme:any) => ({
-  root: {
-    padding: theme.spacing(2)
-  }
-}));
-
 interface FaultsRouteParams {
 }
 
@@ -22,12 +16,10 @@ interface FaultsParams extends RouteComponentProps<FaultsRouteParams> {
 }
 
 const FaultsView: React.FC<FaultsParams> = props => {
-  const classes = useStyles()
-
   const [report, setReport] = useState<DistributionFaultReport>()
 
   return (
-    <div className={classes.root}>
+    <div>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <FaultsCard onSelected={report => setReport(report)}/>

@@ -7,9 +7,6 @@ import Alert from "@material-ui/lab/Alert";
 import {useTasksQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(4)
-  },
   alert: {
     marginTop: 25
   }

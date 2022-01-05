@@ -14,6 +14,7 @@ const useStyles = makeStyles(theme => ({
   },
   creationTimeColumn: {
     width: '200px',
+    paddingLeft: 4
   },
   idColumn: {
     width: '100px',

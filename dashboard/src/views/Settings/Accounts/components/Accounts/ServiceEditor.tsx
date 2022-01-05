@@ -29,12 +29,6 @@ import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(4)
-  },
-  card: {
-    marginTop: 25
-  },
   profile: {
     marginBottom: 20
   },
@@ -151,7 +145,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
 
   const AccountCard = () => {
     return (
-      <Card className={classes.card}>
+      <Card>
         <CardHeader title={(editAccount?'Edit ':'New User') +
           ' Account' + (editAccount? ` '${account}'`:'')}/>
         <CardContent>
@@ -185,7 +179,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
   }
 
   const RolesCard = () => {
-    return <Card className={classes.card}>
+    return <Card>
       <CardHeader title='Roles'/>
       <CardContent>
         <FormGroup row>
@@ -218,7 +212,7 @@ const AccountEditor: React.FC<AccountEditorParams> = props => {
 
   return (
     initialized ? (
-      <Card className={clsx(classes.root)}>
+      <Card>
         {AccountCard()}
         <Divider />
         {RolesCard()}

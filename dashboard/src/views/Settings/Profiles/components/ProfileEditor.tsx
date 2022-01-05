@@ -26,12 +26,6 @@ import ServicesProfile from "./ServicesProfile";
 import DevelopmentServices from "./DevelopmentServices";
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(4)
-  },
-  card: {
-    marginTop: 25
-  },
   controls: {
     marginTop: 25,
     display: 'flex',
@@ -147,7 +141,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   const ProfileCard = () => {
     return (
-      <Card className={classes.card}>
+      <Card>
         <CardHeader
           action={
             (<Box
@@ -210,9 +204,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
 
   return (
     initialized ? (
-      <Card
-        className={clsx(classes.root)}
-      >
+      <Card>
         <ProfileCard />
         <Divider />
         {error && <Alert className={classes.alert} severity="error">{error}</Alert>}

@@ -10,47 +10,28 @@ import StartBuildClientServices from "./components/Client/StartBuildClientServic
 import BuildClient from "./components/Client/BuildClient";
 import MonitorBuildClientServices from "./components/Client/MonitorBuildClientServices";
 
-const useStyles = makeStyles(theme => ({
-  root: {
-    padding: theme.spacing(2)
-  }
-}));
-
 const Build = () => {
-  const classes = useStyles();
   const routeMatch = useRouteMatch();
 
-  return (
-    <div className={classes.root}>
-      <Grid
-        container
-      >
-        <Grid
-          item
-          xs={12}
-        >
-          <Switch>
-            <Route exact path={`${routeMatch.url}/developer`}
-                   component={BuildDeveloper}/>
-            <Route exact path={`${routeMatch.url}/developer/start/:service`}
-                   render={(props) => <StartBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
-            </Route>
-            <Route exact path={`${routeMatch.url}/developer/monitor/:task`}
-                   render={(props) => <MonitorBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
-            </Route>
+  return (<Switch>
+      <Route exact path={`${routeMatch.url}/developer`}
+             component={BuildDeveloper}/>
+      <Route exact path={`${routeMatch.url}/developer/start/:service`}
+             render={(props) => <StartBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
+      </Route>
+      <Route exact path={`${routeMatch.url}/developer/monitor/:task`}
+             render={(props) => <MonitorBuildDeveloperService fromUrl={routeMatch.url + '/developer'} {...props} /> }>
+      </Route>
 
-            <Route exact path={`${routeMatch.url}/client`}
-                   component={BuildClient}/>
-            <Route exact path={`${routeMatch.url}/client/start`}
-                   render={(props) => <StartBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
-            </Route>
-            <Route exact path={`${routeMatch.url}/client/monitor/:task`}
-                   render={(props) => <MonitorBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
-            </Route>
-          </Switch>
-        </Grid>
-      </Grid>
-    </div>
+      <Route exact path={`${routeMatch.url}/client`}
+             component={BuildClient}/>
+      <Route exact path={`${routeMatch.url}/client/start`}
+             render={(props) => <StartBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
+      </Route>
+      <Route exact path={`${routeMatch.url}/client/monitor/:task`}
+             render={(props) => <MonitorBuildClientServices fromUrl={routeMatch.url + '/client'} {...props} /> }>
+      </Route>
+    </Switch>
   );
 };
 
