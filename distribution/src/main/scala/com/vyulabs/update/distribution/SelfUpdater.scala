@@ -12,9 +12,9 @@ import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.graphql.utils.StateUtils
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.slf4j.LoggerFactory
-import java.io.{File, IOException}
-import java.util.concurrent.TimeUnit
 
+import java.io.File
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -42,7 +42,7 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
         stateUtils.setSelfServiceStates(Seq(
           DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File(".")),
           DirectoryServiceState.getServiceInstanceState(Common.DistributionServiceName, new File("."))
-        ))
+        ) ++ directory.getBuilderDir().listFiles().map(DirectoryServiceState.getServiceInstanceState(Common.BuilderServiceName, _)))
       }
       desiredVersions <- collections.Client_DesiredVersions.find().map(_.headOption.getOrElse(
         ClientDesiredVersions(Common.AuthorDistribution, Seq.empty)))

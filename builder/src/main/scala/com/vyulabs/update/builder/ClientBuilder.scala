@@ -57,8 +57,7 @@ class ClientBuilder(builderDir: File) {
     }
 
     log.info(s"Upload client version ${version} of service ${service}")
-    uploadClientVersion(distributionClient, service, version,
-      author, versionInfo.buildInfo)
+    uploadClientVersion(distributionClient, service, version, versionInfo.buildInfo, author)
   }
 
   private def prepareSettingsRepositories(service: ServiceId,
@@ -80,13 +79,7 @@ class ClientBuilder(builderDir: File) {
   }
 
   def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
-                          version: ClientDistributionVersion, author: String): Boolean = {
-    val buildInfo = BuildInfo(author, Seq.empty, new Date(), "Initial version")
-    uploadClientVersion(distributionClient, service, version, author, buildInfo)
-  }
-
-  def uploadClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
-                          version: ClientDistributionVersion, author: String, buildInfo: BuildInfo)(implicit log: Logger): Boolean = {
+                          version: ClientDistributionVersion, buildInfo: BuildInfo, author: String)(implicit log: Logger): Boolean = {
     if (!ZipUtils.zipAndSend(clientBuildDir(service), file => distributionClient.uploadClientVersionImage(service, version, file))) {
       return false
     }

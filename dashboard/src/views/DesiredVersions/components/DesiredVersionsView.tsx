@@ -218,12 +218,12 @@ export class DesiredVersionsView<Version> {
                 control={<>
                   <IconButton
                     className={this.classes.timeChangeButton}
-                    disabled={this.historyIndex == this.desiredVersionsHistory.length-1}
+                    disabled={this.historyIndex == 0}
                     onClick={() => {
-                      this.setHistoryIndex(this.historyIndex += 1)
+                      this.setHistoryIndex(this.historyIndex -= 1)
                       this.rerender()
                     }}>
-                    <UpIcon/>
+                    <DownIcon/>
                   </IconButton>
                 </>
                 }
@@ -233,12 +233,12 @@ export class DesiredVersionsView<Version> {
                 control={<>
                   <IconButton
                     className={this.classes.timeChangeButton}
-                    disabled={this.historyIndex == 0}
+                    disabled={this.historyIndex == this.desiredVersionsHistory.length-1}
                     onClick={() => {
-                      this.setHistoryIndex(this.historyIndex -= 1)
+                      this.setHistoryIndex(this.historyIndex += 1)
                       this.rerender()
                     }}>
-                    <DownIcon/>
+                    <UpIcon/>
                   </IconButton>
                 </>
                 }

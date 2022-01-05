@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.InstallConfig._
-import com.vyulabs.update.common.config.{NamedStringValue, Repository, UpdateConfig}
+import com.vyulabs.update.common.config.{Repository, UpdateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.ServiceSettingsDirectory
@@ -179,8 +179,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   }
 
   def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
-                             service: ServiceId, version: DeveloperDistributionVersion, author: String): Boolean = {
-    val buildInfo = BuildInfo(author, Seq.empty, new Date(), "Initial version")
+                             service: ServiceId, version: DeveloperDistributionVersion, buildInfo: BuildInfo): Boolean = {
     ZipUtils.zipAndSend(developerBuildDir(service), file => {
       uploadDeveloperVersion(distributionClient, service, version, buildInfo, file)
     })

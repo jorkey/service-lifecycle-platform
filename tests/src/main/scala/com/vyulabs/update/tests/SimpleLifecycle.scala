@@ -10,7 +10,7 @@ import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphq
 import com.vyulabs.update.common.distribution.client.graphql.DeveloperGraphqlCoder.{developerMutations, developerQueries, developerSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{AccessToken, ClientDesiredVersionDelta}
+import com.vyulabs.update.common.info.{AccessToken, BuildInfo, ClientDesiredVersionDelta}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.version._
@@ -21,6 +21,7 @@ import spray.json.DefaultJsonProtocol._
 
 import java.io.File
 import java.nio.file.Files
+import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
@@ -157,7 +158,8 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     println(s"########################### Upload new client version of distribution of version ${newVersion}")
     println()
     val newDistributionVersion = ClientDistributionVersion.from(distribution, newVersion)
-    if (!clientBuilder.uploadClientVersion(adminClient, Common.DistributionServiceName, newDistributionVersion, "ak")) {
+    if (!clientBuilder.uploadClientVersion(adminClient, Common.DistributionServiceName, newDistributionVersion,
+          BuildInfo("ak", Seq.empty, new Date(), "Fixed"), "ak")) {
       sys.error(s"Can't write distribution version")
     }
     if (!distributionBuilder.setClientDesiredVersions(Seq(ClientDesiredVersionDelta(Common.DistributionServiceName, Some(newDistributionVersion))))) {
