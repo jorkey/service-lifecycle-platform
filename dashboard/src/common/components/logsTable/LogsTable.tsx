@@ -17,6 +17,7 @@ const useStyles = makeStyles(theme => ({
   timeColumn: {
     minWidth: '180px',
     maxWidth: '180px',
+    paddingLeft: 0,
   },
   instanceColumn: {
     minWidth: '200px',

@@ -21,16 +21,16 @@ import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
   root: {
-    padding: theme.spacing(4)
+    padding: theme.spacing(1)
   },
   logsTable: {
-    height: 'calc(100vh - 550px)',
+    height: 'calc(100vh - 400px)',
   },
   card: {
-    marginTop: 25
+    marginTop: 10
   },
   controls: {
-    marginTop: 25,
+    marginTop: 12,
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2

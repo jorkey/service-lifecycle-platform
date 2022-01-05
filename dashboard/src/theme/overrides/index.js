@@ -1,3 +1,5 @@
+import MuiCardContent from './MuiCardContent';
+import MuiCardHeader from './MuiCardHeader';
 import MuiButton from './MuiButton';
 import MuiIconButton from './MuiIconButton';
 import MuiPaper from './MuiPaper';
@@ -6,6 +8,8 @@ import MuiTableHead from './MuiTableHead';
 import MuiTypography from './MuiTypography';
 
 export default {
+  MuiCardContent,
+  MuiCardHeader,
   MuiButton,
   MuiIconButton,
   MuiPaper,
