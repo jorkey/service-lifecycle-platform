@@ -10,6 +10,8 @@ import {GridColumnType, GridTableCellValue} from "./GridTableColumn";
 import {makeStyles} from "@material-ui/styles";
 
 const useStyles = makeStyles<Theme, GridTableCellInternalParams>(theme => ({
+  сheckbox: {
+  },
   editable: {
     border: '1px solid #ccc',
     borderStyle: 'dashed'
@@ -76,7 +78,8 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
                }}
     > {
       type == 'checkbox' ?
-        <Checkbox checked={editing ? editValue ? editValue as boolean : false : value as boolean}
+        <Checkbox className={classes.checkbox}
+                  checked={editing ? editValue ? editValue as boolean : false : value as boolean}
                   disabled={!editable}
                   onChange={(e) => {
                     if (name == 'select') {

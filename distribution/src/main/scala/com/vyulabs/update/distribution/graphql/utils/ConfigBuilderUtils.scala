@@ -29,16 +29,18 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       _ => Some(BuilderConfig(distribution))).map(_ > 0)
   }
 
-  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+  def setBuildDeveloperServiceConfig(service: ServiceId,
+                                distribution: Option[DistributionId],
+                                environment: Seq[NamedStringValue],
                                 sourceRepositories: Seq[Repository], macroValues: Seq[NamedStringValue])
                                (implicit log: Logger): Future[Boolean] = {
     log.info(s"Set developer service ${service} config")
     val filters = Filters.eq("service", service)
     collections.Developer_Services.update(filters, _ =>
-      Some(ServiceConfig(service, environment, sourceRepositories, macroValues))).map(_ > 0)
+      Some(ServiceConfig(service, distribution, environment, sourceRepositories, macroValues))).map(_ > 0)
   }
 
-  def removeDeveloperServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
+  def removeBuildDeveloperServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
     log.info(s"Remove developer service ${service} config")
     val filters = Filters.eq("service", service)
     collections.Developer_Services.delete(filters).map(_ > 0)
@@ -71,16 +73,18 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
       _ => Some(BuilderConfig(distribution))).map(_ > 0)
   }
 
-  def setClientServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+  def setBuildClientServiceConfig(service: ServiceId,
+                             distribution: Option[DistributionId],
+                             environment: Seq[NamedStringValue],
                              settings: Seq[Repository], macroValues: Seq[NamedStringValue])
                             (implicit log: Logger): Future[Boolean] = {
     log.info(s"Set client service ${service} config")
     val filters = Filters.eq("service", service)
     collections.Client_Services.update(filters, _ =>
-      Some(ServiceConfig(service, environment, settings, macroValues))).map(_ > 0)
+      Some(ServiceConfig(service, distribution, environment, settings, macroValues))).map(_ > 0)
   }
 
-  def removeClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
+  def removeBuildClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
     log.info(s"Remove client service ${service} config")
     val filters = Filters.eq("service", service)
     collections.Client_Services.delete(filters).map(_ > 0)

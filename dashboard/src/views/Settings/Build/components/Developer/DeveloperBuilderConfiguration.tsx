@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
 
 import {
-  useDeveloperBuilderConfigQuery,
-  useDeveloperServicesQuery, useRemoveDeveloperServiceConfigMutation, useSetDeveloperBuilderConfigMutation,
+  useBuildDeveloperServicesQuery,
+  useDeveloperBuilderConfigQuery, useRemoveBuildDeveloperServiceConfigMutation,
+  useSetDeveloperBuilderConfigMutation,
 } from "../../../../../generated/graphql";
 import BuilderConfiguration from "../BuilderConfiguration";
 
@@ -19,7 +20,7 @@ const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = 
     }
   })
 
-  const { data: developerServices, refetch: getDeveloperServices } = useDeveloperServicesQuery({
+  const { data: developerServices, refetch: getDeveloperServices } = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query developer services error ' + err.message)
@@ -31,22 +32,21 @@ const DeveloperBuilderConfiguration: React.FC<DeveloperServicesManagerParams> = 
       onError(err) { setError('Set developer builder config error ' + err.message) },
     })
 
-  const [ removeServiceConfig ] =
-    useRemoveDeveloperServiceConfigMutation({
+  const [ removeBuildServiceConfig ] =
+    useRemoveBuildDeveloperServiceConfigMutation({
       onError(err) { setError('Remove developer service config error ' + err.message) },
     })
 
-  if (builderConfig?.developerBuilderConfig && developerServices?.developerServicesConfig) {
+  if (builderConfig?.developerBuilderConfig && developerServices?.buildDeveloperServicesConfig) {
     return (<BuilderConfiguration
               title='Developer Build Configuration'
               builderConfig={builderConfig.developerBuilderConfig}
-              services={developerServices.developerServicesConfig.map(s => s.service)}
+              services={developerServices.buildDeveloperServicesConfig.map(s => s.service)}
               setBuilderConfig={(distribution =>
                 setDeveloperBuilderConfig({ variables: { distribution: distribution } })
-                  .then(() => {
-                    getBuilderConfig()}))}
+                  .then(() => getBuilderConfig()))}
               removeServiceConfig={(service) =>
-                removeServiceConfig({ variables: { service } }).then(() => getDeveloperServices()) }
+                removeBuildServiceConfig({ variables: { service } }).then(() => getDeveloperServices()) }
               setError={(error) => setError(error)}
               error={error}
       />)

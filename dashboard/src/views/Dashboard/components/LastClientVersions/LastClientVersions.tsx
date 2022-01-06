@@ -15,7 +15,6 @@ import ClientVersionsTable from "./ClientVersionsTable";
 import ClientVersionsInProcessTable from "./ClientVersionsInProcessTable";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {},
   content: {
     padding: 0
   },
@@ -51,9 +50,7 @@ const LastClientVersions = () => {
   const [error, setError] = useState<string>()
 
   return (
-    <Card
-      className={clsx(classes.root)}
-    >
+    <Card>
       <CardHeader
         action={
           <FormGroup row>

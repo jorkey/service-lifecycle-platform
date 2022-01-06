@@ -21,7 +21,6 @@ import {
 import {RefreshControl} from "../../../../common/components/refreshControl/RefreshControl";
 
 const useStyles = makeStyles(theme => ({
-  root: {},
   content: {
     padding: 0
   },
@@ -88,10 +87,7 @@ const Versions: React.FC<VersionsProps> = props => {
   }
 
   return (
-    <Card
-      {...props}
-      className={clsx(classes.root)}
-    >
+    <Card>
       <CardHeader
         action={
           <FormGroup row>

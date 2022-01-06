@@ -29,9 +29,6 @@ import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
-  card: {
-    marginTop: 25
-  },
   profile: {
     marginBottom: 20
   },
@@ -45,7 +42,7 @@ const useStyles = makeStyles(theme => ({
     height: 25
   },
   controls: {
-    marginTop: 25,
+    marginRight: 16,
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2
@@ -160,7 +157,7 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
 
   const AccountCard = () => {
     return (
-      <Card className={classes.card}>
+      <Card>
         <CardHeader title={(editAccount?'Edit ':'New Distribution Consumer') +
           ' Account' + (editAccount? ` '${account}'`:'')}/>
         <CardContent>

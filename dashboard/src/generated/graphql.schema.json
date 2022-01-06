@@ -2938,7 +2938,7 @@
             "deprecationReason": null
           },
           {
-            "name": "setDeveloperServiceConfig",
+            "name": "setBuildDeveloperServiceConfig",
             "description": null,
             "args": [
               {
@@ -2952,6 +2952,18 @@
                     "name": "String",
                     "ofType": null
                   }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "distribution",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
                 },
                 "defaultValue": null,
                 "isDeprecated": false,
@@ -3043,7 +3055,7 @@
             "deprecationReason": null
           },
           {
-            "name": "removeDeveloperServiceConfig",
+            "name": "removeBuildDeveloperServiceConfig",
             "description": null,
             "args": [
               {
@@ -3109,7 +3121,7 @@
             "deprecationReason": null
           },
           {
-            "name": "setClientServiceConfig",
+            "name": "setBuildClientServiceConfig",
             "description": null,
             "args": [
               {
@@ -3123,6 +3135,18 @@
                     "name": "String",
                     "ofType": null
                   }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "distribution",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
                 },
                 "defaultValue": null,
                 "isDeprecated": false,
@@ -3214,7 +3238,7 @@
             "deprecationReason": null
           },
           {
-            "name": "removeClientServiceConfig",
+            "name": "removeBuildClientServiceConfig",
             "description": null,
             "args": [
               {
@@ -4762,7 +4786,7 @@
             "deprecationReason": null
           },
           {
-            "name": "developerServicesConfig",
+            "name": "buildDeveloperServicesConfig",
             "description": null,
             "args": [
               {
@@ -4815,7 +4839,7 @@
             "deprecationReason": null
           },
           {
-            "name": "clientServicesConfig",
+            "name": "buildClientServicesConfig",
             "description": null,
             "args": [
               {
@@ -6678,6 +6702,18 @@
                 "name": "String",
                 "ofType": null
               }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "distribution",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null

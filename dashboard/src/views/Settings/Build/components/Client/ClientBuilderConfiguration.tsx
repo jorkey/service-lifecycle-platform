@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
 
 import {
-  useClientBuilderConfigQuery,
-  useClientServicesQuery, useRemoveClientServiceConfigMutation, useSetClientBuilderConfigMutation,
+  useBuildClientServicesQuery,
+  useClientBuilderConfigQuery, useRemoveBuildClientServiceConfigMutation,
+  useSetClientBuilderConfigMutation,
 } from "../../../../../generated/graphql";
 import BuilderConfiguration from "../BuilderConfiguration";
 
@@ -19,7 +20,7 @@ const ClientBuilderConfiguration: React.FC<ClientServicesManagerParams> = props 
     }
   })
 
-  const { data: clientServices, refetch: getClientServices } = useClientServicesQuery({
+  const { data: buildClientServicesConfig, refetch: getBuildClientServicesConfig } = useBuildClientServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query client services error ' + err.message)
@@ -31,21 +32,21 @@ const ClientBuilderConfiguration: React.FC<ClientServicesManagerParams> = props 
       onError(err) { setError('Set client builder config error ' + err.message) },
     })
 
-  const [ removeServiceConfig ] =
-    useRemoveClientServiceConfigMutation({
+  const [ removeBuildServiceConfig ] =
+    useRemoveBuildClientServiceConfigMutation({
       onError(err) { setError('Remove client service config error ' + err.message) },
     })
 
-  if (builderConfig?.clientBuilderConfig && clientServices?.clientServicesConfig) {
+  if (builderConfig?.clientBuilderConfig && buildClientServicesConfig?.buildClientServicesConfig) {
     return (<BuilderConfiguration
               title='Client Build Configuration'
               builderConfig={builderConfig.clientBuilderConfig}
-              services={clientServices.clientServicesConfig.map(s => s.service)}
+              services={buildClientServicesConfig.buildClientServicesConfig.map(s => s.service)}
               setBuilderConfig={(distribution =>
                 setClientBuilderConfig({ variables: { distribution: distribution } })
                   .then(() => getBuilderConfig()))}
               removeServiceConfig={(service) =>
-                removeServiceConfig({ variables: { service } }).then(() => getClientServices()) }
+                removeBuildServiceConfig({ variables: { service } }).then(() => getBuildClientServicesConfig()) }
               setError={(error) => setError(error)}
               error={error}
       />)

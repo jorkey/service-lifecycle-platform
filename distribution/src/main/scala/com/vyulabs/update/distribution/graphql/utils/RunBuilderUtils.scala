@@ -49,7 +49,8 @@ trait RunBuilderUtils extends SprayJsonSupport {
       val args = arguments ++ Seq(
         s"sourceRepositories=${serviceConfig.repositories.toJson.compactPrint}",
         s"macroValues=${serviceConfig.macroValues.toJson.compactPrint}")
-      runBuilder(task, builderConfig.distribution, serviceConfig.environment, args)
+      runBuilder(task, serviceConfig.distribution.getOrElse(builderConfig.distribution),
+        serviceConfig.environment, args)
     }
     val result = future.map(_._1).flatten
     val cancel = Some(() =>

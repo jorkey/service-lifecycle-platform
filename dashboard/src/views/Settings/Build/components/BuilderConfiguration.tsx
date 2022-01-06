@@ -22,9 +22,6 @@ import {BuilderConfig, useProvidersInfoQuery} from "../../../../generated/graphq
 
 const useStyles = makeStyles((theme:any) => ({
   root: {},
-  card: {
-    marginTop: 25
-  },
   content: {
     padding: 0
   },
@@ -123,16 +120,12 @@ const BuilderConfiguration: React.FC<ServicesManagerParams> = props => {
     const distributions = [localStorage.getItem('distribution'), ...providers.providersInfo.map(info => info.distribution)]
 
     return (
-      <Card
-        className={classes.card}
-      >
+      <Card>
         <CardHeader
           title={title}
         />
         <CardContent>
-          <Card
-            className={classes.card}
-          >
+          <Card>
             <CardHeader
               action={
                 <FormGroup row>
@@ -152,17 +145,14 @@ const BuilderConfiguration: React.FC<ServicesManagerParams> = props => {
                           .map((distribution, index) => <option key={index}>{distribution}</option>)}
                       </Select>
                     }
-                    label='Distribution Server To Run The Build'
+                    label='Distribution Server To Run The Builder'
                   />
                 </FormGroup>
               }
               title={'Builder'}
             />
           </Card>
-          <Divider/>
-          <Card
-            className={classes.card}
-          >
+          <Card>
             <CardHeader
               action={
                 <Box

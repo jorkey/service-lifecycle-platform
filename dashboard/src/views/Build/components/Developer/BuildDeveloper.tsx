@@ -7,7 +7,7 @@ import {
   CardContent, CardHeader,
 } from '@material-ui/core';
 import {
-  useDeveloperServicesQuery,
+  useBuildDeveloperServicesQuery,
   useDeveloperVersionsInfoQuery, useTasksQuery
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
@@ -64,7 +64,7 @@ const BuildDeveloper = () => {
   const history = useHistory()
   const [error, setError] = useState<string>()
 
-  const { data: services, refetch: getServices } = useDeveloperServicesQuery({
+  const { data: services, refetch: getServices } = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
@@ -128,7 +128,7 @@ const BuildDeveloper = () => {
     }
   ]
 
-  const rows = services?.developerServicesConfig.map(s => s.service).sort().map(
+  const rows = services?.buildDeveloperServicesConfig.map(s => s.service).sort().map(
     service => {
       const versionInProcess = tasksInProcess?.tasks.find(task => task.parameters.find(p => {
         return p.name == 'service' && p.value == service }))

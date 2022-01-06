@@ -15,7 +15,6 @@ import DeveloperVersionsTable from "./DeveloperVersionsTable";
 import DeveloperVersionsInProcessTable from "./DeveloperVersionsInProcessTable";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {},
   content: {
     padding: 0
   },
@@ -49,9 +48,7 @@ const LastDeveloperVersions = () => {
   })
 
   return (
-    <Card
-      className={clsx(classes.root)}
-    >
+    <Card>
       <CardHeader
         action={
           <FormGroup row>

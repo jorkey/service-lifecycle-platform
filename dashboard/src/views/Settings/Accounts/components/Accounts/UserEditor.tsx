@@ -41,7 +41,7 @@ const useStyles = makeStyles(theme => ({
     height: 25
   },
   controls: {
-    marginTop: 25,
+    marginRight: 16,
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2
@@ -288,11 +288,9 @@ const UserEditor: React.FC<AccountEditorParams> = props => {
 
   return (
     initialized ? (
-      <Card>
+      <div>
         {AccountCard()}
-        <Divider />
         {RolesCard()}
-        <Divider />
         {PasswordCard()}
         {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
         <Box className={classes.controls}>
@@ -313,7 +311,7 @@ const UserEditor: React.FC<AccountEditorParams> = props => {
             {!editAccount?'Add New Account':'Save'}
           </Button>
         </Box>
-      </Card>) : null
+      </div>) : null
   );
 }
 

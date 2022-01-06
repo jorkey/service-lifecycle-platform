@@ -2,9 +2,9 @@ import React, {useState} from 'react';
 import {RouteComponentProps} from 'react-router-dom'
 
 import {
-  useDeveloperServiceConfigLazyQuery,
-  useDeveloperServicesQuery,
-  useSetDeveloperServiceConfigMutation
+  useBuildDeveloperServiceConfigLazyQuery,
+  useBuildDeveloperServicesQuery,
+  useSetBuildDeveloperServiceConfigMutation
 } from "../../../../../generated/graphql";
 import ServiceEditor from "../ServiceEditor";
 
@@ -21,32 +21,33 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
 
   const [error, setError] = useState<string>()
 
-  const { data: developerServices } = useDeveloperServicesQuery({
+  const { data: builDeveloperServicesConfig } = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query developer services error ' + err.message)
     }
   })
 
-  const [ getServiceConfig, serviceConfig ] = useDeveloperServiceConfigLazyQuery({
+  const [ getBuildServiceConfig, buildServiceConfig ] = useBuildDeveloperServiceConfigLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Get service config error ' + err.message)
     }
   })
 
-  const [ setServiceConfig ] =
-    useSetDeveloperServiceConfigMutation({
+  const [ setBuildServiceConfig ] =
+    useSetBuildDeveloperServiceConfigMutation({
       onError(err) { setError('Set developer service config error: ' + err.message) },
     })
 
-  if (service && !serviceConfig.data && !serviceConfig.loading) {
-    getServiceConfig({variables: {service: service}})
+  if (service && !buildServiceConfig.data && !buildServiceConfig.loading) {
+    getBuildServiceConfig({variables: {service: service}})
   }
 
-  const config = serviceConfig.data?.developerServicesConfig.length?serviceConfig.data.developerServicesConfig[0]:undefined
+  const config = buildServiceConfig.data?.buildDeveloperServicesConfig.length?
+    buildServiceConfig.data.buildDeveloperServicesConfig[0]:undefined
 
-  if ((!service || config) && developerServices?.developerServicesConfig) {
+  if ((!service || config) && builDeveloperServicesConfig?.buildDeveloperServicesConfig) {
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
     const macroValues = config?config.macroValues:[]
@@ -58,12 +59,12 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
               repositories={repositories}
               macroValues={macroValues}
               hasService={(service =>
-                !!developerServices?.developerServicesConfig.find(s => s.service == service))}
+                !!builDeveloperServicesConfig?.buildDeveloperServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) =>
                 repositories.length > 0 }
-              setServiceConfig={(service, environment, repositories, macroValues) =>
-                setServiceConfig({ variables: { service, environment, repositories, macroValues } })
-                  .then((r) => !!r.data?.setDeveloperServiceConfig) }
+              setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
+                setBuildServiceConfig({ variables: { service, distribution, environment, repositories, macroValues } })
+                  .then((r) => !!r.data?.setBuildDeveloperServiceConfig) }
               error={error}
               fromUrl={props.fromUrl}
       />)

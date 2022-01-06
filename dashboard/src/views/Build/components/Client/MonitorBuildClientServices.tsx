@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider,
   Grid, Typography
 } from '@material-ui/core';
 import {
@@ -19,14 +18,11 @@ import Alert from "@material-ui/lab/Alert";
 import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
-  card: {
-    marginTop: 10
-  },
   logsTable: {
     height: 'calc(100vh - 450px)',
   },
   controls: {
-    marginTop: 12,
+    marginRight: 16,
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2
@@ -91,7 +87,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
 
   const MonitorCard = () => {
     return (<>
-      <Card className={classes.card}>
+      <Card>
         <CardHeader title={`Building Services`}/>
         <CardContent>
           <Grid container spacing={1}>
@@ -145,7 +141,7 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
           </Grid>
         </CardContent>
       </Card>
-      <Card className={classes.card}>
+      <Card>
         <CardHeader title={`Task logs`}/>
         <CardContent>
           { <LogsTable className={classes.logsTable}
@@ -171,7 +167,6 @@ const MonitorBuildClientServices = (props: MonitorBuildServicesParams) => {
         { task ?
           <>
             {MonitorCard()}
-            <Divider/>
             {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
             <Box className={classes.controls}>
               { terminatedStatus == undefined ?

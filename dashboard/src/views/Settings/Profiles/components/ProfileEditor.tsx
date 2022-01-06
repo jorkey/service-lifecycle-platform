@@ -15,7 +15,7 @@ import {
 } from '@material-ui/core';
 import {
   useAddServicesProfileMutation,
-  useChangeServicesProfileMutation, useDeveloperServicesQuery,
+  useChangeServicesProfileMutation, useBuildDeveloperServicesQuery,
   useProfileServicesLazyQuery,
   useServiceProfilesQuery,
 } from '../../../../generated/graphql';
@@ -58,7 +58,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
     onCompleted() { setError(undefined) }
   })
 
-  const {data: developerServices} = useDeveloperServicesQuery({
+  const {data: developerServices} = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer services error ' + err.message) },
     onCompleted() { setError(undefined) }
@@ -185,7 +185,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
               xs={6}
             >
               <DevelopmentServices services={developerServices?
-                                      developerServices.developerServicesConfig.map(s => s.service)
+                                      developerServices.buildDeveloperServicesConfig.map(s => s.service)
                                         .filter(service => services.find(s => s == service) === undefined):[]}
                                    deleteIcon={<LeftIcon/>}
                                    onServiceRemove={ service =>

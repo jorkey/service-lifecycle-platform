@@ -2,9 +2,8 @@ import React, {useState} from 'react';
 import {RouteComponentProps} from 'react-router-dom'
 
 import {
-  useClientServiceConfigLazyQuery,
-  useClientServicesQuery,
-  useSetClientServiceConfigMutation
+  useBuildClientServiceConfigLazyQuery, useBuildClientServicesQuery,
+  useSetBuildClientServiceConfigMutation,
 } from "../../../../../generated/graphql";
 import ServiceEditor from "../ServiceEditor";
 
@@ -21,32 +20,33 @@ const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
 
   const [error, setError] = useState<string>()
 
-  const { data: clientServices } = useClientServicesQuery({
+  const { data: buildClientServices } = useBuildClientServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query client services error ' + err.message)
     }
   })
 
-  const [ getServiceConfig, serviceConfig ] = useClientServiceConfigLazyQuery({
+  const [ getBuildServiceConfig, buildServiceConfig ] = useBuildClientServiceConfigLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Get service config error ' + err.message)
     }
   })
 
-  const [ setServiceConfig ] =
-    useSetClientServiceConfigMutation({
+  const [ setBuildServiceConfig ] =
+    useSetBuildClientServiceConfigMutation({
       onError(err) { setError('Set client service config error ' + err.message) },
     })
 
-  if (service && !serviceConfig.data && !serviceConfig.loading) {
-    getServiceConfig({variables: {service: service}})
+  if (service && !buildServiceConfig.data && !buildServiceConfig.loading) {
+    getBuildServiceConfig({variables: {service: service}})
   }
 
-  const config = serviceConfig.data?.clientServicesConfig.length?serviceConfig.data.clientServicesConfig[0]:undefined
+  const config = buildServiceConfig.data?.buildClientServicesConfig.length?
+    buildServiceConfig.data.buildClientServicesConfig[0]:undefined
 
-  if ((!service || config) && clientServices?.clientServicesConfig) {
+  if ((!service || config) && buildClientServices?.buildClientServicesConfig) {
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
     const macroValues = config?config.macroValues:[]
@@ -58,12 +58,12 @@ const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
               repositories={repositories}
               macroValues={macroValues}
               hasService={(service =>
-                !!clientServices?.clientServicesConfig.find(s => s.service == service))}
+                !!buildClientServices?.buildClientServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) =>
                 repositories.length > 0 }
-              setServiceConfig={(service, environment, repositories, macroValues) =>
-                setServiceConfig({ variables: { service, environment, repositories, macroValues } })
-                  .then((r) => !!r.data?.setClientServiceConfig)
+              setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
+                setBuildServiceConfig({ variables: { service, distribution, environment, repositories, macroValues } })
+                  .then((r) => !!r.data?.setBuildClientServiceConfig)
               }
               error={error}
               fromUrl={props.fromUrl}

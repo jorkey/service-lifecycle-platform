@@ -31,7 +31,7 @@ export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
 
 const useStyles = makeStyles(theme => ({
   root: {
-    padding: theme.spacing(2)
+    // padding: theme.spacing(2)
   }
 }));
 

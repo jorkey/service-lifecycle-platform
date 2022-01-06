@@ -23,11 +23,8 @@ import Alert from "@material-ui/lab/Alert";
 import {Version} from "../../../../common";
 
 const useStyles = makeStyles(theme => ({
-  card: {
-    marginTop: 25
-  },
   controls: {
-    marginTop: 25,
+    marginRight: 16,
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2
@@ -123,7 +120,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
 
   const BuildCard = () => {
     return (
-      <Card className={classes.card}>
+      <Card>
         <CardHeader title={`Start Build Service '${service}'.`}/>
         <CardContent>
           <Grid container spacing={3}>
@@ -175,9 +172,8 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
 
   return (
     initialized ? (
-      <Card>
+      <div>
         {BuildCard()}
-        <Divider />
         {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
         <Box className={classes.controls}>
           <Button className={classes.control}
@@ -197,7 +193,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
             Create New Version
           </Button>
         </Box>
-      </Card>) : null
+      </div>) : null
   );
 }
 

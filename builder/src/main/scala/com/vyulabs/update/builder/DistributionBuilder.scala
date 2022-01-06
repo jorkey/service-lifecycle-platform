@@ -192,7 +192,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
       val source = Repository("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
       sourceServices.foreach(service => {
-        if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperServiceConfig(
+        if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setBuildDeveloperServiceConfig(
           service, Seq.empty, Seq(source), Seq.empty)).getOrElse(false)) {
           log.error(s"Can't set developer builder config")
           return false

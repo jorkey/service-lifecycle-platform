@@ -27,12 +27,12 @@ trait BuilderConfigsCoder {
 
 trait ServicesConfigCoder {
   def getDeveloperServicesConfig() =
-    GraphqlQuery[Seq[ServiceConfig]]("developerServicesConfig",
+    GraphqlQuery[Seq[ServiceConfig]]("buildDeveloperServicesConfig",
       Seq.empty,
       "{ service, sources { name, git { url, branch, cloneSubmodules } }, environment { name, value } }")
 
   def getClientServicesConfig() =
-    GraphqlQuery[Seq[ServiceConfig]]("clientServicesConfig",
+    GraphqlQuery[Seq[ServiceConfig]]("buildClientServicesConfig",
       Seq.empty,
       "{ service, environment { name, value } }")
 }
@@ -123,9 +123,9 @@ trait BuilderConfigsAdministrationCoder {
 }
 
 trait ServiceConfigsAdministrationCoder {
-  def setDeveloperServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+  def setBuildDeveloperServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
                                 repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
-    GraphqlMutation[Boolean]("setDeveloperServiceConfig", Seq(
+    GraphqlMutation[Boolean]("setBuildDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
@@ -133,14 +133,14 @@ trait ServiceConfigsAdministrationCoder {
     ))
   }
 
-  def removeDeveloperServiceConfig(service: ServiceId) = {
-    GraphqlMutation[Boolean]("removeDeveloperServiceConfig", Seq(
+  def removeBuildDeveloperServiceConfig(service: ServiceId) = {
+    GraphqlMutation[Boolean]("removeBuildDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service)))
   }
 
-  def setClientServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
+  def setBuildClientServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
                              repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
-    GraphqlMutation[Boolean]("setClientServiceConfig", Seq(
+    GraphqlMutation[Boolean]("setBuildClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
@@ -148,8 +148,8 @@ trait ServiceConfigsAdministrationCoder {
     ))
   }
 
-  def removeClientServiceConfig(service: ServiceId) = {
-    GraphqlMutation[Boolean]("removeClientServiceConfig", Seq(
+  def removeBuildClientServiceConfig(service: ServiceId) = {
+    GraphqlMutation[Boolean]("removeBuildClientServiceConfig", Seq(
       GraphqlArgument("service" -> service)))
   }
 

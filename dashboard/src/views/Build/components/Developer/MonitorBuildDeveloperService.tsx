@@ -23,11 +23,8 @@ const useStyles = makeStyles(theme => ({
   logsTable: {
     height: 'calc(100vh - 440px)',
   },
-  card: {
-    marginTop: 10
-  },
   controls: {
-    marginTop: 12,
+    marginRight: 16,
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2
@@ -96,7 +93,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
 
   const MonitorCard = () => {
     return (<>
-      <Card className={classes.card}>
+      <Card>
         <CardHeader title={`Building Service ${service?`'${service}'`:''}`}/>
         <CardContent>
           <Grid container spacing={1}>
@@ -157,7 +154,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
           </Grid>
         </CardContent>
       </Card>
-      <Card className={classes.card}>
+      <Card>
         <CardHeader title={`Task logs`}/>
         <CardContent>
           { <LogsTable className={classes.logsTable}
@@ -182,7 +179,6 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
         { task ?
           <>
             {MonitorCard()}
-            <Divider/>
             {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
             <Box className={classes.controls}>
               { terminatedStatus == undefined ?

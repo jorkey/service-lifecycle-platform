@@ -8,6 +8,12 @@ import {LogsTailCard} from "./LogsTailCard";
 import FaultsCard from "./FaultsCard";
 import {DistributionFaultReport} from "../../../generated/graphql";
 
+const useStyles = makeStyles(theme => ({
+  info: {
+    display: 'flex'
+  }
+}));
+
 interface FaultsRouteParams {
 }
 
@@ -18,29 +24,16 @@ interface FaultsParams extends RouteComponentProps<FaultsRouteParams> {
 const FaultsView: React.FC<FaultsParams> = props => {
   const [report, setReport] = useState<DistributionFaultReport>()
 
+  const classes = useStyles()
+
   return (
     <div>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <FaultsCard onSelected={report => setReport(report)}/>
-        </Grid>
-        {report?<>
-          <Grid item xs={4}>
-            <Grid container direction={'column'} spacing={3}>
-              <Grid item xs={12}>
-                <FaultInfoCard report={report}/>
-              </Grid>
-              {report.payload.files.length?
-                <Grid item xs={12}>
-                  <FaultFiles files={report.payload.files}/>
-                </Grid>:null}
-            </Grid>
-          </Grid>
-          <Grid item xs={8}>
-            <LogsTailCard lines={report.payload.info.logTail}/>
-          </Grid>
-        </>:null}
-      </Grid>
+        <FaultsCard onSelected={report => setReport(report)}/>
+        {report?<div className={classes.info}>
+          <FaultInfoCard report={report}/>
+          {report.payload.files.length?<FaultFiles files={report.payload.files}/>:null}
+          <LogsTailCard lines={report.payload.info.logTail}/>
+        </div>:null}
     </div>
   )
 }

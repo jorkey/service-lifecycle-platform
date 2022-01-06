@@ -30,7 +30,6 @@ import {RouteComponentProps, useHistory} from "react-router-dom";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles((theme:any) => ({
-  root: {},
   content: {
     padding: 0
   },
@@ -53,8 +52,7 @@ const useStyles = makeStyles((theme:any) => ({
   versionColumn: {
   },
   controls: {
-    marginTop: '25px',
-    paddingRight: '25px',
+    marginRight: 16,
     display: 'flex',
     justifyContent: 'flex-end',
     p: 2
@@ -304,108 +302,108 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   }
 
   return (
-    <Card
-      className={clsx(classes.root)}
-    >
-      <CardHeader
-        action={
-          <FormGroup row>
-            { providers?.providersInfo.length ?
-              <FormControlLabel
+    <div>
+      <Card>
+        <CardHeader
+          action={
+            <FormGroup row>
+              { providers?.providersInfo.length ?
+                <FormControlLabel
+                  className={classes.control}
+                  control={
+                    <Select
+                      className={classes.providerSelect}
+                      native
+                      onChange={(event) => {
+                        const distribution = providers?.providersInfo
+                          .find(provider => provider.distribution == event.target.value as string)
+                        setProvider(distribution)
+                      }}
+                      title='Select provider'
+                      value={provider?.distribution}
+                    >
+                      <option key={-1}/>
+                      { providers?.providersInfo
+                          .map((provider) => provider.distribution)
+                          .map((provider, index) => <option key={index}>{provider}</option>)}
+                    </Select>
+                  }
+                  label='Update From Provider'
+                /> : null }
+              <RefreshControl
                 className={classes.control}
-                control={
-                  <Select
-                    className={classes.providerSelect}
-                    native
-                    onChange={(event) => {
-                      const distribution = providers?.providersInfo
-                        .find(provider => provider.distribution == event.target.value as string)
-                      setProvider(distribution)
-                    }}
-                    title='Select provider'
-                    value={provider?.distribution}
-                  >
-                    <option key={-1}/>
-                    { providers?.providersInfo
-                        .map((provider) => provider.distribution)
-                        .map((provider, index) => <option key={index}>{provider}</option>)}
-                  </Select>
-                }
-                label='Update From Provider'
-              /> : null }
-            <RefreshControl
-              className={classes.control}
-              refresh={ () => {
-                if (provider) {
-                  getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
-                }
-                getDeveloperDesiredVersions()
-                getClientDesiredVersions() }}
+                refresh={ () => {
+                  if (provider) {
+                    getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
+                  }
+                  getDeveloperDesiredVersions()
+                  getClientDesiredVersions() }}
+              />
+            </FormGroup>
+          }
+          title={provider?'Update Client Services':'Build Client Services'}
+        />
+        <CardContent className={classes.content}>
+          <div className={classes.inner}>
+            <GridTable
+               className={classes.versionsTable}
+               columns={columns}
+               rows={rowsView?rowsView:[]}
+               onRowsSelected={(rowsNum) => {
+                 setRows(rows.map((row, index) => { return {
+                   selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
+                   developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
+                 } as RowData }))
+               }}
+               onRowsUnselected={(rowsNum) => {
+                 setRows(rows.map((row, index) => { return {
+                   selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
+                   developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
+                 } as RowData }))
+               }}
             />
-          </FormGroup>
-        }
-        title={provider?'Update Client Services':'Build Client Services'}
-      />
-      <CardContent className={classes.content}>
-        <div className={classes.inner}>
-          <GridTable
-             className={classes.versionsTable}
-             columns={columns}
-             rows={rowsView?rowsView:[]}
-             onRowsSelected={(rowsNum) => {
-               setRows(rows.map((row, index) => { return {
-                 selected: (rowsNum.find(row => row == index) != undefined)?true:row.selected, service: row.service, providerVersion: row.providerVersion,
-                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
-               } as RowData }))
-             }}
-             onRowsUnselected={(rowsNum) => {
-               setRows(rows.map((row, index) => { return {
-                 selected: (rowsNum.find(row => row == index) != undefined)?false:row.selected, service: row.service, providerVersion: row.providerVersion,
-                 developerVersion: row.developerVersion, clientVersion: row.clientVersion, testedVersion: row.testedVersion
-               } as RowData }))
-             }}
-          />
-          {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
-          <Box className={classes.controls}>
-            <Button className={classes.control}
-                    color="primary"
-                    variant="contained"
-                    disabled={!validate()}
-                    onClick={() => buildClientVersions()}
-            >
-              Update Client
-            </Button>
-            {clientDesiredVersions?<Button className={classes.control}
+          </div>
+        </CardContent>
+      </Card>
+    {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
+    <Box className={classes.controls}>
+      <Button className={classes.control}
               color="primary"
               variant="contained"
-              disabled={isTested()}
-              onClick={() => {
-                if (provider) {
-                  setProviderTestedVersions({
-                    variables: {
-                      distribution: provider.distribution,
-                      versions: clientDesiredVersions?.clientDesiredVersions
-                        .filter(info => info.version.distribution == provider.distribution)
-                        .map(version => clientVersionToDeveloperVersion(version)
-                      )
-                    }
-                  })
-                } else {
-                  setTestedVersions({
-                    variables: {
-                      versions: clientDesiredVersions?.clientDesiredVersions
-                        .filter(version => version.version.distribution == localStorage.getItem('distribution'))
-                        .map(version => clientVersionToDeveloperVersion(version))
-                  }})
-                }}
-              }
-            >
-              Mark As Tested
-            </Button>:null}
-          </Box>
-        </div>
-      </CardContent>
-    </Card>
+              disabled={!validate()}
+              onClick={() => buildClientVersions()}
+      >
+        Update Client
+      </Button>
+      {clientDesiredVersions?<Button className={classes.control}
+                                     color="primary"
+                                     variant="contained"
+                                     disabled={isTested()}
+                                     onClick={() => {
+                                       if (provider) {
+                                         setProviderTestedVersions({
+                                           variables: {
+                                             distribution: provider.distribution,
+                                             versions: clientDesiredVersions?.clientDesiredVersions
+                                               .filter(info => info.version.distribution == provider.distribution)
+                                               .map(version => clientVersionToDeveloperVersion(version)
+                                               )
+                                           }
+                                         })
+                                       } else {
+                                         setTestedVersions({
+                                           variables: {
+                                             versions: clientDesiredVersions?.clientDesiredVersions
+                                               .filter(version => version.version.distribution == localStorage.getItem('distribution'))
+                                               .map(version => clientVersionToDeveloperVersion(version))
+                                           }})
+                                       }}
+                                     }
+      >
+        Mark As Tested
+      </Button>:null}
+    </Box>
+  </div>
   );
 }
 

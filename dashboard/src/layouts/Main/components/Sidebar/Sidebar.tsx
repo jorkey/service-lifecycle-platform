@@ -17,7 +17,7 @@ import ProfilesIcon from '@material-ui/icons/FilterList';
 import TaskIcon from '@material-ui/icons/Check';
 
 import { Profile, SidebarNav } from './components';
-import {useDeveloperServicesQuery} from "../../../../generated/graphql";
+import {useBuildDeveloperServicesQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles((theme?: any) => ({
   drawer: {
@@ -54,12 +54,12 @@ const Sidebar = (props:any) => {
 
   const classes = useStyles()
 
-  const { data: developerServices } = useDeveloperServicesQuery({
+  const { data: developerServices } = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
   })
 
-  if (developerServices?.developerServicesConfig) {
-    const development = !!developerServices?.developerServicesConfig.length
+  if (developerServices?.buildDeveloperServicesConfig) {
+    const development = !!developerServices?.buildDeveloperServicesConfig.length
 
     const buildPages: Page = development ? {
       title: 'Build',
