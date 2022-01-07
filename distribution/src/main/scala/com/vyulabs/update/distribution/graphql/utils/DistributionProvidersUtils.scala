@@ -5,7 +5,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common
-import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, ServicesProfileId, TaskId}
+import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.ConsumerGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -19,12 +19,12 @@ import com.vyulabs.update.distribution.task.TaskManager
 import com.vyulabs.update.distribution.updater.AutoUpdater
 import org.bson.BsonDocument
 import org.slf4j.{Logger, LoggerFactory}
+import spray.json.DefaultJsonProtocol._
 
 import java.io.{File, IOException}
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
-import spray.json.DefaultJsonProtocol._
 
 trait DistributionProvidersUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
@@ -123,7 +123,7 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
               Seq(DeveloperDesiredVersionDelta(service, Some(version))), Common.AuthorDistribution)
           } yield {}
         } else {
-          log.info(s"Version ${version} already exists")
+          log.info(s"Version ${version} of service ${service} already exists")
           Future()
         }
     } yield {}
