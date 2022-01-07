@@ -8,7 +8,7 @@ import {
   Box,
   Card,
   CardContent,
-  CardHeader, Select,
+  CardHeader, Select, Typography,
 } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
@@ -22,8 +22,15 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 
 const useStyles = makeStyles(theme => ({
   newServiceName: {
-    width: 200,
-    margin: 0
+    width: 400,
+    marginTop: '25px',
+    marginLeft: '16px'
+  },
+  editServiceName: {
+    marginTop: '25px',
+    marginLeft: '16px',
+    fontWeight: 500,
+    fontSize: '20px'
   },
   providerSelect: {
     width: '150px',
@@ -46,26 +53,26 @@ const useStyles = makeStyles(theme => ({
 
 interface ServiceEditorParams {
   service?: string
-  distribution?: string
+  distribution?: string | null
   environment: NamedStringValue[]
   repositoriesTitle: string
   repositories: Repository[]
   macroValues: NamedStringValue[]
   hasService: (service: string) => boolean
   validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
-  setServiceConfig: (service: string, distribution: string | undefined, environment: NamedStringValue[],
+  setServiceConfig: (service: string, distribution: string | null | undefined, environment: NamedStringValue[],
                      repositories: Repository[], macroValues: NamedStringValue[]) => Promise<boolean>
   error?: string
   fromUrl: string
 }
 
 const ServiceEditor: React.FC<ServiceEditorParams> = props => {
-  const { service: initService, distribution: initBuilerDistribution, environment: initEnvironment,
+  const { service: initService, distribution: initBuilderDistribution, environment: initEnvironment,
     repositoriesTitle, repositories: initRepositories, macroValues: initMacroValues,
     hasService, validate, setServiceConfig, error, fromUrl } = props
 
   const [service, setService] = useState(initService)
-  const [builderDistribution, setBuilderDistribution] = useState(initBuilerDistribution)
+  const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
   const [environment, setEnvironment] = useState(initEnvironment)
   const [repositories, setRepositories] = useState(initRepositories)
   const [macroValues, setMacroValues] = useState(initMacroValues)
@@ -97,29 +104,28 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
   }
 
   if (providers) {
-    const distributions = [localStorage.getItem('distribution'), ...providers.providersInfo.map(info => info.distribution)]
+    const distributions = [localStorage.getItem('distribution')!,
+      ...providers.providersInfo.map(info => info.distribution)]
 
     return (
       <div>
-        <Card>
-          <CardHeader
-            title={initService ? `Edit '${service}' Service Config` : `New Service Config`}
-            action={
-              !initService?<TextField className={classes.newServiceName}
-                         autoFocus
-                         error={!!service && hasService(service)}
-                         fullWidth
-                         helperText={(service && hasService(service)) ? 'Service already exists' : ''}
-                         label="Service Name"
-                         margin="normal"
-                         onChange={e => setService(e.target.value)}
-                         required
-                         value={service ? service : ''}
-                         variant="outlined"
-              />:null
-            }
-          />
-        </Card>
+        {!initService?
+            <TextField className={classes.newServiceName}
+                       autoFocus
+                       error={!!service && hasService(service)}
+                       fullWidth
+                       helperText={(service && hasService(service)) ? 'Service already exists' : ''}
+                       label="New Service Name"
+                       margin="normal"
+                       onChange={e => setService(e.target.value)}
+                       required
+                       value={service ? service : ''}
+                       variant="outlined"
+            />:
+            <Typography className={classes.editServiceName}>
+              {`Edit Service '${service}'`}
+            </Typography>
+        }
         <Card>
           <CardHeader
             action={
@@ -131,12 +137,12 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
                       className={classes.providerSelect}
                       native
                       onChange={(event) => {
-                        setBuilderDistribution(event.target.value as string)
+                        setBuilderDistribution(event.target.value?event.target.value as string:undefined)
                       }}
                       value={distributions
                         .find(distribution => distribution == builderDistribution)}
                     >
-                      {distributions
+                      {['', ...distributions]
                         .map((distribution, index) => <option key={index}>{distribution}</option>)}
                     </Select>
                   }

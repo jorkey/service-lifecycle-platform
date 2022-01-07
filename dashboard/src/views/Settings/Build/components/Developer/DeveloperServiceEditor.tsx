@@ -48,12 +48,14 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
     buildServiceConfig.data.buildDeveloperServicesConfig[0]:undefined
 
   if ((!service || config) && builDeveloperServicesConfig?.buildDeveloperServicesConfig) {
+    const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
     const macroValues = config?config.macroValues:[]
 
     return (<ServiceEditor
               service={service}
+              distribution={distribution}
               environment={environment}
               repositoriesTitle={`Source Repositories`}
               repositories={repositories}

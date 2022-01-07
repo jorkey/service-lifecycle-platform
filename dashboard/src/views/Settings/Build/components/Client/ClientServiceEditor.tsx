@@ -47,20 +47,21 @@ const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
     buildServiceConfig.data.buildClientServicesConfig[0]:undefined
 
   if ((!service || config) && buildClientServices?.buildClientServicesConfig) {
+    const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
     const macroValues = config?config.macroValues:[]
 
     return (<ServiceEditor
               service={service}
+              distribution={distribution}
               environment={environment}
               repositoriesTitle={`Config Repositories`}
               repositories={repositories}
               macroValues={macroValues}
               hasService={(service =>
                 !!buildClientServices?.buildClientServicesConfig.find(s => s.service == service))}
-              validate={(environment, repositories, macroValues) =>
-                repositories.length > 0 }
+              validate={(environment, repositories, macroValues) => true }
               setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
                 setBuildServiceConfig({ variables: { service, distribution, environment, repositories, macroValues } })
                   .then((r) => !!r.data?.setBuildClientServiceConfig)
