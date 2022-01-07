@@ -43,13 +43,13 @@ trait RunBuilderUtils extends SprayJsonSupport {
   def runDeveloperBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
                          (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val future = for {
-      builderConfig <- configBuilderUtils.getDeveloperBuilderConfig()
+      commonConfig <- configBuilderUtils.getDeveloperServiceConfig("")
       serviceConfig <- configBuilderUtils.getDeveloperServiceConfig(service)
     } yield {
       val args = arguments ++ Seq(
         s"sourceRepositories=${serviceConfig.repositories.toJson.compactPrint}",
         s"macroValues=${serviceConfig.macroValues.toJson.compactPrint}")
-      runBuilder(task, serviceConfig.distribution.getOrElse(builderConfig.distribution),
+      runBuilder(task, serviceConfig.distribution.getOrElse(commonConfig.distribution),
         serviceConfig.environment, args)
     }
     val result = future.map(_._1).flatten

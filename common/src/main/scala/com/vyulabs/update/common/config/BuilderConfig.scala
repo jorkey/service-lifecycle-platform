@@ -4,12 +4,6 @@ import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import spray.json.DefaultJsonProtocol
 import spray.json.DefaultJsonProtocol._
 
-case class BuilderConfig(distribution: DistributionId)
-
-object BuilderConfig {
-  implicit val json = jsonFormat1(BuilderConfig.apply)
-}
-
 case class GitConfig(url: String, branch: String, cloneSubmodules: Option[Boolean])
 
 object GitConfig extends DefaultJsonProtocol {
@@ -28,12 +22,12 @@ object NamedStringValue extends DefaultJsonProtocol {
   implicit val json = jsonFormat2(NamedStringValue.apply)
 }
 
-case class ServiceConfig(service: ServiceId,
-                         distribution: Option[DistributionId],
-                         environment: Seq[NamedStringValue],
-                         repositories: Seq[Repository],
-                         macroValues: Seq[NamedStringValue])
+case class BuildServiceConfig(service: Option[ServiceId],
+                              distribution: Option[DistributionId],
+                              environment: Seq[NamedStringValue],
+                              repositories: Seq[Repository],
+                              macroValues: Seq[NamedStringValue])
 
-object ServiceConfig {
-  implicit val json = jsonFormat5(ServiceConfig.apply)
+object BuildServiceConfig {
+  implicit val json = jsonFormat5(BuildServiceConfig.apply)
 }

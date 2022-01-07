@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.config.{BuilderConfig, GitConfig, NamedStringValue, Repository, ServiceConfig}
+import com.vyulabs.update.common.config.{GitConfig, NamedStringValue, Repository, BuildServiceConfig}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, PasswordHash, ServerAccountInfo, UserAccountProperties}
@@ -63,8 +63,7 @@ class DatabaseCollections(db: MongoDb,
     classOf[TaskInfo],
     classOf[TaskParameter],
     classOf[ServiceFaultReport],
-    classOf[ServiceConfig],
-    classOf[BuilderConfig],
+    classOf[BuildServiceConfig],
     classOf[NamedStringValue],
     fromCodecs(FiniteDurationCodec, URLCodec)
   ))
@@ -82,11 +81,7 @@ class DatabaseCollections(db: MongoDb,
     } else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Developer_Builder = new SequencedCollection[BuilderConfig]("developer.builder", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.builder")
-  } yield collection, Sequences, createIndex = createIndices)
-
-  val Developer_Services = new SequencedCollection[ServiceConfig]("developer.services", for {
+  val Developer_BuildServices = new SequencedCollection[BuildServiceConfig]("developer.buildServices", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.services")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
@@ -113,11 +108,7 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerDistribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Client_Builder = new SequencedCollection[BuilderConfig]("client.builder", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("client.builder")
-  } yield collection, Sequences, createIndex = createIndices)
-
-  val Client_Services = new SequencedCollection[ServiceConfig]("client.services", for {
+  val Client_BuildServices = new SequencedCollection[BuildServiceConfig]("client.buildServices", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.services")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
