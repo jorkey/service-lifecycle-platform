@@ -30,7 +30,7 @@ trait ClientVersionUtils {
 
   def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)
                          (implicit log: Logger): TaskId = {
-    var cancels = Seq.empty[() => Unit]
+    var taskCancel = Option.empty[() => Unit]
     tasksUtils.createTask(
       "BuildClientVersions",
       Seq(TaskParameter("author", author),
@@ -62,17 +62,17 @@ trait ClientVersionUtils {
                     .getOrElse(ClientDistributionVersion.from(version.version, 0)))
               } yield {
                 clientVersions :+= ClientDesiredVersionDelta(version.service, Some(clientVersion))
-                buildClientVersion(task, version.service, clientVersion, author) match {
+                prevFuture.flatMap(_ => buildClientVersion(task, version.service, clientVersion, author) match {
                   case (future, cancel) =>
-                    cancels ++= cancel
-                    prevFuture.flatMap(_ => future)
-                }
+                    taskCancel = cancel
+                    future
+                })
               }
               result.flatten
             })
             result.flatMap(_ => setClientDesiredVersions(clientVersions, author))
           }
-        } yield {}, Some(() => cancels.foreach(cancel => cancel())))
+        } yield {}, taskCancel)
       }).task
   }
 
