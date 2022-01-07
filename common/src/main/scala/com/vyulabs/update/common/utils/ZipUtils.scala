@@ -159,7 +159,7 @@ object ZipUtils {
     try {
       receive(tmpFile) && unzip(tmpFile, directory)
     } finally {
-      tmpFile.delete()
+//      tmpFile.delete()
     }
   }
 }
