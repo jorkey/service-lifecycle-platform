@@ -9,7 +9,7 @@ import spray.json.DefaultJsonProtocol._
 import spray.json.JsonReader
 
 import java.io.{File, IOException}
-import java.net.{URL, URLConnection, URLStreamHandler, URLStreamHandlerFactory}
+import java.net.{URL, URLConnection, URLStreamHandler}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -62,41 +62,41 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
 
   def graphqlRequest[Response](request: GraphqlRequest[Response])
                               (implicit reader: JsonReader[Response], log: Logger): Future[Response]= {
-    login().map(_ => client.graphql(request)).flatten
+    login().flatMap(_ => client.graphql(request))
   }
 
   def graphqlRequestSSE[Response](request: GraphqlRequest[Response])
                                  (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
-    login().map(_ => client.subscribeSSE(request)).flatten
+    login().flatMap(_ => client.subscribeSSE(request))
   }
 
   def graphqlRequestWS[Response](request: GraphqlRequest[Response])
                                 (implicit reader: JsonReader[Response], log: Logger): Future[Source[Response]]= {
-    login().map(_ => client.subscribeWS(request)).flatten
+    login().flatMap(_ => client.subscribeWS(request))
   }
 
   def downloadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File)
                                    (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.download(developerVersionImagePath + "/" + service + "/" + version.toString, file)).flatten
+    login().flatMap(_ => client.download(developerVersionImagePath + "/" + service + "/" + version.toString, file))
   }
 
   def downloadClientVersionImage(service: ServiceId, version: ClientDistributionVersion, file: File)
                                 (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.download(clientVersionImagePath + "/" + service + "/" + version.toString, file)).flatten
+    login().flatMap(_ => client.download(clientVersionImagePath + "/" + service + "/" + version.toString, file))
   }
 
   def uploadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File)
                                  (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.upload(developerVersionImagePath + "/" + service + "/" + version.toString, imageField, file)).flatten
+    login().flatMap(_ => client.upload(developerVersionImagePath + "/" + service + "/" + version.toString, imageField, file))
   }
 
   def uploadClientVersionImage(service: ServiceId, version: ClientDistributionVersion, file: File)
                               (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.upload(clientVersionImagePath + "/" + service + "/" + version.toString, imageField, file)).flatten
+    login().flatMap(_ => client.upload(clientVersionImagePath + "/" + service + "/" + version.toString, imageField, file))
   }
 
   def uploadFaultReport(id: FaultId, faultReportFile: File)
                        (implicit log: Logger): Future[Unit] = {
-    login().map(_ => client.upload(faultReportPath + "/" + id, faultReportField, faultReportFile)).flatten
+    login().flatMap(_ => client.upload(faultReportPath + "/" + id, faultReportField, faultReportFile))
   }
 }
