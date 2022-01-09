@@ -7,7 +7,6 @@ import com.vyulabs.update.common.config.InstallConfig._
 import com.vyulabs.update.common.config.{Repository, UpdateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.ServiceSettingsDirectory
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.process.ProcessUtils
@@ -31,8 +30,6 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   private val developerDir = makeDir(new File(builderDir, "developer"))
   private val servicesDir = makeDir(new File(developerDir, "services"))
-
-  private val settingsDirectory = new ServiceSettingsDirectory(builderDir)
 
   def developerServiceDir(service: ServiceId) = makeDir(new File(servicesDir, service))
   def developerBuildDir(service: ServiceId) = makeDir(new File(developerServiceDir(service), "build"))
@@ -169,7 +166,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   def makeDeveloperVersionImage(service: ServiceId): Option[File] = {
     val directory = developerBuildDir(service)
-    val file = Files.createTempFile(s"${service}-version", "zip").toFile
+    val file = Files.createTempFile(s"${service}-version", ".zip").toFile
     file.deleteOnExit()
     if (ZipUtils.zip(file, directory)) {
       Some(file)
@@ -195,6 +192,25 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
         builderMutations.addDeveloperVersionInfo(DeveloperVersionInfo.from(service, version, buildInfo))).getOrElse(false)) {
       log.error("Adding version info error")
       return false
+    }
+    true
+  }
+
+  def cloneDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
+                            providerDistributionClient: SyncDistributionClient[SyncSource],
+                            service: ServiceId, version: DeveloperDistributionVersion, buildInfo: BuildInfo): Boolean = {
+    val tmpFile = File.createTempFile("update", ".zip")
+    try {
+      if (!providerDistributionClient.downloadDeveloperVersionImage(service, version, tmpFile)) {
+        log.error(s"Can't download developer version ${version} of service ${service} from provider")
+        return false
+      }
+      if (!uploadDeveloperVersion(distributionClient, service, version, buildInfo, tmpFile)) {
+        log.error(s"Can't upload developer version ${version} of service ${service}")
+        return false
+      }
+    } finally {
+      tmpFile.delete()
     }
     true
   }

@@ -3,9 +3,9 @@ package com.vyulabs.update.distribution.graphql.utils
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, TaskId}
 import com.vyulabs.update.common.common.Misc
-import com.vyulabs.update.common.config.{DistributionConfig, NamedStringValue}
+import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{ClientDesiredVersion, ClientDesiredVersionDelta, ClientDesiredVersions, ClientVersionInfo, DeveloperDesiredVersion, DeveloperDesiredVersionDelta, TimedClientDesiredVersions, TimedDeveloperDesiredVersions}
+import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
@@ -13,7 +13,6 @@ import org.bson.BsonDocument
 import org.slf4j.Logger
 
 import java.io.IOException
-import java.util.Date
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,7 +30,7 @@ trait ClientVersionUtils {
 
   def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)
                          (implicit log: Logger): TaskId = {
-    var cancels = Seq.empty[() => Unit]
+    var taskCancel = Option.empty[() => Unit]
     tasksUtils.createTask(
       "BuildClientVersions",
       Seq(TaskParameter("author", author),
@@ -42,35 +41,38 @@ trait ClientVersionUtils {
       (task, logger) => {
         implicit val log = logger
         (for {
-          _ <- Future.sequence(versions
-            .map(version =>
-              if (version.version.distribution != config.distribution) {
-                distributionProvidersUtils.downloadProviderVersion(
-                  version.version.distribution, version.service, version.version)
-              } else {
-                Future()
-              }))
+          _ <- versions.foldLeft(Future())((future, version) => {
+            if (version.version.distribution != config.distribution) {
+              future.flatMap(_ => distributionProvidersUtils.downloadProviderVersion(
+                version.version.distribution, version.service, version.version))
+            } else {
+              future
+            }
+          })
           _ <- {
             var clientVersions = Seq.empty[ClientDesiredVersionDelta]
-            val results = versions
-              .map(version => for {
+            val result = versions.foldLeft(Future())((prevFuture, version) => {
+              val result = for {
                 clientVersion <- getClientVersionsInfo(Some(version.service), Some(version.version.distribution)).map(versions =>
-                                  versions.map(_.version)
-                                    .sorted(ClientDistributionVersion.ordering)
-                                    .reverse
-                                    .find(v => DeveloperDistributionVersion.from(v) == version.version)
-                                    .map(version => new ClientDistributionVersion(version.distribution, version.developerBuild, version.clientBuild+1))
-                                    .getOrElse(ClientDistributionVersion.from(version.version, 0)))
-                } yield {
-                  clientVersions :+= ClientDesiredVersionDelta(version.service, Some(clientVersion))
-                  buildClientVersion(task, version.service, clientVersion, author)
-                }
-              )
-            results.foreach(_.foreach(_._2.foreach(cancel => cancels :+= cancel)))
-            Future.sequence(results).map(results => Future.sequence(results.map(_._1))).flatten
-              .flatMap(_ => setClientDesiredVersions(clientVersions, author))
+                  versions.map(_.version)
+                    .sorted(ClientDistributionVersion.ordering)
+                    .reverse
+                    .find(v => DeveloperDistributionVersion.from(v) == version.version)
+                    .map(version => new ClientDistributionVersion(version.distribution, version.developerBuild, version.clientBuild + 1))
+                    .getOrElse(ClientDistributionVersion.from(version.version, 0)))
+              } yield {
+                clientVersions :+= ClientDesiredVersionDelta(version.service, Some(clientVersion))
+                prevFuture.flatMap(_ => buildClientVersion(task, version.service, clientVersion, author) match {
+                  case (future, cancel) =>
+                    taskCancel = cancel
+                    future
+                })
+              }
+              result.flatten
+            })
+            result.flatMap(_ => setClientDesiredVersions(clientVersions, author))
           }
-        } yield {}, Some(() => cancels.foreach(cancel => cancel())))
+        } yield {}, taskCancel)
       }).task
   }
 

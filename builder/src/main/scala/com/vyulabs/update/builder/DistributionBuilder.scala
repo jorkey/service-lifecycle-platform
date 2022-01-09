@@ -127,15 +127,28 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
     }
 
     log.info("")
-    log.info(s"########################### Upload versions")
+    log.info(s"########################### Clone developer versions")
     log.info("")
-    if (!uploadDeveloperAndClientVersions(Map(
-          Common.ScriptsServiceName -> (scriptsVersion._1.original, scriptsVersion._2),
-          Common.DistributionServiceName -> (distributionVersion._1.original, distributionVersion._2),
-          Common.BuilderServiceName -> (builderVersion._1.original, builderVersion._2),
-          Common.UpdaterServiceName -> (updaterVersion._1.original, updaterVersion._2)
+    if (!cloneDeveloperVersions(Map(
+      Common.ScriptsServiceName -> (scriptsVersion._1.original, scriptsVersion._2),
+      Common.DistributionServiceName -> (distributionVersion._1.original, distributionVersion._2),
+      Common.BuilderServiceName -> (builderVersion._1.original, builderVersion._2),
+      Common.UpdaterServiceName -> (updaterVersion._1.original, updaterVersion._2)
+    ))) {
+      log.error("Can't clone developer versions")
+      return false
+    }
+
+    log.info("")
+    log.info(s"########################### Upload client versions")
+    log.info("")
+    if (!uploadClientVersions(Map(
+          Common.ScriptsServiceName -> (scriptsVersion._1, scriptsVersion._2),
+          Common.DistributionServiceName -> (distributionVersion._1, distributionVersion._2),
+          Common.BuilderServiceName -> (builderVersion._1, builderVersion._2),
+          Common.UpdaterServiceName -> (updaterVersion._1, updaterVersion._2)
         ), author)) {
-      log.error("Can't upload versions")
+      log.error("Can't upload client versions")
       return false
     }
 
@@ -427,6 +440,18 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
           DeveloperDesiredVersionDelta(service, Some(version._1)) }.toSeq)) {
       log.error("Set developer desired versions error")
       return false
+    }
+    true
+  }
+
+  private def cloneDeveloperVersions(versions: Map[ServiceId, (DeveloperDistributionVersion, BuildInfo)]): Boolean = {
+    log.info(s"--------------------------- Clone developer versions of services")
+    versions.foreach { case (service, version) =>
+      if (!developerBuilder.cloneDeveloperVersion(adminDistributionClient.get, adminProviderClient.get,
+            service, version._1, version._2)) {
+        log.error(s"Can't clone developer version ${version} of service ${service}")
+        return false
+      }
     }
     true
   }

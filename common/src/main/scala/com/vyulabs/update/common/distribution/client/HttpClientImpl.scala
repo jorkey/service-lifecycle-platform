@@ -8,6 +8,7 @@ import spray.json.{JsonReader, _}
 import java.io._
 import java.net.{HttpURLConnection, URL}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 23.04.19.
@@ -130,8 +131,13 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
             throw new IOException(s"Can't open ${file}", e)
         }
       }
-      result <- upload(path, fieldName, file.getName, input).andThen {
-        case _ => input.close()
+      result <- {
+        val uploadFuture = upload(path, fieldName, file.getName, input)
+        uploadFuture.onComplete {
+          case Failure(_) => input.close()
+          case _ =>
+        }
+        uploadFuture.map { _ => input.close() }
       }
     } yield result
   }
@@ -147,8 +153,13 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
             throw new IOException(s"Can't open ${file}", e)
         }
       }
-      result <- download(path, output).andThen {
-        case _ => output.close()
+      result <- {
+        val downloadFuture = download(path, output)
+        downloadFuture.onComplete {
+          case Failure(_) => output.close()
+          case _ =>
+        }
+        downloadFuture.map { _ => output.close() }
       }
     } yield result
   }
