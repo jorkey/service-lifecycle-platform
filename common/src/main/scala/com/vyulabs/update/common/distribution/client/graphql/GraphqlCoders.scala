@@ -87,7 +87,7 @@ trait StateCoder {
   def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], limit: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faults",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("limit" -> limit, "Int")).filter(_.value != JsNull),
-      "{ distribution, payload { id, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }}")
+      "{ distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }}")
 }
 
 // Mutations
@@ -98,25 +98,14 @@ object LoginCoder {
       Seq(GraphqlArgument("account" -> account), GraphqlArgument("password" -> password)))
 }
 
-trait BuilderConfigsAdministrationCoder {
-  def setDeveloperBuilderConfig(distribution: DistributionId) = {
-    GraphqlMutation[Boolean]("setDeveloperBuilderConfig", Seq(
-      GraphqlArgument("distribution" -> distribution)
-    ))
-  }
-
-  def setClientBuilderConfig(distribution: DistributionId) = {
-    GraphqlMutation[Boolean]("setClientBuilderConfig", Seq(
-      GraphqlArgument("distribution" -> distribution)
-    ))
-  }
-}
-
 trait ServiceConfigsAdministrationCoder {
-  def setBuildDeveloperServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
-                                repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
+  def setBuildDeveloperServiceConfig(service: ServiceId,
+                                     distribution: Option[DistributionId],
+                                     environment: Seq[NamedStringValue],
+                                     repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
+      GraphqlArgument("distribution" -> distribution, "String"),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
@@ -128,10 +117,13 @@ trait ServiceConfigsAdministrationCoder {
       GraphqlArgument("service" -> service)))
   }
 
-  def setBuildClientServiceConfig(service: ServiceId, environment: Seq[NamedStringValue],
-                             repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
+  def setBuildClientServiceConfig(service: ServiceId,
+                                  distribution: Option[DistributionId],
+                                  environment: Seq[NamedStringValue],
+                                  repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
+      GraphqlArgument("distribution" -> distribution, "String"),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
@@ -292,7 +284,7 @@ object DeveloperGraphqlCoder {
 
 object AdministratorQueriesCoder extends ServicesConfigCoder with DistributionProvidersCoder with DeveloperVersionsInfoCoder with ClientVersionsInfoCoder
   with DeveloperDesiredVersionsCoder with ClientDesiredVersionsCoder with StateCoder {}
-object AdministratorMutationsCoder extends BuilderConfigsAdministrationCoder with ServiceConfigsAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
+object AdministratorMutationsCoder extends ServiceConfigsAdministrationCoder with AccountsAdministrationCoder with ConsumersAdministrationCoder
   with AddDeveloperVersionInfoCoder with AddClientVersionInfoCoder  with BuildClientVersionCoder
   with RemoveDeveloperVersionCoder with RemoveClientVersionCoder with DesiredVersionsAdministrationCoder {}
 object AdministratorSubscriptionsCoder extends SubscribeLogsCoder {}

@@ -167,11 +167,11 @@ object GraphqlSchema {
       Field("buildDeveloperServicesConfig", ListType(BuildServiceConfigType),
         arguments = OptionServiceArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperServicesConfig(c.arg(OptionServiceArg)) }),
+        resolve = c => { c.ctx.workspace.getBuildDeveloperServicesConfig(c.arg(OptionServiceArg)) }),
       Field("buildClientServicesConfig", ListType(BuildServiceConfigType),
         arguments = OptionServiceArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientServicesConfig(c.arg(OptionServiceArg)) }),
+        resolve = c => { c.ctx.workspace.getBuildClientServicesConfig(c.arg(OptionServiceArg)) }),
 
       // Profiles
       Field("serviceProfiles", ListType(ServicesProfileType),
@@ -385,20 +385,20 @@ object GraphqlSchema {
 
       // Builders
       Field("setBuildDeveloperServiceConfig", BooleanType,
-        arguments = OptionServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
+        arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setBuildDeveloperServiceConfig(
-          c.arg(OptionServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
+          c.arg(ServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
           c.arg(MacroValuesArg)).map(_ => true) }),
       Field("removeBuildDeveloperServiceConfig", BooleanType,
         arguments = ServiceArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeBuildDeveloperServiceConfig(c.arg(ServiceArg)).map(_ => true) }),
       Field("setBuildClientServiceConfig", BooleanType,
-        arguments = OptionServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
+        arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setBuildClientServiceConfig(
-          c.arg(OptionServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
+          c.arg(ServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
           c.arg(MacroValuesArg)).map(_ => true) }),
       Field("removeBuildClientServiceConfig", BooleanType,
         arguments = ServiceArg :: Nil,

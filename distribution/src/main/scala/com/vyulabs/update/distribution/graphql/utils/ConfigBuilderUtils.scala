@@ -22,61 +22,60 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
-  def setBuildDeveloperServiceConfig(service: Option[ServiceId],
+  def setBuildDeveloperServiceConfig(service: ServiceId,
                                      distribution: Option[DistributionId],
                                      environment: Seq[NamedStringValue],
                                      sourceRepositories: Seq[Repository], macroValues: Seq[NamedStringValue])
                                     (implicit log: Logger): Future[Boolean] = {
-    log.info(s"Set developer service ${service} config")
+    log.info(if (!service.isEmpty) s"Set developer service ${service} config" else "Set common developer services config")
     val filters = Filters.eq("service", service)
     collections.Developer_BuildServices.update(filters, _ =>
       Some(BuildServiceConfig(service, distribution, environment, sourceRepositories, macroValues))).map(_ > 0)
   }
 
   def removeBuildDeveloperServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
-    log.info(s"Remove developer service ${service} config")
+    log.info(if (!service.isEmpty) s"Remove developer service ${service} config" else "Remove common developer services config")
     val filters = Filters.eq("service", service)
     collections.Developer_BuildServices.delete(filters).map(_ > 0)
   }
 
-  def getDeveloperServicesConfig(service: Option[ServiceId])
-                                (implicit log: Logger): Future[Seq[BuildServiceConfig]] = {
+  def getBuildDeveloperServicesConfig(service: Option[ServiceId])
+                                     (implicit log: Logger): Future[Seq[BuildServiceConfig]] = {
     val args = service.map(Filters.eq("service", _)).toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Developer_BuildServices.find(filters)
   }
 
-  def getDeveloperServiceConfig(service: ServiceId)
-                               (implicit log: Logger): Future[BuildServiceConfig] = {
-    getDeveloperServicesConfig(Some(service)).map(_.headOption.getOrElse {
-      throw new IOException(s"No developer service ${service} config")
+  def getBuildDeveloperServiceConfig(service: ServiceId)
+                                    (implicit log: Logger): Future[BuildServiceConfig] = {
+    getBuildDeveloperServicesConfig(Some(service)).map(_.headOption.getOrElse {
+      throw new IOException(if (!service.isEmpty) s"No developer service ${service} config" else "No common developer services config")
     })
   }
 
-  def setBuildClientServiceConfig(service: Option[ServiceId],
+  def setBuildClientServiceConfig(service: ServiceId,
                                   distribution: Option[DistributionId],
                                   environment: Seq[NamedStringValue],
                                   settings: Seq[Repository], macroValues: Seq[NamedStringValue])
                                   (implicit log: Logger): Future[Boolean] = {
-    log.info(s"Set client service ${service} config")
+    log.info(if (!service.isEmpty) s"Set client service ${service} config" else "Set common client services config")
     val filters = Filters.eq("service", service)
     collections.Client_BuildServices.update(filters, _ =>
       Some(BuildServiceConfig(service, distribution, environment, settings, macroValues))).map(_ > 0)
   }
 
   def removeBuildClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
-    log.info(s"Remove client service ${service} config")
+    log.info(if (!service.isEmpty) s"Remove client service ${service} config" else "Remove common client services config")
     val filters = Filters.eq("service", service)
     collections.Client_BuildServices.delete(filters).map(_ > 0)
   }
 
-  def getClientServiceConfig(service: ServiceId)
-                             (implicit log: Logger): Future[Option[BuildServiceConfig]] = {
-    getClientServicesConfig(Some(service)).map(_.headOption)
+  def getBuildClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Option[BuildServiceConfig]] = {
+    getBuildClientServicesConfig(Some(service)).map(_.headOption)
   }
 
-  def getClientServicesConfig(service: Option[ServiceId])
-                              (implicit log: Logger): Future[Seq[BuildServiceConfig]] = {
+  def getBuildClientServicesConfig(service: Option[ServiceId])
+                                  (implicit log: Logger): Future[Seq[BuildServiceConfig]] = {
     val args = service.map(Filters.eq("service", _)).toSeq
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Client_BuildServices.find(filters)

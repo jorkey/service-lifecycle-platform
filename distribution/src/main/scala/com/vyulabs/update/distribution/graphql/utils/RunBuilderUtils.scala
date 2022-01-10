@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
-import com.vyulabs.update.common.config.{DistributionConfig, NamedStringValue}
+import com.vyulabs.update.common.config.{BuildServiceConfig, DistributionConfig, NamedStringValue}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.{DistributionDirectory, ServiceSettingsDirectory}
@@ -43,14 +43,14 @@ trait RunBuilderUtils extends SprayJsonSupport {
   def runDeveloperBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
                          (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val future = for {
-      commonConfig <- configBuilderUtils.getDeveloperServiceConfig("")
-      serviceConfig <- configBuilderUtils.getDeveloperServiceConfig(service)
+      commonConfig <- configBuilderUtils.getBuildDeveloperServiceConfig("")
+      serviceConfig <- configBuilderUtils.getBuildDeveloperServiceConfig(service)
     } yield {
+      val config = BuildServiceConfig.merge(commonConfig, Some(serviceConfig))
       val args = arguments ++ Seq(
-        s"sourceRepositories=${serviceConfig.repositories.toJson.compactPrint}",
-        s"macroValues=${serviceConfig.macroValues.toJson.compactPrint}")
-      runBuilder(task, serviceConfig.distribution.getOrElse(commonConfig.distribution),
-        serviceConfig.environment, args)
+        s"sourceRepositories=${config.repositories.toJson.compactPrint}",
+        s"macroValues=${config.macroValues.toJson.compactPrint}")
+      runBuilder(task, config.distribution, config.environment, args)
     }
     val result = future.map(_._1).flatten
     val cancel = Some(() =>
@@ -62,21 +62,21 @@ trait RunBuilderUtils extends SprayJsonSupport {
   def runClientBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
                       (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val future = for {
-      builderConfig <- configBuilderUtils.getClientBuilderConfig()
-      serviceConfig <- configBuilderUtils.getClientServiceConfig(service)
+      commonConfig <- configBuilderUtils.getBuildClientServiceConfig("")
+        .map(_.getOrElse(throw new IOException("Common client services config is not found")))
+      serviceConfig <- configBuilderUtils.getBuildClientServiceConfig(service)
     } yield {
-      val env = serviceConfig.map(_.environment).getOrElse(Seq.empty)
-      val args = arguments ++ serviceConfig.map(s =>
-        Seq(s"settingsRepositories=${s.repositories.toJson.compactPrint}",
-            s"macroValues=${s.macroValues.toJson.compactPrint}")).getOrElse(Seq.empty)
-      runBuilder(task, builderConfig.distribution, env, args)
+      val config = BuildServiceConfig.merge(commonConfig, serviceConfig)
+      val args = arguments ++
+        Seq(s"settingsRepositories=${config.repositories.toJson.compactPrint}",
+            s"macroValues=${config.macroValues.toJson.compactPrint}")
+      runBuilder(task, config.distribution, config.environment, args)
     }
     val result = future.map(_._1).flatten
     val cancel = Some(() =>
       if (future.isCompleted && future.value.get.isSuccess) future.value.get.get._2.foreach(_.apply()))
     (result, cancel)
   }
-
 
   def runBuilder(task: TaskId, distribution: DistributionId,
                  environment: Seq[NamedStringValue], arguments: Seq[String])

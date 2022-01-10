@@ -196,8 +196,8 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
   }
 
   def setDeveloperBuilderConfig(distribution: DistributionId, sourceServices: Seq[ServiceId]): Boolean = {
-    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setDeveloperBuilderConfig(
-          distribution)).getOrElse(false)) {
+    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setBuildDeveloperServiceConfig(
+        "", Some(distribution), Seq.empty, Seq.empty, Seq.empty)).getOrElse(false)) {
       log.error(s"Can't set developer builder config")
       return false
     }
@@ -206,7 +206,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       val source = Repository("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
       sourceServices.foreach(service => {
         if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setBuildDeveloperServiceConfig(
-          service, Seq.empty, Seq(source), Seq.empty)).getOrElse(false)) {
+            service, None, Seq.empty, Seq(source), Seq.empty)).getOrElse(false)) {
           log.error(s"Can't set developer builder config")
           return false
         }
@@ -216,8 +216,8 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
   }
 
   def setClientBuilderConfig(distribution: DistributionId): Boolean = {
-    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setClientBuilderConfig(
-        distribution)).getOrElse(false)) {
+    if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setBuildClientServiceConfig(
+        "", Some(distribution), Seq.empty, Seq.empty, Seq.empty)).getOrElse(false)) {
       log.error(s"Can't set client builder config")
       return false
     }
