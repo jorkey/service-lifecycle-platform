@@ -105,7 +105,7 @@ trait ServiceConfigsAdministrationCoder {
                                      repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("distribution" -> distribution, "String"),
+      GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
@@ -123,7 +123,7 @@ trait ServiceConfigsAdministrationCoder {
                                   repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
-      GraphqlArgument("distribution" -> distribution, "String"),
+      GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
