@@ -66,13 +66,13 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       headerName: 'URL',
       className: classes.urlColumn,
       editable: true,
-      validate: (value, rowNum) => {
-        try {
-          return value?!!new URL(value as string):false
-        } catch (ex) {
-          return false
-        }
-      }
+      // validate: (value, rowNum) => {
+      //   try {
+      //     return value?!!new URL(value as string):false
+      //   } catch (ex) {
+      //     return false
+      //   }
+      // }
     },
     {
       name: 'branch',
