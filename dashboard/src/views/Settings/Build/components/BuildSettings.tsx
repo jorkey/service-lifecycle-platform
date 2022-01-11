@@ -123,7 +123,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                        variant="outlined"
             />:
             <Typography className={classes.editServiceName}>
-              {service?`Service '${service}' Build Settings`:'All Services Build Settings'}
+              {service?`Service '${service}' Build Settings`:'Common Build Settings'}
             </Typography>
         }
         <Card>

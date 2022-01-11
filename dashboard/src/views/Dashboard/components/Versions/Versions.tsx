@@ -123,7 +123,6 @@ const Versions: React.FC<VersionsProps> = props => {
         }
         title={onlyAlerts ? 'Version Alerts' : 'Versions'}
       />
-      <Divider />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           { developerDesiredVersions.data ?

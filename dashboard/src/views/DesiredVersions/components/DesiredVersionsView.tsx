@@ -18,7 +18,6 @@ export const useBaseStyles = makeStyles((theme:any) => ({
     minWidth: 800
   },
   versionsTable: {
-    marginTop: 20
   },
   serviceColumn: {
     width: '150px',

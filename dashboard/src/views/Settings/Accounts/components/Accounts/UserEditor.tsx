@@ -11,10 +11,8 @@ import {
   CardContent,
   CardHeader,
   Checkbox,
-  Divider,
   FormControlLabel,
   FormGroup,
-  Select, Typography
 } from '@material-ui/core';
 import {
   AccountRole,
@@ -47,7 +45,7 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px',
+    marginLeft: '10px',
     textTransform: 'none'
   },
   alert: {

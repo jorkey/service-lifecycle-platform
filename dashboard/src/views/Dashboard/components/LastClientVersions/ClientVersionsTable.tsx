@@ -12,7 +12,6 @@ const useStyles = makeStyles((theme:any) => ({
     padding: 0
   },
   versionsTable: {
-    marginTop: 20
   },
   serviceColumn: {
     width: '150px',

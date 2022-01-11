@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider,
   Grid, Typography
 } from '@material-ui/core';
 import {
@@ -30,7 +29,7 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px',
+    marginLeft: '10px',
     textTransform: 'none'
   },
   alert: {

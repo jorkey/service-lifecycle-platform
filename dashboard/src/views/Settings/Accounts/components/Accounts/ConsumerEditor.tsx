@@ -10,22 +10,17 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Checkbox,
-  Divider,
-  FormControlLabel,
   FormGroup,
   Select, Typography
 } from '@material-ui/core';
 import {
-  AccountRole, ConsumerAccountProperties,
+  ConsumerAccountProperties,
   useAccountsListQuery, useAddConsumerAccountMutation,
-  useAddUserAccountMutation, useChangeConsumerAccountMutation,
-  useChangeUserAccountMutation, useConsumerAccountInfoLazyQuery, UserAccountProperties,
+  useChangeConsumerAccountMutation,
+  useConsumerAccountInfoLazyQuery,
   useServiceProfilesQuery,
-  useUserAccountInfoLazyQuery,
   useWhoAmIQuery
 } from '../../../../../generated/graphql';
-import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
@@ -48,7 +43,7 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px',
+    marginLeft: '10px',
     textTransform: 'none'
   },
   alert: {
@@ -219,8 +214,6 @@ const ConsumerEditor: React.FC<AccountEditorParams> = props => {
     initialized ? (
       <Card>
         {AccountCard()}
-        <Divider />
-        <Divider />
         {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
         <Box className={classes.controls}>
           <Button className={classes.control}

@@ -11,7 +11,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Divider, Grid,
+  Grid,
 } from '@material-ui/core';
 import {
   useAddServicesProfileMutation,
@@ -19,7 +19,6 @@ import {
   useProfileServicesLazyQuery,
   useServiceProfilesQuery,
 } from '../../../../generated/graphql';
-import clsx from 'clsx';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
 import ServicesProfile from "./ServicesProfile";
@@ -33,7 +32,7 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px',
+    marginLeft: '10px',
     textTransform: 'none'
   },
   alert: {
@@ -206,7 +205,6 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
     initialized ? (
       <Card>
         <ProfileCard />
-        <Divider />
         {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         <Box className={classes.controls}>
           <Button

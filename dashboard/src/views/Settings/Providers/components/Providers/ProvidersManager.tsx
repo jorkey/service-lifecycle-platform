@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, Box,
+  Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import GridTable from "../../../../../common/components/gridTable/GridTable";
@@ -207,7 +207,6 @@ const ProvidersManager = () => {
         }
         title={'Providers'}
       />
-      <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <GridTable

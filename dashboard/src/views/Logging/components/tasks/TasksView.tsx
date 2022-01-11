@@ -1,9 +1,8 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {
-  Button,
   Card,
-  CardContent, CardHeader, Checkbox, Grid, Select, TextField,
+  CardContent, CardHeader, Checkbox, Select
 } from '@material-ui/core';
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";

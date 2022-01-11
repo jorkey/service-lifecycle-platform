@@ -116,7 +116,7 @@ const BuildConfiguration: React.FC<ServicesManagerParams> = props => {
                     component={RouterLink}
                     to={`${routeMatch.url}/edit`}
             >
-              Common Services Settings
+              Common Build Settings
             </Button>
             <Button
               color="primary"

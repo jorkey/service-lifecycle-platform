@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, Box, Link,
+  Box, Link,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import ProfilesTable from './ProfilesTable';
@@ -56,7 +56,6 @@ const ProfilesManager = () => {
         }
         title={'Service Profiles'}
       />
-      <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           <ProfilesTable/>

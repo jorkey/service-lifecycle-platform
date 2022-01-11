@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardContent,
   Button,
-  Divider, Box,
+  Box,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import ConsumerAccountsTable from './ConsumerAccountsTable';
@@ -70,7 +70,6 @@ const AccountManager: React.FC<RouteComponentProps<AccountsManagerRouteParams>> 
              : accountsType == 'consumers' ? 'Distribution Consumers'
              : ''}
       />
-      <Divider/>
       <CardContent className={classes.content}>
         <div className={classes.inner}>
           { accountsType == 'users'? <UserAccountsTable/>

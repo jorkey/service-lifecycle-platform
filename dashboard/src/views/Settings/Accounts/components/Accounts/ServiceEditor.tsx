@@ -11,21 +11,16 @@ import {
   CardContent,
   CardHeader,
   Checkbox,
-  Divider,
   FormControlLabel,
   FormGroup,
-  Select, Typography
 } from '@material-ui/core';
 import {
   AccountRole,
   useAccountsListQuery, useAddServiceAccountMutation,
-  useAddUserAccountMutation, useChangeServiceAccountMutation,
-  useChangeUserAccountMutation, UserAccountProperties, useServiceAccountInfoLazyQuery,
-  useServiceProfilesQuery,
-  useUserAccountInfoLazyQuery,
+  useChangeServiceAccountMutation,
+  useServiceAccountInfoLazyQuery,
   useWhoAmIQuery
 } from '../../../../../generated/graphql';
-import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
@@ -48,7 +43,7 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px',
+    marginLeft: '10px',
     textTransform: 'none'
   },
   alert: {

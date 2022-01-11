@@ -45,7 +45,6 @@ const useStyles = makeStyles((theme:any) => ({
     paddingRight: '2px'
   },
   versionsTable: {
-    marginTop: '20px'
   },
   serviceColumn: {
   },
@@ -58,7 +57,7 @@ const useStyles = makeStyles((theme:any) => ({
     p: 2
   },
   control: {
-    marginLeft: '20px',
+    marginLeft: '10px',
     paddingLeft: '10px',
     textTransform: 'none'
   },

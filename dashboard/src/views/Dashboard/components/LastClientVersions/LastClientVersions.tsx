@@ -21,9 +21,6 @@ const useStyles = makeStyles((theme:any) => ({
   inner: {
     minWidth: 800
   },
-  versionsTable: {
-    marginTop: 20
-  },
   control: {
     paddingLeft: '10px',
     textTransform: 'none'
