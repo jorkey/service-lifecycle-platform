@@ -33,7 +33,7 @@ const useStyles = makeStyles(theme => ({
     fontSize: '20px'
   },
   providerSelect: {
-    width: '150px',
+    width: '200px',
     paddingRight: '2px'
   },
   controls: {
@@ -43,7 +43,7 @@ const useStyles = makeStyles(theme => ({
     p: 2
   },
   control: {
-    marginLeft: '25px',
+    marginLeft: '10px',
     textTransform: 'none'
   },
   alert: {
@@ -66,7 +66,7 @@ interface ServiceEditorParams {
   fromUrl: string
 }
 
-const ServiceEditor: React.FC<ServiceEditorParams> = props => {
+const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const { service: initService, distribution: initBuilderDistribution, environment: initEnvironment,
     repositoriesTitle, repositories: initRepositories, macroValues: initMacroValues,
     hasService, validate, setServiceConfig, error, fromUrl } = props
@@ -109,7 +109,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
 
     return (
       <div>
-        {!initService?
+        {initService == undefined?
             <TextField className={classes.newServiceName}
                        autoFocus
                        error={!!service && hasService(service)}
@@ -123,7 +123,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
                        variant="outlined"
             />:
             <Typography className={classes.editServiceName}>
-              {`Edit Service '${service}'`}
+              {service?`Service '${service}' Build Settings`:'All Services Build Settings'}
             </Typography>
         }
         <Card>
@@ -146,11 +146,11 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
                         .map((distribution, index) => <option key={index}>{distribution}</option>)}
                     </Select>
                   }
-                  label='Distribution Server To Run The Builder'
+                  label={''}
                 />
               </FormGroup>
             }
-            title={'Builder'}
+            title={'Distribution Server To Run Build'}
           />
         </Card>
         <Card>
@@ -269,7 +269,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
               confirmRemove={true}
               onValueAdded={
                 value => {
-                  setEnvironment([...macroValues, value])
+                  setMacroValues([...macroValues, value])
                   setAddMacroValue(false)
                 }
               }
@@ -306,7 +306,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
           <Button
             className={classes.control}
             color="primary"
-            disabled={!service || !validate(environment, repositories, macroValues)}
+            disabled={service == undefined || !validate(environment, repositories, macroValues)}
             onClick={() => {
               setServiceConfig(service!, builderDistribution, environment, repositories, macroValues)
                 .then((result) => {
@@ -315,7 +315,7 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
             }}
             variant="contained"
           >
-            {!initService ? 'Add New Service' : 'Save'}
+            {initService == undefined ? 'Add New Service' : 'Save'}
           </Button>
         </Box>
     </div>)
@@ -324,4 +324,4 @@ const ServiceEditor: React.FC<ServiceEditorParams> = props => {
   }
 }
 
-export default ServiceEditor;
+export default BuildSettings;
