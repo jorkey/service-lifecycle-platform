@@ -43,7 +43,6 @@ const LastDeveloperVersions = () => {
   const {data:developerVersions, refetch:getDeveloperVersions} = useDeveloperVersionsInfoQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query developer versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
 
   return (
