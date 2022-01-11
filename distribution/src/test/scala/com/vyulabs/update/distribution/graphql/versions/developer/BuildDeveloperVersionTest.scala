@@ -10,6 +10,7 @@ import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
+import com.vyulabs.update.common.config.BuildServiceConfig
 import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
@@ -28,6 +29,10 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => {
     ex.printStackTrace(); log.error("Uncatched exception", ex)
   })
+
+  result(for {
+    _ <- collections.Developer_BuildServices.insert(BuildServiceConfig("service1", None, Seq.empty, Seq.empty, Seq.empty))
+  } yield {})
 
   assert(IoUtils.writeBytesToFile(new File(builderDirectory, "builder.sh"),
     ("echo \"2021-03-23 19:12:19.146 INFO Unit1 Builder started\"\n" +
@@ -58,7 +63,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    expectMessage(logInput, "Finished successfully task BuildDeveloperVersion with parameters: service=service1, version=1.1.1, author=developer, comment=Test version, buildClientVersion=false")
+    expectMessage(logInput, "Finished successfully, task BuildDeveloperVersion with parameters: service=service1, version=1.1.1, author=developer, comment=Test version, buildClientVersion=false")
 
     expectComplete(logInput)
   }
@@ -108,7 +113,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val logSource = subscribeResponse.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val logInput = logSource.runWith(TestSink.probe[ServerSentEvent])
 
-    expectMessage(logInput, "Finished successfully task RunBuilderByRemoteDistribution with parameters: distribution=consumer, accessToken=qwe, arguments=buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin")
+    expectMessage(logInput, "Finished successfully, task RunBuilderByRemoteDistribution with parameters: distribution=consumer, accessToken=qwe, environment=, arguments=buildDeveloperVersion, distribution=test, service=service1, version=1.1.1, author=admin")
 
     expectComplete(logInput)
   }

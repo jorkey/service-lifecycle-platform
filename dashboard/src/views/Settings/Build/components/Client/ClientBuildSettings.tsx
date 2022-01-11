@@ -5,18 +5,19 @@ import {
   useBuildClientServiceConfigLazyQuery, useBuildClientServicesQuery,
   useSetBuildClientServiceConfigMutation,
 } from "../../../../../generated/graphql";
-import ServiceEditor from "../ServiceEditor";
+import BuildSettings from "../BuildSettings";
 
 interface ClientServiceRouteParams {
   service?: string
 }
 
 interface ClientServiceEditorParams extends RouteComponentProps<ClientServiceRouteParams> {
+  new?: boolean
   fromUrl: string
 }
 
-const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
-  const service = props.match.params.service
+const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
+  const service = props.match.params.service?props.match.params.service:props.new?undefined:''
 
   const [error, setError] = useState<string>()
 
@@ -39,20 +40,20 @@ const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
       onError(err) { setError('Set client service config error ' + err.message) },
     })
 
-  if (service && !buildServiceConfig.data && !buildServiceConfig.loading) {
-    getBuildServiceConfig({variables: {service: service}})
+  if (!props.new && !buildServiceConfig.data && !buildServiceConfig.loading) {
+    getBuildServiceConfig({variables: {service: service!}})
   }
 
   const config = buildServiceConfig.data?.buildClientServicesConfig.length?
     buildServiceConfig.data.buildClientServicesConfig[0]:undefined
 
-  if ((!service || config) && buildClientServices?.buildClientServicesConfig) {
+  if ((props.new || config) && buildClientServices?.buildClientServicesConfig) {
     const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
     const macroValues = config?config.macroValues:[]
 
-    return (<ServiceEditor
+    return (<BuildSettings
               service={service}
               distribution={distribution}
               environment={environment}
@@ -74,4 +75,4 @@ const ClientServiceEditor: React.FC<ClientServiceEditorParams> = props => {
   }
 }
 
-export default ClientServiceEditor;
+export default ClientBuildSettings;

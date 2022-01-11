@@ -163,21 +163,15 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getAccessToken(c.arg(AccountArg)) }),
 
-      // Builders
-      Field("developerBuilderConfig", BuilderConfigType,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperBuilderConfig() }),
-      Field("buildDeveloperServicesConfig", ListType(DeveloperServiceConfigType),
+      // Build config
+      Field("buildDeveloperServicesConfig", ListType(BuildServiceConfigType),
         arguments = OptionServiceArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperServicesConfig(c.arg(OptionServiceArg)) }),
-      Field("clientBuilderConfig", BuilderConfigType,
-        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientBuilderConfig() }),
-      Field("buildClientServicesConfig", ListType(ClientServiceConfigType),
+        resolve = c => { c.ctx.workspace.getBuildDeveloperServicesConfig(c.arg(OptionServiceArg)) }),
+      Field("buildClientServicesConfig", ListType(BuildServiceConfigType),
         arguments = OptionServiceArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientServicesConfig(c.arg(OptionServiceArg)) }),
+        resolve = c => { c.ctx.workspace.getBuildClientServicesConfig(c.arg(OptionServiceArg)) }),
 
       // Profiles
       Field("serviceProfiles", ListType(ServicesProfileType),
@@ -390,11 +384,6 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.removeAccount(c.arg(AccountArg)) }),
 
       // Builders
-      Field("setDeveloperBuilderConfig", BooleanType,
-        arguments = DistributionArg :: Nil,
-        tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.setDeveloperBuilderConfig(
-          c.arg(DistributionArg)).map(_ => true) }),
       Field("setBuildDeveloperServiceConfig", BooleanType,
         arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
@@ -405,11 +394,6 @@ object GraphqlSchema {
         arguments = ServiceArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeBuildDeveloperServiceConfig(c.arg(ServiceArg)).map(_ => true) }),
-      Field("setClientBuilderConfig", BooleanType,
-        arguments = DistributionArg :: Nil,
-        tags = Authorized(AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.setClientBuilderConfig(
-          c.arg(DistributionArg)).map(_ => true) }),
       Field("setBuildClientServiceConfig", BooleanType,
         arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,

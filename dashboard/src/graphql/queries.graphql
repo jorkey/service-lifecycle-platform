@@ -283,14 +283,6 @@ mutation removeAccount ($account: String!) {
 
 # Build configs
 
-query developerBuilderConfig {
-    developerBuilderConfig { distribution }
-}
-
-query clientBuilderConfig {
-    clientBuilderConfig { distribution }
-}
-
 query buildDeveloperServices {
     buildDeveloperServicesConfig { service }
 }
@@ -314,10 +306,6 @@ query buildClientServiceConfig ($service: String!) {
     }
 }
 
-mutation setDeveloperBuilderConfig ($distribution: String!) {
-    setDeveloperBuilderConfig (distribution: $distribution)
-}
-
 mutation setBuildDeveloperServiceConfig ($service: String!, $distribution: String,
         $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $macroValues: [NamedStringValueInput!]!) {
     setBuildDeveloperServiceConfig (service: $service, distribution: $distribution,
@@ -326,10 +314,6 @@ mutation setBuildDeveloperServiceConfig ($service: String!, $distribution: Strin
 
 mutation removeBuildDeveloperServiceConfig ($service: String!) {
     removeBuildDeveloperServiceConfig (service: $service)
-}
-
-mutation setClientBuilderConfig ($distribution: String!) {
-    setClientBuilderConfig (distribution: $distribution)
 }
 
 mutation setBuildClientServiceConfig ($service: String!, $distribution: String, $environment: [NamedStringValueInput!]!,

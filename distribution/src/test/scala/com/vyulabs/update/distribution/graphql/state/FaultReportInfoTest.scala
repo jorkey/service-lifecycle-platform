@@ -120,14 +120,14 @@ class FaultReportInfoTest extends TestEnvironment {
   def checkReportExists(id: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("consumer",
-        ServiceFaultReport(id, FaultInfo(time, "instance1", service, None, "directory1", ServiceState(time, None, None, None, None, None, None, None),
-          Seq.empty),
+        ServiceFaultReport(id,
+          FaultInfo(time, "instance1", service, None, "directory1", ServiceState(time, None, None, None, None, None, None, None), Seq.empty),
           Seq(FileInfo("core", 123456789), FileInfo("log/service.log", 12345))))))
-    )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.id", id))))
+    )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.fault", id))))
   }
 
   def checkReportNotExists(id: FaultId): Unit = {
-    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("payload.id", id))))
+    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("payload.fault", id))))
     assert(!distributionDir.getFaultReportFile(id).exists())
   }
 

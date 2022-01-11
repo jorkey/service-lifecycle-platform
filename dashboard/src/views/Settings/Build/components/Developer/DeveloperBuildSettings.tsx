@@ -6,22 +6,23 @@ import {
   useBuildDeveloperServicesQuery,
   useSetBuildDeveloperServiceConfigMutation
 } from "../../../../../generated/graphql";
-import ServiceEditor from "../ServiceEditor";
+import BuildSettings from "../BuildSettings";
 
 interface DeveloperServiceRouteParams {
   service?: string
 }
 
 interface DeveloperServiceEditorParams extends RouteComponentProps<DeveloperServiceRouteParams> {
+  new?: boolean
   fromUrl: string
 }
 
-const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => {
-  const service = props.match.params.service
+const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => {
+  const service = props.match.params.service?props.match.params.service:props.new?undefined:''
 
   const [error, setError] = useState<string>()
 
-  const { data: builDeveloperServicesConfig } = useBuildDeveloperServicesQuery({
+  const { data: buildDeveloperServicesConfig } = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query developer services error ' + err.message)
@@ -40,20 +41,20 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
       onError(err) { setError('Set developer service config error: ' + err.message) },
     })
 
-  if (service && !buildServiceConfig.data && !buildServiceConfig.loading) {
-    getBuildServiceConfig({variables: {service: service}})
+  if (!props.new && !buildServiceConfig.data && !buildServiceConfig.loading) {
+    getBuildServiceConfig({variables: {service: service!}})
   }
 
   const config = buildServiceConfig.data?.buildDeveloperServicesConfig.length?
     buildServiceConfig.data.buildDeveloperServicesConfig[0]:undefined
 
-  if ((!service || config) && builDeveloperServicesConfig?.buildDeveloperServicesConfig) {
+  if ((props.new || config) && buildDeveloperServicesConfig?.buildDeveloperServicesConfig) {
     const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
     const macroValues = config?config.macroValues:[]
 
-    return (<ServiceEditor
+    return (<BuildSettings
               service={service}
               distribution={distribution}
               environment={environment}
@@ -61,9 +62,9 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
               repositories={repositories}
               macroValues={macroValues}
               hasService={(service =>
-                !!builDeveloperServicesConfig?.buildDeveloperServicesConfig.find(s => s.service == service))}
+                !!buildDeveloperServicesConfig?.buildDeveloperServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) =>
-                repositories.length > 0 }
+                true }
               setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
                 setBuildServiceConfig({ variables: { service, distribution, environment, repositories, macroValues } })
                   .then((r) => !!r.data?.setBuildDeveloperServiceConfig) }
@@ -75,4 +76,4 @@ const DeveloperServiceEditor: React.FC<DeveloperServiceEditorParams> = props => 
   }
 }
 
-export default DeveloperServiceEditor;
+export default DeveloperBuildSettings;

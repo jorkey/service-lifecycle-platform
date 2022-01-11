@@ -1,7 +1,7 @@
 package com.vyulabs.update.distribution.graphql
 
 import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import com.vyulabs.update.common.config.{BuilderConfig, ServiceConfig, NamedStringValue, GitConfig, Repository}
+import com.vyulabs.update.common.config.{BuildServiceConfig, NamedStringValue, GitConfig, Repository}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
@@ -124,10 +124,8 @@ object GraphqlTypes {
   implicit val ProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
   implicit val TaskParameterType = deriveObjectType[Unit, TaskParameter]()
   implicit val TaskInfoType = deriveObjectType[Unit, TaskInfo]()
-  implicit val BuilderConfigType = deriveObjectType[Unit, BuilderConfig]()
   implicit val EnvironmentVariableType = deriveObjectType[Unit, NamedStringValue]()
-  implicit val DeveloperServiceConfigType = deriveObjectType[Unit, ServiceConfig]()
-  implicit val ClientServiceConfigType = deriveObjectType[Unit, ServiceConfig]()
+  implicit val BuildServiceConfigType = deriveObjectType[Unit, BuildServiceConfig]()
 
   implicit val UserAccountPropertiesInputType = deriveInputObjectType[UserAccountProperties](InputObjectTypeName("UserAccountPropertiesInput"))
   implicit val ConsumerAccountPropertiesInputType = deriveInputObjectType[ConsumerAccountProperties](InputObjectTypeName("ConsumerAccountPropertiesInput"))
@@ -154,6 +152,5 @@ object GraphqlTypes {
   implicit val FileInfoInputType = deriveInputObjectType[FileInfo](InputObjectTypeName("FileInfoInput"))
   implicit val ServiceFaultReportInputType = deriveInputObjectType[ServiceFaultReport](InputObjectTypeName("ServiceFaultReportInput"))
   implicit val TaskParameterInputType = deriveInputObjectType[TaskParameter](InputObjectTypeName("TaskParameterInput"))
-  implicit val BuilderConfigInputType = deriveInputObjectType[BuilderConfig](InputObjectTypeName("BuilderConfigInput"))
   implicit val NamedStringValueInputType = deriveInputObjectType[NamedStringValue](InputObjectTypeName("NamedStringValueInput"))
 }

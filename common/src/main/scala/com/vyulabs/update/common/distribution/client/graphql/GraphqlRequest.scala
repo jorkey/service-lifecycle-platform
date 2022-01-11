@@ -21,9 +21,9 @@ object GraphqlArgument {
                 "String"
             }
           case _ =>
-            arg._2.getClass.getSimpleName
+            arg._2.getClass.getSimpleName + "!"
         }
-      } else inputType)
+      } else inputType + "!")
   }
 }
 
@@ -37,7 +37,7 @@ case class GraphqlRequest[Response](request: String, command: String, arguments:
 
   def encodeQuery(): String = {
     val types = arguments.foldLeft("")((args, arg) => {
-      args + (if (!args.isEmpty) ", " else "") + s"$$${arg.name}: ${arg.inputType}!"
+      args + (if (!args.isEmpty) ", " else "") + s"$$${arg.name}: ${arg.inputType}"
     })
     val args = arguments.foldLeft("")((args, arg) => {
       args + (if (!args.isEmpty) ", " else "") + s"${arg.name}: $$${arg.name}"
