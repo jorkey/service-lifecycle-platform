@@ -19,7 +19,7 @@ import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
   logsTable: {
-    height: 'calc(100vh - 450px)',
+    height: 'calc(100vh - 460px)',
   },
   controls: {
     marginRight: 16,

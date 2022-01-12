@@ -219,7 +219,7 @@ function updateScripts {
     unzip -qo ${scriptsZipFile} .update.sh
     unzip -qjo ${scriptsZipFile} ${serviceToSetup}/*
     rm -f ${scriptsZipFile}
-    chmod +x *.sh
+    chmod +x *.sh .*.sh
     echo "Restart $0"
     exec $0 "$@"
   fi

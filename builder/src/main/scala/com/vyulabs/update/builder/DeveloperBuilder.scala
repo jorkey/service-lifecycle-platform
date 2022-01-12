@@ -53,6 +53,11 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
         true
       },
       () => {
+        if (repositories.isEmpty) {
+          log.error(s"Source repositories are not defined")
+          return false
+        }
+
         log.info(s"Prepare source directories of service ${service}")
         val sourceRepositories = prepareSourceRepositories(service, repositories).getOrElse {
           log.error(s"Can't pull source repositories")

@@ -41,7 +41,10 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
 
   def getBuildDeveloperServicesConfig(service: Option[ServiceId])
                                      (implicit log: Logger): Future[Seq[BuildServiceConfig]] = {
-    val args = service.map(Filters.eq("service", _)).toSeq
+    var args = service.map(Filters.eq("service", _)).toSeq
+    if (!service.contains("")) {
+      args :+= Filters.ne("service", "")
+    }
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Developer_BuildServices.find(filters)
   }
@@ -76,7 +79,10 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
 
   def getBuildClientServicesConfig(service: Option[ServiceId])
                                   (implicit log: Logger): Future[Seq[BuildServiceConfig]] = {
-    val args = service.map(Filters.eq("service", _)).toSeq
+    var args = service.map(Filters.eq("service", _)).toSeq
+    if (!service.contains("")) {
+      args :+= Filters.ne("service", "")
+    }
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Client_BuildServices.find(filters)
   }

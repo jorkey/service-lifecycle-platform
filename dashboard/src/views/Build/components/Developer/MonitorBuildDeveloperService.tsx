@@ -14,13 +14,12 @@ import {
 import {
   useCancelTaskMutation, useTasksQuery,
 } from '../../../../generated/graphql';
-import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 import {LogsTable} from "../../../../common/components/logsTable/LogsTable";
 
 const useStyles = makeStyles(theme => ({
   logsTable: {
-    height: 'calc(100vh - 440px)',
+    height: 'calc(100vh - 460px)',
   },
   controls: {
     marginRight: 16,
