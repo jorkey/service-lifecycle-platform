@@ -93,8 +93,8 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
 
   const rows = clientVersions?.clientVersionsInfo?[...clientVersions?.clientVersionsInfo]
     .sort((v1, v2) =>
-      Version.compareClientDistributionVersions(v2.version, v1.version))
-    .reverse()
+      v1.installInfo.time.getTime() > v2.installInfo.time.getTime() ? -1 :
+      v1.installInfo.time.getTime() < v2.installInfo.time.getTime() ? 1 : 0)
     .slice(0, 5)
     .map(version => (
       new Map<string, GridTableCellParams>([

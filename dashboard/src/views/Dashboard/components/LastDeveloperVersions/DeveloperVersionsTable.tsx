@@ -87,8 +87,8 @@ const LastDeveloperVersionsTable: React.FC<LastDeveloperVersionsTableProps> = (p
 
   const rows = (developerVersions?.developerVersionsInfo ? [...developerVersions?.developerVersionsInfo] : [])
     .sort((v1, v2) =>
-      Version.compareDeveloperDistributionVersions(v2.version, v1.version))
-    .reverse()
+      v1.buildInfo.time.getTime() > v2.buildInfo.time.getTime() ? -1 :
+      v1.buildInfo.time.getTime() < v2.buildInfo.time.getTime() ? 1 : 0)
     .slice(0, 5)
     .map(version => (
       new Map<string, GridTableCellParams>([

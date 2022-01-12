@@ -22,18 +22,14 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
 
   const [error, setError] = useState<string>()
 
-  const { data: buildDeveloperServicesConfig } = useBuildDeveloperServicesQuery({
+  const { data: buildServices } = useBuildDeveloperServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) {
-      setError('Query developer services error ' + err.message)
-    }
+    onError(err) { setError('Query developer services error ' + err.message) }
   })
 
   const [ getBuildServiceConfig, buildServiceConfig ] = useBuildDeveloperServiceConfigLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) {
-      setError('Get service config error ' + err.message)
-    }
+    onError(err) { setError('Get service config error ' + err.message) }
   })
 
   const [ setBuildServiceConfig ] =
@@ -45,10 +41,9 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
     getBuildServiceConfig({variables: {service: service!}})
   }
 
-  const config = buildServiceConfig.data?.buildDeveloperServicesConfig.length?
-    buildServiceConfig.data.buildDeveloperServicesConfig[0]:undefined
-
-  if ((props.new || config) && buildDeveloperServicesConfig?.buildDeveloperServicesConfig) {
+  if (buildServices?.buildDeveloperServicesConfig && buildServiceConfig.data?.buildDeveloperServicesConfig) {
+    const config = buildServiceConfig.data?.buildDeveloperServicesConfig.length?
+      buildServiceConfig.data.buildDeveloperServicesConfig[0]:undefined
     const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
@@ -62,7 +57,7 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
               repositories={repositories}
               macroValues={macroValues}
               hasService={(service =>
-                !!buildDeveloperServicesConfig?.buildDeveloperServicesConfig.find(s => s.service == service))}
+                !!buildServices?.buildDeveloperServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) =>
                 true }
               setServiceConfig={(service, distribution, environment, repositories, macroValues) =>

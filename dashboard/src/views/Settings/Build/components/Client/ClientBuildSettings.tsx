@@ -21,7 +21,7 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
 
   const [error, setError] = useState<string>()
 
-  const { data: buildClientServices } = useBuildClientServicesQuery({
+  const { data: buildServices } = useBuildClientServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) {
       setError('Query client services error ' + err.message)
@@ -44,10 +44,10 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
     getBuildServiceConfig({variables: {service: service!}})
   }
 
-  const config = buildServiceConfig.data?.buildClientServicesConfig.length?
-    buildServiceConfig.data.buildClientServicesConfig[0]:undefined
+  if (buildServices?.buildClientServicesConfig && buildServiceConfig.data?.buildClientServicesConfig) {
+    const config = buildServiceConfig.data?.buildClientServicesConfig.length?
+      buildServiceConfig.data.buildClientServicesConfig[0]:undefined
 
-  if ((props.new || config) && buildClientServices?.buildClientServicesConfig) {
     const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
@@ -61,7 +61,7 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
               repositories={repositories}
               macroValues={macroValues}
               hasService={(service =>
-                !!buildClientServices?.buildClientServicesConfig.find(s => s.service == service))}
+                !!buildServices?.buildClientServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) => true }
               setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
                 setBuildServiceConfig({ variables: { service, distribution, environment, repositories, macroValues } })

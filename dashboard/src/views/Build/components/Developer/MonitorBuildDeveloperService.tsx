@@ -154,7 +154,7 @@ const MonitorBuildDeveloperService = (props: MonitorBuildServiceParams) => {
         </CardContent>
       </Card>
       <Card>
-        <CardHeader title={`Task logs`}/>
+        <CardHeader title={`Task Logs`}/>
         <CardContent>
           { <LogsTable className={classes.logsTable}
                        task={task}
