@@ -44,7 +44,7 @@ object UpdaterMain extends App { self =>
   val distributionClient = new DistributionClient(new HttpClientImpl(config.distributionUrl, Some(config.accessToken)))
 
   TraceAppender.handleLogs("Updater", "PROCESS",
-    new LogUploader[SyncSource](Common.DistributionServiceName, None, config.instance, distributionClient))
+    new LogUploader[SyncSource](Common.UpdaterServiceName, None, config.instance, distributionClient))
 
   command match {
     case "runServices" =>
