@@ -11,4 +11,4 @@ runcmd:
   - su - ec2-user -c "unzip -jo .scripts.zip updater/*"
   - su - ec2-user -c "chmod +x .*.sh"
   - [ sh, -xc, "echo 'Execute setup'" ]
-  - su - ec2-user -c "./updater/.updater_setup.sh Azure %%name%% %%services%% %%distributionUrl%% %%accessToken%%"
+  - su - ec2-user -c "./.updater_setup.sh Azure %%name%% %%services%% %%distributionUrl%% %%accessToken%%"
