@@ -6,7 +6,6 @@ import akka.event.Logging
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
 import com.mongodb.client.model._
-import com.vyulabs.update.common.common.Timer
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
@@ -18,7 +17,6 @@ import org.slf4j.Logger
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
@@ -79,8 +77,8 @@ class SequencedCollection[T: ClassTag](val name: String,
             }
           }
           publisherBuffer = publisherBuffer.enqueue(line)
-          if (publisherBuffer.size > 100) {
-            publisherBuffer = publisherBuffer.takeRight(100)
+          if (publisherBuffer.size > 1000) {
+            publisherBuffer = publisherBuffer.takeRight(1000)
           }
           publisherCallback.invoke(line)
           seq += 1
