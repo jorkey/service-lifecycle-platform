@@ -25,8 +25,15 @@ export class Version {
   }
 
   static contains(clientVersion: ClientDistributionVersion, developerVersion: DeveloperDistributionVersion): boolean {
-    return clientVersion.distribution === developerVersion.distribution &&
-      clientVersion.developerBuild === developerVersion.build
+    if (clientVersion.distribution !== developerVersion.distribution) {
+      return false
+    }
+    if (clientVersion.developerBuild.length !== developerVersion.build.length) {
+      return false
+    }
+    return !clientVersion.developerBuild.find((value, index) =>
+      developerVersion.build[index] != value
+    )
   }
 
   static buildToString(build: Array<number>): string {

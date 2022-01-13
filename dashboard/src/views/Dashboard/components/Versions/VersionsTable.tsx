@@ -109,8 +109,10 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
     } else {
       state = undefined
     }
-    let clientVersionAlarm = clientVersion !== undefined && Version.contains(clientVersion, developerVersion)
-    let workingVersionAlarm = version !== undefined && clientVersion !== undefined && version === clientVersion
+    let clientVersionAlarm = clientVersion !== undefined &&
+      !Version.contains(clientVersion, developerVersion)
+    let workingVersionAlarm = version !== undefined && clientVersion !== undefined &&
+      Version.compareClientDistributionVersions(version, clientVersion) != 0
     alertService = alertService || clientVersionAlarm || workingVersionAlarm
     rowsStack.push(<TableRow
       hover
