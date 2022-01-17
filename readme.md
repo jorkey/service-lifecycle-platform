@@ -343,13 +343,13 @@ _distribution_ запускает _builder_.
 - _directory_
   - каталог для установки
 - _host_
-  - DNS имя для сервиса https
+  - DNS имя для сервиса
 - _port_
-  - порт для сервиса https
+  - порт для сервиса
 - _[sslKeyStoreFile]_
-  - файл с приватным ключом и сертификатом
+  - файл с приватным ключом и сертификатом для сервиса https
 - _[sslKeyStorePassword]_
-  - пароль к файлу с приватным ключом и сертификатом
+  - пароль к файлу с приватным ключом и сертификатом для сервиса https
 - _title_
   - короткое описание сервера дистрибуции
 - _mongoDbConnection_
@@ -380,7 +380,7 @@ serviceToRun=builder
 distributionUrl=?
 accessToken=?
 
-. .update.sh "$@" buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
+. .update.sh buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
 ```
 
 Вместо `?` подставьте значения:
@@ -397,13 +397,13 @@ accessToken=?
 - _directory_
   - каталог для установки
 - _host_
-  - DNS имя для сервиса https
+  - DNS имя для сервиса
 - _port_
-  - порт для сервиса https
+  - порт для сервиса
 - _[sslKeyStoreFile]_
-  - файл с приватным ключом и сертификатом
+  - файл с приватным ключом и сертификатом для сервиса https
 - _[sslKeyStorePassword]_
-  - пароль к файлу с приватным ключом и сертификатом
+  - пароль к файлу с приватным ключом и сертификатом для сервиса https
 - _title_
   - короткое описание сервера дистрибуции
 - _mongoDbConnection_
