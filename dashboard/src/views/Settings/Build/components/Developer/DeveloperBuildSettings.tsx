@@ -41,9 +41,11 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
     getBuildServiceConfig({variables: {service: service!}})
   }
 
-  if (buildServices?.buildDeveloperServicesConfig && buildServiceConfig.data?.buildDeveloperServicesConfig) {
+  if (buildServices?.buildDeveloperServicesConfig &&
+      (props.new || buildServiceConfig.data?.buildDeveloperServicesConfig)) {
     const config = buildServiceConfig.data?.buildDeveloperServicesConfig.length?
       buildServiceConfig.data.buildDeveloperServicesConfig[0]:undefined
+
     const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]

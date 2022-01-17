@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { makeStyles } from '@material-ui/core/styles';
-import {Grid} from '@material-ui/core';
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import DeveloperBuildConfiguration from "./components/Developer/DeveloperBuildConfiguration";
 import DeveloperBuildSettings from "./components/Developer/DeveloperBuildSettings";

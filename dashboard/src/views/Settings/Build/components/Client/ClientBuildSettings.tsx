@@ -44,7 +44,8 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
     getBuildServiceConfig({variables: {service: service!}})
   }
 
-  if (buildServices?.buildClientServicesConfig && buildServiceConfig.data?.buildClientServicesConfig) {
+  if (buildServices?.buildClientServicesConfig &&
+      (props.new || buildServiceConfig.data?.buildClientServicesConfig)) {
     const config = buildServiceConfig.data?.buildClientServicesConfig.length?
       buildServiceConfig.data.buildClientServicesConfig[0]:undefined
 
