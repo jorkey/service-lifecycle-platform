@@ -6,6 +6,7 @@ import akka.event.Logging
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
 import com.mongodb.client.model._
+import com.vyulabs.update.common.common.RaceRingBuffer
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.configuration.CodecRegistry
@@ -16,7 +17,6 @@ import org.slf4j.Logger
 
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import scala.collection.immutable.Queue
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
@@ -36,7 +36,7 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Sequenced[T]]())
     .toMat(BroadcastHub.sink)(Keep.both).run()
-  private var publisherBuffer = Queue.empty[Sequenced[T]]
+  private val publisherBuffer = new RaceRingBuffer[Sequenced[T]](100)
 
   private var modifyInProcess = Option.empty[Future[Int]]
   private var nextSequenceInProcess = Option.empty[Future[Long]]
@@ -71,15 +71,7 @@ class SequencedCollection[T: ClassTag](val name: String,
       synchronized {
         documents.foreach { doc =>
           val line = Sequenced(seq, doc)
-          if (!publisherBuffer.isEmpty) {
-            if (sequence <= publisherBuffer.last.sequence) {
-              publisherBuffer = Queue.empty
-            }
-          }
-          publisherBuffer = publisherBuffer.enqueue(line)
-          if (publisherBuffer.size > 1000) {
-            publisherBuffer = publisherBuffer.takeRight(1000)
-          }
+          publisherBuffer.push(line)
           publisherCallback.invoke(line)
           seq += 1
         }
@@ -234,7 +226,7 @@ class SequencedCollection[T: ClassTag](val name: String,
       storedDocuments <- findSequenced(filtersArg, Some(sort), startLimit)
         .map(_.sortBy(_.sequence))
     } yield {
-      val bufferSource = Source.fromIterator(() => synchronized { publisherBuffer.iterator })
+      val bufferSource = Source.fromIterator(() => publisherBuffer.makeIterator())
       val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
       var sequence = from.getOrElse(0L)
       Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))
