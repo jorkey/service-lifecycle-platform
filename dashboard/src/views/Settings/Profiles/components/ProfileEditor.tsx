@@ -121,7 +121,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
   }
 
   const validate: () => boolean = () => {
-    return !!profile && (!!editProfile || !doesProfileExist(profile)) && services.length != 0
+    return !!profile && (!!editProfile || !doesProfileExist(profile))
   }
 
   const submit = () => {

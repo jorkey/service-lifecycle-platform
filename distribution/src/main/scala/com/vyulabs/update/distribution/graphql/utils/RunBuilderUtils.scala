@@ -183,7 +183,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       remoteTask <- client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder",
         Seq(GraphqlArgument("accessToken" -> accessToken),
             GraphqlArgument("arguments" -> arguments, "[String!]"),
-            GraphqlArgument("environment" -> environment, "[EnvironmentVariableInput!]"))))
+            GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"))))
       logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
       end <- {
         distributionClient = Some(client)
