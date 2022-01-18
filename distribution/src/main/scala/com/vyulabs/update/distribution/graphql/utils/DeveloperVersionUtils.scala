@@ -2,24 +2,20 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.{Common, Misc}
-import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId, ServicesProfileId, TaskId}
-import com.vyulabs.update.common.config.{DistributionConfig, NamedStringValue, Repository}
+import com.vyulabs.update.common.common.Common._
+import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
-import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
-
-import scala.collection.JavaConverters.asJavaIterableConverter
-import scala.concurrent.{ExecutionContext, Future}
 import spray.json._
 
 import java.io.IOException
 import java.util.Date
+import scala.collection.JavaConverters.asJavaIterableConverter
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
 
@@ -167,26 +163,25 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     getDeveloperDesiredVersions(Set(service)).map(_.headOption.map(_.version))
   }
 
-  def filterDesiredVersionsByProfile(profile: ServicesProfileId,
-                                     future: Future[Seq[DeveloperDesiredVersion]])(implicit log: Logger)
+  def getDeveloperDesiredVersionsByConsumer(profile: ServicesProfileId,
+                                            testConsumer: Option[String], services: Set[ServiceId])(implicit log: Logger)
       : Future[Seq[DeveloperDesiredVersion]] = {
-    for {
-      desiredVersions <- future
-      profile <- serviceProfilesUtils.getServicesProfile(profile)
-      versions <- Future(desiredVersions.filter(version => profile.services.contains(version.service)))
-    } yield versions
+    (testConsumer match {
+      case Some(testDistributionConsumer) =>
+        getTestedVersions(Some(testDistributionConsumer))
+      case None =>
+        getDeveloperDesiredVersions(services)
+    }).flatMap(versions => filterDesiredVersionsByProfile(profile, versions))
   }
 
-  def getDeveloperDesiredVersions(testConsumer: Option[String], services: Set[ServiceId])(implicit log: Logger)
-      : Future[Seq[DeveloperDesiredVersion]] = {
+  private def filterDesiredVersionsByProfile(profile: ServicesProfileId,
+                                             desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger)
+  : Future[Seq[DeveloperDesiredVersion]] = {
     for {
-      developerVersions <- testConsumer match {
-        case Some(testDistributionConsumer) =>
-          getTestedVersions(Some(testDistributionConsumer))
-        case None =>
-          getDeveloperDesiredVersions(services)
-      }
-    } yield developerVersions
+      profile <- serviceProfilesUtils.getServicesProfile(profile)
+    } yield {
+      desiredVersions.filter(version => profile.services.contains(version.service))
+    }
   }
 
   def setTestedVersions(consumerDistribution: DistributionId, profile: ServicesProfileId,

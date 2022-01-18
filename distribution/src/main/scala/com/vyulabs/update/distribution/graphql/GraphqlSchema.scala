@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
+import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -189,7 +189,8 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
           if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) {
-            c.ctx.workspace.getDeveloperDesiredVersions(
+            val accountInfo = c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountProperties]
+            c.ctx.workspace.getDeveloperDesiredVersionsByConsumer(accountInfo.profile,
               c.arg(OptionTestConsumerArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           } else {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
