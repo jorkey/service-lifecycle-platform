@@ -86,9 +86,10 @@ export const GridTableRow = (params: GridTableRowParams) => {
                             }}
                             onStopEdit={() => setEditColumn(undefined)}
                             onSetEditValue={(value) => {
-                              setEditValues(editValues => new Map(editValues.set(column.name, value)))
+                              const newValues = new Map(editValues.set(column.name, value))
+                              setEditValues(newValues)
                               if (!hasGridActions) {
-                                onSubmitted?.(editValues, editOldValues)
+                                onSubmitted?.(newValues, editOldValues)
                               }
                             }}
                             onCancelled={() => onCanceled?.()}

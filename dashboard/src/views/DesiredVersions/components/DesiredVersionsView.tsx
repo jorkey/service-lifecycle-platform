@@ -269,7 +269,7 @@ export class DesiredVersionsView<Version> {
               rows={rows}
               onRowChanged={ (row, values, oldValues) =>
                 new Promise(resolve => {
-                  const service = values.get('service')
+                  const service = values.get('service') as string
                   const version = this.parse(values.get('version') as string)
                   this.desiredVersions = this.desiredVersions?.map(v => {
                     if (v.service == service) {
