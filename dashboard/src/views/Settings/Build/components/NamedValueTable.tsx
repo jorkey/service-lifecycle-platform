@@ -88,19 +88,19 @@ const NamedValueTable = (props: NamedValueTableParams) => {
       rows={rows}
       addNewRow={addValue}
       onRowAdded={ (cells) =>
-        new Promise<boolean>(() => {
+        new Promise<boolean>(resolve => {
           onValueAdded?.({
             name: cells.get('name')! as string,
             value: cells.get('value')! as string })
-          return true
+          resolve(true)
         })}
       onRowAddCancelled={onValueAddCancelled}
       onRowChanged={ (row, cells, oldValues) =>
-        new Promise<boolean>(() => {
+        new Promise<boolean>(resolve => {
           onValueChanged!(values[row], {
             name: cells.get('name')! as string,
             value: cells.get('value')! as string })
-          return true
+          resolve(true)
         })}
     />
     { deleteConfirm ? (

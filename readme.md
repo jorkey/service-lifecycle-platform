@@ -286,7 +286,7 @@ vUpdate сам состоит из сервисов. Таким образом, 
       - Поддерживает запросы GraphQL (платформа [Sangria GraphQL](https://github.com/sangria-graphql/sangria))
     - База данных [MongoDB](https://github.com/mongodb/mongo)
   - Frontend 
-    - Distribution Dashboard (платформа [React Js](https://reactjs.org)
+    - Distribution Dashboard (платформа [React Js](https://reactjs.org))
 - builder - Генератор версий (Scala command line application)
 - updater - Установщик инстанции сервисов (Scala command line application)
 
@@ -299,7 +299,7 @@ vUpdate сам состоит из сервисов. Таким образом, 
     - _.create_distribution_service.sh_ - устанавливает сервер дистрибуции как сервис операционной системы, 
                                           в настоящее время поддерживается только Linux systemd. 
     - _.make_distribution_config.sh_ - создание начального файла конфигурации, используется _builder_
-    -                                  при создании сервера дистрибуции
+                                       при создании сервера дистрибуции
     - _distribution.sh_ - запуск сервера дистрибуции
   - _builder_ - скрипты поддержки _builder_
     - _builder.sh_ - запускает _builder_

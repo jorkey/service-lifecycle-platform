@@ -117,19 +117,19 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       rows={rows}
       addNewRow={addRepository}
       onRowAdded={ (columns) =>
-        new Promise<boolean>(() => {
+        new Promise<boolean>(resolve => {
           onRepositoryAdded?.({ name: columns.get('name')! as string,
             git: { url: columns.get('url')! as string, branch: columns.get('branch')! as string,
               cloneSubmodules: columns.get('cloneSubmodules') as boolean } })
-          return true
+          resolve(true)
         })}
       onRowAddCancelled={onRepositoryAddCancelled}
       onRowChanged={ (row, values, oldValues) =>
-        new Promise<boolean>(() => {
+        new Promise<boolean>(resolve => {
           onRepositoryChanged!(repositories[row], { name: values.get('name')! as string,
             git: { url: values.get('url')! as string, branch: values.get('branch')! as string,
               cloneSubmodules: values.get('cloneSubmodules') as boolean } })
-          return true
+          resolve(true)
         })}
     />
     { deleteConfirm ? (

@@ -2,8 +2,8 @@ import React from 'react';
 
 import {Route, Switch, useRouteMatch} from "react-router-dom";
 import DeveloperBuildConfiguration from "./components/Developer/DeveloperBuildConfiguration";
-import DeveloperBuildSettings from "./components/Developer/DeveloperBuildSettings";
 import ClientBuildConfiguration from "./components/Client/ClientBuildConfiguration";
+import DeveloperBuildSettings from "./components/Developer/DeveloperBuildSettings";
 import ClientBuildSettings from "./components/Client/ClientBuildSettings";
 
 const Build = () => {

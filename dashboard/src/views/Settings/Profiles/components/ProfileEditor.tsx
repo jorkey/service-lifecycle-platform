@@ -172,10 +172,10 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                                services={services}
                                doesProfileExist={profile => doesProfileExist(profile)}
                                onServiceRemoved={service =>
-                                 new Promise<boolean>(() => {
+                                 new Promise<boolean>(resolve => {
                                    setServices(services.filter(s => s != service))
                                    setChanged(true)
-                                   return true
+                                   resolve(true)
                                })}
               />
             </Grid>
@@ -188,10 +188,10 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                                         .filter(service => services.find(s => s == service) === undefined):[]}
                                    deleteIcon={<LeftIcon/>}
                                    onServiceRemove={ service =>
-                                     new Promise<boolean>(() => {
+                                     new Promise<boolean>(resolve => {
                                        setServices([...services, service])
                                        setChanged(true)
-                                       return true
+                                       resolve(true)
                                      })
                                    }
               />

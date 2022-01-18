@@ -268,7 +268,7 @@ export class DesiredVersionsView<Version> {
               columns={columns}
               rows={rows}
               onRowChanged={ (row, values, oldValues) =>
-                new Promise(() => {
+                new Promise(resolve => {
                   const service = values.get('service')
                   const version = this.parse(values.get('version') as string)
                   this.desiredVersions = this.desiredVersions?.map(v => {
@@ -279,7 +279,7 @@ export class DesiredVersionsView<Version> {
                     }
                   })
                   this.rerender()
-                  return true
+                  resolve(true)
                 })
               }
             />
