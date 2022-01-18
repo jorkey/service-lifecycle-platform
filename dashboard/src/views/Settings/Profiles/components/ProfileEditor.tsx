@@ -219,7 +219,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
           <Button
             className={classes.control}
             color="primary"
-            disabled={!changed || !validate()}
+            disabled={(editProfile && !changed) || !validate()}
             onClick={() => submit()}
             variant="contained"
           >
