@@ -1,5 +1,4 @@
 import React, {useState} from 'react';
-import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
   Box,
@@ -13,7 +12,7 @@ import {
   DeveloperDistributionVersion,
   DistributionProviderInfo,
   useBuildClientVersionsMutation, useClientDesiredVersionsQuery,
-  useClientVersionsInfoQuery, useDeveloperDesiredVersionsQuery,
+  useClientVersionsInfoQuery, useDeveloperDesiredVersionsLazyQuery, useDeveloperDesiredVersionsQuery,
   useProviderDesiredVersionsLazyQuery,
   useProvidersInfoQuery, useProviderTestedVersionsLazyQuery,
   useSetProviderTestedVersionsMutation, useSetTestedVersionsMutation, useTestedVersionsLazyQuery,
@@ -98,11 +97,6 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       }
     }
   })
-  const { data: developerDesiredVersions, refetch: getDeveloperDesiredVersions } = useDeveloperDesiredVersionsQuery({
-    fetchPolicy: 'no-cache', // base option no-cache does not work
-    onCompleted() { setRows(makeRowsData()) },
-    onError(err) { setError('Query developer desired versions error ' + err.message) },
-  })
   const { data: clientDesiredVersions, refetch: getClientDesiredVersions } = useClientDesiredVersionsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onCompleted() { setRows(makeRowsData()) },
@@ -112,6 +106,11 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query client versions error ' + err.message) }
+  })
+  const [ getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onCompleted() { setRows(makeRowsData()) },
+    onError(err) { setError('Query developer desired versions error ' + err.message) },
   })
   const [ getProviderDesiredVersions, providerDesiredVersions ] = useProviderDesiredVersionsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
@@ -163,8 +162,10 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
       getProviderTestedVersions({ variables: { distribution: provider.distribution } })
     } else {
-      getTestedVersions()
+      getDeveloperDesiredVersions()
     }
+    getTestedVersions()
+    setRows(makeRowsData())
   }, [ provider ])
 
   const makeServicesList = () => {
@@ -176,8 +177,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           version => servicesSet.add(version.service)
         )
       }
-    } else if (developerDesiredVersions?.developerDesiredVersions) {
-      developerDesiredVersions.developerDesiredVersions.forEach(
+    } else if (developerDesiredVersions.data) {
+      developerDesiredVersions.data.developerDesiredVersions.forEach(
         version => servicesSet.add(version.service)
       )
     }
@@ -186,14 +187,14 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
   }
 
   const makeRowsData: () => RowData[] = () => {
-    if (developerDesiredVersions && clientDesiredVersions && clientVersions &&
+    if (clientDesiredVersions && clientVersions &&
         (!provider || (providerDesiredVersions.data && testedVersions.data?.testedVersions))) {
       const services = makeServicesList()
       return services.sort().map(
         service => {
           const providerVersion = providerDesiredVersions.data?.providerDesiredVersions
             .find(version => version.service == service)?.version
-          const developerVersion = developerDesiredVersions.developerDesiredVersions
+          const developerVersion = developerDesiredVersions.data?.developerDesiredVersions
             .find(version => version.service == service)?.version
           const clientVersion = clientDesiredVersions.clientDesiredVersions
             .find(version => version.service == service)?.version
@@ -254,7 +255,8 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       headerName: 'Tested Developer Version',
       className: classes.versionColumn,
     }
-  ].filter(column => column.name != 'providerVersion' || !!provider)
+  ].filter(column => column.name != 'developerVersion' || !provider)
+   .filter(column => column.name != 'providerVersion' || !!provider)
    .filter(column => column.name != 'testedVersion' || !!providerTestedVersions.data || providerTestedVersions.loading) as GridTableColumnParams[]
 
   const rowsView = rows.map(row => {

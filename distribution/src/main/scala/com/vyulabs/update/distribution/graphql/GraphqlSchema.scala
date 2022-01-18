@@ -2,7 +2,7 @@ package com.vyulabs.update.distribution.graphql
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo, ConsumerAccountProperties}
+import com.vyulabs.update.common.accounts.{AccountInfo, ConsumerAccountInfo}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
