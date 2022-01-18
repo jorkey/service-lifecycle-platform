@@ -189,8 +189,8 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.Builder, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
           if (c.ctx.accountInfo.get.role == AccountRole.DistributionConsumer) {
-            val accountInfo = c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountProperties]
-            c.ctx.workspace.getDeveloperDesiredVersionsByConsumer(accountInfo.profile,
+            val accountInfo = c.ctx.accountInfo.get.asInstanceOf[ConsumerAccountInfo]
+            c.ctx.workspace.getDeveloperDesiredVersionsByConsumer(accountInfo.properties.profile,
               c.arg(OptionTestConsumerArg), c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
           } else {
             c.ctx.workspace.getDeveloperDesiredVersions(c.arg(OptionServicesArg).getOrElse(Seq.empty).toSet)
