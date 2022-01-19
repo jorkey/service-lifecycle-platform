@@ -23,6 +23,7 @@ import java.nio.file.Files
 import java.text.ParseException
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 trait RunBuilderUtils extends SprayJsonSupport {
   protected val directory: DistributionDirectory
@@ -203,6 +204,14 @@ trait RunBuilderUtils extends SprayJsonSupport {
             }
           }
         }).run()
+          .onComplete {
+            case Success(_) =>
+              if (!result.isCompleted) {
+                result.failure(new IOException(s"Unexpected completion of remote task log"))
+              }
+            case Failure(ex) =>
+              result.failure(ex)
+          }
         result.future
       }
     } yield end

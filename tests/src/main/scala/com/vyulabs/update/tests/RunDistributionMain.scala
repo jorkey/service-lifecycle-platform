@@ -5,7 +5,7 @@ object RunDistributionMain extends App {
   println("########################### Initialize provider distribution")
   println()
 
-  val provider = new SimpleLifecycle("provider", 8001)
+  val provider = new SimpleLifecycle("provider",   8001)
   provider.makeAndRunDistribution("ak")
 
   println()
