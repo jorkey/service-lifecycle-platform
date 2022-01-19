@@ -119,8 +119,6 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
               case None =>
                 Future()
             }
-            _ <- developerVersionUtils.setDeveloperDesiredVersions(
-              Seq(DeveloperDesiredVersionDelta(service, Some(version))), Common.AuthorDistribution)
           } yield {}
         } else {
           log.info(s"Version ${version} of service ${service} already exists")
