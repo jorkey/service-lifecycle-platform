@@ -22,6 +22,8 @@ import java.io.{File, IOException}
 import java.nio.file.Files
 import java.text.ParseException
 import java.util.Date
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -207,7 +209,11 @@ trait RunBuilderUtils extends SprayJsonSupport {
           .onComplete {
             case Success(_) =>
               if (!result.isCompleted) {
-                result.failure(new IOException(s"Unexpected completion of remote task log"))
+                system.scheduler.scheduleOnce(FiniteDuration(5, TimeUnit.SECONDS))(() => {
+                  if (!result.isCompleted) {
+                    result.failure(new IOException(s"Unexpected completion of remote task log"))
+                  }
+                })
               }
             case Failure(ex) =>
               result.failure(ex)
