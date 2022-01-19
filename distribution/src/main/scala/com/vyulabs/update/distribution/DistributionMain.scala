@@ -100,9 +100,9 @@ object DistributionMain extends App {
     trustManagerFactory.init(keyStore)
 
     val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagerFactory.getKeyManagers, trustManagerFactory.getTrustManagers, new SecureRandom)
     val protocols = sslContext.getSupportedSSLParameters.getProtocols
     sslContext.getSupportedSSLParameters.setProtocols(protocols.filter(_ != "TLSv1").filter(_ != "TLSv1.1"))
-    sslContext.init(keyManagerFactory.getKeyManagers, trustManagerFactory.getTrustManagers, new SecureRandom)
     ConnectionContext.httpsServer(sslContext)
   }
 }
