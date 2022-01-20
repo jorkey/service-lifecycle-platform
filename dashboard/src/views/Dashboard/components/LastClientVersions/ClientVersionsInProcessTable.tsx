@@ -44,7 +44,7 @@ const ClientVersionsInProcessTable: React.FC<ClientVersionsInProcessTableProps> 
   const columns: Array<GridTableColumnParams> = [
     {
       name: 'versions',
-      headerName: 'Versions In Process',
+      headerName: 'Version In Process',
       className: classes.versionsColumn,
     },
     {

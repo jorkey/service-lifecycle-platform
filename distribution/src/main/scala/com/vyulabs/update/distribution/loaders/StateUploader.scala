@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.common.Common.DistributionId
 import com.vyulabs.update.common.distribution.client.DistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
+import com.vyulabs.update.common.distribution.client.graphql.{ConsumerMutationsCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
@@ -92,7 +92,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
       newStates <- Future(newStatesDocuments)
     } yield {
       if (!newStates.isEmpty) {
-        client.graphqlRequest(GraphqlMutation[Boolean]("setServiceStates", Seq(GraphqlArgument("states" -> newStates.map(_.document).toJson)))).
+        client.graphqlRequest(ConsumerMutationsCoder.setServiceStates(newStates.map(_.document.payload))).
           andThen {
             case Success(_) =>
               setLastUploadSequence(collections.State_ServiceStates.name, newStatesDocuments.last.sequence)

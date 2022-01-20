@@ -8,7 +8,7 @@ object MaxCpu extends DefaultJsonProtocol {
   implicit val maxCpuJson = jsonFormat2(MaxCpu.apply)
 }
 
-case class RestartConditions(maxMemoryMB: Option[Long], maxCpu: Option[MaxCpu], makeCore: Boolean, checkTimeoutMs: Long) {
+case class RestartConditions(maxMemoryMB: Option[Long], maxCpu: Option[MaxCpu], makeCore: Option[Boolean], checkTimeoutMs: Long) {
   def maxMemory = maxMemoryMB.map(_ * 1024 *1024)
 }
 

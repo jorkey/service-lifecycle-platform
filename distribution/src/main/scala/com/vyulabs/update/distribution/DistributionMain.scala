@@ -99,7 +99,7 @@ object DistributionMain extends App {
     val trustManagerFactory = TrustManagerFactory.getInstance("SunX509")
     trustManagerFactory.init(keyStore)
 
-    val sslContext = SSLContext.getInstance("TLSv1.3")
+    val sslContext = SSLContext.getInstance("TLS")
     sslContext.init(keyManagerFactory.getKeyManagers, trustManagerFactory.getTrustManagers, new SecureRandom)
 //    val parameters = sslContext.getDefaultSSLParameters
 //    val protocols = parameters.getProtocols

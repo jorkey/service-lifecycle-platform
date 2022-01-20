@@ -56,7 +56,7 @@ const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableP
     },
     {
       name: 'version',
-      headerName: 'Version',
+      headerName: 'Version In Process',
       className: classes.versionColumn,
     },
     {

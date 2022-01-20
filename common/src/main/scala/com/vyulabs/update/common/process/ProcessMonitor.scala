@@ -160,7 +160,7 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
   }
 
   private def killProcessGroup(): Unit = {
-    if (conditions.makeCore && isUnix) {
+    if (conditions.makeCore.getOrElse(false) && isUnix) {
       val command = s"kill -SIGQUIT -- -${process.getHandle().pid()}"
       log.info(s"Execute ${command}")
       Runtime.getRuntime.exec(command, null, new File("."))
