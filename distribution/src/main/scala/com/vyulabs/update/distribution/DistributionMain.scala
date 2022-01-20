@@ -99,16 +99,16 @@ object DistributionMain extends App {
     val trustManagerFactory = TrustManagerFactory.getInstance("SunX509")
     trustManagerFactory.init(keyStore)
 
-    val sslContext = SSLContext.getInstance("TLS")
+    val sslContext = SSLContext.getInstance("TLSv1.3")
     sslContext.init(keyManagerFactory.getKeyManagers, trustManagerFactory.getTrustManagers, new SecureRandom)
-    val parameters = sslContext.getDefaultSSLParameters
-    val protocols = parameters.getProtocols
-    log.info(s"Original SSL protocols: ${protocols.toSeq}")
-    val enabledProtocols = protocols.filter(_ != "TLSv1").filter(_ != "TLSv1.1")
-    if (enabledProtocols.length != protocols.length) {
-      log.info(s"Set SSL protocols: ${enabledProtocols.toSeq}")
-      parameters.setProtocols(enabledProtocols)
-    }
+//    val parameters = sslContext.getDefaultSSLParameters
+//    val protocols = parameters.getProtocols
+//    log.info(s"Original SSL protocols: ${protocols.toSeq}")
+//    val enabledProtocols = protocols.filter(_ != "TLSv1").filter(_ != "TLSv1.1")
+//    if (enabledProtocols.length != protocols.length) {
+//      log.info(s"Set SSL protocols: ${enabledProtocols.toSeq}")
+//      parameters.setProtocols(enabledProtocols)
+//    }
     ConnectionContext.httpsServer(sslContext)
   }
 }
