@@ -101,12 +101,13 @@ object DistributionMain extends App {
 
     val sslContext = SSLContext.getInstance("TLS")
     sslContext.init(keyManagerFactory.getKeyManagers, trustManagerFactory.getTrustManagers, new SecureRandom)
-    val protocols = sslContext.getDefaultSSLParameters.getProtocols
+    val parameters = sslContext.getDefaultSSLParameters
+    val protocols = parameters.getProtocols
     log.info(s"Original SSL protocols: ${protocols.toSeq}")
     val enabledProtocols = protocols.filter(_ != "TLSv1").filter(_ != "TLSv1.1")
     if (enabledProtocols.length != protocols.length) {
       log.info(s"Set SSL protocols: ${enabledProtocols.toSeq}")
-      sslContext.getSupportedSSLParameters.setProtocols(enabledProtocols)
+      parameters.setProtocols(enabledProtocols)
     }
     ConnectionContext.httpsServer(sslContext)
   }
