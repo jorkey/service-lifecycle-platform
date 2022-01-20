@@ -216,6 +216,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
                 })
               }
             case Failure(ex) =>
+              log.error("SSE flow error", ex)
               result.failure(ex)
           }
         result.future
