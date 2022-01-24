@@ -49,6 +49,7 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
     const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
+    const privateFiles = config?config.privateFiles:[]
     const macroValues = config?config.macroValues:[]
 
     return (<BuildSettings
@@ -57,13 +58,14 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
               environment={environment}
               repositoriesTitle={`Source Repositories`}
               repositories={repositories}
+              privateFiles={privateFiles}
               macroValues={macroValues}
               hasService={(service =>
                 !!buildServices?.buildDeveloperServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) =>
                 true }
               setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
-                setBuildServiceConfig({ variables: { service, distribution, environment, repositories, macroValues } })
+                setBuildServiceConfig({ variables: { service, distribution, environment, repositories, privateFiles, macroValues } })
                   .then((r) => !!r.data?.setBuildDeveloperServiceConfig) }
               error={error}
               fromUrl={props.fromUrl}

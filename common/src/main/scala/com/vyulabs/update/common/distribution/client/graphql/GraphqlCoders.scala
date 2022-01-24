@@ -102,12 +102,15 @@ trait ServiceConfigsAdministrationCoder {
   def setBuildDeveloperServiceConfig(service: ServiceId,
                                      distribution: Option[DistributionId],
                                      environment: Seq[NamedStringValue],
-                                     repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
+                                     repositories: Seq[Repository],
+                                     privateFiles: Seq[String],
+                                     macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
+      GraphqlArgument("privateFiles" -> privateFiles, "[String!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
     ))
   }
@@ -120,12 +123,15 @@ trait ServiceConfigsAdministrationCoder {
   def setBuildClientServiceConfig(service: ServiceId,
                                   distribution: Option[DistributionId],
                                   environment: Seq[NamedStringValue],
-                                  repositories: Seq[Repository], macroValues: Seq[NamedStringValue]) = {
+                                  repositories: Seq[Repository],
+                                  privateFiles: Seq[String],
+                                  macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
+      GraphqlArgument("privateFiles" -> privateFiles, "[String!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
     ))
   }

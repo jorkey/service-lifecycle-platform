@@ -52,6 +52,7 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
     const distribution = config?.distribution
     const environment = config?config.environment:[]
     const repositories = config?config.repositories:[]
+    const privateFiles = config?config.privateFiles:[]
     const macroValues = config?config.macroValues:[]
 
     return (<BuildSettings
@@ -60,12 +61,13 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
               environment={environment}
               repositoriesTitle={`Config Repositories`}
               repositories={repositories}
+              privateFiles={privateFiles}
               macroValues={macroValues}
               hasService={(service =>
                 !!buildServices?.buildClientServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) => true }
               setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
-                setBuildServiceConfig({ variables: { service, distribution, environment, repositories, macroValues } })
+                setBuildServiceConfig({ variables: { service, distribution, environment, repositories, privateFiles, macroValues } })
                   .then((r) => !!r.data?.setBuildClientServiceConfig)
               }
               error={error}

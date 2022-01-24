@@ -186,7 +186,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   private def configureTestServiceVersions(developerClient: SyncDistributionClient[SyncSource],
                                            sources: Seq[Repository]): Unit = {
     if (!developerClient.graphqlRequest(administratorMutations.setBuildDeveloperServiceConfig(testServiceName,
-          None, Seq.empty, sources, Seq.empty)).getOrElse(false)) {
+          None, Seq.empty, sources, Seq.empty, Seq.empty)).getOrElse(false)) {
       sys.error(s"Can't set developer service ${testServiceName} config")
     }
   }

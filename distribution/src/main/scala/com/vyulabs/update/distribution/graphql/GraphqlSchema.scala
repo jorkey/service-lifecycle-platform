@@ -412,7 +412,8 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.removeBuildDeveloperServiceConfig(c.arg(ServiceArg)).map(_ => true) }),
       Field("setBuildClientServiceConfig", BooleanType,
-        arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
+        arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg ::
+          PrivateFilesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setBuildClientServiceConfig(
           c.arg(ServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg),

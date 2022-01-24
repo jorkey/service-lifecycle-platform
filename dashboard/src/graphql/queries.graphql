@@ -291,7 +291,7 @@ query buildDeveloperServiceConfig ($service: String!) {
     buildDeveloperServicesConfig (service: $service) {
         service, distribution, environment { name, value },
         repositories { name, git { url, branch, cloneSubmodules } },
-        macroValues { name, value } }
+        privateFiles, macroValues { name, value } }
 }
 
 query buildClientServices {
@@ -302,24 +302,26 @@ query buildClientServiceConfig ($service: String!) {
     buildClientServicesConfig (service: $service) {
         service, distribution, environment { name, value },
         repositories { name, git { url, branch, cloneSubmodules } },
-        macroValues { name, value }
+        privateFiles, macroValues { name, value }
     }
 }
 
 mutation setBuildDeveloperServiceConfig ($service: String!, $distribution: String,
-        $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $macroValues: [NamedStringValueInput!]!) {
+        $environment: [NamedStringValueInput!]!,  $repositories: [RepositoryInput!]!,
+        $privateFiles: [String!]!, $macroValues: [NamedStringValueInput!]!) {
     setBuildDeveloperServiceConfig (service: $service, distribution: $distribution,
-        environment: $environment, repositories: $repositories, macroValues: $macroValues)
+        environment: $environment, repositories: $repositories, privateFiles: $privateFiles, macroValues: $macroValues)
 }
 
 mutation removeBuildDeveloperServiceConfig ($service: String!) {
     removeBuildDeveloperServiceConfig (service: $service)
 }
 
-mutation setBuildClientServiceConfig ($service: String!, $distribution: String, $environment: [NamedStringValueInput!]!,
-        $repositories: [RepositoryInput!]!, $macroValues: [NamedStringValueInput!]!) {
+mutation setBuildClientServiceConfig ($service: String!, $distribution: String,
+        $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!,
+        $privateFiles: [String!]!, $macroValues: [NamedStringValueInput!]!) {
     setBuildClientServiceConfig (service: $service, distribution: $distribution,
-        environment: $environment, repositories: $repositories, macroValues: $macroValues)
+        environment: $environment, repositories: $repositories, privateFiles: $privateFiles, macroValues: $macroValues)
 }
 
 mutation removeBuildClientServiceConfig ($service: String!) {

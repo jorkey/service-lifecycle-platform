@@ -57,6 +57,7 @@ interface ServiceEditorParams {
   environment: NamedStringValue[]
   repositoriesTitle: string
   repositories: Repository[]
+  privateFiles: string[]
   macroValues: NamedStringValue[]
   hasService: (service: string) => boolean
   validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
@@ -68,12 +69,13 @@ interface ServiceEditorParams {
 
 const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const { service: initService, distribution: initBuilderDistribution, environment: initEnvironment,
-    repositoriesTitle, repositories: initRepositories, macroValues: initMacroValues,
+    repositoriesTitle, repositories: initRepositories, privateFiles: initPrivateFiles, macroValues: initMacroValues,
     hasService, validate, setServiceConfig, error, fromUrl } = props
 
   const [service, setService] = useState(initService)
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
   const [environment, setEnvironment] = useState(initEnvironment)
+  const [privateFiles, setPrivateFiles] = useState(initPrivateFiles)
   const [repositories, setRepositories] = useState(initRepositories)
   const [macroValues, setMacroValues] = useState(initMacroValues)
 
