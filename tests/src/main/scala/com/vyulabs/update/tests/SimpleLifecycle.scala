@@ -107,7 +107,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     }
 
     println(s"--------------------------- Configure test service on distribution server")
-    configureTestServiceVersions(adminClient, Seq(Repository("root", GitConfig(testSourceRepository.getUrl(), "master", None))))
+    configureTestServiceVersions(adminClient, Seq(Repository("root", GitConfig(testSourceRepository.getUrl(), "master", None), None)))
 
     println(s"--------------------------- Make test service version")
     buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild))

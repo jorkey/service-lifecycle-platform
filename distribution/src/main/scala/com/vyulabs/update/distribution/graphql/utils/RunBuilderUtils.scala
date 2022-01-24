@@ -7,7 +7,7 @@ import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskI
 import com.vyulabs.update.common.config.{BuildServiceConfig, DistributionConfig, NamedStringValue}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory, ServiceSettingsDirectory}
+import com.vyulabs.update.common.distribution.server.{DistributionDirectory}
 import com.vyulabs.update.common.info.{AccessToken, LogLine}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
@@ -52,6 +52,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       val config = BuildServiceConfig.merge(commonConfig, Some(serviceConfig))
       val args = arguments ++ Seq(
         s"sourceRepositories=${config.repositories.toJson.compactPrint}",
+        s"privateFiles=${config.privateFiles.toJson.compactPrint}",
         s"macroValues=${config.macroValues.toJson.compactPrint}")
       runBuilder(task, config.distribution, config.environment, args)
     }
@@ -70,9 +71,10 @@ trait RunBuilderUtils extends SprayJsonSupport {
       serviceConfig <- configBuilderUtils.getBuildClientServiceConfig(service)
     } yield {
       val config = BuildServiceConfig.merge(commonConfig, serviceConfig)
-      val args = arguments ++
-        Seq(s"settingsRepositories=${config.repositories.toJson.compactPrint}",
-            s"macroValues=${config.macroValues.toJson.compactPrint}")
+      val args = arguments ++ Seq(
+        s"settingsRepositories=${config.repositories.toJson.compactPrint}",
+        s"privateFiles=${config.privateFiles.toJson.compactPrint}",
+        s"macroValues=${config.macroValues.toJson.compactPrint}")
       runBuilder(task, config.distribution, config.environment, args)
     }
     val result = future.map(_._1).flatten
@@ -252,15 +254,12 @@ trait RunBuilderUtils extends SprayJsonSupport {
             val tmpDir = Files.createTempDirectory("builder").toFile
             if (ZipUtils.unzip(imageFile, tmpDir)) {
               if (!IoUtils.copyFile(new File(tmpDir, "builder"), builderDir) ||
-                !IoUtils.copyFile(new File(tmpDir, Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
+                  !IoUtils.copyFile(new File(tmpDir, Common.UpdateSh), new File(builderDir, Common.UpdateSh))) {
                 throw new IOException("Can't find updater script files")
               } else {
                 log.info(s"Set execution permission")
                 if (!builderDir.listFiles().forall { file => !file.getName.endsWith(".sh") || IoUtils.setExecuteFilePermissions(file) }) {
                   throw new IOException("Can't set execution permissions")
-                } else {
-                  log.info(s"Create settings directory")
-                  new ServiceSettingsDirectory(builderDir)
                 }
               }
             } else {

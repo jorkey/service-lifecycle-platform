@@ -103,8 +103,8 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
     _ <- collections.Accounts.insert(ServerAccountInfo(ServerAccountInfo.TypeConsumer, "consumer", "Test Distribution Consumer",
         AccountRole.DistributionConsumer.toString, None, None,
       consumer = Some(ConsumerAccountProperties(profile = Common.CommonConsumerProfile, url = "http://localhost:8001"))))
-    _ <- collections.Developer_BuildServices.insert(BuildServiceConfig("", Some(distributionName), Seq.empty, Seq.empty, Seq.empty))
-    _ <- collections.Client_BuildServices.insert(BuildServiceConfig("", Some(distributionName), Seq.empty, Seq.empty, Seq.empty))
+    _ <- collections.Developer_BuildServices.insert(BuildServiceConfig("", Some(distributionName), Seq.empty, Seq.empty, Seq.empty, Seq.empty))
+    _ <- collections.Client_BuildServices.insert(BuildServiceConfig("", Some(distributionName), Seq.empty, Seq.empty, Seq.empty, Seq.empty))
   } yield {})
 
   IoUtils.writeServiceVersion(distributionDir.directory, Common.DistributionServiceName, ClientDistributionVersion(distributionName, Seq(1, 2, 3), 0))

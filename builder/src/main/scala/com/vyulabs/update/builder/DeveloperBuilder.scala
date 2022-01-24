@@ -41,7 +41,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
                             author: String, service: ServiceId, newVersion: DeveloperVersion, comment: String,
-                            repositories: Seq[Repository], values: Map[String, String])
+                            repositories: Seq[Repository], privateFiles: Seq[String], values: Map[String, String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     val newDistributionVersion = DeveloperDistributionVersion.from(distribution, newVersion)
     IoUtils.synchronize[Boolean](new File(developerServiceDir(service), builderLockFile), false,
@@ -66,8 +66,18 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
         log.info(s"Generate version ${newDistributionVersion} of service ${service}")
         val buildValues = values + ("version" -> newDistributionVersion.toString)
-        if (!generateDeveloperVersion(service, getBuildDirectory(service, repositories.head.name), buildValues)) {
+        if (!generateDeveloperVersion(service, getBuildDirectory(service, repositories.head.name +
+          (repositories.head.subDirectory match {
+            case Some(dir) => "/" + dir
+            case None => ""
+          })), buildValues)) {
           log.error(s"Can't generate version")
+          return false
+        }
+
+        log.info(s"Download private files")
+        if (!downloadDeveloperPrivateFiles(distributionClient, service, privateFiles)) {
+          log.error(s"Can't download developer private files")
           return false
         }
 
@@ -164,6 +174,19 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
       }
       if (!IoUtils.writeJsonToFile(configFile, installConfig)) {
         return false
+      }
+    }
+    true
+  }
+
+  def downloadDeveloperPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId, paths: Seq[String])
+                                   (implicit log: Logger): Boolean = {
+    if (!paths.isEmpty) {
+      paths.foreach { path =>
+        log.info(s"Download developer private file ${path}")
+        if (!distributionClient.downloadClientPrivateFile(service, path, new File(developerBuildDir(service), path))) {
+          return false
+        }
       }
     }
     true

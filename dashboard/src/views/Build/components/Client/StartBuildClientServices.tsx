@@ -12,7 +12,7 @@ import {
   DeveloperDistributionVersion,
   DistributionProviderInfo,
   useBuildClientVersionsMutation, useClientDesiredVersionsQuery,
-  useClientVersionsInfoQuery, useDeveloperDesiredVersionsLazyQuery, useDeveloperDesiredVersionsQuery,
+  useClientVersionsInfoQuery, useDeveloperDesiredVersionsLazyQuery,
   useProviderDesiredVersionsLazyQuery,
   useProvidersInfoQuery, useProviderTestedVersionsLazyQuery,
   useSetProviderTestedVersionsMutation, useSetTestedVersionsMutation, useTestedVersionsLazyQuery,

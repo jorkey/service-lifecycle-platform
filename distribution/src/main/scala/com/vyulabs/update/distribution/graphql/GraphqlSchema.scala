@@ -25,7 +25,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                          protected val executionContext: ExecutionContext)
     extends ConfigBuilderUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with LogUtils with FaultsUtils with TasksUtils
-      with RunBuilderUtils with AccountsUtils {
+      with RunBuilderUtils with AccountsUtils with DeveloperPrivateFilesUtils with ClientPrivateFilesUtils {
   protected val configBuilderUtils = this
   protected val distributionInfoUtils = this
   protected val serviceProfilesUtils = this
@@ -85,6 +85,8 @@ object GraphqlSchema {
   val EnvironmentArg = Argument("environment", ListInputType(NamedStringValueInputType))
   val MacroValuesArg = Argument("macroValues", ListInputType(NamedStringValueInputType))
   val RepositoriesArg = Argument("repositories", ListInputType(RepositoryInputType))
+  val PrivateFilesArg = Argument("privateFiles", ListInputType(StringType))
+  val FileArg = Argument("file", StringType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))
   val OptionNameArg = Argument("name", OptionInputType(StringType))
@@ -203,6 +205,12 @@ object GraphqlSchema {
           c.ctx.workspace.getDeveloperDesiredVersionsHistory(c.arg(LimitArg))
         }),
 
+      // Developer private files
+      Field("developerPrivateFiles", ListType(PrivateFileType),
+        arguments = ServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.getDeveloperPrivateFiles(c.arg(ServiceArg)) }),
+
       // Tested versions
       Field("testedVersions", OptionType(ListType(DeveloperDesiredVersionType)),
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
@@ -226,6 +234,12 @@ object GraphqlSchema {
         resolve = c => {
           c.ctx.workspace.getClientDesiredVersionsHistory(c.arg(LimitArg))
         }),
+
+      // Client private files
+      Field("clientPrivateFiles", ListType(PrivateFileType),
+        arguments = ServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.getClientPrivateFiles(c.arg(ServiceArg)) }),
 
       // Distribution providers
       Field("providersInfo", ListType(ProviderInfoType),
@@ -386,10 +400,12 @@ object GraphqlSchema {
 
       // Builders
       Field("setBuildDeveloperServiceConfig", BooleanType,
-        arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
+        arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg ::
+          RepositoriesArg :: PrivateFilesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setBuildDeveloperServiceConfig(
-          c.arg(ServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
+          c.arg(ServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg),
+          c.arg(RepositoriesArg), c.arg(PrivateFilesArg),
           c.arg(MacroValuesArg)).map(_ => true) }),
       Field("removeBuildDeveloperServiceConfig", BooleanType,
         arguments = ServiceArg :: Nil,
@@ -399,7 +415,8 @@ object GraphqlSchema {
         arguments = ServiceArg :: OptionDistributionArg :: EnvironmentArg :: RepositoriesArg :: MacroValuesArg :: Nil,
         tags = Authorized(AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.setBuildClientServiceConfig(
-          c.arg(ServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg), c.arg(RepositoriesArg),
+          c.arg(ServiceArg), c.arg(OptionDistributionArg), c.arg(EnvironmentArg),
+          c.arg(RepositoriesArg), c.arg(PrivateFilesArg),
           c.arg(MacroValuesArg)).map(_ => true) }),
       Field("removeBuildClientServiceConfig", BooleanType,
         arguments = ServiceArg :: Nil,
@@ -441,6 +458,16 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(
           c.arg(DeveloperDesiredVersionDeltasArg), c.ctx.accessToken.get.account).map(_ => true) }),
+      Field("addDeveloperPrivateFile", BooleanType,
+        arguments = ServiceArg :: FileArg :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.addDeveloperPrivateFile(
+          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
+      Field("removeDeveloperPrivateFile", BooleanType,
+        arguments = ServiceArg :: FileArg :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.removeDeveloperPrivateFile(
+          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
 
       // Client versions
       Field("buildClientVersions", StringType,
@@ -461,6 +488,16 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(
           c.arg(ClientDesiredVersionDeltasArg), c.ctx.accessToken.get.account).map(_ => true) }),
+      Field("addClientPrivateFile", BooleanType,
+        arguments = ServiceArg :: FileArg :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.addClientPrivateFile(
+          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
+      Field("removeClientPrivateFile", BooleanType,
+        arguments = ServiceArg :: FileArg :: Nil,
+        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
+        resolve = c => { c.ctx.workspace.removeClientPrivateFile(
+          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
 
       // Distribution providers management
       Field("addProvider", BooleanType,

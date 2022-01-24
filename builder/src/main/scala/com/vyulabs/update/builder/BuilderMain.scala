@@ -8,6 +8,7 @@ import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
 import spray.json._
+import spray.json.DefaultJsonProtocol._
 
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -34,8 +35,8 @@ object BuilderMain extends App {
     "       host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
     "       title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
     "       consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
-    "    buildDeveloperVersion service=? version=? sourceRepositories=? [macroValues=?] comment=?\n" +
-    "    buildClientVersion service=? developerVersion=? clientVersion=? [settingsRepositories=?] [macroValues=?]"
+    "    buildDeveloperVersion service=? version=? sourceRepositories=? [privateFiles=?] [macroValues=?] comment=?\n" +
+    "    buildClientVersion service=? developerVersion=? clientVersion=? [settingsRepositories=?] [privateFiles=?] [macroValues=?]"
 
   if (args.size < 1) Utils.error(usage())
 
@@ -107,10 +108,13 @@ object BuilderMain extends App {
             val service = arguments.getValue("service")
             val version = DeveloperVersion.parse(arguments.getValue("version"))
             val sourceRepositories = arguments.getValue("sourceRepositories").parseJson.convertTo[Seq[Repository]]
+            val privateFiles = arguments.getOptionValue("privateFiles")
+              .map(_.parseJson.convertTo[Seq[String]]).getOrElse(Seq.empty)
             val comment = arguments.getValue("comment")
             val developerBuilder = new DeveloperBuilder(new File("."), distribution)
             val buildValues = macroValues.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value))
-            if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment, sourceRepositories, buildValues)) {
+            if (!developerBuilder.buildDeveloperVersion(distributionClient, author, service, version, comment,
+                sourceRepositories, privateFiles, buildValues)) {
               Utils.error("Developer version is not generated")
             }
           case "buildClientVersion" =>
@@ -119,12 +123,14 @@ object BuilderMain extends App {
             val version = ClientDistributionVersion.parse(arguments.getValue("version"))
             val settingsRepositories = arguments.getOptionValue("settingsRepositories")
               .map(_.parseJson.convertTo[Seq[Repository]]).getOrElse(Seq.empty)
+            val privateFiles = arguments.getOptionValue("privateFiles")
+              .map(_.parseJson.convertTo[Seq[String]]).getOrElse(Seq.empty)
             var buildValues = macroValues.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value))
             buildValues += ("distributionUrl" -> distributionUrl)
             buildValues += ("version" -> version.toString)
             val clientBuilder = new ClientBuilder(new File("."))
             if (!clientBuilder.buildClientVersion(distributionClient, service, version, author,
-                settingsRepositories, buildValues)) {
+                settingsRepositories, privateFiles, buildValues)) {
               Utils.error("Client version is not generated")
             }
         }

@@ -24,6 +24,8 @@ class DistributionDirectory(val directory: File) {
 
   private val builderDir = new File(directory, "builder")
 
+  private val privateDirName =  "private"
+
   if (!directory.exists()) directory.mkdirs()
 
   if (!directoryDir.exists()) directoryDir.mkdir()
@@ -77,6 +79,22 @@ class DistributionDirectory(val directory: File) {
 
   def getClientVersionImageFile(service: ServiceId, version: ClientDistributionVersion): File = {
     new File(getClientServiceDir(version.distribution, service), getClientVersionImageFileName(service, version.clientVersion))
+  }
+
+  def getDeveloperPrivateDir(distribution: String, service: ServiceId): File = {
+    new File(getDeveloperServiceDir(distribution, service), privateDirName)
+  }
+
+  def getDeveloperPrivateFile(distribution: String, service: ServiceId, path: String): File = {
+    new File(getDeveloperPrivateDir(distribution, service), path)
+  }
+
+  def getClientPrivateDir(distribution: String, service: ServiceId): File = {
+    new File(getClientServiceDir(distribution, service), privateDirName)
+  }
+
+  def getClientPrivateFile(distribution: String, service: ServiceId, path: String): File = {
+    new File(getClientPrivateDir(distribution, service), path)
   }
 
   def getFaultsDir(): File = {

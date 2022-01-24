@@ -5,7 +5,6 @@ import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.config.Repository
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.{builderMutations, builderQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
-import com.vyulabs.update.common.distribution.server.ServiceSettingsDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.settings.{ConfigSettings, DefinedValues}
 import com.vyulabs.update.common.utils.Utils.makeDir
@@ -37,22 +36,34 @@ class ClientBuilder(builderDir: File) {
   private val indexPattern = "(.*)\\.([0-9]*)".r
 
   def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
-                         version: ClientDistributionVersion, author: String, repositories: Seq[Repository],
-                         values: Map[String, String])
-                         (implicit log: Logger): Boolean = {
+                         version: ClientDistributionVersion, author: String,
+                         repositories: Seq[Repository], privateFiles: Seq[String],
+                         values: Map[String, String])(implicit log: Logger): Boolean = {
     val developerVersion = DeveloperDistributionVersion.from(version)
     val versionInfo = downloadDeveloperVersion(distributionClient, service, developerVersion).getOrElse {
       log.error(s"Can't download developer version ${developerVersion} of service ${service}")
       return false
     }
 
+    log.info(s"Prepare settings repositories of service ${service}")
     if (prepareSettingsRepositories(service, repositories).isEmpty) {
       log.error(s"Can't pull settings repositories")
       return false
     }
 
-    if (!generateClientVersion(service, repositories.map(_.name), values)) {
+    log.info(s"Generate client version of service ${service}")
+    if (!generateClientVersion(service, repositories.map(rep => rep.name +
+        (rep.subDirectory match {
+          case Some(dir) => "/" + dir
+          case None => ""
+        })), values)) {
       log.error(s"Can't generate client version ${version} of service ${service}")
+      return false
+    }
+
+    log.info(s"Download private files")
+    if (!downloadClientPrivateFiles(distributionClient, service, privateFiles)) {
+      log.error(s"Can't download client private files")
       return false
     }
 
@@ -70,7 +81,7 @@ class ClientBuilder(builderDir: File) {
       val branch = sourceConfig.git.branch
       val sourceRepository =
         GitRepository.getGitRepository(sourceConfig.git.url, branch, sourceConfig.git.cloneSubmodules.getOrElse(true),
-          new File(clientSettingsDir(service), sourceConfig.name)).getOrElse {
+            new File(clientSettingsDir(service), sourceConfig.name)).getOrElse {
           return None
         }
       gitRepositories :+= sourceRepository
@@ -116,26 +127,28 @@ class ClientBuilder(builderDir: File) {
     if (!settingsDirs.isEmpty) {
       log.info(s"Configure client version of service ${service}")
       settingsDirs.foreach { dir =>
-        val settingsDir = new ServiceSettingsDirectory(new File(clientSettingsDir(service), dir))
-
-        val configDir = settingsDir.getConfigDir()
-        if (configDir.exists()) {
+        val settingDir = new File(clientSettingsDir(service), dir)
+        if (settingDir.exists()) {
           log.info(s"Merge private settings files")
-          if (!mergeSettings(service, clientBuildDir(service), configDir, values)) {
-            return false
-          }
-        }
-
-        val privateDir = settingsDir.getPrivateDir()
-        if (privateDir.exists()) {
-          log.info(s"Copy private files")
-          if (!IoUtils.copyFile(privateDir, clientBuildDir(service))) {
+          if (!mergeSettings(service, clientBuildDir(service), settingDir, values)) {
             return false
           }
         }
       }
     }
+    true
+  }
 
+  def downloadClientPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId, paths: Seq[String])
+                                (implicit log: Logger): Boolean = {
+    if (!paths.isEmpty) {
+      paths.foreach { path =>
+        log.info(s"Download client private file ${path}")
+        if (!distributionClient.downloadClientPrivateFile(service, path, new File(clientBuildDir(service), path))) {
+          return false
+        }
+      }
+    }
     true
   }
 

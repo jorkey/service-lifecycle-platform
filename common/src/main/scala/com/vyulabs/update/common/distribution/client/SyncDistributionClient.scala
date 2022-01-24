@@ -41,6 +41,14 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
     result(client.downloadClientVersionImage(service, version, file)).isDefined
   }
 
+  def downloadDeveloperPrivateFile(service: ServiceId, path: String, file: File): Boolean = {
+    result(client.downloadDeveloperPrivateFile(service, path, file)).isDefined
+  }
+
+  def downloadClientPrivateFile(service: ServiceId, path: String, file: File): Boolean = {
+    result(client.downloadClientPrivateFile(service, path, file)).isDefined
+  }
+
   def uploadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File): Boolean = {
     result(client.uploadDeveloperVersionImage(service, version, file)).isDefined
   }

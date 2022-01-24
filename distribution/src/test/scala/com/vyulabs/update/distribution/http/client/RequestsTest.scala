@@ -109,10 +109,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
       assert(adminClient.graphqlRequest(administratorMutations.addDeveloperVersionInfo(
         DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
-          BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None))), date, "comment")))).getOrElse(false))
+          BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None), None)), date, "comment")))).getOrElse(false))
 
       assertResult(Some(Seq(DeveloperVersionInfo.from("service1", DeveloperDistributionVersion.parse("test-1.2.3"),
-        BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None))), date, "comment")))))(
+        BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None), None)), date, "comment")))))(
         adminClient.graphqlRequest(administratorQueries.getDeveloperVersionsInfo("service1", Some("test"),
           Some(DeveloperVersion(Build.parse("1.2.3"))))))
 
@@ -138,10 +138,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
       assert(adminClient.graphqlRequest(administratorMutations.addClientVersionInfo(
         ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-          BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("account1", date)))).getOrElse(false))
+          BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None), None)), date, "comment"), InstallInfo("account1", date)))).getOrElse(false))
 
       assertResult(Some(Seq(ClientVersionInfo.from("service1", ClientDistributionVersion.parse("test-1.2.3_1"),
-        BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None))), date, "comment"), InstallInfo("account1", date)))))(
+        BuildInfo("author1", Seq(Repository("test", GitConfig("git://dummy", "master", None), None)), date, "comment"), InstallInfo("account1", date)))))(
         adminClient.graphqlRequest(administratorQueries.getClientVersionsInfo("service1", Some("test"),
           Some(ClientVersion.parse("1.2.3_1")))))
 

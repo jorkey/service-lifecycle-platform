@@ -31,7 +31,7 @@ class BuildClientVersionTest extends TestEnvironment {
   })
 
   result(for {
-    _ <- collections.Developer_BuildServices.insert(BuildServiceConfig("service1", None, Seq.empty, Seq.empty, Seq.empty))
+    _ <- collections.Developer_BuildServices.insert(BuildServiceConfig("service1", None, Seq.empty, Seq.empty, Seq.empty, Seq.empty))
   } yield {})
 
   IoUtils.writeBytesToFile(new File(builderDirectory, "builder.sh"),

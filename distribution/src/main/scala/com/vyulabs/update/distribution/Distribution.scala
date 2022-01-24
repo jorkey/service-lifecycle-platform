@@ -5,7 +5,7 @@ import akka.http.scaladsl.common.EntityStreamingSupport
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.model.MediaTypes._
-import akka.http.scaladsl.model.StatusCodes.{BadRequest, OK}
+import akka.http.scaladsl.model.StatusCodes.OK
 import akka.http.scaladsl.model.{ContentType, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, pathPrefix, _}
 import akka.http.scaladsl.server.Route._
@@ -13,9 +13,9 @@ import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
-import com.vyulabs.update.common.info.{AccessToken, AccountRole}
+import com.vyulabs.update.common.info.AccountRole
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
-import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlHttpSupport, GraphqlSchema, GraphqlWebSocketSupport, GraphqlWorkspace}
+import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlHttpSupport, GraphqlWebSocketSupport, GraphqlWorkspace}
 import org.slf4j.LoggerFactory
 import spray.json._
 
@@ -89,6 +89,40 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                         fileUpload(imageField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getClientVersionImageFile(service, ClientDistributionVersion.parse(version)).toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete(OK) }
+                        }
+                      }
+                    }
+                  } ~ path(developerPrivateFilePath / ".*".r / ".*".r) { (service, path) =>
+                    get {
+                      authorize(role == AccountRole.Administrator || role == AccountRole.Builder) {
+                        getFromFile(workspace.directory.getDeveloperPrivateFile(
+                          workspace.config.distribution, service, path))
+                      }
+                    } ~ post {
+                      authorize(role == AccountRole.Administrator) {
+                        fileUpload(imageField) {
+                          case (fileInfo, byteSource) =>
+                            val sink = FileIO.toPath(workspace.directory.getDeveloperPrivateFile(
+                              workspace.config.distribution, service, path).toPath)
+                            val future = byteSource.runWith(sink)
+                            onSuccess(future) { _ => complete(OK) }
+                        }
+                      }
+                    }
+                  } ~ path(clientPrivateFilePath / ".*".r / ".*".r) { (service, path) =>
+                    get {
+                      authorize(role == AccountRole.Administrator || role == AccountRole.Builder) {
+                        getFromFile(workspace.directory.getClientPrivateFile(
+                          workspace.config.distribution, service, path))
+                      }
+                    } ~ post {
+                      authorize(role == AccountRole.Administrator) {
+                        fileUpload(imageField) {
+                          case (fileInfo, byteSource) =>
+                            val sink = FileIO.toPath(workspace.directory.getClientPrivateFile(
+                              workspace.config.distribution, service, path).toPath)
                             val future = byteSource.runWith(sink)
                             onSuccess(future) { _ => complete(OK) }
                         }

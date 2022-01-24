@@ -17,6 +17,9 @@ object DistributionWebPaths {
   val developerVersionImagePath = "developer-version-image"
   val clientVersionImagePath = "client-version-image"
 
+  val developerPrivateFilePath = "developer-private-file"
+  val clientPrivateFilePath = "client-private-file"
+
   val faultReportPath = "fault-report"
 
   val imageField = "image"

@@ -203,7 +203,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
     }
     if (!sourceServices.isEmpty) {
       val repository = GitRepository.openRepository(new File(".")).getOrElse(return false)
-      val source = Repository("base", GitConfig(repository.getUrl(), repository.getBranch(), None))
+      val source = Repository("base", GitConfig(repository.getUrl(), repository.getBranch(), None), None)
       sourceServices.foreach(service => {
         if (!adminDistributionClient.get.graphqlRequest(administratorMutations.setBuildDeveloperServiceConfig(
             service, None, Seq.empty, Seq(source), Seq.empty)).getOrElse(false)) {
