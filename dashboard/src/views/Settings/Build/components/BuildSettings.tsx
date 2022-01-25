@@ -19,6 +19,7 @@ import NamedValueTable from "./NamedValueTable";
 import {FetchResult} from "@apollo/client";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
+import PrivateFilesTable from "./PrivateFilesTable";
 
 const useStyles = makeStyles(theme => ({
   newServiceName: {
@@ -62,7 +63,7 @@ interface ServiceEditorParams {
   hasService: (service: string) => boolean
   validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
   setServiceConfig: (service: string, distribution: string | null | undefined, environment: NamedStringValue[],
-                     repositories: Repository[], macroValues: NamedStringValue[]) => Promise<boolean>
+                     repositories: Repository[], privateFiles: string[], macroValues: NamedStringValue[]) => Promise<boolean>
   error?: string
   fromUrl: string
 }
@@ -75,12 +76,13 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const [service, setService] = useState(initService)
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
   const [environment, setEnvironment] = useState(initEnvironment)
-  const [privateFiles, setPrivateFiles] = useState(initPrivateFiles)
   const [repositories, setRepositories] = useState(initRepositories)
+  const [privateFiles, setPrivateFiles] = useState(initPrivateFiles)
   const [macroValues, setMacroValues] = useState(initMacroValues)
 
   const [addEnvironment, setAddEnvironment] = useState(false)
   const [addRepository, setAddRepository] = useState(false)
+  const [addPrivateFile, setAddPrivateFile] = useState(false)
   const [addMacroValue, setAddMacroValue] = useState(false)
 
   const [ownError, setOwnError] = useState<string>()
@@ -256,6 +258,46 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                 <Button
                   className={classes.control}
                   color="primary"
+                  onClick={() => setAddPrivateFile(true)}
+                  startIcon={<AddIcon/>}
+                  title={'Add private file'}
+                />
+              </Box>
+            }
+            title={'Private Files'}
+          />
+          <CardContent>
+            <PrivateFilesTable
+              privateFiles={privateFiles}
+              addPrivateFile={addPrivateFile}
+              confirmRemove={true}
+              onPrivateFileAdded={
+                file => {
+                  setPrivateFiles([...privateFiles, file])
+                  setAddPrivateFile(false)
+                }
+              }
+              onPrivateFileAddCancelled={() => {
+                setAddPrivateFile(false)
+              }}
+              onPrivateFileRemoved={
+                file => {
+                  const newValues = privateFiles.filter(s => s != file)
+                  setPrivateFiles(newValues)
+                }
+              }
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader
+            action={
+              <Box
+                className={classes.controls}
+              >
+                <Button
+                  className={classes.control}
+                  color="primary"
                   onClick={() => setAddMacroValue(true)}
                   startIcon={<AddIcon/>}
                   title={'Add value'}
@@ -310,7 +352,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             color="primary"
             disabled={service == undefined || !validate(environment, repositories, macroValues)}
             onClick={() => {
-              setServiceConfig(service!, builderDistribution, environment, repositories, macroValues)
+              setServiceConfig(service!, builderDistribution, environment, repositories, privateFiles, macroValues)
                 .then((result) => {
                   if (result) setGoBack(true)
                 })

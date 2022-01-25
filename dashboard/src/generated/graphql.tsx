@@ -305,14 +305,10 @@ export type Mutation = {
   addDeveloperVersionInfo: Scalars['Boolean'];
   removeDeveloperVersion: Scalars['Boolean'];
   setDeveloperDesiredVersions: Scalars['Boolean'];
-  addDeveloperPrivateFile: Scalars['Boolean'];
-  removeDeveloperPrivateFile: Scalars['Boolean'];
   buildClientVersions: Scalars['String'];
   addClientVersionInfo: Scalars['Boolean'];
   removeClientVersion: Scalars['Boolean'];
   setClientDesiredVersions: Scalars['Boolean'];
-  addClientPrivateFile: Scalars['Boolean'];
-  removeClientPrivateFile: Scalars['Boolean'];
   addProvider: Scalars['Boolean'];
   changeProvider: Scalars['Boolean'];
   removeProvider: Scalars['Boolean'];
@@ -456,18 +452,6 @@ export type MutationSetDeveloperDesiredVersionsArgs = {
 };
 
 
-export type MutationAddDeveloperPrivateFileArgs = {
-  service: Scalars['String'];
-  file: Scalars['String'];
-};
-
-
-export type MutationRemoveDeveloperPrivateFileArgs = {
-  service: Scalars['String'];
-  file: Scalars['String'];
-};
-
-
 export type MutationBuildClientVersionsArgs = {
   versions: Array<DeveloperDesiredVersionInput>;
 };
@@ -486,18 +470,6 @@ export type MutationRemoveClientVersionArgs = {
 
 export type MutationSetClientDesiredVersionsArgs = {
   versions: Array<ClientDesiredVersionDeltaInput>;
-};
-
-
-export type MutationAddClientPrivateFileArgs = {
-  service: Scalars['String'];
-  file: Scalars['String'];
-};
-
-
-export type MutationRemoveClientPrivateFileArgs = {
-  service: Scalars['String'];
-  file: Scalars['String'];
 };
 
 
@@ -584,12 +556,6 @@ export type NamedStringValueInput = {
   value: Scalars['String'];
 };
 
-export type PrivateFile = {
-  __typename?: 'PrivateFile';
-  service: Scalars['String'];
-  file: Scalars['String'];
-};
-
 export type Query = {
   __typename?: 'Query';
   ping: Scalars['String'];
@@ -606,12 +572,10 @@ export type Query = {
   developerVersionsInfo: Array<DeveloperVersionInfo>;
   developerDesiredVersions: Array<DeveloperDesiredVersion>;
   developerDesiredVersionsHistory: Array<TimedDeveloperDesiredVersions>;
-  developerPrivateFiles: Array<PrivateFile>;
   testedVersions?: Maybe<Array<DeveloperDesiredVersion>>;
   clientVersionsInfo: Array<ClientVersionInfo>;
   clientDesiredVersions: Array<ClientDesiredVersion>;
   clientDesiredVersionsHistory: Array<TimedClientDesiredVersions>;
-  clientPrivateFiles: Array<PrivateFile>;
   providersInfo: Array<DistributionProviderInfo>;
   providerDesiredVersions: Array<DeveloperDesiredVersion>;
   providerTestedVersions: Array<DeveloperDesiredVersion>;
@@ -688,11 +652,6 @@ export type QueryDeveloperDesiredVersionsHistoryArgs = {
 };
 
 
-export type QueryDeveloperPrivateFilesArgs = {
-  service: Scalars['String'];
-};
-
-
 export type QueryClientVersionsInfoArgs = {
   service?: Maybe<Scalars['String']>;
   distribution?: Maybe<Scalars['String']>;
@@ -707,11 +666,6 @@ export type QueryClientDesiredVersionsArgs = {
 
 export type QueryClientDesiredVersionsHistoryArgs = {
   limit: Scalars['Int'];
-};
-
-
-export type QueryClientPrivateFilesArgs = {
-  service: Scalars['String'];
 };
 
 

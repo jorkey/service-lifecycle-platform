@@ -82,19 +82,27 @@ class DistributionDirectory(val directory: File) {
   }
 
   def getDeveloperPrivateDir(distribution: String, service: ServiceId): File = {
-    new File(getDeveloperServiceDir(distribution, service), privateDirName)
+    val dir = new File(getDeveloperServiceDir(distribution, service), privateDirName)
+    if (!dir.exists()) dir.mkdir()
+    dir
   }
 
   def getDeveloperPrivateFile(distribution: String, service: ServiceId, path: String): File = {
-    new File(getDeveloperPrivateDir(distribution, service), path)
+    val file = new File(getDeveloperPrivateDir(distribution, service), path)
+    file.getParentFile.mkdirs()
+    file
   }
 
   def getClientPrivateDir(distribution: String, service: ServiceId): File = {
-    new File(getClientServiceDir(distribution, service), privateDirName)
+    val dir = new File(getClientServiceDir(distribution, service), privateDirName)
+    if (!dir.exists()) dir.mkdir()
+    dir
   }
 
   def getClientPrivateFile(distribution: String, service: ServiceId, path: String): File = {
-    new File(getClientPrivateDir(distribution, service), path)
+    val file = new File(getClientPrivateDir(distribution, service), path)
+    file.getParentFile.mkdirs()
+    file
   }
 
   def getFaultsDir(): File = {

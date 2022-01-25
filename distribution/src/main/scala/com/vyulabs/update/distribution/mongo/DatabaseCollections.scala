@@ -108,13 +108,6 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerDistribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
-  val Developer_PrivateFiles = new SequencedCollection[PrivateFile]("developer.privateFiles", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("developer.privateFiles")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "file", "_archiveTime"),
-      new IndexOptions().unique(true)) else Future()
-  } yield collection, Sequences, createIndex = createIndices)
-
   val Client_BuildServices = new SequencedCollection[BuildServiceConfig]("client.buildServices", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.services")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
@@ -134,13 +127,6 @@ class DatabaseCollections(db: MongoDb,
   val Client_ProvidersInfo = new SequencedCollection[DistributionProviderInfo]("client.providers", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.providers")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"), new IndexOptions().unique(true)) else Future()
-  } yield collection, Sequences, createIndex = createIndices)
-
-  val Client_PrivateFiles = new SequencedCollection[PrivateFile]("client.privateFiles", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("client.privateFiles")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "file", "_archiveTime"),
-      new IndexOptions().unique(true)) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Consumers_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("consumers.installedDesiredVersions", for {

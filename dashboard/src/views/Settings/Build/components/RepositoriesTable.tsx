@@ -28,6 +28,9 @@ const useStyles = makeStyles(theme => ({
     paddingRight: '40px',
     textAlign: 'right'
   },
+  directoryColumn: {
+    width: '200px',
+  },
 }));
 
 interface RepositoryTableParams {
@@ -65,14 +68,7 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       name: 'url',
       headerName: 'URL',
       className: classes.urlColumn,
-      editable: true,
-      // validate: (value, rowNum) => {
-      //   try {
-      //     return value?!!new URL(value as string):false
-      //   } catch (ex) {
-      //     return false
-      //   }
-      // }
+      editable: true
     },
     {
       name: 'branch',
@@ -92,6 +88,12 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       }
     },
     {
+      name: 'directory',
+      headerName: 'Directory',
+      className: classes.directoryColumn,
+      editable: true,
+    },
+    {
       name: 'actions',
       headerName: 'Actions',
       type: 'elements',
@@ -105,6 +107,7 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       ['url', { value: repository.git.url }],
       ['branch', { value: repository.git.branch }],
       ['cloneSubmodules', { value: repository.git.cloneSubmodules?repository.git.cloneSubmodules:false }],
+      ['directory', { value: repository.subDirectory?repository.subDirectory:'' }],
       ['actions', { value: [<Button key='0' onClick={ () => confirmRemove ? setDeleteConfirm(repository) : onRepositoryRemoved?.(repository) }>
         <DeleteIcon/>
       </Button>] }]
@@ -119,16 +122,24 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       onRowAdded={ (columns) =>
         new Promise<boolean>(resolve => {
           onRepositoryAdded?.({ name: columns.get('name')! as string,
-            git: { url: columns.get('url')! as string, branch: columns.get('branch')! as string,
-              cloneSubmodules: columns.get('cloneSubmodules') as boolean } })
+            git: {
+              url: columns.get('url')! as string,
+              branch: columns.get('branch')! as string,
+              cloneSubmodules: columns.get('cloneSubmodules') as boolean
+            },
+            subDirectory: columns.get('directory')?columns.get('directory') as string:undefined })
           resolve(true)
         })}
       onRowAddCancelled={onRepositoryAddCancelled}
       onRowChanged={ (row, values, oldValues) =>
         new Promise<boolean>(resolve => {
           onRepositoryChanged!(repositories[row], { name: values.get('name')! as string,
-            git: { url: values.get('url')! as string, branch: values.get('branch')! as string,
-              cloneSubmodules: values.get('cloneSubmodules') as boolean } })
+            git: {
+              url: values.get('url')! as string,
+              branch: values.get('branch')! as string,
+              cloneSubmodules: values.get('cloneSubmodules') as boolean
+            },
+            subDirectory: values.get('directory')?values.get('directory') as string:undefined })
           resolve(true)
         })}
     />

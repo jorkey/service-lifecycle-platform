@@ -15,7 +15,6 @@ import org.slf4j.Logger
 import sangria.marshalling.sprayJson._
 import sangria.schema._
 import sangria.streaming.akkaStreams._
-import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.ExecutionContext
 
@@ -25,7 +24,7 @@ case class GraphqlWorkspace(config: DistributionConfig, collections: DatabaseCol
                          protected val executionContext: ExecutionContext)
     extends ConfigBuilderUtils with DistributionInfoUtils with ServiceProfilesUtils with DistributionProvidersUtils with DistributionConsumersUtils
       with DeveloperVersionUtils with ClientVersionUtils with StateUtils with LogUtils with FaultsUtils with TasksUtils
-      with RunBuilderUtils with AccountsUtils with DeveloperPrivateFilesUtils with ClientPrivateFilesUtils {
+      with RunBuilderUtils with AccountsUtils {
   protected val configBuilderUtils = this
   protected val distributionInfoUtils = this
   protected val serviceProfilesUtils = this
@@ -205,12 +204,6 @@ object GraphqlSchema {
           c.ctx.workspace.getDeveloperDesiredVersionsHistory(c.arg(LimitArg))
         }),
 
-      // Developer private files
-      Field("developerPrivateFiles", ListType(PrivateFileType),
-        arguments = ServiceArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.getDeveloperPrivateFiles(c.arg(ServiceArg)) }),
-
       // Tested versions
       Field("testedVersions", OptionType(ListType(DeveloperDesiredVersionType)),
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
@@ -234,12 +227,6 @@ object GraphqlSchema {
         resolve = c => {
           c.ctx.workspace.getClientDesiredVersionsHistory(c.arg(LimitArg))
         }),
-
-      // Client private files
-      Field("clientPrivateFiles", ListType(PrivateFileType),
-        arguments = ServiceArg :: Nil,
-        tags = Authorized(AccountRole.Developer, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.getClientPrivateFiles(c.arg(ServiceArg)) }),
 
       // Distribution providers
       Field("providersInfo", ListType(ProviderInfoType),
@@ -459,16 +446,6 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(
           c.arg(DeveloperDesiredVersionDeltasArg), c.ctx.accessToken.get.account).map(_ => true) }),
-      Field("addDeveloperPrivateFile", BooleanType,
-        arguments = ServiceArg :: FileArg :: Nil,
-        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.addDeveloperPrivateFile(
-          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
-      Field("removeDeveloperPrivateFile", BooleanType,
-        arguments = ServiceArg :: FileArg :: Nil,
-        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.removeDeveloperPrivateFile(
-          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
 
       // Client versions
       Field("buildClientVersions", StringType,
@@ -489,16 +466,6 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setClientDesiredVersions(
           c.arg(ClientDesiredVersionDeltasArg), c.ctx.accessToken.get.account).map(_ => true) }),
-      Field("addClientPrivateFile", BooleanType,
-        arguments = ServiceArg :: FileArg :: Nil,
-        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.addClientPrivateFile(
-          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
-      Field("removeClientPrivateFile", BooleanType,
-        arguments = ServiceArg :: FileArg :: Nil,
-        tags = Authorized(AccountRole.Administrator, AccountRole.Builder) :: Nil,
-        resolve = c => { c.ctx.workspace.removeClientPrivateFile(
-          c.arg(ServiceArg), c.arg(FileArg)).map(_ => true) }),
 
       // Distribution providers management
       Field("addProvider", BooleanType,

@@ -6,6 +6,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.{BuildServiceConfig, DistributionConfig, NamedStringValue, Repository}
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
@@ -19,6 +20,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
   protected implicit val materializer: Materializer
   protected implicit val executionContext: ExecutionContext
 
+  protected val directory: DistributionDirectory
   protected val config: DistributionConfig
   protected val collections: DatabaseCollections
 
@@ -31,8 +33,14 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
                                     (implicit log: Logger): Future[Boolean] = {
     log.info(if (!service.isEmpty) s"Set developer service ${service} config" else "Set common developer services config")
     val filters = Filters.eq("service", service)
-    collections.Developer_BuildServices.update(filters, _ =>
-      Some(BuildServiceConfig(service, distribution, environment, sourceRepositories, privateFiles, macroValues))).map(_ > 0)
+    collections.Developer_BuildServices.update(filters, oldConfig => {
+      for (oldConfig <- oldConfig) {
+        val removedFiles = oldConfig.privateFiles.toSet -- privateFiles.toSet
+        removedFiles.foreach(file => {
+          directory.getDeveloperPrivateFile(config.distribution, service, file).delete()
+        })
+      }
+      Some(BuildServiceConfig(service, distribution, environment, sourceRepositories, privateFiles, macroValues))}).map(_ > 0)
   }
 
   def removeBuildDeveloperServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
@@ -67,9 +75,15 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
                                   (implicit log: Logger): Future[Boolean] = {
     log.info(if (!service.isEmpty) s"Set client service ${service} config" else "Set common client services config")
     val filters = Filters.eq("service", service)
-    collections.Client_BuildServices.update(filters, _ =>
+    collections.Client_BuildServices.update(filters, oldConfig => {
+      for (oldConfig <- oldConfig) {
+        val removedFiles = oldConfig.privateFiles.toSet -- privateFiles.toSet
+        removedFiles.foreach(file => {
+          directory.getClientPrivateFile(config.distribution, service, file).delete()
+        })
+      }
       Some(BuildServiceConfig(service, distribution, environment, settingsRepositories,
-        privateFiles, macroValues))).map(_ > 0)
+        privateFiles, macroValues)) }).map(_ > 0)
   }
 
   def removeBuildClientServiceConfig(service: ServiceId)(implicit log: Logger): Future[Boolean] = {
