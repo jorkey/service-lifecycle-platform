@@ -1,11 +1,9 @@
 import React, {useState} from 'react';
-import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
   Card,
   CardHeader,
   CardContent,
-  Divider,
   Select
 } from '@material-ui/core';
 import FormGroup from '@material-ui/core/FormGroup';

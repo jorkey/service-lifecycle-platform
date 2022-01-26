@@ -1,5 +1,5 @@
-export type GridColumnType = 'checkbox' | 'select' | 'date' | 'number' | 'elements'
-export type GridTableCellValue = string | number | boolean | Date | JSX.Element[] | undefined
+export type GridColumnType = 'checkbox' | 'select' | 'date' | 'number' | 'elements' | 'upload'
+export type GridTableCellValue = string | number | boolean | Date | JSX.Element[] | File | undefined
 
 export interface GridTableColumnParams {
   name: string,

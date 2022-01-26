@@ -63,7 +63,8 @@ interface ServiceEditorParams {
   hasService: (service: string) => boolean
   validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
   setServiceConfig: (service: string, distribution: string | null | undefined, environment: NamedStringValue[],
-                     repositories: Repository[], privateFiles: string[], macroValues: NamedStringValue[]) => Promise<boolean>
+                     repositories: Repository[], privateFiles: string[],
+                     macroValues: NamedStringValue[]) => Promise<boolean>
   error?: string
   fromUrl: string
 }
@@ -77,7 +78,8 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
   const [environment, setEnvironment] = useState(initEnvironment)
   const [repositories, setRepositories] = useState(initRepositories)
-  const [privateFiles, setPrivateFiles] = useState(initPrivateFiles)
+  const [privateFiles, setPrivateFiles] = useState<Array<{file:string, localFile:File|null}>>(
+    initPrivateFiles.map(file => ({ file:file, localFile:null }) ))
   const [macroValues, setMacroValues] = useState(initMacroValues)
 
   const [addEnvironment, setAddEnvironment] = useState(false)
@@ -267,26 +269,26 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             title={'Private Files'}
           />
           <CardContent>
-            <PrivateFilesTable
-              privateFiles={privateFiles}
-              addPrivateFile={addPrivateFile}
-              confirmRemove={true}
-              onPrivateFileAdded={
-                file => {
-                  setPrivateFiles([...privateFiles, file])
+            {privateFiles.length || addPrivateFile?
+              <PrivateFilesTable
+                privateFiles={privateFiles}
+                addPrivateFile={addPrivateFile}
+                confirmRemove={true}
+                onPrivateFileAdded={
+                  (file, localFile) => {
+                    setPrivateFiles([...privateFiles, {file, localFile}])
+                    setAddPrivateFile(false)
+                  }
+                }
+                onPrivateFileAddCancelled={() => {
                   setAddPrivateFile(false)
+                }}
+                onPrivateFileRemoved={
+                  file => {
+                    setPrivateFiles(privateFiles.filter(s => s.file != file))
+                  }
                 }
-              }
-              onPrivateFileAddCancelled={() => {
-                setAddPrivateFile(false)
-              }}
-              onPrivateFileRemoved={
-                file => {
-                  const newValues = privateFiles.filter(s => s != file)
-                  setPrivateFiles(newValues)
-                }
-              }
-            />
+              />:null}
           </CardContent>
         </Card>
         <Card>
@@ -352,7 +354,8 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             color="primary"
             disabled={service == undefined || !validate(environment, repositories, macroValues)}
             onClick={() => {
-              setServiceConfig(service!, builderDistribution, environment, repositories, privateFiles, macroValues)
+              const files = privateFiles.map(file => file.file)
+              setServiceConfig(service!, builderDistribution, environment, repositories, files, macroValues)
                 .then((result) => {
                   if (result) setGoBack(true)
                 })

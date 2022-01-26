@@ -1,11 +1,13 @@
 import React, {Attributes} from "react";
 import {
+  Button,
   Checkbox,
   Input,
   MenuItem,
   Select,
-  TableCell, Theme,
+  TableCell, Theme, Typography,
 } from "@material-ui/core";
+import AttachmentIcon from '@material-ui/icons/Attachment';
 import {GridColumnType, GridTableCellValue} from "./GridTableColumn";
 import {makeStyles} from "@material-ui/styles";
 
@@ -96,6 +98,27 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
         />
       : type == 'date' ?
         value?((value as Date).toLocaleString()):''
+      : type == 'upload' ?
+          editing ?
+            <label htmlFor="upload" style={{ display: 'flex' }}>
+              <Typography style={{ paddingTop: '10px' }}>
+                {editValue?(editValue as File).name:''}
+              </Typography>
+              <input id="upload"
+                     className={classes.input}
+                     style={{ display: 'none' }}
+                     type='file'
+                     onChange={e => onSetEditValue?.(e.target.files![0])}
+              />
+              <Button
+                variant="text"
+                style={{ textTransform: 'none', marginLeft: 'auto', marginRight: 0 }}
+                component="span"
+              >
+                <AttachmentIcon/>
+              </Button>
+            </label>
+          : value?(value as File).name:''
       : editing ?
          type == 'select' ?
           <Select className={classes.input}

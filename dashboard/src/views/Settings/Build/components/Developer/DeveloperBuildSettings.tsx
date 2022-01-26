@@ -64,8 +64,9 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
                 !!buildServices?.buildDeveloperServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) =>
                 true }
-              setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
-                setBuildServiceConfig({ variables: { service, distribution, environment, repositories, privateFiles, macroValues } })
+              setServiceConfig={(service, distribution, environment, repositories, privateFiles, macroValues) =>
+                setBuildServiceConfig({ variables: { service, distribution, environment, repositories,
+                    privateFiles, macroValues } })
                   .then((r) => !!r.data?.setBuildDeveloperServiceConfig) }
               error={error}
               fromUrl={props.fromUrl}

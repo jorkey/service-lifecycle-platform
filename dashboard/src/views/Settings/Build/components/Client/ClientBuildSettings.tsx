@@ -66,7 +66,7 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
               hasService={(service =>
                 !!buildServices?.buildClientServicesConfig.find(s => s.service == service))}
               validate={(environment, repositories, macroValues) => true }
-              setServiceConfig={(service, distribution, environment, repositories, macroValues) =>
+              setServiceConfig={(service, distribution, environment, repositories, privateFiles, macroValues) =>
                 setBuildServiceConfig({ variables: { service, distribution, environment, repositories, privateFiles, macroValues } })
                   .then((r) => !!r.data?.setBuildClientServiceConfig)
               }

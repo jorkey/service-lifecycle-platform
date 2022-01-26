@@ -12,7 +12,7 @@ const useStyles = makeStyles(theme => ({
     marginTop: 20
   },
   fileColumn: {
-    width: '200px',
+    width: '300px'
   },
   uploadColumn: {
   },
@@ -24,10 +24,10 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface PrivateFilesParams {
-  privateFiles: Array<string>
+  privateFiles: Array<{file:string, localFile:File|null}>
   addPrivateFile?: boolean
   confirmRemove?: boolean
-  onPrivateFileAdded?: (file: string, localFile: string) => void
+  onPrivateFileAdded?: (file: string, localFile: File) => void
   onPrivateFileAddCancelled?: () => void
   onPrivateFileRemoved?: (file: string) => void
 }
@@ -56,13 +56,10 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
       name: 'upload',
       headerName: 'Upload',
       className: classes.uploadColumn,
-      // validate: (value, rowNum) => {
-      //   try {
-      //     return value?!!new URL(value as string):false
-      //   } catch (ex) {
-      //     return false
-      //   }
-      // }
+      type: 'upload',
+      validate: (value, rowNum) => {
+        return !!value
+      }
     },
     {
       name: 'actions',
@@ -74,9 +71,10 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
 
   const rows = privateFiles.map(file => (
     new Map<string, GridTableCellParams>([
-      ['name', { value: file }],
+      ['file', { value: file.file }],
+      ['upload', { value: file.localFile?file.localFile:'' }],
       ['actions', { value: [<Button key='0' onClick={
-          () => confirmRemove ? setDeleteConfirm(file) : onPrivateFileRemoved?.(file) }>
+          () => confirmRemove ? setDeleteConfirm(file.file) : onPrivateFileRemoved?.(file.file) }>
         <DeleteIcon/>
       </Button>] }]
     ])))
@@ -89,7 +87,7 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
       addNewRow={addPrivateFile}
       onRowAdded={ (columns) =>
         new Promise<boolean>(resolve => {
-          onPrivateFileAdded?.(columns.get('name')! as string, columns.get('upload')! as string)
+          onPrivateFileAdded?.(columns.get('file')! as string, columns.get('upload')! as File)
           resolve(true)
         })}
       onRowAddCancelled={onPrivateFileAddCancelled}
