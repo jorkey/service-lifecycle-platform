@@ -16,7 +16,7 @@ import {
 } from "../../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
 import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
-import {Logs} from "../../../../common/Logs";
+import {Logs} from "../../../../common/utils/Logs";
 
 const useStyles = makeStyles((theme:any) => ({
   content: {

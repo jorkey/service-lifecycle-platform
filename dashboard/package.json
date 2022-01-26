@@ -36,6 +36,7 @@
     "@material-ui/lab": "^4.0.0-alpha.60",
     "@material-ui/pickers": "^3.3.10",
     "@material-ui/styles": "^4.11.4",
+    "@types/axios": "^0.14.0",
     "@types/jest": "^26.0.24",
     "@types/node": "^14.18.2",
     "@types/react": "^17.0.37",

@@ -1,7 +1,7 @@
 import {
   ClientDistributionVersion, ClientVersionInfo, DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
-} from "../generated/graphql";
+} from "../../generated/graphql";
 
 export class Version {
   static parseBuild(version: string): Array<number> {

@@ -69,15 +69,18 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
     }
   ]
 
-  const rows = privateFiles.map(file => (
-    new Map<string, GridTableCellParams>([
-      ['file', { value: file.file }],
-      ['upload', { value: file.localFile?file.localFile:'' }],
-      ['actions', { value: [<Button key='0' onClick={
-          () => confirmRemove ? setDeleteConfirm(file.file) : onPrivateFileRemoved?.(file.file) }>
-        <DeleteIcon/>
-      </Button>] }]
-    ])))
+  const rows = privateFiles
+    .sort((f1, f2) =>
+      f1.file > f2.file ? 1 : f1.file < f2.file ? -1 : 0)
+    .map(file => (
+      new Map<string, GridTableCellParams>([
+        ['file', { value: file.file }],
+        ['upload', { value: file.localFile?file.localFile:'' }],
+        ['actions', { value: [<Button key='0' onClick={
+            () => confirmRemove ? setDeleteConfirm(file.file) : onPrivateFileRemoved?.(file.file) }>
+          <DeleteIcon/>
+        </Button>] }]
+      ])))
 
   return (<>
     <GridTable

@@ -102,7 +102,7 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                       }
                     } ~ post {
                       authorize(role == AccountRole.Administrator) {
-                        fileUpload(imageField) {
+                        fileUpload(fileField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getDeveloperPrivateFile(
                               workspace.config.distribution, service, path).toPath)
@@ -119,7 +119,7 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                       }
                     } ~ post {
                       authorize(role == AccountRole.Administrator) {
-                        fileUpload(imageField) {
+                        fileUpload(fileField) {
                           case (fileInfo, byteSource) =>
                             val sink = FileIO.toPath(workspace.directory.getClientPrivateFile(
                               workspace.config.distribution, service, path).toPath)

@@ -62,6 +62,7 @@ const ClientBuildSettings: React.FC<ClientServiceEditorParams> = props => {
               repositoriesTitle={`Config Repositories`}
               repositories={repositories}
               privateFiles={privateFiles}
+              uploadPrivateFilePath={'/load/client-private-file'}
               macroValues={macroValues}
               hasService={(service =>
                 !!buildServices?.buildClientServicesConfig.find(s => s.service == service))}

@@ -59,6 +59,7 @@ const DeveloperBuildSettings: React.FC<DeveloperServiceEditorParams> = props => 
               repositoriesTitle={`Source Repositories`}
               repositories={repositories}
               privateFiles={privateFiles}
+              uploadPrivateFilePath={'/load/developer-private-file'}
               macroValues={macroValues}
               hasService={(service =>
                 !!buildServices?.buildDeveloperServicesConfig.find(s => s.service == service))}

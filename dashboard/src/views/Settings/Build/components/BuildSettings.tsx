@@ -20,6 +20,7 @@ import {FetchResult} from "@apollo/client";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import PrivateFilesTable from "./PrivateFilesTable";
+import {upload} from "../../../../common/load/Upload";
 
 const useStyles = makeStyles(theme => ({
   newServiceName: {
@@ -59,6 +60,7 @@ interface ServiceEditorParams {
   repositoriesTitle: string
   repositories: Repository[]
   privateFiles: string[]
+  uploadPrivateFilePath: string
   macroValues: NamedStringValue[]
   hasService: (service: string) => boolean
   validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
@@ -71,8 +73,8 @@ interface ServiceEditorParams {
 
 const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const { service: initService, distribution: initBuilderDistribution, environment: initEnvironment,
-    repositoriesTitle, repositories: initRepositories, privateFiles: initPrivateFiles, macroValues: initMacroValues,
-    hasService, validate, setServiceConfig, error, fromUrl } = props
+    repositoriesTitle, repositories: initRepositories, privateFiles: initPrivateFiles, uploadPrivateFilePath,
+    macroValues: initMacroValues, hasService, validate, setServiceConfig, error, fromUrl } = props
 
   const [service, setService] = useState(initService)
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
@@ -354,11 +356,13 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             color="primary"
             disabled={service == undefined || !validate(environment, repositories, macroValues)}
             onClick={() => {
-              const files = privateFiles.map(file => file.file)
-              setServiceConfig(service!, builderDistribution, environment, repositories, files, macroValues)
-                .then((result) => {
-                  if (result) setGoBack(true)
-                })
+              Promise.all(privateFiles
+                .filter(file => file.localFile)
+                .map(file => upload(uploadPrivateFilePath + '/' + service + '/' + encodeURIComponent(file.file),
+                file.localFile!)))
+              .then(() => setServiceConfig(service!, builderDistribution, environment, repositories,
+                  privateFiles.map(file => file.file), macroValues))
+              .then((result) => { if (result) setGoBack(true) })
             }}
             variant="contained"
           >

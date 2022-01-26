@@ -1,2 +1,2 @@
-export * from './Version';
-export { JsonBigInt as BigInt } from './BigInt';
+export * from './utils/Version';
+export { JsonBigInt as BigInt } from './utils/BigInt';

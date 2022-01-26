@@ -6,7 +6,7 @@ import GridTable from "../../../common/components/gridTable/GridTable";
 import {Version} from "../../../common";
 import {Button} from "@material-ui/core";
 import DownloadIcon from '@material-ui/icons/CloudDownload';
-import {download} from "../../../common/Download";
+import {download} from "../../../common/load/Download";
 import {GridTableCellParams} from "../../../common/components/gridTable/GridTableCell";
 
 const useStyles = makeStyles(theme => ({

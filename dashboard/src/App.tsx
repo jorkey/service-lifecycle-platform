@@ -7,7 +7,7 @@ import validate from 'validate.js';
 import theme from './theme';
 import 'react-perfect-scrollbar/dist/css/styles.css';
 import './assets/scss/index.scss';
-import validators from './common/validators';
+import validators from './common/utils/validators';
 import LoginRoutes from './Routes';
 import {ApolloLink, ApolloProvider, FetchResult, Operation, Resolvers, ServerError, split} from '@apollo/client';
 import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
@@ -26,7 +26,7 @@ import {
   IntrospectionQuery, Kind,
   print
 } from "graphql"
-import {stripProperty} from "./common/Graphql";
+import {stripProperty} from "./common/utils/Graphql";
 import {NextLink} from "@apollo/client/link/core/types";
 import {getMainDefinition, Observable} from '@apollo/client/utilities';
 import {Client, ClientOptions, createClient} from 'graphql-ws'
