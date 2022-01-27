@@ -357,12 +357,13 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             disabled={service == undefined || !validate(environment, repositories, macroValues)}
             onClick={() => {
               Promise.all(privateFiles
-                .filter(file => file.localFile)
-                .map(file => upload(uploadPrivateFilePath + '/' + service + '/' + encodeURIComponent(file.file),
-                file.localFile!)))
+                .filter(f => f.localFile)
+                .map(f => upload(uploadPrivateFilePath + '/' + service + '/' + encodeURIComponent(f.file),
+                f.localFile!)))
               .then(() => setServiceConfig(service!, builderDistribution, environment, repositories,
                   privateFiles.map(file => file.file), macroValues))
               .then((result) => { if (result) setGoBack(true) })
+              .catch(result => setOwnError(JSON.stringify(result)))
             }}
             variant="contained"
           >
