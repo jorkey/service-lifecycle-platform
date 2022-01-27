@@ -144,7 +144,9 @@ class ClientBuilder(builderDir: File) {
     if (!paths.isEmpty) {
       paths.foreach { path =>
         log.info(s"Download client private file ${path}")
-        if (!distributionClient.downloadClientPrivateFile(service, path, new File(clientBuildDir(service), path))) {
+        val file = new File(clientBuildDir(service), path)
+        file.getParentFile.mkdirs()
+        if (!distributionClient.downloadClientPrivateFile(service, path, file)) {
           return false
         }
       }

@@ -253,7 +253,7 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
   }
 
   private def openConnection(path: String): HttpURLConnection = {
-    new URL(distributionUrl.toString + "/" + path).openConnection().asInstanceOf[HttpURLConnection]
+    new URL(distributionUrl + "/" + path).openConnection().asInstanceOf[HttpURLConnection]
   }
 
   private def processResponse(connection: HttpURLConnection): Unit = {

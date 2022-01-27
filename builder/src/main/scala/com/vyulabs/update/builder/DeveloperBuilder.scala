@@ -184,7 +184,9 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     if (!paths.isEmpty) {
       paths.foreach { path =>
         log.info(s"Download developer private file ${path}")
-        if (!distributionClient.downloadClientPrivateFile(service, path, new File(developerBuildDir(service), path))) {
+        val file = new File(developerBuildDir(service), path)
+        file.getParentFile.mkdirs()
+        if (!distributionClient.downloadDeveloperPrivateFile(service, path, file)) {
           return false
         }
       }
