@@ -11,11 +11,18 @@ import {
   DeveloperDesiredVersionInput,
   DeveloperDistributionVersion,
   DistributionProviderInfo,
-  useBuildClientVersionsMutation, useClientDesiredVersionsQuery,
-  useClientVersionsInfoQuery, useDeveloperDesiredVersionsLazyQuery,
+  useBuildClientVersionsMutation,
+  useClientDesiredVersionsQuery,
+  useClientVersionsInfoQuery,
+  useDeveloperDesiredVersionsLazyQuery,
+  useProfileServicesLazyQuery,
+  useProfileServicesQuery,
   useProviderDesiredVersionsLazyQuery,
-  useProvidersInfoQuery, useProviderTestedVersionsLazyQuery,
-  useSetProviderTestedVersionsMutation, useSetTestedVersionsMutation, useTestedVersionsLazyQuery,
+  useProvidersInfoQuery,
+  useProviderTestedVersionsLazyQuery,
+  useSetProviderTestedVersionsMutation,
+  useSetTestedVersionsMutation,
+  useTestedVersionsLazyQuery,
 } from "../../../../generated/graphql";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import {Version} from "../../../../common";
@@ -107,6 +114,11 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
     onCompleted() { setRows(makeRowsData()) },
     onError(err) { setError('Query client versions error ' + err.message) }
   })
+  const [ getSelfServicesProfile, selfServicesProfile ] = useProfileServicesLazyQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    variables: { profile: 'self' },
+    onError(err) { setError('Query self profile services error ' + err.message) },
+  })
   const [ getDeveloperDesiredVersions, developerDesiredVersions ] = useDeveloperDesiredVersionsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onCompleted() { setRows(makeRowsData()) },
@@ -162,6 +174,7 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
       getProviderDesiredVersions({ variables: { distribution: provider.distribution } })
       getProviderTestedVersions({ variables: { distribution: provider.distribution } })
     } else {
+      getSelfServicesProfile()
       getDeveloperDesiredVersions()
     }
     getTestedVersions()
@@ -177,9 +190,9 @@ const StartBuildClientServices: React.FC<BuildServiceParams> = props => {
           version => servicesSet.add(version.service)
         )
       }
-    } else if (developerDesiredVersions.data) {
-      developerDesiredVersions.data.developerDesiredVersions.forEach(
-        version => servicesSet.add(version.service)
+    } else if (selfServicesProfile.data) {
+      selfServicesProfile.data.serviceProfiles.forEach(
+        profiles => profiles.services.forEach(service => servicesSet.add(service))
       )
     }
 

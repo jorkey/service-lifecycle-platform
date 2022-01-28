@@ -126,7 +126,6 @@ object GraphqlTypes {
   implicit val TaskInfoType = deriveObjectType[Unit, TaskInfo]()
   implicit val EnvironmentVariableType = deriveObjectType[Unit, NamedStringValue]()
   implicit val BuildServiceConfigType = deriveObjectType[Unit, BuildServiceConfig]()
-  implicit val PrivateFileType = deriveObjectType[Unit, PrivateFile]()
 
   implicit val UserAccountPropertiesInputType = deriveInputObjectType[UserAccountProperties](InputObjectTypeName("UserAccountPropertiesInput"))
   implicit val ConsumerAccountPropertiesInputType = deriveInputObjectType[ConsumerAccountProperties](InputObjectTypeName("ConsumerAccountPropertiesInput"))

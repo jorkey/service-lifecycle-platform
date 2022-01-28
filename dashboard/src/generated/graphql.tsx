@@ -1869,7 +1869,7 @@ export type BuildDeveloperServiceConfigQuery = (
       & Pick<NamedStringValue, 'name' | 'value'>
     )>, repositories: Array<(
       { __typename?: 'Repository' }
-      & Pick<Repository, 'name'>
+      & Pick<Repository, 'name' | 'subDirectory'>
       & { git: (
         { __typename?: 'GitConfig' }
         & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
@@ -1907,7 +1907,7 @@ export type BuildClientServiceConfigQuery = (
       & Pick<NamedStringValue, 'name' | 'value'>
     )>, repositories: Array<(
       { __typename?: 'Repository' }
-      & Pick<Repository, 'name'>
+      & Pick<Repository, 'name' | 'subDirectory'>
       & { git: (
         { __typename?: 'GitConfig' }
         & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
@@ -4521,6 +4521,7 @@ export const BuildDeveloperServiceConfigDocument = gql`
         branch
         cloneSubmodules
       }
+      subDirectory
     }
     privateFiles
     macroValues {
@@ -4608,6 +4609,7 @@ export const BuildClientServiceConfigDocument = gql`
         branch
         cloneSubmodules
       }
+      subDirectory
     }
     privateFiles
     macroValues {

@@ -24,12 +24,12 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface PrivateFilesParams {
-  privateFiles: Array<{file:string, localFile:File|null}>
+  privateFiles: Array<{path:string, localFile:File|null}>
   addPrivateFile?: boolean
   confirmRemove?: boolean
-  onPrivateFileAdded?: (file: string, localFile: File) => void
+  onPrivateFileAdded?: (path: string, localFile: File) => void
   onPrivateFileAddCancelled?: () => void
-  onPrivateFileRemoved?: (file: string) => void
+  onPrivateFileRemoved?: (path: string) => void
 }
 
 const PrivateFilesTable = (props: PrivateFilesParams) => {
@@ -42,8 +42,8 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
 
   const columns: GridTableColumnParams[] = [
     {
-      name: 'file',
-      headerName: 'File',
+      name: 'path',
+      headerName: 'Path',
       className: classes.fileColumn,
       validate: (value, rowNum) => {
         return !!value &&
@@ -54,7 +54,7 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
     },
     {
       name: 'upload',
-      headerName: 'Upload',
+      headerName: 'File To Upload',
       className: classes.uploadColumn,
       type: 'upload',
       validate: (value, rowNum) => {
@@ -71,13 +71,13 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
 
   const rows = privateFiles
     .sort((f1, f2) =>
-      f1.file > f2.file ? 1 : f1.file < f2.file ? -1 : 0)
+      f1.path > f2.path ? 1 : f1.path < f2.path ? -1 : 0)
     .map(file => (
       new Map<string, GridTableCellParams>([
-        ['file', { value: file.file }],
+        ['path', { value: file.path }],
         ['upload', { value: file.localFile?file.localFile:'' }],
         ['actions', { value: [<Button key='0' onClick={
-            () => confirmRemove ? setDeleteConfirm(file.file) : onPrivateFileRemoved?.(file.file) }>
+            () => confirmRemove ? setDeleteConfirm(file.path) : onPrivateFileRemoved?.(file.path) }>
           <DeleteIcon/>
         </Button>] }]
       ])))
@@ -90,7 +90,7 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
       addNewRow={addPrivateFile}
       onRowAdded={ (columns) =>
         new Promise<boolean>(resolve => {
-          onPrivateFileAdded?.(columns.get('file')! as string, columns.get('upload')! as File)
+          onPrivateFileAdded?.(columns.get('path')! as string, columns.get('upload')! as File)
           resolve(true)
         })}
       onRowAddCancelled={onPrivateFileAddCancelled}

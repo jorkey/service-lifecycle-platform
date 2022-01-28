@@ -23,16 +23,21 @@ import PrivateFilesTable from "./PrivateFilesTable";
 import {upload} from "../../../../common/load/Upload";
 
 const useStyles = makeStyles(theme => ({
-  newServiceName: {
-    width: 400,
-    marginTop: '25px',
-    marginLeft: '16px'
+  serviceRecord: {
+    display: 'flex'
   },
-  editServiceName: {
+  label: {
     marginTop: '25px',
     marginLeft: '16px',
+    marginBottom: '10px',
+    paddingTop: '10px',
+    fontSize: '18px',
     fontWeight: 500,
-    fontSize: '20px'
+  },
+  service: {
+    width: 200,
+    marginTop: '25px',
+    marginLeft: '16px'
   },
   providerSelect: {
     width: '200px',
@@ -55,6 +60,7 @@ const useStyles = makeStyles(theme => ({
 
 interface ServiceEditorParams {
   service?: string
+  services?: string[]
   distribution?: string | null
   environment: NamedStringValue[]
   repositoriesTitle: string
@@ -72,7 +78,7 @@ interface ServiceEditorParams {
 }
 
 const BuildSettings: React.FC<ServiceEditorParams> = props => {
-  const { service: initService, distribution: initBuilderDistribution, environment: initEnvironment,
+  const { service: initService, services, distribution: initBuilderDistribution, environment: initEnvironment,
     repositoriesTitle, repositories: initRepositories, privateFiles: initPrivateFiles, uploadPrivateFilePath,
     macroValues: initMacroValues, hasService, validate, setServiceConfig, error, fromUrl } = props
 
@@ -80,8 +86,8 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
   const [environment, setEnvironment] = useState(initEnvironment)
   const [repositories, setRepositories] = useState(initRepositories)
-  const [privateFiles, setPrivateFiles] = useState<Array<{file:string, localFile:File|null}>>(
-    initPrivateFiles.map(file => ({ file:file, localFile:null }) ))
+  const [privateFiles, setPrivateFiles] = useState<Array<{path:string, localFile:File|null}>>(
+    initPrivateFiles.map(file => ({ path:file, localFile:null }) ))
   const [macroValues, setMacroValues] = useState(initMacroValues)
 
   const [addEnvironment, setAddEnvironment] = useState(false)
@@ -117,23 +123,38 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
 
     return (
       <div>
+        <div className={classes.serviceRecord}>
         {initService == undefined?
-            <TextField className={classes.newServiceName}
-                       autoFocus
-                       error={!!service && hasService(service)}
-                       fullWidth
-                       helperText={(service && hasService(service)) ? 'Service already exists' : ''}
-                       label="New Service Name"
-                       margin="normal"
-                       onChange={e => setService(e.target.value)}
-                       required
-                       value={service ? service : ''}
-                       variant="outlined"
-            />:
-            <Typography className={classes.editServiceName}>
-              {service?`Service '${service}' Build Settings`:'Common Build Settings'}
+          <>
+            <Typography className={classes.label}>
+              {'Service'}
             </Typography>
+            {services?
+             <Select
+               className={classes.service}
+               native
+               onChange={e => setService(e.target.value ? e.target.value as string : undefined)}
+             >
+               <option key={-1}></option>)
+               {services.sort().map((service, index) =>
+                 <option key={index}>{service}</option>)}
+             </Select>:
+             <TextField className={classes.service}
+                        autoFocus
+                        error={!!service && hasService(service)}
+                        fullWidth
+                        helperText={(service && hasService(service)) ? 'Service already exists' : ''}
+                        margin="normal"
+                        onChange={e => setService(e.target.value)}
+                        required
+                        value={service ? service : ''}
+             />}
+           </>:
+             <Typography className={classes.label}>
+               {service?`Service '${service}' Build Settings`:'Common Build Settings'}
+             </Typography>
         }
+        </div>
         <Card>
           <CardHeader
             action={
@@ -224,7 +245,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             }
             title={repositoriesTitle}
           />
-          <CardContent>
+          {repositories.length || addRepository? <CardContent>
             <RepositoriesTable
               repositories={repositories}
               addRepository={addRepository}
@@ -251,7 +272,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                 }
               }
             />
-          </CardContent>
+          </CardContent>:null}
         </Card>
         <Card>
           <CardHeader
@@ -270,28 +291,25 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             }
             title={'Private Files'}
           />
-          <CardContent>
-            {privateFiles.length || addPrivateFile?
-              <PrivateFilesTable
-                privateFiles={privateFiles}
-                addPrivateFile={addPrivateFile}
-                confirmRemove={true}
-                onPrivateFileAdded={
-                  (file, localFile) => {
-                    setPrivateFiles([...privateFiles, {file, localFile}])
-                    setAddPrivateFile(false)
-                  }
-                }
-                onPrivateFileAddCancelled={() => {
+          {privateFiles.length || addPrivateFile?<CardContent>
+            <PrivateFilesTable
+              privateFiles={privateFiles}
+              addPrivateFile={addPrivateFile}
+              confirmRemove={true}
+              onPrivateFileAdded={
+                (file, localFile) => {
+                  setPrivateFiles([...privateFiles, {path: file, localFile}])
                   setAddPrivateFile(false)
-                }}
-                onPrivateFileRemoved={
-                  file => {
-                    setPrivateFiles(privateFiles.filter(s => s.file != file))
-                  }
                 }
-              />:null}
-          </CardContent>
+              }
+              onPrivateFileAddCancelled={() => {
+                setAddPrivateFile(false)
+              }}
+              onPrivateFileRemoved={
+                file => setPrivateFiles(privateFiles.filter(s => s.path != file))
+              }
+            />
+          </CardContent>:null}
         </Card>
         <Card>
           <CardHeader
@@ -357,11 +375,11 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             disabled={service == undefined || !validate(environment, repositories, macroValues)}
             onClick={() => {
               Promise.all(privateFiles
-                .filter(f => f.localFile)
-                .map(f => upload(uploadPrivateFilePath + '/' + service + '/' + encodeURIComponent(f.file),
-                f.localFile!)))
+                .filter(file => file.localFile)
+                .map(file => upload(uploadPrivateFilePath + '/' + service + '/' + encodeURIComponent(file.path),
+                  file.localFile!)))
               .then(() => setServiceConfig(service!, builderDistribution, environment, repositories,
-                  privateFiles.map(file => file.file), macroValues))
+                  privateFiles.map(file => file.path), macroValues))
               .then((result) => { if (result) setGoBack(true) })
               .catch(result => setOwnError(JSON.stringify(result)))
             }}

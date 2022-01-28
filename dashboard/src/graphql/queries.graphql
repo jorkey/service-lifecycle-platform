@@ -290,7 +290,7 @@ query buildDeveloperServices {
 query buildDeveloperServiceConfig ($service: String!) {
     buildDeveloperServicesConfig (service: $service) {
         service, distribution, environment { name, value },
-        repositories { name, git { url, branch, cloneSubmodules } },
+        repositories { name, git { url, branch, cloneSubmodules }, subDirectory },
         privateFiles, macroValues { name, value } }
 }
 
@@ -301,7 +301,7 @@ query buildClientServices {
 query buildClientServiceConfig ($service: String!) {
     buildClientServicesConfig (service: $service) {
         service, distribution, environment { name, value },
-        repositories { name, git { url, branch, cloneSubmodules } },
+        repositories { name, git { url, branch, cloneSubmodules }, subDirectory },
         privateFiles, macroValues { name, value }
     }
 }
