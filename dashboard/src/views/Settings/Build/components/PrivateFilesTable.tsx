@@ -3,7 +3,7 @@ import {makeStyles} from "@material-ui/core/styles";
 import GridTable from "../../../../common/components/gridTable/GridTable";
 import ConfirmDialog from "../../../../common/components/dialogs/ConfirmDialog";
 import DeleteIcon from "@material-ui/icons/Delete";
-import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
+import {GridTableCellValue, GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
 import {FileInfo} from "../../../../generated/graphql";
@@ -31,7 +31,8 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface PrivateFilesParams {
-  privateFiles: Array<{info:FileInfo, localFile:File|null}>
+  privateFiles: Array<FileInfo>
+  filesToUpload: Map<string, File>
   addPrivateFile?: boolean
   confirmRemove?: boolean
   onPrivateFileAdded?: (path: string, localFile: File) => void
@@ -40,7 +41,7 @@ interface PrivateFilesParams {
 }
 
 const PrivateFilesTable = (props: PrivateFilesParams) => {
-  const { privateFiles, addPrivateFile, confirmRemove,
+  const { privateFiles, filesToUpload, addPrivateFile, confirmRemove,
     onPrivateFileAdded, onPrivateFileAddCancelled, onPrivateFileRemoved } = props;
 
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
@@ -57,10 +58,11 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
             return index != rowNum && row.get('name')?.value == value
           })
       }
-    },
+    } as GridTableColumnParams,
     {
       name: 'time',
       type: 'date',
+      initializable: false,
       editable: false,
       headerName: 'Time',
       className: classes.timeColumn
@@ -68,6 +70,7 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
     {
       name: 'length',
       type: 'number',
+      initializable: false,
       editable: false,
       headerName: 'Length',
       className: classes.lengthColumn
@@ -77,29 +80,29 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
       headerName: 'File To Upload',
       className: classes.uploadColumn,
       type: 'upload',
-      validate: (value, rowNum) => {
+      validate: (value) => {
         return !!value
       }
-    },
+    } as GridTableColumnParams,
     {
       name: 'actions',
       headerName: 'Actions',
       type: 'elements',
       className: classes.actionsColumn
     }
-  ]
+  ].filter(column => addPrivateFile || column.name != 'upload') as GridTableColumnParams[]
 
   const rows = privateFiles
     .sort((f1, f2) =>
-      f1.info > f2.info ? 1 : f1.info < f2.info ? -1 : 0)
+      f1.path > f2.path ? 1 : f1.path < f2.path ? -1 : 0)
     .map(file => (
       new Map<string, GridTableCellParams>([
-        ['path', { value: file.info.path }],
-        ['time', { value: file.info.time }],
-        ['length', { value: file.info.length }],
-        ['upload', { value: file.localFile?file.localFile:'' }],
+        ['path', { value: file.path }],
+        ['time', { value: file.time }],
+        ['length', { value: file.length }],
+        ['upload', { value: filesToUpload.get(file.path) }],
         ['actions', { value: [<Button key='0' onClick={
-            () => confirmRemove ? setDeleteConfirm(file.info.path) : onPrivateFileRemoved?.(file.info.path) }>
+            () => confirmRemove ? setDeleteConfirm(file.path) : onPrivateFileRemoved?.(file.path) }>
           <DeleteIcon/>
         </Button>] }]
       ])))

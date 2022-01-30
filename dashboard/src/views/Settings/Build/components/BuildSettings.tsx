@@ -84,14 +84,15 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
   const [environment, setEnvironment] = useState(initEnvironment)
   const [repositories, setRepositories] = useState(initRepositories)
-  const [privateFiles, setPrivateFiles] = useState<Array<{info:FileInfo, localFile:File|null}>>(
-    initPrivateFiles.map(file => ({ info:file, localFile:null }) ))
+  const [privateFiles, setPrivateFiles] = useState(initPrivateFiles)
   const [macroValues, setMacroValues] = useState(initMacroValues)
 
   const [addEnvironment, setAddEnvironment] = useState(false)
   const [addRepository, setAddRepository] = useState(false)
   const [addPrivateFile, setAddPrivateFile] = useState(false)
   const [addMacroValue, setAddMacroValue] = useState(false)
+
+  const [filesToUpload, setFilesToUpload] = useState(new Map<string, File>())
 
   const [ownError, setOwnError] = useState<string>()
 
@@ -292,12 +293,14 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
           {privateFiles.length || addPrivateFile?<CardContent>
             <PrivateFilesTable
               privateFiles={privateFiles}
+              filesToUpload={filesToUpload}
               addPrivateFile={addPrivateFile}
               confirmRemove={true}
               onPrivateFileAdded={
                 (path, localFile) => {
                   setPrivateFiles([...privateFiles,
-                    {info: {path: path, time: new Date(localFile.lastModified), length: localFile.size}, localFile}])
+                    {path: path, time: new Date(localFile.lastModified), length: localFile.size}])
+                  setFilesToUpload(new Map(filesToUpload.set(path, localFile)))
                   setAddPrivateFile(false)
                 }
               }
@@ -305,7 +308,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                 setAddPrivateFile(false)
               }}
               onPrivateFileRemoved={
-                path => setPrivateFiles(privateFiles.filter(s => s.info.path != path))
+                path => setPrivateFiles(privateFiles.filter(s => s.path != path))
               }
             />
           </CardContent>:null}
@@ -371,15 +374,18 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
           <Button
             className={classes.control}
             color="primary"
-            disabled={service == undefined || !validate(environment, repositories, macroValues)}
+            disabled={service == undefined ||
+              (builderDistribution == initBuilderDistribution &&
+                environment == initEnvironment &&
+                repositories == initRepositories &&
+                privateFiles == initPrivateFiles &&
+                macroValues == initMacroValues)  ||
+              !validate(environment, repositories, macroValues)}
             onClick={() => {
-              Promise.all(privateFiles
-                .filter(file => file.localFile)
-                .map(file => upload(uploadPrivateFilePath + '/' + encodeURIComponent(
-                  service + '/' + file.info.path),
-                  file.localFile!)))
+              Promise.all(Array.from(filesToUpload).map(([path, file]) =>
+                upload(uploadPrivateFilePath + '/' + encodeURIComponent(service + '/' + path), file)))
               .then(() => setServiceConfig(service!, builderDistribution, environment, repositories,
-                  privateFiles.map(file => file.info), macroValues))
+                  privateFiles, macroValues))
               .then((result) => { if (result) setGoBack(true) })
               .catch(result => setOwnError(JSON.stringify(result)))
             }}

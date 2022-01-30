@@ -6,7 +6,6 @@ import {
   useBuildClientServicesQuery,
   useProfileServicesLazyQuery, useProviderDesiredVersionsLazyQuery,
   useProvidersInfoLazyQuery,
-  useProvidersInfoQuery,
   useSetBuildClientServiceConfigMutation,
 } from "../../../../../generated/graphql";
 import BuildSettings from "../BuildSettings";
