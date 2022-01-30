@@ -6,12 +6,19 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import {GridTableColumnParams} from "../../../../common/components/gridTable/GridTableColumn";
 import {Button} from "@material-ui/core";
 import {GridTableCellParams} from "../../../../common/components/gridTable/GridTableCell";
+import {FileInfo} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   repositoriesTable: {
     marginTop: 20
   },
-  fileColumn: {
+  pathColumn: {
+    width: '300px'
+  },
+  timeColumn: {
+    width: '300px'
+  },
+  lengthColumn: {
     width: '300px'
   },
   uploadColumn: {
@@ -24,7 +31,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 interface PrivateFilesParams {
-  privateFiles: Array<{path:string, localFile:File|null}>
+  privateFiles: Array<{info:FileInfo, localFile:File|null}>
   addPrivateFile?: boolean
   confirmRemove?: boolean
   onPrivateFileAdded?: (path: string, localFile: File) => void
@@ -37,20 +44,33 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
     onPrivateFileAdded, onPrivateFileAddCancelled, onPrivateFileRemoved } = props;
 
   const [ deleteConfirm, setDeleteConfirm ] = useState<string>()
-
   const classes = useStyles();
 
   const columns: GridTableColumnParams[] = [
     {
       name: 'path',
       headerName: 'Path',
-      className: classes.fileColumn,
+      className: classes.pathColumn,
       validate: (value, rowNum) => {
         return !!value &&
           !rows.find((row, index) => {
             return index != rowNum && row.get('name')?.value == value
           })
       }
+    },
+    {
+      name: 'time',
+      type: 'date',
+      editable: false,
+      headerName: 'Time',
+      className: classes.timeColumn
+    },
+    {
+      name: 'length',
+      type: 'number',
+      editable: false,
+      headerName: 'Length',
+      className: classes.lengthColumn
     },
     {
       name: 'upload',
@@ -71,13 +91,15 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
 
   const rows = privateFiles
     .sort((f1, f2) =>
-      f1.path > f2.path ? 1 : f1.path < f2.path ? -1 : 0)
+      f1.info > f2.info ? 1 : f1.info < f2.info ? -1 : 0)
     .map(file => (
       new Map<string, GridTableCellParams>([
-        ['path', { value: file.path }],
+        ['path', { value: file.info.path }],
+        ['time', { value: file.info.time }],
+        ['length', { value: file.info.length }],
         ['upload', { value: file.localFile?file.localFile:'' }],
         ['actions', { value: [<Button key='0' onClick={
-            () => confirmRemove ? setDeleteConfirm(file.path) : onPrivateFileRemoved?.(file.path) }>
+            () => confirmRemove ? setDeleteConfirm(file.info.path) : onPrivateFileRemoved?.(file.info.path) }>
           <DeleteIcon/>
         </Button>] }]
       ])))

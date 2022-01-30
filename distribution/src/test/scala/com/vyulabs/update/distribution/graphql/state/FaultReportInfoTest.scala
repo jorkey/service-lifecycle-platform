@@ -122,7 +122,7 @@ class FaultReportInfoTest extends TestEnvironment {
       Sequenced(sequence, DistributionFaultReport("consumer",
         ServiceFaultReport(id,
           FaultInfo(time, "instance1", service, None, "directory1", ServiceState(time, None, None, None, None, None, None, None), Seq.empty),
-          Seq(FileInfo("core", 123456789), FileInfo("log/service.log", 12345))))))
+          Seq(FileInfo("core", new Date(), 123456789), FileInfo("log/service.log", new Date(), 12345))))))
     )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.fault", id))))
   }
 

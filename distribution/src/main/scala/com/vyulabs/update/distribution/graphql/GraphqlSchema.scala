@@ -84,7 +84,7 @@ object GraphqlSchema {
   val EnvironmentArg = Argument("environment", ListInputType(NamedStringValueInputType))
   val MacroValuesArg = Argument("macroValues", ListInputType(NamedStringValueInputType))
   val RepositoriesArg = Argument("repositories", ListInputType(RepositoryInputType))
-  val PrivateFilesArg = Argument("privateFiles", ListInputType(StringType))
+  val PrivateFilesArg = Argument("privateFiles", ListInputType(FileInfoInputType))
   val FileArg = Argument("file", StringType)
 
   val OptionAccountArg = Argument("account", OptionInputType(StringType))

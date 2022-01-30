@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.config.InstallConfig._
-import com.vyulabs.update.common.config.{Repository, UpdateConfig}
+import com.vyulabs.update.common.config.{Repository, ServicePrivateFile, UpdateConfig}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.builderMutations
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.{BuildInfo, DeveloperVersionInfo}
@@ -41,7 +41,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
   def buildDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource],
                             author: String, service: ServiceId, newVersion: DeveloperVersion, comment: String,
-                            repositories: Seq[Repository], privateFiles: Seq[String], values: Map[String, String])
+                            repositories: Seq[Repository], privateFiles: Seq[ServicePrivateFile], values: Map[String, String])
                            (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
     val newDistributionVersion = DeveloperDistributionVersion.from(distribution, newVersion)
     IoUtils.synchronize[Boolean](new File(developerServiceDir(service), builderLockFile), false,
@@ -179,14 +179,15 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     true
   }
 
-  def downloadDeveloperPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId, paths: Seq[String])
+  def downloadDeveloperPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
+                                    serviceFiles: Seq[ServicePrivateFile])
                                    (implicit log: Logger): Boolean = {
-    if (!paths.isEmpty) {
-      paths.foreach { path =>
-        log.info(s"Download developer private file ${path}")
-        val file = new File(developerBuildDir(service), path)
+    if (!serviceFiles.isEmpty) {
+      serviceFiles.foreach { serviceFile =>
+        log.info(s"Download developer private file ${serviceFile.loadPath}")
+        val file = new File(developerBuildDir(service), serviceFile.path)
         file.getParentFile.mkdirs()
-        if (!distributionClient.downloadDeveloperPrivateFile(service, path, file)) {
+        if (!distributionClient.downloadDeveloperPrivateFile(serviceFile.loadPath, file)) {
           return false
         }
       }

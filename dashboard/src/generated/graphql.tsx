@@ -50,7 +50,7 @@ export type BuildServiceConfig = {
   distribution?: Maybe<Scalars['String']>;
   environment: Array<NamedStringValue>;
   repositories: Array<Repository>;
-  privateFiles: Array<Scalars['String']>;
+  privateFiles: Array<FileInfo>;
   macroValues: Array<NamedStringValue>;
 };
 
@@ -219,11 +219,13 @@ export type FaultInfoInput = {
 export type FileInfo = {
   __typename?: 'FileInfo';
   path: Scalars['String'];
+  time: Scalars['Date'];
   length: Scalars['Long'];
 };
 
 export type FileInfoInput = {
   path: Scalars['String'];
+  time: Scalars['Date'];
   length: Scalars['Long'];
 };
 
@@ -386,7 +388,7 @@ export type MutationSetBuildDeveloperServiceConfigArgs = {
   distribution?: Maybe<Scalars['String']>;
   environment: Array<NamedStringValueInput>;
   repositories: Array<RepositoryInput>;
-  privateFiles: Array<Scalars['String']>;
+  privateFiles: Array<FileInfoInput>;
   macroValues: Array<NamedStringValueInput>;
 };
 
@@ -401,7 +403,7 @@ export type MutationSetBuildClientServiceConfigArgs = {
   distribution?: Maybe<Scalars['String']>;
   environment: Array<NamedStringValueInput>;
   repositories: Array<RepositoryInput>;
-  privateFiles: Array<Scalars['String']>;
+  privateFiles: Array<FileInfoInput>;
   macroValues: Array<NamedStringValueInput>;
 };
 
@@ -1603,7 +1605,7 @@ export type FaultsQuery = (
         )> }
       ), files: Array<(
         { __typename?: 'FileInfo' }
-        & Pick<FileInfo, 'path' | 'length'>
+        & Pick<FileInfo, 'path' | 'time' | 'length'>
       )> }
     ) }
   )> }
@@ -1644,7 +1646,7 @@ export type FaultQuery = (
         )> }
       ), files: Array<(
         { __typename?: 'FileInfo' }
-        & Pick<FileInfo, 'path' | 'length'>
+        & Pick<FileInfo, 'path' | 'time' | 'length'>
       )> }
     ) }
   )> }
@@ -1863,7 +1865,7 @@ export type BuildDeveloperServiceConfigQuery = (
   { __typename?: 'Query' }
   & { buildDeveloperServicesConfig: Array<(
     { __typename?: 'BuildServiceConfig' }
-    & Pick<BuildServiceConfig, 'service' | 'distribution' | 'privateFiles'>
+    & Pick<BuildServiceConfig, 'service' | 'distribution'>
     & { environment: Array<(
       { __typename?: 'NamedStringValue' }
       & Pick<NamedStringValue, 'name' | 'value'>
@@ -1874,6 +1876,9 @@ export type BuildDeveloperServiceConfigQuery = (
         { __typename?: 'GitConfig' }
         & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
       ) }
+    )>, privateFiles: Array<(
+      { __typename?: 'FileInfo' }
+      & Pick<FileInfo, 'path' | 'time' | 'length'>
     )>, macroValues: Array<(
       { __typename?: 'NamedStringValue' }
       & Pick<NamedStringValue, 'name' | 'value'>
@@ -1901,7 +1906,7 @@ export type BuildClientServiceConfigQuery = (
   { __typename?: 'Query' }
   & { buildClientServicesConfig: Array<(
     { __typename?: 'BuildServiceConfig' }
-    & Pick<BuildServiceConfig, 'service' | 'distribution' | 'privateFiles'>
+    & Pick<BuildServiceConfig, 'service' | 'distribution'>
     & { environment: Array<(
       { __typename?: 'NamedStringValue' }
       & Pick<NamedStringValue, 'name' | 'value'>
@@ -1912,6 +1917,9 @@ export type BuildClientServiceConfigQuery = (
         { __typename?: 'GitConfig' }
         & Pick<GitConfig, 'url' | 'branch' | 'cloneSubmodules'>
       ) }
+    )>, privateFiles: Array<(
+      { __typename?: 'FileInfo' }
+      & Pick<FileInfo, 'path' | 'time' | 'length'>
     )>, macroValues: Array<(
       { __typename?: 'NamedStringValue' }
       & Pick<NamedStringValue, 'name' | 'value'>
@@ -1924,7 +1932,7 @@ export type SetBuildDeveloperServiceConfigMutationVariables = Exact<{
   distribution?: Maybe<Scalars['String']>;
   environment: Array<NamedStringValueInput> | NamedStringValueInput;
   repositories: Array<RepositoryInput> | RepositoryInput;
-  privateFiles: Array<Scalars['String']> | Scalars['String'];
+  privateFiles: Array<FileInfoInput> | FileInfoInput;
   macroValues: Array<NamedStringValueInput> | NamedStringValueInput;
 }>;
 
@@ -1949,7 +1957,7 @@ export type SetBuildClientServiceConfigMutationVariables = Exact<{
   distribution?: Maybe<Scalars['String']>;
   environment: Array<NamedStringValueInput> | NamedStringValueInput;
   repositories: Array<RepositoryInput> | RepositoryInput;
-  privateFiles: Array<Scalars['String']> | Scalars['String'];
+  privateFiles: Array<FileInfoInput> | FileInfoInput;
   macroValues: Array<NamedStringValueInput> | NamedStringValueInput;
 }>;
 
@@ -3810,6 +3818,7 @@ export const FaultsDocument = gql`
       }
       files {
         path
+        time
         length
       }
     }
@@ -3890,6 +3899,7 @@ export const FaultDocument = gql`
       }
       files {
         path
+        time
         length
       }
     }
@@ -4523,7 +4533,11 @@ export const BuildDeveloperServiceConfigDocument = gql`
       }
       subDirectory
     }
-    privateFiles
+    privateFiles {
+      path
+      time
+      length
+    }
     macroValues {
       name
       value
@@ -4611,7 +4625,11 @@ export const BuildClientServiceConfigDocument = gql`
       }
       subDirectory
     }
-    privateFiles
+    privateFiles {
+      path
+      time
+      length
+    }
     macroValues {
       name
       value
@@ -4648,7 +4666,7 @@ export type BuildClientServiceConfigQueryHookResult = ReturnType<typeof useBuild
 export type BuildClientServiceConfigLazyQueryHookResult = ReturnType<typeof useBuildClientServiceConfigLazyQuery>;
 export type BuildClientServiceConfigQueryResult = Apollo.QueryResult<BuildClientServiceConfigQuery, BuildClientServiceConfigQueryVariables>;
 export const SetBuildDeveloperServiceConfigDocument = gql`
-    mutation setBuildDeveloperServiceConfig($service: String!, $distribution: String, $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $privateFiles: [String!]!, $macroValues: [NamedStringValueInput!]!) {
+    mutation setBuildDeveloperServiceConfig($service: String!, $distribution: String, $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $privateFiles: [FileInfoInput!]!, $macroValues: [NamedStringValueInput!]!) {
   setBuildDeveloperServiceConfig(
     service: $service
     distribution: $distribution
@@ -4722,7 +4740,7 @@ export type RemoveBuildDeveloperServiceConfigMutationHookResult = ReturnType<typ
 export type RemoveBuildDeveloperServiceConfigMutationResult = Apollo.MutationResult<RemoveBuildDeveloperServiceConfigMutation>;
 export type RemoveBuildDeveloperServiceConfigMutationOptions = Apollo.BaseMutationOptions<RemoveBuildDeveloperServiceConfigMutation, RemoveBuildDeveloperServiceConfigMutationVariables>;
 export const SetBuildClientServiceConfigDocument = gql`
-    mutation setBuildClientServiceConfig($service: String!, $distribution: String, $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $privateFiles: [String!]!, $macroValues: [NamedStringValueInput!]!) {
+    mutation setBuildClientServiceConfig($service: String!, $distribution: String, $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!, $privateFiles: [FileInfoInput!]!, $macroValues: [NamedStringValueInput!]!) {
   setBuildClientServiceConfig(
     service: $service
     distribution: $distribution

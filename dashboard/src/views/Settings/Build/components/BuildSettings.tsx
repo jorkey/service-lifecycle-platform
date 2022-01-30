@@ -12,11 +12,10 @@ import {
 } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
-import {NamedStringValue, Repository, useProvidersInfoQuery} from "../../../../generated/graphql";
+import {FileInfo, NamedStringValue, Repository, useProvidersInfoQuery} from "../../../../generated/graphql";
 import TextField from "@material-ui/core/TextField";
 import RepositoriesTable from "./RepositoriesTable";
 import NamedValueTable from "./NamedValueTable";
-import {FetchResult} from "@apollo/client";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import PrivateFilesTable from "./PrivateFilesTable";
@@ -65,14 +64,13 @@ interface ServiceEditorParams {
   environment: NamedStringValue[]
   repositoriesTitle: string
   repositories: Repository[]
-  privateFiles: string[]
+  privateFiles: FileInfo[]
   uploadPrivateFilePath: string
   macroValues: NamedStringValue[]
   hasService: (service: string) => boolean
   validate: (environment: NamedStringValue[], repositories: Repository[], macroValues: NamedStringValue[]) => boolean
   setServiceConfig: (service: string, distribution: string | null | undefined, environment: NamedStringValue[],
-                     repositories: Repository[], privateFiles: string[],
-                     macroValues: NamedStringValue[]) => Promise<boolean>
+                     repositories: Repository[], privateFiles: FileInfo[], macroValues: NamedStringValue[]) => Promise<boolean>
   error?: string
   fromUrl: string
 }
@@ -86,8 +84,8 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
   const [builderDistribution, setBuilderDistribution] = useState(initBuilderDistribution)
   const [environment, setEnvironment] = useState(initEnvironment)
   const [repositories, setRepositories] = useState(initRepositories)
-  const [privateFiles, setPrivateFiles] = useState<Array<{path:string, localFile:File|null}>>(
-    initPrivateFiles.map(file => ({ path:file, localFile:null }) ))
+  const [privateFiles, setPrivateFiles] = useState<Array<{info:FileInfo, localFile:File|null}>>(
+    initPrivateFiles.map(file => ({ info:file, localFile:null }) ))
   const [macroValues, setMacroValues] = useState(initMacroValues)
 
   const [addEnvironment, setAddEnvironment] = useState(false)
@@ -297,8 +295,9 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
               addPrivateFile={addPrivateFile}
               confirmRemove={true}
               onPrivateFileAdded={
-                (file, localFile) => {
-                  setPrivateFiles([...privateFiles, {path: file, localFile}])
+                (path, localFile) => {
+                  setPrivateFiles([...privateFiles,
+                    {info: {path: path, time: new Date(localFile.lastModified), length: localFile.size}, localFile}])
                   setAddPrivateFile(false)
                 }
               }
@@ -306,7 +305,7 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                 setAddPrivateFile(false)
               }}
               onPrivateFileRemoved={
-                file => setPrivateFiles(privateFiles.filter(s => s.path != file))
+                path => setPrivateFiles(privateFiles.filter(s => s.info.path != path))
               }
             />
           </CardContent>:null}
@@ -376,10 +375,11 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
             onClick={() => {
               Promise.all(privateFiles
                 .filter(file => file.localFile)
-                .map(file => upload(uploadPrivateFilePath + '/' + service + '/' + encodeURIComponent(file.path),
+                .map(file => upload(uploadPrivateFilePath + '/' + encodeURIComponent(
+                  service + '/' + file.info.path),
                   file.localFile!)))
               .then(() => setServiceConfig(service!, builderDistribution, environment, repositories,
-                  privateFiles.map(file => file.path), macroValues))
+                  privateFiles.map(file => file.info), macroValues))
               .then((result) => { if (result) setGoBack(true) })
               .catch(result => setOwnError(JSON.stringify(result)))
             }}

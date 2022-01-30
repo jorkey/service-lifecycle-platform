@@ -16,25 +16,39 @@ class DistributionDirectory(val directory: File) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val directoryDir = new File(directory, "directory")
+
   private val developerDir = new File(directoryDir, "developer")
   private val developerServicesDir = new File(developerDir, "services")
+  private val developerPrivateDir = new File(developerDir, "private")
+  private val developerPrivateCommonDir = new File(developerPrivateDir, "common")
+  private val developerPrivateServicesDir = new File(developerPrivateDir, "services")
+
   private val clientDir = new File(directoryDir, "client")
   private val clientServicesDir = new File(clientDir, "services")
+  private val clientPrivateDir = new File(clientDir, "private")
+  private val clientPrivateCommonDir = new File(clientPrivateDir, "common")
+  private val clientPrivateServicesDir = new File(clientPrivateDir, "services")
+
   private val faultsDir = new File(directoryDir, "faults")
-
   private val builderDir = new File(directory, "builder")
-
-  private val privateDirName =  "private"
 
   if (!directory.exists()) directory.mkdirs()
 
   if (!directoryDir.exists()) directoryDir.mkdir()
+
   if (!developerDir.exists()) developerDir.mkdir()
   if (!developerServicesDir.exists()) developerServicesDir.mkdir()
+  if (!developerPrivateDir.exists()) developerPrivateDir.mkdir()
+  if (!developerPrivateCommonDir.exists()) developerPrivateCommonDir.mkdir()
+  if (!developerPrivateServicesDir.exists()) developerPrivateServicesDir.mkdir()
+
   if (!clientDir.exists()) clientDir.mkdir()
   if (!clientServicesDir.exists()) clientServicesDir.mkdir()
-  if (!faultsDir.exists()) faultsDir.mkdir()
+  if (!clientPrivateDir.exists()) clientPrivateDir.mkdir()
+  if (!clientPrivateCommonDir.exists()) clientPrivateCommonDir.mkdir()
+  if (!clientPrivateServicesDir.exists()) clientPrivateServicesDir.mkdir()
 
+  if (!faultsDir.exists()) faultsDir.mkdir()
   if (!builderDir.exists()) builderDir.mkdir()
 
   def getConfigFile(): File = {
@@ -81,26 +95,32 @@ class DistributionDirectory(val directory: File) {
     new File(getClientServiceDir(version.distribution, service), getClientVersionImageFileName(service, version.clientVersion))
   }
 
-  def getDeveloperPrivateDir(distribution: String, service: ServiceId): File = {
-    val dir = new File(getDeveloperServiceDir(distribution, service), privateDirName)
-    if (!dir.exists()) dir.mkdir()
-    dir
+  def getDeveloperPrivateFile(path: String): File = {
+    val index = path.indexOf("/")
+    getDeveloperPrivateFile(path.substring(0, index), path.substring(index+1))
   }
 
-  def getDeveloperPrivateFile(distribution: String, service: ServiceId, path: String): File = {
-    val file = new File(getDeveloperPrivateDir(distribution, service), path)
+  def getDeveloperPrivateFile(service: ServiceId, path: String): File = {
+    val file = if (!service.isEmpty) {
+      new File(new File(developerPrivateServicesDir, service), path)
+    } else {
+      new File(developerPrivateCommonDir, path)
+    }
     file.getParentFile.mkdirs()
     file
   }
 
-  def getClientPrivateDir(distribution: String, service: ServiceId): File = {
-    val dir = new File(getClientServiceDir(distribution, service), privateDirName)
-    if (!dir.exists()) dir.mkdir()
-    dir
+  def getClientPrivateFile(path: String): File = {
+    val index = path.indexOf("\"")
+    getClientPrivateFile(path.substring(0, index), path.substring(index+1))
   }
 
-  def getClientPrivateFile(distribution: String, service: ServiceId, path: String): File = {
-    val file = new File(getClientPrivateDir(distribution, service), path)
+  def getClientPrivateFile(service: ServiceId, path: String): File = {
+    val file = if (!service.isEmpty) {
+      new File(new File(clientPrivateServicesDir, service), path)
+    } else {
+      new File(clientPrivateCommonDir, path)
+    }
     file.getParentFile.mkdirs()
     file
   }

@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
-import com.vyulabs.update.common.config.{NamedStringValue, Repository}
+import com.vyulabs.update.common.config.{NamedStringValue, Repository, ServicePrivateFile}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
@@ -109,7 +109,7 @@ object BuilderMain extends App {
             val version = DeveloperVersion.parse(arguments.getValue("version"))
             val sourceRepositories = arguments.getValue("sourceRepositories").parseJson.convertTo[Seq[Repository]]
             val privateFiles = arguments.getOptionValue("privateFiles")
-              .map(_.parseJson.convertTo[Seq[String]]).getOrElse(Seq.empty)
+              .map(_.parseJson.convertTo[Seq[ServicePrivateFile]]).getOrElse(Seq.empty)
             val comment = arguments.getValue("comment")
             val developerBuilder = new DeveloperBuilder(new File("."), distribution)
             val buildValues = macroValues.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value))
@@ -124,7 +124,7 @@ object BuilderMain extends App {
             val settingsRepositories = arguments.getOptionValue("settingsRepositories")
               .map(_.parseJson.convertTo[Seq[Repository]]).getOrElse(Seq.empty)
             val privateFiles = arguments.getOptionValue("privateFiles")
-              .map(_.parseJson.convertTo[Seq[String]]).getOrElse(Seq.empty)
+              .map(_.parseJson.convertTo[Seq[ServicePrivateFile]]).getOrElse(Seq.empty)
             var buildValues = macroValues.foldLeft(Map.empty[String, String])((m, e) => m + (e.name -> e.value))
             buildValues += ("distributionUrl" -> distributionUrl)
             buildValues += ("version" -> version.toString)

@@ -103,14 +103,14 @@ trait ServiceConfigsAdministrationCoder {
                                      distribution: Option[DistributionId],
                                      environment: Seq[NamedStringValue],
                                      repositories: Seq[Repository],
-                                     privateFiles: Seq[String],
+                                     privateFiles: Seq[FileInfo],
                                      macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildDeveloperServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
-      GraphqlArgument("privateFiles" -> privateFiles, "[String!]"),
+      GraphqlArgument("privateFiles" -> privateFiles, "[FileInfoInput!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
     ))
   }
@@ -124,14 +124,14 @@ trait ServiceConfigsAdministrationCoder {
                                   distribution: Option[DistributionId],
                                   environment: Seq[NamedStringValue],
                                   repositories: Seq[Repository],
-                                  privateFiles: Seq[String],
+                                  privateFiles: Seq[FileInfo],
                                   macroValues: Seq[NamedStringValue]) = {
     GraphqlMutation[Boolean]("setBuildClientServiceConfig", Seq(
       GraphqlArgument("service" -> service),
       GraphqlArgument("distribution" -> distribution),
       GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
       GraphqlArgument("repositories" -> repositories, "[RepositoryInput!]"),
-      GraphqlArgument("privateFiles" -> privateFiles, "[String!]"),
+      GraphqlArgument("privateFiles" -> privateFiles, "[FileInfoInput!]"),
       GraphqlArgument("macroValues" -> macroValues, "[NamedStringValueInput!]")
     ))
   }

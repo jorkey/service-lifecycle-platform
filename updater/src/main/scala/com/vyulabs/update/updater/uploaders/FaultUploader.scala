@@ -4,7 +4,7 @@ import com.vyulabs.update.common.common.{Common, IdGenerator}
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info.FaultInfo._
-import com.vyulabs.update.common.info.{FaultInfo, FileInfo, ServiceNameWithRole, ServiceFaultReport}
+import com.vyulabs.update.common.info.{FaultInfo, FileInfo, ServiceFaultReport, ServiceNameWithRole}
 import com.vyulabs.update.common.utils.{IoUtils, Utils, ZipUtils}
 import com.vyulabs.update.common.version.{Build, DeveloperDistributionVersion}
 import org.slf4j.Logger
@@ -17,11 +17,6 @@ import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-
-import java.io.File
-import java.nio.file.Files
-import java.util.Date
-import scala.collection.immutable.Queue
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
@@ -112,7 +107,7 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
         IoUtils.deleteFileRecursively(tmpDirectory)
       }
       val reportFiles = fault.reportFilesTmpDir.map(_.listFiles().toSeq
-          .map(file => FileInfo(file.getName, file.length())))
+          .map(file => FileInfo(file.getName, new Date(file.lastModified()), file.length())))
         .getOrElse(Seq.empty[FileInfo])
       fault.reportFilesTmpDir.foreach(IoUtils.deleteFileRecursively(_))
       val id = idGenerator.generateId(8)

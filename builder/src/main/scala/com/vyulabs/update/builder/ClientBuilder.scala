@@ -2,7 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.common.Common.ServiceId
-import com.vyulabs.update.common.config.Repository
+import com.vyulabs.update.common.config.{Repository, ServicePrivateFile}
 import com.vyulabs.update.common.distribution.client.graphql.BuilderGraphqlCoder.{builderMutations, builderQueries}
 import com.vyulabs.update.common.distribution.client.{SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.info._
@@ -37,7 +37,7 @@ class ClientBuilder(builderDir: File) {
 
   def buildClientVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                          version: ClientDistributionVersion, author: String,
-                         repositories: Seq[Repository], privateFiles: Seq[String],
+                         repositories: Seq[Repository], privateFiles: Seq[ServicePrivateFile],
                          values: Map[String, String])(implicit log: Logger): Boolean = {
     val developerVersion = DeveloperDistributionVersion.from(version)
     val versionInfo = downloadDeveloperVersion(distributionClient, service, developerVersion).getOrElse {
@@ -139,14 +139,15 @@ class ClientBuilder(builderDir: File) {
     true
   }
 
-  def downloadClientPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId, paths: Seq[String])
+  def downloadClientPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
+                                 serviceFiles: Seq[ServicePrivateFile])
                                 (implicit log: Logger): Boolean = {
-    if (!paths.isEmpty) {
-      paths.foreach { path =>
-        log.info(s"Download client private file ${path}")
-        val file = new File(clientBuildDir(service), path)
+    if (!serviceFiles.isEmpty) {
+      serviceFiles.foreach { serviceFile =>
+        log.info(s"Download client private file ${serviceFile.loadPath}")
+        val file = new File(clientBuildDir(service), serviceFile.path)
         file.getParentFile.mkdirs()
-        if (!distributionClient.downloadClientPrivateFile(service, path, file)) {
+        if (!distributionClient.downloadClientPrivateFile(serviceFile.loadPath, file)) {
           return false
         }
       }

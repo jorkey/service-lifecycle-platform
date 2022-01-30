@@ -209,13 +209,13 @@ query faultsEndTime ($distribution: String, $service: String) {
 
 query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date) {
     faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime) {
-        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, time, length } }
     }
 }
 
 query fault ($fault: String!) {
     faults (fault: $fault) {
-        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }
+        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, time, length } }
     }
 }
 
@@ -291,7 +291,7 @@ query buildDeveloperServiceConfig ($service: String!) {
     buildDeveloperServicesConfig (service: $service) {
         service, distribution, environment { name, value },
         repositories { name, git { url, branch, cloneSubmodules }, subDirectory },
-        privateFiles, macroValues { name, value } }
+        privateFiles { path, time, length }, macroValues { name, value } }
 }
 
 query buildClientServices {
@@ -302,13 +302,13 @@ query buildClientServiceConfig ($service: String!) {
     buildClientServicesConfig (service: $service) {
         service, distribution, environment { name, value },
         repositories { name, git { url, branch, cloneSubmodules }, subDirectory },
-        privateFiles, macroValues { name, value }
+        privateFiles { path, time, length }, macroValues { name, value }
     }
 }
 
 mutation setBuildDeveloperServiceConfig ($service: String!, $distribution: String,
         $environment: [NamedStringValueInput!]!,  $repositories: [RepositoryInput!]!,
-        $privateFiles: [String!]!, $macroValues: [NamedStringValueInput!]!) {
+        $privateFiles: [FileInfoInput!]!, $macroValues: [NamedStringValueInput!]!) {
     setBuildDeveloperServiceConfig (service: $service, distribution: $distribution,
         environment: $environment, repositories: $repositories, privateFiles: $privateFiles, macroValues: $macroValues)
 }
@@ -319,7 +319,7 @@ mutation removeBuildDeveloperServiceConfig ($service: String!) {
 
 mutation setBuildClientServiceConfig ($service: String!, $distribution: String,
         $environment: [NamedStringValueInput!]!, $repositories: [RepositoryInput!]!,
-        $privateFiles: [String!]!, $macroValues: [NamedStringValueInput!]!) {
+        $privateFiles: [FileInfoInput!]!, $macroValues: [NamedStringValueInput!]!) {
     setBuildClientServiceConfig (service: $service, distribution: $distribution,
         environment: $environment, repositories: $repositories, privateFiles: $privateFiles, macroValues: $macroValues)
 }

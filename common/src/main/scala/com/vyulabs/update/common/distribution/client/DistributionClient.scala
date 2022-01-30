@@ -85,14 +85,14 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
     login().flatMap(_ => client.download(clientVersionImagePath + "/" + service + "/" + version.toString, file))
   }
 
-  def downloadDeveloperPrivateFile(service: ServiceId, path: String, file: File)
+  def downloadDeveloperPrivateFile(path: String, file: File)
                                   (implicit log: Logger): Future[Unit] = {
-    login().flatMap(_ => client.download(developerPrivateFilePath + "/" + service + "/" + encode(path), file))
+    login().flatMap(_ => client.download(developerPrivateFilePath + "/" + encode(path), file))
   }
 
-  def downloadClientPrivateFile(service: ServiceId, path: String, file: File)
+  def downloadClientPrivateFile(path: String, file: File)
                                (implicit log: Logger): Future[Unit] = {
-    login().flatMap(_ => client.download(clientPrivateFilePath + "/" + service + "/" + encode(path), file))
+    login().flatMap(_ => client.download(clientPrivateFilePath + "/" + encode(path), file))
   }
 
   def uploadDeveloperVersionImage(service: ServiceId, version: DeveloperDistributionVersion, file: File)

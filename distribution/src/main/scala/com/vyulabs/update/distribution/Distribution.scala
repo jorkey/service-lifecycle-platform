@@ -94,35 +94,31 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                         }
                       }
                     }
-                  } ~ path(developerPrivateFilePath / ".*".r / ".*".r) { (service, path) =>
+                  } ~ path(developerPrivateFilePath / ".*".r) { path =>
                     get {
                       authorize(role == AccountRole.Administrator || role == AccountRole.Builder) {
-                        getFromFile(workspace.directory.getDeveloperPrivateFile(
-                          workspace.config.distribution, service, path))
+                        getFromFile(workspace.directory.getDeveloperPrivateFile(path))
                       }
                     } ~ post {
                       authorize(role == AccountRole.Administrator) {
                         fileUpload(fileField) {
                           case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(workspace.directory.getDeveloperPrivateFile(
-                              workspace.config.distribution, service, path).toPath)
+                            val sink = FileIO.toPath(workspace.directory.getDeveloperPrivateFile(path).toPath)
                             val future = byteSource.runWith(sink)
                             onSuccess(future) { _ => complete(OK) }
                         }
                       }
                     }
-                  } ~ path(clientPrivateFilePath / ".*".r / ".*".r) { (service, path) =>
+                  } ~ path(clientPrivateFilePath / ".*".r) { path =>
                     get {
                       authorize(role == AccountRole.Administrator || role == AccountRole.Builder) {
-                        getFromFile(workspace.directory.getClientPrivateFile(
-                          workspace.config.distribution, service, path))
+                        getFromFile(workspace.directory.getClientPrivateFile(path))
                       }
                     } ~ post {
                       authorize(role == AccountRole.Administrator) {
                         fileUpload(fileField) {
                           case (fileInfo, byteSource) =>
-                            val sink = FileIO.toPath(workspace.directory.getClientPrivateFile(
-                              workspace.config.distribution, service, path).toPath)
+                            val sink = FileIO.toPath(workspace.directory.getClientPrivateFile(path).toPath)
                             val future = byteSource.runWith(sink)
                             onSuccess(future) { _ => complete(OK) }
                         }
