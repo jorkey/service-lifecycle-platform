@@ -6,8 +6,8 @@ export interface GridTableColumnParams {
   headerName?: string,
   className?: string,
   type?: GridColumnType,
-  initializable?: boolean,
   editable?: boolean,
   validate?: (value: GridTableCellValue, rowNum: number|undefined) => boolean,
+  auto?:  (values: Map<string, GridTableCellValue>) => GridTableCellValue,
   elements?: JSX.Element[]
 }

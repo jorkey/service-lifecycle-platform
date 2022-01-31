@@ -38,6 +38,7 @@ export interface GridTableCellInternalParams extends Attributes {
   select?: {value:string, description:string}[]
   editable?: boolean
   editing?: boolean
+  auto?: boolean
   focused?: boolean
   editValue?: GridTableCellValue
   onValidate?: (value: GridTableCellValue) => boolean
@@ -51,7 +52,7 @@ export interface GridTableCellInternalParams extends Attributes {
 }
 
 export const GridTableCell = (params: GridTableCellInternalParams) => {
-  const { name, className, type, value, select, editValue, editable, editing, focused,
+  const { name, className, type, value, select, editValue, editable, editing, auto, focused,
     onValidate, onClicked, onStartEdit, onStopEdit, onSetEditValue,
     onCancelled, onSelected, onUnselected } = params
 
@@ -97,7 +98,8 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
                   }}
         />
       : type == 'date' ?
-        value?((value as Date).toLocaleString()):''
+        editing ? editValue ? (editValue as Date).toLocaleString() : '' :
+        value ? (value as Date).toLocaleString() : ''
       : type == 'upload' ?
           editing ?
             <label htmlFor="upload" style={{ display: 'flex' }}>
@@ -119,7 +121,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
               </Button>
             </label>
           : value?(value as File).name:''
-      : editing ?
+      : editing && !auto ?
          type == 'select' ?
           <Select className={classes.input}
                   autoFocus={focused}

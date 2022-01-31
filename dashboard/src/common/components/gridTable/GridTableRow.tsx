@@ -50,11 +50,11 @@ export const GridTableRow = (params: GridTableRowParams) => {
     const columnClassName = cells.get(column.name)?.className
     const cellValue = cells.get(column.name)?.value
     const cellSelect = cells.get(column.name)?.select
-    const initializableCell = column.initializable != false
     const editableCell = column.editable ?
       (cells.get(column.name)?.editable != false) : cells.get(column.name)?.editable
-    const editingCell = (adding && initializableCell) || (editing && editColumn === column.name)
+    const editingCell = adding || (editing && editColumn === column.name)
     const editValue = editValues.get(column.name)
+    const auto = !!column.auto
     const classNames = column.className && columnClassName ? column.className + ' ' + columnClassName :
       column.className ? column.className : columnClassName ? columnClassName : undefined
 
@@ -71,7 +71,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
     } else {
       return <GridTableCell key={index} name={column.name} className={classNames}
                             type={column.type} value={cellValue} select={cellSelect}
-                            editable={editableCell} editing={editingCell}
+                            editable={editableCell} editing={editingCell} auto={auto}
                             focused={adding && index==0 || editing}
                             editValue={editValue}
                             onValidate={() => column.validate ? column.validate(editValues.get(column.name), rowNum) : true}
@@ -88,6 +88,11 @@ export const GridTableRow = (params: GridTableRowParams) => {
                             onStopEdit={() => setEditColumn(undefined)}
                             onSetEditValue={(value) => {
                               const newValues = new Map(editValues.set(column.name, value))
+                              columns.forEach(column => {
+                                if (column.auto) {
+                                  newValues.set(column.name, column.auto(newValues))
+                                }
+                              })
                               setEditValues(newValues)
                               if (!hasGridActions) {
                                 onSubmitted?.(newValues, editOldValues)

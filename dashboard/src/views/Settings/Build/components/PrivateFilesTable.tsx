@@ -62,19 +62,25 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
     {
       name: 'time',
       type: 'date',
-      initializable: false,
       editable: false,
       headerName: 'Time',
-      className: classes.timeColumn
-    },
+      className: classes.timeColumn,
+      auto: (values) => {
+        const file = values.get('upload') as File
+        return file?new Date(file.lastModified):undefined
+      }
+    } as GridTableColumnParams,
     {
       name: 'length',
       type: 'number',
-      initializable: false,
       editable: false,
       headerName: 'Length',
-      className: classes.lengthColumn
-    },
+      className: classes.lengthColumn,
+      auto: (values) => {
+        const file = values.get('upload') as File
+        return file?.size
+      }
+    } as GridTableColumnParams,
     {
       name: 'upload',
       headerName: 'File To Upload',
