@@ -5,7 +5,11 @@ export function upload(path: string, file: File): Promise<any> {
 
   formData.append("file", file)
 
-  const http = axios.create({})
+  const http = axios.create({
+    headers: {
+      Authorization: 'Bearer ' + localStorage.getItem('accessToken')
+    }
+  })
 
   return http.post(path, formData, {
     headers: {
