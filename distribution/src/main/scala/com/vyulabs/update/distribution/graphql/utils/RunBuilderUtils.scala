@@ -192,7 +192,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         logSource.map(lines => {
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
             logUtils.addLogs(Common.DistributionServiceName,
-              config.instance, "", 0.toString, Some(task), lines.map(_.payload)).map(_ => ())
+              config.instance, "", 0.toString, Some(task), lines.map(_.payload.copy(terminationStatus = None))).map(_ => ())
           })
           for (terminationStatus <- lines.lastOption.map(_.payload.terminationStatus).flatten) {
             if (terminationStatus) {
