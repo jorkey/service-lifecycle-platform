@@ -32,6 +32,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
                    (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext)  extends FutureDirectives with SprayJsonSupport { self =>
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
+  val consumerMutationsCoder = ConsumerMutationsCoder
   val uploadInterval = FiniteDuration(10, TimeUnit.SECONDS)
 
   var task = Option.empty[Cancellable]
@@ -117,7 +118,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
           val file = distributionDirectory.getFaultReportFile(report.document.payload.fault)
           val infoUpload = for {
             _ <- client.uploadFaultReport(report.document.payload.fault, file)
-            _ <- client.graphqlRequest(GraphqlMutation[Boolean]("addServiceFaultReportInfo", Seq(GraphqlArgument("fault" -> report.document.payload.toJson))))
+            _ <- client.graphqlRequest(consumerMutationsCoder.addFaultReportInfo(report.document.payload))
           } yield {}
           infoUpload.
             andThen {
