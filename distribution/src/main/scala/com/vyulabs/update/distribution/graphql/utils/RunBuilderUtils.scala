@@ -2,12 +2,12 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.vyulabs.update.common.common.{Common, Misc}
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId, TaskId}
-import com.vyulabs.update.common.config.{BuildServiceConfig, DistributionConfig, NamedStringValue}
+import com.vyulabs.update.common.common.{Common, Misc}
+import com.vyulabs.update.common.config.{DistributionConfig, NamedStringValue}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
-import com.vyulabs.update.common.distribution.server.{DistributionDirectory}
+import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, LogLine}
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
@@ -46,10 +46,8 @@ trait RunBuilderUtils extends SprayJsonSupport {
   def runDeveloperBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
                          (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val future = for {
-      commonConfig <- configBuilderUtils.getBuildDeveloperServiceConfig("")
-      serviceConfig <- configBuilderUtils.getBuildDeveloperServiceConfig(service)
+      config <- configBuilderUtils.getBuildDeveloperServiceMergedConfig(service)
     } yield {
-      val config = BuildServiceConfig.merge(commonConfig, Some(serviceConfig))
       val args = arguments ++ Seq(
         s"sourceRepositories=${config.repositories.toJson.compactPrint}",
         s"privateFiles=${config.privateFiles.toJson.compactPrint}",
@@ -62,15 +60,11 @@ trait RunBuilderUtils extends SprayJsonSupport {
     (result, cancel)
   }
 
-
   def runClientBuilder(task: TaskId, service: ServiceId, arguments: Seq[String])
                       (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val future = for {
-      commonConfig <- configBuilderUtils.getBuildClientServiceConfig("")
-        .map(_.getOrElse(throw new IOException("Common client services config is not found")))
-      serviceConfig <- configBuilderUtils.getBuildClientServiceConfig(service)
+      config <- configBuilderUtils.getBuildClientServiceMergedConfig(service)
     } yield {
-      val config = BuildServiceConfig.merge(commonConfig, serviceConfig)
       val args = arguments ++ Seq(
         s"settingsRepositories=${config.repositories.toJson.compactPrint}",
         s"privateFiles=${config.privateFiles.toJson.compactPrint}",

@@ -5,6 +5,7 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
+import com.vyulabs.update.common.config.BuildServiceConfig.MergedBuildConfig
 import com.vyulabs.update.common.config.{BuildServiceConfig, DistributionConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.FileInfo
@@ -65,6 +66,16 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
     })
   }
 
+  def getBuildDeveloperServiceMergedConfig(service: ServiceId)
+                                          (implicit log: Logger): Future[MergedBuildConfig] = {
+    for {
+      commonConfig <- getBuildDeveloperServiceConfig("")
+      serviceConfig <- getBuildDeveloperServiceConfig(service)
+    } yield {
+      BuildServiceConfig.merge(commonConfig, Some(serviceConfig))
+    }
+  }
+
   def setBuildClientServiceConfig(service: ServiceId,
                                   distribution: Option[DistributionId],
                                   environment: Seq[NamedStringValue],
@@ -101,5 +112,16 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
     }
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Client_BuildServices.find(filters)
+  }
+
+  def getBuildClientServiceMergedConfig(service: ServiceId)
+                                        (implicit log: Logger): Future[MergedBuildConfig] = {
+    for {
+      commonConfig <- getBuildClientServiceConfig("")
+        .map(_.getOrElse(throw new IOException("Common client services config is not found")))
+      serviceConfig <- getBuildClientServiceConfig(service)
+    } yield {
+      BuildServiceConfig.merge(commonConfig, serviceConfig)
+    }
   }
 }

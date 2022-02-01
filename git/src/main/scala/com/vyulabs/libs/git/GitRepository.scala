@@ -1,6 +1,5 @@
 package com.vyulabs.libs.git
 
-import com.vyulabs.libs.git
 import com.vyulabs.update.common.utils.IoUtils
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand.ListMode
@@ -261,6 +260,22 @@ class GitRepository(git: Git)(implicit log: Logger) {
       case ex: Exception =>
         log.error(s"Create branch ${branch} error", ex)
         false
+    }
+  }
+
+  def getLastCommitMessage(): Option[(Long, String)] = {
+    try {
+      val it = git.log().setMaxCount(1).call().iterator()
+      if (it.hasNext) {
+        val commit = it.next()
+        Some((commit.getCommitTime, commit.getFullMessage))
+      } else {
+        None
+      }
+    } catch {
+      case ex: Exception =>
+        log.error(s"Get last commit message error", ex)
+        None
     }
   }
 

@@ -40,6 +40,8 @@ object BuilderMain extends App {
 
   if (args.size < 1) Utils.error(usage())
 
+  println("builder output")
+
   try {
     val command = args(0)
 
