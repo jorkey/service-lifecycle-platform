@@ -111,7 +111,7 @@ class DistributionDirectory(val directory: File) {
   }
 
   def getClientPrivateFile(path: String): File = {
-    val index = path.indexOf("\"")
+    val index = path.indexOf("/")
     getClientPrivateFile(path.substring(0, index), path.substring(index+1))
   }
 
