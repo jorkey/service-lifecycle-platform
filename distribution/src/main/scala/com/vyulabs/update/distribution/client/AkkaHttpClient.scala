@@ -7,7 +7,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.scaladsl.{BroadcastHub, Concat, FileIO, Flow, Framing, Keep, Sink, Source}
-import akka.stream.{KillSwitches, Materializer}
+import akka.stream.{KillSwitches, Materializer, OverflowStrategy, QueueOfferResult}
 import akka.util.ByteString
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.HttpClient
@@ -19,12 +19,42 @@ import org.slf4j.Logger
 import spray.json._
 
 import java.io.{File, IOException}
+import java.net.URL
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Random
+import scala.util.{Failure, Random, Success}
 
 class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String] = None)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
   accessToken = initAccessToken
+
+  private val poolClientFlow = {
+    val url = new URL(distributionUrl)
+    if (url.getProtocol == "https")
+      Http().cachedHostConnectionPoolHttps[Promise[HttpResponse]](url.getHost, url.getPort)
+    else
+      Http().cachedHostConnectionPool[Promise[HttpResponse]](url.getHost, url.getPort)
+  }
+  private val queue =
+    Source.queue[(HttpRequest, Promise[HttpResponse])](10, OverflowStrategy.fail)
+      .via(poolClientFlow)
+      .to(Sink.foreach({
+        case (Success(resp), p) =>
+          p.success(resp)
+        case (Failure(ex), p) =>
+          system.log.error(ex, "Http request failure")
+          p.failure(ex)
+      }))
+      .run()
+
+  private def httpRequest(request: HttpRequest): Future[HttpResponse] = {
+    val responsePromise = Promise[HttpResponse]()
+    queue.offer(request -> responsePromise).flatMap {
+      case QueueOfferResult.Enqueued    => responsePromise.future
+      case QueueOfferResult.Dropped     => Future.failed(new IOException("Queue overflowed. Try again later."))
+      case QueueOfferResult.Failure(ex) => Future.failed(ex)
+      case QueueOfferResult.QueueClosed => Future.failed(new IOException("Queue was closed (pool shut down) while running the request. Try again later."))
+    }
+  }
 
   def graphql[Response](request: GraphqlRequest[Response])
                        (implicit reader: JsonReader[Response], log: Logger): Future[Response] = {
@@ -34,7 +64,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
       HttpEntity(ContentTypes.`application/json`, request.encodeRequest().compactPrint.getBytes()))
     getHttpCredentials().foreach(credentials => post = post.addCredentials(credentials))
     for {
-      response <- Http(system).singleRequest(post)
+      response <- httpRequest(post)
       entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
     } yield {
       if (response.status.isSuccess()) {
@@ -62,7 +92,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
       HttpEntity(ContentTypes.`application/json`, request.encodeRequest().compactPrint.getBytes()))
     getHttpCredentials().foreach(credentials => post.addCredentials(credentials))
     for {
-      response <- Http(system).singleRequest(post)
+      response <- httpRequest(post)
     } yield {
       if (response.status.isSuccess()) {
         response.entity.dataBytes
@@ -150,7 +180,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
     var post = Post(distributionUrl.toString + "/" + loadPathPrefix + "/" + path, multipartForm)
     getHttpCredentials().foreach(credentials => post = post.addCredentials(credentials))
     for {
-      response <- Http(system).singleRequest(post)
+      response <- httpRequest(post)
       entity <- response.entity.dataBytes.runFold(ByteString())(_ ++ _)
     } yield {
       if (!response.status.isSuccess()) {
@@ -166,7 +196,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
     var get = Get(distributionUrl.toString + "/" + loadPathPrefix + "/" + path)
     getHttpCredentials().foreach(credentials => get = get.addCredentials(credentials))
     for {
-      response <- Http(system).singleRequest(get)
+      response <- httpRequest(get)
       result <- {
         if (response.status.isSuccess()) {
           response.entity.dataBytes.runWith(FileIO.toPath(file.toPath)).map(_ => ())
