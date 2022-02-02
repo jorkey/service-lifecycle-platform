@@ -29,10 +29,12 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
 
   private val poolClientFlow = {
     val url = new URL(distributionUrl)
-    if (url.getProtocol == "https")
-      Http().cachedHostConnectionPoolHttps[Promise[HttpResponse]](url.getHost, url.getPort)
-    else
-      Http().cachedHostConnectionPool[Promise[HttpResponse]](url.getHost, url.getPort)
+    val port = url.getPort
+    if (url.getProtocol == "https") {
+      Http().cachedHostConnectionPoolHttps[Promise[HttpResponse]](url.getHost, if (port != -1) port else 443)
+    } else {
+      Http().cachedHostConnectionPool[Promise[HttpResponse]](url.getHost, if (port != -1) port else 80)
+    }
   }
   private val queue =
     Source.queue[(HttpRequest, Promise[HttpResponse])](10, OverflowStrategy.fail)
