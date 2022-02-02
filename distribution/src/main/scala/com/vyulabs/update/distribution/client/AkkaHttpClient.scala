@@ -6,21 +6,21 @@ import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, HttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.{KillSwitch, KillSwitches, Materializer, UniqueKillSwitch}
 import akka.stream.scaladsl.{BroadcastHub, Concat, FileIO, Flow, Framing, Keep, Sink, Source}
+import akka.stream.{KillSwitches, Materializer}
 import akka.util.ByteString
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.HttpClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
-import com.vyulabs.update.distribution.graphql.{Complete, ConnectionAck, ConnectionInit, ConnectionInitPayload, Next, Subscribe, SubscribePayload}
+import com.vyulabs.update.distribution.graphql._
 import org.slf4j.Logger
 import spray.json._
 
 import java.io.{File, IOException}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Random, Success}
+import scala.util.Random
 
 class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String] = None)
                     (implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) extends HttpClient[AkkaSource] {
@@ -66,7 +66,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
     } yield {
       if (response.status.isSuccess()) {
         response.entity.dataBytes
-          .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 10240))
+          .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 1048576))
           .map(_.decodeString("utf8"))
           .filter(!_.isEmpty)
           .map(line => if (line.startsWith("data:")) line.substring(5) else throw new IOException(s"Error data line: ${line}"))

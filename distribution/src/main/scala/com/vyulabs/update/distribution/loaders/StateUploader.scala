@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.common.Common.DistributionId
 import com.vyulabs.update.common.distribution.client.DistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.{ConsumerMutationsCoder, GraphqlArgument, GraphqlMutation}
+import com.vyulabs.update.common.distribution.client.graphql.ConsumerMutationsCoder
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
@@ -39,7 +39,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
 
   def start(): Unit = {
     synchronized {
-      task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
+      task = Some(system.scheduler.scheduleOnce(uploadInterval)(() => uploadState()))
       log.debug("Uploader is scheduled")
     }
   }
@@ -57,7 +57,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
     }
   }
 
-  private def uploadState(): Unit = {
+  private def uploadState(): Future[Unit] = {
     log.debug("Upload state")
     val result = for {
       _ <- uploadServiceStates().andThen {
@@ -78,7 +78,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
             } else {
               log.error(s"State is failed to upload: ${result.failed.get}")
             }
-            task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
+            task = Some(system.scheduler.scheduleOnce(uploadInterval)(() => uploadState()))
             log.debug("Upload task is scheduled")
           }
         }
@@ -91,19 +91,20 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
       from <- getLastUploadSequence(collections.State_ServiceStates.name)
       newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
       newStates <- Future(newStatesDocuments)
-    } yield {
-      if (!newStates.isEmpty) {
-        client.graphqlRequest(ConsumerMutationsCoder.setServiceStates(newStates.map(_.document.payload))).
-          andThen {
-            case Success(_) =>
-              setLastUploadSequence(collections.State_ServiceStates.name, newStatesDocuments.last.sequence)
-            case Failure(ex) =>
-              setLastUploadError(collections.State_ServiceStates.name, ex.getMessage)
-          }
-      } else {
-        Promise[Unit].success(Unit).future
+      _ <- {
+        if (!newStates.isEmpty) {
+          client.graphqlRequest(ConsumerMutationsCoder.setServiceStates(newStates.map(_.document.payload))).
+            andThen {
+              case Success(_) =>
+                setLastUploadSequence(collections.State_ServiceStates.name, newStatesDocuments.last.sequence)
+              case Failure(ex) =>
+                setLastUploadError(collections.State_ServiceStates.name, ex.getMessage)
+            }
+        } else {
+          Promise[Unit].success(Unit).future
+        }
       }
-    }
+    } yield {}
   }
 
   private def uploadFaultReports(): Future[Unit] = {
@@ -112,26 +113,27 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
       from <- getLastUploadSequence(collections.Faults_ReportsInfo.name)
       newReportsDocuments <- collections.Faults_ReportsInfo.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
       newReports <- Future(newReportsDocuments)
-    } yield {
-      if (!newReports.isEmpty) {
-        Future.sequence(newReports.filter(_.document.distribution == distribution).map(report => {
-          val file = distributionDirectory.getFaultReportFile(report.document.payload.fault)
-          val infoUpload = for {
-            _ <- client.uploadFaultReport(report.document.payload.fault, file)
-            _ <- client.graphqlRequest(consumerMutationsCoder.addFaultReportInfo(report.document.payload))
-          } yield {}
-          infoUpload.
-            andThen {
-              case Success(_) =>
-                setLastUploadSequence(collections.Faults_ReportsInfo.name, newReportsDocuments.last.sequence)
-              case Failure(ex) =>
-                setLastUploadError(collections.Faults_ReportsInfo.name, ex.getMessage)
-            }
-        }))
-      } else {
-        Promise[Unit].success(Unit).future
+      _ <- {
+        if (!newReports.isEmpty) {
+          Future.sequence(newReports.filter(_.document.distribution == distribution).map(report => {
+            val file = distributionDirectory.getFaultReportFile(report.document.payload.fault)
+            val infoUpload = for {
+              _ <- client.uploadFaultReport(report.document.payload.fault, file)
+              _ <- client.graphqlRequest(consumerMutationsCoder.addFaultReportInfo(report.document.payload))
+            } yield {}
+            infoUpload.
+              andThen {
+                case Success(_) =>
+                  setLastUploadSequence(collections.Faults_ReportsInfo.name, newReportsDocuments.last.sequence)
+                case Failure(ex) =>
+                  setLastUploadError(collections.Faults_ReportsInfo.name, ex.getMessage)
+              }
+          }))
+        } else {
+          Promise[Unit].success(Unit).future
+        }
       }
-    }
+    } yield {}
   }
 
   private def getLastUploadSequence(component: String): Future[Long] = {
