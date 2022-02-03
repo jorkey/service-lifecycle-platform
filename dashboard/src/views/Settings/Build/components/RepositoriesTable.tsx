@@ -39,7 +39,7 @@ interface RepositoryTableParams {
   confirmRemove?: boolean
   onRepositoryAdded?: (repository: Repository) => void
   onRepositoryAddCancelled?: () => void
-  onRepositoryChanged?: (oldRepository: Repository, newRepository: Repository) => void
+  onRepositoryChanged?: (index: number, newRepository: Repository) => void
   onRepositoryRemoved?: (repository: Repository) => void
 }
 
@@ -133,7 +133,7 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       onRowAddCancelled={onRepositoryAddCancelled}
       onRowChanged={ (row, values, oldValues) =>
         new Promise<boolean>(resolve => {
-          onRepositoryChanged!(repositories[row], { name: values.get('name')! as string,
+          onRepositoryChanged!(row, { name: values.get('name')! as string,
             git: {
               url: values.get('url')! as string,
               branch: values.get('branch')! as string,

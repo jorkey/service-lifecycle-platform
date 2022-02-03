@@ -29,13 +29,12 @@ interface ServicesProfileParams {
   confirmRemove?: boolean
   onServiceAdded?: (service: string) => Promise<boolean>
   onServiceAddCancelled?: () => Promise<boolean>
-  onServiceChanged?: (oldServiceName: string, newServiceName: string) => Promise<boolean>
   onServiceRemoved?: (service: string) => Promise<boolean>
 }
 
 const ServicesProfile = (params: ServicesProfileParams) => {
   const { newProfile, profile, setProfile, doesProfileExist, services, addService, deleteIcon, allowEdit, confirmRemove,
-    onServiceAdded, onServiceAddCancelled, onServiceChanged, onServiceRemoved } = params
+    onServiceAdded, onServiceAddCancelled, onServiceRemoved } = params
 
   const classes = useStyles()
 
@@ -64,7 +63,6 @@ const ServicesProfile = (params: ServicesProfileParams) => {
                    confirmRemove={confirmRemove}
                    onServiceAdded={onServiceAdded}
                    onServiceAddCancelled={onServiceAddCancelled}
-                   onServiceChanged={onServiceChanged}
                    onServiceRemoved={onServiceRemoved}
     />
   </>)

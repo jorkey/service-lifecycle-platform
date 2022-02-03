@@ -249,7 +249,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
   private def markSourceRepositories(sourceRepositories: Seq[GitRepository], service: ServiceId,
                                      version: DeveloperDistributionVersion, comment: String): Boolean = {
     for (repository <- sourceRepositories) {
-      log.info(s"Mark source repository with version ${version}")
+      log.info(s"Mark source repository ${repository.getUrl()} with version ${version}")
       val tag = service + "-" + version.toString
       repository.setTag(tag, Some(comment))
       if (!repository.push(Seq(new RefSpec(tag)))) {

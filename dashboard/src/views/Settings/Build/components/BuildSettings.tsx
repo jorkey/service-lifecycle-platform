@@ -213,9 +213,9 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                 setAddEnvironment(false)
               }}
               onValueChanged={
-                (oldValue, newValue) => {
-                  const newValues = environment.filter(v => v.name != oldValue.name)
-                  setEnvironment([...newValues, newValue])
+                (index, newValue) => {
+                  environment[index] = newValue
+                  setEnvironment([...environment])
                 }
               }
               onValueRemoved={
@@ -259,9 +259,9 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                 setAddRepository(false)
               }}
               onRepositoryChanged={
-                (oldRepository, newRepository) => {
-                  const newSources = repositories.filter(s => s != oldRepository)
-                  setRepositories([...newSources, newRepository])
+                (index, newRepository) => {
+                  repositories[index] = newRepository
+                  setRepositories([...repositories])
                 }
               }
               onRepositoryRemoved={
@@ -345,9 +345,9 @@ const BuildSettings: React.FC<ServiceEditorParams> = props => {
                 setAddMacroValue(false)
               }}
               onValueChanged={
-                (oldValue, newValue) => {
-                  const newValues = macroValues.filter(v => v.name != oldValue.name)
-                  setMacroValues([...newValues, newValue])
+                (index, newValue) => {
+                  macroValues[index] = newValue
+                  setMacroValues([...macroValues])
                 }
               }
               onValueRemoved={

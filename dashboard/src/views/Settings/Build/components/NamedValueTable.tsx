@@ -30,7 +30,7 @@ interface NamedValueTableParams {
   confirmRemove?: boolean
   onValueAdded?: (value: NamedStringValue) => void
   onValueAddCancelled?: () => void
-  onValueChanged?: (oldValue: NamedStringValue, newValue: NamedStringValue) => void
+  onValueChanged?: (index: number, newValue: NamedStringValue) => void
   onValueRemoved?: (value: NamedStringValue) => void
 }
 
@@ -97,7 +97,7 @@ const NamedValueTable = (props: NamedValueTableParams) => {
       onRowAddCancelled={onValueAddCancelled}
       onRowChanged={ (row, cells, oldValues) =>
         new Promise<boolean>(resolve => {
-          onValueChanged!(values[row], {
+          onValueChanged!(row, {
             name: cells.get('name')! as string,
             value: cells.get('value')! as string })
           resolve(true)
