@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand.ListMode
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException
 import org.eclipse.jgit.lib.Ref
+import org.eclipse.jgit.lib.SubmoduleConfig.FetchRecurseSubmodulesMode
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.submodule.SubmoduleWalk
 import org.eclipse.jgit.transport.RefSpec
@@ -373,23 +374,15 @@ object GitRepository {
         val git = Git.open(directory)
         toClose = Some(git)
         val url = git.getRepository.getConfig().getString("remote", "origin", "url")
-        if (url != uri.toString) {
-          log.info(s"Current URL ${url} != ${uri.toString}")
+        if (url != uri) {
+          log.info(s"Current URL ${url} != ${uri}")
           return None
         }
         if (git.getRepository.getBranch() != branch) {
           log.info(s"Current branch is ${git.getRepository.getBranch()}. Need branch ${branch}")
           return None
         }
-        val walk = SubmoduleWalk.forIndex(git.getRepository)
-        while (walk.next) {
-          val submoduleRepository = walk.getRepository
-          if (submoduleRepository != null) {
-            Git.wrap(submoduleRepository).pull().call()
-            submoduleRepository.close
-          }
-        }
-        git.pull().call()
+        git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
         toClose = None
         return Some(new GitRepository(git))
       } catch {
