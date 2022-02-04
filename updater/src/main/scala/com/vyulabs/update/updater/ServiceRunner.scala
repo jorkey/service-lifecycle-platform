@@ -14,7 +14,7 @@ import org.slf4j.Logger
 
 import java.io.File
 import java.nio.file.Files
-import java.text.{ParseException, SimpleDateFormat}
+import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 import java.util.{Date, TimeZone}
 import scala.collection.immutable.Queue
@@ -35,7 +35,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
   private var stopping = false
   private var lastStartTime = 0L
 
-  private val logUnitName = "SERVICE"
+  private val defaultLogUnit = "SERVICE"
 
   def startService(): Boolean = {
     synchronized {
@@ -56,7 +56,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
             (message, exception) => log.error(message, exception))
         }
         val logUploaderBuffer = logUploader.map { logUploader =>
-          new LogBuffer(s"Service ${profiledServiceName}", logUnitName,
+          new LogBuffer(s"Service ${profiledServiceName}", defaultLogUnit,
             logUploader, 100, 1000)
         }
         val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
@@ -65,7 +65,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           (lines: Seq[(String, Boolean)]) => {
             lines.foreach {
               case (line, nl) =>
-                val logLine = LogFormat.parse(line, logUnitName)
+                val logLine = LogFormat.parse(line, defaultLogUnit)
                 writeLogs.writeLogLine(logLine)
                 logUploaderBuffer.foreach(uploaderBuffer => {
                   uploaderBuffer.append(logLine)
@@ -88,7 +88,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           Await.result(ChildProcess.start(command, arguments, env, state.currentServiceDirectory), FiniteDuration(10, TimeUnit.SECONDS))
         } catch {
           case e: Exception =>
-            logUploaderBuffer.foreach(_.append(LogLine(new Date(), "ERROR", logUnitName, s"Can't start process ${e.getMessage}", None)))
+            logUploaderBuffer.foreach(_.append(LogLine(new Date(), "ERROR", defaultLogUnit, s"Can't start process ${e.getMessage}", None)))
             log.error("Can't start process", e)
             return false
         }

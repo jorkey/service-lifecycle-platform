@@ -10,7 +10,7 @@ object LogFormat {
   dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))
   private val formattedLogRegex = "(.[^ ]* .[^ ]*) (.[^ ]*) (.[^ ]*) (.*)".r
 
-  def parse(line: String, unitName: String): LogLine = {
+  def parse(line: String, defaultUnit: String): LogLine = {
     line match {
       case formattedLogRegex(date, level, unit, message) =>
         try {
@@ -18,10 +18,10 @@ object LogFormat {
           LogLine(logDate, level, unit, message, None)
         } catch {
           case _: ParseException =>
-            LogLine(new Date(), "INFO", unitName, line, None)
+            LogLine(new Date(), "INFO", defaultUnit, line, None)
         }
       case line =>
-        LogLine(new Date(), "INFO", unitName, line, None)
+        LogLine(new Date(), "INFO", defaultUnit, line, None)
     }
   }
 

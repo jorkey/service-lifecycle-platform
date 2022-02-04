@@ -31,6 +31,11 @@ const useStyles = makeStyles(theme => ({
     minWidth: '100px',
     maxWidth: '100px',
   },
+  unitColumn: {
+    minWidth: '100px',
+    maxWidth: '100px',
+    textOverflow: 'ellipsis'
+  },
   messageColumn: {
     whiteSpace: 'pre',
   },
@@ -190,6 +195,11 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       headerName: 'Process',
       className: classes.processColumn
     },
+    // { TODO
+    //   name: 'unit',
+    //   headerName: 'Unit',
+    //   className: classes.unitColumn
+    // },
     {
       name: 'message',
       headerName: 'Line',

@@ -24,7 +24,6 @@ class ChildProcess(process: Process)(implicit executionContext: ExecutionContext
       },
       () => {
         val status = process.waitFor()
-        log.info(s"Process ${process.pid()} is terminated with status ${status}")
         onExit(status)
         exitCode.trySuccess(status)
       },

@@ -9,6 +9,7 @@ import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.{AdministratorSubscriptionsCoder, BuilderQueriesCoder, GraphqlArgument, GraphqlMutation}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, LogLine}
+import com.vyulabs.update.common.logs.LogFormat
 import com.vyulabs.update.common.process.ChildProcess
 import com.vyulabs.update.common.utils.{IoUtils, ZipUtils}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
@@ -137,10 +138,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         lines => {
           val logLines = lines.map(line => {
             try {
-              val array = line._1.split(" ", 5)
-              val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
-              val date = dateFormat.parse(s"${array(0)} ${array(1)}")
-              LogLine(date, array(2), array(3), array(4), None)
+              LogFormat.parse(line._1, "BUILDER")
             } catch {
               case e: ParseException =>
                 LogLine(new Date, "INFO", "", line._1, None)

@@ -22,15 +22,10 @@ class ChildProcessTest extends FlatSpec with Matchers {
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   val script = File.createTempFile("test1", ".sh"); script.deleteOnExit()
-  IoUtils.writeBytesToFile(script, "echo \"message1\"\nsleep 5\necho \"message2\"".getBytes)
+  IoUtils.writeBytesToFile(script, "echo \"message1\"; echo \"message2\"; echo -n \"message3 \"\nsleep 5\necho \"message4\"".getBytes)
 
   val errorScript = File.createTempFile("test2", ".sh"); errorScript.deleteOnExit()
-  IoUtils.writeBytesToFile(errorScript, "echo \"message1\"\nsleep 5\necho \"error message\" >&2".getBytes)
-
-  it should "run process and wait termination" in {
-    val process = result(ChildProcess.start("/bin/bash", Seq(script.toString)))
-    result(process.onTermination())
-  }
+  IoUtils.writeBytesToFile(errorScript, "echo \"message\"\nsleep 5\necho \"error message\" >&2".getBytes)
 
   it should "run process and read output" in {
     val process = result(ChildProcess.start("/bin/bash", Seq(script.toString)))
@@ -45,13 +40,10 @@ class ChildProcessTest extends FlatSpec with Matchers {
   }
 
   it should "terminate process" in {
-    /* TODO
     val process = result(ChildProcess.start("/bin/bash", Seq(script.toString)))
-    process.handleOutput(lines => lines.foreach { case (line, nl) =>
-    println(line)
+    process.readOutput(lines => lines.foreach { case (line, nl) =>
       assertResult(false)(result(process.terminate()))
     })
     result(process.onTermination())
-    */
   }
 }
