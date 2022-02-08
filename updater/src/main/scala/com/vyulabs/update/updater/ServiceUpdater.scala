@@ -148,7 +148,8 @@ class ServiceUpdater(instance: InstanceId, service: ServiceNameWithRole,
       log.info(s"Post install service")
       var args = Map.empty[String, String]
       for (role <- service.role) {
-        args += ("profile" -> role)
+        args += ("role" -> role)
+        args += ("profile" -> role) // Backward compatibility
       }
       args += ("version" -> newVersion.original.toString)
       args += ("PATH" -> System.getenv("PATH"))
@@ -194,7 +195,8 @@ class ServiceUpdater(instance: InstanceId, service: ServiceNameWithRole,
 
           var parameters = Map.empty[String, String]
           for (role <- service.role) {
-            parameters += ("profile" -> role)
+            parameters += ("role" -> role)
+            parameters += ("profile" -> role) // Backward compatibility
           }
           parameters += ("version" -> newVersion.original.toString)
 
