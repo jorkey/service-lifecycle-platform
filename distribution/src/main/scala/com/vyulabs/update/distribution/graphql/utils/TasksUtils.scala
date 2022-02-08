@@ -61,12 +61,12 @@ trait TasksUtils extends SprayJsonSupport {
     collections.Tasks_Info.distinctField[TaskType]("taskType")
   }
 
-  def getActiveTasks(id: Option[TaskId] = None, taskType: Option[TaskType] = None,
+  def getActiveTasks(id: Option[TaskId] = None, taskTypes: Seq[TaskType] = Seq.empty,
                      parameters: Seq[TaskParameter] = Seq.empty): Seq[TaskInfo] = {
     synchronized {
       activeTasks
         .filter(task => id.forall(_ == task.task))
-        .filter(task => taskType.forall(_ == task.`type`))
+        .filter(task => taskTypes.forall(_ == task.`type`))
         .filter(task => parameters.forall(parameter =>
           task.parameters.exists(_ == parameter)))
         .sortWith((t1, t2) => t1.creationTime.getTime > t2.creationTime.getTime)

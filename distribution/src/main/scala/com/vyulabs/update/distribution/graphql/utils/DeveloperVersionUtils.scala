@@ -10,6 +10,7 @@ import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDi
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
+import spray.json
 import spray.json._
 
 import java.io.IOException
@@ -27,6 +28,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   protected val serviceProfilesUtils: ServiceProfilesUtils
   protected val tasksUtils: TasksUtils
   protected val runBuilderUtils: RunBuilderUtils
+  protected val logUtils: LogUtils
 
   protected implicit val executionContext: ExecutionContext
 
@@ -41,7 +43,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           TaskParameter("comment", comment),
           TaskParameter("buildClientVersion", buildClientVersion.toString)
       ),
-      () => if (!tasksUtils.getActiveTasks(None, Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
+      () => if (!tasksUtils.getActiveTasks(None, Seq("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
       },
       (taskId, logger) => {
@@ -213,5 +215,24 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     } yield {
       (desiredVersion.toSet ++ testedVersions).filter(_.distribution == distribution).map(_.developerVersion)
     }
+  }
+
+  def getLastCommitComment(service: ServiceId)(implicit log: Logger): Future[Option[String]] = {
+    tasksUtils.createTask(
+      "GetLastCommitComment",
+      Seq(TaskParameter("service", service)),
+      () => if (!tasksUtils.getActiveTasks(None, Seq("BuildDeveloperVersion", "GetLastCommitComment"),
+          Seq(TaskParameter("service", service))).isEmpty) {
+        throw new IOException(s"Build developer version of service ${service} is already in process")
+      },
+      (taskId, logger) => {
+        implicit val log = logger
+        val arguments = Seq("lastCommitComment", s"distribution=${config.distribution}", s"service=${service}")
+        val (future, cancel) =
+          runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
+        val logs = logUtils.getLogs(service = Some(service), task = Some(taskId))
+        logs.
+        (future, Some(() => cancel.foreach(_.apply())))
+      }).task
   }
 }

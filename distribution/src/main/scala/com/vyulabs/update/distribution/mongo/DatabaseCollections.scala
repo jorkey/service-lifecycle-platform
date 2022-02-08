@@ -156,6 +156,7 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.level")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.unit")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.time"), new IndexOptions()
       .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.time")) else Future()

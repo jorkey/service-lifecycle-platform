@@ -138,7 +138,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         lines => {
           val logLines = lines.map(line => {
             try {
-              LogFormat.parse(line._1, "BUILDER")
+              LogFormat.parse(line._1)
             } catch {
               case e: ParseException =>
                 LogLine(new Date, "INFO", "", line._1, None)

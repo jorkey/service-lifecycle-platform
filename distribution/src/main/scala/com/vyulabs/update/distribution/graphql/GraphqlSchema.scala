@@ -112,6 +112,7 @@ object GraphqlSchema {
   val OptionFromTimeArg = Argument("fromTime", OptionInputType(DateType))
   val OptionToTimeArg = Argument("toTime", OptionInputType(DateType))
   val OptionLevelsArg = Argument("levels", OptionInputType(ListInputType(StringType)))
+  val OptionUnitArg = Argument("unit", OptionInputType(StringType))
   val OptionFindArg = Argument("find", OptionInputType(StringType))
   val OptionFaultArg = Argument("fault", OptionInputType(StringType))
   val OptionTypeArg = Argument("type", OptionInputType(StringType))
@@ -555,8 +556,9 @@ object GraphqlSchema {
           :: OptionFromArg :: OptionPrefetchArg :: OptionLevelsArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeLogs(
-          c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg),
-          c.arg(OptionFromArg).map(_.toLong), c.arg(OptionPrefetchArg), c.arg(OptionLevelsArg))),
+          c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg),
+          c.arg(OptionTaskArg), c.arg(OptionLevelsArg), c.arg(OptionUnitArg),
+          c.arg(OptionFromArg).map(_.toLong), c.arg(OptionPrefetchArg))),
       Field.subs("testSubscription", StringType,
         tags = Authorized(AccountRole.Developer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())

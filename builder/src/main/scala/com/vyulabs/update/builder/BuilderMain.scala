@@ -7,8 +7,8 @@ import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperVersion}
 import org.slf4j.LoggerFactory
-import spray.json._
 import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -27,16 +27,17 @@ object BuilderMain extends App {
 
   def usage(): String =
     "Use: <command> {[argument=value]}\n" +
-    "  Commands:\n" +
-    "    buildProviderDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
-    "       title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
-    "    buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
-    "       host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
-    "       title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
-    "       consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
-    "    buildDeveloperVersion service=? version=? sourceRepositories=? [privateFiles=?] [macroValues=?] comment=?\n" +
-    "    buildClientVersion service=? developerVersion=? clientVersion=? [settingsRepositories=?] [privateFiles=?] [macroValues=?]"
+    "Commands:\n" +
+    "  buildProviderDistribution [cloudProvider=?] distribution=? directory=?\n" +
+    "     host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
+    "     title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
+    "  buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
+    "     host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
+    "     title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
+    "     consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
+    "  buildDeveloperVersion service=? version=? sourceRepositories=? [privateFiles=?] [macroValues=?] comment=?\n" +
+    "  buildClientVersion service=? developerVersion=? clientVersion=? [settingsRepositories=?] [privateFiles=?] [macroValues=?]\n" +
+    "  lastCommitComment service=? [sourceRepositories=?]"
 
   if (args.size < 1) Utils.error(usage())
 
@@ -132,6 +133,15 @@ object BuilderMain extends App {
             if (!clientBuilder.buildClientVersion(distributionClient, service, version, author,
                 settingsRepositories, privateFiles, buildValues)) {
               Utils.error("Client version is not generated")
+            }
+          case "lastCommitComment" =>
+            val arguments = Arguments.parse(args.drop(1), Set.empty)
+            val service = arguments.getValue("service")
+            val repositories = arguments.getOptionValue("sourceRepositories")
+              .map(_.parseJson.convertTo[Seq[Repository]]).getOrElse(Seq.empty)
+            val developerBuilder = new DeveloperBuilder(new File("."), distribution)
+            if (!developerBuilder.getLastCommitComment(service, repositories)) {
+              Utils.error("Can't get last commit comment")
             }
         }
     }

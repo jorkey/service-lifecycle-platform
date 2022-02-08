@@ -105,11 +105,11 @@ trait LogUtils extends SprayJsonSupport {
       .find(_.payload.terminationStatus.isDefined).map(_.payload.time))
   }
 
-  def getLogs(service: Option[ServiceId], instance: Option[InstanceId],
-              directory: Option[ServiceDirectory], process: Option[ProcessId], task: Option[TaskId],
-              from: Option[BigInt], to: Option[BigInt],
-              fromTime: Option[Date], toTime: Option[Date],
-              levels: Option[Seq[String]], find: Option[String], limit: Option[Int])
+  def getLogs(service: Option[ServiceId] = None, instance: Option[InstanceId] = None,
+              directory: Option[ServiceDirectory] = None, process: Option[ProcessId] = None, task: Option[TaskId] = None,
+              from: Option[BigInt] = None, to: Option[BigInt] = None,
+              fromTime: Option[Date] = None, toTime: Option[Date] = None,
+              levels: Option[Seq[String]] = None, find: Option[String] = None, limit: Option[Int] = None)
              (implicit log: Logger): Future[Seq[SequencedServiceLogLine]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
@@ -135,14 +135,17 @@ trait LogUtils extends SprayJsonSupport {
 
   def subscribeLogs(service: Option[ServiceId],
                     instance: Option[InstanceId], directory: Option[ServiceDirectory], process: Option[ProcessId],
-                    task: Option[TaskId], from: Option[Long], prefetch: Option[Int], levels: Option[Seq[String]])
+                    task: Option[TaskId], levels: Option[Seq[String]], unit: Option[String],
+                    from: Option[Long], prefetch: Option[Int])
                    (implicit log: Logger): Source[Action[Nothing, Seq[SequencedServiceLogLine]], NotUsed] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
-    val processArg = process.map(Filters.eq("process", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
+    val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg
+    val levelsArg = levels.map(Filters.in("payload.level", _))
+    val unitArg = unit.map(Filters.eq("payload.unit", _))
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++ levelsArg ++ unitArg
     val filters = Filters.and(args.asJava)
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
       .filter(log => service.isEmpty || service.contains(log.document.service))
@@ -151,6 +154,7 @@ trait LogUtils extends SprayJsonSupport {
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
       .filter(log => task.isEmpty || task == log.document.task)
       .filter(log => levels.isEmpty || levels.get.contains(log.document.payload.level))
+      .filter(log => unit.isEmpty || unit.contains(log.document.payload.unit))
       .takeWhile(!_.document.payload.terminationStatus.isDefined, true)
       .groupedWeightedWithin(25, FiniteDuration.apply(100, TimeUnit.MILLISECONDS))(_ => 1)
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(line.sequence,

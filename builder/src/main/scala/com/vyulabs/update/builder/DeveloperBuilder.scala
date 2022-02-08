@@ -103,6 +103,34 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
       }).getOrElse(false)
   }
 
+  def getLastCommitComment(service: ServiceId, repositories: Seq[Repository])
+                           (implicit log: Logger, filesLocker: SmartFilesLocker): Boolean = {
+    IoUtils.synchronize[Boolean](new File(developerServiceDir(service), builderLockFile), false,
+      (attempt, _) => {
+        if (attempt == 1) {
+          log.info(s"Another builder creates version for ${service} - wait ...")
+        }
+        Thread.sleep(5000)
+        true
+      },
+      () => {
+        if (repositories.isEmpty) {
+          log.error(s"Source repositories are not defined")
+          return false
+        }
+
+        log.info(s"Prepare source directories of service ${service}")
+        val sourceRepositories = prepareSourceRepositories(service, repositories).getOrElse {
+          log.error(s"Can't pull source repositories")
+          return false
+        }
+
+        sourceRepositories.flatMap(_.getLastCommitMessage()).sortBy(_._1).reverse.headOption.map(_._2).foreach(println(_))
+
+        true
+      }).getOrElse(false)
+  }
+
   private def prepareSourceRepositories(service: ServiceId, sourcesConfig: Seq[Repository]): Option[Seq[GitRepository]] = {
     var gitRepositories = Seq.empty[GitRepository]
     for (sourceConfig <- sourcesConfig) {
@@ -179,7 +207,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     true
   }
 
-  def downloadDeveloperPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
+  private def downloadDeveloperPrivateFiles(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                                     serviceFiles: Seq[ServicePrivateFile])
                                    (implicit log: Logger): Boolean = {
     if (!serviceFiles.isEmpty) {
@@ -195,7 +223,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     true
   }
 
-  def makeDeveloperVersionImage(service: ServiceId): Option[File] = {
+  private def makeDeveloperVersionImage(service: ServiceId): Option[File] = {
     val directory = developerBuildDir(service)
     val file = Files.createTempFile(s"${service}-version", ".zip").toFile
     file.deleteOnExit()
@@ -213,7 +241,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     })
   }
 
-  def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
+  private def uploadDeveloperVersion(distributionClient: SyncDistributionClient[SyncSource], service: ServiceId,
                              version: DeveloperDistributionVersion, buildInfo: BuildInfo, imageFile: File): Boolean = {
     if (!distributionClient.uploadDeveloperVersionImage(service, version, imageFile)) {
       log.error("Uploading version image error")
