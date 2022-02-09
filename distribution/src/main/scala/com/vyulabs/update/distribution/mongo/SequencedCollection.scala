@@ -106,7 +106,7 @@ class SequencedCollection[T: ClassTag](val name: String,
                       (implicit classTag: ClassTag[T]): Future[Seq[T]] = {
     for {
       collection <- collection
-      docs <- collection.distinct[T](fieldName)
+      docs <- collection.distinct[T](fieldName, filters)
       /* TODO to slow now
       docs <- collection.distinct[T](fieldName, Filters.and(filters,
         Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true))))
