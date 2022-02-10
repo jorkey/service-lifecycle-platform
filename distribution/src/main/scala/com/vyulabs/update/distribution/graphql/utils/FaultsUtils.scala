@@ -49,7 +49,7 @@ trait FaultsUtils extends SprayJsonSupport {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val serviceArg = service.map(Filters.eq("service", _))
     val args = distributionArg ++ serviceArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Sorts.ascending("payload.info.time")
     collections.Faults_ReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.info.time))
   }
@@ -59,7 +59,7 @@ trait FaultsUtils extends SprayJsonSupport {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val serviceArg = service.map(Filters.eq("service", _))
     val args = distributionArg ++ serviceArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Sorts.descending("payload.info.time")
     collections.Faults_ReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.info.time))
   }

@@ -11,6 +11,7 @@ import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.mongo._
+import org.bson.BsonDocument
 import org.slf4j.Logger
 import sangria.schema.Action
 
@@ -72,7 +73,7 @@ trait LogUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Log_Lines.distinctField[String]("payload.level", filters)
   }
 
@@ -85,7 +86,7 @@ trait LogUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Sorts.ascending("payload.time")
     collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
   }
@@ -99,7 +100,7 @@ trait LogUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Sorts.descending("payload.time")
     collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption
       .find(_.payload.terminationStatus.isDefined).map(_.payload.time))
@@ -125,7 +126,7 @@ trait LogUtils extends SprayJsonSupport {
     val findArg = find.map(text => Filters.text(text))
     val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg ++
       fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ levelsArg ++ findArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
     collections.Log_Lines.findSequenced(filters, Some(sort), limit)
       .map(_.sortBy(_.sequence))
@@ -143,7 +144,7 @@ trait LogUtils extends SprayJsonSupport {
     val directoryArg = directory.map(Filters.eq("directory", _))
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
       .filter(log => service.isEmpty || service.contains(log.document.service))
       .filter(log => instance.isEmpty || instance.contains(log.document.instance))
