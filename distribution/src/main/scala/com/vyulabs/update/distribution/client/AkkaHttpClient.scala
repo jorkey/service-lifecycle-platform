@@ -119,9 +119,15 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
 
   override def subscribeWS[Response](request: GraphqlRequest[Response])
                                     (implicit reader: JsonReader[Response], log: Logger): Future[AkkaSource[Response]] = {
-    log.debug(s"Send graphql WebSocket query: ${request}")
+    log.debug(s"Send graphql websocket query: ${request}")
     val token = accessToken.getOrElse(throw new IOException("Not authorized"))
-    val webSocketRequest = WebSocketRequest(Uri(distributionUrl + "/" + graphqlPathPrefix + "/" + websocketPathPrefix),
+    var uri = Uri(distributionUrl + "/" + graphqlPathPrefix + "/" + websocketPathPrefix)
+    if (uri.scheme == "http") {
+      uri = uri.withScheme("ws")
+    } else if (uri.scheme == "https") {
+      uri = uri.withScheme("wss")
+    }
+    val webSocketRequest = WebSocketRequest(uri,
       getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
     val ((publisherCallback, killSwitch), publisherSource) =
       Source.fromGraph(new AkkaCallbackSource[Response]())
@@ -147,6 +153,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
                 })
               case Complete.`type` =>
                 val complete = response.convertTo[Complete]
+                log.debug("Websocket subscription is complete")
                 killSwitch.shutdown()
               case m =>
                 log.error(s"Invalid message ${m}")

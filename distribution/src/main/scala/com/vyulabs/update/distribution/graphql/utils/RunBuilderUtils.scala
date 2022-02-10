@@ -181,7 +181,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         Seq(GraphqlArgument("accessToken" -> accessToken),
             GraphqlArgument("arguments" -> arguments, "[String!]"),
             GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"))))
-      logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
+      logSource <- client.graphqlRequestWS(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
       end <- {
         distributionClient = Some(client)
         remoteTaskId = Some(remoteTask)
@@ -210,7 +210,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
                 })
               }
             case Failure(ex) =>
-              log.error("SSE flow error", ex)
+              log.error("Subscription flow error", ex)
               result.failure(ex)
           }
         result.future

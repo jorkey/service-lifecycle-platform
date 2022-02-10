@@ -278,7 +278,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
         log.error(s"Can't install provider developer version ${version} of service ${service}")
         return false
       }
-      val source = adminDistributionClient.get.graphqlRequestSSE(administratorSubscriptions.subscribeTaskLogs(task)).getOrElse {
+      val source = adminDistributionClient.get.graphqlRequestWS(administratorSubscriptions.subscribeTaskLogs(task)).getOrElse {
         log.error(s"Can't subscribe to task ${task} logs")
         return false
       }
