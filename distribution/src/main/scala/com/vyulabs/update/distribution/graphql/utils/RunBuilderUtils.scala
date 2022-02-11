@@ -203,11 +203,12 @@ trait RunBuilderUtils extends SprayJsonSupport {
           .onComplete {
             case Success(_) =>
               if (!result.isCompleted) {
-                system.scheduler.scheduleOnce(FiniteDuration(5, TimeUnit.SECONDS))(() => {
+                def complete(): Unit = {
                   if (!result.isCompleted) {
                     result.failure(new IOException(s"Unexpected completion of remote task log"))
                   }
-                })
+                }
+                system.scheduler.scheduleOnce(FiniteDuration(5, TimeUnit.SECONDS))(complete())
               }
             case Failure(ex) =>
               log.error("Subscription flow error", ex)

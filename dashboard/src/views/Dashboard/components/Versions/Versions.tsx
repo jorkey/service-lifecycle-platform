@@ -95,10 +95,14 @@ const Versions: React.FC<VersionsProps> = props => {
                 control={<Select
                   className={classes.distributionSelect}
                   native
-                  onChange={(event) => setConsumer(event.target.value as string)}
+                  onChange={
+                    (event) => setConsumer(
+                      event.target.value ? event.target.value as string : undefined)
+                  }
                   title='Select consumer'
                   value={consumer}
                 >
+                  <option key={''}></option>
                   { consumerAccountsInfo?.consumerAccountsInfo
                       .map(consumer => <option key={consumer.account}>{consumer.account}</option>) }
                 </Select>}

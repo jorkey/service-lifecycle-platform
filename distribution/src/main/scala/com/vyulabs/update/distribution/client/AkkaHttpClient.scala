@@ -127,14 +127,13 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
     } else if (uri.scheme == "https") {
       uri = uri.withScheme("wss")
     }
-    val webSocketRequest = WebSocketRequest(uri,
-      getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
     val ((publisherCallback, killSwitch), publisherSource) =
       Source.fromGraph(new AkkaCallbackSource[Response]())
         .viaMat(KillSwitches.single)(Keep.both)
         .toMat(BroadcastHub.sink)(Keep.both)
         .run()
     val id = Random.nextInt().toString
+    val connectionAcked = Promise[Unit]()
     (for {
       response <- {
         val handlerFlow = Flow.fromSinkAndSource[Message, Message](Sink.foreach(m => { m match {
@@ -143,6 +142,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
             val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
             responseType match {
               case ConnectionAck.`type` =>
+                connectionAcked.success()
               case Next.`type` =>
                 val subscribe = response.convertTo[Next]
                 publisherCallback.invoke(request.decodeResponse(subscribe.payload) match {
@@ -155,18 +155,23 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
                 val complete = response.convertTo[Complete]
                 log.debug("Websocket subscription is complete")
                 killSwitch.shutdown()
+              case Error.`type` =>
+                val error = response.convertTo[Error]
+                log.error(s"Websocket subscription error: ${error.payload.message}")
+                killSwitch.shutdown()
               case m =>
-                log.error(s"Invalid message ${m}")
+                log.error(s"Invalid message: ${m}")
             }
           case _ =>
         }}), Source.combine(
-            Source.fromIterator(() => Seq(
-            TextMessage(ConnectionInit(payload =
-              ConnectionInitPayload(s"Bearer ${token}")).toJson.compactPrint),
-            TextMessage(Subscribe(id = id, payload =
-                SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint),
-            ).iterator), Source.future(Promise[Message]().future))(Concat(_))
+          Source.single(TextMessage(ConnectionInit(payload =
+            ConnectionInitPayload(s"Bearer ${token}")).toJson.compactPrint)),
+          Source.future(connectionAcked.future).map(_ => TextMessage(Subscribe(id = id, payload =
+            SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint)),
+          Source.future(Promise[Message]().future))(Concat(_))
         )
+        val webSocketRequest = WebSocketRequest(uri,
+          getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
         Http(system).singleWebSocketRequest(webSocketRequest, handlerFlow)._1
       }
     } yield {

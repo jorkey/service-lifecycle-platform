@@ -228,7 +228,7 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
 
   def akkaSubRequests(): Unit = {
     val adminClient = new SyncDistributionClient(
-      new DistributionClient(new AkkaHttpClient("ws://developer:developer@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
+      new DistributionClient(new AkkaHttpClient("http://developer:developer@localhost:8081")), FiniteDuration(15, TimeUnit.SECONDS))
 
     it should "execute SSE subscription request" in {
       val source = adminClient.graphqlRequestSSE(developerSubscriptions.testSubscription()).get
