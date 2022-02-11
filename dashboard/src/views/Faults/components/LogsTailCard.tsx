@@ -76,7 +76,7 @@ export const LogsTailCard = (props: LogsTailCardParams) => {
           className={classes.logsTable}
           columns={columns}
           rows={rows}
-          scrollToLastRow={true}
+          scrollToRow={rows.length-1}
         />
       </div>
     </CardContent>
