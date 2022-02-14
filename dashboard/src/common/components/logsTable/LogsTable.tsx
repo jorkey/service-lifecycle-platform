@@ -94,7 +94,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const [ lines, setLines ] = useState<LogRecord[]>([])
 
-  const [ position, setPosition ] = useState<'top' | 'middle' | 'bottom'>('top')
+  const [ position, setPosition ] = useState<'top' | 'middle' | 'bottom' | undefined>()
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
 
@@ -107,7 +107,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       setPosition('top')
     },
     toBottom: () => {
-      getLogs(startSequence)
+      getLogs(undefined, endSequence)
       setPosition('bottom')
     }
   }))
