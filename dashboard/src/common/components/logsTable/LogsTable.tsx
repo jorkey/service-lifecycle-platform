@@ -103,12 +103,22 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   useImperativeHandle(ref, () => ({
     toTop: () => {
-      getLogs(startSequence)
-      setPosition('top')
+      if (position != 'top') {
+        setPosition('top')
+        setLines([])
+      }
+      getLogs(startSequence).then(logs => {
+        addLines(logs)
+      })
     },
     toBottom: () => {
-      getLogs(undefined, endSequence)
-      setPosition('bottom')
+      if (position != 'bottom') {
+        setPosition('bottom')
+        setLines([])
+      }
+      getLogs(undefined, endSequence).then(logs => {
+        addLines(logs)
+      })
     }
   }))
 
@@ -117,33 +127,26 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) {
-      if (data.logs) { addLines(data.logs) }
-    }
   })
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getDirectoryLogs, directoryLogs ] = useDirectoryLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const [ getProcessLogs, processLogs ] = useProcessLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { addLines(data.logs) } }
   })
 
   const isLoading = () => serviceLogs.loading || taskLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
@@ -158,22 +161,28 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   useEffect(() => {
     setLines([])
     if (!follow) {
-      getLogs(startSequence)
+      getLogs(startSequence).then(logs => addLines(logs))
     }
   },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
-  const getLogs = (from?: BigInt, to?: BigInt) => {
+  const getLogs = (from?: BigInt, to?: BigInt): Promise<LogRecord[]> => {
     if (task) {
-      taskLogs.previousData = undefined
-      getTaskLogs({variables: {task: task, ...getCommonVariables(from, to)}})
+      return getTaskLogs({variables: {task: task, ...getCommonVariables(from, to)}})
+        .then(result => result.data?.logs) as Promise<LogRecord[]>
     } else if (service && instance && directory && process) {
-      getProcessLogs({ variables: { service: service, instance: instance, directory: directory, process: process, ...getCommonVariables(from, to) }  })
+      return getProcessLogs({ variables: { service: service, instance: instance, directory: directory, process: process, ...getCommonVariables(from, to) }  })
+        .then(result => result.data?.logs) as Promise<LogRecord[]>
     } else if (service && instance && directory) {
-      getDirectoryLogs({ variables: { service: service, instance: instance, directory: directory, ...getCommonVariables(from, to) }  })
+      return getDirectoryLogs({ variables: { service: service, instance: instance, directory: directory, ...getCommonVariables(from, to) }  })
+        .then(result => result.data?.logs) as Promise<LogRecord[]>
     } else if (service && instance) {
-      getInstanceLogs({ variables: { service: service, instance: instance, ...getCommonVariables(from, to) }  })
+      return getInstanceLogs({ variables: { service: service, instance: instance, ...getCommonVariables(from, to) }  })
+        .then(result => result.data?.logs) as Promise<LogRecord[]>
     } else if (service) {
-      getServiceLogs({ variables: { service: service, ...getCommonVariables(from, to) }  })
+      return getServiceLogs({ variables: { service: service, ...getCommonVariables(from, to) }  })
+        .then(result => result.data?.logs) as Promise<LogRecord[]>
+    } else {
+      return new Promise(() => [])
     }
   }
 
@@ -260,15 +269,15 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       }
       onScrollTop={() => {
         if (lines.length) {
-          getLogs(undefined, lines[0].sequence)
+          getLogs(undefined, lines[0].sequence).then(lines => addLines(lines))
         }
       }}
       onScrollMiddle={() => {
         setPosition('middle')
       }}
       onScrollBottom={() => {
-        if (!follow && lines.length && lines[lines.length - 1].payload.terminationStatus == undefined) {
-          getLogs(lines[lines.length - 1].sequence)
+        if (position != 'bottom' && !follow && lines.length && lines[lines.length - 1].payload.terminationStatus == undefined) {
+          getLogs(lines[lines.length - 1].sequence).then(lines => addLines(lines))
         }
       }}
     />
