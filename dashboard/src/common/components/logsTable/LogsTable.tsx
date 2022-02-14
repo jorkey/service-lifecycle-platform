@@ -94,8 +94,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const [ lines, setLines ] = useState<LogRecord[]>([])
 
-  const [ from, setFrom ] = useState<BigInt | undefined>()
-  const [ to, setTo ] = useState<BigInt | undefined>()
+  const [ position, setPosition ] = useState<'top' | 'middle' | 'bottom'>('top')
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
 
@@ -104,18 +103,12 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   useImperativeHandle(ref, () => ({
     toTop: () => {
-      if (from != startSequence) {
-        setLines([])
-        setFrom(startSequence)
-        setTo(undefined)
-      }
+      getLogs(startSequence)
+      setPosition('top')
     },
     toBottom: () => {
-      if (to != endSequence) {
-        setLines([])
-        setFrom(undefined)
-        setTo(endSequence)
-      }
+      getLogs(startSequence)
+      setPosition('bottom')
     }
   }))
 
@@ -123,9 +116,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    onError(err) {
-      onError(err.message) }
-    ,
+    onError(err) { onError(err.message) },
     onCompleted(data) {
       if (data.logs) { addLines(data.logs) }
     }
@@ -157,7 +148,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const isLoading = () => serviceLogs.loading || taskLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
 
-  const getCommonVariables = () => {
+  const getCommonVariables = (from?: BigInt, to?: BigInt) => {
     return {
       fromTime: fromTime, toTime: toTime, levels: levels, find: find,
       from: from, to: to, limit: sliceRowsCount
@@ -167,24 +158,24 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   useEffect(() => {
     setLines([])
     if (!follow) {
-      setFrom(startSequence)
+      getLogs(startSequence)
     }
   },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
-  useEffect(() => {
+  const getLogs = (from?: BigInt, to?: BigInt) => {
     if (task) {
       taskLogs.previousData = undefined
-      getTaskLogs({variables: {task: task, ...getCommonVariables()}})
+      getTaskLogs({variables: {task: task, ...getCommonVariables(from, to)}})
     } else if (service && instance && directory && process) {
-      getProcessLogs({ variables: { service: service, instance: instance, directory: directory, process: process, ...getCommonVariables() }  })
+      getProcessLogs({ variables: { service: service, instance: instance, directory: directory, process: process, ...getCommonVariables(from, to) }  })
     } else if (service && instance && directory) {
-      getDirectoryLogs({ variables: { service: service, instance: instance, directory: directory, ...getCommonVariables() }  })
+      getDirectoryLogs({ variables: { service: service, instance: instance, directory: directory, ...getCommonVariables(from, to) }  })
     } else if (service && instance) {
-      getInstanceLogs({ variables: { service: service, instance: instance, ...getCommonVariables() }  })
+      getInstanceLogs({ variables: { service: service, instance: instance, ...getCommonVariables(from, to) }  })
     } else if (service) {
-      getServiceLogs({ variables: { service: service, ...getCommonVariables() }  })
+      getServiceLogs({ variables: { service: service, ...getCommonVariables(from, to) }  })
     }
-  },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow, from, to ])
+  }
 
   const classes = useStyles()
 
@@ -265,19 +256,19 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       columns={columns}
       rows={rows}
       scrollToRow={
-        ((from == undefined && to == endSequence) || follow) ? rows.length-1 :
-        (from == startSequence && endSequence == undefined) ? 0 : undefined
+        position == 'top' ? 0 : (position == 'bottom' || follow) ? rows.length-1 : undefined
       }
       onScrollTop={() => {
         if (lines.length) {
-          setFrom(undefined)
-          setTo(lines[0].sequence)
+          getLogs(undefined, lines[0].sequence)
         }
+      }}
+      onScrollMiddle={() => {
+        setPosition('middle')
       }}
       onScrollBottom={() => {
         if (!follow && lines.length && lines[lines.length - 1].payload.terminationStatus == undefined) {
-          setFrom(lines[lines.length - 1].sequence)
-          setTo(undefined)
+          getLogs(lines[lines.length - 1].sequence)
         }
       }}
     />
