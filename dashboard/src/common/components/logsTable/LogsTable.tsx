@@ -107,8 +107,8 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         setPosition('top')
         setLines([])
       }
-      getLogs(startSequence).then(logs => {
-        addLines(logs)
+      getLogs(startSequence).then(lines => {
+        { if (lines) addLines(lines) }
       })
     },
     toBottom: () => {
@@ -116,8 +116,8 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         setPosition('bottom')
         setLines([])
       }
-      getLogs(undefined, endSequence).then(logs => {
-        addLines(logs)
+      getLogs(undefined, endSequence).then(lines => {
+        { if (lines) addLines(lines) }
       })
     }
   }))
@@ -161,7 +161,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   useEffect(() => {
     setLines([])
     if (!follow) {
-      getLogs(startSequence).then(logs => addLines(logs))
+      getLogs(startSequence).then(lines => { if (lines) addLines(lines) })
     }
   },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
@@ -269,7 +269,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       }
       onScrollTop={() => {
         if (lines.length) {
-          getLogs(undefined, lines[0].sequence).then(lines => addLines(lines))
+          getLogs(undefined, lines[0].sequence).then(lines => { if (lines) addLines(lines) })
         }
       }}
       onScrollMiddle={() => {
@@ -277,14 +277,14 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       }}
       onScrollBottom={() => {
         if (position != 'bottom' && !follow && lines.length && lines[lines.length - 1].payload.terminationStatus == undefined) {
-          getLogs(lines[lines.length - 1].sequence).then(lines => addLines(lines))
+          getLogs(lines[lines.length - 1].sequence).then(lines => { if (lines) addLines(lines) })
         }
       }}
     />
     {follow ?
       <LogsSubscriber
         {...props}
-        onLines={(lines) => addLines(lines)}
+        onLines={(lines) => { if (lines) addLines(lines) }}
         onComplete={() => {
           if (terminationStatus == undefined) {
             onError("Unexpected close of subscription connection")
