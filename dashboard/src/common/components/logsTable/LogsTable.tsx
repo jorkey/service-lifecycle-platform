@@ -224,6 +224,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
    .filter(column => column.name !== 'process' || (!process && !task)) as GridTableColumnParams[]
 
   const addLines = (receivedLines: LogRecord[]) => {
+    console.log('add lines ' + receivedLines.length)
     const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
     let newLines = new Array(...lines)
