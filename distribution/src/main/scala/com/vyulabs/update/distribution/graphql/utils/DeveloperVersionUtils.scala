@@ -115,7 +115,8 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     val serviceArg = service.map { service => Filters.eq("service", service) }
     val distributionArg = distribution.map { distribution => Filters.eq("version.distribution", distribution ) }
     val versionArg = version.map { version => Filters.eq("version.build", version.build) }
-    val filters = Filters.and((serviceArg ++ distributionArg ++ versionArg).asJava)
+    val args = serviceArg ++ distributionArg ++ versionArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Developer_Versions.find(filters)
   }
 
@@ -199,7 +200,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   def getTestedVersions(consumerDistribution: Option[DistributionId])
                        (implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     val distributionArg = consumerDistribution.map(Filters.eq("consumerDistribution", _))
-    val filters = Filters.and(distributionArg.toSeq.asJava)
+    val filters = distributionArg.getOrElse(new BsonDocument())
     collections.Developer_TestedVersions.find(filters).map(_.headOption.map(_.versions).getOrElse(Seq.empty))
   }
 

@@ -10,6 +10,7 @@ import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersi
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
+import org.mongodb.scala.bson.BsonDocument
 import org.slf4j.Logger
 
 import java.io.IOException
@@ -100,7 +101,8 @@ trait ClientVersionUtils {
     val versionArg = version.map { version => Filters.and(
       Filters.eq("version.developerBuild", version.developerBuild),
       Filters.eq("version.clientBuild", version.clientBuild)) }
-    val filters = Filters.and((serviceArg ++ distributionArg ++ versionArg).asJava)
+    val args = serviceArg ++ distributionArg ++ versionArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Client_Versions.find(filters)
   }
 

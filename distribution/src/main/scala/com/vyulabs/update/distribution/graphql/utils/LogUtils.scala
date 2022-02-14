@@ -44,14 +44,15 @@ trait LogUtils extends SprayJsonSupport {
 
   def getLogInstances(service: ServiceId)(implicit log: Logger): Future[Seq[InstanceId]] = {
     val serviceArg = Filters.eq("service", service)
-    val filters = Filters.and(Seq(serviceArg).asJava)
+    val filters = serviceArg
     collections.Log_Lines.distinctField[String]("instance", filters)
   }
 
   def getLogDirectories(service: ServiceId, instance: InstanceId)(implicit log: Logger): Future[Seq[ServiceDirectory]] = {
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
-    val filters = Filters.and(Seq(serviceArg, instanceArg).asJava)
+    val args = Seq(serviceArg, instanceArg)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Log_Lines.distinctField[String]("directory", filters)
   }
 
@@ -60,7 +61,8 @@ trait LogUtils extends SprayJsonSupport {
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
     val directoryArg = Filters.eq("directory", directory)
-    val filters = Filters.and(Seq(serviceArg, instanceArg, directoryArg).asJava)
+    val args = Seq(serviceArg, instanceArg, directoryArg)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Log_Lines.distinctField[String]("process", filters)
   }
 

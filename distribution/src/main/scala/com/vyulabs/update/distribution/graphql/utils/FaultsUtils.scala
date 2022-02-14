@@ -39,7 +39,7 @@ trait FaultsUtils extends SprayJsonSupport {
 
   def getFaultServices(distribution: Option[DistributionId])(implicit log: Logger): Future[Seq[ServiceId]] = {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
-    val filters = Filters.and(distributionArg.toSeq.asJava)
+    val filters = distributionArg.getOrElse(new BsonDocument())
     collections.Faults_ReportsInfo.distinctField[String](
       "payload.info.service", filters)
   }
@@ -99,7 +99,7 @@ trait FaultsUtils extends SprayJsonSupport {
       log.debug(s"Delete fault report ${report.sequence}")
       val faultFile = directory.getFaultReportFile(report.document.payload.fault)
       faultFile.delete()
-      collection.delete(Filters.and(Filters.eq("_sequence", report.sequence)))
+      collection.delete(Filters.eq("_sequence", report.sequence))
     }).map(_ => Unit)
   }
 }

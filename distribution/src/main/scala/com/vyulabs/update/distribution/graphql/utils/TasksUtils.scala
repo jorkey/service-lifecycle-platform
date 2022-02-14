@@ -10,6 +10,7 @@ import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.mongo._
 import com.vyulabs.update.distribution.task.TaskManager
+import org.bson.BsonDocument
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
@@ -82,7 +83,8 @@ trait TasksUtils extends SprayJsonSupport {
     } else {
       val idArg = task.map { id => Filters.eq("task", id) }
       val taskTypeArg = taskType.map { taskType => Filters.eq("taskType", taskType) }
-      val filters = Filters.and((idArg ++ taskTypeArg).asJava)
+      val args = idArg ++ taskTypeArg
+      val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
       val sort = Some(Sorts.descending("_sequence"))
       collections.Tasks_Info.find(filters, sort, limit.map(_ - activeTasks.size))
         .map(_.filter(info => !activeTasks.exists(_.task == info.task))
