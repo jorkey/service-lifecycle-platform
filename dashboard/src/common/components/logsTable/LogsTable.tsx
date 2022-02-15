@@ -104,29 +104,18 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   useImperativeHandle(ref, () => ({
     toTop: () => {
-      if (direction == 'fromTop') {
-        setPosition('top')
-      } else {
-        getLogs(startSequence).then(logs => {
-          if (logs) {
-            setPosition('top')
-            setDirection('fromTop')
-            setLines(logs)
-          }
-        })
+      setPosition('top')
+      setLines([])
+      if (direction != 'fromTop') {
+        setDirection('fromTop')
+        getLogs(startSequence)
       }
     },
     toBottom: () => {
-      getLogs(undefined, endSequence).then(logs => {
-        if (logs) {
-          console.log('set lines ' +
-            (logs[0]?.payload.time).toLocaleString() + ' -> ' +
-            (logs[logs.length - 1]?.payload.time).toLocaleString())
-          setPosition('bottom')
-          setDirection('fromBottom')
-          setLines(logs)
-        }
-      })
+      setLines([])
+      setPosition('bottom')
+      setDirection('fromBottom')
+      getLogs(undefined, endSequence)
     }
   }))
 
@@ -135,26 +124,61 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
+    onCompleted(result) {
+      if (position != 'middle') {
+        setLines(result.logs)
+      } else {
+        addLines(result.logs)
+      }
+    }
   })
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
+    onCompleted(result) {
+      if (position != 'middle') {
+        setLines(result.logs)
+      } else {
+        addLines(result.logs)
+      }
+    }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
+    onCompleted(result) {
+      if (position != 'middle') {
+        setLines(result.logs)
+      } else {
+        addLines(result.logs)
+      }
+    }
   })
 
   const [ getDirectoryLogs, directoryLogs ] = useDirectoryLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
+    onCompleted(result) {
+      if (position != 'middle') {
+        setLines(result.logs)
+      } else {
+        addLines(result.logs)
+      }
+    }
   })
 
   const [ getProcessLogs, processLogs ] = useProcessLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
+    onCompleted(result) {
+      if (position != 'middle') {
+        setLines(result.logs)
+      } else {
+        addLines(result.logs)
+      }
+    }
   })
 
   const isLoading = () => serviceLogs.loading || taskLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
@@ -169,7 +193,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   useEffect(() => {
     setLines([])
     if (!follow) {
-      getLogs(startSequence).then(logs => { if (logs) addLines(logs) })
+      getLogs(startSequence)
     }
   },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
@@ -284,7 +308,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       }
       onScrollTop={() => {
         if (direction == 'fromBottom' && lines.length) {
-          getLogs(undefined, lines[0].sequence).then(logs => { if (logs) addLines(logs) })
+          getLogs(undefined, lines[0].sequence)
         }
       }}
       onScrollMiddle={() => {
@@ -292,7 +316,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       }}
       onScrollBottom={() => {
         if (position != 'bottom' && !follow && lines.length) {
-          getLogs(lines[lines.length - 1].sequence).then(logs => { if (logs) addLines(logs) })
+          getLogs(lines[lines.length - 1].sequence)
         }
       }}
     />
