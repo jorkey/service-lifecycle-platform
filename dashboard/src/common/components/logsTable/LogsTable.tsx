@@ -94,6 +94,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const [ lines, setLines ] = useState<LogRecord[]>([])
 
+  const [ direction, setDirection ] = useState<'fromTop' | 'fromBottom'>('fromTop')
   const [ position, setPosition ] = useState<'top' | 'middle' | 'bottom' | undefined>()
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
@@ -105,7 +106,10 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     toTop: () => {
       if (position != 'top') {
         setPosition('top')
-        setLines([])
+        if (direction != 'fromTop') {
+          setDirection('fromTop')
+          setLines([])
+        }
       }
       getLogs(startSequence).then(lines => {
         { if (lines) addLines(lines) }
@@ -114,7 +118,10 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     toBottom: () => {
       if (position != 'bottom') {
         setPosition('bottom')
-        setLines([])
+        if (direction != 'fromBottom') {
+          setDirection('fromBottom')
+          setLines([])
+        }
       }
       getLogs(undefined, endSequence).then(lines => {
         { if (lines) addLines(lines) }
@@ -269,7 +276,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         position == 'top' ? 0 : (position == 'bottom' || follow) ? rows.length-1 : undefined
       }
       onScrollTop={() => {
-        if (lines.length) {
+        if (direction == 'fromBottom' && lines.length) {
           getLogs(undefined, lines[0].sequence).then(lines => { if (lines) addLines(lines) })
         }
       }}
@@ -277,7 +284,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         setPosition('middle')
       }}
       onScrollBottom={() => {
-        if (position != 'bottom' && !follow && lines.length && lines[lines.length - 1].payload.terminationStatus == undefined) {
+        if (position != 'bottom' && !follow && lines.length) {
           getLogs(lines[lines.length - 1].sequence).then(lines => { if (lines) addLines(lines) })
         }
       }}
