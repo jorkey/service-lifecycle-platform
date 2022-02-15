@@ -107,14 +107,12 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       setFastPosition('top')
       if (direction != 'fromTop') {
         setDirection('fromTop')
-        setLines([])
         getLogs(startSequence)
       }
     },
     toBottom: () => {
       setFastPosition('bottom')
       setDirection('fromBottom')
-      setLines([])
       getLogs(undefined, endSequence)
     }
   }))
