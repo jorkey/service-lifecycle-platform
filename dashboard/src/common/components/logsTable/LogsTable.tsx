@@ -107,21 +107,24 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       if (direction == 'fromTop') {
         setPosition('top')
       } else {
-        getLogs(startSequence).then(lines => {
-          if (lines) {
+        getLogs(startSequence).then(logs => {
+          if (logs) {
             setPosition('top')
             setDirection('fromTop')
-            setLines(lines)
+            setLines(logs)
           }
         })
       }
     },
     toBottom: () => {
-      getLogs(undefined, endSequence).then(lines => {
-        if (lines) {
+      getLogs(undefined, endSequence).then(logs => {
+        if (logs) {
+          console.log('set lines ' +
+            (logs[0]?.payload.time).toLocaleString() + ' -> ' +
+            (logs[logs.length - 1]?.payload.time).toLocaleString())
           setPosition('bottom')
           setDirection('fromBottom')
-          setLines(lines)
+          setLines(logs)
         }
       })
     }
@@ -166,7 +169,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   useEffect(() => {
     setLines([])
     if (!follow) {
-      getLogs(startSequence).then(lines => { if (lines) addLines(lines) })
+      getLogs(startSequence).then(logs => { if (logs) addLines(logs) })
     }
   },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
@@ -281,7 +284,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       }
       onScrollTop={() => {
         if (direction == 'fromBottom' && lines.length) {
-          getLogs(undefined, lines[0].sequence).then(lines => { if (lines) addLines(lines) })
+          getLogs(undefined, lines[0].sequence).then(logs => { if (logs) addLines(logs) })
         }
       }}
       onScrollMiddle={() => {
@@ -289,7 +292,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       }}
       onScrollBottom={() => {
         if (position != 'bottom' && !follow && lines.length) {
-          getLogs(lines[lines.length - 1].sequence).then(lines => { if (lines) addLines(lines) })
+          getLogs(lines[lines.length - 1].sequence).then(logs => { if (logs) addLines(logs) })
         }
       }}
     />
