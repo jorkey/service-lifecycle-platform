@@ -190,8 +190,8 @@ val shell = if (sys.props("os.name").contains("Windows")) Seq("cmd", "/c") else 
 
 lazy val installNpmModules = taskKey[Unit]("Install npm modules") := {
   val task = streams.value
-//  task.log.info(s"Delete npm modules ...")
-//  IO.delete(baseDirectory.value / "node_modules")
+  task.log.info(s"Delete npm modules ...")
+  IO.delete(baseDirectory.value / "node_modules")
   task.log.info("Install npm modules ...")
   val process = Process(shell :+ "npm install", baseDirectory.value)
   if ((process ! task.log) != 0) {
