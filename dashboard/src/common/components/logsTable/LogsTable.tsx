@@ -95,7 +95,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const [ lines, setLines ] = useState<LogRecord[]>([])
 
   const [ direction, setDirection ] = useState<'fromTop' | 'fromBottom'>('fromTop')
-  const [ position, setPosition ] = useState<'top' | 'middle' | 'bottom' | undefined>()
+  const [ fastPosition, setFastPosition ] = useState<'top' | 'bottom' | undefined>()
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
 
@@ -104,81 +104,59 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   useImperativeHandle(ref, () => ({
     toTop: () => {
-      setPosition('top')
-      setLines([])
+      setFastPosition('top')
       if (direction != 'fromTop') {
         setDirection('fromTop')
+        setLines([])
         getLogs(startSequence)
       }
     },
     toBottom: () => {
-      setLines([])
-      setPosition('bottom')
+      setFastPosition('bottom')
       setDirection('fromBottom')
+      setLines([])
       getLogs(undefined, endSequence)
     }
   }))
 
   const sliceRowsCount = 250
 
+  const processLines = (lines: LogRecord[]) => {
+    if (fastPosition) {
+      setLines(lines)
+    } else {
+      addLines(lines)
+    }
+  }
+
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(result) {
-      if (position != 'middle') {
-        setLines(result.logs)
-      } else {
-        addLines(result.logs)
-      }
-    }
+    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
   })
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(result) {
-      if (position != 'middle') {
-        setLines(result.logs)
-      } else {
-        addLines(result.logs)
-      }
-    }
+    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(result) {
-      if (position != 'middle') {
-        setLines(result.logs)
-      } else {
-        addLines(result.logs)
-      }
-    }
+    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
   })
 
   const [ getDirectoryLogs, directoryLogs ] = useDirectoryLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(result) {
-      if (position != 'middle') {
-        setLines(result.logs)
-      } else {
-        addLines(result.logs)
-      }
-    }
+    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
   })
 
   const [ getProcessLogs, processLogs ] = useProcessLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(result) {
-      if (position != 'middle') {
-        setLines(result.logs)
-      } else {
-        addLines(result.logs)
-      }
-    }
+    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
   })
 
   const isLoading = () => serviceLogs.loading || taskLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
@@ -197,24 +175,17 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     }
   },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
-  const getLogs = (from?: BigInt, to?: BigInt): Promise<LogRecord[]> => {
+  const getLogs = (from?: BigInt, to?: BigInt) => {
     if (task) {
-      return getTaskLogs({variables: {task: task, ...getCommonVariables(from, to)}})
-        .then(result => result.data?.logs) as Promise<LogRecord[]>
+      getTaskLogs({variables: {task: task, ...getCommonVariables(from, to)}})
     } else if (service && instance && directory && process) {
-      return getProcessLogs({ variables: { service: service, instance: instance, directory: directory, process: process, ...getCommonVariables(from, to) }  })
-        .then(result => result.data?.logs) as Promise<LogRecord[]>
+      getProcessLogs({ variables: { service: service, instance: instance, directory: directory, process: process, ...getCommonVariables(from, to) }  })
     } else if (service && instance && directory) {
-      return getDirectoryLogs({ variables: { service: service, instance: instance, directory: directory, ...getCommonVariables(from, to) }  })
-        .then(result => result.data?.logs) as Promise<LogRecord[]>
+      getDirectoryLogs({ variables: { service: service, instance: instance, directory: directory, ...getCommonVariables(from, to) }  })
     } else if (service && instance) {
-      return getInstanceLogs({ variables: { service: service, instance: instance, ...getCommonVariables(from, to) }  })
-        .then(result => result.data?.logs) as Promise<LogRecord[]>
+      getInstanceLogs({ variables: { service: service, instance: instance, ...getCommonVariables(from, to) }  })
     } else if (service) {
-      return getServiceLogs({ variables: { service: service, ...getCommonVariables(from, to) }  })
-        .then(result => result.data?.logs) as Promise<LogRecord[]>
-    } else {
-      return new Promise(() => [])
+      getServiceLogs({ variables: { service: service, ...getCommonVariables(from, to) }  })
     }
   }
 
@@ -256,7 +227,6 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
    .filter(column => column.name !== 'process' || (!process && !task)) as GridTableColumnParams[]
 
   const addLines = (receivedLines: LogRecord[]) => {
-    console.log('add lines ' + receivedLines.length + ' to ' + lines.length)
     const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
     let newLines = new Array(...lines)
@@ -292,19 +262,13 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         ['message', { value: line.payload.message }]
       ])))
 
-  if (rows.length) {
-    console.log('render ' +
-      (rows[0]?.get('time')?.value as Date).toLocaleString() + ' -> ' +
-      (rows[rows.length - 1]?.get('time')?.value as Date).toLocaleString())
-  }
-
   return <>
     <GridTable
       className={className + (isLoading() ? ' ' + classes.inProgress : '')}
       columns={columns}
       rows={rows}
       scrollToRow={
-        position == 'top' ? 0 : (position == 'bottom' || follow) ? rows.length-1 : undefined
+        fastPosition == 'top' ? 0 : (fastPosition == 'bottom' || follow) ? rows.length-1 : undefined
       }
       onScrollTop={() => {
         if (direction == 'fromBottom' && lines.length) {
@@ -312,10 +276,10 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         }
       }}
       onScrollMiddle={() => {
-        setPosition('middle')
+        setFastPosition(undefined)
       }}
       onScrollBottom={() => {
-        if (position != 'bottom' && !follow && lines.length) {
+        if (fastPosition != 'bottom' && !follow && lines.length) {
           getLogs(lines[lines.length - 1].sequence)
         }
       }}
