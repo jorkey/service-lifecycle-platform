@@ -104,27 +104,25 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   useImperativeHandle(ref, () => ({
     toTop: () => {
-      if (position != 'top') {
+      if (direction == 'fromTop') {
         setPosition('top')
-        if (direction != 'fromTop') {
-          setDirection('fromTop')
-          setLines([])
-        }
+      } else {
+        getLogs(startSequence).then(lines => {
+          if (lines) {
+            setPosition('top')
+            setDirection('fromTop')
+            setLines(lines)
+          }
+        })
       }
-      getLogs(startSequence).then(lines => {
-        { if (lines) addLines(lines) }
-      })
     },
     toBottom: () => {
-      if (position != 'bottom') {
-        setPosition('bottom')
-        if (direction != 'fromBottom') {
-          setDirection('fromBottom')
-          setLines([])
-        }
-      }
       getLogs(undefined, endSequence).then(lines => {
-        { if (lines) addLines(lines) }
+        if (lines) {
+          setPosition('bottom')
+          setDirection('fromBottom')
+          setLines(lines)
+        }
       })
     }
   }))
@@ -231,7 +229,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
    .filter(column => column.name !== 'process' || (!process && !task)) as GridTableColumnParams[]
 
   const addLines = (receivedLines: LogRecord[]) => {
-    console.log('add lines ' + receivedLines.length)
+    console.log('add lines ' + receivedLines.length + ' to ' + lines.length)
     const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
     let newLines = new Array(...lines)
@@ -266,6 +264,12 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         ['unit', { value: line.payload.unit }],
         ['message', { value: line.payload.message }]
       ])))
+
+  if (rows.length) {
+    console.log('render ' +
+      (rows[0]?.get('time')?.value as Date).toLocaleString() + ' -> ' +
+      (rows[rows.length - 1]?.get('time')?.value as Date).toLocaleString())
+  }
 
   return <>
     <GridTable
