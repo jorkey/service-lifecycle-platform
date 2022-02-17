@@ -16,15 +16,16 @@ import DistributionIcon from '@material-ui/icons/Share';
 import ProfilesIcon from '@material-ui/icons/FilterList';
 import TaskIcon from '@material-ui/icons/Check';
 
-import { Profile, SidebarNav } from './components';
+import {SidebarNav} from './components';
 import {useBuildDeveloperServicesQuery} from "../../../../generated/graphql";
+import DistributionVersion from "./components/DistributionVersion/DistributionVersion";
 
 const useStyles = makeStyles((theme?: any) => ({
   drawer: {
     width: 260,
     [theme.breakpoints.up('lg')]: {
-      marginTop: 64,
-      height: 'calc(100% - 64px)'
+      marginTop: 48,
+      height: 'calc(100% - 48px)'
     }
   },
   root: {
@@ -35,7 +36,7 @@ const useStyles = makeStyles((theme?: any) => ({
     padding: theme.spacing(2)
   },
   divider: {
-    margin: theme.spacing(2, 0)
+    margin: theme.spacing(1, 0)
   },
   nav: {
     marginBottom: theme.spacing(2)
@@ -199,7 +200,7 @@ const Sidebar = (props:any) => {
           {...rest}
           className={clsx(classes.root, className)}
         >
-          <Profile/>
+          <DistributionVersion/>
           <Divider className={classes.divider}/>
           <SidebarNav
             className={classes.nav}

@@ -17,8 +17,9 @@ import {
   SettingsProviders as SettingsProvidersView,
   NotFound as NotFoundView
 } from './views';
-import {DistributionInfo, useDistributionInfoQuery} from './generated/graphql';
+import {DistributionInfo, useDistributionInfoQuery, useWhoAmIQuery} from './generated/graphql';
 import {makeStyles} from "@material-ui/core/styles";
+import {Version} from "./common";
 
 // @ts-ignore
 export const LoginSwitchRoute = ({ component: Component, ...rest }) => (
@@ -118,13 +119,16 @@ const Routes: React.FC<RoutesProps> = props => {
 }
 
 const LoginRoutes = () => {
-  const { data } = useDistributionInfoQuery({
-    fetchPolicy: 'no-cache', // base option no-cache does not work
+  const { data:info } = useDistributionInfoQuery({
+    onCompleted(data) {
+      localStorage.setItem('distribution', data.distributionInfo.distribution)
+      localStorage.setItem('distributionTitle', data.distributionInfo.title)
+      localStorage.setItem('distributionVersion', Version.clientDistributionVersionToString(data.distributionInfo.version))
+      document.title=data.distributionInfo.title
+    }
   })
 
-  if (data && data.distributionInfo) {
-    localStorage.setItem('distribution', data.distributionInfo.distribution)
-    localStorage.setItem('distributionTitle', data.distributionInfo.title)
+  if (info && info.distributionInfo) {
     return (
       <Switch>
         <RouteWithLayout

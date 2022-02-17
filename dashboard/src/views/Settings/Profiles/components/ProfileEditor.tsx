@@ -155,7 +155,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
               />
             </Box>)
           }
-          title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Profile'}
+          title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Version'}
         />
         <CardContent>
           <Grid
@@ -223,7 +223,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
             onClick={() => submit()}
             variant="contained"
           >
-            {!editProfile?'Add New Profile':'Save'}
+            {!editProfile?'Add New Version':'Save'}
           </Button>
         </Box>
       </Card>) : null
