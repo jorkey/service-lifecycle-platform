@@ -10,7 +10,7 @@ import RefreshIcon from "@material-ui/icons/Refresh";
 const useStyles = makeStyles(theme => ({
   root: {
     display: 'flex',
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     minHeight: 'fit-content'
   },
@@ -52,7 +52,7 @@ const DistributionVersion = () => {
 
   return <div className={classes.root}>
     {upToDate?<Typography
-      style={{paddingLeft: '10px'}}
+      style={{paddingLeft: '10px', textAlign: 'center'}}
       variant='body2'
     >
       Server Version: {Version.clientDistributionVersionToString(clientVersion)}
@@ -62,9 +62,14 @@ const DistributionVersion = () => {
         href='/'
         title='Refresh Page'
       >
-        <InputLabel style={{color: 'red'}}>
-          Refresh Page To Version {Version.clientDistributionVersionToString(clientVersion)}
-        </InputLabel>
+        <div style={{display: 'flex', flexDirection: 'column', paddingRight: '10px' }}>
+          <InputLabel style={{color: 'red', paddingBottom: '4px'}}>
+            Refresh Page To Version
+          </InputLabel>
+          <InputLabel style={{color: 'red', fontStyle: 'italic'}}>
+            {Version.clientDistributionVersionToString(clientVersion)}
+          </InputLabel>
+        </div>
         <RefreshIcon style={{color: 'red'}}/>
       </Button>}
   </div>
