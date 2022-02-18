@@ -191,7 +191,7 @@ const development = process.env.NODE_ENV === 'development';
 
 const wsLink = new WebSocketLink({
   url: (window.location.protocol=='https:'?'wss':'ws') +
-    `://${development?'localhost:8000':window.location.host}/graphql/websocket`,
+    `://${development?'localhost:8001':window.location.host}/graphql/websocket`,
   connectionParams: () => {
     const token = localStorage.getItem('accessToken')
     return {
