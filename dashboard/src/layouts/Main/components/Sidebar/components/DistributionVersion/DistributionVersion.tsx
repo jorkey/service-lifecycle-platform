@@ -40,6 +40,7 @@ const DistributionVersion = () => {
   document.addEventListener("visibilitychange", (e) => {
     const visible = document.visibilityState == 'visible'
     if (visible) {
+      getVersion()
       scheduleGetVersion()
     } else if (timeout[0]) {
       clearInterval(timeout[0])
@@ -64,7 +65,7 @@ const DistributionVersion = () => {
       >
         <div style={{display: 'flex', flexDirection: 'column', paddingRight: '10px' }}>
           <InputLabel style={{color: 'red', paddingBottom: '4px'}}>
-            Refresh Page To Version
+            Refresh page to version
           </InputLabel>
           <InputLabel style={{color: 'red', fontStyle: 'italic'}}>
             {Version.clientDistributionVersionToString(clientVersion)}
