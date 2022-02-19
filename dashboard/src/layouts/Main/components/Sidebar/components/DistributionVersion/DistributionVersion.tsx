@@ -68,7 +68,7 @@ const DistributionVersion = () => {
             Refresh page to version
           </InputLabel>
           <InputLabel style={{color: 'red', fontStyle: 'italic'}}>
-            {Version.clientDistributionVersionToString(clientVersion)}
+            {Version.clientDistributionVersionToString(serverVersion!)}
           </InputLabel>
         </div>
         <RefreshIcon style={{color: 'red'}}/>
