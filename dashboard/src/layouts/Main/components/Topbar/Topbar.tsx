@@ -6,10 +6,37 @@ import MenuIcon from '@material-ui/icons/Menu';
 import InputIcon from '@material-ui/icons/Input';
 import BuildIcon from '@material-ui/icons/Build';
 import Grid from '@material-ui/core/Grid';
+import {useDistributionInfoQuery, useWhoAmIQuery} from "../../../../generated/graphql";
 
 const useStyles = makeStyles(theme => ({
   root: {
     boxShadow: 'none'
+  },
+  toolbar: {
+    minHeight: '48px'
+  },
+  logo: {
+    color: 'white',
+    display: 'flex'
+  },
+  icon: {
+    paddingTop: '4px'
+  },
+  distributionTitle: {
+    paddingLeft: 10,
+    color: 'white',
+    fontWeight: 400,
+    fontSize: '20px',
+    letterSpacing: '-0.06px',
+    lineHeight: '28px'
+  },
+  distributionVersion: {
+    paddingLeft: 10,
+    color: 'white',
+    fontWeight: 400,
+    fontSize: '20px',
+    letterSpacing: '-0.06px',
+    lineHeight: '28px'
   },
   flexGrow: {
     flexGrow: 1
@@ -17,15 +44,11 @@ const useStyles = makeStyles(theme => ({
   // signOutButton: {
   //   marginLeft: theme.spacing(1)
   // },
-  logo: {
-    color: 'white',
-    display: 'flex'
-  },
-  distributionTitle: {
+  accountName: {
     paddingLeft: 10,
     color: 'white',
     fontWeight: 400,
-    fontSize: '24px',
+    fontSize: '20px',
     letterSpacing: '-0.06px',
     lineHeight: '28px'
   },
@@ -49,15 +72,17 @@ const Topbar: React.FC<TopbarProps> = props => {
 
   const classes = useStyles();
 
-  return (
+  const { data:whoAmI } = useWhoAmIQuery()
+
+  return (whoAmI?.whoAmI ?
     <AppBar
       {...rest}
       // className={clsx(classes.root, className)}
     >
-      <Toolbar>
+      <Toolbar className={classes.toolbar}>
         <RouterLink to='/'>
           <Grid className={classes.logo}>
-            <BuildIcon/>
+            <BuildIcon className={classes.icon}/>
             <Typography className={classes.distributionTitle}
               display='inline'
             >
@@ -66,6 +91,11 @@ const Topbar: React.FC<TopbarProps> = props => {
           </Grid>
         </RouterLink>
         <div className={classes.flexGrow} />
+        <Typography className={classes.accountName}
+                    display='inline'
+        >
+          {whoAmI.whoAmI.name}
+        </Typography>
         <Hidden mdDown>
           <IconButton title='Logout'
             // className={classes.signOutButton}
@@ -84,7 +114,7 @@ const Topbar: React.FC<TopbarProps> = props => {
           </IconButton>
         </Hidden>
       </Toolbar>
-    </AppBar>
+    </AppBar> : null
   );
 };
 

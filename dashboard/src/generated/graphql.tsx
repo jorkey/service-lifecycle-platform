@@ -177,6 +177,7 @@ export type DistributionInfo = {
   __typename?: 'DistributionInfo';
   distribution: Scalars['String'];
   title: Scalars['String'];
+  version: ClientDistributionVersion;
 };
 
 export type DistributionProviderInfo = {
@@ -979,6 +980,10 @@ export type DistributionInfoQuery = (
   & { distributionInfo: (
     { __typename?: 'DistributionInfo' }
     & Pick<DistributionInfo, 'distribution' | 'title'>
+    & { version: (
+      { __typename?: 'ClientDistributionVersion' }
+      & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+    ) }
   ) }
 );
 
@@ -1226,6 +1231,23 @@ export type ClientDesiredVersionsHistoryQuery = (
         & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
       ) }
     )> }
+  )> }
+);
+
+export type ClientDesiredVersionQueryVariables = Exact<{
+  service: Scalars['String'];
+}>;
+
+
+export type ClientDesiredVersionQuery = (
+  { __typename?: 'Query' }
+  & { clientDesiredVersions: Array<(
+    { __typename?: 'ClientDesiredVersion' }
+    & Pick<ClientDesiredVersion, 'service'>
+    & { version: (
+      { __typename?: 'ClientDistributionVersion' }
+      & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+    ) }
   )> }
 );
 
@@ -2220,6 +2242,11 @@ export const DistributionInfoDocument = gql`
   distributionInfo {
     distribution
     title
+    version {
+      distribution
+      developerBuild
+      clientBuild
+    }
   }
 }
     `;
@@ -2837,6 +2864,46 @@ export function useClientDesiredVersionsHistoryLazyQuery(baseOptions?: Apollo.La
 export type ClientDesiredVersionsHistoryQueryHookResult = ReturnType<typeof useClientDesiredVersionsHistoryQuery>;
 export type ClientDesiredVersionsHistoryLazyQueryHookResult = ReturnType<typeof useClientDesiredVersionsHistoryLazyQuery>;
 export type ClientDesiredVersionsHistoryQueryResult = Apollo.QueryResult<ClientDesiredVersionsHistoryQuery, ClientDesiredVersionsHistoryQueryVariables>;
+export const ClientDesiredVersionDocument = gql`
+    query clientDesiredVersion($service: String!) {
+  clientDesiredVersions(services: [$service]) {
+    service
+    version {
+      distribution
+      developerBuild
+      clientBuild
+    }
+  }
+}
+    `;
+
+/**
+ * __useClientDesiredVersionQuery__
+ *
+ * To run a query within a React component, call `useClientDesiredVersionQuery` and pass it any options that fit your needs.
+ * When your component renders, `useClientDesiredVersionQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useClientDesiredVersionQuery({
+ *   variables: {
+ *      service: // value for 'service'
+ *   },
+ * });
+ */
+export function useClientDesiredVersionQuery(baseOptions: Apollo.QueryHookOptions<ClientDesiredVersionQuery, ClientDesiredVersionQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ClientDesiredVersionQuery, ClientDesiredVersionQueryVariables>(ClientDesiredVersionDocument, options);
+      }
+export function useClientDesiredVersionLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ClientDesiredVersionQuery, ClientDesiredVersionQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ClientDesiredVersionQuery, ClientDesiredVersionQueryVariables>(ClientDesiredVersionDocument, options);
+        }
+export type ClientDesiredVersionQueryHookResult = ReturnType<typeof useClientDesiredVersionQuery>;
+export type ClientDesiredVersionLazyQueryHookResult = ReturnType<typeof useClientDesiredVersionLazyQuery>;
+export type ClientDesiredVersionQueryResult = Apollo.QueryResult<ClientDesiredVersionQuery, ClientDesiredVersionQueryVariables>;
 export const InstalledDesiredVersionsDocument = gql`
     query installedDesiredVersions($distribution: String!) {
   installedDesiredVersions(distribution: $distribution) {

@@ -34,8 +34,9 @@ export const GridTableRow = (params: GridTableRowParams) => {
   const myRef = useRef(null)
 
   // @ts-ignore
-  const executeScroll = () => { if (scrollInto) myRef.current.scrollIntoView() }
+  const executeScroll = () => { if (scrollInto && myRef.current) myRef.current.scrollIntoView(false) }
   useMountEffect(executeScroll)
+  executeScroll()
 
   if (!editing && editColumn) {
     setEditColumn(undefined)

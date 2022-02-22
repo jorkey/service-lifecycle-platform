@@ -102,7 +102,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, distribution, accessToken, environment, arguments)
-      }).task
+      }).taskId
   }
 
   private def runLocalBuilder(task: TaskId, distribution: DistributionId,
@@ -181,7 +181,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         Seq(GraphqlArgument("accessToken" -> accessToken),
             GraphqlArgument("arguments" -> arguments, "[String!]"),
             GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"))))
-      logSource <- client.graphqlRequestSSE(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
+      logSource <- client.graphqlRequestWS(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
       end <- {
         distributionClient = Some(client)
         remoteTaskId = Some(remoteTask)
@@ -203,14 +203,15 @@ trait RunBuilderUtils extends SprayJsonSupport {
           .onComplete {
             case Success(_) =>
               if (!result.isCompleted) {
-                system.scheduler.scheduleOnce(FiniteDuration(5, TimeUnit.SECONDS))(() => {
+                def complete(): Unit = {
                   if (!result.isCompleted) {
                     result.failure(new IOException(s"Unexpected completion of remote task log"))
                   }
-                })
+                }
+                system.scheduler.scheduleOnce(FiniteDuration(5, TimeUnit.SECONDS))(complete())
               }
             case Failure(ex) =>
-              log.error("SSE flow error", ex)
+              log.error("Subscription flow error", ex)
               result.failure(ex)
           }
         result.future

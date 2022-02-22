@@ -1,5 +1,5 @@
 export default {
   root: {
-    minHeight: '50px'
+    minWidth: '42px'
   }
 };

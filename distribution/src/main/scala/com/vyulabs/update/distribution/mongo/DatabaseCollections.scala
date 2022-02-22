@@ -150,11 +150,11 @@ class DatabaseCollections(db: MongoDb,
 
   val Log_Lines = new SequencedCollection[ServiceLogLine]("log.lines", for {
     collection <- db.getOrCreateCollection[BsonDocument]("log.lines")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.level")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.unit")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.time"), new IndexOptions()

@@ -9,6 +9,9 @@ const useStyles = makeStyles(() => ({
   root: {
     boxShadow: 'none'
   },
+  toolbar: {
+    minHeight: '48px'
+  },
   logo: {
     color: 'white',
     display: 'flex'
@@ -45,7 +48,7 @@ const Topbar: React.FC<TopbarProps> = props => {
       color='primary'
       position='fixed'
     >
-      <Toolbar>
+      <Toolbar className={classes.toolbar}>
         <RouterLink to='/'>
           <Grid className={classes.logo}>
             <BuildIcon/>

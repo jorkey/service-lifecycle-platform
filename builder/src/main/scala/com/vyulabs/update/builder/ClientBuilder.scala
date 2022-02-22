@@ -129,7 +129,7 @@ class ClientBuilder(builderDir: File) {
       settingsDirs.foreach { dir =>
         val settingDir = new File(clientSettingsDir(service), dir)
         if (settingDir.exists()) {
-          log.info(s"Merge private settings files")
+          log.info(s"Merge settings files")
           if (!mergeSettings(service, clientBuildDir(service), settingDir, values)) {
             return false
           }

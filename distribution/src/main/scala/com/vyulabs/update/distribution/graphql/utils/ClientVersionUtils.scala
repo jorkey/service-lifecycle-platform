@@ -73,7 +73,7 @@ trait ClientVersionUtils {
             result.flatMap(_ => setClientDesiredVersions(clientVersions, author))
           }
         } yield {}, taskCancel)
-      }).task
+      }).taskId
   }
 
   def buildClientVersion(task: TaskId, service: ServiceId,
@@ -100,7 +100,8 @@ trait ClientVersionUtils {
     val versionArg = version.map { version => Filters.and(
       Filters.eq("version.developerBuild", version.developerBuild),
       Filters.eq("version.clientBuild", version.clientBuild)) }
-    val filters = Filters.and((serviceArg ++ distributionArg ++ versionArg).asJava)
+    val args = serviceArg ++ distributionArg ++ versionArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Client_Versions.find(filters)
   }
 

@@ -9,7 +9,8 @@ import com.vyulabs.update.common.common.Misc
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.distribution.mongo._
-import com.vyulabs.update.distribution.task.TaskManager
+import com.vyulabs.update.distribution.task.{Task, TaskManager}
+import org.bson.BsonDocument
 import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol
 
@@ -43,8 +44,8 @@ trait TasksUtils extends SprayJsonSupport {
 
   def createTask(taskType: TaskType, parameters: Seq[TaskParameter],
                  checkAllowToRun: () => Unit,
-                 run: (TaskId, Logger) => (Future[Unit], Option[() => Unit]))
-                (implicit log: Logger): TaskInfo = {
+                 run: (TaskId, Logger) => (Future[Any], Option[() => Unit]))
+                 (implicit log: Logger): Task = {
     synchronized {
       checkAllowToRun()
       val task = taskManager.create(s"task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}", run)
@@ -53,7 +54,7 @@ trait TasksUtils extends SprayJsonSupport {
       task.future.andThen { case _ => synchronized { activeTasks = activeTasks.filter(_ != info) }}
       collections.Tasks_Info.insert(info.copy(active = None)).failed
         .foreach(ex => log.error("Insert task info error", ex))
-      info
+      task
     }
   }
 
@@ -61,12 +62,12 @@ trait TasksUtils extends SprayJsonSupport {
     collections.Tasks_Info.distinctField[TaskType]("taskType")
   }
 
-  def getActiveTasks(id: Option[TaskId] = None, taskTypes: Seq[TaskType] = Seq.empty,
+  def getActiveTasks(id: Option[TaskId] = None, taskType: Option[TaskType] = None,
                      parameters: Seq[TaskParameter] = Seq.empty): Seq[TaskInfo] = {
     synchronized {
       activeTasks
         .filter(task => id.forall(_ == task.task))
-        .filter(task => taskTypes.forall(_ == task.`type`))
+        .filter(task => taskType.forall(_ == task.`type`))
         .filter(task => parameters.forall(parameter =>
           task.parameters.exists(_ == parameter)))
         .sortWith((t1, t2) => t1.creationTime.getTime > t2.creationTime.getTime)
@@ -82,7 +83,8 @@ trait TasksUtils extends SprayJsonSupport {
     } else {
       val idArg = task.map { id => Filters.eq("task", id) }
       val taskTypeArg = taskType.map { taskType => Filters.eq("taskType", taskType) }
-      val filters = Filters.and((idArg ++ taskTypeArg).asJava)
+      val args = idArg ++ taskTypeArg
+      val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
       val sort = Some(Sorts.descending("_sequence"))
       collections.Tasks_Info.find(filters, sort, limit.map(_ - activeTasks.size))
         .map(_.filter(info => !activeTasks.exists(_.task == info.task))

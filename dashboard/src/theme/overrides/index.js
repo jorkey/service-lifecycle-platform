@@ -7,6 +7,7 @@ import MuiPaper from './MuiPaper';
 import MuiTableCell from './MuiTableCell';
 import MuiTableHead from './MuiTableHead';
 import MuiTypography from './MuiTypography';
+import MuiListItemIcon from './MuiListItemIcon';
 
 export default {
   MuiCard,
@@ -17,5 +18,6 @@ export default {
   MuiPaper,
   MuiTableCell,
   MuiTableHead,
-  MuiTypography
+  MuiTypography,
+  MuiListItemIcon
 };

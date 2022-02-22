@@ -45,7 +45,7 @@ const ServicesProfile = (params: ServicesProfileParams) => {
                   disabled={!newProfile}
                   error={(newProfile && (!profile || (doesProfileExist?.(profile))))}
                   fullWidth
-                  helperText={(newProfile && profile && doesProfileExist?.(profile)) ? 'Profile already exists': ''}
+                  helperText={(newProfile && profile && doesProfileExist?.(profile)) ? 'Version already exists': ''}
                   label="Profile"
                   margin="normal"
                   onChange={(e: any) => setProfile?.(e.target.value)}

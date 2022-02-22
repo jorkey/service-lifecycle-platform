@@ -11,7 +11,7 @@ query whoAmI {
 }
 
 query distributionInfo {
-    distributionInfo { distribution, title }
+    distributionInfo { distribution, title, version { distribution, developerBuild, clientBuild } }
 }
 
 # Developer Versions
@@ -87,6 +87,10 @@ query clientDesiredVersions {
 
 query clientDesiredVersionsHistory ($limit: Int!) {
     clientDesiredVersionsHistory (limit: $limit) { time, author, versions { service, version { distribution, developerBuild, clientBuild } } }
+}
+
+query clientDesiredVersion ($service: String!) {
+    clientDesiredVersions (services: [$service]) { service, version { distribution, developerBuild, clientBuild } }
 }
 
 query installedDesiredVersions ($distribution: String!) {

@@ -6,11 +6,11 @@ import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.logs.LogFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
 import org.slf4j.Logger
-import spray.json
 import spray.json._
 
 import java.io.IOException
@@ -43,7 +43,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           TaskParameter("comment", comment),
           TaskParameter("buildClientVersion", buildClientVersion.toString)
       ),
-      () => if (!tasksUtils.getActiveTasks(None, Seq("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
+      () => if (!tasksUtils.getActiveTasks(None, Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
       },
       (taskId, logger) => {
@@ -70,7 +70,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
             Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
         (future, Some(() => cancel.foreach(_.apply())))
-      }).task
+      }).taskId
   }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
@@ -117,7 +117,8 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     val serviceArg = service.map { service => Filters.eq("service", service) }
     val distributionArg = distribution.map { distribution => Filters.eq("version.distribution", distribution ) }
     val versionArg = version.map { version => Filters.eq("version.build", version.build) }
-    val filters = Filters.and((serviceArg ++ distributionArg ++ versionArg).asJava)
+    val args = serviceArg ++ distributionArg ++ versionArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Developer_Versions.find(filters)
   }
 
@@ -201,7 +202,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
   def getTestedVersions(consumerDistribution: Option[DistributionId])
                        (implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     val distributionArg = consumerDistribution.map(Filters.eq("consumerDistribution", _))
-    val filters = Filters.and(distributionArg.toSeq.asJava)
+    val filters = distributionArg.getOrElse(new BsonDocument())
     collections.Developer_TestedVersions.find(filters).map(_.headOption.map(_.versions).getOrElse(Seq.empty))
   }
 
@@ -217,22 +218,22 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     }
   }
 
-  def getLastCommitComment(service: ServiceId)(implicit log: Logger): Future[Option[String]] = {
+  def getLastCommitComment(service: ServiceId)
+                          (implicit log: Logger): Future[String] = {
     tasksUtils.createTask(
       "GetLastCommitComment",
       Seq(TaskParameter("service", service)),
-      () => if (!tasksUtils.getActiveTasks(None, Seq("BuildDeveloperVersion", "GetLastCommitComment"),
-          Seq(TaskParameter("service", service))).isEmpty) {
-        throw new IOException(s"Build developer version of service ${service} is already in process")
-      },
+      () => {},
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("lastCommitComment", s"distribution=${config.distribution}", s"service=${service}")
-        val (future, cancel) =
+        val (builderFuture, cancel) =
           runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
-        val logs = logUtils.getLogs(service = Some(service), task = Some(taskId))
-        logs.
-        (future, Some(() => cancel.foreach(_.apply())))
-      }).task
+        val future = builderFuture.flatMap { _ =>
+          val logs = logUtils.getLogs(service = Some(service), task = Some(taskId), unit = Some(LogFormat.PLAIN_OUTPUT_UNIT))
+          logs.map(_.foldLeft("")((str, line) => { str + (if (!str.isEmpty) "\n" else "") + line.payload.message }))
+        }
+        (future, None)
+      }).future.asInstanceOf[Future[String]]
   }
 }

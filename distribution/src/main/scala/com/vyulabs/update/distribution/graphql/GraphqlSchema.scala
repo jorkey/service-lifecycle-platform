@@ -280,16 +280,14 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getLogsEndTime(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
           c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
       Field("logs", ListType(SequencedServiceLogLineType),
-        arguments = OptionServiceArg :: OptionInstanceArg :: OptionProcessArg :: OptionDirectoryArg :: OptionTaskArg ::
-          OptionFromArg :: OptionToArg :: OptionFromTimeArg :: OptionToTimeArg ::
-          OptionLevelsArg :: OptionFindArg :: OptionLimitArg :: Nil,
+        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg ::
+          OptionLevelsArg :: OptionUnitArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionFindArg ::
+          OptionFromArg :: OptionToArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getLogs(c.arg(OptionServiceArg),
           c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg),
-          c.arg(OptionFromArg), c.arg(OptionToArg),
-          c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg),
-          c.arg(OptionLevelsArg), c.arg(OptionFindArg), c.arg(OptionLimitArg)) }),
-
+          c.arg(OptionLevelsArg), c.arg(OptionUnitArg), c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg), c.arg(OptionFindArg),
+          c.arg(OptionFromArg), c.arg(OptionToArg), c.arg(OptionLimitArg)) }),
       // Faults
       Field("faultDistributions", ListType(StringType),
         resolve = c => { c.ctx.workspace.getFaultDistributions() }),

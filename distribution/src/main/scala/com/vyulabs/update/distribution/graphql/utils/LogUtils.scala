@@ -11,6 +11,7 @@ import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.distribution.mongo._
+import org.bson.BsonDocument
 import org.slf4j.Logger
 import sangria.schema.Action
 
@@ -43,14 +44,15 @@ trait LogUtils extends SprayJsonSupport {
 
   def getLogInstances(service: ServiceId)(implicit log: Logger): Future[Seq[InstanceId]] = {
     val serviceArg = Filters.eq("service", service)
-    val filters = Filters.and(Seq(serviceArg).asJava)
+    val filters = serviceArg
     collections.Log_Lines.distinctField[String]("instance", filters)
   }
 
   def getLogDirectories(service: ServiceId, instance: InstanceId)(implicit log: Logger): Future[Seq[ServiceDirectory]] = {
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
-    val filters = Filters.and(Seq(serviceArg, instanceArg).asJava)
+    val args = Seq(serviceArg, instanceArg)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Log_Lines.distinctField[String]("directory", filters)
   }
 
@@ -59,7 +61,8 @@ trait LogUtils extends SprayJsonSupport {
     val serviceArg = Filters.eq("service", service)
     val instanceArg = Filters.eq("instance", instance)
     val directoryArg = Filters.eq("directory", directory)
-    val filters = Filters.and(Seq(serviceArg, instanceArg, directoryArg).asJava)
+    val args = Seq(serviceArg, instanceArg, directoryArg)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Log_Lines.distinctField[String]("process", filters)
   }
 
@@ -72,7 +75,7 @@ trait LogUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.Log_Lines.distinctField[String]("payload.level", filters)
   }
 
@@ -85,7 +88,7 @@ trait LogUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Sorts.ascending("payload.time")
     collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
   }
@@ -99,7 +102,7 @@ trait LogUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
-    val filters = Filters.and(args.asJava)
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Sorts.descending("payload.time")
     collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption
       .find(_.payload.terminationStatus.isDefined).map(_.payload.time))
@@ -107,25 +110,26 @@ trait LogUtils extends SprayJsonSupport {
 
   def getLogs(service: Option[ServiceId] = None, instance: Option[InstanceId] = None,
               directory: Option[ServiceDirectory] = None, process: Option[ProcessId] = None, task: Option[TaskId] = None,
-              from: Option[BigInt] = None, to: Option[BigInt] = None,
-              fromTime: Option[Date] = None, toTime: Option[Date] = None,
-              levels: Option[Seq[String]] = None, find: Option[String] = None, limit: Option[Int] = None)
+              levels: Option[Seq[String]] = None, unit: Option[String] = None,
+              fromTime: Option[Date] = None, toTime: Option[Date] = None, find: Option[String] = None,
+              from: Option[BigInt] = None, to: Option[BigInt] = None, limit: Option[Int] = None)
              (implicit log: Logger): Future[Seq[SequencedServiceLogLine]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
-    val processArg = process.map(Filters.eq("process", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
+    val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val fromArg = from.map(sequence => Filters.gte("_sequence", sequence.toLong))
-    val toArg = to.map(sequence => Filters.lte("_sequence", sequence.toLong))
-    val fromTimeArg = fromTime.map(time => Filters.gte("payload.time", time))
-    val toTimeArg = toTime.map(time => Filters.lte("payload.time", time))
     val levelsArg = levels.map(levels =>
       Filters.or(levels.map(level => Filters.eq("payload.level", level)).asJava))
+    val unitArg = task.map(Filters.eq("payload.unit", _))
+    val fromTimeArg = fromTime.map(time => Filters.gte("payload.time", time))
+    val toTimeArg = toTime.map(time => Filters.lte("payload.time", time))
     val findArg = find.map(text => Filters.text(text))
-    val args = serviceArg ++ instanceArg ++ processArg ++ directoryArg ++ taskArg ++
-      fromArg ++ toArg ++ fromTimeArg ++ toTimeArg ++ levelsArg ++ findArg
-    val filters = Filters.and(args.asJava)
+    val fromArg = from.map(sequence => Filters.gte("_sequence", sequence.toLong))
+    val toArg = to.map(sequence => Filters.lte("_sequence", sequence.toLong))
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++
+      levelsArg ++ unitArg ++ fromTimeArg ++ toTimeArg ++ findArg ++ fromArg ++ toArg
+    val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
     collections.Log_Lines.findSequenced(filters, Some(sort), limit)
       .map(_.sortBy(_.sequence))

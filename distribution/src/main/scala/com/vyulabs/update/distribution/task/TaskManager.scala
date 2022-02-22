@@ -10,7 +10,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future}
 
-case class Task(taskId: TaskId, future: Future[Unit], cancel: Option[() => Unit]) {
+case class Task(taskId: TaskId, future: Future[Any], cancel: Option[() => Unit]) {
   val startDate: Date = new Date
 }
 
@@ -21,7 +21,7 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
   private var activeTasks = Map.empty[TaskId, Task]
 
   def create(description: String,
-             run: (TaskId, Logger) => (Future[Unit], Option[() => Unit])): Task = {
+             run: (TaskId, Logger) => (Future[Any], Option[() => Unit])): Task = {
     val taskId = idGenerator.generateId(8)
     log.info(s"Started task ${taskId}")
     val appender = new TraceAppender()
