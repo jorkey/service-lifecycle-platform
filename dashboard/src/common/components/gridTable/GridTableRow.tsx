@@ -108,5 +108,5 @@ export const GridTableRow = (params: GridTableRowParams) => {
 
   const selected = !!columns.find(c => { return c.name == 'select' && cells.get(c.name)?.value == true })
 
-  return (<TableRow ref={myRef} selected={selected}>{valuesColumns}</TableRow>)
+  return (<TableRow hover ref={myRef} selected={selected}>{valuesColumns}</TableRow>)
 }

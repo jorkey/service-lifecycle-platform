@@ -42,36 +42,36 @@ const FaultInfoCard: React.FC<FaultInfoCardParams> = props => {
       <div className={classes.inner}>
         <Table>
           <TableBody>
-            <TableRow>
+            <TableRow hover>
               <TableCell className={classes.infoCellHeader}>Fault Id</TableCell>
               <TableCell className={classes.infoCellValue}>{report.payload.fault}</TableCell>
             </TableRow>
-            <TableRow>
+            <TableRow hover>
               <TableCell className={classes.infoCellHeader}>Instance</TableCell>
               <TableCell className={classes.infoCellValue}>{report.payload.info.instance}</TableCell>
             </TableRow>
             {report.payload.info.state.installTime?
-              <TableRow>
+              <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Install Time</TableCell>
                 <TableCell className={classes.infoCellValue}>{report.payload.info.state.installTime.toString()}</TableCell>
               </TableRow>:null}
             {report.payload.info.state.lastExitCode?
-              <TableRow>
+              <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Last Exit Code</TableCell>
                 <TableCell className={classes.infoCellValue}>{report.payload.info.state.lastExitCode}</TableCell>
               </TableRow>:null}
             {report.payload.info.state.failuresCount?
-              <TableRow>
+              <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Failures Count</TableCell>
                 <TableCell className={classes.infoCellValue}>{report.payload.info.state.failuresCount}</TableCell>
               </TableRow>:null}
             {report.payload.info.state.updateToVersion?
-              <TableRow>
+              <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Update To Version</TableCell>
                 <TableCell className={classes.infoCellValue}>{Version.clientDistributionVersionToString(report.payload.info.state.updateToVersion)}</TableCell>
               </TableRow>:null}
             {report.payload.info.state.updateError?
-              <TableRow>
+              <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Update Error</TableCell>
                 <TableCell className={classes.infoCellValue}>{report.payload.info.state.updateError}</TableCell>
               </TableRow>:null}

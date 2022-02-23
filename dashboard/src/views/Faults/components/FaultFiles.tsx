@@ -58,7 +58,7 @@ const FaultFiles: React.FC<FaultFilesParams> = props => {
           </TableHead>
           <TableBody>
             {files.map((file, row) =>
-              <TableRow key={row}>
+              <TableRow hover key={row}>
                 <TableCell className={classes.pathCell}>{file.path}</TableCell>
                 <TableCell className={classes.lengthCell}>{file.length}</TableCell>
               </TableRow>
