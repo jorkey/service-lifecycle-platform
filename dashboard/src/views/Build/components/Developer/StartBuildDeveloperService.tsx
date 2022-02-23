@@ -63,7 +63,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const [buildClientVersion, setBuildClientVersion] = useState(true);
 
   const [queryLastCommitComment, setQueryLastCommitComment] = useState(false);
-  const [lastCommitComment, setLastCommitComment] = useState('');
+  const [lastCommitComment, setLastCommitComment] = useState(['']);
 
   const [initialized, setInitialized] = useState(false)
 
@@ -180,15 +180,13 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
                   task={lastCommitCommentTask.data.lastCommitComment}
                   unit={'LAST_COMMENT'}
                   onLines={(lines) => {
-                    console.log('onLines')
-                    let comment = lastCommitComment
-                    lines.forEach(value => { comment = comment?(comment + '\n'):'' + value.payload.message })
-                    setLastCommitComment(comment)
+                    let comment = lastCommitComment[0]
+                    lines.forEach(value => { comment = (comment?comment + '\n':'') + value.payload.message })
+                    lastCommitComment[0] = comment
                   }}
                   onComplete={() => {
-                    console.log('onComplete')
                     if (!comment) {
-                      setComment(lastCommitComment)
+                      setComment(lastCommitComment[0])
                     }
                     setQueryLastCommitComment(false)
                   }}
