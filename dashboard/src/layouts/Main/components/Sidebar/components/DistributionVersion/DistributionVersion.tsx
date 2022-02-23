@@ -49,8 +49,6 @@ const DistributionVersion = () => {
   })
 
   const serverVersion = version?.clientDesiredVersions[0].version
-  if (serverVersion) console.log('server version ' + Version.clientDistributionVersionToString(serverVersion))
-  if (clientVersion) console.log('client version ' + Version.clientDistributionVersionToString(clientVersion))
   const upToDate = serverVersion?Version.compareClientDistributionVersions(clientVersion, serverVersion)==0:true
 
   return <div className={classes.root}>
@@ -61,7 +59,6 @@ const DistributionVersion = () => {
       Server Version: {Version.clientDistributionVersionToString(clientVersion)}
     </Typography>:
       <Button
-        style={{textTransform: 'none'}}
         href='/'
         title='Refresh Page'
       >

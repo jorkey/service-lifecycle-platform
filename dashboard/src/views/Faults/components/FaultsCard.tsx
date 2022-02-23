@@ -37,7 +37,6 @@ const useStyles = makeStyles((theme:any) => ({
   control: {
     paddingLeft: '5px',
     paddingRight: '15px',
-    textTransform: 'none'
   },
   faultsTable: {
     height: '300px'

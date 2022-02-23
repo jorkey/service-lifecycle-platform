@@ -263,31 +263,34 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getLogInstances(c.arg(ServiceArg)) }),
       Field("logDirectories", ListType(StringType),
         arguments = ServiceArg :: InstanceArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogDirectories(c.arg(ServiceArg), c.arg(InstanceArg)) }),
+        resolve = c => { c.ctx.workspace.getLogDirectories(service = c.arg(ServiceArg),
+          instance = c.arg(InstanceArg)) }),
       Field("logProcesses", ListType(StringType),
         arguments = ServiceArg :: InstanceArg :: DirectoryArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogProcesses(c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg)) }),
+        resolve = c => { c.ctx.workspace.getLogProcesses(service = c.arg(ServiceArg),
+          instance = c.arg(InstanceArg), directory = c.arg(DirectoryArg)) }),
       Field("logLevels", ListType(StringType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogLevels(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
-          c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
+        resolve = c => { c.ctx.workspace.getLogLevels(service = c.arg(OptionServiceArg), instance = c.arg(OptionInstanceArg),
+          directory = c.arg(OptionDirectoryArg), process = c.arg(OptionProcessArg), task = c.arg(OptionTaskArg)) }),
       Field("logsStartTime", OptionType(DateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogsStartTime(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
-          c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
+        resolve = c => { c.ctx.workspace.getLogsStartTime(service = c.arg(OptionServiceArg), instance = c.arg(OptionInstanceArg),
+          directory = c.arg(OptionDirectoryArg), process = c.arg(OptionProcessArg), task = c.arg(OptionTaskArg)) }),
       Field("logsEndTime", OptionType(DateType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg :: Nil,
-        resolve = c => { c.ctx.workspace.getLogsEndTime(c.arg(OptionServiceArg), c.arg(OptionInstanceArg),
-          c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg)) }),
+        resolve = c => { c.ctx.workspace.getLogsEndTime(service = c.arg(OptionServiceArg), instance = c.arg(OptionInstanceArg),
+          directory = c.arg(OptionDirectoryArg), process = c.arg(OptionProcessArg), task = c.arg(OptionTaskArg)) }),
       Field("logs", ListType(SequencedServiceLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg ::
           OptionLevelsArg :: OptionUnitArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionFindArg ::
           OptionFromArg :: OptionToArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
-        resolve = c => { c.ctx.workspace.getLogs(c.arg(OptionServiceArg),
-          c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg), c.arg(OptionTaskArg),
-          c.arg(OptionLevelsArg), c.arg(OptionUnitArg), c.arg(OptionFromTimeArg), c.arg(OptionToTimeArg), c.arg(OptionFindArg),
-          c.arg(OptionFromArg), c.arg(OptionToArg), c.arg(OptionLimitArg)) }),
+        resolve = c => { c.ctx.workspace.getLogs(service = c.arg(OptionServiceArg),
+          instance = c.arg(OptionInstanceArg), directory = c.arg(OptionDirectoryArg), process = c.arg(OptionProcessArg),
+          task = c.arg(OptionTaskArg), levels = c.arg(OptionLevelsArg), unit = c.arg(OptionUnitArg),
+          fromTime = c.arg(OptionFromTimeArg), toTime = c.arg(OptionToTimeArg), find = c.arg(OptionFindArg),
+          from = c.arg(OptionFromArg), to = c.arg(OptionToArg), limit = c.arg(OptionLimitArg)) }),
       // Faults
       Field("faultDistributions", ListType(StringType),
         resolve = c => { c.ctx.workspace.getFaultDistributions() }),
@@ -305,9 +308,8 @@ object GraphqlSchema {
           OptionFromTimeArg :: OptionToTimeArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getFaults(
-          c.arg(OptionDistributionArg), c.arg(OptionFaultArg),
-          c.arg(OptionServiceArg), c.arg(OptionFromTimeArg),
-          c.arg(OptionToTimeArg), c.arg(OptionLimitArg)) }),
+          distribution = c.arg(OptionDistributionArg), fault = c.arg(OptionFaultArg), service = c.arg(OptionServiceArg),
+          fromTime = c.arg(OptionFromTimeArg), toTime = c.arg(OptionToTimeArg), limit = c.arg(OptionLimitArg)) }),
 
       // Tasks
       Field("taskTypes", ListType(StringType),
@@ -316,8 +318,8 @@ object GraphqlSchema {
         arguments = OptionTaskArg :: OptionTypeArg :: OptionParametersArg :: OptionOnlyActiveArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getTasks(
-          c.arg(OptionTaskArg), c.arg(OptionTypeArg), c.arg(OptionParametersArg).getOrElse(Seq.empty),
-          c.arg(OptionOnlyActiveArg), c.arg(OptionLimitArg)) }),
+          task = c.arg(OptionTaskArg), taskType = c.arg(OptionTypeArg), parameters = c.arg(OptionParametersArg).getOrElse(Seq.empty),
+          onlyActive = c.arg(OptionOnlyActiveArg), limit = c.arg(OptionLimitArg)) }),
     )
   )
 
@@ -445,6 +447,10 @@ object GraphqlSchema {
         tags = Authorized(AccountRole.Administrator, AccountRole.Developer) :: Nil,
         resolve = c => { c.ctx.workspace.setDeveloperDesiredVersions(
           c.arg(DeveloperDesiredVersionDeltasArg), c.ctx.accessToken.get.account).map(_ => true) }),
+      Field("lastCommitComment", StringType,
+        arguments = ServiceArg :: Nil,
+        tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
+        resolve = c => { c.ctx.workspace.getLastCommitComment(c.arg(ServiceArg)) }),
 
       // Client versions
       Field("buildClientVersions", StringType,
@@ -550,8 +556,9 @@ object GraphqlSchema {
     "Subscription",
     fields[GraphqlContext, Unit](
       Field.subs("subscribeLogs", ListType(SequencedServiceLogLineType),
-        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg :: OptionTaskArg
-          :: OptionFromArg :: OptionPrefetchArg :: OptionLevelsArg :: Nil,
+        arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg ::
+          OptionTaskArg :: OptionLevelsArg :: OptionUnitArg ::
+          OptionFromArg :: OptionPrefetchArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeLogs(
           c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg),

@@ -16,7 +16,6 @@ const useStyles = makeStyles<Theme, PageNavProps>((theme: any) => ({
   page: {
     color: colors.blueGrey[800],
     justifyContent: 'flex-start',
-    textTransform: 'none',
     letterSpacing: 0,
     width: '100%',
     fontWeight: theme.typography.fontWeightMedium,

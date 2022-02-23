@@ -65,7 +65,6 @@ const useStyles = makeStyles((theme:any) => ({
   control: {
     marginLeft: '10px',
     paddingLeft: '10px',
-    textTransform: 'none'
   },
   alert: {
     marginTop: 25

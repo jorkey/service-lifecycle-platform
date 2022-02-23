@@ -69,7 +69,6 @@ const useStyles = makeStyles((theme:any) => ({
   },
   control: {
     marginLeft: '50px',
-    textTransform: 'none'
   },
   alert: {
     marginTop: 25

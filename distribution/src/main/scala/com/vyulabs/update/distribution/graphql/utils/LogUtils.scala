@@ -121,7 +121,7 @@ trait LogUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val levelsArg = levels.map(levels =>
       Filters.or(levels.map(level => Filters.eq("payload.level", level)).asJava))
-    val unitArg = task.map(Filters.eq("payload.unit", _))
+    val unitArg = unit.map(Filters.eq("payload.unit", _))
     val fromTimeArg = fromTime.map(time => Filters.gte("payload.time", time))
     val toTimeArg = toTime.map(time => Filters.lte("payload.time", time))
     val findArg = find.map(text => Filters.text(text))
@@ -147,19 +147,17 @@ trait LogUtils extends SprayJsonSupport {
     val directoryArg = directory.map(Filters.eq("directory", _))
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val levelsArg = levels.map(Filters.in("payload.level", _))
-    val unitArg = unit.map(Filters.eq("payload.unit", _))
-    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++ levelsArg ++ unitArg
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = Filters.and(args.asJava)
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
       .filter(log => service.isEmpty || service.contains(log.document.service))
       .filter(log => instance.isEmpty || instance.contains(log.document.instance))
-      .filter(log => process.isEmpty || process.contains(log.document.process))
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
+      .filter(log => process.isEmpty || process.contains(log.document.process))
       .filter(log => task.isEmpty || task == log.document.task)
+      .takeWhile(!_.document.payload.terminationStatus.isDefined, true)
       .filter(log => levels.isEmpty || levels.get.contains(log.document.payload.level))
       .filter(log => unit.isEmpty || unit.contains(log.document.payload.unit))
-      .takeWhile(!_.document.payload.terminationStatus.isDefined, true)
       .groupedWeightedWithin(25, FiniteDuration.apply(100, TimeUnit.MILLISECONDS))(_ => 1)
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(line.sequence,
         line.document.instance, line.document.directory, line.document.process, line.document.payload))))

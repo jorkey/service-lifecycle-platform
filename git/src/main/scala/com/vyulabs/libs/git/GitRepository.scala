@@ -7,7 +7,6 @@ import org.eclipse.jgit.api.errors.RefAlreadyExistsException
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.lib.SubmoduleConfig.FetchRecurseSubmodulesMode
 import org.eclipse.jgit.revwalk.RevCommit
-import org.eclipse.jgit.submodule.SubmoduleWalk
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
@@ -290,22 +289,11 @@ class GitRepository(git: Git)(implicit log: Logger) {
 }
 
 object GitRepository {
-  def createRepository(directory: File, bare: Boolean)(implicit log: Logger): Option[GitRepository] = {
-    try {
-      val git = Git.init().setDirectory(directory).setBare(bare).call()
-      Some(new GitRepository(git))
-    } catch {
-      case ex:Exception =>
-        log.error("Init Git repository error", ex)
-        None
-    }
-  }
-
-  def initRepository(url: String, directory: File)(implicit log: Logger): Option[GitRepository] = {
+  def initRepository(directory: File)(implicit log: Logger): Option[GitRepository] = {
     try {
       val git = Git.init().setDirectory(directory).call()
       val config = git.getRepository.getConfig
-      config.setString("remote", "origin", "url", url)
+      config.setString("remote", "origin", "url", "file://" + directory.toString)
       config.save()
       Some(new GitRepository(git))
     } catch {
@@ -382,7 +370,9 @@ object GitRepository {
           log.info(s"Current branch is ${git.getRepository.getBranch()}. Need branch ${branch}")
           return None
         }
-        git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
+        if (!url.startsWith("file://")) {
+          git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
+        }
         toClose = None
         return Some(new GitRepository(git))
       } catch {

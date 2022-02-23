@@ -52,7 +52,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
   private var processes = Set.empty[ChildProcess]
 
-  private val testSourceRepository = GitRepository.createRepository(testServiceSourcesDir, false).getOrElse {
+  private val testSourceRepository = GitRepository.initRepository(testServiceSourcesDir).getOrElse {
     sys.error("Can't create Git repository")
   }
 
@@ -98,12 +98,23 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     val installConfig = InstallConfig(Some(installCommands), None, Some(RunServiceConfig("/bin/bash", Some(Seq("-c", "./runScript.sh")),
       None, Some(writeLogs), Some(false), None, None, None)))
     val updateConfig = UpdateConfig(Map.empty + (testServiceName -> ServiceUpdateConfig(buildConfig, Some(installConfig))))
-    if (!IoUtils.writeJsonToFile(new File(testServiceSourcesDir, Common.UpdateConfigFileName), updateConfig)) {
+    val configFile = new File(testServiceSourcesDir, Common.UpdateConfigFileName)
+    if (!IoUtils.writeJsonToFile(configFile, updateConfig)) {
       sys.error(s"Can't write update config file")
     }
+    if (!testSourceRepository.add(configFile)) {
+      sys.error(s"Can't add update config file to repository changes")
+    }
+    val scriptFile = new File(testServiceSourcesDir, "sourceScript.sh")
     val scriptContent = "echo \"Executed version %%version%%\"" + (if (!buggy) "\nsleep 10000" else "")
-    if (!IoUtils.writeBytesToFile(new File(testServiceSourcesDir, "sourceScript.sh"), scriptContent.getBytes("utf8"))) {
+    if (!IoUtils.writeBytesToFile(scriptFile, scriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
+    }
+    if (!testSourceRepository.add(scriptFile)) {
+      sys.error(s"Can't add script file to repository changes")
+    }
+    if (!testSourceRepository.commit("First commit")) {
+      sys.error(s"Can't commit to repository")
     }
 
     println(s"--------------------------- Configure test service on distribution server")
@@ -140,9 +151,16 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     println()
     println(s"########################### Fix test service in directory ${testServiceInstanceDir}")
     println()
+    val scriptFile = new File(testServiceSourcesDir, "sourceScript.sh")
     val fixedScriptContent = "echo \"Executed version %%version%%\"\nsleep 10000\n"
-    if (!IoUtils.writeBytesToFile(new File(testServiceSourcesDir, "sourceScript.sh"), fixedScriptContent.getBytes("utf8"))) {
+    if (!IoUtils.writeBytesToFile(scriptFile, fixedScriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
+    }
+    if (!testSourceRepository.add(scriptFile)) {
+      sys.error(s"Can't add script file to repository changes")
+    }
+    if (!testSourceRepository.commit("Fix commit")) {
+      sys.error(s"Can't commit to repository")
     }
 
     println(s"--------------------------- Make fixed test service version")

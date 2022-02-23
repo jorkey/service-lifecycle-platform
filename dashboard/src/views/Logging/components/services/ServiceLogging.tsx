@@ -52,12 +52,10 @@ const useStyles = makeStyles((theme:any) => ({
   top: {
     marginLeft: '10px',
     width: '50px',
-    textTransform: 'none',
   },
   bottom: {
     marginLeft: '10px',
     width: '50px',
-    textTransform: 'none',
   },
   level: {
     marginLeft: '10px',

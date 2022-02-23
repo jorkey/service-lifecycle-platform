@@ -52,7 +52,6 @@ export const useBaseStyles = makeStyles((theme:any) => ({
   control: {
     marginLeft: '10px',
     marginRight: '10px',
-    textTransform: 'none'
   },
   authorText: {
     textAlign: 'left',
@@ -65,7 +64,6 @@ export const useBaseStyles = makeStyles((theme:any) => ({
   },
   timeChangeButton: {
     width: '25px',
-    textTransform: 'none',
   },
 }));
 

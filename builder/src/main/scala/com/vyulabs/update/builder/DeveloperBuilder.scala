@@ -125,7 +125,9 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
           return false
         }
 
-        sourceRepositories.flatMap(_.getLastCommitMessage()).sortBy(_._1).reverse.headOption.map(_._2).foreach(println(_))
+        val comment_log = LoggerFactory.getLogger("LAST_COMMENT")
+        sourceRepositories.flatMap(_.getLastCommitMessage()).sortBy(_._1).reverse.headOption.map(_._2).foreach(
+          comment_log.info(_))
 
         true
       }).getOrElse(false)

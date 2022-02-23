@@ -1,5 +1,4 @@
 import React, {useCallback, useState} from 'react';
-import clsx from 'clsx';
 import { makeStyles } from '@material-ui/styles';
 import {
   Button,
@@ -50,7 +49,6 @@ const useStyles = makeStyles((theme:any) => ({
     textAlign: 'right'
   },
   control: {
-    textTransform: 'none'
   },
   alert: {
     marginTop: 25

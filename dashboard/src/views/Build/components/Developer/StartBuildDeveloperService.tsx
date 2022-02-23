@@ -11,18 +11,22 @@ import {
   CardContent,
   CardHeader, Checkbox,
   FormControlLabel,
-  Grid
+  Grid, Typography
 } from '@material-ui/core';
 import {
   useBuildDeveloperVersionMutation,
-  useDeveloperVersionsInfoLazyQuery, useProfileServicesQuery,
+  useDeveloperVersionsInfoLazyQuery,
+  useLastCommitCommentMutation,
+  useProfileServicesQuery,
   useWhoAmILazyQuery
 } from '../../../../generated/graphql';
-import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 import {Version} from "../../../../common";
+import {LogsSubscriber} from "../../../../common/components/logsTable/LogsSubscriber";
 
 const useStyles = makeStyles(theme => ({
+  root: {
+  },
   controls: {
     marginRight: 16,
     display: 'flex',
@@ -32,6 +36,9 @@ const useStyles = makeStyles(theme => ({
   control: {
     marginLeft: '10px',
     textTransform: 'none'
+  },
+  inProgress: {
+    cursor: 'progress',
   },
   alert: {
     marginTop: 25
@@ -55,6 +62,9 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const [comment, setComment] = useState('');
   const [buildClientVersion, setBuildClientVersion] = useState(true);
 
+  const [queryLastCommitComment, setQueryLastCommitComment] = useState(false);
+  const [lastCommitComment, setLastCommitComment] = useState('');
+
   const [initialized, setInitialized] = useState(false)
 
   const [error, setError] = useState<string>()
@@ -64,26 +74,29 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
   const [ getWhoAmI, whoAmI ] = useWhoAmILazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query who am I error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
   const [ getDeveloperVersions, developerVersions ] = useDeveloperVersionsInfoLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { service: service },
     onError(err) { setError('Query developer versions error ' + err.message) },
-    onCompleted() { setError(undefined) }
   })
   const { data: selfServicesProfile } = useProfileServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { profile: 'self' },
     onError(err) { setError('Query self profile services error ' + err.message) },
   })
+  const [ getLastCommitCommentTask, lastCommitCommentTask ] = useLastCommitCommentMutation({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    variables: { service: service },
+    onError(err) { setError('Query last commit comment error ' + err.message) },
+  })
   const [ buildDeveloperVersion ] = useBuildDeveloperVersionMutation({
     variables: { service: service, version: { build: Version.parseBuild(version) },
       comment: comment, buildClientVersion: buildClientVersion },
-    onError(err) { setError('Build version error ' + err.message) },
     onCompleted(data) {
       history.push(props.fromUrl + '/monitor/' + data.buildDeveloperVersion)
-    }
+    },
+    onError(err) { setError('Build version error ' + err.message) }
   })
 
   if (!initialized) {
@@ -148,6 +161,36 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
                 onChange={(e: any) => setComment(e.target.value)}
                 error={!comment}
               />
+              {!queryLastCommitComment && !comment?
+                <Button
+                  color="primary"
+                  variant="contained"
+                  onClick={() => {
+                    setQueryLastCommitComment(true)
+                    getLastCommitCommentTask()
+                  }}>
+                  Pull Repositories And Get Last Comment
+                </Button>:null}
+              {queryLastCommitComment && !comment?
+                <Typography>
+                  Pull Repositories And Get Last Comment...
+                </Typography>:null}
+              {queryLastCommitComment && lastCommitCommentTask.data?
+                <LogsSubscriber
+                  task={lastCommitCommentTask.data.lastCommitComment}
+                  unit={'LAST_COMMENT'}
+                  onLines={(lines) => {
+                    let comment = lastCommitComment
+                    lines.forEach(value => { comment = comment?(comment + '\n'):'' + value.payload.message })
+                    setLastCommitComment(comment)
+                  }}
+                  onComplete={() => {
+                    if (!comment) {
+                      setComment(lastCommitComment)
+                    }
+                    setQueryLastCommitComment(false)
+                  }}
+                /> : null}
             </Grid>
           </Grid>
           {hasClient()?
@@ -172,7 +215,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
 
   return (
     initialized ? (
-      <div>
+      <div className={classes.root + (queryLastCommitComment? ' ' + classes.inProgress:'')}>
         {BuildCard()}
         {error && <Alert className={classes.alert} severity='error'>{error}</Alert>}
         <Box className={classes.controls}>

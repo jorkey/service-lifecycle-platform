@@ -308,6 +308,7 @@ export type Mutation = {
   addDeveloperVersionInfo: Scalars['Boolean'];
   removeDeveloperVersion: Scalars['Boolean'];
   setDeveloperDesiredVersions: Scalars['Boolean'];
+  lastCommitComment: Scalars['String'];
   buildClientVersions: Scalars['String'];
   addClientVersionInfo: Scalars['Boolean'];
   removeClientVersion: Scalars['Boolean'];
@@ -452,6 +453,11 @@ export type MutationRemoveDeveloperVersionArgs = {
 
 export type MutationSetDeveloperDesiredVersionsArgs = {
   versions: Array<DeveloperDesiredVersionDeltaInput>;
+};
+
+
+export type MutationLastCommitCommentArgs = {
+  service: Scalars['String'];
 };
 
 
@@ -749,15 +755,16 @@ export type QueryLogsEndTimeArgs = {
 export type QueryLogsArgs = {
   service?: Maybe<Scalars['String']>;
   instance?: Maybe<Scalars['String']>;
-  process?: Maybe<Scalars['String']>;
   directory?: Maybe<Scalars['String']>;
+  process?: Maybe<Scalars['String']>;
   task?: Maybe<Scalars['String']>;
-  from?: Maybe<Scalars['BigInt']>;
-  to?: Maybe<Scalars['BigInt']>;
+  levels?: Maybe<Array<Scalars['String']>>;
+  unit?: Maybe<Scalars['String']>;
   fromTime?: Maybe<Scalars['Date']>;
   toTime?: Maybe<Scalars['Date']>;
-  levels?: Maybe<Array<Scalars['String']>>;
   find?: Maybe<Scalars['String']>;
+  from?: Maybe<Scalars['BigInt']>;
+  to?: Maybe<Scalars['BigInt']>;
   limit?: Maybe<Scalars['Int']>;
 };
 
@@ -881,9 +888,10 @@ export type SubscriptionSubscribeLogsArgs = {
   directory?: Maybe<Scalars['String']>;
   process?: Maybe<Scalars['String']>;
   task?: Maybe<Scalars['String']>;
+  levels?: Maybe<Array<Scalars['String']>>;
+  unit?: Maybe<Scalars['String']>;
   from?: Maybe<Scalars['BigInt']>;
   prefetch?: Maybe<Scalars['Int']>;
-  levels?: Maybe<Array<Scalars['String']>>;
 };
 
 export type TaskInfo = {
@@ -1067,6 +1075,16 @@ export type ProviderDesiredVersionsQuery = (
       & Pick<DeveloperDistributionVersion, 'distribution' | 'build'>
     ) }
   )> }
+);
+
+export type LastCommitCommentMutationVariables = Exact<{
+  service: Scalars['String'];
+}>;
+
+
+export type LastCommitCommentMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'lastCommitComment'>
 );
 
 export type BuildDeveloperVersionMutationVariables = Exact<{
@@ -2114,6 +2132,7 @@ export type SubscribeLogsSubscriptionVariables = Exact<{
   task?: Maybe<Scalars['String']>;
   prefetch: Scalars['Int'];
   levels?: Maybe<Array<Scalars['String']> | Scalars['String']>;
+  unit?: Maybe<Scalars['String']>;
 }>;
 
 
@@ -2450,6 +2469,37 @@ export function useProviderDesiredVersionsLazyQuery(baseOptions?: Apollo.LazyQue
 export type ProviderDesiredVersionsQueryHookResult = ReturnType<typeof useProviderDesiredVersionsQuery>;
 export type ProviderDesiredVersionsLazyQueryHookResult = ReturnType<typeof useProviderDesiredVersionsLazyQuery>;
 export type ProviderDesiredVersionsQueryResult = Apollo.QueryResult<ProviderDesiredVersionsQuery, ProviderDesiredVersionsQueryVariables>;
+export const LastCommitCommentDocument = gql`
+    mutation lastCommitComment($service: String!) {
+  lastCommitComment(service: $service)
+}
+    `;
+export type LastCommitCommentMutationFn = Apollo.MutationFunction<LastCommitCommentMutation, LastCommitCommentMutationVariables>;
+
+/**
+ * __useLastCommitCommentMutation__
+ *
+ * To run a mutation, you first call `useLastCommitCommentMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useLastCommitCommentMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [lastCommitCommentMutation, { data, loading, error }] = useLastCommitCommentMutation({
+ *   variables: {
+ *      service: // value for 'service'
+ *   },
+ * });
+ */
+export function useLastCommitCommentMutation(baseOptions?: Apollo.MutationHookOptions<LastCommitCommentMutation, LastCommitCommentMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<LastCommitCommentMutation, LastCommitCommentMutationVariables>(LastCommitCommentDocument, options);
+      }
+export type LastCommitCommentMutationHookResult = ReturnType<typeof useLastCommitCommentMutation>;
+export type LastCommitCommentMutationResult = Apollo.MutationResult<LastCommitCommentMutation>;
+export type LastCommitCommentMutationOptions = Apollo.BaseMutationOptions<LastCommitCommentMutation, LastCommitCommentMutationVariables>;
 export const BuildDeveloperVersionDocument = gql`
     mutation buildDeveloperVersion($service: String!, $version: DeveloperVersionInput!, $comment: String!, $buildClientVersion: Boolean!) {
   buildDeveloperVersion(
@@ -5201,7 +5251,7 @@ export type RemoveProviderMutationHookResult = ReturnType<typeof useRemoveProvid
 export type RemoveProviderMutationResult = Apollo.MutationResult<RemoveProviderMutation>;
 export type RemoveProviderMutationOptions = Apollo.BaseMutationOptions<RemoveProviderMutation, RemoveProviderMutationVariables>;
 export const SubscribeLogsDocument = gql`
-    subscription subscribeLogs($service: String, $instance: String, $process: String, $directory: String, $task: String, $prefetch: Int!, $levels: [String!]) {
+    subscription subscribeLogs($service: String, $instance: String, $process: String, $directory: String, $task: String, $prefetch: Int!, $levels: [String!], $unit: String) {
   subscribeLogs(
     service: $service
     instance: $instance
@@ -5210,6 +5260,7 @@ export const SubscribeLogsDocument = gql`
     task: $task
     prefetch: $prefetch
     levels: $levels
+    unit: $unit
   ) {
     sequence
     payload {
@@ -5242,6 +5293,7 @@ export const SubscribeLogsDocument = gql`
  *      task: // value for 'task'
  *      prefetch: // value for 'prefetch'
  *      levels: // value for 'levels'
+ *      unit: // value for 'unit'
  *   },
  * });
  */

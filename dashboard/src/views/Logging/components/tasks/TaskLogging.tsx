@@ -34,12 +34,10 @@ const useStyles = makeStyles((theme:any) => ({
   top: {
     marginLeft: '10px',
     width: '50px',
-    textTransform: 'none',
   },
   bottom: {
     marginLeft: '10px',
     width: '50px',
-    textTransform: 'none',
   },
   level: {
     marginLeft: '10px',
@@ -51,7 +49,6 @@ const useStyles = makeStyles((theme:any) => ({
   control: {
     paddingLeft: '5px',
     paddingRight: '15px',
-    textTransform: 'none'
   },
   alert: {
     marginTop: 25

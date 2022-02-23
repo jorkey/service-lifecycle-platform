@@ -34,7 +34,6 @@ const useStyles = makeStyles(theme => ({
   },
   control: {
     paddingLeft: '10px',
-    textTransform: 'none'
   },
   distributionSelect: {
     width: '150px'

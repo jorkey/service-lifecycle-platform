@@ -6,7 +6,6 @@ import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info._
-import com.vyulabs.update.common.logs.LogFormat
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import org.bson.BsonDocument
@@ -179,7 +178,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
 
   private def filterDesiredVersionsByProfile(profile: ServicesProfileId,
                                              desiredVersions: Seq[DeveloperDesiredVersion])(implicit log: Logger)
-  : Future[Seq[DeveloperDesiredVersion]] = {
+      : Future[Seq[DeveloperDesiredVersion]] = {
     for {
       profile <- serviceProfilesUtils.getServicesProfile(profile)
     } yield {
@@ -218,8 +217,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     }
   }
 
-  def getLastCommitComment(service: ServiceId)
-                          (implicit log: Logger): Future[String] = {
+  def getLastCommitComment(service: ServiceId)(implicit log: Logger): TaskId = {
     tasksUtils.createTask(
       "GetLastCommitComment",
       Seq(TaskParameter("service", service)),
@@ -227,13 +225,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("lastCommitComment", s"distribution=${config.distribution}", s"service=${service}")
-        val (builderFuture, cancel) =
-          runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
-        val future = builderFuture.flatMap { _ =>
-          val logs = logUtils.getLogs(service = Some(service), task = Some(taskId), unit = Some(LogFormat.PLAIN_OUTPUT_UNIT))
-          logs.map(_.foldLeft("")((str, line) => { str + (if (!str.isEmpty) "\n" else "") + line.payload.message }))
-        }
-        (future, None)
-      }).future.asInstanceOf[Future[String]]
+        runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
+      }).taskId
   }
 }

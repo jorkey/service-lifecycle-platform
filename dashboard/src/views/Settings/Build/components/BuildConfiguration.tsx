@@ -47,7 +47,6 @@ const useStyles = makeStyles((theme:any) => ({
   },
   control: {
     marginLeft: '10px',
-    textTransform: 'none'
   }
 }));
 

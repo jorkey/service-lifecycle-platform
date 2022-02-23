@@ -25,7 +25,6 @@ const useStyles = makeStyles((theme:any) => ({
     width: '250px',
   },
   control: {
-    textTransform: 'none'
   },
   alert: {
     marginTop: 25

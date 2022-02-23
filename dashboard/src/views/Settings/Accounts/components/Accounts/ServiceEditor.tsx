@@ -44,7 +44,6 @@ const useStyles = makeStyles(theme => ({
   },
   control: {
     marginLeft: '10px',
-    textTransform: 'none'
   },
   alert: {
     marginTop: 25

@@ -114,7 +114,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
               />
               <Button
                 variant="text"
-                style={{ textTransform: 'none', marginLeft: 'auto', marginRight: 0 }}
+                style={{ marginLeft: 'auto', marginRight: 0 }}
                 component="span"
               >
                 <AttachmentIcon/>

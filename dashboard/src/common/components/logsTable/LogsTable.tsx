@@ -45,7 +45,6 @@ const useStyles = makeStyles(theme => ({
 }))
 
 export interface FindLogsDashboardParams {
-  className: string
   task?: string
   service?: string
   instance?: string
@@ -54,11 +53,13 @@ export interface FindLogsDashboardParams {
   fromTime?: Date
   toTime?: Date
   levels?: string[]
+  unit?: string
   find?: string
   follow?: boolean
 }
 
 interface LogsTableParams extends FindLogsDashboardParams {
+  className: string
   onComplete: (time: Date, status: boolean) => void
   onError: (message: string) => void
 }
@@ -89,7 +90,7 @@ export interface FindLogsDashboardParams {
 }
 
 export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<LogsTableEvents>) => {
-  const { className, service, instance, process, directory, task, fromTime, toTime, levels, find,
+  const { className, service, instance, process, directory, task, fromTime, toTime, levels, unit, find,
     follow, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<LogRecord[]>([])
@@ -161,7 +162,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const getCommonVariables = (from?: BigInt, to?: BigInt) => {
     return {
-      fromTime: fromTime, toTime: toTime, levels: levels, find: find,
+      fromTime: fromTime, toTime: toTime, levels: levels, unit: unit, find: find,
       from: from, to: to, limit: sliceRowsCount
     }
   }
@@ -171,7 +172,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     if (!follow) {
       getLogs(startSequence)
     }
-  },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
+  },  [ service, instance, directory, process, task, fromTime, toTime, levels, unit, find, follow ])
 
   const getLogs = (from?: BigInt, to?: BigInt) => {
     if (task) {
