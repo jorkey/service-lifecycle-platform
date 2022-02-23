@@ -169,22 +169,24 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
                     setQueryLastCommitComment(true)
                     getLastCommitCommentTask()
                   }}>
-                  Pull Repositories And Get Last Comment
+                  Get Last Commit Comment
                 </Button>:null}
               {queryLastCommitComment && !comment?
                 <Typography>
-                  Pull Repositories And Get Last Comment...
+                  Get Last Commit Comment...
                 </Typography>:null}
               {queryLastCommitComment && lastCommitCommentTask.data?
                 <LogsSubscriber
                   task={lastCommitCommentTask.data.lastCommitComment}
                   unit={'LAST_COMMENT'}
                   onLines={(lines) => {
+                    console.log('onLines')
                     let comment = lastCommitComment
                     lines.forEach(value => { comment = comment?(comment + '\n'):'' + value.payload.message })
                     setLastCommitComment(comment)
                   }}
                   onComplete={() => {
+                    console.log('onComplete')
                     if (!comment) {
                       setComment(lastCommitComment)
                     }
