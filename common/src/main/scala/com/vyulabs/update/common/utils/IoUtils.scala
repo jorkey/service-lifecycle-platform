@@ -221,12 +221,7 @@ object IoUtils {
     val bytes = readFileToBytes(inputFile).getOrElse {
       return false
     }
-    var contents = new String(bytes, "utf8")
-    for (entry <- args) {
-      val variable = entry._1
-      val value = entry._2
-      contents = contents.replaceAll(s"%%${variable}%%", value)
-    }
+    val contents = Utils.extendMacro(new String(bytes, "utf8"), args)
     writeBytesToFile(outputFile, contents.getBytes("utf8"))
   }
 
