@@ -124,16 +124,13 @@ object Utils {
     }
   }
 
-  def extendMacro(macroString: String, args: Map[String, String])(implicit log: Logger): String = {
-    log.info(s"macro ${macroString}")
+  def extendMacro(macroString: String, args: Map[String, String], getMacroContent: String => Array[Byte])
+                 (implicit log: Logger): String = {
     args.foldLeft(macroString) {
       case (m, (k, v)) =>
-        log.info(s"${k} -> ${v}")
         val value = if (v.startsWith("%B ")) {
-          val file = new File(v.substring(3))
-          Base64.getEncoder().encodeToString(IoUtils.readFileToBytes(file).getOrElse {
-            throw new IOException(s"Error of macro extension of ${macroString}")
-          })
+          val path = v.substring(3)
+          Base64.getEncoder().encodeToString(getMacroContent(path))
         } else {
           v
         }

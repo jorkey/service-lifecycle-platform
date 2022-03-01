@@ -17,7 +17,7 @@ import com.vyulabs.update.common.version.{DeveloperDistributionVersion, Develope
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.{Logger, LoggerFactory}
 
-import java.io.File
+import java.io.{File, IOException}
 import java.nio.file.Files
 import java.util.Date
 
@@ -174,14 +174,16 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
     }
 
     log.info(s"Copy files to build directory ${directory}")
+    def getMacroContent = (path: String) =>
+      IoUtils.readFileToBytes(new File(directory, path)).getOrElse { throw new IOException("Get macro content error") }
     for (copyCommand <- updateConfig.build.copyFiles) {
-      val sourceFile = Utils.extendMacro(copyCommand.sourceFile, params)
+      val sourceFile = Utils.extendMacro(copyCommand.sourceFile, params, getMacroContent)
       val in = if (sourceFile.startsWith("/")) {
         new File(sourceFile)
       } else {
         new File(sourceDirectory, sourceFile)
       }
-      val out = new File(directory, Utils.extendMacro(copyCommand.destinationFile, params))
+      val out = new File(directory, Utils.extendMacro(copyCommand.destinationFile, params, getMacroContent))
       val outDir = out.getParentFile
       if (outDir != null) {
         if (!outDir.exists() && !outDir.mkdirs()) {
@@ -190,7 +192,8 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
         }
       }
       if (!copyFile(in, out, file => !copyCommand.except.getOrElse(Set.empty).contains(in.toPath.relativize(file.toPath).toString),
-          copyCommand.settings.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, params)))) {
+            copyCommand.settings.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, params, getMacroContent)),
+            getMacroContent)) {
         return false
       }
     }

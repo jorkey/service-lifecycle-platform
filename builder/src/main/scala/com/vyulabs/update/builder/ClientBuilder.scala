@@ -13,7 +13,7 @@ import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDi
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.DefaultJsonProtocol._
 
-import java.io.File
+import java.io.{File, IOException}
 import java.nio.file.Files
 import java.util.Date
 
@@ -168,6 +168,8 @@ class ClientBuilder(builderDir: File) {
 
   private def mergeSettings(service: ServiceId, buildDirectory: File, localDirectory: File,
                             values: Map[String, String], subPath: String = "")(implicit log: Logger): Boolean = {
+    def getMacroContent = (path: String) =>
+      IoUtils.readFileToBytes(new File(buildDirectory, path)).getOrElse { throw new IOException("Get macro content error") }
     for (localFile <- sortConfigFilesByIndex(new File(localDirectory, subPath).listFiles().toSeq)) {
       if (localFile.isDirectory) {
         val newSubPath = subPath + "/" + localFile.getName
@@ -208,7 +210,7 @@ class ClientBuilder(builderDir: File) {
             return false
           }
           log.info(s"Extend configuration file ${filePath} with defines")
-          if (!definedValues.propertiesExpansion(buildConf)) {
+          if (!definedValues.propertiesExpansion(buildConf, getMacroContent)) {
             log.error("Extend configuration file with defines error")
             return false
           }

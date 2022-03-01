@@ -86,7 +86,8 @@ class SelfUpdater(collections: DatabaseCollections, directory: DistributionDirec
 
   private def beginServiceUpdate(service: ServiceId, toVersion: ClientDistributionVersion): Boolean = {
     log.info(s"Downloading ${service} of version ${toVersion}")
-    if (!IoUtils.copyFile(directory.getClientVersionImageFile(service, toVersion), new File(Common.ServiceZipName.format(service)))) {
+    if (!IoUtils.copyFile(directory.getClientVersionImageFile(service, toVersion),
+        new File(Common.ServiceZipName.format(service)))) {
       log.error(s"Downloading ${service} error")
       return false
     }

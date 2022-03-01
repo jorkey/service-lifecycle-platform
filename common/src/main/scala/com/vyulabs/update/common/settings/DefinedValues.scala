@@ -13,9 +13,10 @@ import scala.collection.JavaConverters._
   * Copyright FanDate, Inc.
   */
 class DefinedValues(map: Map[String, String]) {
-  def propertiesExpansion(file: File)(implicit log: Logger): Boolean = {
+  def propertiesExpansion(file: File, getMacroContent: String => Array[Byte])
+                         (implicit log: Logger): Boolean = {
     log.info(s"Expand macro for file ${file}")
-    if (!IoUtils.macroExpansion(file, file, map)) {
+    if (!IoUtils.macroExpansion(file, file, map, getMacroContent)) {
       return false
     }
     true

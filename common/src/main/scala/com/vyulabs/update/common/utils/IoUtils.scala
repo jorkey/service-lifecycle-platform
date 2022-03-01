@@ -116,7 +116,10 @@ object IoUtils {
     config.root().render(renderOpts)
   }
 
-  def copyFile(from: File, to: File, filter: (File) => Boolean = (_) => true, settings: Map[String, String] = Map.empty)
+  def copyFile(from: File, to: File,
+               filter: File => Boolean = _ => true,
+               settings: Map[String, String] = Map.empty,
+               getMacroContent: String => Array[Byte] = _ => throw new NotImplementedError())
               (implicit log: Logger): Boolean = {
     if (from.isDirectory) {
       if (!to.exists() && !to.mkdir()) {
@@ -126,7 +129,7 @@ object IoUtils {
       for (fromChild <- from.listFiles()) {
         if (filter(fromChild)) {
           val toChild = new File(to, fromChild.getName)
-          if (!copyFile(fromChild, toChild, filter, settings)) {
+          if (!copyFile(fromChild, toChild, filter, settings, getMacroContent)) {
             return false
           }
         }
@@ -135,7 +138,7 @@ object IoUtils {
     } else {
       if (!settings.isEmpty) {
         log.info(s"Expand macros from file ${from} and copy to ${to}")
-        if (!macroExpansion(from, to, settings)) {
+        if (!macroExpansion(from, to, settings, getMacroContent)) {
           return false
         }
         true
@@ -217,11 +220,12 @@ object IoUtils {
     writeJsonToFile(versionMarkFile, version)
   }
 
-  def macroExpansion(inputFile: File, outputFile: File, args: Map[String, String])(implicit log: Logger): Boolean = {
+  def macroExpansion(inputFile: File, outputFile: File, args: Map[String, String], getMacroContent: String => Array[Byte])
+                    (implicit log: Logger): Boolean = {
     val bytes = readFileToBytes(inputFile).getOrElse {
       return false
     }
-    val contents = Utils.extendMacro(new String(bytes, "utf8"), args)
+    val contents = Utils.extendMacro(new String(bytes, "utf8"), args, getMacroContent)
     writeBytesToFile(outputFile, contents.getBytes("utf8"))
   }
 

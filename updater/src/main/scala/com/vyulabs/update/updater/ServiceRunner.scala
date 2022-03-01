@@ -12,7 +12,7 @@ import com.vyulabs.update.common.version.{Build, DeveloperDistributionVersion}
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import org.slf4j.Logger
 
-import java.io.File
+import java.io.{File, IOException}
 import java.nio.file.Files
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
@@ -43,9 +43,11 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         false
       } else {
         stopping = false
-        val command = Utils.extendMacro(config.command, parameters)
-        val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters))
-        val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters))
+        val getMacroContent = (path: String) =>
+          IoUtils.readFileToBytes(new File(state.currentServiceDirectory, path)).getOrElse(throw new IOException())
+        val command = Utils.extendMacro(config.command, parameters, getMacroContent)
+        val arguments = config.args.getOrElse(Seq.empty).map(Utils.extendMacro(_, parameters, getMacroContent))
+        val env = config.env.getOrElse(Map.empty).mapValues(Utils.extendMacro(_, parameters, getMacroContent))
         val logWriter = config.writeLogs.map { writeLogsConfig =>
           new LogWriter(new File(state.currentServiceDirectory, writeLogsConfig.directory),
             writeLogsConfig.maxFileSizeMB * 1024 * 1024,
@@ -162,7 +164,10 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
       state.failure(exitCode)
       saveLogs(true)
       val pattern = config.faultFilesMatch.getOrElse("core")
-      val regPattern = Utils.extendMacro(pattern, parameters).r
+      def getMacroContent = (path: String) =>
+        IoUtils.readFileToBytes(new File(state.currentServiceDirectory, path)).getOrElse {
+          throw new IOException("Get macro content error") }
+      val regPattern = Utils.extendMacro(pattern, parameters, getMacroContent).r
       val files = state.currentServiceDirectory.listFiles().filter { file =>
         file.getName match {
           case regPattern() => true

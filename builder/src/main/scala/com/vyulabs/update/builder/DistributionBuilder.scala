@@ -338,8 +338,8 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
   private def installDistributionService(scriptsVersion: ClientDistributionVersion,
                                          distributionVersion: ClientDistributionVersion): Boolean = {
     if (!IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), "distribution"), directory) ||
-      !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(directory, Common.UpdateSh)) ||
-      !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), directory)) {
+        !IoUtils.copyFile(new File(clientBuilder.clientBuildDir(Common.ScriptsServiceName), Common.UpdateSh), new File(directory, Common.UpdateSh)) ||
+        !IoUtils.copyFile(clientBuilder.clientBuildDir(Common.DistributionServiceName), directory)) {
       return false
     }
     directory.listFiles().foreach { file =>

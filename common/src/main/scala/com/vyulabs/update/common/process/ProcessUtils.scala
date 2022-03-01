@@ -2,10 +2,11 @@ package com.vyulabs.update.common.process
 
 import com.vyulabs.update.common.config.CommandConfig
 import com.vyulabs.update.common.process.ProcessUtils.Logging.Logging
+import com.vyulabs.update.common.utils.IoUtils
 import com.vyulabs.update.common.utils.Utils.extendMacro
 import org.slf4j.Logger
 
-import java.io.{BufferedReader, File, InputStream, InputStreamReader}
+import java.io.{BufferedReader, File, IOException, InputStreamReader}
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
@@ -33,11 +34,14 @@ object ProcessUtils {
           new File(dir, directory)
       case None => dir
     }
-    runProcess(extendMacro(config.command, args),
-      config.args.getOrElse(Seq.empty).map(extendMacro(_, args)),
-      config.env.getOrElse(Map.empty).mapValues(extendMacro(_, args)),
+    def getMacroContent = (path: String) => {
+      IoUtils.readFileToBytes(new File(directory, path)).getOrElse { throw new IOException("Get macro content error") }
+    }
+    runProcess(extendMacro(config.command, args, getMacroContent),
+      config.args.getOrElse(Seq.empty).map(extendMacro(_, args, getMacroContent)),
+      config.env.getOrElse(Map.empty).mapValues(extendMacro(_, args, getMacroContent)),
       directory, config.exitCode,
-      config.outputMatch.map(extendMacro(_, args)),
+      config.outputMatch.map(extendMacro(_, args, getMacroContent)),
       logging)
   }
 

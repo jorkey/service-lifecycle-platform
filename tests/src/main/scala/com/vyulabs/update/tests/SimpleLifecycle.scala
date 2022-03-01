@@ -125,7 +125,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
     println(s"--------------------------- Setup and start updater with test service in directory ${testServiceInstanceDir}")
     if (!IoUtils.copyFile(new File("./scripts/updater/updater.sh"), new File(testServiceInstanceDir, "updater.sh")) ||
-      !IoUtils.copyFile(new File("./scripts/.update.sh"), new File(testServiceInstanceDir, ".update.sh"))) {
+        !IoUtils.copyFile(new File("./scripts/.update.sh"), new File(testServiceInstanceDir, ".update.sh"))) {
       sys.error("Copying of updater scripts error")
     }
     val updaterConfig = UpdaterConfig("Test", updaterDistributionUrl,
