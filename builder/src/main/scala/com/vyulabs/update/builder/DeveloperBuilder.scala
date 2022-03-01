@@ -175,7 +175,7 @@ class DeveloperBuilder(builderDir: File, distribution: DistributionId) {
 
     log.info(s"Copy files to build directory ${directory}")
     def getMacroContent = (path: String) =>
-      IoUtils.readFileToBytes(new File(directory, path)).getOrElse { throw new IOException("Get macro content error") }
+      IoUtils.readFileToBytes(new File(sourceDirectory, path)).getOrElse { throw new IOException("Get macro content error") }
     for (copyCommand <- updateConfig.build.copyFiles) {
       val sourceFile = Utils.extendMacro(copyCommand.sourceFile, params, getMacroContent)
       val in = if (sourceFile.startsWith("/")) {
