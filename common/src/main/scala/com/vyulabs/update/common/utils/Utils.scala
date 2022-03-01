@@ -128,12 +128,15 @@ object Utils {
                  (implicit log: Logger): String = {
     args.foldLeft(macroString) {
       case (m, (k, v)) =>
+        log.info(s"extendMacro 1 ${k} ${v}")
         val value = if (v.startsWith("%B ")) {
+          log.info(s"extendMacro 2")
           val path = v.substring(3)
           Base64.getEncoder().encodeToString(getMacroContent(path))
         } else {
           v
         }
+        log.info(s"replace ${k} with ${value}")
         m.replaceAll(s"%%${k}%%", value)
     }
   }
