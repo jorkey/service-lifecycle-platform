@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme:any) => ({
     width: '50px',
   },
   tasksTable: {
-    height: 'calc(100vh - 250px)',
+    height: 'calc(100vh - 200px)',
   },
   control: {
     paddingLeft: '5px',

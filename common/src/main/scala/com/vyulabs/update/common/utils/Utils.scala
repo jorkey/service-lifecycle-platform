@@ -4,11 +4,11 @@ import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.helpers.SubstituteLogger
 import org.slf4j.{Logger, LoggerFactory}
+
 import java.io.{File, IOException}
 import java.text.{ParseException, SimpleDateFormat}
 import java.util.jar.Attributes
-import java.util.{Date, TimeZone}
-
+import java.util.{Base64, Date, TimeZone}
 import com.vyulabs.update.common.logger.TraceAppender
 
 import scala.annotation.tailrec
@@ -124,9 +124,19 @@ object Utils {
     }
   }
 
-  def extendMacro(macroString: String, args: Map[String, String]): String = {
+  def extendMacro(macroString: String, args: Map[String, String])(implicit log: Logger): String = {
     args.foldLeft(macroString) {
-      case (m, (k, v)) => m.replaceAll(s"%%${k}%%", v)
+      case (m, (k, v)) => {
+        val value = if (v.startsWith("%B ")) {
+          val file = new File(v.substring(3))
+          Base64.getEncoder().encodeToString(IoUtils.readFileToBytes(file).getOrElse {
+            throw new IOException(s"Error of macro extension of ${macroString}")
+          })
+        } else {
+          v
+        }
+        m.replaceAll(s"%%${k}%%", value)
+      }
     }
   }
 

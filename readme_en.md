@@ -1,234 +1,152 @@
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [Введение](#%D0%B2%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5)
-  - [Требуемые платформы](#%D1%82%D1%80%D0%B5%D0%B1%D1%83%D0%B5%D0%BC%D1%8B%D0%B5-%D0%BF%D0%BB%D0%B0%D1%82%D1%84%D0%BE%D1%80%D0%BC%D1%8B)
-  - [Соглашения к оформлению](#%D1%81%D0%BE%D0%B3%D0%BB%D0%B0%D1%88%D0%B5%D0%BD%D0%B8%D1%8F-%D0%BA-%D0%BE%D1%84%D0%BE%D1%80%D0%BC%D0%BB%D0%B5%D0%BD%D0%B8%D1%8E)
-  - [Сервисы](#%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D1%8B)
-    - [Жизненный цикл сервиса](#%D0%B6%D0%B8%D0%B7%D0%BD%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9-%D1%86%D0%B8%D0%BA%D0%BB-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%B0)
-    - [Профили сервисов](#%D0%BF%D1%80%D0%BE%D1%84%D0%B8%D0%BB%D0%B8-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2)
-    - [Роль сервиса](#%D1%80%D0%BE%D0%BB%D1%8C-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%B0)
-  - [Версии сервисов](#%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B8-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2)
-    - [Версия разработчика](#%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F-%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B0)
-    - [Клиентская версия](#%D0%BA%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D1%81%D0%BA%D0%B0%D1%8F-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F)
-    - [Желательные версии (desired versions)](#%D0%B6%D0%B5%D0%BB%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%B5-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B8-desired-versions)
-- [Настройки сервисов](#%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2)
-  - [Настройки обновления и запуска сервисов](#%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8-%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F-%D0%B8-%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA%D0%B0-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2)
-  - [Настройки работы сервиса от разработчика](#%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8-%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%B0-%D0%BE%D1%82-%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B0)
-  - [Кастомизация настроек для клиента](#%D0%BA%D0%B0%D1%81%D1%82%D0%BE%D0%BC%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B5%D0%BA-%D0%B4%D0%BB%D1%8F-%D0%BA%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D0%B0)
-- [Сервисы v-update](#%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D1%8B-vupdate)
-  - [Scripts](#scripts)
-  - [Distribution Server](#distribution-server)
-    - [Создание сервера дистрибуции](#%D1%81%D0%BE%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8)
-      - [Сборка и установка сервера дистрибуции с исходных кодов](#%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0-%D0%B8-%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8-%D1%81-%D0%B8%D1%81%D1%85%D0%BE%D0%B4%D0%BD%D1%8B%D1%85-%D0%BA%D0%BE%D0%B4%D0%BE%D0%B2)
-      - [Установка сервера дистрибуции с другого сервера дистрибуции](#%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8-%D1%81-%D0%B4%D1%80%D1%83%D0%B3%D0%BE%D0%B3%D0%BE-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8)
-    - [Настройка сервера дистрибуции](#%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8)
-      - [Конфигурационный файл](#%D0%BA%D0%BE%D0%BD%D1%84%D0%B8%D0%B3%D1%83%D1%80%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%BD%D1%8B%D0%B9-%D1%84%D0%B0%D0%B9%D0%BB)
-    - [Работа сервера дистрибуции](#%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B0-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8)
-      - [Запросы GraphQL](#%D0%B7%D0%B0%D0%BF%D1%80%D0%BE%D1%81%D1%8B-graphql)
-      - [Запись журналов](#%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D1%8C-%D0%B6%D1%83%D1%80%D0%BD%D0%B0%D0%BB%D0%BE%D0%B2)
-      - [Задачи](#%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B8)
-      - [Обработка состояния сервисов](#%D0%BE%D0%B1%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0-%D1%81%D0%BE%D1%81%D1%82%D0%BE%D1%8F%D0%BD%D0%B8%D1%8F-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2)
-      - [Обработка отчётов о сбоях](#%D0%BE%D0%B1%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0-%D0%BE%D1%82%D1%87%D1%91%D1%82%D0%BE%D0%B2-%D0%BE-%D1%81%D0%B1%D0%BE%D1%8F%D1%85)
-      - [Взаимодействие с другими серверами дистрибуции](#%D0%B2%D0%B7%D0%B0%D0%B8%D0%BC%D0%BE%D0%B4%D0%B5%D0%B9%D1%81%D1%82%D0%B2%D0%B8%D0%B5-%D1%81-%D0%B4%D1%80%D1%83%D0%B3%D0%B8%D0%BC%D0%B8-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0%D0%BC%D0%B8-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8)
-    - [Обновление сервера дистрибуции](#%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8)
-    - [История документов в Mongo DB](#%D0%B8%D1%81%D1%82%D0%BE%D1%80%D0%B8%D1%8F-%D0%B4%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%BE%D0%B2-%D0%B2-mongo-db)
-  - [Builder](#builder)
-    - [Установка и обновление](#%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-%D0%B8-%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5)
-    - [Установка сервера дистрибуции](#%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-%D0%B4%D0%B8%D1%81%D1%82%D1%80%D0%B8%D0%B1%D1%83%D1%86%D0%B8%D0%B8)
-    - [Сборка версии разработчика](#%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B8-%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B0)
-    - [Сборка клиентской версии](#%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0-%D0%BA%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D1%81%D0%BA%D0%BE%D0%B9-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B8)
-  - [Updater](#updater)
-    - [Установка updater](#%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-updater)
-    - [Файл конфигурации updater.json](#%D1%84%D0%B0%D0%B9%D0%BB-%D0%BA%D0%BE%D0%BD%D1%84%D0%B8%D0%B3%D1%83%D1%80%D0%B0%D1%86%D0%B8%D0%B8-updaterjson)
-    - [Запуск updater](#%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA-updater)
-    - [Работа updater](#%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B0-updater)
-      - [Установка сервиса](#%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%B0)
-      - [Запуск сервиса](#%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%B0)
-      - [Запись журнала работы](#%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D1%8C-%D0%B6%D1%83%D1%80%D0%BD%D0%B0%D0%BB%D0%B0-%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B)
-      - [Отправка состояния сервисов](#%D0%BE%D1%82%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B0-%D1%81%D0%BE%D1%81%D1%82%D0%BE%D1%8F%D0%BD%D0%B8%D1%8F-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2)
-      - [Обработка сбоя сервисов](#%D0%BE%D0%B1%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0-%D1%81%D0%B1%D0%BE%D1%8F-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2)
-      - [Аварийное прерывание работы сервиса _updater_-ом](#%D0%B0%D0%B2%D0%B0%D1%80%D0%B8%D0%B9%D0%BD%D0%BE%D0%B5-%D0%BF%D1%80%D0%B5%D1%80%D1%8B%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5-%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%B0-_updater_-%D0%BE%D0%BC)
-      - [Обновление версии](#%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B8)
-    - [Самообновление](#%D1%81%D0%B0%D0%BC%D0%BE%D0%BE%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5)
-- [Distribution Dashboard](#distribution-dashboard)
-  - [Настройки](#%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8)
-    - [Учётные записи](#%D1%83%D1%87%D1%91%D1%82%D0%BD%D1%8B%D0%B5-%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D0%B8)
-      - [Пользователи](#%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D0%B8)
-      - [Сервисы](#%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D1%8B-1)
-      - [Distribution Consumers](#distribution-consumers)
-    - [Builder](#builder-1)
-      - [Developer](#developer)
-      - [Client](#client)
-    - [Профили сервисов](#%D0%BF%D1%80%D0%BE%D1%84%D0%B8%D0%BB%D0%B8-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%BE%D0%B2-1)
-    - [Поставщики](#%D0%BF%D0%BE%D1%81%D1%82%D0%B0%D0%B2%D1%89%D0%B8%D0%BA%D0%B8)
-  - [Сборка версии разработчика](#%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B8-%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B0-1)
-  - [Сборка клиентских версий](#%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0-%D0%BA%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D1%81%D0%BA%D0%B8%D1%85-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B9)
-    - [С закачкой от поставщика](#%D1%81-%D0%B7%D0%B0%D0%BA%D0%B0%D1%87%D0%BA%D0%BE%D0%B9-%D0%BE%D1%82-%D0%BF%D0%BE%D1%81%D1%82%D0%B0%D0%B2%D1%89%D0%B8%D0%BA%D0%B0)
-    - [Без закачки от поставщика](#%D0%B1%D0%B5%D0%B7-%D0%B7%D0%B0%D0%BA%D0%B0%D1%87%D0%BA%D0%B8-%D0%BE%D1%82-%D0%BF%D0%BE%D1%81%D1%82%D0%B0%D0%B2%D1%89%D0%B8%D0%BA%D0%B0)
-    - [Мониторинг процесса сборки](#%D0%BC%D0%BE%D0%BD%D0%B8%D1%82%D0%BE%D1%80%D0%B8%D0%BD%D0%B3-%D0%BF%D1%80%D0%BE%D1%86%D0%B5%D1%81%D1%81%D0%B0-%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B8)
-    - [Пометка версий как протестированных](#%D0%BF%D0%BE%D0%BC%D0%B5%D1%82%D0%BA%D0%B0-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B9-%D0%BA%D0%B0%D0%BA-%D0%BF%D1%80%D0%BE%D1%82%D0%B5%D1%81%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D1%85)
-  - [Желаемые версии](#%D0%B6%D0%B5%D0%BB%D0%B0%D0%B5%D0%BC%D1%8B%D0%B5-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B8)
-    - [Откат до предыдущей редакции списка](#%D0%BE%D1%82%D0%BA%D0%B0%D1%82-%D0%B4%D0%BE-%D0%BF%D1%80%D0%B5%D0%B4%D1%8B%D0%B4%D1%83%D1%89%D0%B5%D0%B9-%D1%80%D0%B5%D0%B4%D0%B0%D0%BA%D1%86%D0%B8%D0%B8-%D1%81%D0%BF%D0%B8%D1%81%D0%BA%D0%B0)
-    - [Назначение версий вручную](#%D0%BD%D0%B0%D0%B7%D0%BD%D0%B0%D1%87%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D0%B9-%D0%B2%D1%80%D1%83%D1%87%D0%BD%D1%83%D1%8E)
-  - [Наблюдение за журналами](#%D0%BD%D0%B0%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B7%D0%B0-%D0%B6%D1%83%D1%80%D0%BD%D0%B0%D0%BB%D0%B0%D0%BC%D0%B8)
-    - [Наблюдение за журналами задач](#%D0%BD%D0%B0%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B7%D0%B0-%D0%B6%D1%83%D1%80%D0%BD%D0%B0%D0%BB%D0%B0%D0%BC%D0%B8-%D0%B7%D0%B0%D0%B4%D0%B0%D1%87)
-    - [Наблюдение за журналами сервиса](#%D0%BD%D0%B0%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B7%D0%B0-%D0%B6%D1%83%D1%80%D0%BD%D0%B0%D0%BB%D0%B0%D0%BC%D0%B8-%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81%D0%B0)
-  - [Наблюдение за отчётами о сбоях](#%D0%BD%D0%B0%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5-%D0%B7%D0%B0-%D0%BE%D1%82%D1%87%D1%91%D1%82%D0%B0%D0%BC%D0%B8-%D0%BE-%D1%81%D0%B1%D0%BE%D1%8F%D1%85)
-  - [Dashboard](#dashboard)
-    - [Панель Versions](#%D0%BF%D0%B0%D0%BD%D0%B5%D0%BB%D1%8C-versions)
-    - [Панель Last Developer Versions](#%D0%BF%D0%B0%D0%BD%D0%B5%D0%BB%D1%8C-last-developer-versions)
-    - [Панель Last Client Versions](#%D0%BF%D0%B0%D0%BD%D0%B5%D0%BB%D1%8C-last-client-versions)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 <a name="services_accounts"></a>
-# Введение
+# Introduction
 
-v-update выполняет создание версий, обновление, запуск и мониторинг работы сервисов.
-Хранение истории позволяет откатывать изменения назад. Централизованное хранение журналов работы
-и отчётов о сбоях удобно для мониторинга работы системы и оперативного устранения ошибок.
+V-update performs versioning, updating, starting and monitoring of services.
+History storage allows you to roll back changes. 
+Centralized storage of log journals and crash reports is convenient for 
+monitoring system performance and troubleshooting errors.
 
-## Требуемые платформы
+## Required platforms
 
-В настоящее время v-update работает на серверах Linux Ubuntu.
-Исходные коды должны находиться в репозиториях Git VCS.
-Поддерживается работа с облачным сервисом Microsoft Azure.
+Currently v-update works on Linux Ubuntu servers.
+Source codes must be in the Git VCS repositories.
+Work with Microsoft Azure cloud service is supported.
 
-## Соглашения к оформлению
+## Agreements
 
-Для отображения структуры файлов _Json_ принято следующее.
+The following is accepted to display the structure of _Json_ files.
 
-Пара имя/значение:
-- _name_ : строка
-- _name:number_ : число
-- _name:boolean_ : булевское
+Pair name/value:
+- _name_ : string
+- _name:number_ : number
+- _name:boolean_ : boolean
 
-Объект
+Object
 - _name_
-  - содержимое объекта
+  - contents
 
-Массив
-- _name[]_ - массив строк
-- _name:number[]_ - массив чисел
-- _name[]_ - массив объектов
-  - ... - содержимое объекта
+Array
+- _name[]_ - strings array
+- _name:number[]_ - numbers array
+- _name[]_ - objects array
+  - ... - contents
   
-Необязательное значение:
+Optional value:
 - _[name]_
 
-## Сервисы
+## Services
 
-Сервисом может считаться целое приложение, или его часть. 
-Например, сервисом может быть выполнимый файл с набором разделяемых библиотек, 
-или только разделяемые библиотеки.
-Для сервиса описываются правила сборки версии и установки.
-Если сервис является выполнимой программой, для него также описываются правила запуска, 
-записи журналов и отчётов о сбоях.
+A service is an entire application, or a part of it.
+For example, a service could be an executable file with a set of shared libraries,
+or only shared libraries.
 
-### Жизненный цикл сервиса
+For each service, the assembly version and installation rules must be described.
+If the service is an executable program, the startup rules are also described for it,
+logging and crash reporting.
 
-- Создание разработческой версии сервиса
-- Создание клиентской версии сервиса с кастомизацией настроек для конкретного клиента
-- Установка/обновление инстанции сервиса
+### Service lifecycle
+
+- Creating a development version of the service
+- Creation of a client version of the service with customization of settings for a specific client
+- Installing/Upgrading a Service Instance
 - Для выполнимых сервисов:
-  - Запуск инстанции сервиса
-  - Запись журналов работы сервиса в базу данных
-  - Запись отчётов о сбоях сервиса в базу данных
+  - Run service instance
+  - Writing service logs to database
+  - Write service crash reports to database
 
-### Профили сервисов
+### Service profiles
 
-Профилями называются именованные группы сервисов. 
-Профили используются для обозначения распределяемых групп серисов.
+Profiles are named groups of services.
+Profiles are used to designate distributed groups of services.
 
-### Роль сервиса
+### Service role
 
-При запуске сервис может выполнять одну из отведённых ролей. 
-Роль может указываться в параметрах запуска или в файле конфигурации.
+The service can perform one of the assigned roles.
+The role can be specified in the launch options or in the configuration file.
 
-## Версии сервисов
+## Service versions
 
-При создании сервиса создаётся архив установочных файлов и метаниформация об этом архиве,
-помеченные уникальной версией. 
+When creating a service, an archive of installation files and meta information about this archive are created,
+marked with a unique version number.
 
-### Версия разработчика
+### Developer version
 
-Версия сервиса от разработчика имеет формат _distribution-build_:
-- _distribution_ - имя сервера дистрибуции, на котором создана версия.
-- _build_ - номер сборки из чисел, разделённых точками, например *4.21.2*.
+Format of developer version is _distribution-build_:
+- _distribution_ - the name of the distribution server on which the version was created.
+- _build_ - build number from numbers separated by dots, for example *4.21.2*.
 
-Таким образом, для сервера дистрибуции _jetto_ и сборки _3.5.1_, 
-будет версия _jetto-3.5.1_.
+For the distribution server _jetto_ and build _3.5.1_, there will be a version _jetto-3.5.1_.
 
-### Клиентская версия
+### Client version
 
-Из версии разработчика создаётся клиентская версия на том сервере дистрибуции, 
-где она будет использоваться. 
-Клиентская версия содержит кастомизацию версии разработчика под конкретного клиента.
-Она может уточнять конкретные настройки, задавать ключи, сертификаты, и т.д.
+The client version is created from the developer version on the distribution server
+where it will be used.
+The client version contains customization of the developer's version for a specific client.
+It can specify specific settings, set keys, certificates, etc.
 
-Начальная клиентская версия имеет то же название, что и версия разработчика, с которой она была создана.
-Если настройки клиента поменялись, клиентская версия пересоздаётся заново. 
-Новая версия будет иметь окончание ._N, где N - номер генерации клиентской версии.
-Например, созданная с версии разработчика _jetto-3.5.1_, клиентская версия будет называться _jetto-3.5.1_, 
-следующие сборки будут называться _jetto-3.5.1_1_, _jetto-3.5.1_2_ и т.д.
+The initial client version has the same name as the developer version it was created with.
+If the client settings have changed, the client version is recreated.
+The new version will end with ._N, where N - client version generation number.
+For example, created from the developer's version _jetto-3.5.1_,
+the client version will be called _jetto-3.5.1_, next builds will be called 
+_jetto-3.5.1_1_, _jetto-3.5.1_2_, etc.
 
-### Желательные версии (desired versions)
+### Desired versions
 
-Сервер дистрибуции хранит некоторое количество последних сгенерированных версий сервиса.
-Для того чтобы указать, какую именно версию использовать в текущий момент, предназначен список 
-желательных версий в формате _сервис-версия_.
+The distribution server stores a number of the latest generated versions of the service.
 
-Есть список желательных версий разработчика и клиентских версий.
+In order to indicate which version to use at the current moment, is intended
+the list of desired versions in the format _service-version_.
 
-Изменение желаемых версий происходит всегда целым списком, поскольку версии сервисов зависят друг от друга.
+There is a list of desired developer versions and desired client versions.
 
-При генерации новой версии, по умолчанию, номер новой версии становится желательным для данного сервиса.
-Номер желательной версии можно изменить вручную. 
+Desired versions are changed in a whole list, since the versions of the services depend on each other.
 
-# Настройки сервисов
+When generating a new version, by default, the new version number becomes desirable for the given service.
+The desired version number can be changed manually.
+
+# Services settings
 
 <a name="update_json"></a>
-## Настройки обновления и запуска сервисов
+## Settings for updating and starting services
 
-В главном репозитории разработки сервиса создаётся файл _update.json_,
-описывающий правила сборки, установки и запуска.
+The file _update.json_ is created in the main service development repository.
+It describes the rules for building, installing and running.
 
-Формат файла:
+File format:
 
-- _update[]_ - описания сервисов
-  - _service_ : имя сервиса
-  - _build_ - объект, правила сборки версии сервиса
-    - _[buildCommands[]]_ - команды сборки версии
-      - _command_ : команда сборки
-      - _[args[]]_ - параметры сборки
-      - _[env[]]_ - окружение запуска команды
-        - _'имя'_ : значение
-      - _[directory]_ : каталог для выполнения, если не указано, текущий
-      - _[exitCode:number]_ : код возврата
-      - _[outputMatch]_ : соответствие вывода в stderr и stdout, регулярное выражение
-    - _copyFiles[]_ - файлы и каталоги для копирования в сборку
-      - _sourceFile_ : исходный файл в репозитории сервиса
-      - _destinationFile_ : файл в образе версии
-      - _except[]_ - массив исключений файлов для копирования в сборку
-      - _[settings[]]_ - объект, значения макросов в исходных файлах. 
-                       При копировании в сборку происходит замена макроса на значение.
-        - _'имя макроса'_ : значение макроса
+- _update[]_ - service descriptions
+  - _service_ : service name
+  - _build_ - service version assembly rules
+    - _[buildCommands[]]_ - version build commands
+      - _command_ : build command
+      - _[args[]]_ - build options
+      - _[env[]]_ - command run environment
+        - _'name'_ : value
+      - _[directory]_ : directory to execute, if not specified, current
+      - _[exitCode:number]_ : exit code
+      - _[outputMatch]_ : matching output to stderr and stdout, regular expression
+    - _copyFiles[]_ - files and directories to copy to assembly
+      - _sourceFile_ : source file in the service repository
+      - _destinationFile_ : file in version image
+      - _except[]_ - exclude this files
+      - _[settings[]]_ - macro values in source files. When copied to an assembly, 
+                         the macro is replaced with a value.
+        - _'macro name'_ : macro value
     - _install_
-      - _[installCommands]_ : команды установки версии, как в _buildCommands_
-      - _[postInstallCommands]_ : команды после установки версии, как в _buildCommands_
-      - _[runService]_ - правила запуска сервиса
-        - _command_ : команда запуска
-        - _[args[]]_ - аргументы запуска
-        - _[writeLogs]_ - запись журналов сервиса на локальный диск
-          - _directory_ : каталог для записи журналов
-          - _filePrefix_ : начало имени файла журнала, полное имя _<filePrefix>.<number>_
-          - _maxFileSizeMB_ : максимальный размер файла журнала
-          - _maxFilesCount_ : максимальное количество файлов журналов
-        - _[uploadLogs:boolean]_ - выгрузка журналов сервиса на сервер update
-        - _[faultFilesMatch]_ - регулярное выражение для поиска файлов с информацией о падении
-          при неожиданном завершении сервиса. Файлы включаются в отчёт о сбое.
+      - _[installCommands]_ : version install commands, as in _buildCommands_
+      - _[postInstallCommands]_ : commands after installing the version, as in _buildCommands_
+      - _[runService]_ - service start rules
+        - _command_ : run command
+        - _[args[]]_ - run arguments
+        - _[writeLogs]_ - write service logs to local disk
+          - _directory_ : directory to write logs
+          - _filePrefix_ : start of log file name, full name _<filePrefix>.<number>_
+          - _maxFileSizeMB_ : maximum log file size
+          - _maxFilesCount_ : maximum number of log files
+        - _[uploadLogs:boolean]_ - uploading service logs to the update server
+        - _[faultFilesMatch]_ - regular expression to search for files with crash information
+          when the service fails unexpectedly. The files are included in the crash report.
         - _[restartOnFault:boolean]_ - перезапускать сервис после сбоя
         - _[restartConditions]_ - условия для принудительного завершения сервиса
           - _[maxMemoryMB:number]_ : сервис использовал более указанного количества мегабайт памяти
@@ -802,7 +720,7 @@ _message_ - сообщение журнала
 #### Отправка состояния сервисов
 
 Раз в 10 сек _updater_ отправляет состояние сервисов _ServiceState_ на сервер дистрибуции
-(см [Обработка состояния сервисов](#service_state)). 
+(см [Обработка состояния серисов](#service_state)). 
 
 #### Обработка сбоя сервисов
 
