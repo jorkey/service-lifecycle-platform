@@ -7,7 +7,6 @@ import org.eclipse.jgit.api.errors.RefAlreadyExistsException
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.lib.SubmoduleConfig.FetchRecurseSubmodulesMode
 import org.eclipse.jgit.revwalk.RevCommit
-import org.eclipse.jgit.submodule.SubmoduleWalk
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
@@ -372,14 +371,18 @@ object GitRepository {
           return None
         }
         if (!url.startsWith("file://")) {
-          val walk = SubmoduleWalk.forIndex(git.getRepository)
-          while (walk.next) {
-            val submoduleRepository = walk.getRepository
-            if (submoduleRepository != null) {
-              Git.wrap(submoduleRepository).pull().call()
-              submoduleRepository.close
-            }
-          }
+//            03.03.2022, 21:13:06	ERROR	 Open Git repository error
+//            03.03.2022, 21:13:06	INFO	 org.eclipse.jgit.api.errors.NoHeadException: Cannot check out from unborn branch
+//            03.03.2022, 21:13:06	INFO	 	at org.eclipse.jgit.api.PullCommand.call(PullCommand.java:245)
+//            03.03.2022, 21:13:06	INFO	 	at com.vyulabs.libs.git.GitRepository$.openAndPullRepository(GitRepository.scala:379)
+//          val walk = SubmoduleWalk.forIndex(git.getRepository)
+//          while (walk.next) {
+//            val submoduleRepository = walk.getRepository
+//            if (submoduleRepository != null) {
+//              Git.wrap(submoduleRepository).pull().call()
+//              submoduleRepository.close
+//            }
+//          }
           git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
         }
         toClose = None
