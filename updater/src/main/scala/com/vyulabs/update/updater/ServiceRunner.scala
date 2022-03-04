@@ -107,11 +107,12 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
 
   def stopService(): Boolean = {
     synchronized {
-      log.info("Stop service")
+      log.info(s"Stop service. Current process ${currentProcess}")
       stopping = true
       val result = currentProcess match {
         case Some(process) =>
           try {
+            log.info(s"Terminate ${process.getHandle().pid()}")
             val result = Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
             currentProcess = None
             result
