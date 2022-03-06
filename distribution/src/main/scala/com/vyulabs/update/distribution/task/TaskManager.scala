@@ -25,7 +25,7 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Time
     val taskId = idGenerator.generateId(8)
     log.info(s"Started task ${taskId}")
     val appender = new TraceAppender()
-    val logger = Utils.getLogbackLogger(Task.getClass)
+    val logger = Utils.getLogbackLogger(s"Task-${taskId}")
     logger.addAppender(appender)
     val buffer = new LogBuffer(description, "TASK", logStorekeeper(taskId), 1, 1000)
     appender.addListener(buffer)
