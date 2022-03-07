@@ -1,7 +1,6 @@
 package com.vyulabs.update.distribution.mongo
 
 import akka.actor.ActorSystem
-import akka.event.Logging
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.mongodb.client.model.{FindOneAndUpdateOptions, IndexOptions, ReplaceOptions, UpdateOptions}
@@ -22,7 +21,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
              (implicit executionContext: ExecutionContext) {
   implicit val system = ActorSystem(s"MongoDB_${dbName}")
   implicit val materializer = ActorMaterializer()
-  implicit val log = Logging(system, this.getClass)
+//  implicit val log = Logging(system, this.getClass)
 
   private val client = MongoClients.create(MongoClientSettings.builder
     .applyConnectionString(new ConnectionString(connectionString))
@@ -33,7 +32,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
 
   def close(): Unit = {
     if (temporary) {
-      log.info(s"Drop temporary database '${dbName}'")
+//      log.info(s"Drop temporary database '${dbName}'")
       Await.result(dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
     }
     client.close()
@@ -82,7 +81,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
 
 class MongoDbCollection[T](name: String, collection: MongoCollection[T], db: MongoDb)
                           (implicit system: ActorSystem, materializer: ActorMaterializer, executionContext: ExecutionContext, classTag: ClassTag[T]) {
-  implicit val log = Logging(system, this.getClass)
+//  implicit val log = Logging(system, this.getClass)
 
   def getName() = name
 

@@ -14,7 +14,8 @@ case class Task(taskId: TaskId, future: Future[Any], cancel: Option[() => Unit])
   val startDate: Date = new Date
 }
 
-class TaskManager(logStorekeeper: TaskId => LogStorekeeper)(implicit timer: Timer, executionContext: ExecutionContext) {
+class TaskManager(logStorekeeper: TaskId => LogStorekeeper)
+                 (implicit timer: Timer, executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(getClass)
 
   private val idGenerator = new IdGenerator()

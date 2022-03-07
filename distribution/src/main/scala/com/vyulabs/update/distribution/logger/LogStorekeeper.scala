@@ -1,6 +1,6 @@
 package com.vyulabs.update.distribution.logger
 
-import com.vyulabs.update.common.common.Common.{DistributionId, InstanceId, ServiceId, TaskId}
+import com.vyulabs.update.common.common.Common.{InstanceId, ServiceId, TaskId}
 import com.vyulabs.update.common.info.{LogLine, ServiceLogLine}
 import com.vyulabs.update.common.logger.LogReceiver
 import com.vyulabs.update.distribution.mongo.SequencedCollection
@@ -18,19 +18,21 @@ class LogStorekeeper(service: ServiceId, task: Option[TaskId], instance: Instanc
   private val process = ProcessHandle.current.pid.toString
   private val directory = new java.io.File(".").getCanonicalPath()
 
-  @volatile private var logOutputFuture = Option.empty[Future[Unit]]
+  private var logOutputFuture = Option.empty[Future[Unit]]
 
   override def receiveLogLines(logs: Seq[LogLine]): Future[Unit] = {
-    logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-      collection.insert(logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => {
-        val newLine = if (line.message.length > maxLineSize) {
-          line.copy(message = line.message.substring(0, maxLineSize) + " ...")
-        } else {
-          line
-        }
-        seq :+ ServiceLogLine(service, instance, directory, process, task, newLine)
-      })).map(_ => ())
-    })
-    logOutputFuture.get
+    synchronized {
+      logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
+        collection.insert(logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => {
+          val newLine = if (line.message.length > maxLineSize) {
+            line.copy(message = line.message.substring(0, maxLineSize) + " ...")
+          } else {
+            line
+          }
+          seq :+ ServiceLogLine(service, instance, directory, process, task, newLine)
+        })).map(_ => ())
+      })
+      logOutputFuture.get
+    }
   }
 }
