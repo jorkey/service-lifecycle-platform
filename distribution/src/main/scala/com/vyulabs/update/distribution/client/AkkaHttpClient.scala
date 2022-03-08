@@ -20,6 +20,8 @@ import spray.json._
 
 import java.io.{File, IOException}
 import java.net.URL
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Random, Success}
 
@@ -155,11 +157,11 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
               case Complete.`type` =>
                 val complete = response.convertTo[Complete]
                 log.debug("Websocket subscription is complete")
-                killSwitch.shutdown()
+                system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
               case Error.`type` =>
                 val error = response.convertTo[Error]
                 log.error(s"Websocket subscription error: ${error.payload.message}")
-                killSwitch.shutdown()
+                system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
               case m =>
                 log.error(s"Invalid message: ${m}")
             }
