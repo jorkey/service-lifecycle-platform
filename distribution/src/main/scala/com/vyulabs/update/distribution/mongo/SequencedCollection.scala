@@ -71,6 +71,7 @@ class SequencedCollection[T: ClassTag](val name: String,
       synchronized {
         documents.foreach { doc =>
           val line = Sequenced(seq, doc)
+          println(s"publish line ${line}")
           publisherBuffer.push(line)
           publisherCallback.invoke(line)
           seq += 1
