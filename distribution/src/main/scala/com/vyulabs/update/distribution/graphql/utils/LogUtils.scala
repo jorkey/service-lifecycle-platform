@@ -151,7 +151,7 @@ trait LogUtils extends SprayJsonSupport {
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++ unitArg
     val filters = Filters.and(args.asJava)
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
-      .map(l => { log.info(s"--- line --- ${l}"); l })
+      .map(l => { log.info(s"--- line1 --- ${l}"); l })
       .filter(log => service.isEmpty || service.contains(log.document.service))
       .filter(log => instance.isEmpty || instance.contains(log.document.instance))
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
@@ -164,6 +164,7 @@ trait LogUtils extends SprayJsonSupport {
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(line.sequence,
         line.document.instance, line.document.directory, line.document.process, line.document.payload))))
       .buffer(100, OverflowStrategy.fail)
+      .map(l => { log.info(s"--- line2 --- ${l}"); l })
     source.mapMaterializedValue(_ => NotUsed)
   }
 
