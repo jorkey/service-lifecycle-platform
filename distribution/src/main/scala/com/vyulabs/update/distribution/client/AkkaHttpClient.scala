@@ -139,6 +139,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
         val handlerFlow = Flow.fromSinkAndSource[Message, Message](Sink.foreach(m => { m match {
           case TextMessage.Strict(m) =>
             val response = m.parseJson.asJsObject
+            log.debug(s"Receive graphql message: ${response}")
             val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
             responseType match {
               case ConnectionAck.`type` =>
