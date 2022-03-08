@@ -147,9 +147,11 @@ trait LogUtils extends SprayJsonSupport {
     val directoryArg = directory.map(Filters.eq("directory", _))
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
+    val unitArg = unit.map(Filters.eq("payload.unit", _))
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++ unitArg
     val filters = Filters.and(args.asJava)
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
+      .map(l => { log.info(s"--- line --- ${l}"); l })
       .filter(log => service.isEmpty || service.contains(log.document.service))
       .filter(log => instance.isEmpty || instance.contains(log.document.instance))
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
