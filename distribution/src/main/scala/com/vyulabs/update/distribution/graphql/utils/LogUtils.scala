@@ -151,6 +151,7 @@ trait LogUtils extends SprayJsonSupport {
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++ unitArg
     val filters = Filters.and(args.asJava)
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
+      .map(l => { log.info(s"--- line1 --- ${l}"); l })
       .filter(log => service.isEmpty || service.contains(log.document.service))
       .filter(log => instance.isEmpty || instance.contains(log.document.instance))
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
@@ -158,11 +159,16 @@ trait LogUtils extends SprayJsonSupport {
       .filter(log => task.isEmpty || task == log.document.task)
       .takeWhile(!_.document.payload.terminationStatus.isDefined, true)
       .filter(log => levels.isEmpty || levels.get.contains(log.document.payload.level))
+      .map(l => { log.info(s"--- line2 --- ${l}"); l })
       .filter(log => unit.isEmpty || unit.contains(log.document.payload.unit))
+      .map(l => { log.info(s"--- line3 --- ${l}"); l })
       .groupedWeightedWithin(25, FiniteDuration.apply(100, TimeUnit.MILLISECONDS))(_ => 1)
+      .map(l => { log.info(s"--- line4 --- ${l}"); l })
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(line.sequence,
         line.document.instance, line.document.directory, line.document.process, line.document.payload))))
+      .map(l => { log.info(s"--- line5 --- ${l}"); l })
       .buffer(100, OverflowStrategy.fail)
+      .map(l => { log.info(s"--- line6 --- ${l}"); l })
     source.mapMaterializedValue(_ => NotUsed)
   }
 
