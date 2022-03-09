@@ -59,6 +59,9 @@ class SequencedCollection[T: ClassTag](val name: String,
       result <- {
         var seq = sequence - documents.size + 1
         val docs = documents.map { document =>
+          val line = Sequenced(seq, document)
+          publisherBuffer.push(line)
+          publisherCallback.invoke(line)
           val doc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
           doc.append("_sequence", new BsonInt64(seq)); seq += 1
           doc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
@@ -66,18 +69,7 @@ class SequencedCollection[T: ClassTag](val name: String,
         }
         collection.insert(docs).map(_ => sequence)
       }
-    } yield {
-      var seq = sequence - documents.size + 1
-      synchronized {
-        documents.foreach { doc =>
-          val line = Sequenced(seq, doc)
-          publisherBuffer.push(line)
-          publisherCallback.invoke(line)
-          seq += 1
-        }
-      }
-      result
-    }
+    } yield result
   }
 
   def find(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[T]] = {
