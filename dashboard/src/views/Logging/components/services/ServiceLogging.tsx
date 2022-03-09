@@ -375,12 +375,12 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          { service && levels && (startTime?.logsStartTime !== undefined) && (endTime?.logsEndTime !== undefined) ?
+          { service && (startTime?.logsStartTime !== undefined) && (endTime?.logsEndTime !== undefined) ?
             <LogsTable ref={tableRef}
                        className={classes.logsTable}
                        service={service} instance={instance} directory={directory} process={process}
                        fromTime={fromTime} toTime={toTime}
-                       levels={level?Logs.levelWithSubLevels(level, levels.logLevels):undefined}
+                       levels={(levels && level)?Logs.levelWithSubLevels(level, levels.logLevels):undefined}
                        find={find != ''?find:undefined}
                        follow={follow}
                        onComplete={() => {}}
