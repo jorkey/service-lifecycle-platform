@@ -1,5 +1,6 @@
 package com.vyulabs.update.distribution.client
 
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
@@ -138,7 +139,7 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
     val connectionAcked = Promise[Unit]()
     (for {
       response <- {
-        val handlerFlow = Flow.fromSinkAndSource[Message, Message](Sink.foreach(m => { m match {
+        val handlerFlow = Flow.fromSinkAndSourceMat(Sink.foreach[Message](m => { m match {
           case TextMessage.Strict(m) =>
             val response = m.parseJson.asJsObject
             val responseType = response.fields.get("type").map(_.asInstanceOf[JsString].value).getOrElse("unknown")
@@ -171,10 +172,15 @@ class AkkaHttpClient(val distributionUrl: String, initAccessToken: Option[String
           Source.future(connectionAcked.future).map(_ => TextMessage(Subscribe(id = id, payload =
             SubscribePayload(query = request.encodeQuery(), Some(request.command), Some(request.encodeVariables()), None)).toJson.compactPrint)),
           Source.future(Promise[Message]().future))(Concat(_))
-        )
+        )(Keep.left)
         val webSocketRequest = WebSocketRequest(uri,
           getHttpCredentials().map(Authorization(_)).to[collection.immutable.Seq], collection.immutable.Seq("graphql-transport-ws"))
-        Http(system).singleWebSocketRequest(webSocketRequest, handlerFlow)._1
+        val (response, closed) = Http(system).singleWebSocketRequest(webSocketRequest, handlerFlow)
+        closed.foreach { _ =>
+          log.info("Websocket connection is closed")
+          system.scheduler.scheduleOnce(FiniteDuration(1, TimeUnit.SECONDS))(killSwitch.shutdown())
+        }
+        response
       }
     } yield {
       if (!response.response.status.isSuccess()) {
