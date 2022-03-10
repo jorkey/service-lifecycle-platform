@@ -71,10 +71,15 @@ export interface LogsTableEvents {
 
 export interface LogRecord {
   sequence: BigInt
-  instance?: string
-  directory?: string
-  process?: string
-  payload: LogLine
+  instance: string
+  directory: string
+  process: string
+  task?: string
+  time: Date
+  level: string
+  unit: string
+  message: string
+  terminationStatus?: boolean
 }
 
 export interface FindLogsDashboardParams {
@@ -131,31 +136,31 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
+    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
   })
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
+    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
+    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
   })
 
   const [ getDirectoryLogs, directoryLogs ] = useDirectoryLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
+    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
   })
 
   const [ getProcessLogs, processLogs ] = useProcessLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs) } }
+    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
   })
 
   const isLoading = () => serviceLogs.loading || taskLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
@@ -242,10 +247,10 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     }
     setLines(newLines)
     if (newLines.length) {
-      const status = newLines[newLines.length-1].payload.terminationStatus
+      const status = newLines[newLines.length-1].terminationStatus
       if (status != undefined) {
         setTerminationStatus(status)
-        onComplete(newLines[0].payload.time, status)
+        onComplete(newLines[0].time, status)
       }
     }
   }
@@ -253,12 +258,12 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const rows = lines
     .map(line => (
       new Map<string, GridTableCellParams>([
-        ['time', { value: line.payload.time }],
+        ['time', { value: line.time }],
         ['instance', { value: line.instance?line.instance:'' }],
         ['process', { value: line.process?line.process:'' }],
-        ['level', { value: line.payload.level }],
-        ['unit', { value: line.payload.unit }],
-        ['message', { value: line.payload.message }]
+        ['level', { value: line.level }],
+        ['unit', { value: line.unit }],
+        ['message', { value: line.message }]
       ])))
 
   return <>

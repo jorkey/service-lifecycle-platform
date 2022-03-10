@@ -181,7 +181,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
                   unit={'LAST_COMMENT'}
                   onLines={(lines) => {
                     let comment = lastCommitComment[0]
-                    lines.forEach(value => { comment = (comment?comment + '\n':'') + value.payload.message })
+                    lines.forEach(value => { comment = (comment?comment + '\n':'') + value.message })
                     lastCommitComment[0] = comment
                   }}
                   onComplete={() => {

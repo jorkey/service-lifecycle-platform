@@ -16,7 +16,7 @@ export const LogsSubscriber = (props: LogsSubscriptionParams) => {
     variables: { service, instance, process, directory, task, unit, prefetch: 100, levels },
     onSubscriptionData(data) {
       if (data.subscriptionData.data) {
-        onLines(data.subscriptionData.data.subscribeLogs)
+        onLines(data.subscriptionData.data.subscribeLogs as LogRecord[])
       }
     },
     onSubscriptionComplete() {

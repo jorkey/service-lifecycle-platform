@@ -823,7 +823,12 @@ export type SequencedServiceLogLine = {
   instance: Scalars['String'];
   directory: Scalars['String'];
   process: Scalars['String'];
-  payload: LogLine;
+  task?: Maybe<Scalars['String']>;
+  time: Scalars['Date'];
+  level: Scalars['String'];
+  unit: Scalars['String'];
+  message: Scalars['String'];
+  terminationStatus?: Maybe<Scalars['Boolean']>;
 };
 
 export type ServiceAccountInfo = {
@@ -1457,11 +1462,7 @@ export type TaskLogsQuery = (
   { __typename?: 'Query' }
   & { logs: Array<(
     { __typename?: 'SequencedServiceLogLine' }
-    & Pick<SequencedServiceLogLine, 'sequence' | 'instance' | 'directory' | 'process'>
-    & { payload: (
-      { __typename?: 'LogLine' }
-      & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
-    ) }
+    & Pick<SequencedServiceLogLine, 'sequence' | 'instance' | 'directory' | 'process' | 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
   )> }
 );
 
@@ -1481,11 +1482,7 @@ export type ServiceLogsQuery = (
   { __typename?: 'Query' }
   & { logs: Array<(
     { __typename?: 'SequencedServiceLogLine' }
-    & Pick<SequencedServiceLogLine, 'sequence' | 'instance' | 'directory' | 'process'>
-    & { payload: (
-      { __typename?: 'LogLine' }
-      & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
-    ) }
+    & Pick<SequencedServiceLogLine, 'sequence' | 'instance' | 'directory' | 'process' | 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
   )> }
 );
 
@@ -1506,11 +1503,7 @@ export type InstanceLogsQuery = (
   { __typename?: 'Query' }
   & { logs: Array<(
     { __typename?: 'SequencedServiceLogLine' }
-    & Pick<SequencedServiceLogLine, 'sequence' | 'directory' | 'process'>
-    & { payload: (
-      { __typename?: 'LogLine' }
-      & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
-    ) }
+    & Pick<SequencedServiceLogLine, 'sequence' | 'directory' | 'process' | 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
   )> }
 );
 
@@ -1532,11 +1525,7 @@ export type DirectoryLogsQuery = (
   { __typename?: 'Query' }
   & { logs: Array<(
     { __typename?: 'SequencedServiceLogLine' }
-    & Pick<SequencedServiceLogLine, 'sequence' | 'process'>
-    & { payload: (
-      { __typename?: 'LogLine' }
-      & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
-    ) }
+    & Pick<SequencedServiceLogLine, 'sequence' | 'process' | 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
   )> }
 );
 
@@ -1559,11 +1548,7 @@ export type ProcessLogsQuery = (
   { __typename?: 'Query' }
   & { logs: Array<(
     { __typename?: 'SequencedServiceLogLine' }
-    & Pick<SequencedServiceLogLine, 'sequence'>
-    & { payload: (
-      { __typename?: 'LogLine' }
-      & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
-    ) }
+    & Pick<SequencedServiceLogLine, 'sequence' | 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
   )> }
 );
 
@@ -2140,11 +2125,7 @@ export type SubscribeLogsSubscription = (
   { __typename?: 'Subscription' }
   & { subscribeLogs: Array<(
     { __typename?: 'SequencedServiceLogLine' }
-    & Pick<SequencedServiceLogLine, 'sequence'>
-    & { payload: (
-      { __typename?: 'LogLine' }
-      & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
-    ) }
+    & Pick<SequencedServiceLogLine, 'sequence' | 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
   )> }
 );
 
@@ -3459,13 +3440,11 @@ export const TaskLogsDocument = gql`
     instance
     directory
     process
-    payload {
-      time
-      level
-      unit
-      message
-      terminationStatus
-    }
+    time
+    level
+    unit
+    message
+    terminationStatus
   }
 }
     `;
@@ -3520,13 +3499,11 @@ export const ServiceLogsDocument = gql`
     instance
     directory
     process
-    payload {
-      time
-      level
-      unit
-      message
-      terminationStatus
-    }
+    time
+    level
+    unit
+    message
+    terminationStatus
   }
 }
     `;
@@ -3581,13 +3558,11 @@ export const InstanceLogsDocument = gql`
     sequence
     directory
     process
-    payload {
-      time
-      level
-      unit
-      message
-      terminationStatus
-    }
+    time
+    level
+    unit
+    message
+    terminationStatus
   }
 }
     `;
@@ -3643,13 +3618,11 @@ export const DirectoryLogsDocument = gql`
   ) {
     sequence
     process
-    payload {
-      time
-      level
-      unit
-      message
-      terminationStatus
-    }
+    time
+    level
+    unit
+    message
+    terminationStatus
   }
 }
     `;
@@ -3706,13 +3679,11 @@ export const ProcessLogsDocument = gql`
     limit: $limit
   ) {
     sequence
-    payload {
-      time
-      level
-      unit
-      message
-      terminationStatus
-    }
+    time
+    level
+    unit
+    message
+    terminationStatus
   }
 }
     `;
@@ -5263,13 +5234,11 @@ export const SubscribeLogsDocument = gql`
     unit: $unit
   ) {
     sequence
-    payload {
-      time
-      level
-      unit
-      message
-      terminationStatus
-    }
+    time
+    level
+    unit
+    message
+    terminationStatus
   }
 }
     `;
