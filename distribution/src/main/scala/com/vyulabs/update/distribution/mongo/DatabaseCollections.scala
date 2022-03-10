@@ -155,12 +155,12 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.level")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.unit")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.time"), new IndexOptions()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("level")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("unit")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("time"), new IndexOptions()
       .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.time")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.text("payload.message")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.descending("time")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {

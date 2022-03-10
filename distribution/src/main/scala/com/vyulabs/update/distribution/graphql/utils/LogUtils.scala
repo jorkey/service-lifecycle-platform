@@ -34,7 +34,18 @@ trait LogUtils extends SprayJsonSupport {
   def addLogs(service: ServiceId, instance: InstanceId, directory: ServiceDirectory, process: ProcessId,
               task: Option[TaskId], logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
     val documents = logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
-      ServiceLogLine(service, instance, directory, process, task, line) })
+      ServiceLogLine(
+        service = service,
+        instance = instance,
+        directory = directory,
+        process = process,
+        task = task,
+        time = line.time,
+        level = line.level,
+        unit = line.unit,
+        message = line.message,
+        terminationStatus = line.terminationStatus
+      ) })
     collections.Log_Lines.insert(documents).map(_ => ())
   }
 
@@ -76,7 +87,7 @@ trait LogUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    collections.Log_Lines.distinctField[String]("payload.level", filters)
+    collections.Log_Lines.distinctField[String]("level", filters)
   }
 
   def getLogsStartTime(service: Option[ServiceId], instance: Option[InstanceId],
@@ -89,8 +100,8 @@ trait LogUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    val sort = Sorts.ascending("payload.time")
-    collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.time))
+    val sort = Sorts.ascending("time")
+    collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.time))
   }
 
   def getLogsEndTime(service: Option[ServiceId], instance: Option[InstanceId],
@@ -103,9 +114,9 @@ trait LogUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    val sort = Sorts.descending("payload.time")
+    val sort = Sorts.descending("time")
     collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption
-      .find(_.payload.terminationStatus.isDefined).map(_.payload.time))
+      .find(_.terminationStatus.isDefined).map(_.time))
   }
 
   def getLogs(service: Option[ServiceId] = None, instance: Option[InstanceId] = None,
@@ -120,10 +131,10 @@ trait LogUtils extends SprayJsonSupport {
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
     val levelsArg = levels.map(levels =>
-      Filters.or(levels.map(level => Filters.eq("payload.level", level)).asJava))
-    val unitArg = unit.map(Filters.eq("payload.unit", _))
-    val fromTimeArg = fromTime.map(time => Filters.gte("payload.time", time))
-    val toTimeArg = toTime.map(time => Filters.lte("payload.time", time))
+      Filters.or(levels.map(level => Filters.eq("level", level)).asJava))
+    val unitArg = unit.map(Filters.eq("unit", _))
+    val fromTimeArg = fromTime.map(time => Filters.gte("time", time))
+    val toTimeArg = toTime.map(time => Filters.lte("time", time))
     val findArg = find.map(text => Filters.text(text))
     val fromArg = from.map(sequence => Filters.gte("_sequence", sequence.toLong))
     val toArg = to.map(sequence => Filters.lte("_sequence", sequence.toLong))
@@ -133,8 +144,17 @@ trait LogUtils extends SprayJsonSupport {
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
     collections.Log_Lines.findSequenced(filters, Some(sort), limit)
       .map(_.sortBy(_.sequence))
-      .map(_.map(line => SequencedServiceLogLine(line.sequence,
-        line.document.instance, line.document.directory, line.document.process, line.document.payload)))
+      .map(_.map(line => SequencedServiceLogLine(
+        sequence = line.sequence,
+        instance = line.document.instance,
+        directory = line.document.directory,
+        process = line.document.process,
+        task = line.document.task,
+        time = line.document.time,
+        level = line.document.level,
+        unit = line.document.unit,
+        message = line.document.message,
+        terminationStatus = line.document.terminationStatus)))
   }
 
   def subscribeLogs(service: Option[ServiceId],
@@ -147,7 +167,7 @@ trait LogUtils extends SprayJsonSupport {
     val directoryArg = directory.map(Filters.eq("directory", _))
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val unitArg = unit.map(Filters.eq("payload.unit", _))
+    val unitArg = unit.map(Filters.eq("unit", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++ unitArg
     val filters = Filters.and(args.asJava)
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
@@ -156,13 +176,22 @@ trait LogUtils extends SprayJsonSupport {
       .filter(log => directory.isEmpty || directory.contains(log.document.directory))
       .filter(log => process.isEmpty || process.contains(log.document.process))
       .filter(log => task.isEmpty || task == log.document.task)
-      .takeWhile(!_.document.payload.terminationStatus.isDefined, true)
-      .filter(log => levels.isEmpty || levels.get.contains(log.document.payload.level))
-      .filter(log => unit.isEmpty || unit.contains(log.document.payload.unit))
+      .takeWhile(!_.document.terminationStatus.isDefined, true)
+      .filter(log => levels.isEmpty || levels.get.contains(log.document.level))
+      .filter(log => unit.isEmpty || unit.contains(log.document.unit))
       .groupedWeightedWithin(25, FiniteDuration.apply(100, TimeUnit.MILLISECONDS))(_ => 1)
-      .map(lines => Action(lines.map(line => SequencedServiceLogLine(line.sequence,
-        line.document.instance, line.document.directory, line.document.process, line.document.payload))))
-      .buffer(100, OverflowStrategy.fail)
+      .map(lines => Action(lines.map(line => SequencedServiceLogLine(
+        sequence = line.sequence,
+        instance = line.document.instance,
+        directory = line.document.directory,
+        process = line.document.process,
+        task = line.document.task,
+        time = line.document.time,
+        level = line.document.level,
+        unit = line.document.unit,
+        message = line.document.message,
+        terminationStatus = line.document.terminationStatus))))
+      .buffer(1000, OverflowStrategy.fail)
     source.mapMaterializedValue(_ => NotUsed)
   }
 

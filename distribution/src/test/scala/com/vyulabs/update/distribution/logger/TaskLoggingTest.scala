@@ -25,7 +25,7 @@ class TaskLoggingTest extends TestEnvironment with ScalatestRouteTest {
     Thread.sleep(1000)
     val linesFuture = collections.Log_Lines.find(Filters.eq("task", task.taskId))
     val lines = Await.result(linesFuture, FiniteDuration.apply(10, TimeUnit.SECONDS))
-      .map(_.payload.message).drop(1).dropRight(1)
+      .map(_.message).drop(1).dropRight(1)
     assertResult(Seq("log line 1", "log line 2", "log line 3", "log line 4", "log line 5"))(lines)
   }
 
@@ -53,12 +53,12 @@ class TaskLoggingTest extends TestEnvironment with ScalatestRouteTest {
 
     val linesFuture1 = collections.Log_Lines.find(Filters.eq("task", task1.taskId))
     val lines1 = Await.result(linesFuture1, FiniteDuration.apply(10, TimeUnit.SECONDS))
-      .map(_.payload.message).drop(1).dropRight(1)
+      .map(_.message).drop(1).dropRight(1)
     assertResult((1 to 1000).map(i => s"task1 - log line ${i}"))(lines1)
 
     val linesFuture2 = collections.Log_Lines.find(Filters.eq("task", task2.taskId))
     val lines2 = Await.result(linesFuture2, FiniteDuration.apply(10, TimeUnit.SECONDS))
-      .map(_.payload.message).drop(1).dropRight(1)
+      .map(_.message).drop(1).dropRight(1)
     assertResult((1 to 1000).map(i => s"task2 - log line ${i}"))(lines2)
   }
 }

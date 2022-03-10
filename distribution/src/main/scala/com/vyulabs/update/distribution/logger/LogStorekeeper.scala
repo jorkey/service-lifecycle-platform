@@ -29,7 +29,18 @@ class LogStorekeeper(service: ServiceId, task: Option[TaskId], instance: Instanc
           } else {
             line
           }
-          seq :+ ServiceLogLine(service, instance, directory, process, task, newLine)
+          seq :+ ServiceLogLine(
+            service = service,
+            instance = instance,
+            directory = directory,
+            process = process,
+            task = task,
+            time = newLine.time,
+            level = newLine.level,
+            unit = newLine.unit,
+            message = newLine.message,
+            terminationStatus = newLine.terminationStatus
+          )
         })).map(_ => ())
       })
       logOutputFuture.get

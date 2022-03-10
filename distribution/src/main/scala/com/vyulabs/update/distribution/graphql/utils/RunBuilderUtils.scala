@@ -190,9 +190,15 @@ trait RunBuilderUtils extends SprayJsonSupport {
         logSource.map(lines => {
           logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
             logUtils.addLogs(Common.DistributionServiceName,
-              config.instance, "", 0.toString, Some(task), lines.map(_.payload.copy(terminationStatus = None))).map(_ => ())
+              config.instance, "", 0.toString, Some(task),
+              lines.map(line => LogLine(
+                time = line.time,
+                level = line.level,
+                unit = line.unit,
+                message = line.message,
+                terminationStatus = None))).map(_ => ())
           })
-          for (terminationStatus <- lines.lastOption.map(_.payload.terminationStatus).flatten) {
+          for (terminationStatus <- lines.lastOption.map(_.terminationStatus).flatten) {
             if (terminationStatus) {
               logOutputFuture.foreach(_.andThen { case _ => result.success() })
             } else {

@@ -286,15 +286,14 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
       do {
         for (lines <- source.next()) {
           lines.foreach(line => {
-            val l = line.payload
-            if (l.level == "INFO") {
-              log.info(l.message)
-            } else if (l.level == "WARN") {
-              log.warn(l.message)
-            } else if (l.level == "ERROR") {
-              log.error(l.message)
+            if (line.level == "INFO") {
+              log.info(line.message)
+            } else if (line.level == "WARN") {
+              log.warn(line.message)
+            } else if (line.level == "ERROR") {
+              log.error(line.message)
             }
-            for (terminationStatus <- l.terminationStatus) {
+            for (terminationStatus <- line.terminationStatus) {
               if (!terminationStatus) {
                 log.error(s"Install version ${version} of service ${service} error")
                 return false

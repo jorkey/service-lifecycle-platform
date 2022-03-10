@@ -237,8 +237,8 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
         sys.error("Unexpected end of subscription")
       }
       logs.foreach(log => {
-        println(log.payload.message)
-        for (terminationStatus <- log.payload.terminationStatus) {
+        println(log.message)
+        for (terminationStatus <- log.terminationStatus) {
           println(s"Build developer version termination status is ${terminationStatus}")
           return terminationStatus
         }
