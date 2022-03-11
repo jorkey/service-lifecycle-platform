@@ -275,7 +275,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
         fastPosition == 'top' ? 0 : (fastPosition == 'bottom' || follow) ? rows.length-1 : undefined
       }
       onScrollTop={() => {
-        if (direction == 'fromBottom' && lines.length) {
+        if (lines.length) {
           getLogs(undefined, lines[0].sequence)
         }
       }}
