@@ -119,9 +119,11 @@ object IoUtils {
   def copyFile(from: File, to: File,
                filter: File => Boolean = _ => true,
                settings: Map[String, String] = Map.empty,
-               getMacroContent: String => Array[Byte] = _ => throw new NotImplementedError())
+               getMacroContent: String => Array[Byte] = _ => throw new NotImplementedError(),
+               level: Int = 0)
               (implicit log: Logger): Boolean = {
     if (from.isDirectory) {
+      log.info(s"Copy directory ${from} to ${to}")
       if (!to.exists() && !to.mkdir()) {
         log.error(s"Can't make directory ${to}")
         return false
@@ -129,7 +131,7 @@ object IoUtils {
       for (fromChild <- from.listFiles()) {
         if (filter(fromChild)) {
           val toChild = new File(to, fromChild.getName)
-          if (!copyFile(fromChild, toChild, filter, settings, getMacroContent)) {
+          if (!copyFile(fromChild, toChild, filter, settings, getMacroContent, level+1)) {
             return false
           }
         }
@@ -144,7 +146,9 @@ object IoUtils {
         true
       } else {
         try {
-          log.info(s"Copy file ${from} to ${to}")
+          if (level == 0) {
+            log.info(s"Copy file ${from} to ${to}")
+          }
           val in = new FileInputStream(from)
           val out = new FileOutputStream(to)
           val buf = new Array[Byte](1024)
