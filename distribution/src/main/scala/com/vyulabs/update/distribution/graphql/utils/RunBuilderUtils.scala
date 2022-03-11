@@ -109,6 +109,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
                               accessToken: String, environment: Seq[NamedStringValue],
                               arguments: Seq[String])
                              (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    log.info(s"Run builder on local distribution server")
     val process = for {
       distributionUrl <- {
         if (config.distribution != distribution) {
@@ -172,6 +173,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
   private def runRemoteBuilder(task: TaskId, distribution: DistributionId, accessToken: String,
                                environment: Seq[NamedStringValue], arguments: Seq[String])
                               (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
+    log.info(s"Run builder on remove distribution server ${distribution}")
     @volatile var distributionClient = Option.empty[DistributionClient[AkkaHttpClient.AkkaSource]]
     @volatile var remoteTaskId = Option.empty[TaskId]
     val future = for {
@@ -200,25 +202,24 @@ trait RunBuilderUtils extends SprayJsonSupport {
           })
           for (terminationStatus <- lines.lastOption.map(_.terminationStatus).flatten) {
             if (terminationStatus) {
-              logOutputFuture.foreach(_.andThen { case _ => result.success() })
+              logOutputFuture.foreach(_.andThen { case _ => result.trySuccess() })
             } else {
-              logOutputFuture.foreach(_.andThen { case _ => result.failure(new IOException(s"Remote builder is failed")) })
+              logOutputFuture.foreach(_.andThen { case _ => result.tryFailure(new IOException(s"Remote builder is failed")) })
             }
           }
         }).run()
           .onComplete {
             case Success(_) =>
               if (!result.isCompleted) {
+                log.info(s"Remote task ${remoteTaskId} log is completed")
                 def complete(): Unit = {
-                  if (!result.isCompleted) {
-                    result.failure(new IOException(s"Unexpected completion of remote task log"))
-                  }
+                  result.tryFailure(new IOException(s"Unexpected completion of remote task ${remoteTaskId} log"))
                 }
                 system.scheduler.scheduleOnce(FiniteDuration(5, TimeUnit.SECONDS))(complete())
               }
             case Failure(ex) =>
               log.error("Subscription flow error", ex)
-              result.failure(ex)
+              result.tryFailure(ex)
           }
         result.future
       }
