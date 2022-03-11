@@ -28,7 +28,7 @@ const useStyles = makeStyles((theme:any) => ({
   commentColumn: {
   },
   startTimeColumn: {
-    width: '150px',
+    width: '250px',
   },
   control: {
     paddingLeft: '10px',

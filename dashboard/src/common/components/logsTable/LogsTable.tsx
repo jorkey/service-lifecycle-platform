@@ -242,8 +242,8 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     if (append.length) {
       newLines = new Array(...newLines, ...append)
     }
-    if (follow && newLines.length > 50) {
-      newLines.slice(newLines.length - 50)
+    if (follow && newLines.length > 250) {
+      newLines = newLines.slice(newLines.length - 250)
     }
     setLines(newLines)
     if (newLines.length) {

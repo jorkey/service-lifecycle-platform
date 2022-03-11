@@ -6,11 +6,10 @@ import akka.stream.Materializer
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.info.DistributionInfo
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
 
-import java.io.File
 import scala.concurrent.ExecutionContext
 
 trait DistributionInfoUtils extends SprayJsonSupport {
@@ -22,7 +21,8 @@ trait DistributionInfoUtils extends SprayJsonSupport {
 
   def getDistributionInfo()(implicit log: Logger): DistributionInfo = {
     DistributionInfo(config.distribution, config.title,
-      IoUtils.readServiceVersion(Common.DistributionServiceName, new File("."))
+      Utils.getManifestBuildVersion(Common.DistributionServiceName)
+        .map(v => ClientDistributionVersion(v.distribution, v.build, 0))
         .getOrElse(ClientDistributionVersion(config.distribution, Seq(0), 0)))
   }
 }
