@@ -179,7 +179,7 @@ trait LogUtils extends SprayJsonSupport {
       .takeWhile(!_.document.terminationStatus.isDefined, true)
       .filter(log => levels.isEmpty || levels.get.contains(log.document.level))
       .filter(log => unit.isEmpty || unit.contains(log.document.unit))
-      .groupedWeightedWithin(25, FiniteDuration.apply(100, TimeUnit.MILLISECONDS))(_ => 1)
+      .groupedWeightedWithin(100, FiniteDuration.apply(500, TimeUnit.MILLISECONDS))(_ => 1)
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(
         sequence = line.sequence,
         instance = line.document.instance,
