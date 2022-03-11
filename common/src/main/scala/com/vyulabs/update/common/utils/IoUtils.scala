@@ -123,7 +123,9 @@ object IoUtils {
                level: Int = 0)
               (implicit log: Logger): Boolean = {
     if (from.isDirectory) {
-      log.info(s"Copy directory ${from} to ${to}")
+      if (level == 0) {
+        log.info(s"Copy directory ${from} to ${to}")
+      }
       if (!to.exists() && !to.mkdir()) {
         log.error(s"Can't make directory ${to}")
         return false
