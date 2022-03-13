@@ -74,7 +74,7 @@ const LastDeveloperVersionsTable: React.FC<LastDeveloperVersionsTableProps> = (p
     {
       name: 'creationTime',
       headerName: 'Creation Time',
-      type: 'date',
+      type: 'relativeTime',
       className: classes.creationTime,
     },
     {

@@ -69,7 +69,7 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
     {
       name: 'creationTime',
       headerName: 'Creation Time',
-      type: 'date',
+      type: 'relativeTime',
       className: classes.creationTime,
     },
     {
@@ -85,7 +85,7 @@ const ClientVersionsTable: React.FC<LastClientVersionsTableProps> = (props) => {
     {
       name: 'installTime',
       headerName: 'Install Time',
-      type: 'date',
+      type: 'relativeTime',
       className: classes.installTimeColumn,
     }
   ]

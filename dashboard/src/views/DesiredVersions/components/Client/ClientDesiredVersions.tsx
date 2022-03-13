@@ -96,7 +96,7 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
     columns.push({
       name: 'installTime',
       headerName: 'Install Time',
-      type: 'date',
+      type: 'relativeTime',
       className: baseClasses.timeColumn,
     })
     const rows = view.makeBaseRows().map(row => {

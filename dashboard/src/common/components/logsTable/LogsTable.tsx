@@ -200,7 +200,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       name: 'time',
       headerName: 'Time',
       className: classes.timeColumn,
-      type: 'date',
+      type: 'time',
     },
     {
       name: 'level',

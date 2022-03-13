@@ -10,6 +10,7 @@ import {
 import AttachmentIcon from '@material-ui/icons/Attachment';
 import {GridColumnType, GridTableCellValue} from "./GridTableColumn";
 import {makeStyles} from "@material-ui/styles";
+import moment from "moment/moment";
 
 const useStyles = makeStyles<Theme, GridTableCellInternalParams>(theme => ({
   сheckbox: {
@@ -95,8 +96,10 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
                     }
                   }}
         />
-      : type == 'date' ?
+      : type == 'time' ?
         value ? (value as Date).toLocaleString() : ''
+      : type == 'relativeTime' ?
+        value ? moment(value as Date).fromNow() : ''
       : type == 'upload' ?
           editing ?
             <label htmlFor="upload" style={{ display: 'flex' }}>

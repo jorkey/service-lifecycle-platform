@@ -45,7 +45,7 @@ export const LogsTailCard = (props: LogsTailCardParams) => {
       name: 'time',
       headerName: 'Time',
       className: classes.timeColumn,
-      type: 'date',
+      type: 'time',
     },
     {
       name: 'level',

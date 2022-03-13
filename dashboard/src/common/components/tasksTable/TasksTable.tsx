@@ -54,7 +54,7 @@ export const TasksTable = (props: TasksTableParams) => {
       name: 'creationTime',
       headerName: 'Creation Time',
       className: classes.creationTimeColumn,
-      type: 'date',
+      type: 'time',
     },
     {
       name: 'task',

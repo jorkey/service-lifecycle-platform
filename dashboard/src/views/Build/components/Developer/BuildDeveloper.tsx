@@ -104,7 +104,7 @@ const BuildDeveloper = () => {
     {
       name: 'time',
       headerName: 'Time',
-      type: 'date',
+      type: 'relativeTime',
       className: classes.timeColumn,
     },
     {

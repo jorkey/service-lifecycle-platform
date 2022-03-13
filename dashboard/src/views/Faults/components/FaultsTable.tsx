@@ -54,7 +54,7 @@ export const FaultsTable = (props: FaultsTableParams) => {
       name: 'time',
       headerName: 'Fault Time',
       className: classes.timeColumn,
-      type: 'date',
+      type: 'time',
     },
     {
       name: 'distribution',

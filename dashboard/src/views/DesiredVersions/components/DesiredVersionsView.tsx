@@ -149,7 +149,7 @@ export class DesiredVersionsView<Version> {
       {
         name: 'buildTime',
         headerName: 'Build Time',
-        type: 'date',
+        type: 'relativeTime',
         className: this.classes.timeColumn,
       },
       {

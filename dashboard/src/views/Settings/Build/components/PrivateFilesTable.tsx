@@ -61,7 +61,7 @@ const PrivateFilesTable = (props: PrivateFilesParams) => {
     } as GridTableColumnParams,
     {
       name: 'time',
-      type: 'date',
+      type: 'time',
       editable: false,
       headerName: 'Time',
       className: classes.timeColumn,

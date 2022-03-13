@@ -54,7 +54,7 @@ const ClientVersionsInProcessTable: React.FC<ClientVersionsInProcessTableProps> 
     {
       name: 'startTime',
       headerName: 'Start',
-      type: 'date',
+      type: 'relativeTime',
       className: classes.creationTime,
     },
   ]

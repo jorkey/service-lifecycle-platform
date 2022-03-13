@@ -65,7 +65,7 @@ const DeveloperVersionsInProcessTable: React.FC<DeveloperVersionsInProcessTableP
     },
     {
       name: 'startTime',
-      type: 'date',
+      type: 'relativeTime',
       headerName: 'Start Time',
       className: classes.startTimeColumn,
     },

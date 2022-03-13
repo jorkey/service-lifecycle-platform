@@ -1,4 +1,4 @@
-export type GridColumnType = 'checkbox' | 'select' | 'date' | 'number' | 'elements' | 'upload'
+export type GridColumnType = 'checkbox' | 'select' | 'time' | 'relativeTime' | 'number' | 'elements' | 'upload'
 export type GridTableCellValue = string | number | boolean | Date | JSX.Element[] | File | undefined
 
 export interface GridTableColumnParams {
