@@ -30,6 +30,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
   const [editColumn, setEditColumn] = useState<string>()
   const [editOldValues, setEditOldValues] = useState<Map<string, GridTableCellValue>>(new Map())
   const [editValues, setEditValues] = useState<Map<string, GridTableCellValue>>(new Map())
+  const editValuesRef = useRef<Map<string, GridTableCellValue>>(new Map())
 
   const myRef = useRef(null)
 
@@ -38,10 +39,15 @@ export const GridTableRow = (params: GridTableRowParams) => {
   useMountEffect(executeScroll)
   executeScroll()
 
+  const modifyEditValues = (values: Map<string, GridTableCellValue>) => {
+    setEditValues(values)
+    editValuesRef.current = values
+  }
+
   if (!editing && editColumn) {
     setEditColumn(undefined)
     setEditOldValues(new Map())
-    setEditValues(new Map())
+    modifyEditValues(new Map())
   }
 
   const valid = !columns.find(c => { return c.validate && !c.validate(editValues.get(c.name), rowNum) })
@@ -49,12 +55,11 @@ export const GridTableRow = (params: GridTableRowParams) => {
 
   const valuesColumns = columns.map((column, index) => {
     const columnClassName = cells.get(column.name)?.className
-    const cellValue = cells.get(column.name)?.value
+    const cellValue = editing?editValues.get(column.name):cells.get(column.name)?.value
     const cellSelect = cells.get(column.name)?.select
     const editableCell = column.editable ?
       (cells.get(column.name)?.editable != false) : cells.get(column.name)?.editable
     const editingCell = adding || (editing && editColumn === column.name)
-    const editValue = editValues.get(column.name)
     const auto = !!column.auto
     const classNames = column.className && columnClassName ? column.className + ' ' + columnClassName :
       column.className ? column.className : columnClassName ? columnClassName : undefined
@@ -74,27 +79,27 @@ export const GridTableRow = (params: GridTableRowParams) => {
                             type={column.type} value={cellValue} select={cellSelect}
                             editable={editableCell} editing={editingCell} auto={auto}
                             focused={adding && index==0 || editing}
-                            editValue={editValue}
                             onValidate={() => column.validate ? column.validate(editValues.get(column.name), rowNum) : true}
                             onClicked={() => onClicked?.()}
                             onStartEdit={() => {
                               if (onBeginEditing?.()) {
                                 setEditColumn(column.name)
                                 const values = new Map<string, GridTableCellValue>()
-                                cells.forEach((value, key) => values.set(key, value.value))
+                                editing?editValuesRef.current.forEach((value, key) => values.set(key, value)):
+                                  cells.forEach((value, key) => values.set(key, value.value))
                                 setEditOldValues(values)
-                                setEditValues(values)
+                                modifyEditValues(values)
                               }
                             }}
                             onStopEdit={() => setEditColumn(undefined)}
                             onSetEditValue={(value) => {
-                              const newValues = new Map(editValues.set(column.name, value))
+                              const newValues = new Map(editValuesRef.current.set(column.name, value))
                               columns.forEach(column => {
                                 if (column.auto) {
                                   newValues.set(column.name, column.auto(newValues))
                                 }
                               })
-                              setEditValues(newValues)
+                              modifyEditValues(newValues)
                               if (!hasGridActions) {
                                 onSubmitted?.(newValues, editOldValues)
                               }

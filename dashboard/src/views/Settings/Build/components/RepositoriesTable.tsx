@@ -83,9 +83,7 @@ const RepositoriesTable = (props: RepositoryTableParams) => {
       className: classes.cloneSubmodulesColumn,
       type: 'checkbox',
       editable: true,
-      validate: (value, rowNum) => {
-        return true
-      }
+      validate: (value, rowNum) => true
     },
     {
       name: 'directory',

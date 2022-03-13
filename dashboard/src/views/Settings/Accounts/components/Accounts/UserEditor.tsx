@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import {NavLink as RouterLink, Redirect, RouteComponentProps, useHistory} from "react-router-dom"
+import {NavLink as RouterLink, Redirect, RouteComponentProps} from "react-router-dom"
 
 import {makeStyles} from '@material-ui/core/styles';
 import {
@@ -10,19 +10,21 @@ import {
   Card,
   CardContent,
   CardHeader,
-  Checkbox,
+  FormControl,
   FormControlLabel,
   FormGroup,
+  Radio,
+  RadioGroup,
 } from '@material-ui/core';
 import {
   AccountRole,
   useAccountsListQuery,
   useAddUserAccountMutation,
-  useChangeUserAccountMutation, UserAccountProperties,
+  useChangeUserAccountMutation,
+  UserAccountProperties,
   useUserAccountInfoLazyQuery,
   useWhoAmIQuery
 } from '../../../../../generated/graphql';
-import clsx from 'clsx';
 import Alert from "@material-ui/lab/Alert";
 
 const useStyles = makeStyles(theme => ({
@@ -75,7 +77,7 @@ const UserEditor: React.FC<AccountEditorParams> = props => {
 
   const [account, setAccount] = useState<string>();
   const [name, setName] = useState<string>();
-  const [role, setRole] = useState<AccountRole>();
+  const [role, setRole] = useState(AccountRole.Administrator);
   const [changePassword, setChangePassword] = useState(false);
   const [oldPassword, setOldPassword] = useState();
   const [password, setPassword] = useState<string>();
@@ -256,26 +258,15 @@ const UserEditor: React.FC<AccountEditorParams> = props => {
       <CardHeader title='Roles'/>
       <CardContent>
         <FormGroup row>
-          <FormControlLabel
-            control={(
-              <Checkbox
-                color="primary"
-                checked={role == AccountRole.Developer}
-                onChange={ event => setRole(event.target.checked ? AccountRole.Developer : undefined) }
-              />
-            )}
-            label="Developer"
-          />
-          <FormControlLabel
-            control={(
-              <Checkbox
-                color="primary"
-                checked={role == AccountRole.Administrator}
-                onChange={ event => setRole(event.target.checked ? AccountRole.Administrator : undefined) }
-              />
-            )}
-            label="Administrator"
-          />
+          <FormControl>
+            <RadioGroup row
+              value={role}
+              onChange={ event => setRole(event.target.value as AccountRole) }
+            >
+              <FormControlLabel value={AccountRole.Developer} control={<Radio/>} label="Developer"/>
+              <FormControlLabel value={AccountRole.Administrator} control={<Radio/>} label="Administrator"/>
+            </RadioGroup>
+          </FormControl>
         </FormGroup>
       </CardContent>
     </Card>

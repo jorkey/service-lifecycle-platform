@@ -40,7 +40,6 @@ export interface GridTableCellInternalParams extends Attributes {
   editing?: boolean
   auto?: boolean
   focused?: boolean
-  editValue?: GridTableCellValue
   onValidate?: (value: GridTableCellValue) => boolean
   onClicked?: () => void
   onStartEdit?: () => void
@@ -52,7 +51,7 @@ export interface GridTableCellInternalParams extends Attributes {
 }
 
 export const GridTableCell = (params: GridTableCellInternalParams) => {
-  const { name, className, type, value, select, editValue, editable, editing, auto, focused,
+  const { name, className, type, value, select, editable, editing, auto, focused,
     onValidate, onClicked, onStartEdit, onStopEdit, onSetEditValue,
     onCancelled, onSelected, onUnselected } = params
 
@@ -82,7 +81,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
     > {
       type == 'checkbox' ?
         <Checkbox className={classes.checkbox}
-                  checked={editing ? editValue ? editValue as boolean : false : value as boolean}
+                  checked={value as boolean}
                   disabled={!editable}
                   onChange={(e) => {
                     if (name == 'select') {
@@ -92,19 +91,17 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
                         onUnselected?.()
                       }
                     } else {
-                      const v = editing ? editValue as boolean : value as boolean
-                      onSetEditValue?.(!v)
+                      onSetEditValue?.(!value as boolean)
                     }
                   }}
         />
       : type == 'date' ?
-        editing ? editValue ? (editValue as Date).toLocaleString() : '' :
         value ? (value as Date).toLocaleString() : ''
       : type == 'upload' ?
           editing ?
             <label htmlFor="upload" style={{ display: 'flex' }}>
               <Typography style={{ paddingTop: '10px' }}>
-                {editValue?(editValue as File).name:''}
+                {value?(value as File).name:''}
               </Typography>
               <input id="upload"
                      className={classes.input}
@@ -125,7 +122,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
          type == 'select' ?
           <Select className={classes.input}
                   autoFocus={focused}
-                  value={editValue?editValue:''}
+                  value={value?value:''}
                   open={true}
                   onChange={e => onSetEditValue?.(e.target.value as string)}
                   onClose={() => onStopEdit?.()}
@@ -136,12 +133,11 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
           </Select>
         : <Input className={classes.input}
                  type={type}
-                 value={editValue?editValue:''}
+                 value={value?value:''}
                  autoFocus={focused}
                  onChange={e => onSetEditValue?.(e.target.value)}
-                 error={onValidate?!onValidate(editValue):false}
+                 error={onValidate?!onValidate(value):false}
           />
-      : editing ? editValue!
       : value!
     }
     </TableCell>)
