@@ -154,6 +154,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
   const { data: levels } = useLogLevelsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { service: service, instance: instance, directory: directory, process: process },
+    onError(err) { setError('Query log levels error ' + err.message) }
   })
 
   const { data: startTime } = useLogsStartTimeQuery({
@@ -279,7 +280,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
               <FormControlLabel
                 className={classes.control}
                 labelPlacement={'start'}
-                disabled={!service}
+                disabled={!service || !levels}
                 control={
                   <Select
                     className={classes.level}

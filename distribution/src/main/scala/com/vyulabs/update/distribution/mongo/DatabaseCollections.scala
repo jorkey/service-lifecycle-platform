@@ -161,6 +161,10 @@ class DatabaseCollections(db: MongoDb,
       .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.descending("time")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
+    _ <- if (createIndices) collection.createIndex(
+      Indexes.compoundIndex(Indexes.ascending("task"), Indexes.ascending("level"))) else Future()
+    _ <- if (createIndices) collection.createIndex(
+      Indexes.compoundIndex(Indexes.ascending("service"), Indexes.ascending("level"))) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
