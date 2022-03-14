@@ -50,7 +50,7 @@ const Versions: React.FC<VersionsProps> = props => {
   const classes = useStyles();
 
   const [consumer, setConsumer] = useState<string>()
-  const [onlyAlerts, setOnlyAlerts] = useState(false)
+  const [onlyAlerts, setOnlyAlerts] = useState(true)
 
   React.useEffect(() => {
       getVersions(consumer)

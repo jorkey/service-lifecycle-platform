@@ -148,7 +148,7 @@ const BuildDeveloper = () => {
           ['time', { value: time }],
           ['comment', { value: comment }],
           ['status', { value: status }],
-          ['actions', { value: [<Button key='0' onClick={ () => handleOnClick(service) }>
+          ['actions', { value: [<Button key='0' title='Start Build' onClick={ () => handleOnClick(service) }>
             {versionInProcess?<VisibilityIcon/>:<BuildIcon/>}
           </Button>] }]
         ])
@@ -173,7 +173,6 @@ const BuildDeveloper = () => {
            className={classes.versionsTable}
            columns={columns}
            rows={rows?rows:[]}
-           onClick={(row) => { if (rows) handleOnClick(rows[row].get('service')!.value! as string)}}
           />
           {error && <Alert className={classes.alert} severity="error">{error}</Alert>}
         </div>

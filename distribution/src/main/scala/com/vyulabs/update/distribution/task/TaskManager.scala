@@ -10,6 +10,8 @@ import org.slf4j.{Logger, LoggerFactory}
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future}
 
+case class TaskLimit(taskType: String, concurrentTasksCount: Option[Int])
+
 case class Task(taskId: TaskId, future: Future[Any], cancel: Option[() => Unit]) {
   val startDate: Date = new Date
 }
@@ -21,14 +23,14 @@ class TaskManager(logStorekeeper: TaskId => LogStorekeeper)
   private val idGenerator = new IdGenerator()
   private var activeTasks = Map.empty[TaskId, Task]
 
-  def create(description: String,
+  def create(taskType: String,
              run: (TaskId, Logger) => (Future[Any], Option[() => Unit])): Task = {
     val taskId = idGenerator.generateId(8)
     log.info(s"Started task ${taskId}")
     val appender = new TraceAppender()
     val logger = Utils.getLogbackLogger(s"Task-${taskId}")
     logger.addAppender(appender)
-    val buffer = new LogBuffer(description, "TASK", logStorekeeper(taskId), 1, 1000)
+    val buffer = new LogBuffer(taskType, "TASK", logStorekeeper(taskId), 1, 1000)
     appender.addListener(buffer)
     appender.start()
     val (future, cancel) = run(taskId, logger)
