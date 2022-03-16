@@ -18,7 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 import java.util.{Date, TimeZone}
 import scala.collection.immutable.Queue
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext}
 
 /**
@@ -85,7 +85,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           logUploaderBuffer.foreach(_.stop(Some(exitCode==0), None))
         }
         val process = try {
-          Await.result(ChildProcess.start(command, arguments, env, state.currentServiceDirectory), FiniteDuration(10, TimeUnit.SECONDS))
+          Await.result(ChildProcess.start(command, arguments, env, state.currentServiceDirectory), Duration.Inf)
         } catch {
           case e: Exception =>
             logUploaderBuffer.foreach(_.append(LogLine(new Date(), "ERROR", "SERVICE",
@@ -113,7 +113,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         case Some(process) =>
           try {
             log.info(s"Terminate ${process.getHandle().pid()}")
-            val result = Await.result(process.terminate(), FiniteDuration(30, TimeUnit.SECONDS))
+            val result = Await.result(process.terminate(), Duration.Inf)
             currentProcess = None
             result
           } catch {

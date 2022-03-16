@@ -7,11 +7,10 @@ import com.vyulabs.update.common.utils.Utils.extendMacro
 import org.slf4j.Logger
 
 import java.io.{BufferedReader, File, IOException, InputStreamReader}
-import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.Duration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 31.07.20.
@@ -55,7 +54,7 @@ object ProcessUtils {
         processToTerminate.foreach( proc => {
           log.info(s"Program is terminating - kill child process ${proc.pid()}")
           try {
-            Await.result(new ChildProcess(proc).terminate(), FiniteDuration(3, TimeUnit.SECONDS))
+            Await.result(new ChildProcess(proc).terminate(), Duration.Inf)
           } catch {
             case e: Exception =>
           }

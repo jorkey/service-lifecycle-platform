@@ -147,111 +147,106 @@ File format:
         - _[uploadLogs:boolean]_ - uploading service logs to the update server
         - _[faultFilesMatch]_ - regular expression to search for files with crash information
           when the service fails unexpectedly. The files are included in the crash report.
-        - _[restartOnFault:boolean]_ - перезапускать сервис после сбоя
-        - _[restartConditions]_ - условия для принудительного завершения сервиса
-          - _[maxMemoryMB:number]_ : сервис использовал более указанного количества мегабайт памяти
-          - _[maxCpu]_ - сервис использовал больше ресурсов CPU, чем указано
-            - _percents:number_ : проценты потребления CPU
-            - _durationSec:number_ : в течение указанного интервала времени
-          - _[makeCore:boolean]_ : для Unix-подобных систем, завершение сервиса сигналом SIGQUIT,
-            для образования _core dump_
-          - _checkTimeoutMs:number_ : интервал проверки условий
+        - _[restartOnFault:boolean]_ - restart service after fault
+        - _[restartConditions]_ - conditions for service restart
+          - _[maxMemoryMB:number]_ : the service used more than the specified number of megabytes of memory
+          - _[maxCpu]_ - the service used more CPU resources than specified
+            - _percents:number_ : percentage of CPU usage
+            - _durationSec:number_ : within the specified time interval
+          - _[makeCore:boolean]_ : for Unix-like systems, service termination with SIGQUIT signal,
+            _core dump_ is created by this signal
+          - _checkTimeoutMs:number_ : interval between check conditions
 
-В строковых значениях настроек могут присутствовать макро:
-- _%%version%%_ - Версия разработчика
-- _%%role%%_ - Роль сервиса. Может указываться в параметрах команд _installCommands_, 
-               _postInstallCommands_ и _runService_.
+Macros may be present in the string values of the settings:
+- _%%version%%_ - Developer version
+- _%%role%%_ - Service role. Can be specified in parameters of commands: _installCommands_, 
+               _postInstallCommands_ and _runService_.
 
-При генерации версии разработчика секция _install_ из файла _update.json_ записывается в файл _install.json_
-корневого каталога образа версии.
+When generating the developer version, the _install_ section from the _update.json_ file is written to the _install.json_ file
+version image root directory.
 
-## Настройки работы сервиса от разработчика
+## Service settings by the developer
 
-Общие настройки работы сервиса, которые определяет разработчик, 
-находятся в файлах исходных кодов и определяются конкретным приложением.
-В общих настройках могут указываться значения по-умолчанию, либо макросы `%%name%%`, 
-либо не указываться ничего.
-Общие настройки попадают в образ версии разработчика.
+Common settings for the service, which are determined by the developer, are placed in the source files.
+In common settings defined default values, or macros `%%name%%`.
+Common settings are recorded to developer version image.
 
 <a name="settings_customization"></a>
-## Кастомизация настроек для клиента
+## Customizing settings for the client
 
-При генерации клиентской версии может производиться определение, дополнение и переопределение настроек от разработчика.
-Для этого создаётся каталог с дополнительными настройками, с той же структурой, что и каталог образа версии.
+When generating a client version, the settings from the developer may be defined, supplemented and overridden.
+To do this, a directory with additional settings is created, with the same structure as the version image directory.
 
-Дополнение общих настроек дополнительными происходит по следующим правилам:
-- Если требуется дополнить настройки файла с расширением _.conf_ (формат typesafe), _.json_ или _.properties_,
-создаётся файл с тем же именем и путём, что и этот файл. В дополнительном файле дополняются или переопределяются 
-секции настроек. Для содержимого файлов будет произведено автоматическое слияние (merge).
-- Если нужно определить значения макросов `%%name%%` в файле настроек, создаётся файл с таким же именем и расширением
-_.defines_, в который записываются значения для макроопределений в формате `name=value`.
-- Для одного конфигурационного файла может быть создано несколько дополнительных файлов с 
-добавлением индекса к имени _.<index>_. Файлы применяются последовательно, согласно индексу. 
-Это позволяет менять конфигурацию клиента из разных источников.
-- Если требуется просто добавить файл с настройками, создаётся дополнительный файл с уникальным именем.
+The complement of common settings by optional settings done according to the following rules:
+- If it is required to complete the settings of a file with the extension _.conf_ (typesafe format), _.json_ or _.properties_,
+a file is created with the same name and path to this file. This file adds or redefines
+  settings section. The content of the files will be automatically merged.
+- If you need to define macro values `%%name%%` in the settings file, a file with the same name and extension _.defines_ is created, 
+  which contains values for macro definitions in the format `name=value`.
+- For one configuration file, several additional files can be created with
+  adding an index to the name _.<index>_. Files are applied sequentially, according to the index.
+  This allows you to change the client configuration from different sources.
+- If you just want to add a settings file, an additional file with a unique name is created.
 
-Файл _install.json_ может дополняться для клиента по тем же правилам.  
+The _install.json_ file can be completed for the client according to the same rules.
 
-## Приватные файлы
+## Private files
 
-Помимо исходных кодов иногда требуется включение в образ версии сервиса файлов с приватной информацией,
-такой как ключи доступа. Особенно это касается клиентских версий.
-Такие файлы не хранятся в репозиториях исходных кодов или настроек, а закачиваются на сервер дистрибуции 
-непосредственно.
+In addition to source codes, sometimes it is required to include to the image of service version of files with private information,
+such as access keys. This is often needed for client versions.
+Such files are not stored in source repositories, but are uploaded to the distribution server directly.
 
-# Сервисы v-update
+# Services v-update
 
-v-update сам состоит из сервисов. Таким образом, v-update содаёт версии самого себя и обновляет сам себя.
+V-update itself consists of services. Thus, v-update creates versions of itself and updates itself.
 
-Сервисы v-update:
-- scripts - Скрипты (Shell, YAML)
-- distribution - Сервер дистрибуции
+Services v-update:
+- scripts - Startup and initializing scripts (Shell, YAML)
+- distribution - Distribution server
   - Backend
-    - Distribution Web Server (платформа [Scala Akka HTTP](https://doc.akka.io/docs/akka-http/current/index.html))
-      - Поддерживает запросы GraphQL (платформа [Sangria GraphQL](https://github.com/sangria-graphql/sangria))
-    - База данных [MongoDB](https://github.com/mongodb/mongo)
-  - Frontend 
-    - Distribution Dashboard (платформа [React Js](https://reactjs.org))
-- builder - Генератор версий (Scala command line application)
-- updater - Установщик инстанции сервисов (Scala command line application)
+    - Distribution Web server [Scala Akka HTTP](https://doc.akka.io/docs/akka-http/current/index.html)
+      - Supports GraphQL requests [Sangria GraphQL](https://github.com/sangria-graphql/sangria)
+    - Data base [MongoDB](https://github.com/mongodb/mongo)
+  - Frontend
+    - Distribution Dashboard [React Js](https://reactjs.org)
+- builder - Version builder (Scala command line application)
+- updater - Services installer and executor (Scala command line application)
 
 ## Scripts
 
-Производят начальную установку и обновление сервисов.
+Perform initial installation and service upgrades.
 
-- _.update.sh_ - базовый скрипт, обновляет сами скрипты, обновляет, запускает сервис
-  - _distribution_ - скрипты поддержки сервера дистрибуции
-    - _.create_distribution_service.sh_ - устанавливает сервер дистрибуции как сервис операционной системы, 
-                                          в настоящее время поддерживается только Linux systemd. 
-    - _.make_distribution_config.sh_ - создание начального файла конфигурации, используется _builder_
-                                       при создании сервера дистрибуции
-    - _distribution.sh_ - запуск сервера дистрибуции
-  - _builder_ - скрипты поддержки _builder_
-    - _builder.sh_ - запускает _builder_
-  - _updater_ - скрипты поддержки _updater_
-    - _.updater_setup.sh_ - установка _updater_
-      - записывает файл конфигурации _updater_
-      - устанавливает _updater_ как сервис операционнй системы,
-        в настоящее время поддерживается только Linux systemd.
-    - _instance.yaml_ - начальный скрипт запуска на Azure 
-    - _updater.sh_ - запускает _updater_
+- _.update.sh_ - base script, updates the scripts themselves, starts and updates the service
+  - _distribution_ - distribution server scripts
+    - _.create_distribution_service.sh_ - installs the distribution server as an operating system service,
+                                          only Linux systemd is currently supported 
+    - _.make_distribution_config.sh_ - creates an initial configuration file
+    - _distribution.sh_ - start distribution server
+  - _builder_ - _builder_ scripts
+    - _builder.sh_ - run _builder_
+  - _updater_ - _updater_ scripts
+    - _.updater_setup.sh_ - installs _updater_
+      - creates _updater_ configuration file
+      - installs _updater_ as operation system service,
+        currently only Linux systemd is supported
+    - _instance.yaml_ - start script of _cloud-init_ 
+    - _updater.sh_ - runs _updater_
 
 ## Distribution Server
 
-Ключевым компонентом v-update является сервер дистрибуции, с управлением через Distribution Dashboard.
-На сервере дистрибуции создаются новые версии сервисов. Для создания новой версии,
-_distribution_ запускает _builder_.
+The main component of v-update is the distribution server, managed through the Distribution Dashboard.
+New versions of services are created on the distribution server. To create a new version, _distribution_ starts _builder_.
 
 <a name="create_distribution_server"></a>
-### Создание сервера дистрибуции
+### Create distribution server
 
-Сервер дистрибуции может быть собран и установлен с исходных кодов, или с другого сервера дистрибуции.
+The distribution server can be built and installed from source, or from another distribution server.
 
-#### Сборка и установка сервера дистрибуции с исходных кодов
+#### Building and installing the distribution server from source codes
 
-Установите базу данных MongoDB.
+Install data base MongoDB.
 
-Клонируйте репозиторий v-update на сервер дистрибуции:
+Clone source repository v-update to distribution server:
 
 `git clone git@github.com:jorkey/v-update.git`
 

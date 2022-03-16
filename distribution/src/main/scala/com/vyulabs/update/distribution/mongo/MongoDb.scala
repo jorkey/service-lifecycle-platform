@@ -11,9 +11,8 @@ import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
 import org.bson.{BsonDocument, Document}
 
-import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.ClassTag
 
@@ -33,7 +32,7 @@ class MongoDb(dbName: String, connectionString: String = "mongodb://localhost:27
   def close(): Unit = {
     if (temporary) {
 //      log.info(s"Drop temporary database '${dbName}'")
-      Await.result(dropDatabase(), FiniteDuration(3, TimeUnit.SECONDS))
+      Await.result(dropDatabase(), Duration.Inf)
     }
     client.close()
   }
