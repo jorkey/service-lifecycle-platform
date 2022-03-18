@@ -9,6 +9,7 @@ import com.vyulabs.update.common.common.Common.DistributionId
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.ConsumerMutationsCoder
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
+import com.vyulabs.update.common.info.{InstanceServiceState, ServiceFaultReport}
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.mongo.DatabaseCollections
@@ -39,7 +40,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
 
   def start(): Unit = {
     synchronized {
-      task = Some(system.scheduler.scheduleOnce(uploadInterval)(() => uploadState()))
+      task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
       log.debug("Uploader is scheduled")
     }
   }
@@ -78,7 +79,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
             } else {
               log.error(s"State is failed to upload: ${result.failed.get}")
             }
-            task = Some(system.scheduler.scheduleOnce(uploadInterval)(() => uploadState()))
+            task = Some(system.scheduler.scheduleOnce(uploadInterval)(uploadState()))
             log.debug("Upload task is scheduled")
           }
         }
@@ -93,7 +94,12 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
       newStates <- Future(newStatesDocuments)
       _ <- {
         if (!newStates.isEmpty) {
-          client.graphqlRequest(ConsumerMutationsCoder.setServiceStates(newStates.map(_.document.payload))).
+          client.graphqlRequest(ConsumerMutationsCoder.setServiceStates(newStates.map(s =>
+              InstanceServiceState(
+                instance = s.document.instance,
+                service = s.document.service,
+                directory = s.document.directory,
+                state = s.document.state)))).
             andThen {
               case Success(_) =>
                 setLastUploadSequence(collections.State_ServiceStates.name, newStatesDocuments.last.sequence)
@@ -116,10 +122,11 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
       _ <- {
         if (!newReports.isEmpty) {
           Future.sequence(newReports.filter(_.document.distribution == distribution).map(report => {
-            val file = distributionDirectory.getFaultReportFile(report.document.payload.fault)
+            val file = distributionDirectory.getFaultReportFile(report.document.fault)
             val infoUpload = for {
-              _ <- client.uploadFaultReport(report.document.payload.fault, file)
-              _ <- client.graphqlRequest(consumerMutationsCoder.addFaultReportInfo(report.document.payload))
+              _ <- client.uploadFaultReport(report.document.fault, file)
+              _ <- client.graphqlRequest(consumerMutationsCoder.addFaultReportInfo(
+                ServiceFaultReport(fault = report.document.fault, info = report.document.info, files = report.document.files)))
             } yield {}
             infoUpload.
               andThen {
@@ -139,7 +146,8 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   private def getLastUploadSequence(component: String): Future[Long] = {
     for {
       uploadStatus <- collections.State_UploadStatus
-      sequence <- uploadStatus.find(Filters.eq("component", component)).map(_.headOption.map(_.payload.lastUploadSequence).flatten.getOrElse(-1L))
+      sequence <- uploadStatus.find(Filters.eq("component", component)).map(
+        _.headOption.map(_.lastUploadSequence).flatten.getOrElse(-1L))
     } yield sequence
   }
 
@@ -147,7 +155,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
     for {
       uploadStatus <- collections.State_UploadStatus
       result <- uploadStatus.updateOne(Filters.eq("component", component),
-        Updates.combine(Updates.set("payload.lastUploadSequence", sequence), Updates.unset("payload.lastError")))
+        Updates.combine(Updates.set("lastUploadSequence", sequence), Updates.unset("lastError")))
         .map(r => r.getModifiedCount > 0)
     } yield result
   }
@@ -155,8 +163,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   private def setLastUploadError(component: String, error: String): Future[Unit] = {
     for {
       uploadStatus <- collections.State_UploadStatus
-      _ <- uploadStatus.updateOne(Filters.eq("component", component),
-        Updates.set("payload.lastError", error))
+      _ <- uploadStatus.updateOne(Filters.eq("component", component), Updates.set("lastError", error))
         .map(r => r.getModifiedCount > 0)
     } yield {}
   }

@@ -28,7 +28,11 @@ trait FaultsUtils extends SprayJsonSupport {
 
   def addServiceFaultReportInfo(distribution: DistributionId, report: ServiceFaultReport)(implicit log: Logger): Future[Unit] = {
     for {
-      result <- collections.Faults_ReportsInfo.insert(DistributionFaultReport(distribution, report)).map(_ => ())
+      result <- collections.Faults_ReportsInfo.insert(DistributionFaultReport(
+        distribution = distribution,
+        fault = report.fault,
+        info = report.info,
+        files = report.files)).map(_ => ())
       _ <- clearOldReports()
     } yield result
   }
@@ -41,7 +45,7 @@ trait FaultsUtils extends SprayJsonSupport {
     val distributionArg = distribution.map(Filters.eq("distribution", _))
     val filters = distributionArg.getOrElse(new BsonDocument())
     collections.Faults_ReportsInfo.distinctField[String](
-      "payload.info.service", filters)
+      "info.service", filters)
   }
 
   def getFaultsStartTime(distribution: Option[ServiceId], service: Option[ServiceId])
@@ -50,8 +54,8 @@ trait FaultsUtils extends SprayJsonSupport {
     val serviceArg = service.map(Filters.eq("service", _))
     val args = distributionArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    val sort = Sorts.ascending("payload.info.time")
-    collections.Faults_ReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.info.time))
+    val sort = Sorts.ascending("info.time")
+    collections.Faults_ReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.info.time))
   }
 
   def getFaultsEndTime(distribution: Option[ServiceId], service: Option[ServiceId])
@@ -60,8 +64,8 @@ trait FaultsUtils extends SprayJsonSupport {
     val serviceArg = service.map(Filters.eq("service", _))
     val args = distributionArg ++ serviceArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    val sort = Sorts.descending("payload.info.time")
-    collections.Faults_ReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.payload.info.time))
+    val sort = Sorts.descending("info.time")
+    collections.Faults_ReportsInfo.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.info.time))
   }
 
   def getFaults(distribution: Option[DistributionId], fault: Option[FaultId],
@@ -69,10 +73,10 @@ trait FaultsUtils extends SprayJsonSupport {
                 limit: Option[Int])(implicit log: Logger)
       : Future[Seq[DistributionFaultReport]] = {
     val distributionArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
-    val faultArg = fault.map(fault => Filters.lte("payload.fault", fault))
-    val serviceArg = service.map { service => Filters.eq("payload.info.service", service) }
-    val fromTimeArg = fromTime.map(time => Filters.gte("payload.info.time", time))
-    val toTimeArg = toTime.map(time => Filters.lte("payload.info.time", time))
+    val faultArg = fault.map(fault => Filters.lte("fault", fault))
+    val serviceArg = service.map { service => Filters.eq("info.service", service) }
+    val fromTimeArg = fromTime.map(time => Filters.gte("info.time", time))
+    val toTimeArg = toTime.map(time => Filters.lte("info.time", time))
     val args = faultArg ++ distributionArg ++ serviceArg ++ fromTimeArg ++ toTimeArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Some(Sorts.descending("_sequence"))
@@ -84,8 +88,8 @@ trait FaultsUtils extends SprayJsonSupport {
       reports <- collections.Faults_ReportsInfo.findSequenced()
       result <- {
         val remainReports = reports
-          .sortBy(_.document.payload.info.time)
-          .filter(_.document.payload.info.time.getTime +
+          .sortBy(_.document.info.time)
+          .filter(_.document.info.time.getTime +
             config.faultReports.expirationTimeout.toMillis >= System.currentTimeMillis())
           .takeRight(config.faultReports.maxReportsCount)
         deleteReports(collections.Faults_ReportsInfo, reports.toSet -- remainReports.toSet)
@@ -97,7 +101,7 @@ trait FaultsUtils extends SprayJsonSupport {
                            (implicit log: Logger): Future[Unit] = {
     Future.sequence(reports.map { report =>
       log.debug(s"Delete fault report ${report.sequence}")
-      val faultFile = directory.getFaultReportFile(report.document.payload.fault)
+      val faultFile = directory.getFaultReportFile(report.document.fault)
       faultFile.delete()
       collection.delete(Filters.eq("_sequence", report.sequence))
     }).map(_ => Unit)

@@ -10,7 +10,7 @@ import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.client.HttpClientTestStub
-import com.vyulabs.update.distribution.mongo.{UploadStatus, UploadStatusDocument}
+import com.vyulabs.update.distribution.mongo.UploadStatusDocument
 import spray.json.DefaultJsonProtocol._
 import spray.json.enrichAny
 
@@ -41,7 +41,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     waitForSetServiceStates(Seq(state1)).success(true)
 
     Thread.sleep(500)
-    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(1), None)))(
+    assertResult(UploadStatusDocument("state.serviceStates", Some(1), None))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
@@ -50,7 +50,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     waitForSetServiceStates(Seq(state2)).success(true)
 
     Thread.sleep(500)
-    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(2), None)))(
+    assertResult(UploadStatusDocument("state.serviceStates", Some(2), None))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()
@@ -67,7 +67,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     waitForSetServiceStates(Seq(state1)).failure(new IOException("upload error"))
 
     Thread.sleep(500)
-    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(None, Some("upload error"))))(
+    assertResult(UploadStatusDocument("state.serviceStates", None, Some("upload error")))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     val state2 = DistributionServiceState("client2", "instance2", DirectoryServiceState("service2", "directory",
@@ -81,7 +81,7 @@ class ServicesStateUploadTest extends TestEnvironment {
     waitForSetServiceStates(Seq(state3)).success(true)
 
     Thread.sleep(500)
-    assertResult(UploadStatusDocument("state.serviceStates", UploadStatus(Some(3), None)))(
+    assertResult(UploadStatusDocument("state.serviceStates", Some(3), None))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "state.serviceStates")).map(_.head)))))
 
     uploader.stop()

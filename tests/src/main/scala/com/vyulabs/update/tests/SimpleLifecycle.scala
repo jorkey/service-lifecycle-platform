@@ -192,8 +192,8 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
       service = Some(Common.DistributionServiceName))).getOrElse {
       sys.error("Can't get version of distribution server")
     }
-    if (Some(newDistributionVersion) != states.head.payload.state.version) {
-      sys.error(s"Distribution server version ${states.head.payload.state.version} is not equals expected ${newDistributionVersion}")
+    if (Some(newDistributionVersion) != states.head.state.version) {
+      sys.error(s"Distribution server version ${states.head.state.version} is not equals expected ${newDistributionVersion}")
     }
 
     println()

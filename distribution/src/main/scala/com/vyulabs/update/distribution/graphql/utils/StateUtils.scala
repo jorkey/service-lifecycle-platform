@@ -2,8 +2,8 @@ package com.vyulabs.update.distribution.graphql.utils
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.stream.{Materializer}
-import com.mongodb.client.model.{Filters, Sorts}
+import akka.stream.Materializer
+import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.config.DistributionConfig
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -30,13 +30,14 @@ trait StateUtils extends SprayJsonSupport {
   }
 
   def setServiceStates(distribution: DistributionId, instanceStates: Seq[InstanceServiceState])(implicit log: Logger): Future[Unit] = {
-    val documents = instanceStates.foldLeft(Seq.empty[DistributionServiceState])((seq, state) => seq :+ DistributionServiceState(distribution, state))
+    val documents = instanceStates.foldLeft(Seq.empty[DistributionServiceState])((seq, state) => seq :+
+      DistributionServiceState(distribution = distribution, instance = state.instance, service = state.service, directory = state.directory, state.state))
     Future.sequence(documents.map(doc => {
       val filters = Filters.and(
         Filters.eq("distribution", distribution),
-        Filters.eq("payload.service", doc.payload.service),
-        Filters.eq("payload.instance", doc.payload.instance),
-        Filters.eq("payload.directory", doc.payload.directory))
+        Filters.eq("service", doc.service),
+        Filters.eq("instance", doc.instance),
+        Filters.eq("directory", doc.directory))
       collections.State_ServiceStates.update(filters, _ => Some(doc))
     })).map(_ => ())
   }
@@ -44,9 +45,9 @@ trait StateUtils extends SprayJsonSupport {
   def getServicesState(distribution: Option[DistributionId], service: Option[ServiceId],
                        instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[DistributionServiceState]] = {
     val distributionArg = distribution.map { distribution => Filters.eq("distribution", distribution) }
-    val serviceArg = service.map { service => Filters.eq("payload.service", service) }
-    val instanceArg = instance.map { instance => Filters.eq("payload.instance", instance) }
-    val directoryArg = directory.map { directory => Filters.eq("payload.directory", directory) }
+    val serviceArg = service.map { service => Filters.eq("service", service) }
+    val instanceArg = instance.map { instance => Filters.eq("instance", instance) }
+    val directoryArg = directory.map { directory => Filters.eq("directory", directory) }
     val args = distributionArg ++ serviceArg ++ instanceArg ++ directoryArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     collections.State_ServiceStates.find(filters)
@@ -54,6 +55,7 @@ trait StateUtils extends SprayJsonSupport {
 
   def getInstanceServiceStates(distribution: Option[DistributionId], service: Option[ServiceId],
                                instance: Option[InstanceId], directory: Option[ServiceDirectory])(implicit log: Logger): Future[Seq[InstanceServiceState]] = {
-    getServicesState(distribution, service, instance, directory).map(_.map(_.payload))
+    getServicesState(distribution, service, instance, directory).map(_.map(s =>
+      InstanceServiceState(instance = s.instance, service = s.service, directory = s.directory, state = s.state)))
   }
 }

@@ -1,11 +1,12 @@
 package com.vyulabs.update.updater
 
 import com.vyulabs.update.common.common.ThreadTimer
-import com.vyulabs.update.common.config.{WriteLogsConfig, RunServiceConfig}
+import com.vyulabs.update.common.config.{RunServiceConfig, WriteLogsConfig}
 import com.vyulabs.update.common.info.{FaultInfo, LogLine, ServiceNameWithRole}
 import com.vyulabs.update.common.logger.{LogReceiver, PrefixedLogger}
+import com.vyulabs.update.common.logs.LogFormat
 import com.vyulabs.update.common.utils.IoUtils
-import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion, Build}
+import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
@@ -82,8 +83,10 @@ class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     assertResult(Seq(LogLine(logDate, "DEBUG", "module1", "Script is executing", None)))(
       logLines.filter(_.unit == "module1"))
-    assertResult(Seq("Started Service test-service", "Unformatted line"))(
+    assertResult(Seq("Started Service test-service"))(
       logLines.filter(_.unit == "SERVICE").map(_.message))
+    assertResult(Seq("Unformatted line"))(
+      logLines.filter(_.unit == LogFormat.PLAIN_OUTPUT_UNIT).map(_.message))
 
     serviceRunner.stopService()
     assert(!serviceRunner.isServiceRunning())

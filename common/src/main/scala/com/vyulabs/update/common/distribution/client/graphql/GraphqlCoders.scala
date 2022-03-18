@@ -81,13 +81,13 @@ trait StateCoder {
     GraphqlQuery[Seq[DistributionServiceState]]("serviceStates",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service),
         GraphqlArgument("instance" -> instance), GraphqlArgument("directory" -> directory)).filter(_.value != JsNull),
-      "{ distribution payload { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } } }"
+      "{ distribution, instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }"
     )
 
   def getFaultReportsInfo(distribution: Option[DistributionId], service: Option[ServiceId], limit: Option[Int]) =
     GraphqlQuery[Seq[DistributionFaultReport]]("faults",
       Seq(GraphqlArgument("distribution" -> distribution), GraphqlArgument("service" -> service), GraphqlArgument("limit" -> limit, "Int")).filter(_.value != JsNull),
-      "{ distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, length } }}")
+      "{ distribution, fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, time, length } }")
 }
 
 // Mutations

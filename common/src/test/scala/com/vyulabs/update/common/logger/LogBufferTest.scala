@@ -140,7 +140,7 @@ class LogBufferTest extends FlatSpec with Matchers with BeforeAndAfterAll with O
     log.warn("log line 2")
     getMessages(Seq())
     appender.stop()
-    getMessages(Seq("log line 1", "log line 2", "Finished Test"))
+    getMessages(Seq("log line 1", "log line 2", "Finished, Test"))
   }
 
   private def resetPromise(): Unit = {

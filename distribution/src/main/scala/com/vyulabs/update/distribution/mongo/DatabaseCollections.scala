@@ -137,8 +137,8 @@ class DatabaseCollections(db: MongoDb,
   val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.serviceStates")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.instance")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.service.date"), new IndexOptions()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service.date"), new IndexOptions()
       .expireAfter(serviceStatesExpireTimeout.length, serviceStatesExpireTimeout.unit)) else Future()
     _ <- collection.dropItems()
   } yield collection, Sequences, createIndex = createIndices)
@@ -170,10 +170,10 @@ class DatabaseCollections(db: MongoDb,
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
     collection <- db.getOrCreateCollection[BsonDocument]("faults.reports")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.fault")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.service")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("payload.info.time")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.descending("payload.info.time")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("fault")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.service")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.time")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.descending("info.time")) else Future()
   } yield collection, Sequences, createIndex = createIndices)
 
   val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {

@@ -18,6 +18,5 @@ class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     lifecycle.installTestService(true)
     lifecycle.fixTestService()
     lifecycle.updateDistribution(ClientVersion(Build.initialBuild, 1))
-    Thread.sleep(1000000)
   }
 }

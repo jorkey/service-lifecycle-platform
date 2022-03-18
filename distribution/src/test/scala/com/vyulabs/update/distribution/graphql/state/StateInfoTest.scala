@@ -116,15 +116,13 @@ class StateInfoTest extends TestEnvironment {
       """, variables = JsObject("time" -> new Date().toJson))))
 
     assertResult((OK,
-      ("""{"data":{"serviceStates":[{"payload":{"instance":"instance1","state":{"version":{"distribution":"test","developerBuild":[1,2,4],"clientBuild":0}}}}]}}""").parseJson))(
+      ("""{"data":{"serviceStates":[{"instance":"instance1","state":{"version":{"distribution":"test","developerBuild":[1,2,4],"clientBuild":0}}}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query {
           serviceStates (distribution: "consumer", service: "service1") {
-            payload {
-              instance
-              state {
-                version { distribution, developerBuild, clientBuild }
-              }
+            instance
+            state {
+              version { distribution, developerBuild, clientBuild }
             }
           }
         }

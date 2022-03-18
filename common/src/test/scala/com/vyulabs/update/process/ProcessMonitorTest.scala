@@ -40,7 +40,8 @@ class ProcessMonitorTest extends FlatSpec with Matchers {
 
     val process = result(ChildProcess.start("/bin/bash", Seq(script.toString)))
     process.readOutput(onOutput = lines => lines.foreach { case (line, nl) => println(line) })
-    new ProcessMonitor(process, RestartConditions(None, Some(MaxCpu(100, 5)), None, 100)).start()
+    new ProcessMonitor(process, RestartConditions(None,
+      Some(MaxCpu(100/Runtime.getRuntime().availableProcessors()-10, 5)), None, 100)).start()
     result(process.onTermination())
   }
 }

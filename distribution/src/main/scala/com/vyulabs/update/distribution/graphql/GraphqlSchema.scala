@@ -73,7 +73,7 @@ object GraphqlSchema {
   val ServiceStatesArg = Argument("states", ListInputType(ServiceStateInputType))
   val InstanceServiceStatesArg = Argument("states", ListInputType(InstanceServiceStateInputType))
   val LogLinesArg = Argument("logs", ListInputType(LogLineInputType))
-  val ServiceFaultReportInfoArg = Argument("fault", ServiceFaultReportInputType)
+  val ServiceFaultReportArg = Argument("fault", ServiceFaultReportInputType)
   val ArgumentsArg = Argument("arguments", ListInputType(StringType))
   val AccessTokenArg = Argument("accessToken", StringType)
   val UrlArg = Argument("url", StringType)
@@ -527,13 +527,13 @@ object GraphqlSchema {
             c.arg(ServiceArg), c.arg(InstanceArg), c.arg(DirectoryArg), c.arg(ProcessArg), c.arg(OptionTaskArg), c.arg(LogLinesArg)).map(_ => true)
         }),
       Field("addFaultReportInfo", BooleanType,
-        arguments = ServiceFaultReportInfoArg :: Nil,
+        arguments = ServiceFaultReportArg :: Nil,
         tags = Authorized(AccountRole.Updater, AccountRole.DistributionConsumer) :: Nil,
         resolve = c => {
           if (c.ctx.accountInfo.get.role == AccountRole.Updater) {
-            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distribution, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
+            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.workspace.config.distribution, c.arg(ServiceFaultReportArg)).map(_ => true)
           } else {
-            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.account, c.arg(ServiceFaultReportInfoArg)).map(_ => true)
+            c.ctx.workspace.addServiceFaultReportInfo(c.ctx.accessToken.get.account, c.arg(ServiceFaultReportArg)).map(_ => true)
           }
         }),
 

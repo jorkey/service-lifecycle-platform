@@ -33,16 +33,14 @@ class ServiceLogsTest extends TestEnvironment {
 
     assertResult((OK,
       ("""{"data":{"logs":[""" +
-       """{"payload":{"level":"INFO","message":"line1"}},""" +
-       """{"payload":{"level":"DEBUG","message":"line2"}},""" +
-       """{"payload":{"level":"ERROR","message":"line3"}}]}}""").parseJson))(
+       """{"level":"INFO","message":"line1"},""" +
+       """{"level":"DEBUG","message":"line2"},""" +
+       """{"level":"ERROR","message":"line3"}}]}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query logs($$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           logs (service: $$service, instance: $$instance, process: $$process, directory: $$directory, from: "0") {
-            payload {
-              level
-              message
-            }
+            level
+            message
           }
         }
       """, variables = JsObject(
@@ -64,20 +62,20 @@ class ServiceLogsTest extends TestEnvironment {
 
     addLogLine("INFO", "unit1", "line2")
     addLogLine("DEBUG", "unit2", "line3")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[{"sequence":13,"payload":{"level":"DEBUG","message":"line3"}}]}}"""))
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[{"sequence":13,"level":"DEBUG","message":"line3"}]}}"""))
 
     addLogLine("ERROR", "unit1", "line4")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[{"sequence":14,"payload":{"level":"ERROR","message":"line4"}}]}}"""))
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[{"sequence":14,"level":"ERROR","message":"line4"}]}}"""))
 
     val response2 = subscribeLogs(11)
     val source2 = response2.value.asInstanceOf[Source[ServerSentEvent, NotUsed]]
     val input2 = source2.runWith(TestSink.probe[ServerSentEvent])
 
     input2.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[""" +
-      """{"sequence":11,"payload":{"level":"INFO","message":"line1"}},""" +
-      """{"sequence":12,"payload":{"level":"INFO","message":"line2"}},""" +
-      """{"sequence":13,"payload":{"level":"DEBUG","message":"line3"}},""" +
-      """{"sequence":14,"payload":{"level":"ERROR","message":"line4"}}]}}"""))
+      """{"sequence":11,"level":"INFO","message":"line1"},""" +
+      """{"sequence":12,"level":"INFO","message":"line2"},""" +
+      """{"sequence":13,"level":"DEBUG","message":"line3"},""" +
+      """{"sequence":14,"level":"ERROR","message":"line4"}}]}"""))
   }
 
   it should "subscribe task logs" in {
@@ -92,14 +90,14 @@ class ServiceLogsTest extends TestEnvironment {
     addTaskLogLine("DEBUG", "unit2", "line2")
 
     input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[""" +
-      """{"sequence":21,"payload":{"level":"INFO","message":"line1"}},""" +
-      """{"sequence":22,"payload":{"level":"DEBUG","message":"line2"}}]}}"""))
+      """{"sequence":21,"level":"INFO","message":"line1"},""" +
+      """{"sequence":22,"level":"DEBUG","message":"line2"}}]}"""))
 
     addLogLine("ERROR", "unit1", "line1")
     input1.expectNoMessage()
 
     addTaskLogLine("DEBUG", "unit1", "line3")
-    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[{"sequence":24,"payload":{"level":"DEBUG","message":"line3"}}]}}"""))
+    input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[{"sequence":24,"level":"DEBUG","message":"line3"}]}}"""))
   }
 
   def addLogLine(level: String, unit: String, message: String): Unit = {
@@ -131,10 +129,8 @@ class ServiceLogsTest extends TestEnvironment {
             from: $$from
           ) {
             sequence
-            payload {
-              level
-              message
-            }
+            level
+            message
           }
         }
       """, variables = JsObject("from" -> JsNumber(from))))
@@ -167,10 +163,8 @@ class ServiceLogsTest extends TestEnvironment {
             from: $$from
           ) {
             sequence
-            payload {
-              level
-              message
-            }
+            level
+            message
           }
         }
       """, variables = JsObject("from" -> JsNumber(from))))

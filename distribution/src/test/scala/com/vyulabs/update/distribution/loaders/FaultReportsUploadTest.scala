@@ -12,7 +12,7 @@ import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.client.HttpClientTestStub
-import com.vyulabs.update.distribution.mongo.{UploadStatus, UploadStatusDocument}
+import com.vyulabs.update.distribution.mongo.UploadStatusDocument
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
@@ -39,8 +39,10 @@ class FaultReportsUploadTest extends TestEnvironment {
     val uploader = new StateUploader(distributionName, collections, distributionDir, distributionClient)
     uploader.start()
 
-    val report = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
-      Seq(FileInfo("file1", new Date(), 1234))))
+    val report = DistributionFaultReport(distributionName, "fault1",
+        FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory",
+          ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
+          Seq(FileInfo("file1", new Date(), 1234)))
     result(collections.Faults_ReportsInfo.insert(report))
     waitForFaultReportUpload("fault1").success()
     waitForAddServiceFaultReportInfo(report).success(true)
@@ -56,20 +58,22 @@ class FaultReportsUploadTest extends TestEnvironment {
     val uploader = new StateUploader(distributionName, collections, distributionDir, distributionClient)
     uploader.start()
 
-    val report1 = DistributionFaultReport(distributionName, ServiceFaultReport("fault1", FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
-      Seq(FileInfo("file2", new Date(), 1234))))
+    val report1 = DistributionFaultReport(distributionName, "fault1",
+      FaultInfo(new Date(), "instance1", "service1", Some("role1"), "directory",
+        ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1), 0)), None, None, None, None), Seq()),
+        Seq(FileInfo("file2", new Date(), 1234)))
     result(collections.Faults_ReportsInfo.insert(report1))
     waitForFaultReportUpload( "fault1").failure(new IOException("upload error"))
 
     Thread.sleep(500)
-    assertResult(UploadStatusDocument("faults.reports", UploadStatus(None, Some("upload error"))))(
+    assertResult(UploadStatusDocument("faults.reports", None, Some("upload error")))(
       result(result(collections.State_UploadStatus.map(_.find(Filters.eq("component", "faults.reports")).map(_.head)))))
 
     waitForFaultReportUpload( "fault1").success()
     waitForAddServiceFaultReportInfo(report1).success(true)
 
-    val report2 = DistributionFaultReport(distributionName, ServiceFaultReport("fault2", FaultInfo(new Date(), "instance2", "service2", Some("role2"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()),
-      Seq(FileInfo("file2", new Date(), 1234))))
+    val report2 = DistributionFaultReport(distributionName, "fault2", FaultInfo(new Date(), "instance2", "service2", Some("role2"), "directory", ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(2), 0)), None, None, None, None), Seq()),
+      Seq(FileInfo("file2", new Date(), 1234)))
     result(collections.Faults_ReportsInfo.insert(report2))
     waitForFaultReportUpload( "fault2").success()
     waitForAddServiceFaultReportInfo(report2).success(true)
@@ -89,6 +93,7 @@ class FaultReportsUploadTest extends TestEnvironment {
   }
 
   def waitForAddServiceFaultReportInfo(report: DistributionFaultReport): Promise[Boolean] = {
-    httpClient.waitForMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" -> report.payload.toJson)))
+    httpClient.waitForMutation("addFaultReportInfo", Seq(GraphqlArgument("fault" ->
+      ServiceFaultReport(report.fault, report.info, report.files).toJson, "ServiceFaultReportInput")))
   }
 }

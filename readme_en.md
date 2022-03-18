@@ -250,46 +250,46 @@ Clone source repository v-update to distribution server:
 
 `git clone git@github.com:jorkey/v-update.git`
 
-Выполните команду в каталоге репозитория:
+Execute the command in the repository directory:
 
 `sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? [persistent=?]"`
 
-Вместо `?` подставьте значения:
+Replace `?` with values:
 - _cloudProvider_
-  - тип облачного сервиса, если сервер дистрибуции находится в облаке:
-      - Azure - единственное на данный момент поддерживаемое облако
+  - type of cloud service, if the distribution server is in the cloud:
+      - Azure - the only currently supported cloud
 - _distribution_
-  - уникальное имя сервера дистрибуции, без пробелов
+  - unique distribution server name, no spaces
 - _directory_
-  - каталог для установки
+  - installation directory
 - _host_
-  - DNS имя для сервиса
+  - DNS name for the service
 - _port_
-  - порт для сервиса
+  - TCP port
 - _[sslKeyStoreFile]_
-  - файл с приватным ключом и сертификатом для сервиса https
+  - file with private key and certificate for HTTPS service
 - _[sslKeyStorePassword]_
-  - пароль к файлу с приватным ключом и сертификатом для сервиса https
+  - password to file with private key and certificate for HTTPS service
 - _title_
-  - короткое описание сервера дистрибуции
+  - title of distribution server
 - _mongoDbConnection_
-  - URL подсоединения к MongoDB, например mongodb://localhost:27017
+  - MongoDB connection URL, for example mongodb://localhost:27017
 - _mongoDbName_
-  - имя базы данных MongoDB
+  - MongoDB database name
 - _persistent_
-  - в настоящее время только для установки на Linux. 
-  - _true_, если сервер дистрибуции устанавливается как сервис systemd Linux. 
+  - currently only for installation on Linux
+  - _true_, if the distribution server is installed as a Linux systemd service 
 
-После завершения команды должен запуститься процесс сервера дострибуции.
+After the command completes, the distribution server process should start.
 
-#### Установка сервера дистрибуции с другого сервера дистрибуции
+#### Installing a distribution server from another distribution server
 
-Заведите учётную запись для нового _customer_ на исходном сервере дистрибуции (см [Учётные записи сервисов](#services_accounts)).
+Create an account for the new _customer_ on the source distribution server (see [Service accounts](#services_accounts)).
 
-Установите базу данных MongoDB.
+Install the MongoDB database.
 
-Скопируйте во временный каталог из каталога исходного сервера дистрибуции файл _.update.sh_.
-Создайте там же скрипт _clone_distribution.sh_:
+Copy the file _.update.sh_ to the temporary directory from the directory of the source distribution server.
+Create the script _clone_distribution.sh_ in the same place:
 
 ```
 #!/bin/bash -e
@@ -300,159 +300,157 @@ serviceToRun=builder
 distributionUrl=?
 accessToken=?
 
-. .update.sh buildConsumerDistribution providerUrl=$distributionUrl [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
+. .update.sh buildConsumerDistribution providerUrl=? [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
 ```
 
-Вместо `?` подставьте значения:
-- _distributionUrl_
-  - URL исходного сервера дистрибуции
-- _accessToken_
-  - Access Token сервиса _builder_ исходного сервера дистрибуции
-    - Зайдите в _Settings/Accounts/Services_ и нажмите на значок ключа для _builder_.  
+Replace `?` with values:
+- _providerUrl_
+  - source distribution server URL
 - _cloudProvider_
-  - тип облачного сервиса, если сервер дистрибуции находится в облаке:
-    - Azure - единственное на данный момент поддерживаемое облако
+  - type of cloud service, if the distribution server is in the cloud
+    - Azure - the only currently supported cloud
 - _distribution_
-  - уникальное имя сервера дистрибуции
+  - distribution server unique name
 - _directory_
-  - каталог для установки
+  - installation directory
 - _host_
-  - DNS имя для сервиса
+  - DNS name for the service
 - _port_
-  - порт для сервиса
+  - TCP port
 - _[sslKeyStoreFile]_
-  - файл с приватным ключом и сертификатом для сервиса https
+  - file with private key and certificate for HTTPS service
 - _[sslKeyStorePassword]_
-  - пароль к файлу с приватным ключом и сертификатом для сервиса https
+  - password to file with private key and certificate for HTTPS service
 - _title_
-  - короткое описание сервера дистрибуции
+  - title of distribution server
 - _mongoDbConnection_
-  - URL подсоединения к MongoDB, например mongodb://localhost:27017
+  - MongoDB connection URL, for example mongodb://localhost:27017
 - _mongoDbName_
-  - имя базы данных MongoDB
+  - MongoDB database name
 - _provider_
-  - имя исходного сервера дистрибуции
+  - source distribution server name
 - _consumerAccessToken_
-  - Access Token для учётной записи _consumer_
-    - Зайдите в _Settings/Accounts/Distribution Consumers_ и нажмите на значок ключа для соответствующей записи.
+  - Access Token for _consumer_ account
+    - Go to _Settings/Accounts/Distribution Consumers_ and click on the key icon for the relevant entry.
 - _testConsumerMatch_
-  - имя сервера дистрибуции тестовой системы
+  - test installation distribution server name
 - _persistent_
-  - в настоящее время только для установки на Linux.
-  - _true_, если сервер дистрибуции устанавливается как сервис systemd Linux.
+  - currently only for installation on Linux
+  - _true_, if the distribution server is installed as a Linux systemd service
 
-Выполните скрипт _clone_distribution.sh_. 
-После завершения скрипта должен запуститься процесс сервера дистрибуции.
+Run script _clone_distribution.sh_.
+After the script completes, the distribution server process will start.
 
-### Настройка сервера дистрибуции
+### Distribution server setup
 
 #### Конфигурационный файл 
 
-Файл конфигурации _distribution.json_ находится в рабочем каталоге сервера дистрибуции и имеет следующий формат:
+The _distribution.json_ configuration file is located in the working directory of the distribution server and has the following format:
 
-- _distribution_ : уникальное имя сервера дистрибуции
-- _title_ : заголовок сервера дистрибуции
-- _instance_ : идентификатор инстанции виртуальной мащины 
-- _jwtSecret_ : ключ кодирования JWT
-- _mongoDb_ - настройка подключения к Mongo DB
-  - _connection_ : URL подключения 
-  - _name_ : имя базы
+- _distribution_ : distribution server unique name
+- _title_ : distribution server header
+- _instance_ : virtual machine instance identifier
+- _jwtSecret_ : encoding key JWT
+- _mongoDb_ - setting up a connection to Mongo DB
+  - _connection_ : URL подключения
+  - _name_ : base name
 - _network_
-  - _port:number_ : номер серверного порта http или https
-  - _[ssl]_ - настройки для сервиса https
-    - _keyStoreFile_ : файл jks с ключами и сертификатами
-    - _keyStorePassword_ : пароль доступа к key store
-- _versions_ - история версий
-  - _maxHistorySize:number_ : максимальное количество версий сервиса в истории
-- _serviceStates_ - состояние сервисов 
-  - _expirationTimeout:FiniteDuration_ : длительность хранения в базе последнего состояния сервиса. 
-     Если в течение этого времени состояние не обновляется, инстанция сервиса считается умершей.
-- _logs_ - журналы сервисов
-  - _expirationTimeout:FiniteDuration_ : длительность хранения в базе записи в журнал
-- _faultReports_ - отчёты о сбоях
-  - _expirationTimeout:FiniteDuration_ : длительность хранения в базе записи отчёта о сбое
-  - _maxReportsCount:number_ : максимальное количество отчётов о сбоях в базе
+  - _port:number_ : HTTP or HTTPS server port number
+  - _[ssl]_ - settings for HTTPS service
+    - _keyStoreFile_ : JKS file with keys and certificates
+    - _keyStorePassword_ : key store access password
+- _versions_ - version history
+  - _maxHistorySize:number_ : maximum number of service versions in history
+- _serviceStates_ - state of services
+  - _expirationTimeout:FiniteDuration_ : duration of storage of the last state of the service.
+    If the state is not updated during this time, the service instance is considered dead.
+- _logs_ - logs of services
+  - _expirationTimeout:FiniteDuration_ : duration of log record storage in the database
+- _faultReports_ - fault reports
+  - _expirationTimeout:FiniteDuration_ : duration of fault report storage in the database
+  - _maxReportsCount:number_ : maximum number of fault reports in the database
 
-Структура _FiniteDuration_:
-- unit - единицы времени: "SECONDS", "HOURS", "MINUTES", "DAYS"
-- length:number - количество единиц
+_FiniteDuration_ format:
+- unit - unit of time: "SECONDS", "HOURS", "MINUTES", "DAYS"
+- length:number - number of units
   
-### Работа сервера дистрибуции
+### Functions of distribution server
 
 #### Запросы GraphQL
 
-Сервер дистрибуции принимает запросы GraphQL от пользователей, от других сервисов v-update и других серверов дистрибуции.
-Запросы GraphQL управляют:
-  - учётными записями
-  - настройками связи между серверами дистрибуции
-  - репозиториями исходных кодов
-  - профилями сервисов
-  - версиями разработчика
-  - желательными версиями разработчика
-  - версиями клиента
-  - желательными версиями клиента
-  - сохранением/поиском состояния сервисов
-  - сохранением/поиском журналов сервисов
-  - сохранением/поиском отчётов о сбоях
+The distribution server accepts GraphQL requests from users, other v-update services, and other distribution servers.
+GraphQL queries serve:
+  - accounts
+  - distribution servers connection settings
+  - source code repositories
+  - profile of services
+  - developer versions
+  - desired developer versions
+  - client versions
+  - desired client versions
+  - store/find state of services
+  - store/find logs of services
+  - store/find fault reports
 
-Для создания версий сервер дистрибуции запускает _builder_ локально или на другом сервере дистрибуции.
+To build versions, the distribution server runs _builder_ locally or on another distribution server.
 
-#### Запись журналов
+#### Logging
 
-Журналы сервисов, включая сам _distribution_, записываются в коллекцию MongoDB.
-Каждая запись коллекции содержит одну запись журнала и состоит из следующих полей:
-- _service_ - название сервиса
-- _instance_ - идентификатор инстанции сервера, на котором выполняется сервис 
-- _directory_ - текущий каталог процесса
-- _process_ - идентификатор процесса
-- _[task]_ - если запись получена в процессе выполнения задачи, идентификатор задачи
-- payload 
-  - _time:Date_ - время и дата создания записи
-  - _level_ - уровень отладки
-  - _unit_ - функциональный блок
-  - _message_ - сообщение журнала
-  - _terminationStatus:Boolean_ - статус завершения 
-    - если определена _task_ - задачи
-    - иначе - процесса  
+Service logs, including logs of _distribution_ itself, are written to a MongoDB collection.
+Each entry in the collection contains one log entry and consists of the following fields:
+- _service_ - service name
+- _instance_ - instance identifier of the server on which the service is running 
+- _directory_ - current process directory
+- _process_ - process identifier
+- _[task]_ -  the task identifier, if the entry was received while the task was running
+- _time:Date_ - time and data of log record
+- _level_ - debug level
+- _unit_ - functional unit
+- _message_ - lgo message
+- _terminationStatus:Boolean_ - termination status
+  - true - success
+  - false - error 
 
-Схема GraphQL имеет запрос для поиска записей журналов по разным критериям.
-Можно также выполнить GraphQL _subscription_ на журнал записей, и тогда новые записи в журнал будут
-поступать клиенту GraphQL в реальном времени.
+The GraphQL schema has a query to search for log entries by different criteria.
+It is also possible to do a GraphQL _subscription_ on the logs, and then new records in the log will be
+flow to the GraphQL client in real time.
 
-#### Задачи
+#### Tasks
 
-Действия, асинхронные к запросам GraphQL, оформляются в задачи.
-Информация о задачах записывается в коллекцию MongoDB в следующем формате:
-- _id_ - идентификатор задачи
-- _type_ - тип задачи
-- _parameters_ - набор параметров, в формате
-  - _name_ - имя параметра
-  - _value_ - значение параметра
-- _creationTime:Date_ - время и дата создания задачи
+Actions asynchronous to GraphQL queries are framed as tasks.
+Task information is written to the MongoDB collection in the following format:
 
-Журнал выполнения и статус завершения задачи можно получить из журналов.
+Actions asynchronous to GraphQL queries are executed in tasks.
+Task information is written to a MongoDB collection in the following format:
+- _id_ - task identifier
+- _type_ - task type
+- _parameters_ - set of parameters, in the format:
+  - _name_ - parameter name
+  - _value_ - parameter value
+- _creationTime:Date_ - time and data when task is created
+
+The execution log and task completion status can be retrieved from the logs.
 
 <a name="service_state"></a>
-#### Обработка состояния сервисов
+#### Services state handling
 
-_Updater_ периодически присылает _distribution_ состояние выполняющихся сервисов. 
-Состояние сервисов записываются в коллекцию MongoDB, и на локальный диск.
+_Updater_ periodically sends to distribution server status of running services.
+The state of the services is written to the MongoDB collection, and to the local disk.
 
-Формат записи:
-- _distribution_ - идентификатор сервера дистрибуции
-- _payload:ServiceState_
-  - _instance_ - идентификатор инстанции
-  - _service_ - название сервиса
-  - _directory_ - рабочий каталог сервиса
-  - _state:ServiceState_ - состояние сервиса
-    - _time_ - время получения состояния
-    - _[installTime]_ - время, когда сервис был установлен
-    - _[startTime]_ - время запуска сервиса
-    - _[version]_ - текущая версия сервиса
-    - _[updateToVersion]_ - если сервис в данный момент обновляется, целевая версия
-    - _[updateError]_ - ошибка обновления
-    - _[failuresCount]_ - количество сбоев сервиса после установки и запуска _updater_
-    - _[lastExitCode]_ - последний код завершения
+State record format:
+- _distribution_ - identified of distribution server
+- _instance_ - instance identifier
+- _service_ - service name
+- _directory_ - service working directory
+- _state:ServiceState_ - service state
+  - _time_ - time of state
+  - _[installTime]_ - installation time
+  - _[startTime]_ - service start time
+  - _[version]_ - current version of service
+  - _[updateToVersion]_ - target version, if the service is currently being updated
+  - _[updateError]_ - update error
+  - _[failuresCount]_ - count of service failures after install and run _updater_
+  - _[lastExitCode]_ - last exit code
 
 #### Обработка отчётов о сбоях
 

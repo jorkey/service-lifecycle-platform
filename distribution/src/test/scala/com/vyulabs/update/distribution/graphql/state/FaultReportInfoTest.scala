@@ -33,22 +33,20 @@ class FaultReportInfoTest extends TestEnvironment {
     addFaultReportInfo("fault2", "service2", 2, new Date())
 
     assertResult((OK,
-      ("""{"data":{"faults":[{"distribution":"consumer","payload":{"fault":"fault2","info":{"service":"service2","instance":"instance1"},"files":[{ "path": "core", "length": 123456789 }, { "path": "log/service.log", "length": 12345 }]}}]}}""").parseJson))(
+      ("""{"data":{"faults":[{"distribution":"consumer","fault":"fault2","info":{"service":"service2","instance":"instance1"},"files":[{ "path": "core", "length": 123456789 }, { "path": "log/service.log", "length": 12345 }]}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition,
         adminContext, graphql"""
           query FaultsQuery($$service: String!) {
             faults (service: $$service) {
               distribution
-              payload {
-                fault
-                info {
-                  service
-                  instance
-                }
-                files {
-                  path
-                  length
-                }
+              fault
+              info {
+                service
+                instance
+              }
+              files {
+                path
+                length
               }
             }
           }
@@ -105,8 +103,8 @@ class FaultReportInfoTest extends TestEnvironment {
                 logTail: []
               },
               files: [
-                { path: "core", length: 123456789 },
-                { path: "log/service.log", length: 12345 }
+                { path: "core", time: $$time, length: 123456789 },
+                { path: "log/service.log", time: $$time, length: 12345 }
               ]
             }
           )
@@ -120,14 +118,13 @@ class FaultReportInfoTest extends TestEnvironment {
   def checkReportExists(id: FaultId, service: ServiceId, sequence: Long, time: Date): Unit = {
     assertResult(Seq(
       Sequenced(sequence, DistributionFaultReport("consumer",
-        ServiceFaultReport(id,
-          FaultInfo(time, "instance1", service, None, "directory1", ServiceState(time, None, None, None, None, None, None, None), Seq.empty),
-          Seq(FileInfo("core", new Date(), 123456789), FileInfo("log/service.log", new Date(), 12345))))))
-    )(result(faultsInfoCollection.findSequenced(Filters.eq("payload.fault", id))))
+        id, FaultInfo(time, "instance1", service, None, "directory1", ServiceState(time, None, None, None, None, None, None, None), Seq.empty),
+        Seq(FileInfo("core", time, 123456789), FileInfo("log/service.log", time, 12345)))))
+    )(result(faultsInfoCollection.findSequenced(Filters.eq("fault", id))))
   }
 
   def checkReportNotExists(id: FaultId): Unit = {
-    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("payload.fault", id))))
+    assertResult(Seq.empty)(result(faultsInfoCollection.find(Filters.eq("fault", id))))
     assert(!distributionDir.getFaultReportFile(id).exists())
   }
 

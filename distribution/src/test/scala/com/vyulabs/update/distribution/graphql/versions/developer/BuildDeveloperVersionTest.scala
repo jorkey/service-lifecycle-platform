@@ -126,10 +126,8 @@ class BuildDeveloperVersionTest extends TestEnvironment {
             from: 1
           ) {
             sequence
-            payload {
-              level
-              message
-            }
+            level
+            message
           }
         }
       """, variables = JsObject("task" -> JsString(task))))
@@ -141,8 +139,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val json = e.data.parseJson
     val messages = json.asJsObject.fields.get("data").get
       .asJsObject.fields.get("subscribeLogs").get.asInstanceOf[JsArray]
-      .elements.map(_.asJsObject.fields.get("payload").get.asJsObject
-      .fields.get("message").get.asInstanceOf[JsString].value)
+      .elements.map(_.asJsObject.fields.get("message").get.asInstanceOf[JsString].value)
     println(s"messages ${messages}")
     if (!messages.contains(message)) {
       expectMessage(input, message)
