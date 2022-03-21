@@ -11,9 +11,8 @@ import spray.json.DefaultJsonProtocol._
 import spray.json._
 
 import java.io.File
-import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.Duration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 21.02.19.
@@ -101,7 +100,7 @@ object BuilderMain extends App {
         val httpClient = new HttpClientImpl(distributionUrl)
         httpClient.accessToken = Some(accessToken)
         val asyncDistributionClient = new DistributionClient(httpClient)
-        val distributionClient = new SyncDistributionClient(asyncDistributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+        val distributionClient = new SyncDistributionClient(asyncDistributionClient, Duration.Inf)
 
         command match {
           case "buildDeveloperVersion" =>

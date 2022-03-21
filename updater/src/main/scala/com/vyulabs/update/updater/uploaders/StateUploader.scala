@@ -16,7 +16,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[ServiceNameWithRole],
                     distributionClient: DistributionClient[SyncSource])(implicit executionContext: ExecutionContext, log: Logger) extends Thread { self =>
-  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(10, TimeUnit.SECONDS))
 
   private val services = servicesNames.foldLeft(Map.empty[ServiceNameWithRole, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(directory, name, () => update()))

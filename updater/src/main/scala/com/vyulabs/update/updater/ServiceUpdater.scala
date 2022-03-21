@@ -12,9 +12,8 @@ import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.updater.uploaders.FaultUploaderImpl
 import org.slf4j.Logger
 
-import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.Duration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
@@ -56,7 +55,7 @@ class ServiceUpdater(instance: InstanceId, service: ServiceNameWithRole,
   }
 
   def beginInstall(newVersion: ClientDistributionVersion): Boolean = {
-    val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(60, TimeUnit.SECONDS))
+    val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, Duration.Inf)
     try {
       log.info("Begin install")
 

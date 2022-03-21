@@ -20,7 +20,7 @@ import java.io.File
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Failure, Success}
 
 /**
@@ -99,8 +99,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
                                     testConsumer: Option[String], author: String): Boolean = {
     this.providerDistributionName = Some(provider)
     adminProviderClient = Some(new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(providerURL, Some(consumerAccessToken))),
-        FiniteDuration(60, TimeUnit.SECONDS)))
+      new DistributionClient(new HttpClientImpl(providerURL, Some(consumerAccessToken))), Duration.Inf))
 
     log.info("")
     log.info(s"########################### Download and generate client versions")
@@ -383,7 +382,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
     }
 
     adminDistributionClient = Some(new SyncDistributionClient(
-      new DistributionClient(new HttpClientImpl(makeUrlWithCredentials("admin"))), FiniteDuration(60, TimeUnit.SECONDS)))
+      new DistributionClient(new HttpClientImpl(makeUrlWithCredentials("admin"))), Duration.Inf))
 
     startDistributionServer()
   }

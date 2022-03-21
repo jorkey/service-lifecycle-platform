@@ -7,10 +7,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import spray.json.JsonReader
 
 import java.io.File
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Awaitable, ExecutionContext}
 
-class SyncDistributionClient[Source[_]](client: DistributionClient[Source], waitDuration: FiniteDuration)(implicit executionContext: ExecutionContext) {
+class SyncDistributionClient[Source[_]](client: DistributionClient[Source], waitDuration: Duration)(implicit executionContext: ExecutionContext) {
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   def available(): Boolean = {
