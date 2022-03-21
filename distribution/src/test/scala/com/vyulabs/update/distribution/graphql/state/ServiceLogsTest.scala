@@ -35,7 +35,7 @@ class ServiceLogsTest extends TestEnvironment {
       ("""{"data":{"logs":[""" +
        """{"level":"INFO","message":"line1"},""" +
        """{"level":"DEBUG","message":"line2"},""" +
-       """{"level":"ERROR","message":"line3"}}]}""").parseJson))(
+       """{"level":"ERROR","message":"line3"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query logs($$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           logs (service: $$service, instance: $$instance, process: $$process, directory: $$directory, from: "0") {
@@ -75,7 +75,7 @@ class ServiceLogsTest extends TestEnvironment {
       """{"sequence":11,"level":"INFO","message":"line1"},""" +
       """{"sequence":12,"level":"INFO","message":"line2"},""" +
       """{"sequence":13,"level":"DEBUG","message":"line3"},""" +
-      """{"sequence":14,"level":"ERROR","message":"line4"}}]}"""))
+      """{"sequence":14,"level":"ERROR","message":"line4"}]}}"""))
   }
 
   it should "subscribe task logs" in {
@@ -91,7 +91,7 @@ class ServiceLogsTest extends TestEnvironment {
 
     input1.requestNext(ServerSentEvent("""{"data":{"subscribeLogs":[""" +
       """{"sequence":21,"level":"INFO","message":"line1"},""" +
-      """{"sequence":22,"level":"DEBUG","message":"line2"}}]}"""))
+      """{"sequence":22,"level":"DEBUG","message":"line2"}]}}"""))
 
     addLogLine("ERROR", "unit1", "line1")
     input1.expectNoMessage()

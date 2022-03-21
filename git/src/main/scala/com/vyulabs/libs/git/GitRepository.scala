@@ -341,19 +341,26 @@ object GitRepository {
     if (!directory.exists()) {
       cloneRepository(uri, branch, directory, cloneSubmodules)
     } else {
-      openAndPullRepository(uri, branch, directory) match {
-        case None =>
-          if (!IoUtils.deleteFileRecursively(directory)) {
-            return None
-          }
-          cloneRepository(uri, branch, directory, cloneSubmodules)
-        case rep =>
-          rep
+      if (uri.startsWith("file://")) {
+        if (!IoUtils.deleteFileRecursively(directory)) {
+          return None
+        }
+        cloneRepository(uri, branch, directory, cloneSubmodules)
+      } else {
+        openAndPullRepository(uri, branch, directory) match {
+          case None =>
+            if (!IoUtils.deleteFileRecursively(directory)) {
+              return None
+            }
+            cloneRepository(uri, branch, directory, cloneSubmodules)
+          case rep =>
+            rep
+        }
       }
     }
   }
 
-  def openAndPullRepository(uri: String, branch: String, directory: File)(implicit log: Logger): Option[GitRepository] = {
+  def openAndPullRepository(url: String, branch: String, directory: File)(implicit log: Logger): Option[GitRepository] = {
     log.info(s"Open and pull repository in directory ${directory}")
     var attempt = 1
     while (true) {
@@ -361,20 +368,15 @@ object GitRepository {
       try {
         val git = Git.open(directory)
         toClose = Some(git)
-        val url = git.getRepository.getConfig().getString("remote", "origin", "url")
-        if (url != uri) {
-          log.info(s"Current URL ${url} != ${uri}")
+        val currentUrl = git.getRepository.getConfig().getString("remote", "origin", "url")
+        if (currentUrl != url) {
+          log.info(s"Current URL ${currentUrl} != ${url}")
           return None
         }
         if (git.getRepository.getBranch() != branch) {
           log.info(s"Current branch is ${git.getRepository.getBranch()}. Need branch ${branch}")
           return None
         }
-        if (!url.startsWith("file://")) {
-//            03.03.2022, 21:13:06	ERROR	 Open Git repository error
-//            03.03.2022, 21:13:06	INFO	 org.eclipse.jgit.api.errors.NoHeadException: Cannot check out from unborn branch
-//            03.03.2022, 21:13:06	INFO	 	at org.eclipse.jgit.api.PullCommand.call(PullCommand.java:245)
-//            03.03.2022, 21:13:06	INFO	 	at com.vyulabs.libs.git.GitRepository$.openAndPullRepository(GitRepository.scala:379)
 //          val walk = SubmoduleWalk.forIndex(git.getRepository)
 //          while (walk.next) {
 //            val submoduleRepository = walk.getRepository
@@ -383,8 +385,7 @@ object GitRepository {
 //              submoduleRepository.close
 //            }
 //          }
-          git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
-        }
+        git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
         toClose = None
         return Some(new GitRepository(git))
       } catch {

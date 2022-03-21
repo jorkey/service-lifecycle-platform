@@ -85,17 +85,17 @@ export const FaultsTable = (props: FaultsTableParams) => {
   const rows = faults
     .map((fault, row) => (
       new Map<string, GridTableCellParams>([
-        ['time', { value: fault.payload.info.time }],
+        ['time', { value: fault.info.time }],
         ['distribution', { value: fault.distribution }],
-        ['service', { value: fault.payload.info.service }],
+        ['service', { value: fault.info.service }],
         ['version', { value:
-            fault.payload.info.state.version?Version.clientDistributionVersionToString(fault.payload.info.state.version):'' }],
+            fault.info.state.version?Version.clientDistributionVersionToString(fault.info.state.version):'' }],
         ['download', { value: [
           <Button key='0'
                   onClick={
                     () => {
-                      download(`http://${development?'localhost:8000':window.location.host}/load/fault-report/` + fault.payload.fault,
-                `fault-${fault.payload.info.service}-${fault.payload.info.time.toString()}`)
+                      download(`http://${development?'localhost:8000':window.location.host}/load/fault-report/` + fault.fault,
+                `fault-${fault.info.service}-${fault.info.time.toString()}`)
                     }
                   }>
             <DownloadIcon/>

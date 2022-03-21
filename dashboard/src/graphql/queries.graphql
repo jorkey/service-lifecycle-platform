@@ -123,7 +123,7 @@ mutation setClientDesiredVersions ($versions: [ClientDesiredVersionDeltaInput!]!
 
 query serviceStates ($distribution: String!) {
     serviceStates (distribution: $distribution) {
-        distribution, payload { instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode } }
+        distribution, instance, service, directory, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }
     }
 }
 
@@ -217,13 +217,13 @@ query faultsEndTime ($distribution: String, $service: String) {
 
 query faults ($distribution: String, $service: String, $fromTime: Date, $toTime: Date) {
     faults (distribution: $distribution, service: $service, fromTime: $fromTime, toTime: $toTime) {
-        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, time, length } }
+        distribution, fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, time, length }
     }
 }
 
 query fault ($fault: String!) {
     faults (fault: $fault) {
-        distribution, payload { fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, time, length } }
+        distribution, fault, info { time, instance, service, serviceDirectory, serviceRole, state { time, installTime, startTime, version { distribution, developerBuild, clientBuild }, updateToVersion { distribution, developerBuild, clientBuild }, updateError { critical, error }, failuresCount, lastExitCode }, logTail { time, level, unit, message, terminationStatus } }, files { path, time, length }
     }
 }
 

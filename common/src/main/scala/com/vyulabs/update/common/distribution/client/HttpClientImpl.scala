@@ -252,12 +252,15 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
     }
   }
 
-  private def openConnection(path: String): HttpURLConnection = {
-    new URL(distributionUrl + "/" + path).openConnection().asInstanceOf[HttpURLConnection]
+  private def openConnection(path: String)(implicit log: Logger): HttpURLConnection = {
+    val url = distributionUrl + "/" + path
+    if (log.isDebugEnabled) log.debug(s"Open connection ${url}")
+    new URL(url).openConnection().asInstanceOf[HttpURLConnection]
   }
 
-  private def processResponse(connection: HttpURLConnection): Unit = {
+  private def processResponse(connection: HttpURLConnection)(implicit log: Logger): Unit = {
     val responseCode = connection.getResponseCode
+//    if (log.isDebugEnabled) log.debug(s"Response code is ${responseCode}")
     if (responseCode != HttpURLConnection.HTTP_OK) {
       if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
         accessToken = None

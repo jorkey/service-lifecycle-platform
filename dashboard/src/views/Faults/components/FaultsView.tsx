@@ -31,8 +31,8 @@ const FaultsView: React.FC<FaultsParams> = props => {
         <FaultsCard onSelected={report => setReport(report)}/>
         {report?<div className={classes.info}>
           <FaultInfoCard report={report}/>
-          {report.payload.files.length?<FaultFiles files={report.payload.files}/>:null}
-          <LogsTailCard lines={report.payload.info.logTail}/>
+          {report.files.length?<FaultFiles files={report.files}/>:null}
+          <LogsTailCard lines={report.info.logTail}/>
         </div>:null}
     </div>
   )

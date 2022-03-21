@@ -170,7 +170,9 @@ export type DeveloperVersionInput = {
 export type DistributionFaultReport = {
   __typename?: 'DistributionFaultReport';
   distribution: Scalars['String'];
-  payload: ServiceFaultReport;
+  fault: Scalars['String'];
+  info: FaultInfo;
+  files: Array<FileInfo>;
 };
 
 export type DistributionInfo = {
@@ -193,7 +195,10 @@ export type DistributionProviderInfo = {
 export type DistributionServiceState = {
   __typename?: 'DistributionServiceState';
   distribution: Scalars['String'];
-  payload: InstanceServiceState;
+  instance: Scalars['String'];
+  service: Scalars['String'];
+  directory: Scalars['String'];
+  state: ServiceState;
 };
 
 export type FaultInfo = {
@@ -252,14 +257,6 @@ export type InstallInfo = {
 export type InstallInfoInput = {
   account: Scalars['String'];
   time: Scalars['Date'];
-};
-
-export type InstanceServiceState = {
-  __typename?: 'InstanceServiceState';
-  instance: Scalars['String'];
-  service: Scalars['String'];
-  directory: Scalars['String'];
-  state: ServiceState;
 };
 
 export type InstanceServiceStateInput = {
@@ -838,13 +835,6 @@ export type ServiceAccountInfo = {
   role: AccountRole;
 };
 
-export type ServiceFaultReport = {
-  __typename?: 'ServiceFaultReport';
-  fault: Scalars['String'];
-  info: FaultInfo;
-  files: Array<FileInfo>;
-};
-
 export type ServiceFaultReportInput = {
   fault: Scalars['String'];
   info: FaultInfoInput;
@@ -1341,24 +1331,20 @@ export type ServiceStatesQuery = (
   { __typename?: 'Query' }
   & { serviceStates: Array<(
     { __typename?: 'DistributionServiceState' }
-    & Pick<DistributionServiceState, 'distribution'>
-    & { payload: (
-      { __typename?: 'InstanceServiceState' }
-      & Pick<InstanceServiceState, 'instance' | 'service' | 'directory'>
-      & { state: (
-        { __typename?: 'ServiceState' }
-        & Pick<ServiceState, 'time' | 'installTime' | 'startTime' | 'failuresCount' | 'lastExitCode'>
-        & { version?: Maybe<(
-          { __typename?: 'ClientDistributionVersion' }
-          & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
-        )>, updateToVersion?: Maybe<(
-          { __typename?: 'ClientDistributionVersion' }
-          & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
-        )>, updateError?: Maybe<(
-          { __typename?: 'UpdateError' }
-          & Pick<UpdateError, 'critical' | 'error'>
-        )> }
-      ) }
+    & Pick<DistributionServiceState, 'distribution' | 'instance' | 'service' | 'directory'>
+    & { state: (
+      { __typename?: 'ServiceState' }
+      & Pick<ServiceState, 'time' | 'installTime' | 'startTime' | 'failuresCount' | 'lastExitCode'>
+      & { version?: Maybe<(
+        { __typename?: 'ClientDistributionVersion' }
+        & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+      )>, updateToVersion?: Maybe<(
+        { __typename?: 'ClientDistributionVersion' }
+        & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+      )>, updateError?: Maybe<(
+        { __typename?: 'UpdateError' }
+        & Pick<UpdateError, 'critical' | 'error'>
+      )> }
     ) }
   )> }
 );
@@ -1604,35 +1590,31 @@ export type FaultsQuery = (
   { __typename?: 'Query' }
   & { faults: Array<(
     { __typename?: 'DistributionFaultReport' }
-    & Pick<DistributionFaultReport, 'distribution'>
-    & { payload: (
-      { __typename?: 'ServiceFaultReport' }
-      & Pick<ServiceFaultReport, 'fault'>
-      & { info: (
-        { __typename?: 'FaultInfo' }
-        & Pick<FaultInfo, 'time' | 'instance' | 'service' | 'serviceDirectory' | 'serviceRole'>
-        & { state: (
-          { __typename?: 'ServiceState' }
-          & Pick<ServiceState, 'time' | 'installTime' | 'startTime' | 'failuresCount' | 'lastExitCode'>
-          & { version?: Maybe<(
-            { __typename?: 'ClientDistributionVersion' }
-            & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
-          )>, updateToVersion?: Maybe<(
-            { __typename?: 'ClientDistributionVersion' }
-            & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
-          )>, updateError?: Maybe<(
-            { __typename?: 'UpdateError' }
-            & Pick<UpdateError, 'critical' | 'error'>
-          )> }
-        ), logTail: Array<(
-          { __typename?: 'LogLine' }
-          & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
+    & Pick<DistributionFaultReport, 'distribution' | 'fault'>
+    & { info: (
+      { __typename?: 'FaultInfo' }
+      & Pick<FaultInfo, 'time' | 'instance' | 'service' | 'serviceDirectory' | 'serviceRole'>
+      & { state: (
+        { __typename?: 'ServiceState' }
+        & Pick<ServiceState, 'time' | 'installTime' | 'startTime' | 'failuresCount' | 'lastExitCode'>
+        & { version?: Maybe<(
+          { __typename?: 'ClientDistributionVersion' }
+          & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+        )>, updateToVersion?: Maybe<(
+          { __typename?: 'ClientDistributionVersion' }
+          & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+        )>, updateError?: Maybe<(
+          { __typename?: 'UpdateError' }
+          & Pick<UpdateError, 'critical' | 'error'>
         )> }
-      ), files: Array<(
-        { __typename?: 'FileInfo' }
-        & Pick<FileInfo, 'path' | 'time' | 'length'>
+      ), logTail: Array<(
+        { __typename?: 'LogLine' }
+        & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
       )> }
-    ) }
+    ), files: Array<(
+      { __typename?: 'FileInfo' }
+      & Pick<FileInfo, 'path' | 'time' | 'length'>
+    )> }
   )> }
 );
 
@@ -1645,35 +1627,31 @@ export type FaultQuery = (
   { __typename?: 'Query' }
   & { faults: Array<(
     { __typename?: 'DistributionFaultReport' }
-    & Pick<DistributionFaultReport, 'distribution'>
-    & { payload: (
-      { __typename?: 'ServiceFaultReport' }
-      & Pick<ServiceFaultReport, 'fault'>
-      & { info: (
-        { __typename?: 'FaultInfo' }
-        & Pick<FaultInfo, 'time' | 'instance' | 'service' | 'serviceDirectory' | 'serviceRole'>
-        & { state: (
-          { __typename?: 'ServiceState' }
-          & Pick<ServiceState, 'time' | 'installTime' | 'startTime' | 'failuresCount' | 'lastExitCode'>
-          & { version?: Maybe<(
-            { __typename?: 'ClientDistributionVersion' }
-            & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
-          )>, updateToVersion?: Maybe<(
-            { __typename?: 'ClientDistributionVersion' }
-            & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
-          )>, updateError?: Maybe<(
-            { __typename?: 'UpdateError' }
-            & Pick<UpdateError, 'critical' | 'error'>
-          )> }
-        ), logTail: Array<(
-          { __typename?: 'LogLine' }
-          & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
+    & Pick<DistributionFaultReport, 'distribution' | 'fault'>
+    & { info: (
+      { __typename?: 'FaultInfo' }
+      & Pick<FaultInfo, 'time' | 'instance' | 'service' | 'serviceDirectory' | 'serviceRole'>
+      & { state: (
+        { __typename?: 'ServiceState' }
+        & Pick<ServiceState, 'time' | 'installTime' | 'startTime' | 'failuresCount' | 'lastExitCode'>
+        & { version?: Maybe<(
+          { __typename?: 'ClientDistributionVersion' }
+          & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+        )>, updateToVersion?: Maybe<(
+          { __typename?: 'ClientDistributionVersion' }
+          & Pick<ClientDistributionVersion, 'distribution' | 'developerBuild' | 'clientBuild'>
+        )>, updateError?: Maybe<(
+          { __typename?: 'UpdateError' }
+          & Pick<UpdateError, 'critical' | 'error'>
         )> }
-      ), files: Array<(
-        { __typename?: 'FileInfo' }
-        & Pick<FileInfo, 'path' | 'time' | 'length'>
+      ), logTail: Array<(
+        { __typename?: 'LogLine' }
+        & Pick<LogLine, 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
       )> }
-    ) }
+    ), files: Array<(
+      { __typename?: 'FileInfo' }
+      & Pick<FileInfo, 'path' | 'time' | 'length'>
+    )> }
   )> }
 );
 
@@ -3104,31 +3082,29 @@ export const ServiceStatesDocument = gql`
     query serviceStates($distribution: String!) {
   serviceStates(distribution: $distribution) {
     distribution
-    payload {
-      instance
-      service
-      directory
-      state {
-        time
-        installTime
-        startTime
-        version {
-          distribution
-          developerBuild
-          clientBuild
-        }
-        updateToVersion {
-          distribution
-          developerBuild
-          clientBuild
-        }
-        updateError {
-          critical
-          error
-        }
-        failuresCount
-        lastExitCode
+    instance
+    service
+    directory
+    state {
+      time
+      installTime
+      startTime
+      version {
+        distribution
+        developerBuild
+        clientBuild
       }
+      updateToVersion {
+        distribution
+        developerBuild
+        clientBuild
+      }
+      updateError {
+        critical
+        error
+      }
+      failuresCount
+      lastExitCode
     }
   }
 }
@@ -3867,48 +3843,46 @@ export const FaultsDocument = gql`
     toTime: $toTime
   ) {
     distribution
-    payload {
-      fault
-      info {
+    fault
+    info {
+      time
+      instance
+      service
+      serviceDirectory
+      serviceRole
+      state {
         time
-        instance
-        service
-        serviceDirectory
-        serviceRole
-        state {
-          time
-          installTime
-          startTime
-          version {
-            distribution
-            developerBuild
-            clientBuild
-          }
-          updateToVersion {
-            distribution
-            developerBuild
-            clientBuild
-          }
-          updateError {
-            critical
-            error
-          }
-          failuresCount
-          lastExitCode
+        installTime
+        startTime
+        version {
+          distribution
+          developerBuild
+          clientBuild
         }
-        logTail {
-          time
-          level
-          unit
-          message
-          terminationStatus
+        updateToVersion {
+          distribution
+          developerBuild
+          clientBuild
         }
+        updateError {
+          critical
+          error
+        }
+        failuresCount
+        lastExitCode
       }
-      files {
-        path
+      logTail {
         time
-        length
+        level
+        unit
+        message
+        terminationStatus
       }
+    }
+    files {
+      path
+      time
+      length
     }
   }
 }
@@ -3948,48 +3922,46 @@ export const FaultDocument = gql`
     query fault($fault: String!) {
   faults(fault: $fault) {
     distribution
-    payload {
-      fault
-      info {
+    fault
+    info {
+      time
+      instance
+      service
+      serviceDirectory
+      serviceRole
+      state {
         time
-        instance
-        service
-        serviceDirectory
-        serviceRole
-        state {
-          time
-          installTime
-          startTime
-          version {
-            distribution
-            developerBuild
-            clientBuild
-          }
-          updateToVersion {
-            distribution
-            developerBuild
-            clientBuild
-          }
-          updateError {
-            critical
-            error
-          }
-          failuresCount
-          lastExitCode
+        installTime
+        startTime
+        version {
+          distribution
+          developerBuild
+          clientBuild
         }
-        logTail {
-          time
-          level
-          unit
-          message
-          terminationStatus
+        updateToVersion {
+          distribution
+          developerBuild
+          clientBuild
         }
+        updateError {
+          critical
+          error
+        }
+        failuresCount
+        lastExitCode
       }
-      files {
-        path
+      logTail {
         time
-        length
+        level
+        unit
+        message
+        terminationStatus
       }
+    }
+    files {
+      path
+      time
+      length
     }
   }
 }

@@ -7,7 +7,7 @@ import com.vyulabs.update.common.common.ThreadTimer
 import com.vyulabs.update.common.logger.{LogBuffer, TraceAppender}
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
-import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
+import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
 import spray.json._
 
@@ -43,7 +43,7 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
         """{"level":"WARN","message":"log line 2"},""" +
         """{"level":"ERROR","message":"log line 3"},""" +
         """{"level":"WARN","message":"log line 4"},""" +
-        """{"level":"INFO","message":"log line 5"}}]}""").parseJson))(
+        """{"level":"INFO","message":"log line 5"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query ServiceLogs($$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           logs (service: $$service, instance: $$instance, process: $$process, directory: $$directory) {

@@ -165,6 +165,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
 
     println(s"--------------------------- Make fixed test service version")
     buildTestServiceVersions(adminClient, DeveloperVersion(Build.initialBuild).next)
+    Thread.sleep(10000)
 
     println()
     println(s"########################### Test service is updated")

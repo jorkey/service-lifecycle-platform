@@ -130,7 +130,7 @@ const Versions: React.FC<VersionsProps> = props => {
             <VersionsTable
               developerVersions={developerDesiredVersions.data.developerDesiredVersions}
               clientVersions={consumer ? installedDesiredVersions.data?.installedDesiredVersions : clientDesiredVersions.data?.clientDesiredVersions}
-              serviceStates={serviceStates.data?.serviceStates.map(state => state.payload)}
+              serviceStates={serviceStates.data?.serviceStates}
               onlyAlerts={onlyAlerts}
             />
           : null }

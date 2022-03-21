@@ -7,8 +7,7 @@ import {Info} from './ServiceState';
 import {
   ClientDesiredVersion, ClientDistributionVersion,
   DeveloperDesiredVersion,
-  DeveloperDistributionVersion,
-  InstanceServiceState
+  DeveloperDistributionVersion, DistributionServiceState,
 } from "../../../../generated/graphql";
 
 // eslint-disable-next-line no-unused-vars
@@ -38,32 +37,32 @@ interface ServiceVersionsProps {
   service: string
   developerVersion: DeveloperDistributionVersion
   clientVersion: ClientDistributionVersion|undefined
-  serviceStates: Array<InstanceServiceState>|undefined
+  serviceStates: Array<DistributionServiceState>|undefined
   onlyAlerts: Boolean
 }
 
 export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
   const { service, developerVersion, clientVersion, serviceStates, onlyAlerts } = props;
   const classes = useStyles();
-  let versionsTree = new Array<[ClientDistributionVersion, Array<[string, Array<InstanceServiceState>]>]>()
+  let versionsTree = new Array<[ClientDistributionVersion, Array<[string, Array<DistributionServiceState>]>]>()
   serviceStates?.forEach(state => {
     if (state.state.version) {
       let versionNode = versionsTree.find(node => node[0] === state.state.version)
       if (!versionNode) {
-        versionNode = [state.state.version, new Array<[string, Array<InstanceServiceState>]>()]
+        versionNode = [state.state.version, new Array<[string, Array<DistributionServiceState>]>()]
         versionsTree.push(versionNode)
       }
       let directoriesNode = versionNode[1]
       let directoryNode = directoriesNode.find(node => node[0] === state.directory)
       if (!directoryNode) {
-        directoryNode = [state.directory, new Array<InstanceServiceState>()]
+        directoryNode = [state.directory, new Array<DistributionServiceState>()]
         directoriesNode.push(directoryNode)
       }
       directoryNode[1].push(state)
     } })
   let versionIndex = versionsTree.length, version:ClientDistributionVersion|undefined = undefined
-  let directories = new Array<[string, Array<InstanceServiceState>]>(), directoryIndex = 0, directory:string|undefined = undefined
-  let states = new Array<InstanceServiceState>(), stateIndex = 0, state:InstanceServiceState|undefined = undefined
+  let directories = new Array<[string, Array<DistributionServiceState>]>(), directoryIndex = 0, directory:string|undefined = undefined
+  let states = new Array<DistributionServiceState>(), stateIndex = 0, state:DistributionServiceState|undefined = undefined
   let rows = []
   let rowsStack = []
   let alertService = false
@@ -174,7 +173,7 @@ export const ServiceVersions: React.FC<ServiceVersionsProps> = props => {
 interface VersionsTableProps {
   developerVersions: Array<DeveloperDesiredVersion>
   clientVersions: Array<ClientDesiredVersion>|undefined
-  serviceStates: Array<InstanceServiceState>|undefined
+  serviceStates: Array<DistributionServiceState>|undefined
   onlyAlerts: Boolean
 }
 

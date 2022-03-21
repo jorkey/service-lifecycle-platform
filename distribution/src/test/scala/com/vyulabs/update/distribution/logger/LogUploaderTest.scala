@@ -53,7 +53,7 @@ class LogUploaderTest extends TestEnvironment with ScalatestRouteTest {
         """{"level":"WARN","message":"log line 2"},""" +
         """{"level":"ERROR","message":"log line 3"},""" +
         """{"level":"WARN","message":"log line 4"},""" +
-        """{"level":"INFO","message":"log line 5"}}]}""").parseJson))(
+        """{"level":"INFO","message":"log line 5"}]}}""").parseJson))(
       result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, adminContext, graphql"""
         query ServiceLogs($$service: String!, $$instance: String!, $$process: String!, $$directory: String!) {
           logs (service: $$service, instance: $$instance, process: $$process, directory: $$directory) {

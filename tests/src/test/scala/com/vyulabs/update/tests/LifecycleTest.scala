@@ -1,6 +1,6 @@
 package com.vyulabs.update.tests
 
-import com.vyulabs.update.common.version.{ClientVersion, Build}
+import com.vyulabs.update.common.version.{Build, ClientVersion}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
 class LifecycleTest extends FlatSpec with Matchers with BeforeAndAfterAll {

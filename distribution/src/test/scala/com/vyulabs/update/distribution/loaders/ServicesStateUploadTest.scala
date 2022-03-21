@@ -5,7 +5,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.client.model.Filters
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlArgument
-import com.vyulabs.update.common.info.{DirectoryServiceState, DistributionServiceState, ServiceState}
+import com.vyulabs.update.common.info.{DirectoryServiceState, DistributionServiceState, InstanceServiceState, ServiceState}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
@@ -93,7 +93,8 @@ class ServicesStateUploadTest extends TestEnvironment {
   }
 
   private def waitForSetServiceStates(states: Seq[DistributionServiceState]): Promise[Boolean] = {
-    httpClient.waitForMutation("setServiceStates", Seq(GraphqlArgument("states" -> states.toJson)))
+    httpClient.waitForMutation("setServiceStates", Seq(GraphqlArgument("states" ->
+      states.map(s => InstanceServiceState(s.instance, s.service, s.directory, s.state)).toJson, "[InstanceServiceStateInput!]")))
   }
 
   private def clear(): Unit = {

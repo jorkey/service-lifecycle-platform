@@ -44,36 +44,37 @@ const FaultInfoCard: React.FC<FaultInfoCardParams> = props => {
           <TableBody>
             <TableRow hover>
               <TableCell className={classes.infoCellHeader}>Fault Id</TableCell>
-              <TableCell className={classes.infoCellValue}>{report.payload.fault}</TableCell>
+              <TableCell className={classes.infoCellValue}>{report.fault}</TableCell>
             </TableRow>
             <TableRow hover>
               <TableCell className={classes.infoCellHeader}>Instance</TableCell>
-              <TableCell className={classes.infoCellValue}>{report.payload.info.instance}</TableCell>
+              <TableCell className={classes.infoCellValue}>{report.info.instance}</TableCell>
             </TableRow>
-            {report.payload.info.state.installTime?
+            {report.info.state.installTime?
               <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Install Time</TableCell>
-                <TableCell className={classes.infoCellValue}>{report.payload.info.state.installTime.toString()}</TableCell>
+                <TableCell className={classes.infoCellValue}>{report.info.state.installTime.toString()}</TableCell>
               </TableRow>:null}
-            {report.payload.info.state.lastExitCode?
+            {report.info.state.lastExitCode?
               <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Last Exit Code</TableCell>
-                <TableCell className={classes.infoCellValue}>{report.payload.info.state.lastExitCode}</TableCell>
+                <TableCell className={classes.infoCellValue}>{report.info.state.lastExitCode}</TableCell>
               </TableRow>:null}
-            {report.payload.info.state.failuresCount?
+            {report.info.state.failuresCount?
               <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Failures Count</TableCell>
-                <TableCell className={classes.infoCellValue}>{report.payload.info.state.failuresCount}</TableCell>
+                <TableCell className={classes.infoCellValue}>{report.info.state.failuresCount}</TableCell>
               </TableRow>:null}
-            {report.payload.info.state.updateToVersion?
+            {report.info.state.updateToVersion?
               <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Update To Version</TableCell>
-                <TableCell className={classes.infoCellValue}>{Version.clientDistributionVersionToString(report.payload.info.state.updateToVersion)}</TableCell>
+                <TableCell className={classes.infoCellValue}>{Version.clientDistributionVersionToString(
+                  report.info.state.updateToVersion)}</TableCell>
               </TableRow>:null}
-            {report.payload.info.state.updateError?
+            {report.info.state.updateError?
               <TableRow hover>
                 <TableCell className={classes.infoCellHeader}>Update Error</TableCell>
-                <TableCell className={classes.infoCellValue}>{report.payload.info.state.updateError}</TableCell>
+                <TableCell className={classes.infoCellValue}>{report.info.state.updateError}</TableCell>
               </TableRow>:null}
           </TableBody>
         </Table>
