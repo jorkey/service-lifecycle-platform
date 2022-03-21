@@ -105,15 +105,17 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
           try {
             log.info(s"Terminate ${process.getHandle().pid()}")
             val result = Await.result(process.terminate(), Duration.Inf)
-            log.info(s"Wait for process ${process.getHandle().pid()} is completed")
-            var completed = false
-            do {
-              self.wait()
-              if (process.onTermination().isCompleted) {
-                log.info(s"Process ${process.getHandle().pid()} stopping is completed")
-                completed = true
-              }
-            } while (!completed)
+            if (result) {
+              log.info(s"Wait for process ${process.getHandle().pid()} termination")
+              var completed = false
+              do {
+                self.wait(100)
+                if (process.onTermination().isCompleted) {
+                  log.info(s"Process ${process.getHandle().pid()} stopping is completed")
+                  completed = true
+                }
+              } while (!completed)
+            }
             result
           } catch {
             case _: Exception =>
