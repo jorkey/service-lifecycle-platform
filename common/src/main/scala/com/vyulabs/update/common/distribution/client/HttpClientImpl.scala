@@ -198,7 +198,7 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
         accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
         connection.setChunkedStreamingMode(0)
         connection.setConnectTimeout(connectTimeoutMs)
-        connection.setReadTimeout(readTimeoutMs)
+//        connection.setReadTimeout(readTimeoutMs)
         connection.setDoOutput(true)
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary)
         val output = connection.getOutputStream
