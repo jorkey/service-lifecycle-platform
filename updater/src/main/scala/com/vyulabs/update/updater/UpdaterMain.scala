@@ -21,7 +21,13 @@ import scala.concurrent.duration.Duration
   */
 object UpdaterMain extends App { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
-  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => {
+    log.error("Uncatched exception", ex)
+    for (stackElement <- ex.getStackTrace) {
+      log.error(stackElement.toString)
+    }
+    System.exit(1)
+  })
   implicit val timer = new ThreadTimer()
 
   if (args.size < 1) {
