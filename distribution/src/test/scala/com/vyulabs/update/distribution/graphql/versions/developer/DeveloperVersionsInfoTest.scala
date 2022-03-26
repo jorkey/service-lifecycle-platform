@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.utils.JsonFormats._
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
@@ -19,7 +20,7 @@ class DeveloperVersionsInfoTest extends TestEnvironment {
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   it should "add/get/remove developer version info" in {
     addDeveloperVersionInfo("service1", DeveloperDistributionVersion("test", Seq(1, 1, 1)))

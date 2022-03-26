@@ -12,7 +12,7 @@ import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpCl
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, BuildInfo, ClientDesiredVersionDelta}
 import com.vyulabs.update.common.process.ChildProcess
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version._
 import com.vyulabs.update.distribution.mongo.MongoDb
 import com.vyulabs.update.updater.config.UpdaterConfig
@@ -27,7 +27,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext}
 
 class SimpleLifecycle(val distribution: DistributionId, val distributionPort: Int) {
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
   private val distributionDir = Files.createTempDirectory(distribution).toFile

@@ -8,6 +8,7 @@ import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlArgument
 import com.vyulabs.update.common.info._
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
@@ -25,7 +26,7 @@ class FaultReportsUploadTest extends TestEnvironment {
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   val date = new Date()
 

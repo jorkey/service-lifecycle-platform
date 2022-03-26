@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.Filters
+import com.vyulabs.update.common.utils.Utils
 import org.bson.BsonDocument
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala.bson.codecs.Macros._
@@ -19,7 +20,7 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   implicit val log = LoggerFactory.getLogger(this.getClass)
 

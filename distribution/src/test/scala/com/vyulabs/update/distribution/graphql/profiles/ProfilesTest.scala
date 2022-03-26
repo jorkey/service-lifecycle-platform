@@ -3,6 +3,7 @@ package com.vyulabs.update.distribution.graphql.profiles
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.OK
 import akka.stream.{ActorMaterializer, Materializer}
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
@@ -15,10 +16,7 @@ class ProfilesTest extends TestEnvironment {
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => {
-    ex.printStackTrace();
-    log.error("Uncatched exception", ex)
-  })
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   it should "add/get/remove service profiles" in {
     assertResult((OK,

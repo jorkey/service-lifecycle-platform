@@ -11,7 +11,7 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import com.vyulabs.update.common.common.Common.TaskId
 import com.vyulabs.update.common.config.BuildServiceConfig
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.GraphqlSchema
 import sangria.macros.LiteralGraphQLStringContext
@@ -26,9 +26,7 @@ class BuildClientVersionTest extends TestEnvironment {
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => {
-    ex.printStackTrace(); log.error("Uncatched exception", ex)
-  })
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   result(for {
     _ <- collections.Developer_BuildServices.insert(BuildServiceConfig("service1", None, Seq.empty, Seq.empty, Seq.empty, Seq.empty))

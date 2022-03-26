@@ -22,10 +22,7 @@ import scala.concurrent.duration.Duration
 object UpdaterMain extends App { self =>
   implicit val log = LoggerFactory.getLogger(this.getClass)
   implicit val executionContext = ExecutionContext.fromExecutor(null, ex => {
-    log.error("Uncatched exception", ex)
-    for (stackElement <- ex.getStackTrace) {
-      log.error(stackElement.toString)
-    }
+    Utils.logException(log, "Uncatched exception", ex)
     System.exit(1)
   })
   implicit val timer = new ThreadTimer()

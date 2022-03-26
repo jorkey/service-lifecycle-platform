@@ -21,7 +21,7 @@ import scala.concurrent.duration.Duration
 object BuilderMain extends App {
   implicit val log = LoggerFactory.getLogger(this.getClass)
   implicit val filesLocker = new SmartFilesLocker()
-  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val executionContext = ExecutionContext.fromExecutor(null, ex => Utils.logException(log, "Uncatched exception", ex))
   implicit val timer = new ThreadTimer()
 
   def usage(): String =
@@ -146,8 +146,7 @@ object BuilderMain extends App {
     }
   } catch {
     case ex: Exception =>
-      println(s"Error: ${ex.getMessage}")
-      ex.printStackTrace()
+      Utils.logException(log, "Error", ex)
       sys.exit(1)
   }
 

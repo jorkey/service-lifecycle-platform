@@ -18,9 +18,8 @@ import spray.json.DefaultJsonProtocol._
 
 import java.io.File
 import java.util.Date
-import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
 /**
@@ -545,11 +544,9 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
         directory)
       startProcess.onComplete {
         case Success(process) =>
-          log.info("Distribution server started")
+          log.info(s"Distribution server started, process ${process.getHandle().pid()}")
         case Failure(ex) =>
-          sys.error("Can't start distribution process")
-          ex.printStackTrace()
-      }
+          Utils.logException(log, "Can't start distribution process", ex)
     }
     if (!waitForServerAvailable(10000)) {
       return false

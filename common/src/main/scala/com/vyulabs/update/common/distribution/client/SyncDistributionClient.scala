@@ -2,6 +2,7 @@ package com.vyulabs.update.common.distribution.client
 
 import com.vyulabs.update.common.common.Common.{FaultId, ServiceId}
 import com.vyulabs.update.common.distribution.client.graphql.GraphqlRequest
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.JsonReader
@@ -66,7 +67,7 @@ class SyncDistributionClient[Source[_]](client: DistributionClient[Source], wait
       Some(Await.result(awaitable, waitDuration))
     } catch {
       case e: Exception =>
-        log.error(e.getMessage)
+        Utils.logException(log, "Distribution client exception", e)
         None
     }
   }

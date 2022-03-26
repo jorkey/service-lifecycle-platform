@@ -138,6 +138,13 @@ object Utils {
     }
   }
 
+  def logException(log: Logger, message: String, ex: Throwable): Unit = {
+    log.error(message, ex)
+    for (stackElement <- ex.getStackTrace) {
+      log.error(stackElement.toString)
+    }
+  }
+
   def error(msg: String)(implicit log: Logger): Nothing = {
     log.error(msg)
     for (stackElement <- Thread.currentThread().getStackTrace) {

@@ -10,7 +10,7 @@ import com.vyulabs.update.common.common.{Common, JWT}
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
 import com.vyulabs.update.common.info.{AccessToken, AccountRole}
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.ClientDistributionVersion
 import com.vyulabs.update.distribution.common.AkkaTimer
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, GraphqlWorkspace}
@@ -19,9 +19,9 @@ import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
 import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, PasswordHash, ServerAccountInfo, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
-import org.slf4j.{LoggerFactory}
+import org.slf4j.LoggerFactory
 
-import java.io.{File}
+import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -30,7 +30,7 @@ import scala.concurrent.{Await, Awaitable, ExecutionContext}
 abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec with Matchers with BeforeAndAfterAll {
   private implicit val system = ActorSystem("Distribution")
   private implicit val materializer: Materializer = ActorMaterializer()
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
   private implicit val timer = new AkkaTimer(system.scheduler)
 
   implicit val log = LoggerFactory.getLogger(this.getClass)

@@ -7,6 +7,7 @@ import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountP
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats._
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.TestEnvironment
 import com.vyulabs.update.distribution.graphql.{GraphqlContext, GraphqlSchema}
@@ -22,7 +23,7 @@ class StateInfoTest extends TestEnvironment {
 
   implicit val system = ActorSystem("Distribution")
   implicit val materializer: Materializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   override protected def beforeAll(): Unit = {
   }

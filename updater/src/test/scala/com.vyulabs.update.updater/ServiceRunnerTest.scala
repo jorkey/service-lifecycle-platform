@@ -5,7 +5,7 @@ import com.vyulabs.update.common.config.{RunServiceConfig, WriteLogsConfig}
 import com.vyulabs.update.common.info.{FaultInfo, LogLine, ServiceNameWithRole}
 import com.vyulabs.update.common.logger.{LogReceiver, PrefixedLogger}
 import com.vyulabs.update.common.logs.LogFormat
-import com.vyulabs.update.common.utils.IoUtils
+import com.vyulabs.update.common.utils.{IoUtils, Utils}
 import com.vyulabs.update.common.version.{Build, ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.updater.uploaders.FaultUploader
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -18,7 +18,7 @@ import java.util.TimeZone
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceRunnerTest extends FlatSpec with Matchers with BeforeAndAfterAll {
-  private implicit val executionContext = ExecutionContext.fromExecutor(null, ex => { ex.printStackTrace(); log.error("Uncatched exception", ex) })
+  private implicit val executionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
   private implicit val timer = new ThreadTimer()
   private implicit val log = LoggerFactory.getLogger(this.getClass)
 
