@@ -75,14 +75,14 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
       val interval = System.currentTimeMillis() - lastUploadTime.getOrElse(0L)
       val skip = interval < maxUploadFrequencyMs
       if (!skip) {
-        log.info(s"Upload fault report ${fault}")
+        log.info(s"Upload fault report")
         if (uploadFault(fault)) {
           lastUploadedServiceReports  += (fault.info.service -> System.currentTimeMillis())
         } else {
-          log.error(s"Can't upload fault report ${fault}")
+          log.error(s"Can't upload fault report")
         }
       } else {
-        log.info(s"Skip of uploading fault report ${fault} because interval ${interval}ms from previous fault too short")
+        log.info(s"Skip of uploading fault report because interval ${interval}ms from previous fault too short")
       }
     }
   }

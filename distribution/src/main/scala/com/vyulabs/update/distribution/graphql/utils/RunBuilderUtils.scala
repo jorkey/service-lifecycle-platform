@@ -173,7 +173,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
   private def runRemoteBuilder(task: TaskId, distribution: DistributionId, accessToken: String,
                                environment: Seq[NamedStringValue], arguments: Seq[String])
                               (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
-    log.info(s"Run builder on remove distribution server '${distribution}''")
+    log.info(s"Run builder on remote distribution server '${distribution}''")
     @volatile var distributionClient = Option.empty[DistributionClient[AkkaHttpClient.AkkaSource]]
     @volatile var remoteTaskId = Option.empty[TaskId]
     val future = for {
