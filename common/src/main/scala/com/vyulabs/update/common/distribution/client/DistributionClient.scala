@@ -18,6 +18,8 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
                         (implicit executionContext: ExecutionContext) {
   private var loginInProcess = Option.empty[Future[Unit]]
 
+  val url = client.distributionUrl
+
   def ping()(implicit log: Logger): Future[Unit] = {
     client.graphql(PingCoder.ping()).map(_ => ())
   }

@@ -59,7 +59,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   }
 
   private def uploadState(): Future[Unit] = {
-    log.debug("Upload state")
+    log.debug(s"Upload state to ${client.url}")
     val result = for {
       _ <- uploadServiceStates().andThen {
         case Failure(ex) =>
@@ -87,7 +87,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   }
 
   private def uploadServiceStates(): Future[Unit] = {
-    log.debug("Upload service states")
+    log.debug(s"Upload service states to ${client.url}")
     for {
       from <- getLastUploadSequence(collections.State_ServiceStates.name)
       newStatesDocuments <- collections.State_ServiceStates.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
@@ -114,7 +114,7 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   }
 
   private def uploadFaultReports(): Future[Unit] = {
-    log.debug("Upload fault reports")
+    log.debug(s"Upload fault reports to ${client.url}")
     for {
       from <- getLastUploadSequence(collections.Faults_ReportsInfo.name)
       newReportsDocuments <- collections.Faults_ReportsInfo.findSequenced(Filters.gt("_sequence", from), sort = Some(Sorts.ascending("_sequence")))
