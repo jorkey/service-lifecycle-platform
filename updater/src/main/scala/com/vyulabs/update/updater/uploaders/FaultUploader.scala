@@ -1,5 +1,6 @@
 package com.vyulabs.update.updater.uploaders
 
+import com.vyulabs.update.common.common.Common.ServiceId
 import com.vyulabs.update.common.common.{Common, IdGenerator}
 import com.vyulabs.update.common.distribution.client.graphql.UpdaterGraphqlCoder.updaterMutations
 import com.vyulabs.update.common.distribution.client.{DistributionClient, SyncDistributionClient, SyncSource}
@@ -13,10 +14,9 @@ import spray.json.enrichAny
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
-import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
@@ -35,6 +35,8 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
   private val idGenerator = new IdGenerator()
   private var faults = Queue.empty[FaultReport]
   private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024
+  private val maxUploadFrequencyMs = 60000
+  private var lastUploadedServiceReports = Map.empty[ServiceId, Long]
   private var stopping = false
 
   if (!archiveDir.exists() && !archiveDir.mkdir()) {
@@ -69,8 +71,18 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
         faults = ret._2
         ret._1
       }
-      if (!uploadFault(fault)) {
-        log.error(s"Can't upload fault report ${fault}")
+      val lastUploadTime = lastUploadedServiceReports.get(fault.info.service)
+      val interval = System.currentTimeMillis() - lastUploadTime.getOrElse(0)
+      val skip = interval < maxUploadFrequencyMs
+      if (!skip) {
+        log.info(s"Upload fault report ${fault}")
+        if (uploadFault(fault)) {
+          lastUploadedServiceReports  += (fault.info.service -> System.currentTimeMillis())
+        } else {
+          log.error(s"Can't upload fault report ${fault}")
+        }
+      } else {
+        log.info(s"Skip of uploading fault report ${fault} because interval ${interval}ms from previous fault too short")
       }
     }
   }
