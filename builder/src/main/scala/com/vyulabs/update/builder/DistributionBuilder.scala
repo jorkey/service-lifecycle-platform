@@ -547,6 +547,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
           log.info(s"Distribution server started, process ${process.getHandle().pid()}")
         case Failure(ex) =>
           Utils.logException(log, "Can't start distribution process", ex)
+      }
     }
     if (!waitForServerAvailable(10000)) {
       return false

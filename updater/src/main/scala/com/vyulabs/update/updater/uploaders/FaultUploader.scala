@@ -72,7 +72,7 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
         ret._1
       }
       val lastUploadTime = lastUploadedServiceReports.get(fault.info.service)
-      val interval = System.currentTimeMillis() - lastUploadTime.getOrElse(0)
+      val interval = System.currentTimeMillis() - lastUploadTime.getOrElse(0L)
       val skip = interval < maxUploadFrequencyMs
       if (!skip) {
         log.info(s"Upload fault report ${fault}")
