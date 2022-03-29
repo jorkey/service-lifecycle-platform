@@ -30,8 +30,8 @@ class ServiceStateController(directory: File, profiledServiceName: ServiceNameWi
     logHistoryDirectory.mkdir()
   }
 
-  @volatile private var installDate = Option.empty[Date]
-  @volatile private var startDate = Option.empty[Date]
+  @volatile private var installTime = Option.empty[Date]
+  @volatile private var startTime = Option.empty[Date]
   @volatile private var version = Option.empty[ClientDistributionVersion]
   @volatile private var updateToVersion = Option.empty[ClientDistributionVersion]
   @volatile private var updateError: Option[UpdateError] = None
@@ -51,7 +51,7 @@ class ServiceStateController(directory: File, profiledServiceName: ServiceNameWi
   def getUpdateError() = updateError
 
   def setVersion(version: ClientDistributionVersion): Unit = synchronized {
-    this.installDate = Some(new Date())
+    this.installTime = Some(new Date())
     this.version = Some(version)
     if (updateToVersion.isDefined) {
       log.info(s"Updated to version ${version}")
@@ -64,17 +64,17 @@ class ServiceStateController(directory: File, profiledServiceName: ServiceNameWi
   }
 
   def serviceStarted(): Unit = synchronized {
-    this.startDate = Some(new Date())
+    this.startTime = Some(new Date())
     updateRepository()
   }
 
   def serviceStopped(): Unit = synchronized {
-    this.startDate = None
+    this.startTime = None
     updateRepository()
   }
 
   def serviceRemoved(): Unit = synchronized {
-    this.startDate = None
+    this.startTime = None
     this.version = None
     updateRepository()
   }
@@ -100,6 +100,6 @@ class ServiceStateController(directory: File, profiledServiceName: ServiceNameWi
   }
 
   def getState(): ServiceState = {
-    ServiceState(new Date(), installDate, startDate, version, updateToVersion, updateError, failuresCount, lastExitCode)
+    ServiceState(new Date(), installTime, startTime, version, updateToVersion, updateError, failuresCount, lastExitCode)
   }
 }

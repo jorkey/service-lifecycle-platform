@@ -59,7 +59,6 @@ class StateUploader(distribution: DistributionId, collections: DatabaseCollectio
   }
 
   private def uploadState(): Future[Unit] = {
-    log.debug(s"Upload state to ${client.url}")
     val result = for {
       _ <- uploadServiceStates().andThen {
         case Failure(ex) =>

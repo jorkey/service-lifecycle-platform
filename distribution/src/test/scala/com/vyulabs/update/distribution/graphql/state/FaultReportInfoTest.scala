@@ -25,7 +25,6 @@ class FaultReportInfoTest extends TestEnvironment {
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(null, Utils.logException(log, "Uncatched exception", _))
 
   val faultsInfoCollection = collections.Faults_ReportsInfo
-  val sequencesCollection = result(collections.Sequences)
 
   override def dbName = super.dbName + "-distribution"
 
@@ -132,6 +131,6 @@ class FaultReportInfoTest extends TestEnvironment {
   def clear(): Unit = {
     distributionDir.getFaultsDir().listFiles().foreach(_.delete())
     result(faultsInfoCollection.drop())
-    result(sequencesCollection.delete())
+    faultsInfoCollection.setSequence(0)
   }
 }

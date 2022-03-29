@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken
 import akka.http.scaladsl.testkit.RouteTestTimeout
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestDuration
-import com.mongodb.client.model.{Filters, Updates}
+import com.vyulabs.update.common.accounts._
 import com.vyulabs.update.common.common.{Common, JWT}
 import com.vyulabs.update.common.config._
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -17,7 +17,6 @@ import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlContext, Graphql
 import com.vyulabs.update.distribution.logger.LogStorekeeper
 import com.vyulabs.update.distribution.mongo.{DatabaseCollections, MongoDb}
 import com.vyulabs.update.distribution.task.TaskManager
-import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, PasswordHash, ServerAccountInfo, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 import org.slf4j.LoggerFactory
 
@@ -115,9 +114,5 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
     mongo.close()
     distributionDir.drop()
     IoUtils.deleteFileRecursively(builderDirectory)
-  }
-
-  def setSequence(name: String, sequence: Long): Unit = {
-    result(result(collections.Sequences).updateOne(Filters.eq("name", name), Updates.set("sequence", sequence)))
   }
 }

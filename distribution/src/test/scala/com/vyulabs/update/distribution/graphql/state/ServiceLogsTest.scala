@@ -53,7 +53,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   it should "subscribe logs" in {
-    setSequence("log.lines", 10)
+    collections.Log_Lines.setSequence(10)
 
     addLogLine("INFO", "unit1", "line1")
 
@@ -80,7 +80,7 @@ class ServiceLogsTest extends TestEnvironment {
   }
 
   it should "subscribe task logs" in {
-    setSequence("log.lines", 20)
+    collections.Log_Lines.setSequence(20)
 
     addTaskLogLine("INFO", "unit1", "line1")
 

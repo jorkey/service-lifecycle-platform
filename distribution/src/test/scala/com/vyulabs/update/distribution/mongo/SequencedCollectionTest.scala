@@ -29,13 +29,12 @@ class SequencedCollectionTest extends FlatSpec with Matchers with BeforeAndAfter
   case class TestRecord(field1: String, field2: String)
 
   implicit val codecRegistry = fromRegistries(fromProviders(
-    MongoClientSettings.getDefaultCodecRegistry(), classOf[SequenceDocument], classOf[TestRecord]))
+    MongoClientSettings.getDefaultCodecRegistry(), classOf[TestRecord]))
 
   private def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
-  val sequenceCollection =  mongo.createCollection[SequenceDocument]("sequence")
   val testCollection = mongo.createCollection[BsonDocument]("test")
-  val test = new SequencedCollection[TestRecord]("test", testCollection, sequenceCollection)
+  val test = new SequencedCollection[TestRecord]("test", testCollection)
 
   it should "insert/modify/delete records" in {
     result(test.insert(TestRecord("v1", "v2")))

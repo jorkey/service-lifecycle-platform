@@ -452,9 +452,9 @@ State record format:
   - _[failuresCount]_ - count of service failures after install and run _updater_
   - _[lastExitCode]_ - last exit code
 
-#### Обработка отчётов о сбоях
+#### Handling fault reports
 
-Отчёты о сбоях сервисов записываются в коллекцию MongoDB, и на локальный диск.
+Fault reports are store to MongoDB collection, and to local file storage.
 
 Формат записи:
 - _distribution_ - идентификатор сервера дистрибуции 

@@ -67,7 +67,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   }
 
   it should "cancel of building developer version" in {
-    setSequence("state.serviceLogs", 100)
+    collections.Log_Lines.setSequence(100)
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, developerContext, graphql"""
         mutation {
@@ -95,7 +95,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
   }
 
   it should "run builder" in {
-    setSequence("state.serviceLogs", 200)
+    collections.Log_Lines.setSequence(200)
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
         mutation {

@@ -17,7 +17,8 @@ import org.slf4j.Logger
 
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.reflect.{ClassTag, classTag}
 
 case class Sequenced[T](sequence: Long, document: T)
@@ -28,7 +29,7 @@ case class DocumentAlreadyExists() extends Exception
 case class NoSuchDocument() extends Exception
 
 class SequencedCollection[T: ClassTag](val name: String,
-                                       collection: Future[MongoDbCollection[BsonDocument]], sequenceCollection: Future[MongoDbCollection[SequenceDocument]],
+                                       collection: Future[MongoDbCollection[BsonDocument]],
                                        historyExpireDays: Int = 7, createIndex: Boolean = true)
                                       (implicit system: ActorSystem, executionContext: ExecutionContext,
                                        codecRegistry: CodecRegistry) {
@@ -38,8 +39,10 @@ class SequencedCollection[T: ClassTag](val name: String,
     .toMat(BroadcastHub.sink)(Keep.both).run()
   private val publisherBuffer = new RaceRingBuffer[Sequenced[T]](100)
 
+  private var sequence = Await.result(collection.map(_.find(sort = Some(Sorts.descending("_sequence")), limit = Some(1))
+    .map(_.headOption.map(_.getInt64("_sequence").getValue).getOrElse(0L))).flatten, Duration.Inf)
+
   private var modifyInProcess = Option.empty[Future[Int]]
-  private var nextSequenceInProcess = Option.empty[Future[Long]]
 
   if (createIndex) {
     collection.map(_.createIndex(Indexes.ascending("_sequence")))
@@ -55,9 +58,8 @@ class SequencedCollection[T: ClassTag](val name: String,
   def insert(documents: Seq[T]): Future[Long] = {
     for {
       collection <- collection
-      sequence <- getNextSequence(collection.getName(), documents.size)
       result <- {
-        var seq = sequence - documents.size + 1
+        var seq = nextSequence(documents.size) - documents.size + 1
         val docs = documents.map { document =>
           val line = Sequenced(seq, document)
           publisherBuffer.push(line)
@@ -131,8 +133,8 @@ class SequencedCollection[T: ClassTag](val name: String,
     def updateAndInsert(doc: Option[BsonDocument]): Future[Int] = {
       for {
         collection <- collection
-        sequence <- getNextSequence(collection.getName(), 1)
         result <- {
+          val sequence = nextSequence(1)
           doc match {
             case Some(doc) =>
               val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
@@ -262,24 +264,22 @@ class SequencedCollection[T: ClassTag](val name: String,
     } yield docs
   }
 
-  private def getNextSequence(sequenceName: String, increment: Int = 1): Future[Long] = {
-    def getNextSequence(): Future[Long] = {
-      (for {
-        sequenceCollection <- sequenceCollection
-        sequence <- { sequenceCollection.findOneAndUpdate(
-          Filters.eq("name", sequenceName), Updates.inc("sequence", increment),
-          new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER)) }
-      } yield sequence).map(_.map(_.sequence).head)
-    }
+  def setSequence(sequence: Long): Unit = {
+    synchronized { this.sequence = sequence }
+  }
 
-    queueFuture[Long](() => nextSequenceInProcess, nextSequenceInProcess = _, () => getNextSequence())
+  private def nextSequence(increment: Int = 1): Long = {
+    synchronized {
+      sequence += increment
+      sequence
+    }
   }
 
   private def queueFuture[T](getLast: () => Option[Future[T]], setLast: (Option[Future[T]]) => Unit,
                              process: () => Future[T]): Future[T] = {
     synchronized {
       val future = getLast() match {
-        case Some(currentProcess) if !currentProcess.isCompleted =>
+        case Some(currentProcess) =>
           currentProcess.transformWith(_ => process())
         case _ =>
           process()

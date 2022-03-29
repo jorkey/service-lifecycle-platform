@@ -36,6 +36,8 @@ class ServicesStateUploadTest extends TestEnvironment {
     val uploader = new StateUploader("consumer", collections, distributionDir, distributionClient)
     uploader.start()
 
+    collections.State_ServiceStates.setSequence(0)
+
     val state1 = DistributionServiceState("distribution1", "instance1", DirectoryServiceState("service1", "directory",
       ServiceState(new Date(), None, None, version = Some(ClientDistributionVersion("test", Seq(1, 1, 0), 0)), None, None, None, None)))
     result(collections.State_ServiceStates.insert(state1))
@@ -100,7 +102,7 @@ class ServicesStateUploadTest extends TestEnvironment {
 
   private def clear(): Unit = {
     result(collections.State_ServiceStates.drop())
+    collections.State_ServiceStates.setSequence(0)
     result(collections.State_UploadStatus.map(_.dropItems()).flatten)
-    result(result(collections.Sequences).drop())
   }
 }
