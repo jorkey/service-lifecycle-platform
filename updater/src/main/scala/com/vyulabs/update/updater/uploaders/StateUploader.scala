@@ -40,9 +40,9 @@ class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[Se
     while (true) {
       try {
         self.synchronized {
-          self.wait(10000)
+          self.wait(30000)
         }
-        updateRepository()
+        uploadState()
       } catch {
         case ex: Exception =>
           log.error("Updating repository error", ex)
@@ -50,8 +50,8 @@ class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[Se
     }
   }
 
-  private def updateRepository(): Boolean = synchronized {
-    log.info("Update instance state")
+  private def uploadState(): Boolean = synchronized {
+    log.info("Upload instance state")
     val scriptsState = DirectoryServiceState.getServiceInstanceState(Common.ScriptsServiceName, new File("."))
     val serviceStates = services.foldLeft(Seq(scriptsState))((state, service) =>
       state :+ DirectoryServiceState(service._1.name, service._2.serviceDirectory.getCanonicalPath, service._2.getState()))
