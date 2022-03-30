@@ -40,7 +40,7 @@ class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[Se
     while (true) {
       try {
         self.synchronized {
-          self.wait(30000)
+          self.wait(20000)
         }
         uploadState()
       } catch {
