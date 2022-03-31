@@ -382,6 +382,7 @@ object GitRepository {
         while (walk.next) {
           val submoduleRepository = walk.getRepository
           if (submoduleRepository != null) {
+            log.info(s"Pull submodule repository ${submoduleRepository.toString}")
             Git.wrap(submoduleRepository).pull().call()
             submoduleRepository.close
           }
