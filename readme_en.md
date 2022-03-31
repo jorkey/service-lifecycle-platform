@@ -456,33 +456,32 @@ State record format:
 
 Fault reports are store to MongoDB collection, and to local file storage.
 
-Формат записи:
-- _distribution_ - идентификатор сервера дистрибуции 
-- _payload_
-  - _id_ - идентификатор отчёта о сбое
-  - _info_ - последнее состояние сервиса
-    - _time_ - время получения состояния
-    - _instance_ - идентификатор инстанции сервера
-    - _service_ - название сервиса
-    - _[serviceRole]_ - роль сервиса
-    - _serviceDirectory_ - рабочий каталог сервиса 
-    - _serviceState:ServiceState_ - последнее состояние сервиса
-    - _logTail:LogLine[]_ - 500 последних записей в журнале
-  - _files[]_ - файлы с информацией о сбое
+Document format:
+- _distribution_ - identifier of distribution server 
+- _id_ - identifier of fault report
+- _info_ - last service state
+  - _time_ - time of state
+  - _instance_ - identifier of instance
+  - _service_ - service name
+  - _[serviceRole]_ - service role
+  - _serviceDirectory_ - working directory of service 
+  - _serviceState:ServiceState_ - service state
+  - _logTail:LogLine[]_ - last 500 log records
+- _files[]_ - files with fault information
 
-#### Взаимодействие с другими серверами дистрибуции
+#### Interaction with other distribution servers
 
-Сервера дистрибуции могут объединяться в сеть по принципу поставщик/потребитель.
+Distribution servers can be networked on a provider/consumer basis.
 
-Поставщик предоставляет для потребителя заданные в его _profile_ сервисы.
-Если у поставщика появились новые версии, потребитель может скачать их, и установить у себя.
-Таким образом компания, разрабатывающая сервисы, может завести учётную запись потребителя
-на своём сервере дистрибуции и определить список сервисов, которые она хочет ему отдавать.
+The provider profile defines the services for the consumer.
+If the provider has new versions, the consumer can download and install them.
+Thus, a company developing services can create a consumer account
+on its distribution server and determine the list of services that it wants to give to it.
 
-Потребитель периодически отправляет поставщику информацию об установленных сервисах поставщика:
-- Номера установленных версий
-- Состояние инстанций
-- Отчёты о сбоях
+The consumer periodically sends information to the provider about the provider's installed services:
+- Installed versions numbers
+- Instances state
+- Fault reports
 
 Поставщик также может выполнять _builder_ для потребителя.
 Это необходимо, если на сервере потребителя нет достаточных ресурсов для сборки версии, или поставщик

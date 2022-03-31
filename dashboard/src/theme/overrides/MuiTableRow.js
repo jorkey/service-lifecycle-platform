@@ -5,10 +5,8 @@ export default {
     '&$selected': {
       backgroundColor: palette.background.default
     },
-    '&$hover': {
-      '&:hover': {
-        backgroundColor: palette.background.default
-      }
+    '&:hover': {
+      backgroundColor: palette.text.secondary
     }
   }
 };
