@@ -55,7 +55,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
 
   const valuesColumns = columns.map((column, index) => {
     const columnClassName = cells.get(column.name)?.className
-    const cellValue = editing?editValues.get(column.name):cells.get(column.name)?.value
+    const cellValue = (editing || adding)?editValues.get(column.name):cells.get(column.name)?.value
     const cellSelect = cells.get(column.name)?.select
     const editableCell = column.editable ?
       (cells.get(column.name)?.editable != false) : cells.get(column.name)?.editable
