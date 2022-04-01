@@ -46,7 +46,7 @@ export interface GridTableCellInternalParams extends Attributes {
   onStartEdit?: () => void
   onStopEdit?: () => void
   onSetEditValue?: (value: GridTableCellValue) => void
-  onEnter?: () => void
+  onSubmitted?: () => void
   onCancelled?: () => void
   onSelected?: () => void
   onUnselected?: () => void
@@ -54,8 +54,8 @@ export interface GridTableCellInternalParams extends Attributes {
 
 export const GridTableCell = (params: GridTableCellInternalParams) => {
   const { name, className, type, value, select, editable, editing, auto, focused,
-    onValidate, onClicked, onStartEdit, onStopEdit, onSetEditValue, onEnter,
-    onCancelled, onSelected, onUnselected } = params
+    onValidate, onClicked, onStartEdit, onStopEdit, onSetEditValue,
+    onSubmitted, onCancelled, onSelected, onUnselected } = params
 
   const classes = useStyles(params)
 
@@ -143,7 +143,7 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
                  onKeyPress={e => {
                    const keyCode = e.code || e.key
                    if (keyCode == 'Enter'){
-                     onEnter?.()
+                     onSubmitted?.()
                    }
                  }}
                  error={onValidate?!onValidate(value):false}

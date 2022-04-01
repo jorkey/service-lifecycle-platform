@@ -104,7 +104,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
                                 onSubmitted?.(newValues, editOldValues)
                               }
                             }}
-                            onEnter={() => { if (valid) onSubmitted?.(new Map(editValuesRef.current), editOldValues)}}
+                            onSubmitted={() => { if (valid) onSubmitted?.(new Map(editValuesRef.current), editOldValues)}}
                             onCancelled={() => onCanceled?.()}
                             onSelected={() => onSelected?.()}
                             onUnselected={() => onUnselected?.()}

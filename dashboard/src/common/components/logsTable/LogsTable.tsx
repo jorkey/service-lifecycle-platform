@@ -1,6 +1,5 @@
 import React, {ForwardedRef, forwardRef, useEffect, useImperativeHandle, useState} from "react";
 import {
-  LogLine,
   useDirectoryLogsLazyQuery, useInstanceLogsLazyQuery,
   useProcessLogsLazyQuery, useServiceLogsLazyQuery, useTaskLogsLazyQuery,
 } from "../../../generated/graphql";
@@ -101,66 +100,68 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const [ lines, setLines ] = useState<LogRecord[]>([])
 
   const [ direction, setDirection ] = useState<'fromTop' | 'fromBottom'>('fromTop')
-  const [ fastPosition, setFastPosition ] = useState<'top' | 'bottom' | undefined>()
+  const [ position, setPosition ] = useState<'top' | 'bottom' | undefined>()
 
   const [ terminationStatus, setTerminationStatus ] = useState<boolean>()
 
   const startSequence = BigInt(0)
   const endSequence = BigInt('0x7FFFFFFFFFFFFFFF')
 
+  useEffect(() => {
+    if (follow) {
+      setPosition('bottom')
+    }
+  }, [ follow ])
+
   useImperativeHandle(ref, () => ({
     toTop: () => {
-      setFastPosition('top')
+      setPosition('top')
       if (direction != 'fromTop') {
+        setLines([])
         setDirection('fromTop')
         getLogs(startSequence)
       }
     },
     toBottom: () => {
-      setFastPosition('bottom')
-      setDirection('fromBottom')
-      getLogs(undefined, endSequence)
+      setPosition('bottom')
+      if (direction != 'fromBottom') {
+        setLines([])
+        setDirection('fromBottom')
+        getLogs(undefined, endSequence)
+      }
     }
   }))
 
   const sliceRowsCount = 250
 
-  const processLines = (lines: LogRecord[]) => {
-    if (fastPosition) {
-      setLines(lines)
-    } else {
-      addLines(lines)
-    }
-  }
-
   const [ getTaskLogs, taskLogs ] = useTaskLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
+    onCompleted(data) { if (data.logs) { addLines(data.logs as LogRecord[]) } }
   })
 
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
+    onCompleted(data) { if (data.logs) { addLines(data.logs as LogRecord[]) } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
+    onCompleted(data) { if (data.logs) { addLines(data.logs as LogRecord[]) } }
   })
 
   const [ getDirectoryLogs, directoryLogs ] = useDirectoryLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
+    onCompleted(data) { if (data.logs) { addLines(data.logs as LogRecord[]) } }
   })
 
   const [ getProcessLogs, processLogs ] = useProcessLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { processLines(data.logs as LogRecord[]) } }
+    onCompleted(data) { if (data.logs) { addLines(data.logs as LogRecord[]) } }
   })
 
   const isLoading = () => serviceLogs.loading || taskLogs.loading || instanceLogs.loading || directoryLogs.loading || processLogs.loading
@@ -272,23 +273,26 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       columns={columns}
       rows={rows}
       scrollToRow={
-        fastPosition == 'top' ? 0 : (fastPosition == 'bottom' || follow) ? rows.length-1 : undefined
+        position == 'top' ? 0 : (position == 'bottom' && rows.length) ? rows.length-1 : undefined
       }
       onScrollTop={() => {
         if (lines.length) {
+          setPosition('top')
           getLogs(undefined, lines[0].sequence)
         }
       }}
       onScrollMiddle={() => {
-        setFastPosition(undefined)
+        setPosition(undefined)
       }}
       onScrollBottom={() => {
-        if (fastPosition != 'bottom' && !follow && lines.length) {
+        if (follow) {
+          setPosition('bottom')
+        } else if (position != 'bottom' && lines.length) {
           getLogs(lines[lines.length - 1].sequence)
         }
       }}
     />
-    {follow ?
+    {(follow && position == 'bottom')?
       <LogsSubscriber
         {...props}
         onLines={(lines) => { if (lines) addLines(lines) }}
