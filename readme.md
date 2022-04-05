@@ -18,7 +18,7 @@
   - [Service settings by the developer](#service-settings-by-the-developer)
   - [Customizing settings for the client](#customizing-settings-for-the-client)
   - [Private files](#private-files)
-- [Services v-update](#services-v-update)
+- [Services vm-update](#services-vm-update)
   - [Scripts](#scripts)
   - [Distribution Server](#distribution-server)
     - [Create distribution server](#create-distribution-server)
@@ -87,14 +87,14 @@
 <a name="services_accounts"></a>
 # Introduction
 
-V-update performs versioning, updating, starting and monitoring of services.
+VM-update performs versioning, updating, starting and monitoring of services.
 History storage allows you to roll back changes. 
 Centralized storage of log journals and crash reports is convenient for 
 monitoring system performance and troubleshooting errors.
 
 ## Required platforms
 
-Currently v-update works on Linux Ubuntu servers.
+Currently vm-update works on Linux Ubuntu servers.
 Source codes must be in the Git VCS repositories.
 Work with Microsoft Azure cloud service is supported.
 
@@ -282,11 +282,11 @@ In addition to source codes, sometimes it is required to include to the image of
 such as access keys. This is often needed for client versions.
 Such files are not stored in source repositories, but are uploaded to the distribution server directly.
 
-# Services v-update
+# Services vm-update
 
-V-update itself consists of services. Thus, v-update creates versions of itself and updates itself.
+VM-update itself consists of services. Thus, vm-update creates versions of itself and updates itself.
 
-Services v-update:
+Services vm-update:
 - scripts - Startup and initializing scripts (Shell, YAML)
 - distribution - Distribution server
   - Backend
@@ -320,7 +320,7 @@ Perform initial installation and service upgrades.
 
 ## Distribution Server
 
-The main component of v-update is the distribution server, managed through the Distribution Dashboard.
+The main component of vm-update is the distribution server, managed through the Distribution Dashboard.
 New versions of services are created on the distribution server. To create a new version, _distribution_ starts _builder_.
 
 <a name="create_distribution_server"></a>
@@ -332,9 +332,9 @@ The distribution server can be built and installed from source, or from another 
 
 Install data base MongoDB.
 
-Clone source repository v-update to distribution server:
+Clone source repository vm-update to distribution server:
 
-`git clone git@github.com:jorkey/v-update.git`
+`git clone git@github.com:jorkey/vm-update.git`
 
 Execute the command in the repository directory:
 
@@ -464,7 +464,7 @@ _FiniteDuration_ format:
 
 #### GraphQL queries
 
-The distribution server accepts GraphQL requests from users, other v-update services, and other distribution servers.
+The distribution server accepts GraphQL requests from users, other vm-update services, and other distribution servers.
 GraphQL queries serve:
   - accounts
   - distribution servers connection settings
@@ -578,7 +578,7 @@ The consumer periodically checks for updates, and when updates are found, runs a
 
 ### Update of distribution server
 
-The distribution server is a v-update service, which means that it is built and updated by general rules.
+The distribution server is a vm-update service, which means that it is built and updated by general rules.
 The server periodically checks its current version against the client version in the database,
 and if they differ, restarts. Scripts after the completion of the distribution server install and run
 new version.
@@ -588,7 +588,7 @@ In this case, the scripts update themselves and start the distribution server ag
 
 ### Document history in Mongo DB
 
-All v-update documents are stored in collections of a special format.
+All vm-update documents are stored in collections of a special format.
 
 Each document, except for the content part, has additional fields:
 - __sequence_ - sequence number of adding/modifying the document in the collection
@@ -616,7 +616,7 @@ Here:
 - _distributionDir_ - distribution server working directory
 - _distribution_ - distribution server name
 
-Installation and updating is performed by v-update scripts from the distribution server for which the assembly is performed.
+Installation and updating is performed by vm-update scripts from the distribution server for which the assembly is performed.
 
 ### Distribution server install
 
@@ -1001,7 +1001,7 @@ assembly is already in progress.
 
 Before installing services on production servers, it is advisable to conduct comprehensive testing.
 In order for services to be installed on working servers only after they are
-tested, v-update has a mechanism to mark the list of service versions as tested.
+tested, vm-update has a mechanism to mark the list of service versions as tested.
 
 For example, there is a distribution server named _production_,
 in the configuration of which the test distribution server _test_ is specified.
@@ -1089,8 +1089,8 @@ It is possible to download the ZIP archive of fault report to a file.
 
 ## Dashboard
 
-The _Dashboard_ page is intended for operational control of _v-update_.
-With its, you can see how _v-update_ lives, quickly find possible problems,
+The _Dashboard_ page is intended for operational control of _vm-update_.
+With its, you can see how _vm-update_ lives, quickly find possible problems,
 rollback installed versions.
 
 Panels are used to display information from different angles.
