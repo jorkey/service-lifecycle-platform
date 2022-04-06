@@ -87,16 +87,16 @@
 <a name="services_accounts"></a>
 # Introduction
 
-VM-update performs versioning, updating, starting and monitoring of services.
-History storage allows you to roll back changes. 
+Vm-update performs versioning, updating, starting and monitoring of services.
+History storage allows you to roll back changes.
 Centralized storage of log journals and crash reports is convenient for 
 monitoring system performance and troubleshooting errors.
 
 ## Required platforms
 
-Currently vm-update works on Linux Ubuntu servers.
+Currently, vm-update works on Linux Ubuntu servers.
 Source codes must be in the Git VCS repositories.
-Work with Microsoft Azure cloud service is supported.
+Microsoft Azure cloud service is supported.
 
 ## Agreements
 

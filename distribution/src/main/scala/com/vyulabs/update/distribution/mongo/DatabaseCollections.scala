@@ -158,9 +158,23 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.descending("time")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
     _ <- if (createIndices) collection.createIndex(
-      Indexes.compoundIndex(Indexes.ascending("task"), Indexes.ascending("level"))) else Future()
+      Indexes.compoundIndex(Indexes.ascending("task"),
+                            Indexes.ascending("level"))) else Future()
     _ <- if (createIndices) collection.createIndex(
-      Indexes.compoundIndex(Indexes.ascending("service"), Indexes.ascending("level"))) else Future()
+      Indexes.compoundIndex(Indexes.ascending("service"),
+                            Indexes.ascending("level"))) else Future()
+    _ <- if (createIndices) collection.createIndex(
+      Indexes.compoundIndex(Indexes.ascending("service"),
+                            Indexes.ascending("instance"))) else Future()
+    _ <- if (createIndices) collection.createIndex(
+      Indexes.compoundIndex(Indexes.ascending("service", "instance"),
+                            Indexes.ascending("directory"))) else Future()
+    _ <- if (createIndices) collection.createIndex(
+      Indexes.compoundIndex(Indexes.ascending("service", "instance", "directory"),
+                            Indexes.ascending("process"))) else Future()
+    _ <- if (createIndices) collection.createIndex(
+      Indexes.compoundIndex(Indexes.ascending("service", "instance", "directory", "process"),
+                            Indexes.ascending("level"))) else Future()
   } yield collection, createIndex = createIndices)
 
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
