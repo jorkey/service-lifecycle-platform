@@ -130,7 +130,7 @@ const BuildDeveloper = () => {
       const versionInProcess = tasksInProcess?.tasks.find(task => task.parameters.find(p => {
         return p.name == 'service' && p.value == service }))
       const completedVersion = completedVersions?.developerVersionsInfo?.filter(version => version.service == service)
-        .sort((v1, v2) => Version.compareBuilds(v2.version.build, v1.version.build))[0]
+        .sort((v1, v2) => v1.buildInfo.time.getTime() > v2.buildInfo.time.getTime() ? -1 : 1)[0]
       const version = versionInProcess?versionInProcess.parameters.find(p => p.name == 'version')?.value:
         completedVersion?Version.buildToString(completedVersion.version.build):undefined
       const author = versionInProcess?versionInProcess.parameters.find(p => p.name == 'author')?.value:

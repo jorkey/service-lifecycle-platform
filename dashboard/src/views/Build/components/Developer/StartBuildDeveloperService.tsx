@@ -109,7 +109,7 @@ const StartBuildDeveloperService: React.FC<BuildServiceParams> = props => {
     if (whoAmI.data && developerVersions.data) {
       const versions = [...developerVersions.data.developerVersionsInfo]
         .sort((v1, v2) =>
-          Version.compareBuilds(v1.version.build, v2.version.build))
+          v1.buildInfo.time.getTime() > v2.buildInfo.time.getTime() ? -1 : 1)
       const lastVersion = versions.length > 0 ? versions[versions.length-1] : undefined
       if (lastVersion) {
         setVersion(Version.buildToString(Version.nextBuild(lastVersion.version.build)))
