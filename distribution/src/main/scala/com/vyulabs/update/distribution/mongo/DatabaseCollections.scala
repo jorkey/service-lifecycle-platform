@@ -146,21 +146,15 @@ class DatabaseCollections(db: MongoDb,
 
   val Log_Lines = new SequencedCollection[ServiceLogLine]("log.lines", for {
     collection <- db.getOrCreateCollection[BsonDocument]("log.lines")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("level")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("unit")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("time"), new IndexOptions()
-      .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.descending("time")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
     _ <- if (createIndices) collection.createIndex(
       Indexes.compoundIndex(Indexes.ascending("service"), Indexes.ascending("instance"),
                             Indexes.ascending("directory"), Indexes.ascending("process"),
-                            Indexes.ascending("level"))) else Future()
+                            Indexes.ascending("task"), Indexes.ascending("time"),
+                            Indexes.ascending("level"), Indexes.ascending("unit"),
+                            Indexes.text("message"))) else Future()
+
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("time"), new IndexOptions()
+      .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
   } yield collection, createIndex = createIndices)
 
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
