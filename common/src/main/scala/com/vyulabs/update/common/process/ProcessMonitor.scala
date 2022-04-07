@@ -71,7 +71,7 @@ class ProcessMonitor(process: ChildProcess, conditions: RestartConditions)
   private def getProcessMemorySize(handle: ProcessHandle): Option[Long] = {
     if (isUnix) {
       try {
-        val proc = Runtime.getRuntime.exec(s"ps -o vsz= -p ${handle.pid()}", null, new File("."))
+        val proc = Runtime.getRuntime.exec(s"ps -o rss= -p ${handle.pid()}", null, new File("."))
         val stdOutput = ProcessUtils.readOutputToString(
             proc, ProcessUtils.Logging.None).getOrElse {
           log.error(s"Get 'ps' output error")
