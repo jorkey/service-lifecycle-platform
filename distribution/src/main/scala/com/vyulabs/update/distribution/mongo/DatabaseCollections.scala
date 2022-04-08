@@ -150,9 +150,8 @@ class DatabaseCollections(db: MongoDb,
       Indexes.compoundIndex(Indexes.ascending("service"), Indexes.ascending("instance"),
                             Indexes.ascending("directory"), Indexes.ascending("process"),
                             Indexes.ascending("task"), Indexes.ascending("time"),
-                            Indexes.ascending("level"), Indexes.ascending("unit"),
-                            Indexes.text("message"))) else Future()
-
+                            Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("time"), new IndexOptions()
       .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
   } yield collection, createIndex = createIndices)
