@@ -14,9 +14,10 @@ import spray.json.enrichAny
 import java.io.File
 import java.nio.file.Files
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 19.12.19.
@@ -31,7 +32,7 @@ class FaultUploaderImpl(archiveDir: File, distributionClient: DistributionClient
                         (implicit executionContext: ExecutionContext, log: Logger) extends Thread with FaultUploader { self =>
   private case class FaultReport(info: FaultInfo, reportFilesTmpDir: Option[File])
 
-  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, Duration.Inf)
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(5, TimeUnit.MINUTES))
   private val idGenerator = new IdGenerator()
   private var faults = Queue.empty[FaultReport]
   private val maxServiceDirectoryCapacity = 1000L * 1024 * 1024

@@ -10,12 +10,13 @@ import org.slf4j.Logger
 import spray.json.DefaultJsonProtocol._
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 class StateUploader(directory: File, instance: InstanceId, servicesNames: Set[ServiceNameWithRole],
                     distributionClient: DistributionClient[SyncSource])(implicit executionContext: ExecutionContext, log: Logger) extends Thread { self =>
-  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, Duration.Inf)
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(5, TimeUnit.SECONDS))
 
   private val services = servicesNames.foldLeft(Map.empty[ServiceNameWithRole, ServiceStateController]){ (services, name) =>
     services + (name -> new ServiceStateController(directory, name, () => update()))
