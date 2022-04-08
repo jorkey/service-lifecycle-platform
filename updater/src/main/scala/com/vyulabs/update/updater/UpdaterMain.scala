@@ -12,8 +12,9 @@ import com.vyulabs.update.updater.uploaders.StateUploader
 import org.slf4j.LoggerFactory
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 24.12.18.
@@ -141,7 +142,7 @@ object UpdaterMain extends App { self =>
 
         def maybeUpdate(): Boolean = {
           if (System.currentTimeMillis() - lastUpdateTime > 10000) {
-            val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, Duration.Inf)
+            val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(5, TimeUnit.SECONDS))
             syncDistributionClient.graphqlRequest(administratorQueries.getClientDesiredVersions(
                 Seq(Common.ScriptsServiceName, Common.UpdaterServiceName) ++ serviceUpdaters.map(_._1.name))) match {
               case Some(desiredVersions) =>

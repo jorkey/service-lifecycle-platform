@@ -8,8 +8,9 @@ import com.vyulabs.update.common.version.ClientDistributionVersion
 import org.slf4j.Logger
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 16.01.19.
@@ -17,7 +18,7 @@ import scala.concurrent.duration.Duration
   */
 class SelfUpdater(state: ServiceStateController, distributionClient: DistributionClient[SyncSource])
                  (implicit executionContext: ExecutionContext, log: Logger) {
-  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, Duration.Inf)
+  private val syncDistributionClient = new SyncDistributionClient[SyncSource](distributionClient, FiniteDuration(1, TimeUnit.MINUTES))
 
   private val scriptsVersion = IoUtils.readServiceVersion(Common.ScriptsServiceName, new File("."))
   private val updaterVersion = IoUtils.readServiceVersion(Common.UpdaterServiceName, new File("."))
