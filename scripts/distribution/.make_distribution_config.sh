@@ -50,7 +50,8 @@ jq "$substitutions" >distribution.json <<EOF
     "expirationTimeout": { "length": 60, "unit": "SECONDS" }
   },
   "logs": {
-    "expirationTimeout": { "length": 7, "unit": "DAYS" }
+    "serviceLogExpirationTimeout": { "length": 7, "unit": "DAYS" },
+    "taskLogExpirationTimeout": { "length": 365, "unit": "DAYS" }
   },
   "faultReports": {
     "expirationTimeout": { "length": 7, "unit": "DAYS" },

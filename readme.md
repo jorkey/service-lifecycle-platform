@@ -451,7 +451,8 @@ The _distribution.json_ configuration file is located in the working directory o
   - _expirationTimeout:FiniteDuration_ : duration of storage of the last state of the service.
     If the state is not updated during this time, the service instance is considered dead.
 - _logs_ - logs of services
-  - _expirationTimeout:FiniteDuration_ : duration of log record storage in the database
+  - _serviceLogExpirationTimeout:FiniteDuration_ : duration of service log record storage in the database
+  - _taskLogExpirationTimeout:FiniteDuration_ : duration of task log record storage in the database
 - _faultReports_ - fault reports
   - _expirationTimeout:FiniteDuration_ : duration of fault report storage in the database
   - _maxReportsCount:number_ : maximum number of fault reports in the database

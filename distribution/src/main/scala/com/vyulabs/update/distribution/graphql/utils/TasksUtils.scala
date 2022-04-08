@@ -27,7 +27,7 @@ object TaskParameter extends DefaultJsonProtocol {
 }
 
 case class TaskInfo(task: TaskId, `type`: TaskType, parameters: Seq[TaskParameter],
-                    creationTime: Date, active: Option[Boolean] = None)
+                    creationTime: Date, active: Option[Boolean], expireTime: Date)
 
 trait TasksUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
@@ -49,7 +49,8 @@ trait TasksUtils extends SprayJsonSupport {
     synchronized {
       checkAllowToRun()
       val task = taskManager.create(s"task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}", run)
-      val info = TaskInfo(task.taskId, taskType, parameters, new Date(), Some(true))
+      val info = TaskInfo(task.taskId, taskType, parameters, new Date(), Some(true),
+        new Date(System.currentTimeMillis() + config.logs.taskLogExpirationTimeout.toMillis))
       activeTasks :+= info
       task.future.andThen { case _ => synchronized { activeTasks = activeTasks.filter(_ != info) }}
       collections.Tasks_Info.insert(info.copy(active = None)).failed

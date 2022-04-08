@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.model._
-import com.vyulabs.update.common.config.{GitConfig, NamedStringValue, Repository, BuildServiceConfig}
+import com.vyulabs.update.common.config.{BuildServiceConfig, GitConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, PasswordHash, ServerAccountInfo, UserAccountProperties}
@@ -14,12 +14,12 @@ import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromProviders,
 import org.mongodb.scala.bson.codecs.IterableCodecProvider
 import org.mongodb.scala.bson.codecs.Macros._
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class DatabaseCollections(db: MongoDb,
                           serviceStatesExpireTimeout: FiniteDuration,
-                          logLineExpireTimeout: FiniteDuration,
                           createIndices: Boolean)
                          (implicit system: ActorSystem, executionContext: ExecutionContext) {
   private implicit val log = Logging(system, this.getClass)
@@ -152,8 +152,8 @@ class DatabaseCollections(db: MongoDb,
                             Indexes.ascending("task"), Indexes.ascending("time"),
                             Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("time"), new IndexOptions()
-      .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
+      .expireAfter(0, TimeUnit.SECONDS)) else Future()
   } yield collection, createIndex = createIndices)
 
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
@@ -169,9 +169,10 @@ class DatabaseCollections(db: MongoDb,
     collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("task"),
       new IndexOptions().unique(true)) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("taskType"), new IndexOptions()
-      .expireAfter(logLineExpireTimeout.length, logLineExpireTimeout.unit)) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("type")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
+      .expireAfter(0, TimeUnit.SECONDS)) else Future()
   } yield collection, createIndex = createIndices)
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {

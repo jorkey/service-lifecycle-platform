@@ -21,7 +21,7 @@ class LogStorekeeperTest extends TestEnvironment with ScalatestRouteTest {
   val appender = new TraceAppender()
   logger.addAppender(appender)
 
-  val storekeeper = new LogStorekeeper("service1", None, "instance1", collections.Log_Lines)
+  val storekeeper = new LogStorekeeper("service1", None, "instance1", collections.Log_Lines, config.logs)
   val buffer = new LogBuffer("Test", "PROCESS", storekeeper, 3, 6)
 
   appender.addListener(buffer)

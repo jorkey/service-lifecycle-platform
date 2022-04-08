@@ -42,7 +42,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   def networkConfig = NetworkConfig("localhost", 0, None)
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = ServiceStatesConfig(FiniteDuration(60, TimeUnit.SECONDS))
-  def logsConfig = LogsConfig(FiniteDuration(60, TimeUnit.SECONDS))
+  def logsConfig = LogsConfig(FiniteDuration(60, TimeUnit.SECONDS), FiniteDuration(60, TimeUnit.SECONDS))
   def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 
   val config = DistributionConfig("test", "Test distribution server", "instance1", "secret", mongoDbConfig,
@@ -57,11 +57,10 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
     config.mongoDb.temporary.getOrElse(false)); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo,
     instanceStateConfig.expirationTimeout,
-    logsConfig.expirationTimeout,
     createIndices)
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(task => new LogStorekeeper(Common.DistributionServiceName, Some(task),
-    instance, collections.Log_Lines))
+    instance, collections.Log_Lines, config.logs))
 
   val graphql = new Graphql()
   val workspace = GraphqlWorkspace(config, collections, distributionDir, taskManager)

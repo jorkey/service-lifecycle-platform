@@ -34,10 +34,10 @@ object ServiceStatesConfig {
   implicit val instanceStateConfigJson = jsonFormat1(ServiceStatesConfig.apply)
 }
 
-case class LogsConfig(expirationTimeout: FiniteDuration)
+case class LogsConfig(serviceLogExpirationTimeout: FiniteDuration, taskLogExpirationTimeout: FiniteDuration)
 
 object LogsConfig {
-  implicit val logsConfigJson = jsonFormat1(LogsConfig.apply)
+  implicit val logsConfigJson = jsonFormat2(LogsConfig.apply)
 }
 
 case class FaultReportsConfig(expirationTimeout: FiniteDuration, maxReportsCount: Int)

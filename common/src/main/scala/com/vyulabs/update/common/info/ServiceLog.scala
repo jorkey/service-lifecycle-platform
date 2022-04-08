@@ -13,10 +13,10 @@ object LogLine extends DefaultJsonProtocol {
 }
 
 case class ServiceLogLine(service: ServiceId, instance: InstanceId, directory: ServiceDirectory, process: ProcessId, task: Option[TaskId],
-                          time: Date, level: String, unit: String, message: String, terminationStatus: Option[Boolean])
+                          time: Date, level: String, unit: String, message: String, terminationStatus: Option[Boolean], expireTime: Date)
 
 object ServiceLogLine extends DefaultJsonProtocol {
-  implicit val serviceLogLineJson = jsonFormat10(ServiceLogLine.apply)
+  implicit val serviceLogLineJson = jsonFormat11(ServiceLogLine.apply)
 }
 
 case class SequencedServiceLogLine(sequence: BigInt, instance: InstanceId, directory: ServiceDirectory, process: ProcessId, task: Option[TaskId],
