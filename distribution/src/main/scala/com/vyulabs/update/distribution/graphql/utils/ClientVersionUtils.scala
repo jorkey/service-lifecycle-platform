@@ -30,11 +30,13 @@ trait ClientVersionUtils {
 
   def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)
                          (implicit log: Logger): TaskId = {
+    val services = versions.map(_.service)
     var taskCancel = Option.empty[() => Unit]
     tasksUtils.createTask(
       "BuildClientVersions",
       Seq(TaskParameter("author", author),
           TaskParameter("versions", Misc.seqToCommaSeparatedString(versions))),
+      services,
       () => if (!tasksUtils.getActiveTasks(taskType = Some("BuildClientVersions")).isEmpty) {
           throw new IOException(s"Build of client versions is already in process")
       },

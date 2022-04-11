@@ -27,7 +27,9 @@ object TaskParameter extends DefaultJsonProtocol {
 }
 
 case class TaskInfo(task: TaskId, `type`: TaskType, parameters: Seq[TaskParameter],
-                    creationTime: Date, active: Option[Boolean], expireTime: Date)
+                    services: Seq[ServiceId], creationTime: Date,
+                    terminationTime: Option[Date], terminationStatus: Option[Boolean],
+                    expireTime: Date)
 
 trait TasksUtils extends SprayJsonSupport {
   protected implicit val system: ActorSystem
@@ -42,18 +44,24 @@ trait TasksUtils extends SprayJsonSupport {
 
   private var activeTasks = Seq.empty[TaskInfo]
 
-  def createTask(taskType: TaskType, parameters: Seq[TaskParameter],
-                 checkAllowToRun: () => Unit,
-                 run: (TaskId, Logger) => (Future[Any], Option[() => Unit]))
+  def createTask(taskType: TaskType, parameters: Seq[TaskParameter], services: Seq[ServiceId],
+                 checkAllowToRun: () => Unit, run: (TaskId, Logger) => (Future[Any], Option[() => Unit]))
                  (implicit log: Logger): Task = {
     synchronized {
       checkAllowToRun()
-      val task = taskManager.create(s"task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}", run)
-      val info = TaskInfo(task.taskId, taskType, parameters, new Date(), Some(true),
+      val task = taskManager.create(s"task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}",
+        run)
+      val info = TaskInfo(task.taskId, taskType, parameters, services, new Date(), None, None,
         new Date(System.currentTimeMillis() + config.logs.taskLogExpirationTimeout.toMillis))
       activeTasks :+= info
-      task.future.andThen { case _ => synchronized { activeTasks = activeTasks.filter(_ != info) }}
-      collections.Tasks_Info.insert(info.copy(active = None)).failed
+      task.future.andThen {
+        case result =>
+          synchronized { activeTasks = activeTasks.filter(_ != info) }
+          collections.Tasks_Info.update(Filters.eq("task", task.taskId),
+            _.map(_.copy(terminationTime = Some(new Date()), terminationStatus = Some(result.isSuccess)))).failed
+            .foreach(ex => log.error("Insert task info error", ex))
+      }
+      collections.Tasks_Info.insert(info).failed
         .foreach(ex => log.error("Insert task info error", ex))
       task
     }
@@ -64,27 +72,30 @@ trait TasksUtils extends SprayJsonSupport {
   }
 
   def getActiveTasks(id: Option[TaskId] = None, taskType: Option[TaskType] = None,
-                     parameters: Seq[TaskParameter] = Seq.empty): Seq[TaskInfo] = {
+                     parameters: Seq[TaskParameter] = Seq.empty, services: Seq[String] = Seq.empty): Seq[TaskInfo] = {
     synchronized {
       activeTasks
         .filter(task => id.forall(_ == task.task))
         .filter(task => taskType.forall(_ == task.`type`))
         .filter(task => parameters.forall(parameter =>
           task.parameters.exists(_ == parameter)))
+        .filter(task => services.forall(service =>
+          task.services.exists(_ == service)))
         .sortWith((t1, t2) => t1.creationTime.getTime > t2.creationTime.getTime)
     }
   }
 
-  def getTasks(task: Option[TaskId], taskType: Option[String], parameters: Seq[TaskParameter],
-               onlyActive: Option[Boolean], limit: Option[Int])
-              (implicit log: Logger) : Future[Seq[TaskInfo]] = {
-    val activeTasks = getActiveTasks(task, taskType, parameters).take(limit.getOrElse(Int.MaxValue))
+  def getTasks(task: Option[TaskId], taskType: Option[String], parameters: Seq[TaskParameter], services: Seq[String],
+               onlyActive: Option[Boolean], limit: Option[Int])(implicit log: Logger) : Future[Seq[TaskInfo]] = {
+    val activeTasks = getActiveTasks(task, taskType, parameters, services).take(limit.getOrElse(Int.MaxValue))
     if (onlyActive.getOrElse(false) || limit.exists(_ == activeTasks.size)) {
       Future(activeTasks)
     } else {
       val idArg = task.map { id => Filters.eq("task", id) }
-      val taskTypeArg = taskType.map { taskType => Filters.eq("taskType", taskType) }
-      val args = idArg ++ taskTypeArg
+      val taskTypeArg = taskType.map { taskType => Filters.eq("type", taskType) }
+      val servicesArg = if (!services.isEmpty)
+        Some(Filters.or(services.map(service => Filters.eq("services", service)).asJava)) else None
+      val args = idArg ++ taskTypeArg ++ servicesArg
       val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
       val sort = Some(Sorts.descending("_sequence"))
       collections.Tasks_Info.find(filters, sort, limit.map(_ - activeTasks.size))

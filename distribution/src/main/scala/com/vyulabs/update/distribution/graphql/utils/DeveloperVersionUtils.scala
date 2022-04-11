@@ -42,6 +42,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           TaskParameter("comment", comment),
           TaskParameter("buildClientVersion", buildClientVersion.toString)
       ),
+      Seq(service),
       () => if (!tasksUtils.getActiveTasks(None, Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
         throw new IOException(s"Build developer version of service ${service} is already in process")
       },
@@ -221,6 +222,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     tasksUtils.createTask(
       "GetLastCommitComment",
       Seq(TaskParameter("service", service)),
+      Seq(service),
       () => {},
       (taskId, logger) => {
         implicit val log = logger

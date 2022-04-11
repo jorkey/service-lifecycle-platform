@@ -797,6 +797,7 @@ export type QueryTasksArgs = {
   task?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   parameters?: Maybe<Array<TaskParameterInput>>;
+  services?: Maybe<Array<Scalars['String']>>;
   onlyActive?: Maybe<Scalars['Boolean']>;
   limit?: Maybe<Scalars['Int']>;
 };
@@ -894,8 +895,11 @@ export type TaskInfo = {
   task: Scalars['String'];
   type: Scalars['String'];
   parameters: Array<TaskParameter>;
+  services: Array<Scalars['String']>;
   creationTime: Scalars['Date'];
-  active?: Maybe<Scalars['Boolean']>;
+  terminationTime?: Maybe<Scalars['Date']>;
+  terminationStatus?: Maybe<Scalars['Boolean']>;
+  expireTime: Scalars['Date'];
 };
 
 export type TaskParameter = {
@@ -2119,6 +2123,7 @@ export type TasksQueryVariables = Exact<{
   task?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   parameters?: Maybe<Array<TaskParameterInput> | TaskParameterInput>;
+  services?: Maybe<Array<Scalars['String']> | Scalars['String']>;
   onlyActive?: Maybe<Scalars['Boolean']>;
   limit?: Maybe<Scalars['Int']>;
 }>;
@@ -2128,7 +2133,7 @@ export type TasksQuery = (
   { __typename?: 'Query' }
   & { tasks: Array<(
     { __typename?: 'TaskInfo' }
-    & Pick<TaskInfo, 'task' | 'type' | 'creationTime' | 'active'>
+    & Pick<TaskInfo, 'task' | 'type' | 'services' | 'creationTime' | 'terminationTime' | 'terminationStatus' | 'expireTime'>
     & { parameters: Array<(
       { __typename?: 'TaskParameter' }
       & Pick<TaskParameter, 'name' | 'value'>
@@ -5277,11 +5282,12 @@ export type TaskTypesQueryHookResult = ReturnType<typeof useTaskTypesQuery>;
 export type TaskTypesLazyQueryHookResult = ReturnType<typeof useTaskTypesLazyQuery>;
 export type TaskTypesQueryResult = Apollo.QueryResult<TaskTypesQuery, TaskTypesQueryVariables>;
 export const TasksDocument = gql`
-    query tasks($task: String, $type: String, $parameters: [TaskParameterInput!], $onlyActive: Boolean, $limit: Int) {
+    query tasks($task: String, $type: String, $parameters: [TaskParameterInput!], $services: [String!], $onlyActive: Boolean, $limit: Int) {
   tasks(
     task: $task
     type: $type
     parameters: $parameters
+    services: $services
     onlyActive: $onlyActive
     limit: $limit
   ) {
@@ -5291,8 +5297,11 @@ export const TasksDocument = gql`
       name
       value
     }
+    services
     creationTime
-    active
+    terminationTime
+    terminationStatus
+    expireTime
   }
 }
     `;
@@ -5312,6 +5321,7 @@ export const TasksDocument = gql`
  *      task: // value for 'task'
  *      type: // value for 'type'
  *      parameters: // value for 'parameters'
+ *      services: // value for 'services'
  *      onlyActive: // value for 'onlyActive'
  *      limit: // value for 'limit'
  *   },

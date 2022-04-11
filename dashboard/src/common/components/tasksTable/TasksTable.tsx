@@ -70,11 +70,6 @@ export const TasksTable = (props: TasksTableParams) => {
       name: 'parameters',
       headerName: 'Parameters',
       className: classes.parametersColumn
-    },
-    {
-      name: 'active',
-      headerName: 'Active',
-      className: classes.activeColumn
     }
   ].filter(column => column.name != 'active' || !onlyActive) as GridTableColumnParams[]
 
@@ -94,8 +89,7 @@ export const TasksTable = (props: TasksTableParams) => {
         ['creationTime', { value: task.creationTime }],
         ['task', { value: task.task }],
         ['type', { value: task.type }],
-        ['parameters', { value: parametersToString(task.parameters) }],
-        ['active', { value: task.active?true:false }]
+        ['parameters', { value: parametersToString(task.parameters) }]
       ]))
 
   return rows?<>
