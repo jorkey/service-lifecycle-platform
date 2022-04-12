@@ -798,7 +798,7 @@ export type QueryTasksArgs = {
   task?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   parameters?: Maybe<Array<TaskParameterInput>>;
-  services?: Maybe<Array<Scalars['String']>>;
+  service?: Maybe<Scalars['String']>;
   onlyActive?: Maybe<Scalars['Boolean']>;
   limit?: Maybe<Scalars['Int']>;
 };
@@ -2132,7 +2132,7 @@ export type TasksQueryVariables = Exact<{
   task?: Maybe<Scalars['String']>;
   type?: Maybe<Scalars['String']>;
   parameters?: Maybe<Array<TaskParameterInput> | TaskParameterInput>;
-  services?: Maybe<Array<Scalars['String']> | Scalars['String']>;
+  service?: Maybe<Scalars['String']>;
   onlyActive?: Maybe<Scalars['Boolean']>;
   limit?: Maybe<Scalars['Int']>;
 }>;
@@ -5323,12 +5323,12 @@ export type TaskServicesQueryHookResult = ReturnType<typeof useTaskServicesQuery
 export type TaskServicesLazyQueryHookResult = ReturnType<typeof useTaskServicesLazyQuery>;
 export type TaskServicesQueryResult = Apollo.QueryResult<TaskServicesQuery, TaskServicesQueryVariables>;
 export const TasksDocument = gql`
-    query tasks($task: String, $type: String, $parameters: [TaskParameterInput!], $services: [String!], $onlyActive: Boolean, $limit: Int) {
+    query tasks($task: String, $type: String, $parameters: [TaskParameterInput!], $service: String, $onlyActive: Boolean, $limit: Int) {
   tasks(
     task: $task
     type: $type
     parameters: $parameters
-    services: $services
+    service: $service
     onlyActive: $onlyActive
     limit: $limit
   ) {
@@ -5362,7 +5362,7 @@ export const TasksDocument = gql`
  *      task: // value for 'task'
  *      type: // value for 'type'
  *      parameters: // value for 'parameters'
- *      services: // value for 'services'
+ *      service: // value for 'service'
  *      onlyActive: // value for 'onlyActive'
  *      limit: // value for 'limit'
  *   },

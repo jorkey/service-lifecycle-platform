@@ -53,7 +53,7 @@ const TasksView: React.FC<TasksParams> = props => {
   const classes = useStyles()
 
   const [taskType, setTaskType] = useState<string>()
-  const [service, setService] = useState<string>()
+  const [taskService, setTaskService] = useState<string>()
   const [onlyActive, setOnlyOnlyActive] = useState<boolean>()
 
   const history = useHistory()
@@ -107,14 +107,14 @@ const TasksView: React.FC<TasksParams> = props => {
                     className={classes.taskServiceSelect}
                     native
                     onChange={(event) => {
-                      setTaskType(event.target.value? event.target.value as string: undefined)
+                      setTaskService(event.target.value? event.target.value as string: undefined)
                     }}
                     title='Service'
-                    value={taskType}
+                    value={taskService}
                   >
                     <option key={-1}/>
                     { taskServices?.taskServices
-                      .map((type, index) => <option key={index}>{type}</option>)}
+                      .map((type, index) => <option key={index}>{type}</option>) }
                   </Select>
                 }
                 label='Service'
@@ -141,7 +141,7 @@ const TasksView: React.FC<TasksParams> = props => {
         <div className={classes.inner}>
           <TasksTable className={classes.tasksTable}
                      type={taskType}
-                     service={service}
+                     service={taskService}
                      onlyActive={onlyActive}
                      onClick={(task) => { handleOnClick(task) }}
                      onError={error => {setError(error)}}

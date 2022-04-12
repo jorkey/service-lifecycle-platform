@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import { makeStyles } from '@material-ui/styles';
 import {
+  Box,
   Button,
   Card,
   CardContent, CardHeader, Checkbox, Grid, Select, TextField,
@@ -8,13 +9,14 @@ import {
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
-import {RouteComponentProps} from "react-router-dom";
+import {NavLink as RouterLink, RouteComponentProps} from "react-router-dom";
 import {
   useLogLevelsQuery,
   useTasksQuery
 } from "../../../../generated/graphql";
 import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
 import {Logs} from "../../../../common/utils/Logs";
+import {upload} from "../../../../common/load/Upload";
 
 const useStyles = makeStyles((theme:any) => ({
   content: {
@@ -46,13 +48,22 @@ const useStyles = makeStyles((theme:any) => ({
   logsTable: {
     height: 'calc(100vh - 250px)',
   },
-  control: {
+  topControl: {
     paddingLeft: '5px',
     paddingRight: '15px',
   },
   alert: {
     marginTop: 25
-  }
+  },
+  controls: {
+    marginRight: 16,
+    display: 'flex',
+    justifyContent: 'flex-end',
+    p: 2
+  },
+  control: {
+    marginLeft: '10px',
+  },
 }));
 
 interface TaskLoggingRouteParams {
@@ -60,7 +71,7 @@ interface TaskLoggingRouteParams {
 }
 
 interface TaskLoggingParams extends RouteComponentProps<TaskLoggingRouteParams> {
-  fromUrl?: string
+  fromUrl: string
 }
 
 const TaskLogging: React.FC<TaskLoggingParams> = props => {
@@ -89,14 +100,14 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
 
   const active = !!activeTask?.tasks.length
 
-  return (
+  return (<>
     <Card>
       <CardHeader
         action={
           <>
             <FormGroup row>
               <FormControlLabel
-                className={classes.control}
+                className={classes.topControl}
                 labelPlacement={'start'}
                 control={
                   <Select
@@ -116,7 +127,7 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
                 label='Level'
               />
               {!follow ? <FormControlLabel
-                className={classes.control}
+                className={classes.topControl}
                 labelPlacement={'start'}
                 control={
                   <TextField
@@ -180,7 +191,18 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
         </div>
       </CardContent>
     </Card>
-  )
+    <Box className={classes.controls}>
+      <Button
+        className={classes.control}
+        color="primary"
+        component={RouterLink}
+        to={props.fromUrl}
+        variant="contained"
+      >
+        Exit
+      </Button>
+    </Box>
+  </>)
 }
 
 export default TaskLogging

@@ -408,9 +408,9 @@ query taskServices {
     taskServices
 }
 
-query tasks ($task: String, $type: String, $parameters: [TaskParameterInput!], $services: [String!],
+query tasks ($task: String, $type: String, $parameters: [TaskParameterInput!], $service: String,
              $onlyActive: Boolean, $limit: Int) {
-    tasks (task: $task, type: $type, parameters: $parameters, services: $services, onlyActive: $onlyActive, limit: $limit) {
+    tasks (task: $task, type: $type, parameters: $parameters, service: $service, onlyActive: $onlyActive, limit: $limit) {
         task, type, parameters { name, value }, services, creationTime, terminationTime, terminationStatus, expireTime
     }
 }

@@ -69,7 +69,7 @@ trait TasksUtils extends SprayJsonSupport {
   }
 
   def getTaskTypes(): Future[Seq[TaskType]] ={
-    collections.Tasks_Info.distinctField[TaskType]("taskType")
+    collections.Tasks_Info.distinctField[TaskType]("type")
   }
 
   def getTaskServices(): Future[Seq[ServiceId]] ={
