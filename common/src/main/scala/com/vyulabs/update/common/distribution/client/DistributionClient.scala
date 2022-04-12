@@ -13,11 +13,8 @@ import java.net.{URL, URLConnection, URLStreamHandler}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-
 class DistributionClient[Source[_]](client: HttpClient[Source])
                         (implicit executionContext: ExecutionContext) {
-  private var loginInProcess = Option.empty[Future[Unit]]
-
   val url = client.distributionUrl
 
   def ping()(implicit log: Logger): Future[Unit] = {
@@ -26,38 +23,31 @@ class DistributionClient[Source[_]](client: HttpClient[Source])
 
   def login()(implicit log: Logger): Future[Unit] = {
     synchronized {
-      loginInProcess match {
+      client.accessToken match {
         case None =>
-          client.accessToken match {
-            case None =>
-              val authTokenRx = "(.*):(.*)".r
-              new URL(null, client.distributionUrl, new URLStreamHandler() {
-                override def openConnection(u: URL): URLConnection = null
-              }
-              ).getUserInfo match {
-                case authTokenRx(user, password) =>
-                  val future = client.graphql(LoginCoder.login(user, password))
-                    .andThen { case result =>
-                      synchronized {
-                        loginInProcess = None
-                        result match {
-                          case Success(token) =>
-                            client.accessToken = Some(token)
-                          case Failure(_) =>
-                        }
-                      }
-                    }
-                    .map(_ => ())
-                  loginInProcess = Some(future)
-                  future
-                case _ =>
-                  Future.failed(new IOException("No authentication data in the URL for login"))
-              }
-            case Some(_) =>
-              Future()
+          val authTokenRx = "(.*):(.*)".r
+          new URL(null, client.distributionUrl, new URLStreamHandler() {
+            override def openConnection(u: URL): URLConnection = null
           }
-        case Some(loginInProcess) =>
-          loginInProcess
+          ).getUserInfo match {
+            case authTokenRx(user, password) =>
+              val future = client.graphql(LoginCoder.login(user, password))
+                .andThen { case result =>
+                  synchronized {
+                    result match {
+                      case Success(token) =>
+                        client.accessToken = Some(token)
+                      case Failure(_) =>
+                    }
+                  }
+                }
+                .map(_ => ())
+              future
+            case _ =>
+              Future.failed(new IOException("No authentication data in the URL for login"))
+          }
+        case Some(_) =>
+          Future()
       }
     }
   }

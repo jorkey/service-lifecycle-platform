@@ -9,6 +9,7 @@ import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps, useHistory} from "react-router-dom";
 import {
+  useTaskServicesQuery,
   useTaskTypesQuery
 } from "../../../../generated/graphql";
 import {TasksTable} from "../../../../common/components/tasksTable/TasksTable";
@@ -18,6 +19,10 @@ const useStyles = makeStyles((theme:any) => ({
     minWidth: 800
   },
   taskTypeSelect: {
+    marginLeft: '10px',
+    width: '150px',
+  },
+  taskServiceSelect: {
     marginLeft: '10px',
     width: '150px',
   },
@@ -48,6 +53,7 @@ const TasksView: React.FC<TasksParams> = props => {
   const classes = useStyles()
 
   const [taskType, setTaskType] = useState<string>()
+  const [service, setService] = useState<string>()
   const [onlyActive, setOnlyOnlyActive] = useState<boolean>()
 
   const history = useHistory()
@@ -56,6 +62,11 @@ const TasksView: React.FC<TasksParams> = props => {
   const { data: taskTypes } = useTaskTypesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query task types error ' + err.message) },
+  })
+
+  const { data: taskServices } = useTaskServicesQuery({
+    fetchPolicy: 'no-cache', // base option no-cache does not work
+    onError(err) { setError('Query task services error ' + err.message) },
   })
 
   const handleOnClick = useCallback((task: string) => {
@@ -92,6 +103,26 @@ const TasksView: React.FC<TasksParams> = props => {
                 className={classes.control}
                 labelPlacement={'start'}
                 control={
+                  <Select
+                    className={classes.taskServiceSelect}
+                    native
+                    onChange={(event) => {
+                      setTaskType(event.target.value? event.target.value as string: undefined)
+                    }}
+                    title='Service'
+                    value={taskType}
+                  >
+                    <option key={-1}/>
+                    { taskServices?.taskServices
+                      .map((type, index) => <option key={index}>{type}</option>)}
+                  </Select>
+                }
+                label='Service'
+              />
+              <FormControlLabel
+                className={classes.control}
+                labelPlacement={'start'}
+                control={
                   <Checkbox
                     className={classes.onlyActive}
                     onChange={ event => setOnlyOnlyActive(event.target.checked) }
@@ -110,6 +141,7 @@ const TasksView: React.FC<TasksParams> = props => {
         <div className={classes.inner}>
           <TasksTable className={classes.tasksTable}
                      type={taskType}
+                     service={service}
                      onlyActive={onlyActive}
                      onClick={(task) => { handleOnClick(task) }}
                      onError={error => {setError(error)}}

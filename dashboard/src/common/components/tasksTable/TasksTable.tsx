@@ -12,7 +12,7 @@ const useStyles = makeStyles(theme => ({
   div: {
     display: 'relative'
   },
-  creationTimeColumn: {
+  timeColumn: {
     width: '200px',
     paddingLeft: 4
   },
@@ -24,22 +24,22 @@ const useStyles = makeStyles(theme => ({
   },
   parametersColumn: {
   },
-  activeColumn: {
-    whiteSpace: 'pre',
-    width: '100px',
-  }
+  statusColumn: {
+    width: '200px',
+  },
 }))
 
 interface TasksTableParams {
   className: string
   type: string | undefined
+  service: string | undefined
   onlyActive: boolean | undefined
   onClick: (id: string) => void
   onError: (msg: string) => void
 }
 
 export const TasksTable = (props: TasksTableParams) => {
-  const { className, type, onlyActive, onClick, onError } = props
+  const { className, type, service, onlyActive, onClick, onError } = props
 
   const { data: tasks } = useTasksQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
@@ -53,7 +53,7 @@ export const TasksTable = (props: TasksTableParams) => {
     {
       name: 'creationTime',
       headerName: 'Creation Time',
-      className: classes.creationTimeColumn,
+      className: classes.timeColumn,
       type: 'time',
     },
     {
@@ -70,6 +70,17 @@ export const TasksTable = (props: TasksTableParams) => {
       name: 'parameters',
       headerName: 'Parameters',
       className: classes.parametersColumn
+    },
+    {
+      name: 'terminationTime',
+      headerName: 'Termination Time',
+      className: classes.timeColumn,
+      type: 'time'
+    },
+    {
+      name: 'terminationStatus',
+      headerName: 'Termination Status',
+      className: classes.statusColumn,
     }
   ].filter(column => column.name != 'active' || !onlyActive) as GridTableColumnParams[]
 
@@ -89,7 +100,9 @@ export const TasksTable = (props: TasksTableParams) => {
         ['creationTime', { value: task.creationTime }],
         ['task', { value: task.task }],
         ['type', { value: task.type }],
-        ['parameters', { value: parametersToString(task.parameters) }]
+        ['parameters', { value: parametersToString(task.parameters) }],
+        ['terminationTime', { value: task.terminationTime?task.terminationTime:undefined }],
+        ['terminationStatus', { value: task.terminationStatus == undefined?'':task.terminationStatus?'Success':'Failure' }]
       ]))
 
   return rows?<>
