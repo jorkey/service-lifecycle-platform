@@ -12,7 +12,6 @@ import org.bson.BsonDocument
 import org.slf4j.Logger
 import spray.json._
 
-import java.io.IOException
 import java.util.Date
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,9 +42,6 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           TaskParameter("buildClientVersion", buildClientVersion.toString)
       ),
       Seq(service),
-      () => if (!tasksUtils.getActiveTasks(None, Some("BuildDeveloperVersion"), Seq(TaskParameter("service", service))).isEmpty) {
-        throw new IOException(s"Build developer version of service ${service} is already in process")
-      },
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("buildDeveloperVersion",
@@ -223,7 +219,6 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
       "GetLastCommitComment",
       Seq(TaskParameter("service", service)),
       Seq(service),
-      () => {},
       (taskId, logger) => {
         implicit val log = logger
         val arguments = Seq("lastCommitComment", s"distribution=${config.distribution}", s"service=${service}")

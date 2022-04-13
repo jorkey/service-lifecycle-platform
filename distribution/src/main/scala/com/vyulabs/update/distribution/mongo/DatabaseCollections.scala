@@ -188,6 +188,7 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("type")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("services")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.descending("creationTime")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("terminationTime")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("terminationStatus")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()

@@ -316,13 +316,15 @@ object GraphqlSchema {
         resolve = c => { c.ctx.workspace.getTaskTypes() }),
       Field("taskServices", ListType(StringType),
         resolve = c => { c.ctx.workspace.getTaskServices() }),
-      Field("tasks", ListType(TaskInfoType),
+      Field("tasks", ListType(SequencedTaskInfoType),
         arguments = OptionTaskArg :: OptionTypeArg :: OptionParametersArg :: OptionServiceArg ::
-          OptionOnlyActiveArg :: OptionLimitArg :: Nil,
+          OptionOnlyActiveArg :: OptionFromTimeArg :: OptionToTimeArg :: OptionFromArg :: OptionLimitArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator) :: Nil,
         resolve = c => { c.ctx.workspace.getTasks(
           task = c.arg(OptionTaskArg), taskType = c.arg(OptionTypeArg), parameters = c.arg(OptionParametersArg).getOrElse(Seq.empty),
-          service = c.arg(OptionServiceArg), onlyActive = c.arg(OptionOnlyActiveArg), limit = c.arg(OptionLimitArg)) }),
+          service = c.arg(OptionServiceArg), onlyActive = c.arg(OptionOnlyActiveArg),
+          fromTime = c.arg(OptionFromTimeArg), toTime = c.arg(OptionToTimeArg),
+          from = c.arg(OptionFromArg), limit = c.arg(OptionLimitArg)) }),
     )
   )
 

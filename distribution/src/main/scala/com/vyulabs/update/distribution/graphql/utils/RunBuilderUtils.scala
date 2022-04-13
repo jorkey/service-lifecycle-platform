@@ -99,7 +99,6 @@ trait RunBuilderUtils extends SprayJsonSupport {
         TaskParameter("environment", Misc.seqToCommaSeparatedString(environment)),
         TaskParameter("arguments", Misc.seqToCommaSeparatedString(arguments))),
       Seq.empty,
-      () => {},
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, distribution, accessToken, environment, arguments)

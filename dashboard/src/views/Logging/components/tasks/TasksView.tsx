@@ -13,6 +13,7 @@ import {
   useTaskTypesQuery
 } from "../../../../generated/graphql";
 import {TasksTable} from "../../../../common/components/tasksTable/TasksTable";
+import {DateTimePicker} from "@material-ui/pickers";
 
 const useStyles = makeStyles((theme:any) => ({
   inner: {
@@ -20,7 +21,7 @@ const useStyles = makeStyles((theme:any) => ({
   },
   taskTypeSelect: {
     marginLeft: '10px',
-    width: '150px',
+    width: '200px',
   },
   taskServiceSelect: {
     marginLeft: '10px',
@@ -32,6 +33,10 @@ const useStyles = makeStyles((theme:any) => ({
   },
   tasksTable: {
     height: 'calc(100vh - 200px)',
+  },
+  date: {
+    marginLeft: '10px',
+    width: '200px'
   },
   control: {
     paddingLeft: '5px',
@@ -55,6 +60,8 @@ const TasksView: React.FC<TasksParams> = props => {
   const [taskType, setTaskType] = useState<string>()
   const [taskService, setTaskService] = useState<string>()
   const [onlyActive, setOnlyOnlyActive] = useState<boolean>()
+  const [fromTime, setFromTime] = useState<Date>()
+  const [toTime, setToTime] = useState<Date>()
 
   const history = useHistory()
   const [error, setError] = useState<string>()
@@ -132,6 +139,36 @@ const TasksView: React.FC<TasksParams> = props => {
                 }
                 label='Only Active'
               />
+              <FormControlLabel
+                className={classes.control}
+                labelPlacement={'start'}
+                control={
+                  <DateTimePicker
+                    className={classes.date}
+                    value={fromTime?fromTime:null}
+                    ampm={false}
+                    onChange={(newValue) => {
+                      setFromTime(newValue?newValue:undefined)
+                    }}
+                  />
+                }
+                label='From'
+              />
+              <FormControlLabel
+                className={classes.control}
+                labelPlacement={'start'}
+                control={
+                  <DateTimePicker
+                    className={classes.date}
+                    value={toTime?toTime:null}
+                    ampm={false}
+                    onChange={(newValue) => {
+                      setToTime(newValue?newValue:undefined)
+                    }}
+                  />
+                }
+                label='To'
+              />
             </FormGroup>
           </>
         }
@@ -143,6 +180,8 @@ const TasksView: React.FC<TasksParams> = props => {
                      type={taskType}
                      service={taskService}
                      onlyActive={onlyActive}
+                     fromTime={fromTime}
+                     toTime={toTime}
                      onClick={(task) => { handleOnClick(task) }}
                      onError={error => {setError(error)}}
           />

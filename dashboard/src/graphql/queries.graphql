@@ -409,9 +409,10 @@ query taskServices {
 }
 
 query tasks ($task: String, $type: String, $parameters: [TaskParameterInput!], $service: String,
-             $onlyActive: Boolean, $limit: Int) {
-    tasks (task: $task, type: $type, parameters: $parameters, service: $service, onlyActive: $onlyActive, limit: $limit) {
-        task, type, parameters { name, value }, services, creationTime, terminationTime, terminationStatus, expireTime
+             $onlyActive: Boolean, $fromTime: Date, $toTime: Date, $from: BigInt, $limit: Int) {
+    tasks (task: $task, type: $type, parameters: $parameters, service: $service, onlyActive: $onlyActive,
+           fromTime: $fromTime, toTime: $toTime, from: $from, limit: $limit) {
+        sequence, task, type, parameters { name, value }, services, creationTime, terminationTime, terminationStatus, expireTime
     }
 }
 

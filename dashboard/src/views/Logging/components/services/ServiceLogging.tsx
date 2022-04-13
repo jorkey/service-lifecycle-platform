@@ -160,15 +160,13 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
   const { data: startTime } = useLogsStartTimeQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { service: service, instance: instance, directory: directory, process: process },
-    onCompleted(data) { if (data.logsStartTime) setFromTime(data.logsStartTime) },
-    onError(err) { setError('Query log min time error ' + err.message) },
+    onError(err) { setError('Query log start time error ' + err.message) },
   })
 
   const { data: endTime } = useLogsEndTimeQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { service: service, instance: instance, directory: directory, process: process },
-    onCompleted(data) { if (data.logsEndTime) setToTime(data.logsEndTime) },
-    onError(err) { setError('Query log max time error ' + err.message) },
+    onError(err) { setError('Query log end time error ' + err.message) },
   })
 
   return (
@@ -305,7 +303,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                 control={
                   <DateTimePicker
                     className={classes.date}
-                    value={fromTime}
+                    value={fromTime?fromTime:null}
                     // minDate={startTime}
                     // maxDate={endTime}
                     ampm={false}
@@ -323,7 +321,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                 control={
                   <DateTimePicker
                     className={classes.date}
-                    value={toTime}
+                    value={toTime?toTime:null}
                     // minDate={startTime}
                     // maxDate={endTime}
                     ampm={false}

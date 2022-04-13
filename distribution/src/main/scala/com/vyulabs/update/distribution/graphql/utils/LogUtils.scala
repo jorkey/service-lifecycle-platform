@@ -118,8 +118,7 @@ trait LogUtils extends SprayJsonSupport {
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Sorts.descending("time")
-    collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption
-      .find(_.terminationStatus.isDefined).map(_.time))
+    collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.time))
   }
 
   def getLogs(service: Option[ServiceId] = None, instance: Option[InstanceId] = None,

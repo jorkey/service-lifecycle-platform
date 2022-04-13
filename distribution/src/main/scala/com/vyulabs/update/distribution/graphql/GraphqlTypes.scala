@@ -1,13 +1,13 @@
 package com.vyulabs.update.distribution.graphql
 
-import com.vyulabs.update.common.accounts.{ConsumerAccountInfo, ConsumerAccountProperties, ServiceAccountInfo, UserAccountInfo, UserAccountProperties}
-import com.vyulabs.update.common.config.{BuildServiceConfig, NamedStringValue, GitConfig, Repository}
-import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
+import com.vyulabs.update.common.accounts._
+import com.vyulabs.update.common.config.{BuildServiceConfig, GitConfig, NamedStringValue, Repository}
+import com.vyulabs.update.common.info._
 import com.vyulabs.update.common.utils.JsonFormats.FiniteDurationFormat
 import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.utils.Utils.serializeISO8601Date
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
-import com.vyulabs.update.distribution.graphql.utils.{TaskInfo, TaskParameter}
+import com.vyulabs.update.distribution.graphql.utils.{SequencedTaskInfo, TaskParameter}
 import com.vyulabs.update.distribution.mongo.InstalledDesiredVersions
 import sangria.ast
 import sangria.ast.StringValue
@@ -123,7 +123,7 @@ object GraphqlTypes {
   implicit val DistributionFaultReportType = deriveObjectType[Unit, DistributionFaultReport]()
   implicit val ProviderInfoType = deriveObjectType[Unit, DistributionProviderInfo]()
   implicit val TaskParameterType = deriveObjectType[Unit, TaskParameter]()
-  implicit val TaskInfoType = deriveObjectType[Unit, TaskInfo]()
+  implicit val SequencedTaskInfoType = deriveObjectType[Unit, SequencedTaskInfo]()
   implicit val EnvironmentVariableType = deriveObjectType[Unit, NamedStringValue]()
   implicit val BuildServiceConfigType = deriveObjectType[Unit, BuildServiceConfig]()
 

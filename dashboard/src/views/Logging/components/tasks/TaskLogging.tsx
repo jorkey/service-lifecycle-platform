@@ -34,7 +34,7 @@ const useStyles = makeStyles((theme:any) => ({
     width: '50px',
   },
   top: {
-    marginLeft: '10px',
+    marginLeft: '30px',
     width: '50px',
   },
   bottom: {
@@ -86,19 +86,11 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
 
   const tableRef = useRef<LogsTableEvents>(null)
 
-  const { data: activeTask } = useTasksQuery({
-    fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: { task: task, onlyActive: true },
-    onError(err) { setError('Query active task error ' + err.message) },
-  })
-
   const { data: levels } = useLogLevelsQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     variables: { task:task },
     onError(err) { setError('Query log levels error ' + err.message) },
   })
-
-  const active = !!activeTask?.tasks.length
 
   return (<>
     <Card>
@@ -141,6 +133,19 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
                 }
                 label='Find Text'
               /> : null}
+              <FormControlLabel
+                className={classes.control}
+                labelPlacement={'start'}
+                control={
+                  <Checkbox
+                    className={classes.follow}
+                    onChange={ event => setFollow(event.target.checked) }
+                    title='Follow'
+                    value={follow}
+                  />
+                }
+                label='Follow'
+              />
               {!follow ? <Button
                 className={classes.top}
                 color="primary"
@@ -157,19 +162,6 @@ const TaskLogging: React.FC<TaskLoggingParams> = props => {
               >
                 Bottom
               </Button> : null}
-              {active?<FormControlLabel
-                className={classes.control}
-                labelPlacement={'start'}
-                control={
-                  <Checkbox
-                    className={classes.follow}
-                    onChange={ event => setFollow(event.target.checked) }
-                    title='Follow'
-                    value={follow}
-                  />
-                }
-                label='Follow'
-              />:null}
             </FormGroup>
           </>
         }

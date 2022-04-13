@@ -602,7 +602,7 @@ export type Query = {
   faults: Array<DistributionFaultReport>;
   taskTypes: Array<Scalars['String']>;
   taskServices: Array<Scalars['String']>;
-  tasks: Array<TaskInfo>;
+  tasks: Array<SequencedTaskInfo>;
 };
 
 
@@ -800,6 +800,9 @@ export type QueryTasksArgs = {
   parameters?: Maybe<Array<TaskParameterInput>>;
   service?: Maybe<Scalars['String']>;
   onlyActive?: Maybe<Scalars['Boolean']>;
+  fromTime?: Maybe<Scalars['Date']>;
+  toTime?: Maybe<Scalars['Date']>;
+  from?: Maybe<Scalars['BigInt']>;
   limit?: Maybe<Scalars['Int']>;
 };
 
@@ -828,6 +831,19 @@ export type SequencedServiceLogLine = {
   unit: Scalars['String'];
   message: Scalars['String'];
   terminationStatus?: Maybe<Scalars['Boolean']>;
+};
+
+export type SequencedTaskInfo = {
+  __typename?: 'SequencedTaskInfo';
+  sequence: Scalars['BigInt'];
+  task: Scalars['String'];
+  type: Scalars['String'];
+  parameters: Array<TaskParameter>;
+  services: Array<Scalars['String']>;
+  creationTime: Scalars['Date'];
+  terminationTime?: Maybe<Scalars['Date']>;
+  terminationStatus?: Maybe<Scalars['Boolean']>;
+  expireTime: Scalars['Date'];
 };
 
 export type ServiceAccountInfo = {
@@ -889,18 +905,6 @@ export type SubscriptionSubscribeLogsArgs = {
   unit?: Maybe<Scalars['String']>;
   from?: Maybe<Scalars['BigInt']>;
   prefetch?: Maybe<Scalars['Int']>;
-};
-
-export type TaskInfo = {
-  __typename?: 'TaskInfo';
-  task: Scalars['String'];
-  type: Scalars['String'];
-  parameters: Array<TaskParameter>;
-  services: Array<Scalars['String']>;
-  creationTime: Scalars['Date'];
-  terminationTime?: Maybe<Scalars['Date']>;
-  terminationStatus?: Maybe<Scalars['Boolean']>;
-  expireTime: Scalars['Date'];
 };
 
 export type TaskParameter = {
@@ -2134,6 +2138,9 @@ export type TasksQueryVariables = Exact<{
   parameters?: Maybe<Array<TaskParameterInput> | TaskParameterInput>;
   service?: Maybe<Scalars['String']>;
   onlyActive?: Maybe<Scalars['Boolean']>;
+  fromTime?: Maybe<Scalars['Date']>;
+  toTime?: Maybe<Scalars['Date']>;
+  from?: Maybe<Scalars['BigInt']>;
   limit?: Maybe<Scalars['Int']>;
 }>;
 
@@ -2141,8 +2148,8 @@ export type TasksQueryVariables = Exact<{
 export type TasksQuery = (
   { __typename?: 'Query' }
   & { tasks: Array<(
-    { __typename?: 'TaskInfo' }
-    & Pick<TaskInfo, 'task' | 'type' | 'services' | 'creationTime' | 'terminationTime' | 'terminationStatus' | 'expireTime'>
+    { __typename?: 'SequencedTaskInfo' }
+    & Pick<SequencedTaskInfo, 'sequence' | 'task' | 'type' | 'services' | 'creationTime' | 'terminationTime' | 'terminationStatus' | 'expireTime'>
     & { parameters: Array<(
       { __typename?: 'TaskParameter' }
       & Pick<TaskParameter, 'name' | 'value'>
@@ -5323,15 +5330,19 @@ export type TaskServicesQueryHookResult = ReturnType<typeof useTaskServicesQuery
 export type TaskServicesLazyQueryHookResult = ReturnType<typeof useTaskServicesLazyQuery>;
 export type TaskServicesQueryResult = Apollo.QueryResult<TaskServicesQuery, TaskServicesQueryVariables>;
 export const TasksDocument = gql`
-    query tasks($task: String, $type: String, $parameters: [TaskParameterInput!], $service: String, $onlyActive: Boolean, $limit: Int) {
+    query tasks($task: String, $type: String, $parameters: [TaskParameterInput!], $service: String, $onlyActive: Boolean, $fromTime: Date, $toTime: Date, $from: BigInt, $limit: Int) {
   tasks(
     task: $task
     type: $type
     parameters: $parameters
     service: $service
     onlyActive: $onlyActive
+    fromTime: $fromTime
+    toTime: $toTime
+    from: $from
     limit: $limit
   ) {
+    sequence
     task
     type
     parameters {
@@ -5364,6 +5375,9 @@ export const TasksDocument = gql`
  *      parameters: // value for 'parameters'
  *      service: // value for 'service'
  *      onlyActive: // value for 'onlyActive'
+ *      fromTime: // value for 'fromTime'
+ *      toTime: // value for 'toTime'
+ *      from: // value for 'from'
  *      limit: // value for 'limit'
  *   },
  * });

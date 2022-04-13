@@ -12,7 +12,6 @@ import com.vyulabs.update.distribution.task.TaskManager
 import org.bson.BsonDocument
 import org.slf4j.Logger
 
-import java.io.IOException
 import scala.collection.JavaConverters.asJavaIterableConverter
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -37,9 +36,6 @@ trait ClientVersionUtils {
       Seq(TaskParameter("author", author),
           TaskParameter("versions", Misc.seqToCommaSeparatedString(versions))),
       services,
-      () => if (!tasksUtils.getActiveTasks(taskType = Some("BuildClientVersions")).isEmpty) {
-          throw new IOException(s"Build of client versions is already in process")
-      },
       (task, logger) => {
         implicit val log = logger
         (for {
