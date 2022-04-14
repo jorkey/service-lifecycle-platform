@@ -86,7 +86,7 @@ trait TasksUtils extends SprayJsonSupport {
       .map { _ => Filters.eq("terminationStatus", null) }
     val fromTimeArg = fromTime.map(time => Filters.gte("creationTime", time))
     val toTimeArg = toTime.map(time => Filters.lte("creationTime", time))
-    val fromArg = from.map(sequence => Filters.gte("_sequence", sequence.toLong))
+    val fromArg = from.map(sequence => Filters.lte("_sequence", sequence.toLong))
     val args = idArg ++ taskTypeArg ++ servicesArg ++ onlyActiveArg ++ fromTimeArg ++ toTimeArg ++ fromArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = Some(Sorts.descending("_sequence"))

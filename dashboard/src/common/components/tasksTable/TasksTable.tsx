@@ -110,9 +110,13 @@ export const TasksTable = (props: TasksTableParams) => {
   }
 
   const addTasks = (receivedTasks: SequencedTaskInfo[]) => {
-    const end = tasks.length ? tasks[tasks.length-1].sequence : BigInt(0)
-    const append = receivedTasks.filter(line => line.sequence > end)
-    setTasks(new Array(...tasks, ...append))
+    if (tasks.length) {
+      const end = tasks[tasks.length - 1].sequence
+      const append = receivedTasks.filter(line => line.sequence < end)
+      setTasks(new Array(...tasks, ...append))
+    } else {
+      setTasks(receivedTasks)
+    }
   }
 
   const rows = tasks
@@ -126,7 +130,7 @@ export const TasksTable = (props: TasksTableParams) => {
       ]))
 
   const getTasks = (from?: BigInt) => {
-    getTasksRequest({variables: { type: type, service: service, onlyActive: onlyActive, fromTime: fromTime, toTime: toTime, from: from, limit: 100 }})
+    getTasksRequest({variables: { type: type, service: service, onlyActive: onlyActive, fromTime: fromTime, toTime: toTime, from: from, limit: 30 }})
   }
 
   const isLoading = () => tasksRequest.loading

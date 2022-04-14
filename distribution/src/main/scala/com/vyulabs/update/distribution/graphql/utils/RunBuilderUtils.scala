@@ -188,9 +188,12 @@ trait RunBuilderUtils extends SprayJsonSupport {
         distributionClient = Some(client)
         remoteTaskId = Some(remoteTask)
         val result = Promise[Unit]()
-        @volatile var logOutputFuture = Option.empty[Future[Unit]]
+        @volatile var logOutputFuture = Future()
         logSource.map(lines => {
-          logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
+          if (logOutputFuture.isCompleted) {
+            logOutputFuture = Future()
+          }
+          logOutputFuture = logOutputFuture.flatMap { _ =>
             logUtils.addLogs(Common.DistributionServiceName,
               config.instance, "", 0.toString, Some(task),
               lines.map(line => LogLine(
@@ -199,12 +202,12 @@ trait RunBuilderUtils extends SprayJsonSupport {
                 unit = line.unit,
                 message = line.message,
                 terminationStatus = None))).map(_ => ())
-          })
+          }
           for (terminationStatus <- lines.lastOption.map(_.terminationStatus).flatten) {
             if (terminationStatus) {
-              logOutputFuture.foreach(_.andThen { case _ => result.trySuccess() })
+              logOutputFuture.andThen { case _ => result.trySuccess() }
             } else {
-              logOutputFuture.foreach(_.andThen { case _ => result.tryFailure(new IOException(s"Remote builder is failed")) })
+              logOutputFuture.andThen { case _ => result.tryFailure(new IOException(s"Remote builder is failed")) }
             }
           }
         }).run()

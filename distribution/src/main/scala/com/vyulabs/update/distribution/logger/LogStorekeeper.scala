@@ -20,13 +20,16 @@ class LogStorekeeper(service: ServiceId, task: Option[TaskId], instance: Instanc
   private val process = ProcessHandle.current.pid.toString
   private val directory = new java.io.File(".").getCanonicalPath()
 
-  private var logOutputFuture = Option.empty[Future[Unit]]
+  private var logOutputFuture = Future()
 
   override def receiveLogLines(logs: Seq[LogLine]): Future[Unit] = {
     synchronized {
       val expirationTimeout = if (task.isDefined) logsConfig.taskLogExpirationTimeout else logsConfig.serviceLogExpirationTimeout
       val expireTime = new Date(System.currentTimeMillis() + expirationTimeout.toMillis)
-      logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
+      if (logOutputFuture.isCompleted) {
+        logOutputFuture = Future()
+      }
+      logOutputFuture = logOutputFuture.flatMap { _ =>
         collection.insert(logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => {
           val newLine = if (line.message.length > maxLineSize) {
             line.copy(message = line.message.substring(0, maxLineSize) + " ...")
@@ -47,8 +50,8 @@ class LogStorekeeper(service: ServiceId, task: Option[TaskId], instance: Instanc
             expireTime
           )
         })).map(_ => ())
-      })
-      logOutputFuture.get
+      }
+      logOutputFuture
     }
   }
 }
