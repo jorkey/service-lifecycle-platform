@@ -161,13 +161,12 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("level")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("unit")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
-      Indexes.ascending("service"), Indexes.ascending("instance"),
-      Indexes.ascending("directory"), Indexes.ascending("process"),
-      Indexes.ascending("time"),
-      Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
+      Indexes.ascending("service"), Indexes.ascending("_sequence"),
+      Indexes.ascending("instance"), Indexes.ascending("directory"), Indexes.ascending("process"),
+      Indexes.ascending("time"), Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
-      Indexes.ascending("task"), Indexes.ascending("time"),
-      Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
+      Indexes.ascending("_sequence"), Indexes.ascending("_sequence"), Indexes.ascending("task"),
+      Indexes.ascending("time"), Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
       .expireAfter(0, TimeUnit.SECONDS)) else Future()
