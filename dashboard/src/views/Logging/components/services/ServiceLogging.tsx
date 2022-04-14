@@ -157,18 +157,6 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
     onError(err) { setError('Query log levels error ' + err.message) }
   })
 
-  const { data: startTime } = useLogsStartTimeQuery({
-    fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: { service: service, instance: instance, directory: directory, process: process },
-    onError(err) { setError('Query log start time error ' + err.message) },
-  })
-
-  const { data: endTime } = useLogsEndTimeQuery({
-    fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: { service: service, instance: instance, directory: directory, process: process },
-    onError(err) { setError('Query log end time error ' + err.message) },
-  })
-
   return (
     <Card>
       <CardHeader
@@ -373,7 +361,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          { service && (startTime?.logsStartTime !== undefined) && (endTime?.logsEndTime !== undefined) ?
+          { service ?
             <LogsTable ref={tableRef}
                        className={classes.logsTable}
                        service={service} instance={instance} directory={directory} process={process}
