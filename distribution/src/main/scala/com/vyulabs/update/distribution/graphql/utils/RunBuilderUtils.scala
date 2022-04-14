@@ -91,7 +91,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
 
   def runBuilderByRemoteDistribution(distribution: DistributionId, accessToken: String,
                                      arguments: Seq[String], environment: Seq[NamedStringValue])
-                                    (implicit log: Logger): TaskId = {
+                                    (implicit log: Logger): Future[TaskId] = {
     tasksUtils.createTask(
       "RunBuilderByRemoteDistribution",
       Seq(TaskParameter("distribution", distribution),
@@ -102,7 +102,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, distribution, accessToken, environment, arguments)
-      }).taskId
+      }).map(_.taskId)
   }
 
   private def runLocalBuilder(task: TaskId, distribution: DistributionId,

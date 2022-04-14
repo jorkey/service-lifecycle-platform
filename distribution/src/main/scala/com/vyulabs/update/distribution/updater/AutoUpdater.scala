@@ -4,15 +4,9 @@ import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
-import com.mongodb.client.model.{Filters, Sorts, Updates}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.DistributionId
-import com.vyulabs.update.common.distribution.client.DistributionClient
-import com.vyulabs.update.common.distribution.client.graphql.{GraphqlArgument, GraphqlMutation}
-import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
 import com.vyulabs.update.distribution.graphql.utils.{ClientVersionUtils, DeveloperVersionUtils, DistributionProvidersUtils}
-import com.vyulabs.update.distribution.mongo.DatabaseCollections
 import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.LoggerFactory
 import spray.json.DefaultJsonProtocol._
@@ -20,8 +14,7 @@ import spray.json._
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Created by Andrei Kaplanov (akaplanov@vyulabs.com) on 11.11.21.
@@ -69,14 +62,16 @@ class AutoUpdater(distribution: DistributionId,
     val result = for {
       developerVersions <- developerVersionUtils.getDeveloperDesiredVersions()
       providerVersions <- distributionProvidersUtils.getProviderDesiredVersions(distribution)
-    } yield {
-      val versionsToUpdate = providerVersions.filter(!developerVersions.contains(_))
-      if (!versionsToUpdate.isEmpty) {
-        val taskId = clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution)
-        taskManager.getTask(taskId)
-      } else {
-        None
+      taskId <- {
+        val versionsToUpdate = providerVersions.filter(!developerVersions.contains(_))
+        if (!versionsToUpdate.isEmpty) {
+          clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution).map(Some(_))
+        } else {
+          Future(None)
+        }
       }
+    } yield {
+      taskId.map(taskManager.getTask(_)).flatten
     }
     result.andThen { case result =>
       synchronized {

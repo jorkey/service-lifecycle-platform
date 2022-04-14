@@ -49,7 +49,7 @@ trait TasksUtils extends SprayJsonSupport {
 
   def createTask(taskType: TaskType, parameters: Seq[TaskParameter], services: Seq[ServiceId],
                  run: (TaskId, Logger) => (Future[Any], Option[() => Unit]))
-                 (implicit log: Logger): Task = {
+                 (implicit log: Logger): Future[Task] = {
     synchronized {
       val task = taskManager.create(s"task ${taskType} with parameters: ${Misc.seqToCommaSeparatedString(parameters)}",
         run)
@@ -58,12 +58,10 @@ trait TasksUtils extends SprayJsonSupport {
       task.future.andThen {
         case result =>
           collections.Tasks_Info.update(Filters.eq("task", info.task),
-            _ => Some(info.copy(terminationTime = Some(new Date()), terminationStatus = Some(result.isSuccess)))).failed
-            .foreach(ex => log.error("Update task info error", ex))
+            _ => Some(info.copy(terminationTime = Some(new Date()), terminationStatus = Some(result.isSuccess))))
+            .failed.foreach(ex => log.error("Update task info error", ex))
       }
-      collections.Tasks_Info.insert(info).failed
-        .foreach(ex => log.error("Insert task info error", ex))
-      task
+      collections.Tasks_Info.insert(info).map(_ => task)
     }
   }
 

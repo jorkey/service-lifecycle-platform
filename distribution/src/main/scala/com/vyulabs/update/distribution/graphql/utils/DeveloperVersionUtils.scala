@@ -32,7 +32,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
 
   def buildDeveloperVersion(service: ServiceId, version: DeveloperVersion, author: AccountId,
                             comment: String, buildClientVersion: Boolean)
-                           (implicit log: Logger): TaskId = {
+                           (implicit log: Logger): Future[TaskId] = {
     tasksUtils.createTask(
       "BuildDeveloperVersion",
       Seq(TaskParameter("service", service),
@@ -66,7 +66,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
           .flatMap(_ => setClientDesiredVersions(Seq(ClientDesiredVersionDelta(service,
             Some(ClientDistributionVersion(config.distribution, version.build, 0)))), author))
         (future, Some(() => cancel.foreach(_.apply())))
-      }).taskId
+      }).map(_.taskId)
   }
 
   def addDeveloperVersionInfo(versionInfo: DeveloperVersionInfo)(implicit log: Logger): Future[Unit] = {
@@ -214,7 +214,7 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
     }
   }
 
-  def getLastCommitComment(service: ServiceId)(implicit log: Logger): TaskId = {
+  def getLastCommitComment(service: ServiceId)(implicit log: Logger): Future[TaskId] = {
     tasksUtils.createTask(
       "GetLastCommitComment",
       Seq(TaskParameter("service", service)),
@@ -223,6 +223,6 @@ trait DeveloperVersionUtils extends ClientVersionUtils with SprayJsonSupport {
         implicit val log = logger
         val arguments = Seq("lastCommitComment", s"distribution=${config.distribution}", s"service=${service}")
         runBuilderUtils.runDeveloperBuilder(taskId, service, arguments)
-      }).taskId
+      }).map(_.taskId)
   }
 }

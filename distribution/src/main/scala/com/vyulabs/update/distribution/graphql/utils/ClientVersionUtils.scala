@@ -28,7 +28,7 @@ trait ClientVersionUtils {
   protected implicit val executionContext: ExecutionContext
 
   def buildClientVersions(versions: Seq[DeveloperDesiredVersion], author: AccountId)
-                         (implicit log: Logger): TaskId = {
+                         (implicit log: Logger): Future[TaskId] = {
     val services = versions.map(_.service)
     var taskCancel = Option.empty[() => Unit]
     tasksUtils.createTask(
@@ -71,7 +71,7 @@ trait ClientVersionUtils {
             result.flatMap(_ => setClientDesiredVersions(clientVersions, author))
           }
         } yield {}, taskCancel)
-      }).taskId
+      }).map(_.taskId)
   }
 
   def buildClientVersion(task: TaskId, service: ServiceId,
