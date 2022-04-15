@@ -49,7 +49,9 @@ const DistributionVersion = () => {
   })
 
   const serverVersion = version?.clientDesiredVersions[0].version
-  const upToDate = serverVersion?Version.compareClientDistributionVersions(clientVersion, serverVersion)==0:true
+  const upToDate = serverVersion?
+    clientVersion.distribution == serverVersion.distribution &&
+    Version.compareBuilds(clientVersion.developerBuild, serverVersion.developerBuild) == 0:true
 
   return <div className={classes.root}>
     {upToDate?<Typography
