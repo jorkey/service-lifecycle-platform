@@ -23,6 +23,7 @@ import Alert from '@material-ui/lab/Alert';
 import AddIcon from '@material-ui/icons/Add';
 import ServicesProfile from "./ServicesProfile";
 import DevelopmentServices from "./DevelopmentServices";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 const useStyles = makeStyles(theme => ({
   controls: {
@@ -154,7 +155,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
               />
             </Box>)
           }
-          title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Version'}
+          title={editProfile?`Edit Service Profile '${editProfile}'`:'New Services Profile'}
         />
         <CardContent>
           <Grid
@@ -170,6 +171,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
                                setProfile={setProfile}
                                services={services}
                                doesProfileExist={profile => doesProfileExist(profile)}
+                               deleteIcon={<DeleteIcon/>}
                                onServiceRemoved={service =>
                                  new Promise<boolean>(resolve => {
                                    setServices(services.filter(s => s != service))
@@ -222,7 +224,7 @@ const ProfileEditor: React.FC<ProfileEditorParams> = props => {
             onClick={() => submit()}
             variant="contained"
           >
-            {!editProfile?'Add New Version':'Save'}
+            {!editProfile?'Add New Profile':'Save'}
           </Button>
         </Box>
       </Card>) : null
