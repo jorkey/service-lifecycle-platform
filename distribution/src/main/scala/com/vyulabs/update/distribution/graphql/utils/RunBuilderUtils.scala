@@ -134,7 +134,6 @@ trait RunBuilderUtils extends SprayJsonSupport {
       }
     } yield {
       val outputFinishedPromise = Promise[Unit]
-      @volatile var logOutputFuture = Option.empty[Future[Unit]]
       process.readOutput(
         lines => {
           val logLines = lines.map(line => {
@@ -145,17 +144,14 @@ trait RunBuilderUtils extends SprayJsonSupport {
                 LogLine(new Date, "INFO", "", line._1, None)
             }
           })
-          logOutputFuture = Some(logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            logUtils.addLogs(Common.BuilderServiceName,
-              config.instance, directory.getBuilderDir().toString, process.getHandle().pid().toString, Some(task), logLines).map(_ => ())
-          })
+          logUtils.addLogs(Common.BuilderServiceName,
+            config.instance, directory.getBuilderDir().toString, process.getHandle().pid().toString, Some(task), logLines).map(_ => ())
         },
         exitCode => {
-          logOutputFuture.getOrElse(Future()).flatMap { _ =>
-            logUtils.addLogs(Common.BuilderServiceName,
-              config.instance, directory.getBuilderDir().toString, process.getHandle().pid().toString, Some(task),
-              Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
-          }.andThen { case _ => outputFinishedPromise.success(Unit) }
+          logUtils.addLogs(Common.BuilderServiceName,
+            config.instance, directory.getBuilderDir().toString, process.getHandle().pid().toString, Some(task),
+            Seq(LogLine(new Date, "", "PROCESS", s"Builder process terminated with status ${exitCode}", None)))
+            .andThen { case _ => outputFinishedPromise.success(Unit) }
         })
       (process, outputFinishedPromise.future)
     }
@@ -190,24 +186,19 @@ trait RunBuilderUtils extends SprayJsonSupport {
         val result = Promise[Unit]()
         @volatile var logOutputFuture = Future()
         logSource.map(lines => {
-          if (logOutputFuture.isCompleted) {
-            logOutputFuture = Future()
-          }
-          logOutputFuture = logOutputFuture.flatMap { _ =>
-            logUtils.addLogs(Common.DistributionServiceName,
-              config.instance, "", 0.toString, Some(task),
-              lines.map(line => LogLine(
-                time = line.time,
-                level = line.level,
-                unit = line.unit,
-                message = line.message,
-                terminationStatus = None))).map(_ => ())
-          }
+          logUtils.addLogs(Common.DistributionServiceName,
+            config.instance, "", 0.toString, Some(task),
+            lines.map(line => LogLine(
+              time = line.time,
+              level = line.level,
+              unit = line.unit,
+              message = line.message,
+              terminationStatus = None))).map(_ => ())
           for (terminationStatus <- lines.lastOption.map(_.terminationStatus).flatten) {
             if (terminationStatus) {
-              logOutputFuture.andThen { case _ => result.trySuccess() }
+              result.trySuccess()
             } else {
-              logOutputFuture.andThen { case _ => result.tryFailure(new IOException(s"Remote builder is failed")) }
+              result.tryFailure(new IOException(s"Remote builder is failed"))
             }
           }
         }).run()

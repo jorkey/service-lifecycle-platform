@@ -165,7 +165,7 @@ class DatabaseCollections(db: MongoDb,
       Indexes.ascending("instance"), Indexes.ascending("directory"), Indexes.ascending("process"),
       Indexes.ascending("time"), Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
-      Indexes.ascending("_sequence"), Indexes.ascending("_sequence"), Indexes.ascending("task"),
+      Indexes.ascending("task"), Indexes.ascending("_sequence"),
       Indexes.ascending("time"), Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()

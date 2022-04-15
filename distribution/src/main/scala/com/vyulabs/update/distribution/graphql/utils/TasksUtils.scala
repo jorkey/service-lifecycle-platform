@@ -47,6 +47,12 @@ trait TasksUtils extends SprayJsonSupport {
 
   protected val config: DistributionConfig
 
+  collections.Tasks_Info.update(Filters.eq("terminationStatus", null),
+    info => info match {
+      case Some(info) => Some(info.copy(terminationTime = Some(new Date()), terminationStatus = Some(false)))
+      case None => None
+    })
+
   def createTask(taskType: TaskType, parameters: Seq[TaskParameter], services: Seq[ServiceId],
                  run: (TaskId, Logger) => (Future[Any], Option[() => Unit]))
                  (implicit log: Logger): Future[Task] = {

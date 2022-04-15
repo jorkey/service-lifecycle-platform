@@ -143,7 +143,10 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
   const [ getServiceLogs, serviceLogs ] = useServiceLogsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
-    onCompleted(data) { if (data.logs) { addLines(data.logs as LogRecord[]) } }
+    onCompleted(data) {
+      console.log('getServiceLogs return')
+      if (data.logs) { addLines(data.logs as LogRecord[])
+    } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
@@ -190,6 +193,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     } else if (service && instance) {
       getInstanceLogs({ variables: { service: service, instance: instance, ...getCommonVariables(from, to) }  })
     } else if (service) {
+      console.log('getServiceLogs')
       getServiceLogs({ variables: { service: service, ...getCommonVariables(from, to) }  })
     }
   }
@@ -232,6 +236,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
    .filter(column => column.name !== 'process' || (!process && !task)) as GridTableColumnParams[]
 
   const addLines = (receivedLines: LogRecord[]) => {
+    console.log('add lines')
     const begin = lines.length ? lines[0].sequence : BigInt(0)
     const insert = receivedLines.filter(line => line.sequence < begin)
     let newLines = new Array(...lines)

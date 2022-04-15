@@ -56,10 +56,10 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   def insert(documents: Seq[T]): Future[Long] = {
+    var seq = nextSequence(documents.size) - documents.size + 1
     for {
       collection <- collection
       result <- {
-        var seq = nextSequence(documents.size) - documents.size + 1
         val docs = documents.map { document =>
           val line = Sequenced(seq, document)
           publisherBuffer.push(line)
