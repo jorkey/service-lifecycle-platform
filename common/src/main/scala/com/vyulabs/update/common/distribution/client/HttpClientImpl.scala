@@ -19,7 +19,7 @@ trait SyncSource[T] {
 }
 
 class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String] = None,
-                     connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 1000)
+                     connectTimeoutMs: Int = 1000, readTimeoutMs: Int = 10000, uploadTimeoutMs: Int = 300000)
                     (implicit executionContext: ExecutionContext) extends HttpClient[SyncSource] {
   accessToken = initAccessToken
 
@@ -33,6 +33,8 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
         accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
+        connection.setConnectTimeout(connectTimeoutMs)
+        connection.setReadTimeout(readTimeoutMs)
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "application/json")
         connection.setRequestMethod("POST")
@@ -70,6 +72,7 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
         accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
+        connection.setConnectTimeout(connectTimeoutMs)
         connection.setRequestProperty("Content-Type", "application/json")
         connection.setRequestProperty("Accept", "text/event-stream")
         connection.setRequestMethod("POST")
@@ -196,9 +199,9 @@ class HttpClientImpl(val distributionUrl: String, initAccessToken: Option[String
 //          connection.setRequestProperty("Authorization", "Basic " + encoded)
 //        }
         accessToken.foreach(token => connection.setRequestProperty("Authorization", "Bearer " + token))
-        connection.setChunkedStreamingMode(0)
         connection.setConnectTimeout(connectTimeoutMs)
-//        connection.setReadTimeout(readTimeoutMs)
+        connection.setReadTimeout(uploadTimeoutMs)
+        connection.setChunkedStreamingMode(0)
         connection.setDoOutput(true)
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary)
         val output = connection.getOutputStream
