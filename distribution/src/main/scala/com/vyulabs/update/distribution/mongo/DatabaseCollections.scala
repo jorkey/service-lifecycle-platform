@@ -151,22 +151,28 @@ class DatabaseCollections(db: MongoDb,
 
   val Log_Lines = new SequencedCollection[ServiceLogLine]("log.lines", for {
     collection <- db.getOrCreateCollection[BsonDocument]("log.lines")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("process")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+      Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
+      Indexes.ascending("process"), Indexes.ascending("level"), Indexes.ascending("time"),
+      Indexes.ascending("_sequence"))) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+      Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
+      Indexes.ascending("process"), Indexes.ascending("level"),
+      Indexes.ascending("_sequence"))) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+      Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
+      Indexes.ascending("process"),
+      Indexes.ascending("_sequence"))) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+      Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
+      Indexes.ascending("_sequence"))) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+      Indexes.ascending("service"), Indexes.ascending("instance"),
+      Indexes.ascending("_sequence"))) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+      Indexes.ascending("service"),
+      Indexes.ascending("_sequence"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("time")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.descending("time")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("level")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("unit")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
-      Indexes.ascending("service"), Indexes.ascending("_sequence"),
-      Indexes.ascending("instance"), Indexes.ascending("directory"), Indexes.ascending("process"),
-      Indexes.ascending("time"), Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
-      Indexes.ascending("task"), Indexes.ascending("_sequence"),
-      Indexes.ascending("time"), Indexes.ascending("level"), Indexes.ascending("unit"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
       .expireAfter(0, TimeUnit.SECONDS)) else Future()

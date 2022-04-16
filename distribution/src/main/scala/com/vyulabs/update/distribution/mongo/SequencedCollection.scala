@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Source}
+import akka.stream.scaladsl.{BroadcastHub, Concat, Keep, Sink, Source}
 import com.mongodb.client.model._
 import com.vyulabs.update.common.common.RaceRingBuffer
 import com.vyulabs.update.distribution.common.AkkaCallbackSource
@@ -43,6 +43,8 @@ class SequencedCollection[T: ClassTag](val name: String,
     .map(_.headOption.map(_.getInt64("_sequence").getValue).getOrElse(0L))).flatten, Duration.Inf)
 
   private var modifyInProcess = Option.empty[Future[Int]]
+
+  publisherSource.to(Sink.ignore).run()
 
   if (createIndex) {
     collection.map(_.createIndex(Indexes.ascending("_sequence")))
