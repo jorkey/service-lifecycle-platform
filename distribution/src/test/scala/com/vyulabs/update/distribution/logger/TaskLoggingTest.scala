@@ -33,7 +33,7 @@ class TaskLoggingTest extends TestEnvironment with ScalatestRouteTest {
     val task1 = taskManager.create("Test task1", (taskId, log) => {(
       Future {
         Thread.sleep(100)
-        for (i <- 1 to 1000) {
+        for (i <- 1 to 100) {
           log.info(s"task1 - log line ${i}")
         }
       },
@@ -41,7 +41,7 @@ class TaskLoggingTest extends TestEnvironment with ScalatestRouteTest {
     })
     val task2 = taskManager.create("Test task2", (taskId, log) => {(
       Future {
-        for (i <- 1 to 1000) {
+        for (i <- 1 to 100) {
           log.info(s"task2 - log line ${i}")
         }
       },
@@ -54,11 +54,11 @@ class TaskLoggingTest extends TestEnvironment with ScalatestRouteTest {
     val linesFuture1 = collections.Log_Lines.find(Filters.eq("task", task1.taskId))
     val lines1 = Await.result(linesFuture1, FiniteDuration.apply(10, TimeUnit.SECONDS))
       .map(_.message).drop(1).dropRight(1)
-    assertResult((1 to 1000).map(i => s"task1 - log line ${i}"))(lines1)
+    assertResult((1 to 100).map(i => s"task1 - log line ${i}"))(lines1)
 
     val linesFuture2 = collections.Log_Lines.find(Filters.eq("task", task2.taskId))
     val lines2 = Await.result(linesFuture2, FiniteDuration.apply(10, TimeUnit.SECONDS))
       .map(_.message).drop(1).dropRight(1)
-    assertResult((1 to 1000).map(i => s"task2 - log line ${i}"))(lines2)
+    assertResult((1 to 100).map(i => s"task2 - log line ${i}"))(lines2)
   }
 }

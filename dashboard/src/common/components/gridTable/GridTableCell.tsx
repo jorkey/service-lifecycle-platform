@@ -15,13 +15,15 @@ import moment from "moment/moment";
 const useStyles = makeStyles<Theme, GridTableCellInternalParams>(theme => ({
   сheckbox: {
   },
-  notEditable: {
+  notClickable: {
     cursor: 'default'
+  },
+  clickable: {
+    cursor: 'pointer'
   },
   editable: {
     border: '1px solid #ccc',
     borderStyle: 'dashed',
-    cursor: 'pointer'
   },
   editing: {
     cursor: 'cell'
@@ -69,10 +71,10 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
   let classNames = className
   if (classNames) classNames += ' ';
   if (!editing) {
-    if (!editable) {
-      classNames += classes.notEditable
+    if (!editable && !onClicked) {
+      classNames += classes.notClickable
     } else {
-      classNames += classes.editable
+      classNames += classes.clickable + ' ' + classes.editable
     }
   } else {
     classNames += classes.editing

@@ -2,11 +2,13 @@ package com.vyulabs.update.common.process
 
 import org.slf4j.Logger
 
-import java.io.BufferedReader
+import java.io.{BufferedReader, IOException}
 
 class OutputReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int],
                          terminated: () => Boolean,
-                         onOutput: Seq[(String, Boolean)] => Unit, onEof: () => Unit, onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
+                         onOutput: Seq[(String, Boolean)] => Unit,
+                         onEof: () => Unit,
+                         onError: (Exception) => Unit)(implicit log: Logger) extends Thread {
   override def run(): Unit = {
     val buffer = StringBuilder.newBuilder
     val chunk = new Array[Char](1024)
@@ -46,10 +48,11 @@ class OutputReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int
         }
         cnt = safeRead(chunk)
       }
+      onEof()
     } catch {
-      case e: Exception =>
+      case ex: Exception =>
+        onError(ex)
     }
-    onEof()
   }
 
   // Darwin Kernel Version 19.6.0 hangs on output reading when process is terminated.
@@ -57,6 +60,11 @@ class OutputReaderThread(input: BufferedReader, lineWaitingTimeoutMs: Option[Int
     while (!terminated() && !input.ready()) {
       Thread.sleep(100)
     }
-    input.read(buffer)
+    try {
+      input.read(buffer)
+    } catch {
+      case ex: IOException =>
+        -1
+    }
   }
 }

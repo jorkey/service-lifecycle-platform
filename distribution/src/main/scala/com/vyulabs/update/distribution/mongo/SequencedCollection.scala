@@ -30,7 +30,7 @@ case class NoSuchDocument() extends Exception
 
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]],
-                                       historyExpireDays: Int = 7, createIndex: Boolean = true)
+                                       historyExpireDays: Int = 7, createIndices: Boolean = true)
                                       (implicit system: ActorSystem, executionContext: ExecutionContext,
                                        codecRegistry: CodecRegistry) {
   private implicit val log = Logging(system, this.getClass)
@@ -46,9 +46,8 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   publisherSource.to(Sink.ignore).run()
 
-  if (createIndex) {
+  if (createIndices) {
     collection.map(_.createIndex(Indexes.ascending("_sequence")))
-    collection.map(_.createIndex(Indexes.descending("_sequence")))
     collection.map(_.createIndex(Indexes.ascending("_archiveTime"),
       new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS)))
   }

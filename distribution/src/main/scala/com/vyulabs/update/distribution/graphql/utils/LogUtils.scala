@@ -103,7 +103,7 @@ trait LogUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    val sort = Sorts.ascending("time")
+    val sort = Sorts.ascending("_sequence")
     collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.time))
   }
 
@@ -117,7 +117,7 @@ trait LogUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
-    val sort = Sorts.descending("time")
+    val sort = Sorts.descending("_sequence")
     collections.Log_Lines.find(filters, Some(sort), Some(1)).map(_.headOption.map(_.time))
   }
 

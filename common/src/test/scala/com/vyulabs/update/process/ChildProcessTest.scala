@@ -42,7 +42,7 @@ class ChildProcessTest extends FlatSpec with Matchers {
   it should "terminate process" in {
     val process = result(ChildProcess.start("/bin/bash", Seq(script.toString)))
     process.readOutput(lines => lines.foreach { case (line, nl) =>
-      assertResult(false)(result(process.terminate()))
+      assertResult(true)(result(process.terminate()))
     })
     result(process.onTermination())
   }

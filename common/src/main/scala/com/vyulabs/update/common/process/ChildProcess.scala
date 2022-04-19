@@ -27,8 +27,10 @@ class ChildProcess(process: Process)(implicit executionContext: ExecutionContext
         onExit(status)
         exitCode.trySuccess(status)
       },
-      exception => {
-        log.error(s"Read process output error", exception)
+      ex => {
+        log.error(s"Read process output error", ex)
+        onExit(-1)
+        exitCode.tryFailure(ex)
       }
     ).start()
   }
