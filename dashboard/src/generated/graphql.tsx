@@ -757,10 +757,9 @@ export type QueryLogsArgs = {
   process?: Maybe<Scalars['String']>;
   task?: Maybe<Scalars['String']>;
   levels?: Maybe<Array<Scalars['String']>>;
-  unit?: Maybe<Scalars['String']>;
+  find?: Maybe<Scalars['String']>;
   fromTime?: Maybe<Scalars['Date']>;
   toTime?: Maybe<Scalars['Date']>;
-  find?: Maybe<Scalars['String']>;
   from?: Maybe<Scalars['BigInt']>;
   to?: Maybe<Scalars['BigInt']>;
   limit?: Maybe<Scalars['Int']>;
@@ -903,6 +902,7 @@ export type SubscriptionSubscribeLogsArgs = {
   task?: Maybe<Scalars['String']>;
   levels?: Maybe<Array<Scalars['String']>>;
   unit?: Maybe<Scalars['String']>;
+  find?: Maybe<Scalars['String']>;
   from?: Maybe<Scalars['BigInt']>;
   prefetch?: Maybe<Scalars['Int']>;
 };
@@ -2105,6 +2105,7 @@ export type SubscribeLogsSubscriptionVariables = Exact<{
   prefetch: Scalars['Int'];
   levels?: Maybe<Array<Scalars['String']> | Scalars['String']>;
   unit?: Maybe<Scalars['String']>;
+  find?: Maybe<Scalars['String']>;
 }>;
 
 
@@ -5215,7 +5216,7 @@ export type RemoveProviderMutationHookResult = ReturnType<typeof useRemoveProvid
 export type RemoveProviderMutationResult = Apollo.MutationResult<RemoveProviderMutation>;
 export type RemoveProviderMutationOptions = Apollo.BaseMutationOptions<RemoveProviderMutation, RemoveProviderMutationVariables>;
 export const SubscribeLogsDocument = gql`
-    subscription subscribeLogs($service: String, $instance: String, $process: String, $directory: String, $task: String, $prefetch: Int!, $levels: [String!], $unit: String) {
+    subscription subscribeLogs($service: String, $instance: String, $process: String, $directory: String, $task: String, $prefetch: Int!, $levels: [String!], $unit: String, $find: String) {
   subscribeLogs(
     service: $service
     instance: $instance
@@ -5225,6 +5226,7 @@ export const SubscribeLogsDocument = gql`
     prefetch: $prefetch
     levels: $levels
     unit: $unit
+    find: $find
   ) {
     sequence
     time
@@ -5257,6 +5259,7 @@ export const SubscribeLogsDocument = gql`
  *      prefetch: // value for 'prefetch'
  *      levels: // value for 'levels'
  *      unit: // value for 'unit'
+ *      find: // value for 'find'
  *   },
  * });
  */

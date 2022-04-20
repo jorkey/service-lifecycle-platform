@@ -3,7 +3,7 @@ package com.vyulabs.update.distribution.mongo
 import akka.actor.ActorSystem
 import akka.event.Logging
 import com.mongodb.MongoClientSettings
-import com.mongodb.client.model._
+import com.mongodb.client.model.{IndexOptions, _}
 import com.vyulabs.update.common.config.{BuildServiceConfig, GitConfig, NamedStringValue, Repository}
 import com.vyulabs.update.common.info.{DistributionProviderInfo, _}
 import com.vyulabs.update.common.version.{ClientDistributionVersion, ClientVersion, DeveloperDistributionVersion, DeveloperVersion}
@@ -20,6 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DatabaseCollections(db: MongoDb,
                           serviceStatesExpireTimeout: FiniteDuration,
+                          taskLogExpirationTimeout: FiniteDuration,
                           createIndices: Boolean)
                          (implicit system: ActorSystem, executionContext: ExecutionContext) {
   private implicit val log = Logging(system, this.getClass)
@@ -153,29 +154,39 @@ class DatabaseCollections(db: MongoDb,
     collection <- db.getOrCreateCollection[BsonDocument]("log.lines")
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
-      Indexes.ascending("process"), Indexes.ascending("level"), Indexes.ascending("time"),
-      Indexes.ascending("_sequence"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
-      Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
       Indexes.ascending("process"), Indexes.ascending("level"),
-      Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
       Indexes.ascending("process"),
-      Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
-      Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"),
-      Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"),
-      Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.text("message")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+      Indexes.ascending("service"),
+      Indexes.text("message"),
+      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
       .expireAfter(0, TimeUnit.SECONDS)) else Future()
+  } yield collection, createIndices = false)
+
+  val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
+    collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("type")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("services")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime"), new IndexOptions()
+      .expireAfter(taskLogExpirationTimeout.length, taskLogExpirationTimeout.unit)) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("terminationStatus")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("_sequence")) else Future()
   } yield collection, createIndices = false)
 
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
@@ -184,21 +195,7 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("fault")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.service")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.time")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.descending("info.time")) else Future()
-  } yield collection, createIndices = false)
-
-  val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task", "_archiveTime"),
-      new IndexOptions().unique(true)) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("type")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("services")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.descending("creationTime")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("terminationTime")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("terminationStatus")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
-      .expireAfter(0, TimeUnit.SECONDS)) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("_sequence")) else Future()
   } yield collection, createIndices = false)
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {

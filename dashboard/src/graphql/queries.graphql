@@ -391,9 +391,9 @@ query providerDesiredVersions ($distribution: String!) {
 # Subscriptions
 
 subscription subscribeLogs ($service: String, $instance: String, $process: String,
-        $directory: String, $task: String, $prefetch: Int!, $levels: [String!], $unit: String) {
+        $directory: String, $task: String, $prefetch: Int!, $levels: [String!], $unit: String, $find: String) {
     subscribeLogs (service: $service, instance: $instance, process: $process,
-                   directory: $directory, task: $task, prefetch: $prefetch, levels: $levels, unit: $unit) {
+                   directory: $directory, task: $task, prefetch: $prefetch, levels: $levels, unit: $unit, find: $find) {
         sequence, time, level, instance, process, message, terminationStatus
     }
 }

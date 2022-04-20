@@ -123,9 +123,9 @@ trait LogUtils extends SprayJsonSupport {
 
   def getLogs(service: Option[ServiceId] = None, instance: Option[InstanceId] = None,
               directory: Option[ServiceDirectory] = None, process: Option[ProcessId] = None, task: Option[TaskId] = None,
-              levels: Option[Seq[String]] = None, unit: Option[String] = None,
-              fromTime: Option[Date] = None, toTime: Option[Date] = None, find: Option[String] = None,
-              from: Option[BigInt] = None, to: Option[BigInt] = None, limit: Option[Int] = None)
+              levels: Option[Seq[String]] = None, find: Option[String] = None,
+              fromTime: Option[Date] = None, toTime: Option[Date] = None, from: Option[BigInt] = None, to: Option[BigInt] = None,
+              limit: Option[Int] = None)
              (implicit log: Logger): Future[Seq[SequencedServiceLogLine]] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
@@ -134,14 +134,13 @@ trait LogUtils extends SprayJsonSupport {
     val taskArg = task.map(Filters.eq("task", _))
     val levelsArg = levels.map(levels =>
       Filters.or(levels.map(level => Filters.eq("level", level)).asJava))
-    val unitArg = unit.map(Filters.eq("unit", _))
+    val findArg = find.map(text => Filters.text(text))
     val fromTimeArg = fromTime.map(time => Filters.gte("time", time))
     val toTimeArg = toTime.map(time => Filters.lte("time", time))
-    val findArg = find.map(text => Filters.text(text))
     val fromArg = from.map(sequence => Filters.gte("_sequence", sequence.toLong))
     val toArg = to.map(sequence => Filters.lte("_sequence", sequence.toLong))
     val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++
-      levelsArg ++ unitArg ++ fromTimeArg ++ toTimeArg ++ findArg ++ fromArg ++ toArg
+      levelsArg ++ findArg ++ fromTimeArg ++ toTimeArg ++ fromArg ++ toArg
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
     collections.Log_Lines.findSequenced(filters, Some(sort), limit)
@@ -161,7 +160,7 @@ trait LogUtils extends SprayJsonSupport {
 
   def subscribeLogs(service: Option[ServiceId],
                     instance: Option[InstanceId], directory: Option[ServiceDirectory], process: Option[ProcessId],
-                    task: Option[TaskId], levels: Option[Seq[String]], unit: Option[String],
+                    task: Option[TaskId], levels: Option[Seq[String]], unit: Option[String] = None, find: Option[String] = None,
                     from: Option[Long], prefetch: Option[Int])
                    (implicit log: Logger): Source[Action[Nothing, Seq[SequencedServiceLogLine]], NotUsed] = {
     val serviceArg = service.map(Filters.eq("service", _))
@@ -169,8 +168,7 @@ trait LogUtils extends SprayJsonSupport {
     val directoryArg = directory.map(Filters.eq("directory", _))
     val processArg = process.map(Filters.eq("process", _))
     val taskArg = task.map(Filters.eq("task", _))
-    val unitArg = unit.map(Filters.eq("unit", _))
-    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg ++ unitArg
+    val args = serviceArg ++ instanceArg ++ directoryArg ++ processArg ++ taskArg
     val filters = Filters.and(args.asJava)
     val source = collections.Log_Lines.subscribe(filters, from, prefetch)
       .filter(log => service.isEmpty || service.contains(log.document.service))
@@ -181,6 +179,7 @@ trait LogUtils extends SprayJsonSupport {
       .takeWhile(!_.document.terminationStatus.isDefined, true)
       .filter(log => levels.isEmpty || levels.get.contains(log.document.level))
       .filter(log => unit.isEmpty || unit.contains(log.document.unit))
+      .filter(log => find.isEmpty || log.document.message.toLowerCase().contains(find.get.toLowerCase))
       .groupedWeightedWithin(100, FiniteDuration.apply(500, TimeUnit.MILLISECONDS))(_ => 1)
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(
         sequence = line.sequence,

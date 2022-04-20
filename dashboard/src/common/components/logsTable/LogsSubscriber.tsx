@@ -10,10 +10,10 @@ interface LogsSubscriptionParams extends FindLogsDashboardParams {
 }
 
 export const LogsSubscriber = (props: LogsSubscriptionParams) => {
-  const { service, instance, process, directory, task, levels, unit, onLines, onComplete } = props
+  const { service, instance, process, directory, task, levels, unit, find, onLines, onComplete } = props
 
   useSubscribeLogsSubscription({
-    variables: { service, instance, process, directory, task, unit, prefetch: 100, levels },
+    variables: { service, instance, process, directory, task, unit, find, prefetch: 100, levels },
     onSubscriptionData(data) {
       if (data.subscriptionData.data) {
         onLines(data.subscriptionData.data.subscribeLogs as LogRecord[])

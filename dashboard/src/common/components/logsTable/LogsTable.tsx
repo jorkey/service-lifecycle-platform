@@ -94,7 +94,7 @@ export interface FindLogsDashboardParams {
 }
 
 export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<LogsTableEvents>) => {
-  const { className, service, instance, process, directory, task, fromTime, toTime, levels, unit, find,
+  const { className, service, instance, process, directory, task, fromTime, toTime, levels, find,
     follow, onComplete, onError } = props
 
   const [ lines, setLines ] = useState<LogRecord[]>([])
@@ -144,8 +144,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { onError(err.message) },
     onCompleted(data) {
-      if (data.logs) { addLines(data.logs as LogRecord[])
-    } }
+      if (data.logs) { addLines(data.logs as LogRecord[]) } }
   })
 
   const [ getInstanceLogs, instanceLogs ] = useInstanceLogsLazyQuery({
@@ -170,7 +169,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
 
   const getCommonVariables = (from?: BigInt, to?: BigInt) => {
     return {
-      fromTime: fromTime, toTime: toTime, levels: levels, unit: unit, find: find,
+      fromTime: fromTime, toTime: toTime, levels: levels, find: find,
       from: from, to: to, limit: sliceRowsCount
     }
   }
@@ -180,7 +179,7 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
     if (!follow) {
       getLogs(startSequence)
     }
-  },  [ service, instance, directory, process, task, fromTime, toTime, levels, unit, find, follow ])
+  },  [ service, instance, directory, process, task, fromTime, toTime, levels, find, follow ])
 
   const getLogs = (from?: BigInt, to?: BigInt) => {
     if (task) {
@@ -220,11 +219,6 @@ export const LogsTable = forwardRef((props: LogsTableParams, ref: ForwardedRef<L
       headerName: 'Process',
       className: classes.processColumn
     },
-    // { TODO
-    //   name: 'unit',
-    //   headerName: 'Unit',
-    //   className: classes.unitColumn
-    // },
     {
       name: 'message',
       headerName: 'Line',

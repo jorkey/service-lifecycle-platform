@@ -57,6 +57,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
     config.mongoDb.temporary.getOrElse(false)); result(mongo.dropDatabase())
   val collections = new DatabaseCollections(mongo,
     instanceStateConfig.expirationTimeout,
+    logsConfig.taskLogExpirationTimeout,
     createIndices)
   val distributionDir = new DistributionDirectory(distributionDirectory)
   val taskManager = new TaskManager(task => new LogStorekeeper(Common.DistributionServiceName, Some(task),

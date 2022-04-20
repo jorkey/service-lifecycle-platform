@@ -50,7 +50,8 @@ object DistributionMain extends App {
 
     val collections = new DatabaseCollections(mongoDb,
       config.serviceStates.expirationTimeout,
-      true)
+      config.logs.taskLogExpirationTimeout,
+     true)
     val dir = new DistributionDirectory(new File("."))
     val taskManager = new TaskManager(task => new LogStorekeeper(Common.DistributionServiceName, Some(task),
       config.instance, collections.Log_Lines, config.logs))

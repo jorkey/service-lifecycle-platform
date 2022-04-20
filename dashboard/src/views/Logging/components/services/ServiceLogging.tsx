@@ -320,7 +320,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                 }
                 label='To'
               /> : null}
-              {!follow ? <FormControlLabel
+              <FormControlLabel
                 className={classes.control}
                 labelPlacement={'start'}
                 disabled={!service}
@@ -335,7 +335,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                   />
                 }
                 label='Find Text'
-              /> : null}
+              />
               {!follow ? <Button
                 className={classes.top}
                 color="primary"
