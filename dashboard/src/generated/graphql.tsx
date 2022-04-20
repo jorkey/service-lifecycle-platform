@@ -2112,7 +2112,7 @@ export type SubscribeLogsSubscription = (
   { __typename?: 'Subscription' }
   & { subscribeLogs: Array<(
     { __typename?: 'SequencedServiceLogLine' }
-    & Pick<SequencedServiceLogLine, 'sequence' | 'time' | 'level' | 'unit' | 'message' | 'terminationStatus'>
+    & Pick<SequencedServiceLogLine, 'sequence' | 'time' | 'level' | 'instance' | 'process' | 'message' | 'terminationStatus'>
   )> }
 );
 
@@ -5229,7 +5229,8 @@ export const SubscribeLogsDocument = gql`
     sequence
     time
     level
-    unit
+    instance
+    process
     message
     terminationStatus
   }

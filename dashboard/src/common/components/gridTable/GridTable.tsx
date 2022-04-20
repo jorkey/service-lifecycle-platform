@@ -17,7 +17,7 @@ interface GridParams {
   rows: Map<string, GridTableCellParams>[],
   addNewRow?: boolean,
   scrollToRow?: number,
-  onClick?: (row: number) => void,
+  onClicked?: (row: number) => void,
   onRowAdded?: (values: Map<string, GridTableCellValue>) => Promise<boolean>,
   onRowAddCancelled?: () => void,
   onChanging?: boolean,
@@ -32,7 +32,7 @@ interface GridParams {
 
 export const GridTable = (props: GridParams) => {
   const { className, columns, rows, addNewRow, scrollToRow,
-    onClick, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected,
+    onClicked, onRowAdded, onRowAddCancelled, onRowChanged, onRowsSelected, onRowsUnselected,
     onScrollTop, onScrollMiddle, onScrollBottom  } = props
 
   const [editingRow, setEditingRow] = useState(-1)
@@ -90,15 +90,15 @@ export const GridTable = (props: GridParams) => {
                                       adding={false}
                                       editing={rowNum == editingRow}
                                       scrollInto={rowNum == scrollToRow}
-                                      onClicked={() => {
-                                        onClick?.(rowNum)
-                                      }}
-                                      onSelected={() => {
-                                        onRowsSelected?.([rowNum])
-                                      }}
-                                      onUnselected={() => {
-                                        onRowsUnselected?.([rowNum])
-                                      }}
+                                      onClicked={onClicked?() => {
+                                        onClicked(rowNum)
+                                      }:undefined}
+                                      onSelected={onRowsSelected?() => {
+                                        onRowsSelected([rowNum])
+                                      }:undefined}
+                                      onUnselected={onRowsUnselected?() => {
+                                        onRowsUnselected([rowNum])
+                                      }:undefined}
                                       onBeginEditing={() => {
                                         if (!changingInProgress) {
                                           setEditingRow(rowNum)

@@ -133,7 +133,7 @@ const ConsumerAccountsTable: React.FC<ConsumerAccountsTableProps> = props => {
       className={classes.accountsTable}
       columns={columns}
       rows={rows}
-      onClick={ (row) =>
+      onClicked={ (row) =>
         setStartEdit(rows[row].get('account')!.value! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}

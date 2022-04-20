@@ -85,7 +85,7 @@ const ProfilesTable = () => {
       className={classes.profileTable}
       columns={columns}
       rows={rows}
-      onClick={ (row) =>
+      onClicked={ (row) =>
         setStartEdit(rows[row].get('profile')?.value! as string) }
     />
     {error && <Alert className={classes.alert} severity="error">{error}</Alert>}

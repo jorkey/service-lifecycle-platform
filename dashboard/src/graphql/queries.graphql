@@ -394,7 +394,7 @@ subscription subscribeLogs ($service: String, $instance: String, $process: Strin
         $directory: String, $task: String, $prefetch: Int!, $levels: [String!], $unit: String) {
     subscribeLogs (service: $service, instance: $instance, process: $process,
                    directory: $directory, task: $task, prefetch: $prefetch, levels: $levels, unit: $unit) {
-        sequence, time, level, unit, message, terminationStatus
+        sequence, time, level, instance, process, message, terminationStatus
     }
 }
 

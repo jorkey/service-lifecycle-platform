@@ -80,7 +80,7 @@ export const GridTableRow = (params: GridTableRowParams) => {
                             editable={editableCell} editing={editingCell} auto={auto}
                             focused={adding && index==0 || editing}
                             onValidate={() => column.validate ? column.validate(editValues.get(column.name), rowNum) : true}
-                            onClicked={() => onClicked?.()}
+                            onClicked={onClicked?() => onClicked():undefined}
                             onStartEdit={() => {
                               if (onBeginEditing?.()) {
                                 setEditColumn(column.name)

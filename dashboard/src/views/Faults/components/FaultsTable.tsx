@@ -108,6 +108,6 @@ export const FaultsTable = (props: FaultsTableParams) => {
       className={className}
       columns={columns}
       rows={rows}
-      onClick={row => setSelected(row)}
+      onClicked={row => setSelected(row)}
   />
 }

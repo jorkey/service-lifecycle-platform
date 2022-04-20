@@ -134,7 +134,7 @@ const BuildConfiguration: React.FC<ServicesManagerParams> = props => {
           className={classes.servicesTable}
           columns={columns}
           rows={rows}
-          onClick={(row) =>
+          onClicked={(row) =>
             setStartEdit(rows[row].get('service')?.value! as string)
           }
         />

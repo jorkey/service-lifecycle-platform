@@ -145,7 +145,7 @@ export const TasksTable = (props: TasksTableParams) => {
           getTasks(tasks[tasks.length-1].sequence)
         }
       }}
-      onClick={row =>
+      onClicked={row =>
         onClick(rows[row].get('task')?.value! as string)
       }
     />

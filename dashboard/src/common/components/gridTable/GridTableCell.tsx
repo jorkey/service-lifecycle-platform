@@ -71,10 +71,13 @@ export const GridTableCell = (params: GridTableCellInternalParams) => {
   let classNames = className
   if (classNames) classNames += ' ';
   if (!editing) {
-    if (!editable && !onClicked) {
-      classNames += classes.notClickable
+    if (editable || onClicked) {
+      classNames += classes.clickable
     } else {
-      classNames += classes.clickable + ' ' + classes.editable
+      classNames += classes.notClickable
+    }
+    if (editable) {
+      classNames += ' ' + classes.editable
     }
   } else {
     classNames += classes.editing
