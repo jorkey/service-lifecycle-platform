@@ -192,11 +192,12 @@ class DatabaseCollections(db: MongoDb,
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
     collection <- db.getOrCreateCollection[BsonDocument]("faults.reports")
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("fault")) else Future()
+    _ <- if (createIndices) collection.createIndex(Indexes.ascending("fault", "_archiveTime"),
+      new IndexOptions().unique(true)) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.service")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.time")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("_sequence")) else Future()
-  } yield collection, createIndices = false)
+  } yield collection, createIndices = createIndices)
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
     val filters = Filters.eq("account", "admin")
