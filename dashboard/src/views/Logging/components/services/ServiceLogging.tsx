@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/styles';
 import {
   Button,
   Card,
-  CardContent, CardHeader, Checkbox, Grid, Select, TextField,
+  CardContent, CardHeader, Checkbox, Select, TextField,
 } from '@material-ui/core';
 import Alert from "@material-ui/lab/Alert";
 import FormGroup from "@material-ui/core/FormGroup";
@@ -11,8 +11,8 @@ import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {RouteComponentProps} from "react-router-dom";
 import {
   useLogDirectoriesLazyQuery,
-  useLogInstancesLazyQuery, useLogLevelsQuery, useLogsStartTimeQuery, useLogsEndTimeQuery, useLogProcessesLazyQuery,
-  useLogServicesQuery
+  useLogInstancesLazyQuery, useLogProcessesLazyQuery,
+  useLogServicesQuery, useLogLevelsLazyQuery
 } from "../../../../generated/graphql";
 import {DateTimePicker} from "@material-ui/pickers";
 import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
@@ -104,32 +104,25 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
 
   useEffect(() => {
     if (service) {
-      getInstances({
-        variables: { service: service! },
+      if (instance && directory) {
+        getProcesses({
+          variables: { service: service!, instance: instance!, directory: directory! },
+        })
+      } else if (instance) {
+        getDirectories({
+          variables: { service: service!, instance: instance! },
+        })
+      } else {
+        getInstances({
+          variables: { service: service! },
+        })
+      }
+      getLevels({
+        variables: { service: service!, instance: instance, directory: directory, process: process },
       })
     }
-    setInstance(undefined)
-    setFromTime(undefined)
-    setToTime(undefined)
-  }, [ service ])
-
-  useEffect(() => {
-    if (service && instance) {
-      getDirectories({
-        variables: { service: service!, instance: instance! },
-      })
-    }
-    setDirectory(undefined)
-  }, [ instance ])
-
-  useEffect(() => {
-    if (service && instance && directory) {
-      getProcesses({
-        variables: { service: service!, instance: instance!, directory: directory! },
-      })
-    }
-    setProcess(undefined)
-  }, [ directory ])
+    setLevel(undefined)
+  }, [ service, instance, directory, process ])
 
   const { data: services } = useLogServicesQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
@@ -151,9 +144,8 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
     onError(err) { setError('Query log processes error ' + err.message) },
   })
 
-  const { data: levels } = useLogLevelsQuery({
+  const [ getLevels, levels ] = useLogLevelsLazyQuery({
     fetchPolicy: 'no-cache', // base option no-cache does not work
-    variables: { service: service, instance: instance, directory: directory, process: process },
     onError(err) { setError('Query log levels error ' + err.message) }
   })
 
@@ -172,7 +164,10 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     className={classes.serviceSelect}
                     native
                     onChange={(event) => {
-                      setService(event.target.value as string)
+                      setService(event.target.value?event.target.value as string:undefined)
+                      setInstance(undefined)
+                      setDirectory(undefined)
+                      setProcess(undefined)
                     }}
                     title='Select service'
                     value={service}
@@ -193,7 +188,9 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     className={classes.instanceSelect}
                     native
                     onChange={(event) => {
-                      setInstance(event.target.value as string)
+                      setInstance(event.target.value?event.target.value as string:undefined)
+                      setDirectory(undefined)
+                      setProcess(undefined)
                     }}
                     title='Select instance'
                     value={instance}
@@ -214,7 +211,8 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     className={classes.directorySelect}
                     native
                     onChange={(event) => {
-                      setDirectory(event.target.value as string)
+                      setDirectory(event.target.value?event.target.value as string:undefined)
+                      setProcess(undefined)
                     }}
                     title='Select directory'
                     value={directory}
@@ -235,7 +233,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     className={classes.processSelect}
                     native
                     onChange={(event) => {
-                      setProcess(event.target.value as string)
+                      setProcess(event.target.value?event.target.value as string:undefined)
                     }}
                     title='Select process'
                     value={process}
@@ -272,13 +270,13 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     className={classes.level}
                     native
                     onChange={(event) => {
-                      setLevel(event.target.value as string)
+                      setLevel(event.target.value?event.target.value as string:undefined)
                     }}
                     title='Select level'
                     value={level}
                   >
                     <option key={-1}/>
-                    { levels ? Logs.sortLevels(levels.logLevels)
+                    { levels.data?.logLevels != undefined ? Logs.sortLevels(levels.data.logLevels)
                       .map((level, index) => <option key={index}>{level}</option>) : null }
                   </Select>
                 }
@@ -366,7 +364,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                        className={classes.logsTable}
                        service={service} instance={instance} directory={directory} process={process}
                        fromTime={fromTime} toTime={toTime}
-                       levels={(levels && level)?Logs.levelWithSubLevels(level, levels.logLevels):undefined}
+                       levels={(levels.data && level)?Logs.levelWithSubLevels(level, levels.data.logLevels):undefined}
                        find={find != ''?find:undefined}
                        follow={follow}
                        onComplete={() => {}}

@@ -221,9 +221,11 @@ const client = new ApolloClient({
   defaultOptions: {
     watchQuery: {
       fetchPolicy: 'no-cache',
+      notifyOnNetworkStatusChange: true,
     },
     query: {
       fetchPolicy: 'no-cache',
+      notifyOnNetworkStatusChange: true,
     }
   }
 });

@@ -155,25 +155,24 @@ class DatabaseCollections(db: MongoDb,
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
       Indexes.ascending("process"), Indexes.ascending("level"),
-      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
       Indexes.ascending("process"),
-      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
-      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"),
-      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"),
-      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
-      Indexes.ascending("service"),
-      Indexes.text("message"),
-      Indexes.ascending("time"), Indexes.ascending("_sequence"))) else Future()
+      Indexes.ascending("service"), Indexes.text("message"),
+      Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
     _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
       .expireAfter(0, TimeUnit.SECONDS)) else Future()
   } yield collection, createIndices = false)

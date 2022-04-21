@@ -126,7 +126,7 @@ const Versions: React.FC<VersionsProps> = props => {
       />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
-          { developerDesiredVersions.data ?
+          { developerDesiredVersions.data?.developerDesiredVersions ?
             <VersionsTable
               developerVersions={developerDesiredVersions.data.developerDesiredVersions}
               clientVersions={consumer ? installedDesiredVersions.data?.installedDesiredVersions : clientDesiredVersions.data?.clientDesiredVersions}
