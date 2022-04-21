@@ -96,6 +96,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
   const [toTime, setToTime] = useState<Date>()
   const [level, setLevel] = useState<string>()
   const [find, setFind] = useState<string>('')
+  const [inputFind, setInputFind] = useState<string>('')
   const [follow, setFollow] = useState<boolean>()
 
   const [error, setError] = useState<string>()
@@ -148,6 +149,11 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
     fetchPolicy: 'no-cache', // base option no-cache does not work
     onError(err) { setError('Query log levels error ' + err.message) }
   })
+
+  useEffect(() => {
+    const timeOutId = setTimeout(() => setFind(inputFind), 1000)
+    return () => clearTimeout(timeOutId)
+  }, [inputFind])
 
   return (
     <Card>
@@ -326,10 +332,10 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                   <TextField
                     className={classes.find}
                     onChange={(event) => {
-                      setFind(event.target.value)
+                      setInputFind(event.target.value)
                     }}
                     title='Find Text'
-                    value={find}
+                    value={inputFind}
                   />
                 }
                 label='Find Text'
