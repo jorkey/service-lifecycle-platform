@@ -30,7 +30,7 @@ case class NoSuchDocument() extends Exception
 
 class SequencedCollection[T: ClassTag](val name: String,
                                        collection: Future[MongoDbCollection[BsonDocument]],
-                                       historyExpireDays: Int = 7, createIndices: Boolean = true)
+                                       historyExpireDays: Int = 7, modifiable: Boolean = true, createIndices: Boolean = true)
                                       (implicit system: ActorSystem, executionContext: ExecutionContext,
                                        codecRegistry: CodecRegistry) {
   private implicit val log = Logging(system, this.getClass)
@@ -48,8 +48,10 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   if (createIndices) {
     collection.map(_.createIndex(Indexes.ascending("_sequence")))
-    collection.map(_.createIndex(Indexes.ascending("_archiveTime"),
-      new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS)))
+    if (modifiable) {
+      collection.map(_.createIndex(Indexes.ascending("_archiveTime"),
+        new IndexOptions().expireAfter(historyExpireDays, TimeUnit.DAYS)))
+    }
   }
 
   def insert(document: T): Future[Long] = {
@@ -67,7 +69,9 @@ class SequencedCollection[T: ClassTag](val name: String,
           publisherCallback.invoke(line)
           val doc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
           doc.append("_sequence", new BsonInt64(seq)); seq += 1
-          doc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
+          if (modifiable) {
+            doc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
+          }
           doc
         }
         collection.insert(docs).map(_ => sequence)
@@ -111,6 +115,7 @@ class SequencedCollection[T: ClassTag](val name: String,
 
 
   def update(filters: Bson, modify: Option[T] => Option[T]): Future[Int] = {
+    assert(modifiable)
     def update(): Future[Int] = {
       for {
         docs <- findDocuments(filters)
@@ -127,7 +132,9 @@ class SequencedCollection[T: ClassTag](val name: String,
     def insert(collection: MongoDbCollection[BsonDocument], document: T, sequence: Long): Future[Unit] = {
       val newDoc = BsonDocumentWrapper.asBsonDocument(document, codecRegistry)
       newDoc.append("_sequence", new BsonInt64(sequence))
-      newDoc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
+      if (modifiable) {
+        newDoc.append("_modifyTime", new BsonDateTime(System.currentTimeMillis()))
+      }
       collection.insert(newDoc).map(_ => ())
     }
 
@@ -170,6 +177,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   def add(filters: Bson, doc: T): Future[Int] = {
+    assert(modifiable)
     update(filters, _ match {
       case Some(_) =>
         throw DocumentAlreadyExists()
@@ -179,6 +187,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   def change(filters: Bson, modify: T => T): Future[Int] = {
+    assert(modifiable)
     update(filters, _ match {
       case Some(oldValue) =>
         Some(modify(oldValue))
@@ -188,6 +197,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   def delete(filters: Bson = new BsonDocument()): Future[Long] = {
+    assert(modifiable)
     for {
       collection <- collection
       result <- collection.updateMany(Filters.and(filters,
@@ -204,6 +214,7 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   def history(filters: Bson = new BsonDocument(), limit: Option[Int] = None): Future[Seq[Timed[T]]] = {
+    assert(modifiable)
     for {
       docs <- getHistory(filters, limit)
     } yield {
@@ -246,14 +257,24 @@ class SequencedCollection[T: ClassTag](val name: String,
   }
 
   private def findDocuments(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Seq[BsonDocument]] = {
+    val findFilters = if (modifiable) {
+      Filters.and(filters,
+        Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true)))
+    } else {
+      filters
+    }
     for {
       collection <- collection
-      docs <- collection.find(Filters.and(filters,
-        Filters.or(Filters.exists("_archiveTime", false), Filters.exists("_replacedBy", true))),
-          sort, limit)
+      docs <- collection.find(findFilters, sort, limit)
     } yield {
-      val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_sequence").asInt64())
-      docs.filter(doc => { !doc.containsKey("_replacedBy") || !notReplaced.contains(doc.get("_replacedBy").asInt64()) })
+      if (modifiable) {
+        val notReplaced = docs.filter(!_.containsKey("_replacedBy")).map(_.get("_sequence").asInt64())
+        docs.filter(doc => {
+          !doc.containsKey("_replacedBy") || !notReplaced.contains(doc.get("_replacedBy").asInt64())
+        })
+      } else {
+        docs
+      }
     }
   }
 

@@ -68,26 +68,33 @@ class DatabaseCollections(db: MongoDb,
     fromCodecs(FiniteDurationCodec, URLCodec)
   ))
 
-  val Accounts = new SequencedCollection[ServerAccountInfo]("accounts", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("accounts")
-    _ <- if (createIndices) {
-      collection.createIndex(Indexes.ascending("type", "_archiveTime"))
-      collection.createIndex(Indexes.ascending("account", "_archiveTime"),
-        new IndexOptions().unique(true))
-    } else Future()
-  } yield collection, createIndices = createIndices)
+  val Accounts = new SequencedCollection[ServerAccountInfo]("accounts",
+    for {
+      collection <- db.getOrCreateCollection[BsonDocument]("accounts")
+    } yield {
+      if (createIndices) {
+        collection.createIndex(Indexes.ascending("type", "_archiveTime"))
+        collection.createIndex(Indexes.ascending("account", "_archiveTime"),
+          new IndexOptions().unique(true))
+      } else Future()
+      collection
+    }, createIndices = createIndices)
 
   val Developer_BuildServices = new SequencedCollection[BuildServiceConfig]("developer.buildServices", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.services")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection, createIndices = createIndices)
+    collection
+  }, createIndices = createIndices)
 
   val Developer_Versions = new SequencedCollection[DeveloperVersionInfo]("developer.versions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.versions")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "version", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("service", "version", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection, createIndices = createIndices)
+    collection
+  }, createIndices = createIndices)
 
   val Developer_DesiredVersions = new SequencedCollection[DeveloperDesiredVersions]("developer.desiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.desiredVersions")
@@ -95,28 +102,36 @@ class DatabaseCollections(db: MongoDb,
 
   val Developer_ServiceProfiles = new SequencedCollection[ServicesProfile]("developer.serviceProfiles", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.serviceProfiles")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("profile", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("profile", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection, createIndices = createIndices)
+    collection
+  }, createIndices = createIndices)
 
   val Developer_TestedVersions = new SequencedCollection[TestedVersions]("developer.testedVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("developer.testedVersions")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("profile")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("consumerDistribution", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("profile")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("consumerDistribution", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection, createIndices = createIndices)
+    collection
+  }, createIndices = createIndices)
 
   val Client_BuildServices = new SequencedCollection[BuildServiceConfig]("client.buildServices", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.services")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("service", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection, createIndices = createIndices)
+    collection
+  }, createIndices = createIndices)
 
   val Client_Versions = new SequencedCollection[ClientVersionInfo]("client.versions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.versions")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service", "version", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("service", "version", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection, createIndices = createIndices)
+    collection
+  }, createIndices = createIndices)
 
   val Client_DesiredVersions = new SequencedCollection[ClientDesiredVersions]("client.desiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.desiredVersions")
@@ -124,79 +139,93 @@ class DatabaseCollections(db: MongoDb,
 
   val Client_ProvidersInfo = new SequencedCollection[DistributionProviderInfo]("client.providers", for {
     collection <- db.getOrCreateCollection[BsonDocument]("client.providers")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("distribution", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection, createIndices = createIndices)
+    collection
+  }, createIndices = createIndices)
 
   val Consumers_InstalledDesiredVersions = new SequencedCollection[InstalledDesiredVersions]("consumers.installedDesiredVersions", for {
     collection <- db.getOrCreateCollection[BsonDocument]("consumers.installedDesiredVersions")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-  } yield collection, createIndices = createIndices)
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
+    collection
+  }, createIndices = createIndices)
 
   val State_ServiceStates = new SequencedCollection[DistributionServiceState]("state.serviceStates", for {
     collection <- db.getOrCreateCollection[BsonDocument]("state.serviceStates")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("state.time"), new IndexOptions()
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("instance")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("service")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("directory")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("state.time"), new IndexOptions()
       .expireAfter(serviceStatesExpireTimeout.length, serviceStatesExpireTimeout.unit)) else Future()
-    _ <- collection.dropItems()
-  } yield collection, createIndices = createIndices)
+    collection.dropItems()
+    collection
+  }, createIndices = createIndices)
 
   val State_UploadStatus = for {
     collection <- db.getOrCreateCollection[UploadStatusDocument]("state.uploadStatus")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("component", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("component", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-  } yield collection
+    collection
+  }
 
   val Log_Lines = new SequencedCollection[ServiceLogLine]("log.lines", for {
     collection <- db.getOrCreateCollection[BsonDocument]("log.lines")
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
       Indexes.ascending("process"), Indexes.ascending("level"),
       Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+    if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
       Indexes.ascending("process"),
       Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+    if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),
       Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+    if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"),
       Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+    if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"),
       Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.compoundIndex(
+    if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
+    if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.text("message"),
       Indexes.ascending("_sequence"), Indexes.ascending("time"))) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
+    if (createIndices) collection.createIndex(Indexes.ascending("expireTime"), new IndexOptions()
       .expireAfter(0, TimeUnit.SECONDS)) else Future()
-  } yield collection, createIndices = false)
+    collection
+  }, modifiable = false, createIndices = false)
 
   val Tasks_Info = new SequencedCollection[TaskInfo]("tasks.info", for {
     collection <- db.getOrCreateCollection[BsonDocument]("tasks.info")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("type")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("services")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("creationTime"), new IndexOptions()
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("task")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("type")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("services")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("creationTime"), new IndexOptions()
       .expireAfter(taskLogExpirationTimeout.length, taskLogExpirationTimeout.unit)) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("terminationStatus")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("_sequence")) else Future()
-  } yield collection, createIndices = false)
+    if (createIndices) collection.createIndex(Indexes.ascending("terminationStatus")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("_sequence")) else Future()
+    collection
+  }, createIndices = false)
 
   val Faults_ReportsInfo = new SequencedCollection[DistributionFaultReport]("faults.reports", for {
     collection <- db.getOrCreateCollection[BsonDocument]("faults.reports")
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("fault", "_archiveTime"),
+  } yield {
+    if (createIndices) collection.createIndex(Indexes.ascending("distribution")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("fault", "_archiveTime"),
       new IndexOptions().unique(true)) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.service")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("info.time")) else Future()
-    _ <- if (createIndices) collection.createIndex(Indexes.ascending("_sequence")) else Future()
-  } yield collection, createIndices = createIndices)
+    if (createIndices) collection.createIndex(Indexes.ascending("info.service")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("info.time")) else Future()
+    if (createIndices) collection.createIndex(Indexes.ascending("_sequence")) else Future()
+    collection
+  }, createIndices = createIndices)
 
   def init()(implicit executionContext: ExecutionContext): Future[Unit] = {
     val filters = Filters.eq("account", "admin")
