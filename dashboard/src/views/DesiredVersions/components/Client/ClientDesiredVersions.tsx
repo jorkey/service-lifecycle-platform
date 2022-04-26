@@ -104,8 +104,8 @@ const ClientDesiredVersions = (props: ClientDesiredVersionsParams) => {
       const version = Version.parseClientDistributionVersion(row.get('version')!.value as string)
       const installInfo = versionsInfo.clientVersionsInfo
         .find(v => v.service == service &&
-          Version.compareClientDistributionVersions(v.version, version) == 0)!.installInfo
-      row.set('installTime', { value: installInfo.time })
+          Version.compareClientDistributionVersions(v.version, version) == 0)?.installInfo
+      row.set('installTime', { value: installInfo?installInfo.time:'' })
       return row
     })
     viewRender = view.render(columns, rows)

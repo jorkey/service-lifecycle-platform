@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.directives.FutureDirectives
 import akka.stream.Materializer
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.DistributionId
+import com.vyulabs.update.common.info.DeveloperDesiredVersion
 import com.vyulabs.update.distribution.graphql.utils.{ClientVersionUtils, DeveloperVersionUtils, DistributionProvidersUtils}
 import com.vyulabs.update.distribution.task.TaskManager
 import org.slf4j.LoggerFactory
@@ -60,10 +61,12 @@ class AutoUpdater(distribution: DistributionId,
   private def autoUpdate(): Unit = {
     log.debug("Started auto update")
     val result = for {
-      developerVersions <- developerVersionUtils.getDeveloperDesiredVersions()
+      developerVersions <- developerVersionUtils.getDeveloperVersionsInfo()
+        .map(_.map(v => DeveloperDesiredVersion(v.service, v.version)).filter(_.version.distribution == distribution))
       providerVersions <- distributionProvidersUtils.getProviderDesiredVersions(distribution)
       taskId <- {
         val versionsToUpdate = providerVersions.filter(!developerVersions.contains(_))
+        log.debug(s"Versions to update ${versionsToUpdate}")
         if (!versionsToUpdate.isEmpty) {
           clientVersionUtils.buildClientVersions(versionsToUpdate, Common.AuthorDistribution).map(Some(_))
         } else {
@@ -90,7 +93,7 @@ class AutoUpdater(distribution: DistributionId,
               schedule()
           }
         } else {
-          log.error(s"Auto update error")
+          log.error(s"Auto update error", result.failed)
           schedule()
         }
       }
