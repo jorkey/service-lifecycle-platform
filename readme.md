@@ -338,7 +338,7 @@ Clone source repository vm-update to distribution server:
 
 Execute the command in the repository directory:
 
-`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? [persistent=?]"`
+`sbt "project builder; run buildProviderDistribution [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? [logsMongoDbConnection=?] [logsMongoDbName=?] [persistent=?]"`
 
 Replace `?` with values:
 - _cloudProvider_
@@ -362,6 +362,12 @@ Replace `?` with values:
   - MongoDB connection URL, for example mongodb://localhost:27017
 - _mongoDbName_
   - MongoDB database name
+- _[logsMongoDbConnection]_
+  - MongoDB connection URL for store log records, for example mongodb://localhost:27017. 
+  - Log records are stores in the common database if this parameter is not specified.
+- _[logsMongoDbName]_
+  - MongoDB database name for store log records. Must be defined when logsMongoDbConnection is defined. 
+  - Log records are stores in the common database if this parameter is not specified.
 - _persistent_
   - currently only for installation on Linux
   - _true_, if the distribution server is installed as a Linux systemd service 
@@ -386,7 +392,7 @@ serviceToRun=builder
 distributionUrl=?
 accessToken=?
 
-. .update.sh buildConsumerDistribution providerUrl=? [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
+. .update.sh buildConsumerDistribution providerUrl=? [cloudProvider=?] distribution=? directory=? host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?] title=? mongoDbConnection=? mongoDbName=? [logsMongoDbConnection=?] [logsMongoDbName=?] provider=? consumerAccessToken=? testConsumerMatch=? [persistent=?] 
 ```
 
 Replace `?` with values:
@@ -413,6 +419,12 @@ Replace `?` with values:
   - MongoDB connection URL, for example mongodb://localhost:27017
 - _mongoDbName_
   - MongoDB database name
+- _[logsMongoDbConnection]_
+  - MongoDB connection URL for store log records, for example mongodb://localhost:27017.
+  - Log records are stores in the common database if this parameter is not specified.
+- _[logsMongoDbName]_
+  - MongoDB database name for store log records. Must be defined when logsMongoDbConnection is defined.
+  - Log records are stores in the common database if this parameter is not specified.
 - _provider_
   - source distribution server name
 - _consumerAccessToken_
@@ -781,10 +793,10 @@ The service should write the operation log to standard output. The log line form
 `date level unit message`
 
 Where:
-_date_ - date in format `yyyy-MM-dd HH:mm:ss.SSS`
-_level_ - logging level: _TRACE_, _DEBUG_, _INFO_, _WARN_ или _ERROR_
-_unit_ - functional unit
-_message_ - logging message
+- _date_ - date in format `yyyy-MM-dd HH:mm:ss.SSS`
+- _level_ - logging level: _TRACE_, _DEBUG_, _INFO_, _WARN_ или _ERROR_
+- _unit_ - functional unit
+- _message_ - logging message
 
 The service's standard output and error output are grabbed by _updater_.
 
