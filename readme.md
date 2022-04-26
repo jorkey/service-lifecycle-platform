@@ -452,6 +452,9 @@ The _distribution.json_ configuration file is located in the working directory o
 - _mongoDb_ - setting up a connection to Mongo DB
   - _connection_ : URL подключения
   - _name_ : base name
+- _[logsMongoDb]_ - setting up a connection to Mongo DB for store log records. If not defined, log records are stored in the _mongoDb_. 
+  - _connection_ : URL подключения
+  - _name_ : base name
 - _network_
   - _port:number_ : HTTP or HTTPS server port number
   - _[ssl]_ - settings for HTTPS service

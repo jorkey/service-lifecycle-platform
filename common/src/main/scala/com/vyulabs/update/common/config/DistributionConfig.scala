@@ -53,10 +53,10 @@ case class DistributionConfig(distribution: DistributionId, title: String, insta
 
 object DistributionConfig {
   implicit val distributionConfigJson = jsonFormat11((distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
-                                                      db: MongoDbConfig, logsDb: Option[MongoDbConfig], network: NetworkConfig,
+                                                      mongoDb: MongoDbConfig, logsMongoDb: Option[MongoDbConfig], network: NetworkConfig,
                                                       versions: VersionsConfig, instanceState: ServiceStatesConfig,
                                                       logs: LogsConfig, faultReports: FaultReportsConfig) =>
-    DistributionConfig.apply(distribution, title, instance, jwtSecret, db, logsDb, network,
+    DistributionConfig.apply(distribution, title, instance, jwtSecret, mongoDb, logsMongoDb, network,
       versions, instanceState, logs, faultReports))
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {
