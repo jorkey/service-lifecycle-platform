@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DatabaseCollections(db: MongoDb,
+class DatabaseCollections(db: MongoDb, logsDb: MongoDb,
                           serviceStatesExpireTimeout: FiniteDuration,
                           taskLogExpirationTimeout: FiniteDuration,
                           createIndices: Boolean)
@@ -174,7 +174,7 @@ class DatabaseCollections(db: MongoDb,
   }
 
   val Log_Lines = new SequencedCollection[ServiceLogLine]("log.lines", for {
-    collection <- db.getOrCreateCollection[BsonDocument]("log.lines")
+    collection <- logsDb.getOrCreateCollection[BsonDocument]("log.lines")
   } yield {
     if (createIndices) collection.createIndex(Indexes.compoundIndex(
       Indexes.ascending("service"), Indexes.ascending("instance"), Indexes.ascending("directory"),

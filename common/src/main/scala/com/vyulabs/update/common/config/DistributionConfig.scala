@@ -10,7 +10,7 @@ import spray.json.DefaultJsonProtocol._
 import java.io.File
 import scala.concurrent.duration.FiniteDuration
 
-case class MongoDbConfig(connection: String, name: String, temporary: Option[Boolean])
+case class MongoDbConfig(connection: String, name: String, temporary: Option[Boolean] = Some(false))
 
 object MongoDbConfig {
   implicit val mongoDbConfigJson = jsonFormat3(MongoDbConfig.apply)
@@ -47,16 +47,16 @@ object FaultReportsConfig {
 }
 
 case class DistributionConfig(distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
-                              mongoDb: MongoDbConfig, network: NetworkConfig,
+                              mongoDb: MongoDbConfig, logsMongoDb: Option[MongoDbConfig], network: NetworkConfig,
                               versions: VersionsConfig, serviceStates: ServiceStatesConfig,
                               logs: LogsConfig, faultReports: FaultReportsConfig)
 
 object DistributionConfig {
-  implicit val distributionConfigJson = jsonFormat10((distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
-                                                      mongoDb: MongoDbConfig, network: NetworkConfig,
+  implicit val distributionConfigJson = jsonFormat11((distribution: DistributionId, title: String, instance: InstanceId, jwtSecret: String,
+                                                      db: MongoDbConfig, logsDb: Option[MongoDbConfig], network: NetworkConfig,
                                                       versions: VersionsConfig, instanceState: ServiceStatesConfig,
                                                       logs: LogsConfig, faultReports: FaultReportsConfig) =>
-    DistributionConfig.apply(distribution, title, instance, jwtSecret, mongoDb, network,
+    DistributionConfig.apply(distribution, title, instance, jwtSecret, db, logsDb, network,
       versions, instanceState, logs, faultReports))
 
   def readFromFile()(implicit log: Logger): Option[DistributionConfig] = {

@@ -2,6 +2,7 @@ package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.accounts.ConsumerAccountProperties
 import com.vyulabs.update.common.common.{Common, JWT}
+import com.vyulabs.update.common.config.MongoDbConfig
 import com.vyulabs.update.common.info.AccessToken
 import com.vyulabs.update.distribution.mongo.MongoDb
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
@@ -48,7 +49,8 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       "None", providerDistributionName, providerDistributionDir,
       "localhost", 8000, None, None,
       "Test developer distribution server",
-      mongoDbConnection, providerMongoDbName, true, false)
+      MongoDbConfig(mongoDbConnection, providerMongoDbName, Some(true)),
+      Some(MongoDbConfig(mongoDbConnection, providerMongoDbName, Some(true))), false)
     assert(providerDistributionBuilder.buildDistributionFromSources("ak"))
     assert(providerDistributionBuilder.addConsumerAccount(consumerDistributionName,
       "Distribution Consumer", ConsumerAccountProperties(Common.CommonConsumerProfile, "http://localhost:8001")))
@@ -60,7 +62,8 @@ class BuildDistributionTest extends FlatSpec with Matchers with BeforeAndAfterAl
       "None", consumerDistributionName, consumerDistributionDir,
       "localhost", 8001, None, None,
       "Test client distribution server",
-      mongoDbConnection, consumerMongoDbName,true, false)
+      MongoDbConfig(mongoDbConnection, consumerMongoDbName, Some(true)),
+      Some(MongoDbConfig(mongoDbConnection, consumerMongoDbName, Some(true))),false)
     assert(consumerDistributionBuilder.buildFromProviderDistribution(providerDistributionName,
       "http://localhost:8000",
       JWT.encodeAccessToken(AccessToken(consumerDistributionName), providerDistributionBuilder.config.get.jwtSecret),

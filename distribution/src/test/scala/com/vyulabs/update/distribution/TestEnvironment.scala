@@ -38,14 +38,14 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   def dbName = getClass.getSimpleName
 
-  def mongoDbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, Some(true))
+  def dbConfig = MongoDbConfig("mongodb://localhost:27017", dbName, Some(true))
   def networkConfig = NetworkConfig("localhost", 0, None)
   def versionsConfig = VersionsConfig(3)
   def instanceStateConfig = ServiceStatesConfig(FiniteDuration(60, TimeUnit.SECONDS))
   def logsConfig = LogsConfig(FiniteDuration(60, TimeUnit.SECONDS), FiniteDuration(60, TimeUnit.SECONDS))
   def faultReportsConfig = FaultReportsConfig(FiniteDuration(30, TimeUnit.SECONDS), 3)
 
-  val config = DistributionConfig("test", "Test distribution server", "instance1", "secret", mongoDbConfig,
+  val config = DistributionConfig("test", "Test distribution server", "instance1", "secret", dbConfig, None,
                                   networkConfig, versionsConfig, instanceStateConfig, logsConfig, faultReportsConfig)
 
   val distributionName = config.distribution
@@ -53,9 +53,13 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
 
   val distributionDirectory = Files.createTempDirectory("distribution-").toFile
 
-  val mongo = new MongoDb(config.mongoDb.name, config.mongoDb.connection,
-    config.mongoDb.temporary.getOrElse(false)); result(mongo.dropDatabase())
-  val collections = new DatabaseCollections(mongo,
+  val db = new MongoDb(config.mongoDb.name, config.mongoDb.connection,
+    config.mongoDb.temporary.getOrElse(false))
+  val logsDb = new MongoDb(config.mongoDb.name, config.mongoDb.connection,
+    config.mongoDb.temporary.getOrElse(false))
+  result(db.dropDatabase())
+
+  val collections = new DatabaseCollections(db, logsDb,
     instanceStateConfig.expirationTimeout,
     logsConfig.taskLogExpirationTimeout,
     createIndices)
@@ -111,7 +115,7 @@ abstract class TestEnvironment(createIndices: Boolean = false) extends FlatSpec 
   def result[T](awaitable: Awaitable[T]) = Await.result(awaitable, FiniteDuration(15, TimeUnit.SECONDS))
 
   override protected def afterAll(): Unit = {
-    mongo.close()
+    db.close()
     distributionDir.drop()
     IoUtils.deleteFileRecursively(builderDirectory)
   }

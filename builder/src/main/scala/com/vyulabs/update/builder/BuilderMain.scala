@@ -1,7 +1,7 @@
 package com.vyulabs.update.builder
 
 import com.vyulabs.update.common.common.{Arguments, Common, ThreadTimer}
-import com.vyulabs.update.common.config.{NamedStringValue, Repository, ServicePrivateFile}
+import com.vyulabs.update.common.config.{MongoDbConfig, NamedStringValue, Repository, ServicePrivateFile}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient}
 import com.vyulabs.update.common.lock.SmartFilesLocker
 import com.vyulabs.update.common.utils.Utils
@@ -29,11 +29,12 @@ object BuilderMain extends App {
     "Commands:\n" +
     "  buildProviderDistribution [cloudProvider=?] distribution=? directory=?\n" +
     "     host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
-    "     title=? mongoDbConnection=? mongoDbName=? [sourceBranches=?[,?]...] [persistent=?]\n" +
+    "     title=? mongoDbConnection=? mongoDbName=? [logsMongoDbConnection=?] [logsMongoDbName=?]\n" +
+    "     [sourceBranches=?[,?]...] [persistent=?]\n" +
     "  buildConsumerDistribution [cloudProvider=?] distribution=? directory=?\n" +
     "     host=? port=? [sslKeyStoreFile=?] [sslKeyStorePassword=?]\n" +
-    "     title=? mongoDbConnection=? mongoDbName=? provider=? providerUrl=?\n" +
-    "     consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
+    "     title=? mongoDbConnection=? mongoDbName=? [logsMongoDbConnection=?] [logsMongoDbName=?]\n" +
+    "     provider=? providerUrl=? consumerAccessToken=? [testConsumerMatch=?] [persistent=?]\n" +
     "  buildDeveloperVersion service=? version=? sourceRepositories=? [privateFiles=?] [macroValues=?] comment=?\n" +
     "  buildClientVersion service=? developerVersion=? clientVersion=? [settingsRepositories=?] [privateFiles=?] [macroValues=?]\n" +
     "  lastCommitComment service=? [sourceRepositories=?]"
@@ -57,11 +58,15 @@ object BuilderMain extends App {
         val title = arguments.getValue("title")
         val mongoDbConnection = arguments.getValue("mongoDbConnection")
         val mongoDbName = arguments.getValue("mongoDbName")
+        val logsMongoDbConnection = arguments.getOptionValue("logsMongoDbConnection")
+        val logsMongoDbName = arguments.getOptionValue("logsMongoDbName")
         val persistent = arguments.getOptionBooleanValue("persistent").getOrElse(false)
 
         val distributionBuilder = new DistributionBuilder(cloudProvider,
           distribution, new File(directory), host, port, sslKeyStoreFile, sslKeyStorePassword,
-          title, mongoDbConnection, mongoDbName, false, persistent)
+          title, MongoDbConfig(mongoDbConnection, mongoDbName),
+          logsMongoDbConnection.map(connection => MongoDbConfig(connection,
+            logsMongoDbName.getOrElse(Utils.error("Argument logsMongoDbName is not defined")))), persistent)
 
         if (command == "buildProviderDistribution") {
           if (!distributionBuilder.buildDistributionFromSources(Common.AuthorBuilder)) {

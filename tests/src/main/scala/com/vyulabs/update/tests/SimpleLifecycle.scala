@@ -44,7 +44,9 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
   private val distributionBuilder = new DistributionBuilder("None",
     distribution, distributionDir,
     "localhost", distributionPort, None, None,
-    s"Test distribution server: ${distribution}", dbConnection, dbName, false, false)
+    s"Test distribution server: ${distribution}",
+    MongoDbConfig(dbConnection, dbName, Some(true)),
+    Some(MongoDbConfig(dbConnection, dbName, Some(true))), false)
   private val clientBuilder = new ClientBuilder(builderDir)
 
   private val adminClient = new SyncDistributionClient(

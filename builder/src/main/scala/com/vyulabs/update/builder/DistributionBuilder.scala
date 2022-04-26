@@ -4,7 +4,7 @@ import com.vyulabs.libs.git.GitRepository
 import com.vyulabs.update.common.accounts.{ConsumerAccountProperties, UserAccountProperties}
 import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{AccountId, DistributionId, ServiceId}
-import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, Repository}
+import com.vyulabs.update.common.config.{DistributionConfig, GitConfig, MongoDbConfig, Repository}
 import com.vyulabs.update.common.distribution.client.graphql.AdministratorGraphqlCoder.{administratorMutations, administratorQueries, administratorSubscriptions}
 import com.vyulabs.update.common.distribution.client.{DistributionClient, HttpClientImpl, SyncDistributionClient, SyncSource}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
@@ -28,7 +28,7 @@ import scala.util.{Failure, Success}
   */
 class DistributionBuilder(cloudProvider: String, distribution: String, directory: File,
                           host: String, port: Int, sslKeyStoreFile: Option[String], sslKeyStorePassword: Option[String],
-                          title: String, mongoDbConnection: String, mongoDbName: String, mongoDbTemporary: Boolean,
+                          title: String, dbConfig: MongoDbConfig, logsDbConfig: Option[MongoDbConfig],
                           persistent: Boolean)(implicit executionContext: ExecutionContext) {
   implicit val log = LoggerFactory.getLogger(this.getClass)
 
@@ -356,15 +356,24 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
 
     log.info(s"--------------------------- Make distribution config")
     var substitutions = s""".distribution="${distribution}" | .title="${title}"""" +
-      s""" | .mongoDb.connection="${mongoDbConnection}" | .mongoDb.name="${mongoDbName}" | .mongoDb.temporary=${mongoDbTemporary}""" +
-      s""" | .network.host="${host}" | .network.port=${port}"""
+      s""" | .mongoDb.connection="${dbConfig.connection}" | .mongoDb.name="${dbConfig.name}""""
+    for (dbTemporary <- dbConfig.temporary) {
+      substitutions += s""" | .mongoDb.temporary=${dbTemporary}"""
+    }
+    substitutions += s""" | .network.host="${host}" | .network.port=${port}"""
     for (sslKeyStoreFile <- sslKeyStoreFile) {
       if (!IoUtils.copyFile(new File(sslKeyStoreFile), new File(directory, "keystore.jks"))) {
         return false
       }
       substitutions += """ | .network.ssl.keyStoreFile="keystore.jks""""
       for (sslKeyStorePassword <- sslKeyStorePassword) {
-        substitutions += s""" | .network.ssl.keyStorePassword ="${sslKeyStorePassword}""""
+        substitutions += s""" | .network.ssl.keyStorePassword="${sslKeyStorePassword}""""
+      }
+    }
+    for (logsDbConfig <- logsDbConfig) {
+      substitutions += s""" | .logsMongoDb += {"connection": "${logsDbConfig.connection}", "name": "${logsDbConfig.name}"}"""
+      for (dbTemporary <- logsDbConfig.temporary) {
+        substitutions += s""" | .logsMongoDb.temporary=${dbTemporary}"""
       }
     }
     val arguments = Seq(cloudProvider, substitutions)
