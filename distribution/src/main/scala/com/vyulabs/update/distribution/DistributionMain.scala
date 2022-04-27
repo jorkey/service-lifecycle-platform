@@ -78,7 +78,7 @@ object DistributionMain extends App {
         StateUploader(config.distribution, collections, dir,
           providerInfo.url, providerInfo.accessToken).start())
       providerInfo.autoUpdate.filter(u => u).foreach(_ =>
-        AutoUpdater.start(config.distribution, workspace, workspace, workspace, taskManager))
+        AutoUpdater.start(providerInfo.distribution, workspace, workspace, workspace, taskManager))
     })
 
     var server = Http().newServerAt("0.0.0.0", config.network.port)

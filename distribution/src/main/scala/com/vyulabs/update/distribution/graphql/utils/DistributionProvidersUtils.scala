@@ -56,14 +56,14 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
   def changeProvider(distribution: DistributionId, distributionUrl: String, accessKey: String, testDistributionMatch: Option[String],
                      uploadState: Option[Boolean], autoUpdate: Option[Boolean]): Future[Unit] = {
     collections.Client_ProvidersInfo.change(Filters.eq("distribution", distribution),
-      (_) => DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate))
-      .map(_ => {
-        if (autoUpdate.getOrElse(false)) {
+      oldConfig => {
+        if (!oldConfig.autoUpdate.getOrElse(false) && autoUpdate.getOrElse(false)) {
           AutoUpdater.start(distribution, developerVersionUtils, clientVersionUtils, this, taskManager)
-        } else {
+        } else if (oldConfig.autoUpdate.getOrElse(false) && !autoUpdate.getOrElse(false)) {
           AutoUpdater.stop(distribution)
         }
-      })
+        DistributionProviderInfo(distribution, distributionUrl, accessKey, testDistributionMatch, uploadState, autoUpdate)
+      }).map(_ => ())
   }
 
   def removeProvider(distribution: DistributionId): Future[Unit] = {
