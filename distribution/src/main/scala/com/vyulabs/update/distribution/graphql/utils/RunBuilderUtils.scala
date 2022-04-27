@@ -53,7 +53,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         s"sourceRepositories=${config.repositories.toJson.compactPrint}",
         s"privateFiles=${config.privateFiles.toJson.compactPrint}",
         s"macroValues=${config.macroValues.toJson.compactPrint}")
-      runBuilder(task, config.distribution, config.environment, args)
+      runBuilder(task, config.distribution, config.environment, args, service)
     }
     val result = future.map(_._1).flatten
     val cancel = Some(() =>
@@ -70,7 +70,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         s"settingsRepositories=${config.repositories.toJson.compactPrint}",
         s"privateFiles=${config.privateFiles.toJson.compactPrint}",
         s"macroValues=${config.macroValues.toJson.compactPrint}")
-      runBuilder(task, config.distribution, config.environment, args)
+      runBuilder(task, config.distribution, config.environment, args, service)
     }
     val result = future.map(_._1).flatten
     val cancel = Some(() =>
@@ -79,18 +79,19 @@ trait RunBuilderUtils extends SprayJsonSupport {
   }
 
   def runBuilder(task: TaskId, distribution: DistributionId,
-                 environment: Seq[NamedStringValue], arguments: Seq[String])
+                 environment: Seq[NamedStringValue], arguments: Seq[String], service: ServiceId)
                 (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     val accessToken = accountsUtils.encodeAccessToken(AccessToken(Common.BuilderServiceName))
     if (config.distribution == distribution) {
       runLocalBuilder(task, distribution, accessToken, environment, arguments)
     } else {
-      runRemoteBuilder(task, distribution, accessToken, environment, arguments)
+      runRemoteBuilder(task, distribution, accessToken, environment, arguments, service)
     }
   }
 
   def runBuilderByRemoteDistribution(distribution: DistributionId, accessToken: String,
-                                     arguments: Seq[String], environment: Seq[NamedStringValue])
+                                     arguments: Seq[String], environment: Seq[NamedStringValue],
+                                     service: ServiceId)
                                     (implicit log: Logger): Future[TaskId] = {
     tasksUtils.createTask(
       "RunBuilderByRemoteDistribution",
@@ -98,7 +99,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
         TaskParameter("accessToken", accessToken),
         TaskParameter("environment", Misc.seqToCommaSeparatedString(environment)),
         TaskParameter("arguments", Misc.seqToCommaSeparatedString(arguments))),
-      Seq.empty,
+      Seq(service),
       (task, logger) => {
         implicit val log = logger
         runLocalBuilder(task, distribution, accessToken, environment, arguments)
@@ -167,7 +168,7 @@ trait RunBuilderUtils extends SprayJsonSupport {
   }
 
   private def runRemoteBuilder(task: TaskId, distribution: DistributionId, accessToken: String,
-                               environment: Seq[NamedStringValue], arguments: Seq[String])
+                               environment: Seq[NamedStringValue], arguments: Seq[String], service: ServiceId)
                               (implicit log: Logger): (Future[Unit], Option[() => Unit]) = {
     log.info(s"Run builder on remote distribution server '${distribution}''")
     @volatile var distributionClient = Option.empty[DistributionClient[AkkaHttpClient.AkkaSource]]
@@ -177,8 +178,10 @@ trait RunBuilderUtils extends SprayJsonSupport {
         new DistributionClient(new AkkaHttpClient(provider.url, Some(provider.accessToken))) })
       remoteTask <- client.graphqlRequest(GraphqlMutation[TaskId]("runBuilder",
         Seq(GraphqlArgument("accessToken" -> accessToken),
+            GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"),
             GraphqlArgument("arguments" -> arguments, "[String!]"),
-            GraphqlArgument("environment" -> environment, "[NamedStringValueInput!]"))))
+            GraphqlArgument("service" -> service),
+        )))
       logSource <- client.graphqlRequestWS(AdministratorSubscriptionsCoder.subscribeTaskLogs(remoteTask))
       end <- {
         distributionClient = Some(client)

@@ -544,10 +544,10 @@ object GraphqlSchema {
 
       // Run builder remotely
       Field("runBuilder", StringType,
-        arguments = AccessTokenArg :: ArgumentsArg :: OptionEnvironmentArg :: Nil,
+        arguments = AccessTokenArg :: ArgumentsArg :: EnvironmentArg :: ServiceArg :: Nil,
         tags = Authorized(AccountRole.DistributionConsumer) :: Nil,
         resolve = c => { c.ctx.workspace.runBuilderByRemoteDistribution(c.ctx.accessToken.get.account,
-          c.arg(AccessTokenArg), c.arg(ArgumentsArg), c.arg(OptionEnvironmentArg).getOrElse(Seq.empty)) }),
+          c.arg(AccessTokenArg), c.arg(ArgumentsArg), c.arg(EnvironmentArg), c.arg(ServiceArg)) }),
 
       // Cancel tasks
       Field("cancelTask", BooleanType,
