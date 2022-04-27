@@ -4,12 +4,11 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.stream.Materializer
 import com.mongodb.client.model.Filters
-import com.vyulabs.update.common.common.Common
 import com.vyulabs.update.common.common.Common.{DistributionId, ServiceId}
 import com.vyulabs.update.common.distribution.client.DistributionClient
 import com.vyulabs.update.common.distribution.client.graphql.ConsumerGraphqlCoder.{distributionMutations, distributionQueries}
 import com.vyulabs.update.common.distribution.server.DistributionDirectory
-import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DeveloperDesiredVersionDelta, DistributionProviderInfo}
+import com.vyulabs.update.common.info.{DeveloperDesiredVersion, DistributionProviderInfo}
 import com.vyulabs.update.common.version.DeveloperDistributionVersion
 import com.vyulabs.update.distribution.client.AkkaHttpClient
 import com.vyulabs.update.distribution.client.AkkaHttpClient.AkkaSource
@@ -74,8 +73,10 @@ trait DistributionProvidersUtils extends SprayJsonSupport {
 
   def getProviderDesiredVersions(distribution: DistributionId)(implicit log: Logger): Future[Seq[DeveloperDesiredVersion]] = {
     for {
+      providerInfo <- getDistributionProviderInfo(distribution)
       distributionProviderClient <- getDistributionProviderClient(distribution)
-      desiredVersions <- distributionProviderClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions())
+      desiredVersions <- distributionProviderClient.graphqlRequest(
+        distributionQueries.getDeveloperDesiredVersions(providerInfo.testConsumer))
     } yield desiredVersions
   }
 

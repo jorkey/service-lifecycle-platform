@@ -59,9 +59,9 @@ trait ClientVersionsInfoCoder {
 }
 
 trait DeveloperDesiredVersionsCoder {
-  def getDeveloperDesiredVersions(services: Seq[ServiceId] = Seq.empty) =
+  def getDeveloperDesiredVersions(testConsumer: Option[String] = None, services: Seq[ServiceId] = Seq.empty) =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("developerDesiredVersions",
-      Seq(GraphqlArgument("services" -> services, "[String!]")).filter(_.value != JsArray.empty),
+      Seq(GraphqlArgument("testConsumer" -> testConsumer), GraphqlArgument("services" -> services, "[String!]")).filter(_.value != JsArray.empty),
       "{ service, version { distribution, build } }")
   def getTestedVersions() =
     GraphqlQuery[Seq[DeveloperDesiredVersion]]("testedVersions",

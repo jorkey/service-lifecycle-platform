@@ -122,10 +122,10 @@ class RequestsTest extends TestEnvironment(true) with ScalatestRouteTest {
         .getOrElse(false))
 
       assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(adminClient.graphqlRequest(
-        administratorQueries.getDeveloperDesiredVersions(Seq("service1"))))
+        administratorQueries.getDeveloperDesiredVersions(services = Seq("service1"))))
 
       assertResult(Some(Seq(DeveloperDesiredVersion("service1", DeveloperDistributionVersion.parse("test-1.2.3")))))(
-        consumerClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(Seq("service1"))))
+        consumerClient.graphqlRequest(distributionQueries.getDeveloperDesiredVersions(services = Seq("service1"))))
 
       assert(adminClient.graphqlRequest(
         administratorMutations.removeServicesProfile("common")).getOrElse(false))

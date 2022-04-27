@@ -508,7 +508,7 @@ class DistributionBuilder(cloudProvider: String, distribution: String, directory
   private def downloadAndGenerateClientVersion(developerDistributionClient: SyncDistributionClient[SyncSource],
                                                service: ServiceId): Option[(ClientDistributionVersion, BuildInfo)] = {
     log.info(s"--------------------------- Get developer desired version of service ${service}")
-    val desiredVersion = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions(Seq(service)))
+    val desiredVersion = developerDistributionClient.graphqlRequest(administratorQueries.getDeveloperDesiredVersions(services = Seq(service)))
         .getOrElse(Seq.empty).headOption.getOrElse {
       log.error(s"Can't get developer desired version of service ${service}")
       return None
