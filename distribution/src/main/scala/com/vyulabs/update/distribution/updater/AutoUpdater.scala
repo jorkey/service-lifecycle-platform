@@ -93,7 +93,7 @@ class AutoUpdater(distribution: DistributionId,
               schedule()
           }
         } else {
-          log.error(s"Auto update error", result.failed)
+          log.error(s"Auto update error", result.failed.get)
           schedule()
         }
       }
