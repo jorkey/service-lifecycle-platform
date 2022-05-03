@@ -55,7 +55,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         }
         val logUploaderBuffer = logUploader.map { logUploader =>
           new LogBuffer(s"Service ${profiledServiceName}", "SERVICE",
-            logUploader, 100, 1000)
+            logUploader, 250, 10000)
         }
         val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"))

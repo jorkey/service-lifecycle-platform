@@ -88,7 +88,12 @@ class LogBuffer(description: String, unitName: String, logReceiver: LogReceiver,
         }
       case Failure(ex) =>
         synchronized {
-          eventsBuffer = sendingEvents ++ eventsBuffer
+          val events = sendingEvents ++ eventsBuffer
+          val cutted = events.size - highWater
+          if (cutted > 0) {
+            skipped += cutted
+          }
+          eventsBuffer = events.take(highWater)
           sendingEvents = Seq.empty
           maybeSend()
         }
