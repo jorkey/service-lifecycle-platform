@@ -21,6 +21,8 @@ object LogFormat {
         } catch {
           case _: ParseException =>
             LogLine(new Date(), "INFO", PLAIN_OUTPUT_UNIT, line, None)
+          case _: NumberFormatException =>
+            LogLine(new Date(), "INFO", PLAIN_OUTPUT_UNIT, line, None)
         }
       case line =>
         LogLine(new Date(), "INFO", PLAIN_OUTPUT_UNIT, line, None)
