@@ -15,7 +15,7 @@ class AkkaCallbackSource[Stream]() extends GraphStageWithMaterializedValue[Sourc
       var buffer = Queue.empty[Stream]
 
       val callback = getAsyncCallback[Stream] { packet =>
-        if (isAvailable(out)) {
+        if (buffer.isEmpty && isAvailable(out)) {
           push(out, packet)
         } else {
           buffer = buffer.enqueue(packet)

@@ -35,7 +35,7 @@ trait LogUtils extends SprayJsonSupport {
               task: Option[TaskId], logs: Seq[LogLine])(implicit log: Logger): Future[Unit] = {
     val expirationTimeout = if (task.isDefined) config.logs.taskLogExpirationTimeout else config.logs.serviceLogExpirationTimeout
     val expireTime = new Date(System.currentTimeMillis() + expirationTimeout.toMillis)
-    val documents = logs.foldLeft(Seq.empty[ServiceLogLine])((seq, line) => { seq :+
+    val documents = logs.map(line =>
       ServiceLogLine(
         service = service,
         instance = instance,
@@ -48,7 +48,7 @@ trait LogUtils extends SprayJsonSupport {
         message = line.message,
         terminationStatus = line.terminationStatus,
         expireTime = expireTime
-      ) })
+      ))
     collections.Log_Lines.insert(documents).map(_ => ())
   }
 
