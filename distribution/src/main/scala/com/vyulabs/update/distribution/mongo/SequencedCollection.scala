@@ -235,10 +235,12 @@ class SequencedCollection[T: ClassTag](val name: String,
       storedDocuments <- findSequenced(filtersArg, Some(sort), startLimit)
         .map(_.sortBy(_.sequence))
     } yield {
-      val bufferSource = Source.fromIterator(() => publisherBuffer.makeIterator())
-      val collectionSource = Source.fromIterator(() => storedDocuments.iterator)
+      val bufferIterator = publisherBuffer.makeIterator()
+      val documents = (storedDocuments ++ bufferIterator.toSeq).sortBy(_.sequence) // Stored documents may be with gaps
+      val documentsSource = Source.fromIterator(() => documents.iterator)
+      val bufferSource = Source.fromIterator(() => bufferIterator) // Makes up for the lack of newly arrived documents
       var sequence = from.getOrElse(0L)
-      Source.combine(collectionSource, bufferSource, publisherSource)(Concat(_))
+      Source.combine(documentsSource, bufferSource, publisherSource)(Concat(_))
         .buffer(1000, OverflowStrategy.fail)
         .filter(doc => {
           if (doc.sequence >= sequence) {
