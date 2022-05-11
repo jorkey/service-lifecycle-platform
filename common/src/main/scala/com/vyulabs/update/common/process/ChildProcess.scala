@@ -14,13 +14,20 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 class ChildProcess(process: Process)(implicit executionContext: ExecutionContext, log: Logger) {
   private val processTerminateTimeoutMs = 5000
   private val exitCode = Promise[Int]
-  private val input = new BufferedReader(new InputStreamReader(process.getInputStream))
+  private val stdin = new BufferedReader(new InputStreamReader(process.getInputStream))
+  private val stderr = new BufferedReader(new InputStreamReader(process.getErrorStream))
 
-  def readOutput(onOutput: Seq[(String, Boolean)] => Unit = _ => (), onExit: Int => Unit = _ => ()) {
-    new OutputReaderThread(input, None,
+  def readOutput(onOutput: Seq[(String, Boolean)] => Unit = _ => (),
+                 onErrorOutput: Seq[(String, Boolean)] => Unit = _ => (),
+                 onExit: Int => Unit = _ => ()) {
+    new OutputReaderThread(stdin, stderr,
+      None,
       () => !process.isAlive,
       lines => {
         onOutput(lines)
+      },
+      lines => {
+        onErrorOutput(lines)
       },
       () => {
         val status = process.waitFor()
@@ -93,7 +100,6 @@ object ChildProcess {
         else { e.remove(entry._1) }
         e
       })
-      builder.redirectErrorStream(true)
       builder.directory(directory)
       log.info(s"Start command ${command} with arguments ${arguments} in directory ${directory.getAbsolutePath}")
       log.debug(s"Environment: ${builder.environment().asScala}")
