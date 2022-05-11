@@ -88,7 +88,7 @@ trait ConfigBuilderUtils extends SprayJsonSupport {
     collections.Client_BuildServices.update(filters, oldConfig => {
       for (oldConfig <- oldConfig) {
         val removedFiles = oldConfig.privateFiles.map(_.path).toSet -- privateFiles.map(_.path).toSet
-        removedFiles.foreach(path => directory.getClientPrivateFile(path).delete())
+        removedFiles.foreach(path => directory.getClientPrivateFile(service, path).delete())
       }
       Some(BuildServiceConfig(service, distribution, environment, settingsRepositories,
         privateFiles, macroValues)) }).map(_ > 0)
