@@ -280,7 +280,7 @@ function runService {
       if [ ${serviceToRun} == "distribution" ]; then
         args="-jar -XX:+UseG1GC -Xss16m -Xms500m -Xmx500m -XX:+HeapDumpOnOutOfMemoryError ${serviceToRun}-${developerVersion}.jar"
       elif [ ${serviceToRun} == "updater" ]; then
-        args="-jar -Xms64m -Xmx64m ${serviceToRun}-${developerVersion}.jar"
+        args="-jar -Xms128m -Xmx128m ${serviceToRun}-${developerVersion}.jar"
       else
         args="-jar ${serviceToRun}-${developerVersion}.jar"
       fi
