@@ -37,7 +37,7 @@ class SequencedCollection[T: ClassTag](val name: String,
 
   private val (publisherCallback, publisherSource) = Source.fromGraph(new AkkaCallbackSource[Sequenced[T]]())
     .toMat(BroadcastHub.sink)(Keep.both).run()
-  private val publisherBuffer = new RaceRingBuffer[Sequenced[T]](100)
+  private val publisherBuffer = new RaceRingBuffer[Sequenced[T]](1000)
 
   private var sequence = Await.result(collection.map(_.find(sort = Some(Sorts.descending("_sequence")), limit = Some(1))
     .map(_.headOption.map(_.getInt64("_sequence").getValue).getOrElse(0L))).flatten, Duration.Inf)

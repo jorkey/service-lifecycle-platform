@@ -26,7 +26,7 @@
 
     <logger name="akka.event.slf4j.Slf4jLogger" level="ERROR"/>
     <logger name="ch.qos.logback" level="ERROR"/>
-    <logger name="org.eclipse.jgit" level="ERROR"/>
+    <logger name="org.eclipse.jgit" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />

@@ -63,7 +63,6 @@ object ProcessUtils {
     Runtime.getRuntime.addShutdownHook(terminateThread)
     try {
       val builder = new ProcessBuilder((command +: args).toList.asJava)
-      builder.redirectErrorStream(true)
       env.foldLeft(builder.environment())((e, entry) => {
         if (entry._2 != null) {
           e.put(entry._1, entry._2)
@@ -112,14 +111,27 @@ object ProcessUtils {
 
   def readOutputToString(process: Process, logging: Logging)
                         (implicit log: Logger): Option[String] = {
-    val stdInput = new BufferedReader(new InputStreamReader(process.getInputStream))
+    val stdin = new BufferedReader(new InputStreamReader(process.getInputStream))
+    val stderr = new BufferedReader(new InputStreamReader(process.getErrorStream))
     val output = StringBuilder.newBuilder
-    val thread = new OutputReaderThread(stdInput, if (logging == Logging.Realtime) Some(1000) else None,
+    val thread = new OutputReaderThread(stdin, stderr,
+      if (logging == Logging.Realtime) Some(1000) else None,
       () => !process.isAlive,
       lines => {
         lines.foreach { case (data, nl) =>
           if (logging != Logging.None) {
             log.info(data)
+          }
+          output.append(data)
+          if (nl) {
+            output.append('\n')
+          }
+        }
+      },
+      lines => {
+        lines.foreach { case (data, nl) =>
+          if (logging != Logging.None) {
+            log.error(data)
           }
           output.append(data)
           if (nl) {

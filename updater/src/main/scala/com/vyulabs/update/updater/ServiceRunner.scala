@@ -84,7 +84,7 @@ class ServiceRunner(config: RunServiceConfig, parameters: Map[String, String], i
         val onExit = (exitCode: Int) => {
           processExit(process, exitCode, logWriter, logUploaderBuffer)
         }
-        process.readOutput(onOutput, onExit)
+        process.readOutput(onOutput, onOutput, onExit)
         logUploaderBuffer.foreach(_.start())
         currentProcess = Some(process)
         lastStartTime = System.currentTimeMillis()
