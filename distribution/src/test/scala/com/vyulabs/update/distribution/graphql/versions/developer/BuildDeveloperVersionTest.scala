@@ -99,7 +99,7 @@ class BuildDeveloperVersionTest extends TestEnvironment {
 
     val buildResponse = result(graphql.executeQuery(GraphqlSchema.SchemaDefinition, consumerContext, graphql"""
         mutation {
-          runBuilder (accessToken: "qwe", arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin"])
+          runBuilder (accessToken: "qwe", arguments: ["buildDeveloperVersion", "distribution=test", "service=service1", "version=1.1.1", "author=admin"], service: "service1", environment: [])
         }
       """))
     assertResult(OK)(buildResponse._1)
@@ -138,7 +138,6 @@ class BuildDeveloperVersionTest extends TestEnvironment {
     val messages = json.asJsObject.fields.get("data").get
       .asJsObject.fields.get("subscribeLogs").get.asInstanceOf[JsArray]
       .elements.map(_.asJsObject.fields.get("message").get.asInstanceOf[JsString].value)
-    println(s"messages ${messages}")
     if (!messages.contains(message)) {
       expectMessage(input, message)
     }

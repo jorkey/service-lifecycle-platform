@@ -20,11 +20,12 @@ class LogBuffer(description: String, unitName: String, logReceiver: LogReceiver,
   private var sendingEvents = Seq.empty[LogLine]
   private var skipped = 0
   private var timerTask = Option.empty[Cancelable]
+  private var deferredFlush = false
 
   override def start(): Unit = {
     synchronized {
       eventsBuffer :+= LogLine(new Date, "INFO", unitName, s"Started ${description}", None)
-      timerTask = Some(timer.schedulePeriodically(() => flush(), FiniteDuration(1, TimeUnit.SECONDS)))
+      timerTask = Some(timer.schedulePeriodically(flush, FiniteDuration(1, TimeUnit.SECONDS)))
     }
     flush()
   }
@@ -65,15 +66,21 @@ class LogBuffer(description: String, unitName: String, logReceiver: LogReceiver,
 
   private def flush(): Unit = {
     synchronized {
-      if (!eventsBuffer.isEmpty && sendingEvents.isEmpty) {
-        send()
+      if (!eventsBuffer.isEmpty) {
+        if (sendingEvents.isEmpty) {
+          send()
+        } else {
+          deferredFlush = true
+        }
       }
     }
   }
 
   private def maybeSend(): Unit = {
-    if (eventsBuffer.size >= lowWater && sendingEvents.isEmpty) {
+    val sizeCondition = if (deferredFlush) !eventsBuffer.isEmpty else eventsBuffer.size >= lowWater
+    if (sizeCondition && sendingEvents.isEmpty) {
       send()
+      deferredFlush = false
     }
   }
 

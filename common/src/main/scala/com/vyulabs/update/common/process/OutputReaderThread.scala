@@ -79,23 +79,19 @@ class OutputReaderThread(outputInput: BufferedReader,
     while (!terminated() && !outputInput.ready() && !errorInput.ready()) {
       Thread.sleep(100)
     }
-    if (terminated()) {
-      (-1, -1)
-    } else {
-      try {
-        var cntOut = 0
-        if (outputInput.ready()) {
-          cntOut = outputInput.read(outBuffer)
-        }
-        var cntErr = 0
-        if (errorInput.ready()) {
-          cntErr = errorInput.read(errBuffer)
-        }
-        (cntOut, cntErr)
-      } catch {
-        case ex: IOException =>
-          (-1, -1)
+    try {
+      var cntOut = 0
+      if (terminated() || outputInput.ready()) {
+        cntOut = outputInput.read(outBuffer)
       }
+      var cntErr = 0
+      if (terminated() || errorInput.ready()) {
+        cntErr = errorInput.read(errBuffer)
+      }
+      (cntOut, cntErr)
+    } catch {
+      case ex: IOException =>
+        (-1, -1)
     }
   }
 }
