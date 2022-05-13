@@ -12,8 +12,10 @@ import akka.http.scaladsl.server.Route._
 import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
+import com.vyulabs.update.common.common.Common.{InstanceId, ProcessId, ServiceDirectory, ServiceId, TaskId}
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.info.AccountRole
+import com.vyulabs.update.common.utils.Utils
 import com.vyulabs.update.common.version.{ClientDistributionVersion, DeveloperDistributionVersion}
 import com.vyulabs.update.distribution.graphql.{Graphql, GraphqlHttpSupport, GraphqlWebSocketSupport, GraphqlWorkspace}
 import org.slf4j.LoggerFactory
@@ -121,6 +123,21 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                             val sink = FileIO.toPath(workspace.directory.getClientPrivateFile(path).toPath)
                             val future = byteSource.runWith(sink)
                             onSuccess(future) { _ => complete(OK) }
+                        }
+                      }
+                    }
+                  } ~ path(logsPath / ".*".r) { service =>
+                    get {
+                      authorize(role == AccountRole.Administrator || role == AccountRole.Developer) {
+                        parameters("service".as[ServiceId].optional, "instance".as[InstanceId].optional,
+                                    "directory".as[ServiceDirectory].optional, "process".as[ProcessId].optional,
+                                    "task".as[TaskId].optional, "levels".optional, "find".optional,
+                                    "fromTime", "toTime", "from".as[Long].optional, "to".as[Long].optional,
+                                    "limit".as[Int].optional) {
+                          (service, instance, directory, process, task, levels, find, fromTime, toTime, from, to, limit) =>
+                            complete(workspace.getLogsToStream(service, instance, directory, process, task,
+                              levels.map(_.split(':')), find, Utils.parseISO8601Date(fromTime), Utils.parseISO8601Date(toTime),
+                              from, to, limit))
                         }
                       }
                     }

@@ -1,5 +1,6 @@
 package com.vyulabs.update.distribution.mongo
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -109,6 +110,13 @@ class MongoDbCollection[T](name: String, collection: MongoCollection[T], db: Mon
     Source.fromPublisher(find)
 //      .log(s"Find in Mongo DB collection ${name} with filters ${filters}")
       .runWith(Sink.fold[Seq[T], T](Seq.empty[T])((seq, obj) => {seq :+ obj}))
+  }
+
+  def findToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Source[T, NotUsed] = {
+    var find = collection.find(filters)
+    sort.foreach(sort => find = find.sort(sort))
+    limit.foreach(limit => find = find.limit(limit))
+    Source.fromPublisher(find)
   }
 
   def findOneAndUpdate(filters: Bson, update: Bson, options: FindOneAndUpdateOptions = new FindOneAndUpdateOptions().upsert(true)): Future[Seq[T]] = {

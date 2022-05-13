@@ -101,6 +101,22 @@ class SequencedCollection[T: ClassTag](val name: String,
     }
   }
 
+  def findSequencedToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Source[Sequenced[T], NotUsed]] = {
+    findDocumentsToStream(filters, sort, limit)
+      .map(source => source.map(doc => {
+        val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+        Sequenced[T](doc.getInt64("_sequence").getValue, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
+      }))
+  }
+
+  def findToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Source[T, NotUsed]] = {
+    findDocumentsToStream(filters, sort, limit)
+      .map(source => source.map(doc => {
+        val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+        codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build())
+      }))
+  }
+
   def distinctField[T](fieldName: String, filters: Bson = new BsonDocument())
                       (implicit classTag: ClassTag[T]): Future[Seq[T]] = {
     for {
@@ -226,13 +242,13 @@ class SequencedCollection[T: ClassTag](val name: String,
     }
   }
 
-  def subscribe(filters: Bson = new BsonDocument(), from: Option[Long] = None, startLimit: Option[Int])
+  def subscribe(filters: Bson = new BsonDocument(), from: Option[Long] = None)
                (implicit log: Logger): Source[Sequenced[T], NotUsed] = {
     val filtersArg = Filters.and(filters,
       from.map(sequence => Filters.gte("_sequence", sequence)).getOrElse(new BsonDocument()))
-    val sort = if (!from.isEmpty || startLimit.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
+    val sort = Sorts.ascending("_sequence")
     val source = for {
-      storedDocuments <- findSequenced(filtersArg, Some(sort), startLimit)
+      storedDocuments <- findSequenced(filtersArg, Some(sort))
         .map(_.sortBy(_.sequence))
     } yield {
       val bufferIterator = publisherBuffer.makeIterator()
@@ -277,6 +293,15 @@ class SequencedCollection[T: ClassTag](val name: String,
       } else {
         docs
       }
+    }
+  }
+
+  private def findDocumentsToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Source[BsonDocument, NotUsed]] = {
+    assert(!modifiable)
+    for {
+      collection <- collection
+    } yield {
+      collection.findToStream(filters, sort, limit)
     }
   }
 

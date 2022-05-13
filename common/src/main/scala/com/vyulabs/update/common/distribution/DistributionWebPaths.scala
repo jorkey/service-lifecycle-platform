@@ -20,6 +20,7 @@ object DistributionWebPaths {
   val developerPrivateFilePath = "developer-private-file"
   val clientPrivateFilePath = "client-private-file"
 
+  val logsPath = "logs"
   val faultReportPath = "fault-report"
 
   val imageField = "image"

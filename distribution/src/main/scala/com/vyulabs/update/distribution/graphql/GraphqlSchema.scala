@@ -118,7 +118,6 @@ object GraphqlSchema {
   val OptionTypeArg = Argument("type", OptionInputType(StringType))
   val OptionParametersArg = Argument("parameters", OptionInputType(ListInputType(TaskParameterInputType)))
   val OptionLimitArg = Argument("limit", OptionInputType(IntType))
-  val OptionPrefetchArg = Argument("prefetch", OptionInputType(IntType))
   val OptionUploadStateArg = Argument("uploadState", OptionInputType(BooleanType))
   val OptionAutoUpdateArg = Argument("autoUpdate", OptionInputType(BooleanType))
   val OptionTestConsumerArg = Argument("testConsumer", OptionInputType(StringType))
@@ -290,7 +289,8 @@ object GraphqlSchema {
           instance = c.arg(OptionInstanceArg), directory = c.arg(OptionDirectoryArg), process = c.arg(OptionProcessArg),
           task = c.arg(OptionTaskArg), levels = c.arg(OptionLevelsArg), find = c.arg(OptionFindArg),
           fromTime = c.arg(OptionFromTimeArg), toTime = c.arg(OptionToTimeArg),
-          from = c.arg(OptionFromArg), to = c.arg(OptionToArg), limit = c.arg(OptionLimitArg)) }),
+          from = c.arg(OptionFromArg).map(_.longValue()), to = c.arg(OptionToArg).map(_.longValue()),
+          limit = c.arg(OptionLimitArg)) }),
       // Faults
       Field("faultDistributions", ListType(StringType),
         resolve = c => { c.ctx.workspace.getFaultDistributions() }),
@@ -563,12 +563,12 @@ object GraphqlSchema {
       Field.subs("subscribeLogs", ListType(SequencedServiceLogLineType),
         arguments = OptionServiceArg :: OptionInstanceArg :: OptionDirectoryArg :: OptionProcessArg ::
           OptionTaskArg :: OptionLevelsArg :: OptionUnitArg :: OptionFindArg ::
-          OptionFromArg :: OptionPrefetchArg :: Nil,
+          OptionFromArg :: Nil,
         tags = Authorized(AccountRole.Developer, AccountRole.Administrator, AccountRole.DistributionConsumer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.subscribeLogs(
           c.arg(OptionServiceArg), c.arg(OptionInstanceArg), c.arg(OptionDirectoryArg), c.arg(OptionProcessArg),
           c.arg(OptionTaskArg), c.arg(OptionLevelsArg), c.arg(OptionUnitArg), c.arg(OptionFindArg),
-          c.arg(OptionFromArg).map(_.toLong), c.arg(OptionPrefetchArg))),
+          c.arg(OptionFromArg).map(_.toLong))),
       Field.subs("testSubscription", StringType,
         tags = Authorized(AccountRole.Developer) :: Nil,
         resolve = (c: Context[GraphqlContext, Unit]) => c.ctx.workspace.testSubscription())
