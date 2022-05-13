@@ -543,7 +543,8 @@ export type MutationAddFaultReportInfoArgs = {
 export type MutationRunBuilderArgs = {
   accessToken: Scalars['String'];
   arguments: Array<Scalars['String']>;
-  environment?: Maybe<Array<NamedStringValueInput>>;
+  environment: Array<NamedStringValueInput>;
+  service: Scalars['String'];
 };
 
 
@@ -904,7 +905,6 @@ export type SubscriptionSubscribeLogsArgs = {
   unit?: Maybe<Scalars['String']>;
   find?: Maybe<Scalars['String']>;
   from?: Maybe<Scalars['BigInt']>;
-  prefetch?: Maybe<Scalars['Int']>;
 };
 
 export type TaskParameter = {
@@ -2102,7 +2102,6 @@ export type SubscribeLogsSubscriptionVariables = Exact<{
   process?: Maybe<Scalars['String']>;
   directory?: Maybe<Scalars['String']>;
   task?: Maybe<Scalars['String']>;
-  prefetch: Scalars['Int'];
   levels?: Maybe<Array<Scalars['String']> | Scalars['String']>;
   unit?: Maybe<Scalars['String']>;
   find?: Maybe<Scalars['String']>;
@@ -5216,14 +5215,13 @@ export type RemoveProviderMutationHookResult = ReturnType<typeof useRemoveProvid
 export type RemoveProviderMutationResult = Apollo.MutationResult<RemoveProviderMutation>;
 export type RemoveProviderMutationOptions = Apollo.BaseMutationOptions<RemoveProviderMutation, RemoveProviderMutationVariables>;
 export const SubscribeLogsDocument = gql`
-    subscription subscribeLogs($service: String, $instance: String, $process: String, $directory: String, $task: String, $prefetch: Int!, $levels: [String!], $unit: String, $find: String) {
+    subscription subscribeLogs($service: String, $instance: String, $process: String, $directory: String, $task: String, $levels: [String!], $unit: String, $find: String) {
   subscribeLogs(
     service: $service
     instance: $instance
     process: $process
     directory: $directory
     task: $task
-    prefetch: $prefetch
     levels: $levels
     unit: $unit
     find: $find
@@ -5256,14 +5254,13 @@ export const SubscribeLogsDocument = gql`
  *      process: // value for 'process'
  *      directory: // value for 'directory'
  *      task: // value for 'task'
- *      prefetch: // value for 'prefetch'
  *      levels: // value for 'levels'
  *      unit: // value for 'unit'
  *      find: // value for 'find'
  *   },
  * });
  */
-export function useSubscribeLogsSubscription(baseOptions: Apollo.SubscriptionHookOptions<SubscribeLogsSubscription, SubscribeLogsSubscriptionVariables>) {
+export function useSubscribeLogsSubscription(baseOptions?: Apollo.SubscriptionHookOptions<SubscribeLogsSubscription, SubscribeLogsSubscriptionVariables>) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useSubscription<SubscribeLogsSubscription, SubscribeLogsSubscriptionVariables>(SubscribeLogsDocument, options);
       }

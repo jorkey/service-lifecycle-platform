@@ -17,6 +17,8 @@ import {
 import {DateTimePicker} from "@material-ui/pickers";
 import {LogsTable, LogsTableEvents} from "../../../../common/components/logsTable/LogsTable";
 import {Logs} from "../../../../common/utils/Logs";
+import {download} from "../../../../common/load/Download";
+import DownloadIcon from "@material-ui/icons/CloudDownload";
 
 const useStyles = makeStyles((theme:any) => ({
   content: {
@@ -91,7 +93,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
   const [service, setService] = useState<string>()
   const [instance, setInstance] = useState<string>()
   const [directory, setDirectory] = useState<string>()
-  const [process, setProcess] = useState<string>()
+  const [pid, setPid] = useState<string>()
   const [fromTime, setFromTime] = useState<Date>()
   const [toTime, setToTime] = useState<Date>()
   const [level, setLevel] = useState<string>()
@@ -102,6 +104,8 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
   const [error, setError] = useState<string>()
 
   const tableRef = useRef<LogsTableEvents>(null)
+
+  const development = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
     if (service) {
@@ -119,7 +123,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
         })
       }
       getLevels({
-        variables: { service: service!, instance: instance, directory: directory, process: process },
+        variables: { service: service!, instance: instance, directory: directory, process: pid },
       })
     }
     setLevel(undefined)
@@ -173,7 +177,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                       setService(event.target.value?event.target.value as string:undefined)
                       setInstance(undefined)
                       setDirectory(undefined)
-                      setProcess(undefined)
+                      setPid(undefined)
                     }}
                     title='Select service'
                     value={service}
@@ -196,7 +200,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     onChange={(event) => {
                       setInstance(event.target.value?event.target.value as string:undefined)
                       setDirectory(undefined)
-                      setProcess(undefined)
+                      setPid(undefined)
                     }}
                     title='Select instance'
                     value={instance}
@@ -218,7 +222,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     native
                     onChange={(event) => {
                       setDirectory(event.target.value?event.target.value as string:undefined)
-                      setProcess(undefined)
+                      setPid(undefined)
                     }}
                     title='Select directory'
                     value={directory}
@@ -239,7 +243,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                     className={classes.processSelect}
                     native
                     onChange={(event) => {
-                      setProcess(event.target.value?event.target.value as string:undefined)
+                      setPid(event.target.value?event.target.value as string:undefined)
                     }}
                     title='Select process'
                     value={process}
@@ -340,6 +344,28 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                 }
                 label='Find Text'
               />
+              <Button disabled={!service}
+                      onClick={
+                        () => {
+                          let params = `service=${service!}`
+                          if (instance) params += `&instance=${instance!}`
+                          if (directory) params += `&directory=${directory}`
+                          if (pid) params += `&process=${pid}`
+                          if (fromTime) params += `&fromTime=${fromTime.toISOString()}`
+                          if (toTime) params += `&toTime=${toTime.toISOString()}`
+                          if (find) params += `&find=${find}`
+                          if (level && levels.data) {
+                            let levelsStr = ''
+                            Logs.levelWithSubLevels(level, levels.data.logLevels)?.forEach(
+                              level => levelsStr += ':' + level)
+                            params += `&levels=${levelsStr}`
+                          }
+                          download(`http://${development?'localhost:8000':window.location.host}/load/logs?${params}`,
+                            `${service}.log`)
+                        }
+                      }>
+                <DownloadIcon/>
+              </Button>
               {!follow ? <Button
                 className={classes.top}
                 color="primary"
@@ -368,7 +394,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
           { service ?
             <LogsTable ref={tableRef}
                        className={classes.logsTable}
-                       service={service} instance={instance} directory={directory} process={process}
+                       service={service} instance={instance} directory={directory} process={pid}
                        fromTime={fromTime} toTime={toTime}
                        levels={(levels.data && level)?Logs.levelWithSubLevels(level, levels.data.logLevels):undefined}
                        find={find != ''?find:undefined}

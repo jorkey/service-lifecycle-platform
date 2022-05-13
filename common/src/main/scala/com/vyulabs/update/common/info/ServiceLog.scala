@@ -20,7 +20,9 @@ object ServiceLogLine extends DefaultJsonProtocol {
 }
 
 case class SequencedServiceLogLine(sequence: BigInt, instance: InstanceId, directory: ServiceDirectory, process: ProcessId, task: Option[TaskId],
-                                   time: Date, level: String, unit: String, message: String, terminationStatus: Option[Boolean])
+                                   time: Date, level: String, unit: String, message: String, terminationStatus: Option[Boolean]) {
+  def getLogLine() = LogLine(time, level, unit, message, terminationStatus)
+}
 
 object SequencedServiceLogLine extends DefaultJsonProtocol {
   implicit val sequencedServiceLogLineJson = jsonFormat10(SequencedServiceLogLine.apply)
