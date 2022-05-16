@@ -347,18 +347,18 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
               <Button disabled={!service}
                       onClick={
                         () => {
-                          let params = `service=${service!}`
-                          if (instance) params += `&instance=${instance!}`
-                          if (directory) params += `&directory=${directory}`
-                          if (pid) params += `&process=${pid}`
-                          if (fromTime) params += `&fromTime=${fromTime.toISOString()}`
-                          if (toTime) params += `&toTime=${toTime.toISOString()}`
-                          if (find) params += `&find=${find}`
+                          let params = `service=${encodeURIComponent(service!)}`
+                          if (instance) params += `&instance=${encodeURIComponent(instance!)}`
+                          if (directory) params += `&directory=${encodeURIComponent(directory)}`
+                          if (pid) params += `&process=${encodeURIComponent(pid)}`
+                          if (fromTime) params += `&fromTime=${encodeURIComponent(fromTime.toISOString())}`
+                          if (toTime) params += `&toTime=${encodeURIComponent(toTime.toISOString())}`
+                          if (find) params += `&find=${encodeURIComponent(find)}`
                           if (level && levels.data) {
                             let levelsStr = ''
                             Logs.levelWithSubLevels(level, levels.data.logLevels)?.forEach(
                               level => levelsStr += ':' + level)
-                            params += `&levels=${levelsStr}`
+                            params += `&levels=${encodeURIComponent(levelsStr)}`
                           }
                           download(`http://${development?'localhost:8000':window.location.host}/load/logs?${params}`,
                             `${service}.log`)
