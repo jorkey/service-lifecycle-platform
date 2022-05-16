@@ -144,7 +144,7 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                                                         fromTime.map(Utils.parseISO8601Date(_).get), toTime.map(Utils.parseISO8601Date(_).get),
                                                         from, to, limit).map(log => {
                                 (LogFormat.serialize(log, service.isEmpty, instance.isEmpty, directory.isEmpty, process.isEmpty,
-                                  service.isEmpty && task.isEmpty) + "\n").getBytes("utf8") })))
+                                  service.isEmpty && task.isEmpty) + "\n") })))
                         }
                       }
                     }

@@ -140,7 +140,7 @@ const FaultsCard: React.FC<FaultsCardParams> = props => {
                 >
                   <option key={-1}/>
                   { services?.data?.faultServices
-                    .map((service, index) => <option key={index}>{service}</option>)}
+                    ?.map((service, index) => <option key={index}>{service}</option>)}
                 </Select>
               }
               label='Service'

@@ -31,29 +31,28 @@ object LogFormat {
 
   def serialize(line: SequencedServiceLogLine,
                 service: Boolean, instance: Boolean, directory: Boolean, process: Boolean, task: Boolean): String = {
-    val str = new StringBuilder()
+    val str = new StringBuilder(dateFormat.format(line.time))
     if (service) {
-      str.append(line.service)
+      str.append(" " + line.service)
     }
     if (instance) {
-      if (str.size != 0) str += ' '
-      str.append(line.instance)
+      str.append(" " + line.instance)
     }
     if (directory) {
-      if (str.size != 0) str += ' '
-      str.append(line.directory)
+      str.append(" " + line.directory)
     }
     if (process) {
-      if (str.size != 0) str += ' '
-      str.append(line.process)
+      str.append(" " + line.process)
     }
     if (task && line.task.isDefined) {
-      if (str.size != 0) str += ' '
-      str.append(line.task.get)
+      str.append(" " + line.task.get)
     }
-    if (str.size != 0) str += ' '
-    str + "%s %s %s %s".format(dateFormat.format(line.time),
-      line.level, line.unit, line.message)
+    if (!line.level.isEmpty) {
+      str.append(" " + line.level)
+    }
+    str.append(" " + line.unit)
+    str.append(" " + line.message)
+    str.toString()
   }
 
   def serialize(line: LogLine): String = {
