@@ -101,20 +101,19 @@ class SequencedCollection[T: ClassTag](val name: String,
     }
   }
 
-  def findSequencedToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Source[Sequenced[T], NotUsed]] = {
+  def findSequencedToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Source[Sequenced[T], NotUsed] = {
     findDocumentsToStream(filters, sort, limit)
-      .map(source => source.map(doc => {
+      .map(doc => {
         val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
         Sequenced[T](doc.getInt64("_sequence").getValue, codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build()))
-      }))
+      })
   }
 
-  def findToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Source[T, NotUsed]] = {
-    findDocumentsToStream(filters, sort, limit)
-      .map(source => source.map(doc => {
-        val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
-        codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build())
-      }))
+  def findToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Source[T, NotUsed] = {
+    findDocumentsToStream(filters, sort, limit).map(doc => {
+      val codec = codecRegistry.get(classTag[T].runtimeClass.asInstanceOf[Class[T]])
+      codec.decode(new BsonDocumentReader(doc), DecoderContext.builder.build())
+    })
   }
 
   def distinctField[T](fieldName: String, filters: Bson = new BsonDocument())
@@ -296,13 +295,15 @@ class SequencedCollection[T: ClassTag](val name: String,
     }
   }
 
-  private def findDocumentsToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Future[Source[BsonDocument, NotUsed]] = {
+  private def findDocumentsToStream(filters: Bson = new BsonDocument(), sort: Option[Bson] = None, limit: Option[Int] = None): Source[BsonDocument, NotUsed] = {
     assert(!modifiable)
-    for {
-      collection <- collection
-    } yield {
-      collection.findToStream(filters, sort, limit)
-    }
+    Source.futureSource {
+      for {
+        collection <- collection
+      } yield {
+        collection.findToStream(filters, sort, limit)
+      }
+    }.mapMaterializedValue(_ => NotUsed)
   }
 
   private def getHistory(filters: Bson = new BsonDocument(), limit: Option[Int] = None): Future[Seq[BsonDocument]] = {

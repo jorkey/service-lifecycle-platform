@@ -6,13 +6,14 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.HttpCharsets._
 import akka.http.scaladsl.model.MediaTypes._
 import akka.http.scaladsl.model.StatusCodes.OK
-import akka.http.scaladsl.model.{ContentType, HttpRequest, StatusCodes}
+import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Directives.{path, pathPrefix, _}
 import akka.http.scaladsl.server.Route._
+import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.http.scaladsl.server.{ExceptionHandler, Route, RouteResult}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
-import com.vyulabs.update.common.common.Common.{InstanceId, ProcessId, ServiceDirectory, ServiceId, TaskId}
+import com.vyulabs.update.common.common.Common._
 import com.vyulabs.update.common.distribution.DistributionWebPaths._
 import com.vyulabs.update.common.info.AccountRole
 import com.vyulabs.update.common.logs.LogFormat
@@ -137,10 +138,13 @@ class Distribution(val workspace: GraphqlWorkspace, val graphql: Graphql)
                                     "from".as[Long].optional, "to".as[Long].optional,
                                     "limit".as[Int].optional) {
                           (service, instance, directory, process, task, levels, find, fromTime, toTime, from, to, limit) =>
-                            complete(workspace.getLogsToStream(service, instance, directory, process, task,
-                              levels.map(_.split(':')), find,
-                              fromTime.map(Utils.parseISO8601Date(_).get), toTime.map(Utils.parseISO8601Date(_).get),
-                              from, to, limit).map(_.map(log => { LogFormat.serialize(log.getLogLine()) + "\n" })))
+                            complete(HttpEntity.Chunked(`application/octet-stream`,
+                              workspace.getLogsToStream(service, instance, directory, process, task,
+                                                        levels.map(_.split(':')), find,
+                                                        fromTime.map(Utils.parseISO8601Date(_).get), toTime.map(Utils.parseISO8601Date(_).get),
+                                                        from, to, limit).map(log => {
+                                (LogFormat.serialize(log, service.isEmpty, instance.isEmpty, directory.isEmpty, process.isEmpty,
+                                  service.isEmpty && task.isEmpty) + "\n").getBytes("utf8") })))
                         }
                       }
                     }

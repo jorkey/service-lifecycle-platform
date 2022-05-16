@@ -128,8 +128,8 @@ trait LogUtils extends SprayJsonSupport {
               limit: Option[Int] = None)
              (implicit log: Logger): Future[Seq[SequencedServiceLogLine]] = {
     getLogsToStream(service, instance, directory, process, task, levels, find, fromTime, toTime, from, to, limit)
-      .map(_.runWith(Sink.fold[Seq[SequencedServiceLogLine], SequencedServiceLogLine](Seq.empty[SequencedServiceLogLine])
-        ((seq, obj) => {seq :+ obj})).map(_.sortBy(_.sequence))).flatten
+      .runWith(Sink.fold[Seq[SequencedServiceLogLine], SequencedServiceLogLine](Seq.empty[SequencedServiceLogLine])
+        ((seq, obj) => {seq :+ obj})).map(_.sortBy(_.sequence))
   }
 
   def getLogsToStream(service: Option[ServiceId] = None, instance: Option[InstanceId] = None,
@@ -137,7 +137,7 @@ trait LogUtils extends SprayJsonSupport {
               levels: Option[Seq[String]] = None, find: Option[String] = None,
               fromTime: Option[Date] = None, toTime: Option[Date] = None, from: Option[Long] = None, to: Option[Long] = None,
               limit: Option[Int] = None)
-             (implicit log: Logger): Future[Source[SequencedServiceLogLine, NotUsed]] = {
+             (implicit log: Logger): Source[SequencedServiceLogLine, NotUsed] = {
     val serviceArg = service.map(Filters.eq("service", _))
     val instanceArg = instance.map(Filters.eq("instance", _))
     val directoryArg = directory.map(Filters.eq("directory", _))
@@ -155,18 +155,18 @@ trait LogUtils extends SprayJsonSupport {
     val filters = if (!args.isEmpty) Filters.and(args.asJava) else new BsonDocument()
     val sort = if (to.isEmpty || !from.isEmpty) Sorts.ascending("_sequence") else Sorts.descending("_sequence")
     collections.Log_Lines.findSequencedToStream(filters, Some(sort), limit)
-      .map(source => source
-        .map(line => SequencedServiceLogLine(
-          sequence = line.sequence,
-          instance = line.document.instance,
-          directory = line.document.directory,
-          process = line.document.process,
-          task = line.document.task,
-          time = line.document.time,
-          level = line.document.level,
-          unit = line.document.unit,
-          message = line.document.message,
-          terminationStatus = line.document.terminationStatus)))
+      .map(line => SequencedServiceLogLine(
+        sequence = line.sequence,
+        service = line.document.service,
+        instance = line.document.instance,
+        directory = line.document.directory,
+        process = line.document.process,
+        task = line.document.task,
+        time = line.document.time,
+        level = line.document.level,
+        unit = line.document.unit,
+        message = line.document.message,
+        terminationStatus = line.document.terminationStatus))
   }
 
   def subscribeLogs(service: Option[ServiceId],
@@ -195,6 +195,7 @@ trait LogUtils extends SprayJsonSupport {
       .map(lines => Action(lines.map(line => SequencedServiceLogLine(
         sequence = line.sequence,
         instance = line.document.instance,
+        service = line.document.service,
         directory = line.document.directory,
         process = line.document.process,
         task = line.document.task,

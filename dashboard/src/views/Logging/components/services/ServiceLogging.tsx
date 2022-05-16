@@ -246,7 +246,7 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                       setPid(event.target.value?event.target.value as string:undefined)
                     }}
                     title='Select process'
-                    value={process}
+                    value={pid}
                   >
                     <option key={-1}/>
                     { directory && !processes.loading && processes.data ? processes.data.logProcesses

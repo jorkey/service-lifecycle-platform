@@ -1,6 +1,6 @@
 package com.vyulabs.update.common.logs
 
-import com.vyulabs.update.common.info.LogLine
+import com.vyulabs.update.common.info.{LogLine, SequencedServiceLogLine}
 
 import java.text.{ParseException, SimpleDateFormat}
 import java.util.{Date, TimeZone}
@@ -27,6 +27,33 @@ object LogFormat {
       case line =>
         LogLine(new Date(), "INFO", PLAIN_OUTPUT_UNIT, line, None)
     }
+  }
+
+  def serialize(line: SequencedServiceLogLine,
+                service: Boolean, instance: Boolean, directory: Boolean, process: Boolean, task: Boolean): String = {
+    val str = new StringBuilder()
+    if (service) {
+      str.append(line.service)
+    }
+    if (instance) {
+      if (str.size != 0) str += ' '
+      str.append(line.instance)
+    }
+    if (directory) {
+      if (str.size != 0) str += ' '
+      str.append(line.directory)
+    }
+    if (process) {
+      if (str.size != 0) str += ' '
+      str.append(line.process)
+    }
+    if (task && line.task.isDefined) {
+      if (str.size != 0) str += ' '
+      str.append(line.task.get)
+    }
+    if (str.size != 0) str += ' '
+    str + "%s %s %s %s".format(dateFormat.format(line.time),
+      line.level, line.unit, line.message)
   }
 
   def serialize(line: LogLine): String = {
