@@ -360,7 +360,8 @@ const ServiceLogging: React.FC<LoggingParams> = props => {
                               level => levelsStr += ':' + level)
                             params += `&levels=${encodeURIComponent(levelsStr)}`
                           }
-                          download(`http://${development?'localhost:8000':window.location.host}/load/logs?${params}`,
+                          download(`${development?
+                              'http://localhost:8000':`${window.location.protocol}//${window.location.host}`}/load/logs?${params}`,
                             `${service}.log`)
                         }
                       }>
