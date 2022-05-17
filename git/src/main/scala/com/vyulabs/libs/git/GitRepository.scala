@@ -348,7 +348,7 @@ object GitRepository {
         }
         cloneRepository(uri, branch, directory, cloneSubmodules)
       } else {
-        openAndPullRepository(uri, branch, directory, cloneSubmodules) match {
+        openAndPullRepository(uri, branch, directory) match {
           case None =>
             if (!IoUtils.deleteFileRecursively(directory)) {
               return None
@@ -361,8 +361,7 @@ object GitRepository {
     }
   }
 
-  def openAndPullRepository(url: String, branch: String, directory: File, cloneSubmodules: Boolean)
-                           (implicit log: Logger): Option[GitRepository] = {
+  def openAndPullRepository(url: String, branch: String, directory: File)(implicit log: Logger): Option[GitRepository] = {
     log.info(s"Open and pull repository in directory ${directory}")
     var attempt = 1
     while (true) {
@@ -379,17 +378,16 @@ object GitRepository {
           log.info(s"Current branch is ${git.getRepository.getBranch()}. Need branch ${branch}")
           return None
         }
-        if (cloneSubmodules) {
-          val walk = SubmoduleWalk.forIndex(git.getRepository)
-          while (walk.next) {
-            val submoduleRepository = walk.getRepository
-            if (submoduleRepository != null) {
-              log.info(s"Pull submodule repository ${submoduleRepository.toString}")
-              Git.wrap(submoduleRepository).pull().call()
-            }
+        val walk = SubmoduleWalk.forIndex(git.getRepository)
+        while (walk.next) {
+          val submoduleRepository = walk.getRepository
+          if (submoduleRepository != null) {
+            log.info(s"Pull submodule repository ${submoduleRepository.toString}")
+            Git.wrap(submoduleRepository).pull().call()
+            submoduleRepository.close
           }
-          git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
         }
+        git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
         toClose = None
         return Some(new GitRepository(git))
       } catch {
