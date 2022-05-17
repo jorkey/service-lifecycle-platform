@@ -154,7 +154,7 @@ lazy val dependencies =
     val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
 
     // Misc
-    val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "6.1.0.202203080745-r"
+    val jGit = "org.eclipse.jgit" % "org.eclipse.jgit" % "5.6.1.202002131546-r"
 
     // MongoDB
     val mongoDbDriver = "org.mongodb" % "mongodb-driver-reactivestreams" % "1.13.1"
