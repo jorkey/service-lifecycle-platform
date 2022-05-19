@@ -7,7 +7,7 @@ import org.eclipse.jgit.api.errors.RefAlreadyExistsException
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.lib.SubmoduleConfig.FetchRecurseSubmodulesMode
 import org.eclipse.jgit.revwalk.RevCommit
-import org.eclipse.jgit.submodule.SubmoduleWalk
+import org.eclipse.jgit.submodule.SubmoduleStatus
 import org.eclipse.jgit.transport.RefSpec
 import org.slf4j.Logger
 
@@ -63,7 +63,7 @@ class GitRepository(git: Git)(implicit log: Logger) {
     }
   }
 
-  def add(file: File): Boolean = {
+  def addFile(file: File): Boolean = {
     log.debug(s"Add to commit ${file}")
     try {
       git.add().addFilepattern(getSubPath(file).toString).call()
@@ -79,7 +79,7 @@ class GitRepository(git: Git)(implicit log: Logger) {
     val contents = file.listFiles()
     if (contents != null) {
       for (file <- contents) {
-        if (!add(file)) {
+        if (!addFile(file)) {
           return false
         }
       }
@@ -99,11 +99,14 @@ class GitRepository(git: Git)(implicit log: Logger) {
     }
   }
 
-  def pull(branch: Option[String] = None): Boolean = {
+  def pull(branch: Option[String] = None, withSubmodules: Boolean = false): Boolean = {
     log.debug(s"Pull ${branch}")
     try {
       val pull = git.pull()
       branch.foreach(pull.setRemoteBranchName(_))
+      if (withSubmodules) {
+        pull.setRecurseSubmodules(FetchRecurseSubmodulesMode.YES)
+      }
       val result = pull.call()
       if (result.isSuccessful) {
         log.debug("Pull result: " + result.toString)
@@ -280,6 +283,22 @@ class GitRepository(git: Git)(implicit log: Logger) {
     }
   }
 
+  def addSubmodule(uri: String, path: String): Unit = {
+    git.submoduleAdd().setURI(uri).setPath(path).call()
+  }
+
+  def getSubmoduleStatus(): Map[String, SubmoduleStatus] = {
+    git.submoduleStatus().call().asScala.toMap
+  }
+
+  def initSubmodules(): Unit = {
+    git.submoduleInit().call()
+  }
+
+  def updateSubmodules(): Unit = {
+    git.submoduleUpdate().setFetch(true).call()
+  }
+
   def close(): Unit = {
     git.close()
   }
@@ -304,21 +323,16 @@ object GitRepository {
     }
   }
 
-  def cloneRepository(uri: String, branch: String, directory: File, cloneSubmodules: Boolean)(implicit log: Logger): Option[GitRepository] = {
-    log.info(s"Clone repository ${uri} to ${directory}")
+  def cloneRepository(uri: String, branch: String, directory: File, withSubmodules: Boolean)(implicit log: Logger): Option[GitRepository] = {
+    log.info(s"Clone repository ${uri} to ${directory} cloneSubmodules ${withSubmodules}")
     try {
-      if (uri.startsWith("file://")) {
-        IoUtils.copyFile(new File(uri.substring(7)), directory)
-        Some(new GitRepository(Git.open(directory)))
-      } else {
-        val git = Git.cloneRepository()
-          .setURI(uri)
-          .setBranch(branch)
-          .setDirectory(directory)
-          .setCloneSubmodules(cloneSubmodules)
-          .call()
-        Some(new GitRepository(git))
-      }
+      val git = Git.cloneRepository()
+        .setURI(uri)
+        .setBranch(branch)
+        .setDirectory(directory)
+        .setCloneSubmodules(withSubmodules)
+        .call()
+      Some(new GitRepository(git))
     } catch {
       case ex:Exception =>
         log.error("Clone Git repository error", ex)
@@ -361,47 +375,36 @@ object GitRepository {
     }
   }
 
-  def openAndPullRepository(url: String, branch: String, directory: File, cloneSubmodules: Boolean)
+  def openAndPullRepository(url: String, branch: String, directory: File, withSubmodules: Boolean)
                            (implicit log: Logger): Option[GitRepository] = {
     log.info(s"Open and pull repository in directory ${directory}")
-    var attempt = 1
-    while (true) {
-      var toClose = Option.empty[Git]
-      try {
-        val git = Git.open(directory)
-        toClose = Some(git)
-        val currentUrl = git.getRepository.getConfig().getString("remote", "origin", "url")
-        if (currentUrl != url) {
-          log.info(s"Current URL ${currentUrl} != ${url}")
-          return None
-        }
-        if (git.getRepository.getBranch() != branch) {
-          log.info(s"Current branch is ${git.getRepository.getBranch()}. Need branch ${branch}")
-          return None
-        }
-        if (cloneSubmodules) {
-          val walk = SubmoduleWalk.forIndex(git.getRepository)
-          while (walk.next) {
-            val submoduleRepository = walk.getRepository
-            if (submoduleRepository != null) {
-              log.info(s"Pull submodule repository ${submoduleRepository.toString}")
-              Git.wrap(submoduleRepository).pull().call()
-            }
-          }
-          git.pull().setRecurseSubmodules(FetchRecurseSubmodulesMode.YES).call()
-        }
-        toClose = None
-        return Some(new GitRepository(git))
-      } catch {
-        case ex: Exception =>
-          if (attempt == 3) {
-            log.error("Open Git repository error", ex)
-            return None
-          }
-          attempt += 1
-      } finally {
-        toClose.foreach(_.close())
+    var toClose = Option.empty[Git]
+    try {
+      val git = Git.open(directory)
+      toClose = Some(git)
+      val currentUrl = git.getRepository.getConfig().getString("remote", "origin", "url")
+      if (currentUrl != url) {
+        log.info(s"Current URL ${currentUrl} != ${url}")
+        return None
       }
+      if (git.getRepository.getBranch() != branch) {
+        log.info(s"Current branch is ${git.getRepository.getBranch()}. Need branch ${branch}")
+        return None
+      }
+      val rep = new GitRepository(git)
+      if (rep.pull(Some(branch), withSubmodules)) {
+        rep.initSubmodules()
+        rep.updateSubmodules()
+        return Some(rep)
+      } else {
+        return None
+      }
+    } catch {
+      case ex: Exception =>
+        log.error("Open and pull Git repository error", ex)
+        return None
+    } finally {
+      toClose.foreach(_.close())
     }
     None
   }

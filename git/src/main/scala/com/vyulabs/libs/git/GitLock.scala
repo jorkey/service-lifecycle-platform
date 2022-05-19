@@ -96,7 +96,7 @@ class GitLock(git: GitRepository, name: String)(implicit log: Logger) extends Th
         log.error(s"Write lock file ${file} exception", ex)
         return false
     }
-    if (!git.add(file)) {
+    if (!git.addFile(file)) {
       return false
     }
     if (!git.commit(commitMessage)) {

@@ -104,7 +104,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     if (!IoUtils.writeJsonToFile(configFile, updateConfig)) {
       sys.error(s"Can't write update config file")
     }
-    if (!testSourceRepository.add(configFile)) {
+    if (!testSourceRepository.addFile(configFile)) {
       sys.error(s"Can't add update config file to repository changes")
     }
     val scriptFile = new File(testServiceSourcesDir, "sourceScript.sh")
@@ -112,7 +112,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     if (!IoUtils.writeBytesToFile(scriptFile, scriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }
-    if (!testSourceRepository.add(scriptFile)) {
+    if (!testSourceRepository.addFile(scriptFile)) {
       sys.error(s"Can't add script file to repository changes")
     }
     if (!testSourceRepository.commit("First commit")) {
@@ -158,7 +158,7 @@ class SimpleLifecycle(val distribution: DistributionId, val distributionPort: In
     if (!IoUtils.writeBytesToFile(scriptFile, fixedScriptContent.getBytes("utf8"))) {
       sys.error(s"Can't write script")
     }
-    if (!testSourceRepository.add(scriptFile)) {
+    if (!testSourceRepository.addFile(scriptFile)) {
       sys.error(s"Can't add script file to repository changes")
     }
     if (!testSourceRepository.commit("Fix commit")) {
